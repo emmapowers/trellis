@@ -1,0 +1,39 @@
+[project]
+name = "trellis"
+version = "0.1.0"
+authors = ["Emma Powers <emma@emmaponders.com>"]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[dependencies]
+python = "3.13.*"
+rich = ">=13.0,<15"
+pip = ">=24,<26"
+black = ">=25.1.0,<26"
+ruff = ">=0.8,<1"
+mypy = ">=1.15,<2"
+pytest = ">=8,<9"
+pytest-cov = ">=6,<7"
+
+[pypi-dependencies]
+trellis = { path = ".", editable = true }
+
+[tasks]
+fmt = { cmd = "black src", description = "Format code with black" }
+fmt-check = { cmd = "black --check src", description = "Check black formatting" }
+
+ruff-fix = { cmd = "ruff check --fix src", depends-on = ["fmt"], description = "Run ruff with auto-fix" }
+ruff-check = { cmd = "ruff check src", description = "Check ruff linting" }
+
+typecheck = { cmd = "dmypy run src", description = "Run mypy (daemon)" }
+typecheck-ci = { cmd = "mypy src", description = "Run mypy (full check)" }
+
+test = { cmd = "pytest", description = "Run tests" }
+test-cov = { cmd = "pytest --cov=src/trellis --cov-report=term-missing", description = "Run tests with coverage" }
+
+cleanup = { depends-on = ["fmt", "ruff-fix"], description = "Run formatters with auto-fix" }
+lint = { depends-on = ["fmt-check", "ruff-check", "typecheck-ci"], description = "Check all linters (no fix)" }
+ci = { depends-on = ["lint", "test"], description = "Run CI checks" }
+
+build = { cmd = "pip wheel . -w dist --no-deps", description = "Build wheel" }
+clean = { cmd = "rm -rf dist build .mypy_cache .ruff_cache .pytest_cache .coverage", description = "Clean build artifacts" }

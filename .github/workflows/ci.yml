@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Pixi
+        uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          pixi-version: latest
+          cache: true
+
+      - name: Cache Pixi environment
+        uses: actions/cache@v4
+        with:
+          path: .pixi/envs
+          key: pixi-env-linux-${{ hashFiles('pixi.lock') }}
+          restore-keys: |
+            pixi-env-linux-
+
+      - name: Install environment
+        run: pixi install --locked
+
+      - name: Run CI checks
+        run: pixi run ci

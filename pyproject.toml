@@ -1,0 +1,93 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "trellis"
+version = "0.1.0"
+description = "A reactive UI framework for Python"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.13"
+authors = [{ name = "Emma Powers", email = "emma@emmaponders.com" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: User Interfaces",
+]
+dependencies = [
+    "rich>=13.0",
+]
+
+[project.urls]
+Repository = "https://github.com/emmapowers/trellis"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/trellis"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-vv"
+
+[tool.coverage.run]
+source = ["src/trellis"]
+omit = ["tests/*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py313"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "PL",     # pylint
+    "DTZ",    # flake8-datetimez
+    "RUF",    # ruff-specific rules
+    "FURB",   # refurb
+    "PERF",   # perflint
+    "RET",    # flake8-return
+    "SLF",    # flake8-self
+    "SLOT",   # flake8-slots
+    "TC",     # flake8-type-checking
+    "PT",     # flake8-pytest-style
+    "ISC",    # flake8-implicit-str-concat
+    "ICN",    # flake8-import-conventions
+]
+ignore = [
+    "E501",     # line too long (black handles this)
+    "PLR0912",  # too-many-branches
+    "PLR0915",  # too-many-statements
+    "PLR0913",  # too-many-arguments
+    "TC001",    # type-checking block
+    "TC003",    # type-checking block - standard library
+    "F403",     # star imports - used intentionally in __init__.py
+    "SLF001",   # private member access - needed for descriptor protocol
+    "PLW0603",  # global statement - needed for render context
+    "UP046",    # generic class style - defer to later cleanup
+    "UP047",    # generic function style - defer to later cleanup
+]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+warn_redundant_casts = true
+warn_no_return = true
+warn_unreachable = true
