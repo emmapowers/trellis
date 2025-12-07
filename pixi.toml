@@ -7,16 +7,12 @@ platforms = ["osx-arm64", "linux-64"]
 
 [dependencies]
 python = "3.13.*"
-rich = ">=13.0,<15"
 pip = ">=24,<26"
 black = ">=25.1.0,<26"
 ruff = ">=0.8,<1"
 mypy = ">=1.15,<2"
 pytest = ">=8,<9"
 pytest-cov = ">=6,<7"
-fastapi = ">=0.115"
-uvicorn = ">=0.34"
-msgspec = ">=0.19"
 nodejs = ">=22"
 
 [pypi-dependencies]
@@ -41,3 +37,7 @@ ci = { depends-on = ["lint", "test"], description = "Run CI checks" }
 
 build = { cmd = "pip wheel . -w dist --no-deps", description = "Build wheel" }
 clean = { cmd = "rm -rf dist build .mypy_cache .ruff_cache .pytest_cache .coverage", description = "Clean build artifacts" }
+
+# Client build tasks
+build-client = { cmd = "npm install && npm run build", cwd = "src/trellis/client", description = "Build client bundle" }
+watch-client = { cmd = "npm install && npm run watch", cwd = "src/trellis/client", description = "Watch and rebuild client" }

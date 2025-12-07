@@ -1,0 +1,21 @@
+{
+  "name": "trellis-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/main.tsx --bundle --outfile=dist/bundle.js --format=esm --platform=browser --target=es2022 --jsx=automatic --loader:.tsx=tsx --loader:.ts=ts",
+    "watch": "esbuild src/main.tsx --bundle --outfile=dist/bundle.js --format=esm --platform=browser --target=es2022 --jsx=automatic --loader:.tsx=tsx --loader:.ts=ts --watch"
+  },
+  "dependencies": {
+    "@msgpack/msgpack": "^3.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.0"
+  }
+}

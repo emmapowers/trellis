@@ -22,6 +22,9 @@ classifiers = [
 ]
 dependencies = [
     "rich>=13.0",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "msgspec>=0.19",
 ]
 
 [project.urls]
