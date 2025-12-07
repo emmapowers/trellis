@@ -25,35 +25,38 @@ Notes:
 
 import asyncio
 from dataclasses import dataclass
-from typing import Callable
-from framework import widgets as w
-from framework import html as h
-from framework import navigation as nav
-import framework as fw
+
+from trellis.core.state import Stateful
+from trellis.core.functional_component import component
+from trellis.core.block_component import blockComponent
+from trellis.core.rendering import Elements
+from trellis import widgets as w
+from trellis import html as h
+from trellis import navigation as nav
+from trellis import App, Mutable, mutable
 
 routerState = nav.RouterState()
 
-# Stateful Component
 @dataclass
-class FormState(fw.Stateful):
+class FormState(Stateful):
     # Form state
     submitting: bool
     error: str
 
-    @fw.composite
-    def valid(self):
-        return self.text != "" and self.enabled
-
     # Form Data
     text: str
     enabled: str
+
+    @property
+    def valid(self):
+        return self.text != "" and self.enabled
 
     async def submit(self):
         try:
             self.error = ""
             if not self.valid:
                 raise RuntimeError("Form submitted while not valid")
-            
+
             result = await doSomethingNetworky(self.text)
             routerState.navigate("/done")
         except RuntimeError as e:
@@ -61,13 +64,16 @@ class FormState(fw.Stateful):
         except Exception:
             raise # This is safe, by default exceptoin from callbacks are logged, but there's a hook so you can show an error message
 
-@fw.component
-def Form(state: FormState):
+@component
+def Form() -> Elements:
+    """Form component - gets FormState from context."""
+    state = FormState.from_context()
+
     with w.Column() as out:
         if state.error:
             Notification(message=state.error)
 
-        TextWithlabel(
+        TextWithLabel(
             label="text",
             text=mutable(state.text)
         )
@@ -79,11 +85,11 @@ def Form(state: FormState):
 
 # Component with local state
 @dataclass
-class NotificationState(fw.Stateful):
+class NotificationState(Stateful):
     shownTime: float | None = None
 
-@fw.component
-def Notification(message: str, duration: float) -> fw.Component:
+@component
+def Notification(message: str, duration: float) -> Elements:
     state = NotificationState(showTime=time.time())
 
     if (time.time() - state.shownTime) < duration:
@@ -99,8 +105,8 @@ def Notification(message: str, duration: float) -> fw.Component:
 # ---------------------------------------------------
 # Stateless Component, state variable used for bi-directional sync to state held outside the component
 # ---------------------------------------------------
-@fw.component
-def TextWithlabel(label: str, text: Mutable[str], placeholderText=None):
+@component
+def TextWithLabel(label: str, text: Mutable[str], placeholderText: str | None = None) -> Elements:
     with w.Row() as out:
         w.Label(label=label, width=150) # pixels assumed
         w.TextInput(text=text, placeholderText=placeholderText)
@@ -110,26 +116,26 @@ def TextWithlabel(label: str, text: Mutable[str], placeholderText=None):
 # ---------------------------------------------------
 # Simple stateless Component, component functions must be sync
 # ---------------------------------------------------
-@fw.component
-def ErrorText(message: str) -> fw.Component:
+@component
+def ErrorText(message: str) -> Elements:
     return w.Label(text=message, textColor='red')
 
 # ---------------------------------------------------
 # Top, app has a router for navigation
 # ---------------------------------------------------
-@fw.component
-def top():
-    formState = FormState() # State can go here, or in a global like routerState below
-
+@component
+def top() -> Elements:
     with nav.Router(state=routerState) as out:
-        nav.Route(path="/", target=Form(state=formState))
+        # FormState provided via context - children access it with FormState.from_context()
+        with FormState() as formState:
+            nav.Route(path="/", target=Form())  # No props needed!
         with nav.Route(path="/done"):
             w.Column(hAlign=w.Align.Center)
             w.Label("Hurray, you submited the form!")
             w.Button(label="Try Again!", onClick=lambda: routerState.navigate("/"))
 
 async def main():
-    app = fw.App()
+    app = App()
 
     await app.serve(top)
 
