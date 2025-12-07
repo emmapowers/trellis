@@ -73,25 +73,41 @@ def Button(
     *,
     on_click: Callable[[], None] | None = None,
     disabled: bool = False,
+    variant: str = "primary",
+    size: str = "md",
+    full_width: bool = False,
     key: str | None = None,
 ) -> ElementDescriptor:
-    """Clickable button widget.
+    """Clickable button widget with modern styling.
 
     Args:
         text: The button label text.
         on_click: Callback invoked when the button is clicked.
         disabled: Whether the button is disabled.
+        variant: Button style variant. One of:
+            - "primary": Solid background, high emphasis (default)
+            - "secondary": Subtle background, medium emphasis
+            - "outline": Border only, low emphasis
+            - "ghost": No background/border, minimal emphasis
+            - "danger": Red/destructive action
+        size: Button size. One of "sm", "md" (default), "lg".
+        full_width: Whether button should take full container width.
         key: Optional key for reconciliation.
 
     Returns:
         An ElementDescriptor for the Button component.
 
     Example:
-        Button(text="Click me", on_click=lambda: print("clicked!"))
+        Button(text="Save", on_click=save_handler, variant="primary")
+        Button(text="Cancel", on_click=cancel_handler, variant="secondary")
+        Button(text="Delete", on_click=delete_handler, variant="danger")
     """
     return _button(
         text=text,
         on_click=on_click,
         disabled=disabled,
+        variant=variant,
+        size=size,
+        full_width=full_width,
         key=key,
     )

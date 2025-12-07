@@ -117,6 +117,8 @@ class Component(ABC, tp.Generic[T]):
         has_children_param = getattr(self, "_has_children_param", False)
         if _descriptor_stack and not has_children_param:
             _descriptor_stack[-1].append(descriptor)
+            # Mark as auto-collected to prevent double-collection if used with `with`
+            object.__setattr__(descriptor, "_auto_collected", True)
 
         return descriptor
 

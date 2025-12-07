@@ -176,6 +176,7 @@ class ElementDescriptor:
     key: str = ""
     props: FrozenProps = ()
     children: tuple[ElementDescriptor, ...] = ()
+    _auto_collected: bool = False  # Track if already added to parent
 
     def __enter__(self) -> ElementDescriptor:
         """Enter a `with` block to collect children for a container component.
@@ -239,7 +240,8 @@ class ElementDescriptor:
         object.__setattr__(self, "children", tuple(children))
 
         # Add self to parent's collection (if inside another with block)
-        if _descriptor_stack:
+        # Skip if already auto-collected to prevent double-collection
+        if _descriptor_stack and not self._auto_collected:
             _descriptor_stack[-1].append(self)
 
     def __call__(self) -> None:
