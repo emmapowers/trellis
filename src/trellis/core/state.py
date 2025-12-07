@@ -31,7 +31,7 @@ will be marked dirty and re-rendered.
 import typing as tp
 from dataclasses import dataclass, field
 
-from trellis.core.rendering import Element, RenderContext, get_active_render_context
+from trellis.core.rendering import Element, get_active_render_context
 
 
 @dataclass(kw_only=True)
@@ -44,11 +44,11 @@ class StatePropertyInfo:
 
     Attributes:
         name: The property name being tracked
-        elements: Set of (context, element) tuples that depend on this property
+        elements: Set of elements that depend on this property
     """
 
     name: str
-    elements: set[tuple[RenderContext, Element]] = field(default_factory=set)
+    elements: set[Element] = field(default_factory=set)
 
 
 class Stateful:
@@ -72,7 +72,6 @@ class Stateful:
 
     _state_deps: dict[str, StatePropertyInfo]
     _initialized: bool
-    _owner_element: Element | None
 
     def __init_subclass__(cls, **kwargs: tp.Any) -> None:
         """Set up subclass to skip re-initialization on cached instances.
@@ -129,11 +128,10 @@ class Stateful:
         key = (cls, call_idx)
 
         if key in element._local_state:
-            return element._local_state[key]  # Return cached instance
+            return tp.cast("Stateful", element._local_state[key])  # Return cached instance
 
         # Create new instance and cache it on the element
         instance = object.__new__(cls)
-        object.__setattr__(instance, "_owner_element", element)
         element._local_state[key] = instance
         return instance
 
@@ -171,7 +169,7 @@ class Stateful:
                 if name not in deps:
                     deps[name] = StatePropertyInfo(name=name)
                 state_info = deps[name]
-                state_info.elements.add((context, current_element))
+                state_info.elements.add(current_element)
 
         return value
 
@@ -200,8 +198,9 @@ class Stateful:
 
         if name in deps:
             state_info = deps[name]
-            for context, element in state_info.elements:
-                context.mark_dirty(element)
+            for element in state_info.elements:
+                if element.render_context is not None:
+                    element.render_context.mark_dirty(element)
 
     def on_mount(self) -> None:
         """Called after owning element mounts. Override for initialization."""
@@ -210,11 +209,3 @@ class Stateful:
     def on_unmount(self) -> None:
         """Called before owning element unmounts. Override for cleanup."""
         pass
-
-    @property
-    def owner_element(self) -> Element | None:
-        """The element that owns this state instance."""
-        try:
-            return object.__getattribute__(self, "_owner_element")
-        except AttributeError:
-            return None

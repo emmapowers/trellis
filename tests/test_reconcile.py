@@ -242,24 +242,6 @@ class TestStatefulLifecycle:
 
         assert "state_unmounted" in unmount_log
 
-    def test_stateful_owner_element(self) -> None:
-        """Stateful.owner_element returns the owning element."""
-        captured_owner = [None]
-
-        @dataclass
-        class MyState(Stateful):
-            pass
-
-        @component
-        def MyComponent() -> None:
-            state = MyState()
-            captured_owner[0] = state.owner_element
-
-        ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
-
-        assert captured_owner[0] is ctx.root_element
-
     def test_state_cleanup_on_unmount(self) -> None:
         """State is removed from cache when element unmounts."""
         show = [True]

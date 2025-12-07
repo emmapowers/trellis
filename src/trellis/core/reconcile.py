@@ -229,7 +229,7 @@ def reconcile_children(
     # Phase 1: Handle empty edge cases
     if not old_children:
         # All new - mount everything
-        result = []
+        new_elements: list[Element] = []
         for desc in new_descs:
             # Get parent from context
             parent = ctx._current_node
@@ -237,8 +237,8 @@ def reconcile_children(
             # Remove from parent.children since mount_new adds it
             if parent and elem in parent.children:
                 parent.children.remove(elem)
-            result.append(elem)
-        return result
+            new_elements.append(elem)
+        return new_elements
 
     if not new_descs:
         # All removed - unmount everything

@@ -35,6 +35,8 @@ from trellis.core.rendering import (
     freeze_props,
 )
 
+__all__ = ["Component"]
+
 T = tp.TypeVar("T", bound=Element, default=Element)
 
 
@@ -93,7 +95,7 @@ class Component(ABC, tp.Generic[T]):
             key = str(props.pop("key"))
 
         descriptor = ElementDescriptor(
-            component=self,
+            component=self,  # type: ignore[arg-type]  # T is bound to Element
             key=key,
             props=freeze_props(props),
         )
@@ -142,18 +144,3 @@ class Component(ABC, tp.Generic[T]):
             ```
         """
         pass
-
-
-def fixup_children(parent: Element, children: list[Element]) -> None:
-    """Update parent references and depths for a list of child elements.
-
-    Called by the reconciler after reconciling children to ensure the
-    tree structure is consistent.
-
-    Args:
-        parent: The parent element
-        children: List of child elements to fix up
-    """
-    for child in children:
-        child.parent = parent
-        child.depth = parent.depth + 1

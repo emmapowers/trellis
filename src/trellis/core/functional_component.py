@@ -38,6 +38,8 @@ from dataclasses import dataclass, field
 from trellis.core.base_component import Component
 from trellis.core.rendering import Element
 
+__all__ = ["FunctionalComponent", "RenderFunc", "component"]
+
 T = tp.TypeVar("T", bound=Element, default=Element)
 
 
@@ -47,6 +49,8 @@ class RenderFunc(tp.Protocol):
     Render functions take keyword-only props and return None.
     They create child components by calling them during execution.
     """
+
+    __name__: str
 
     def __call__(self, /, **props: tp.Any) -> None: ...
 

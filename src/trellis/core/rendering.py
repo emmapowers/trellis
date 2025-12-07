@@ -32,10 +32,17 @@ import threading
 import typing as tp
 from dataclasses import dataclass, field, fields
 
-from trellis.utils.lock_helper import with_lock
+from trellis.utils.lock_helper import ClassWithLock, with_lock
 
-# Type alias for component return values (deprecated - components now return None)
-type Elements = None | "Element" | tp.Iterable["Element"] | tuple["Element", ...]
+__all__ = [
+    "Element",
+    "ElementDescriptor",
+    "FrozenProps",
+    "IComponent",
+    "RenderContext",
+    "get_active_render_context",
+    "set_active_render_context",
+]
 
 # Immutable props type for ElementDescriptor - tuple of (key, value) pairs
 type FrozenProps = tuple[tuple[str, tp.Any], ...]
@@ -358,7 +365,7 @@ class Element:
         """
         pass
 
-    def __rich_repr__(self):
+    def __rich_repr__(self) -> tp.Iterator[tp.Any]:
         """Rich library representation for pretty printing."""
         if self.key:
             yield self.component.name + f" (d={self.depth}, key={self.key})"
@@ -368,18 +375,7 @@ class Element:
         yield "children", self.children
 
 
-@dataclass(kw_only=True)
-class LeafElement(Element):
-    """An Element subclass for components with no children.
-
-    Leaf elements represent terminal nodes in the component tree,
-    typically corresponding to native UI elements or text.
-    """
-
-    pass
-
-
-class RenderContext:
+class RenderContext(ClassWithLock):
     """Manages the rendering lifecycle for a component tree.
 
     RenderContext is the main entry point for rendering. It:
