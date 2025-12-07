@@ -3,7 +3,7 @@ name = "trellis"
 version = "0.1.0"
 authors = ["Emma Powers <emma@emmaponders.com>"]
 channels = ["conda-forge"]
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "linux-64"]
 
 [dependencies]
 python = "3.13.*"
@@ -14,6 +14,10 @@ ruff = ">=0.8,<1"
 mypy = ">=1.15,<2"
 pytest = ">=8,<9"
 pytest-cov = ">=6,<7"
+fastapi = ">=0.115"
+uvicorn = ">=0.34"
+msgspec = ">=0.19"
+nodejs = ">=22"
 
 [pypi-dependencies]
 trellis = { path = ".", editable = true }
