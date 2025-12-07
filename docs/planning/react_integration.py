@@ -4,13 +4,13 @@ React/TSX Integration Concepts
 These examples show how React components could be defined for use with Trellis.
 """
 
-from trellis.core.rendering import Elements
+from trellis.core.rendering import Element
 from trellis.react import reactComponent, ReactComponent
 
 
 # Compact, inline definition
 @reactComponent()
-def Column(children: Elements) -> Elements:
+def Column(children: list[Element]) -> None:
     # language=html
     return t"""
     function Column(props: ColumnProps): React.ReactElement {
@@ -21,6 +21,7 @@ def Column(children: Elements) -> Elements:
         );
     }
     """
+
 
 # For something more complex, use separate files
 # This can include typescript, css, images, etc.

@@ -20,8 +20,8 @@ pixi install
 
 Early development. The core reactive rendering engine is functional:
 
-- `@component` and `@blockComponent` decorators for defining UI components
-- Block components support context manager syntax (`with Column() as col:`)
+- `@component` decorator for defining UI components
+- Container components use context manager syntax (`with Column():`)
 - `Stateful` base class for reactive state with automatic dependency tracking
 - Selective re-rendering of only components affected by state changes
 - Thread-safe rendering context
@@ -30,12 +30,13 @@ Early development. The core reactive rendering engine is functional:
 
 ```python
 from dataclasses import dataclass
-from trellis.core import RenderContext, component, blockComponent, Element, Elements
+from trellis.core import RenderContext, component, Element
 from trellis.core.state import Stateful
 
-@blockComponent
-def Column(children: list[Element]) -> Elements:
-    return children
+@component
+def Column(children: list[Element]) -> None:
+    for child in children:
+        child()
 
 @dataclass(kw_only=True)
 class AppState(Stateful):
@@ -44,10 +45,9 @@ class AppState(Stateful):
 state = AppState()
 
 @component
-def App() -> Elements:
-    with Column() as col:
+def App() -> None:
+    with Column():
         SomeText(text=state.text)
-    return col
 
 # Render
 context = RenderContext(App)

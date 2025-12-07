@@ -9,7 +9,6 @@ Run with: python -m docs.planning.examples.todo.app
 
 from trellis import App
 from trellis.core.functional_component import component
-from trellis.core.rendering import Elements
 from trellis.utils import async_main
 
 from .components import TodoApp
@@ -17,13 +16,13 @@ from .state import TodosState
 
 
 @component
-def top() -> Elements:
+def top() -> None:
     """Root component - provides TodosState context."""
     todos = TodosState()
 
     # Provide state as context - children access via TodosState.from_context()
     with todos:
-        return TodoApp()
+        TodoApp()
 
 
 @async_main

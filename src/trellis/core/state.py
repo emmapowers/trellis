@@ -1,7 +1,6 @@
 import typing as tp
 from dataclasses import dataclass, field
 
-from trellis.core.block_component import BlockElement
 from trellis.core.rendering import Element, RenderContext, get_active_render_context
 
 
@@ -116,7 +115,8 @@ class Stateful:
                     deps[name] = StatePropertyInfo(name=name)
                 state_info = deps[name]
 
-                if isinstance(current_element, BlockElement):
+                # If inside a block context, register dependency on parent
+                if current_element._block_active and current_element.parent is not None:
                     state_info.elements.add((context, current_element.parent))
                 else:
                     state_info.elements.add((context, current_element))

@@ -31,7 +31,7 @@ class Element:
     component: IComponent
     key: str = ""
     properties: dict[str, tp.Any] = field(default_factory=dict)
-    children: list[IComponent] = field(default_factory=list)
+    children: list[Element] = field(default_factory=list)
     dirty: bool = False
     render_context: RenderContext | None = None
 
@@ -42,6 +42,10 @@ class Element:
     # Local state storage (replaces RenderContext.local_state)
     _local_state: dict[tuple[type, int], tp.Any] = field(default_factory=dict)
     _state_call_count: int = 0
+
+    # Child collection during rendering
+    pending_elements: list[Element] = field(default_factory=list)
+    _block_active: bool = False
 
     def __hash__(self) -> int:
         # TODO: Find a less naive way to do this
@@ -62,6 +66,77 @@ class Element:
         """Called when element is removed from tree. Override in subclasses."""
         pass
 
+    def __enter__(self) -> Element:
+        """Enter context manager for collecting children."""
+        import inspect
+
+        # Validate that the component accepts a 'children' parameter
+        render_func = getattr(self.component, "render_func", None)
+        if render_func is not None:
+            sig = inspect.signature(render_func)
+            if "children" not in sig.parameters:
+                raise TypeError(
+                    f"Component '{self.component.name}' cannot be used with 'with' statement: "
+                    f"it does not have a 'children' parameter"
+                )
+
+        if self._block_active:
+            raise RuntimeError(f"Component '{self.component.name}' block is already active")
+
+        self._block_active = True
+        assert self.render_context is not None
+        self.render_context.element_stack.append(self)
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: tp.Any,
+    ) -> None:
+        """Exit context manager, pass collected children to component."""
+        from trellis.core.base_component import fixup_children
+
+        assert self.render_context is not None
+        self._block_active = False
+
+        if exc_type is not None:
+            self.render_context.element_stack.pop()
+            return
+
+        # Pass collected children to the component's render function
+        if "children" in self.properties:
+            self.render_context.element_stack.pop()
+            raise RuntimeError(
+                f"Cannot provide 'children' as a property and use 'with' block. "
+                f"Component: {self.component.name}"
+            )
+
+        # Store collected children and clear pending before render
+        collected_children = self.pending_elements
+        self.pending_elements = []
+        self.properties["children"] = collected_children
+
+        # Render with children - element stays on stack so child() works
+        render_func = getattr(self.component, "render_func", None)
+        if render_func is not None:
+            render_func(**self.properties)
+
+        # Now pop from stack
+        self.render_context.element_stack.pop()
+
+        # Finalize: use pending_elements populated by child() calls
+        self.children = self.pending_elements
+        fixup_children(self, self.children)
+        self.pending_elements = []
+
+    def __call__(self) -> None:
+        """Mount this element at the current render position."""
+        assert self.render_context is not None
+        current = self.render_context.current_element
+        if current is not None:
+            current.pending_elements.append(self)
+
     def __rich_repr__(self):
         if self.key:
             yield self.component.name + f" (d={self.depth}, key={self.key})"
@@ -69,10 +144,6 @@ class Element:
             yield self.component.name + f" (d={self.depth})"
         yield "properties", self.properties
         yield "children", self.children
-
-
-class IActiveBlock(tp.Protocol):
-    pending_elements = list[Element]
 
 
 @dataclass(kw_only=True)
@@ -89,7 +160,6 @@ class RenderContext:
     # Render state
     rendering: bool
     element_stack: list[Element]
-    block_stack: list[IActiveBlock]
     _rerender_target: Element | None  # Old element being re-rendered (has existing state)
 
     def __init__(self, root: IComponent) -> None:
@@ -161,11 +231,3 @@ class RenderContext:
         if not self.element_stack:
             return None
         return self.element_stack[-1]
-
-    @property
-    @with_lock
-    def current_block(self) -> IActiveBlock | None:
-        if self.current_element and hasattr(self.current_element, "pending_elements"):
-            return self.current_element
-
-        return None

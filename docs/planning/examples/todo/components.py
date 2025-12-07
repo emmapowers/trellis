@@ -5,7 +5,7 @@ from datetime import date
 
 from trellis import mutable
 from trellis.core.functional_component import component
-from trellis.core.rendering import Elements
+from trellis.core.rendering import Element
 from trellis.core.state import Stateful
 from trellis import widgets as w
 
@@ -14,11 +14,11 @@ from .state import TodosState
 
 
 @component
-def TodoApp() -> Elements:
+def TodoApp() -> None:
     """Main application layout."""
     todos = TodosState.from_context()
 
-    with w.Column(gap=16, padding=24, maxWidth=600) as out:
+    with w.Column(gap=16, padding=24, maxWidth=600):
         # Header
         w.Label(text="todos", fontSize=48, textColor="#b83f45", hAlign=w.Align.CENTER)
 
@@ -40,18 +40,15 @@ def TodoApp() -> Elements:
         if todos.todos:
             TodoFooter()
 
-    return out
-
 
 @component
-def ErrorBanner(message: str, onDismiss: callable) -> Elements:
+def ErrorBanner(message: str, onDismiss: callable) -> None:
     """Error message banner with dismiss button."""
     with w.Row(
         gap=8, padding=12, backgroundColor="#ffebee", borderRadius=4, hAlign=w.Align.SPACE_BETWEEN
-    ) as out:
+    ):
         w.Label(text=message, textColor="#c62828")
         w.Button(label="Dismiss", variant="text", onClick=onDismiss)
-    return out
 
 
 # --- Local state for TodoInput ---
@@ -72,7 +69,7 @@ class NewTodoFormState(Stateful):
 
 
 @component
-def TodoInput() -> Elements:
+def TodoInput() -> None:
     """New todo input form with due date and tags."""
     todos = TodosState.from_context()
     form = NewTodoFormState()  # Local state
@@ -87,7 +84,7 @@ def TodoInput() -> Elements:
         )
         form.clear()
 
-    with w.Column(gap=8) as out:
+    with w.Column(gap=8):
         # Main input row
         with w.Row(gap=8):
             w.TextInput(
@@ -110,15 +107,13 @@ def TodoInput() -> Elements:
                 placeholder="Add tags...",
             )
 
-    return out
-
 
 @component
-def TagFilterBar() -> Elements:
+def TagFilterBar() -> None:
     """Horizontal bar of tag filters."""
     todos = TodosState.from_context()
 
-    with w.Row(gap=4, wrap=True) as out:
+    with w.Row(gap=4, wrap=True):
         # All tags button
         w.Button(
             label="All",
@@ -135,15 +130,14 @@ def TagFilterBar() -> Elements:
                 backgroundColor=tag.color if todos.tag_filter == tag.name else None,
                 onClick=lambda t=tag: setattr(todos, "tag_filter", t.name),
             )
-    return out
 
 
 @component
-def TodoList() -> Elements:
+def TodoList() -> None:
     """List of visible todos."""
     todos = TodosState.from_context()
 
-    with w.Column(gap=0) as out:
+    with w.Column(gap=0):
         if not todos.visible_todos:
             w.Label(
                 text="No todos to show",
@@ -154,7 +148,6 @@ def TodoList() -> Elements:
         else:
             for todo in todos.visible_todos:
                 TodoItem(todo=todo, key=str(todo.id))
-    return out
 
 
 # --- Local state for TodoItem ---
@@ -164,7 +157,7 @@ class EditState(Stateful):
 
 
 @component
-def TodoItem(todo) -> Elements:
+def TodoItem(todo) -> None:
     """Single todo item with edit, complete, and delete actions."""
     todos = TodosState.from_context()
     edit = EditState()  # Local state for edit text only
@@ -191,7 +184,7 @@ def TodoItem(todo) -> Elements:
         borderBottom="1px solid #eee",
         backgroundColor="#fff3e0" if is_overdue else None,
         hAlign=w.Align.SPACE_BETWEEN,
-    ) as out:
+    ):
         # Left side: checkbox and text/input
         with w.Row(gap=8, flex=1):
             w.Checkbox(checked=todo.completed, onChange=lambda: todos.toggle_complete(todo))
@@ -239,15 +232,13 @@ def TodoItem(todo) -> Elements:
                     onClick=lambda: todos.delete_todo(todo.id),
                 )
 
-    return out
-
 
 @component
-def TodoFooter() -> Elements:
+def TodoFooter() -> None:
     """Footer with count, filters, and clear completed."""
     todos = TodosState.from_context()
 
-    with w.Row(gap=16, padding=12, hAlign=w.Align.SPACE_BETWEEN) as out:
+    with w.Row(gap=16, padding=12, hAlign=w.Align.SPACE_BETWEEN):
         # Item count
         count_text = f"{todos.active_count} item{'s' if todos.active_count != 1 else ''} left"
         w.Label(text=count_text, textColor="#666")
@@ -270,5 +261,3 @@ def TodoFooter() -> Elements:
                 size="small",
                 onClick=todos.clear_completed,
             )
-
-    return out

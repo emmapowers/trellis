@@ -1,36 +1,29 @@
-"""Tests for trellis.core.block_component module."""
+"""Tests for components with children parameter (container components)."""
 
 import pytest
 
-from trellis.core.rendering import Element, Elements, RenderContext
+from trellis.core.rendering import Element, RenderContext
 from trellis.core.functional_component import component
-from trellis.core.block_component import BlockComponent, BlockElement, blockComponent
 
 
-class TestBlockComponent:
-    def test_block_component_decorator(self) -> None:
-        @blockComponent
-        def Column(children: list[Element]) -> Elements:
-            return children
-
-        assert isinstance(Column, BlockComponent)
-        assert Column.name == "Column"
-
-    def test_block_component_context_manager(self) -> None:
-        @blockComponent
-        def Column(children: list[Element]) -> Elements:
-            return children
+class TestContainerComponent:
+    def test_with_statement_collects_children(self) -> None:
+        """Children created in with block are passed to component."""
 
         @component
-        def Child() -> Elements:
-            return None
+        def Column(children: list[Element]) -> None:
+            for child in children:
+                child()
 
         @component
-        def Parent() -> Elements:
-            with Column() as col:
+        def Child() -> None:
+            pass
+
+        @component
+        def Parent() -> None:
+            with Column():
                 Child()
                 Child()
-            return col
 
         ctx = RenderContext(Parent)
         ctx.render(from_element=None)
@@ -40,45 +33,31 @@ class TestBlockComponent:
         assert len(ctx.root_element.children) == 1
         column_elem = ctx.root_element.children[0]
         assert column_elem.component == Column
-        # Column has two Child elements
+        # Column has two Child elements (mounted via child())
         assert len(column_elem.children) == 2
 
-    def test_block_element_is_block_element_type(self) -> None:
-        @blockComponent
-        def Column(children: list[Element]) -> Elements:
-            return children
+    def test_nested_containers(self) -> None:
+        """Nested with blocks work correctly."""
 
         @component
-        def Parent() -> Elements:
-            with Column() as col:
-                pass
-            return col
-
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
-
-        column_elem = ctx.root_element.children[0]
-        assert isinstance(column_elem, BlockElement)
-
-    def test_nested_block_components(self) -> None:
-        @blockComponent
-        def Column(children: list[Element]) -> Elements:
-            return children
-
-        @blockComponent
-        def Row(children: list[Element]) -> Elements:
-            return children
+        def Column(children: list[Element]) -> None:
+            for child in children:
+                child()
 
         @component
-        def Child() -> Elements:
-            return None
+        def Row(children: list[Element]) -> None:
+            for child in children:
+                child()
 
         @component
-        def Parent() -> Elements:
-            with Column() as col:
-                with Row() as row:
+        def Child() -> None:
+            pass
+
+        @component
+        def Parent() -> None:
+            with Column():
+                with Row():
                     Child()
-            return col
 
         ctx = RenderContext(Parent)
         ctx.render(from_element=None)
@@ -89,44 +68,138 @@ class TestBlockComponent:
         assert row_elem.component.name == "Row"
         assert len(row_elem.children) == 1
 
-    def test_block_component_cannot_be_reused(self) -> None:
-        @blockComponent
-        def Column(children: list[Element]) -> Elements:
-            return children
-
-        @component
-        def Parent() -> Elements:
-            col = Column()
-            with col:
-                pass
-            with col:  # Should raise
-                pass
-            return col
-
-        ctx = RenderContext(Parent)
-        with pytest.raises(RuntimeError, match="only use.*once"):
-            ctx.render(from_element=None)
-
-    def test_block_component_children_passed_to_render_func(self) -> None:
+    def test_container_receives_children_list(self) -> None:
+        """Container component receives children as a list."""
         received_children: list = []
 
-        @blockComponent
-        def Column(children: list[Element]) -> Elements:
+        @component
+        def Column(children: list[Element]) -> None:
             received_children.extend(children)
-            return children
+            for child in children:
+                child()
 
         @component
-        def Child() -> Elements:
-            return None
+        def Child() -> None:
+            pass
 
         @component
-        def Parent() -> Elements:
-            with Column() as col:
+        def Parent() -> None:
+            with Column():
                 Child()
                 Child()
-            return col
 
         ctx = RenderContext(Parent)
         ctx.render(from_element=None)
 
         assert len(received_children) == 2
+        for child in received_children:
+            assert isinstance(child, Element)
+
+    def test_component_without_children_param_raises_on_with(self) -> None:
+        """Using with on a component without children param raises TypeError."""
+
+        @component
+        def NoChildren() -> None:
+            pass
+
+        @component
+        def Parent() -> None:
+            with NoChildren():  # Should raise
+                pass
+
+        ctx = RenderContext(Parent)
+        with pytest.raises(TypeError, match="does not have a 'children' parameter"):
+            ctx.render(from_element=None)
+
+    def test_cannot_provide_children_prop_and_use_with(self) -> None:
+        """Can't pass children as prop AND use with block."""
+
+        @component
+        def Column(children: list[Element]) -> None:
+            for child in children:
+                child()
+
+        @component
+        def Parent() -> None:
+            with Column(children=[]):  # Should raise
+                pass
+
+        ctx = RenderContext(Parent)
+        with pytest.raises(RuntimeError, match="Cannot provide 'children'.*and use 'with' block"):
+            ctx.render(from_element=None)
+
+    def test_empty_with_block(self) -> None:
+        """Empty with block results in empty children list."""
+        received_children: list | None = None
+
+        @component
+        def Column(children: list[Element]) -> None:
+            nonlocal received_children
+            received_children = children
+            for child in children:
+                child()
+
+        @component
+        def Parent() -> None:
+            with Column():
+                pass
+
+        ctx = RenderContext(Parent)
+        ctx.render(from_element=None)
+
+        assert received_children == []
+
+    def test_child_call_mounts_element(self) -> None:
+        """Calling child() mounts the element in the container."""
+
+        @component
+        def Wrapper(children: list[Element]) -> None:
+            # Only mount first child
+            if children:
+                children[0]()
+
+        @component
+        def Child() -> None:
+            pass
+
+        @component
+        def Parent() -> None:
+            with Wrapper():
+                Child()
+                Child()
+                Child()
+
+        ctx = RenderContext(Parent)
+        ctx.render(from_element=None)
+
+        wrapper = ctx.root_element.children[0]
+        # Only one child mounted, even though 3 were collected
+        assert len(wrapper.children) == 1
+
+    def test_container_can_reorder_children(self) -> None:
+        """Container can mount children in different order."""
+
+        @component
+        def Reverse(children: list[Element]) -> None:
+            for child in reversed(children):
+                child()
+
+        @component
+        def Item(value: int) -> None:
+            pass
+
+        @component
+        def Parent() -> None:
+            with Reverse():
+                Item(value=1)
+                Item(value=2)
+                Item(value=3)
+
+        ctx = RenderContext(Parent)
+        ctx.render(from_element=None)
+
+        reverse_elem = ctx.root_element.children[0]
+        # Children should be in reverse order
+        assert reverse_elem.children[0].properties["value"] == 3
+        assert reverse_elem.children[1].properties["value"] == 2
+        assert reverse_elem.children[2].properties["value"] == 1

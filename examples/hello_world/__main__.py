@@ -2,49 +2,47 @@ from dataclasses import dataclass
 
 from rich.pretty import pprint
 
-from trellis.core import Element, Elements, RenderContext, blockComponent, component
+from trellis.core import Element, RenderContext, component
 from trellis.core.state import Stateful
 
 
 @component
-def A() -> Elements:
-    return None
+def A() -> None:
+    pass
 
 
 @component
-def B() -> Elements:
-    with Column() as col:
+def B() -> None:
+    with Column():
         A()
         A()
-    return col
 
 
 @component
-def SomeText(text: str) -> Elements:
+def SomeText(text: str) -> None:
     print(f"SomeText: {text}")
-    return None
 
 
-@blockComponent
-def Column(children: list[Element]) -> Elements:
-    return children
+@component
+def Column(children: list[Element]) -> None:
+    for child in children:
+        child()
 
 
-@dataclass(kw_only=True)
+@dataclass
 class AppState(Stateful):
     text: str = "Hello, World!"
 
 
-global_app_state = AppState(text="Hello, World!")
+global_app_state = AppState()
 
 
 @component
-def Top() -> Elements:
-    with Column() as col:
+def Top() -> None:
+    with Column():
         A()
         B()
         SomeText(text=global_app_state.text)
-    return col
 
 
 if __name__ == "__main__":
