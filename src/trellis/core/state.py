@@ -1,102 +1,159 @@
 import typing as tp
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 
 from trellis.core.block_component import BlockElement
 from trellis.core.rendering import Element, RenderContext, get_active_render_context
 
-DEFAULT_MARKER = object()
-
 
 @dataclass(kw_only=True)
 class StatePropertyInfo:
+    """Tracks which elements depend on a state property."""
+
     name: str
-    value: tp.Any = DEFAULT_MARKER
-    default: tp.Any = DEFAULT_MARKER
     elements: set[tuple[RenderContext, Element]] = field(default_factory=set)
 
 
-@dataclass(kw_only=True)
 class Stateful:
-    _state_properties: tp.ClassVar[dict[str, StatePropertyInfo]]
+    """Base class for reactive state objects.
 
-    def __init__(self):
-        # Copy the state properties from the class to the instance so they can be modified per-instance
-        self._state_properties = type(self)._state_properties.copy()
-        print(f"Initialized state properties for {self} {fields(self)}")
+    Subclasses can use @dataclass or plain classes - your choice:
 
-    def __init_subclass__(cls) -> None:
-        super().__init_subclass__()
-        cls._state_properties = {}
+        @dataclass
+        class MyState(Stateful):
+            count: int = 0
 
-        # For all annotated fields, convert them to StatefulProperty if they are not already
-        for field_name in tp.get_type_hints(cls):
-            if field_name != "_state_properties":
-                # default_value = field_def.default if field_def.default is not field_def.default_factory else DEFAULT_MARKER
-                prop = StatefulProperty(default=DEFAULT_MARKER)
-                prop.__set_name__(cls, field_name)
-                setattr(cls, field_name, prop)
-                print(
-                    f"Converted field '{field_name}' to StatefulProperty with default '{DEFAULT_MARKER}'"
-                )
+        # or
 
+        class MyState(Stateful):
+            def __init__(self):
+                self.count = 0
 
-class StatefulProperty:
-    name: str
+    State instances are cached per-component during render (like React hooks).
+    Accessing state during render registers dependencies for fine-grained updates.
+    """
 
-    def __init__(self, default: tp.Any = DEFAULT_MARKER) -> None:
-        self.default = default
+    _state_deps: dict[str, StatePropertyInfo]
+    _initialized: bool
+    _owner_element: Element | None
 
-    def __set_name__(self, owner: type[Stateful], name: str) -> None:
-        if not issubclass(owner, Stateful):
-            raise TypeError("StatefulProperty can only be used in subclasses of Stateful")
-        owner._state_properties[name] = StatePropertyInfo(name=name, default=self.default)
-        self.name = name
+    def __init_subclass__(cls, **kwargs: tp.Any) -> None:
+        super().__init_subclass__(**kwargs)
+        # Wrap __init__ to skip re-initialization on cached instances
+        original_init = cls.__init__
 
-    # overloads for class and instance access
-    @tp.overload
-    def __get__(self, instance: Stateful, owner: type[Stateful]) -> tp.Any: ...
+        def wrapped_init(self: Stateful, *args: tp.Any, **kw: tp.Any) -> None:
+            if getattr(self, "_initialized", False):
+                return  # Skip - already initialized (cached instance)
+            original_init(self, *args, **kw)
+            object.__setattr__(self, "_initialized", True)
 
-    @tp.overload
-    def __get__(self, instance: None, owner: type[Stateful]) -> "StatefulProperty": ...
+        cls.__init__ = wrapped_init  # type: ignore[assignment,method-assign]
 
-    def __get__(self, instance: Stateful, owner: type[Stateful]) -> tp.Any:
-        print(f"Getting state property '{self.name}' for instance '{instance}' of owner '{owner}'")
-        if instance is None:
-            return self
-        state_info = instance._state_properties[self.name]
-        if state_info.value is DEFAULT_MARKER:
-            if state_info.default is not DEFAULT_MARKER:
-                state_info.value = state_info.default
+    def __new__(cls, *args: tp.Any, **kwargs: tp.Any) -> "Stateful":
+        """Cache instances per-element during render (like React hooks)."""
+        ctx = get_active_render_context()
+
+        # Outside render context - create normally
+        if ctx is None or not ctx.rendering:
+            return object.__new__(cls)
+
+        current = ctx.current_element
+        rerender_target = ctx._rerender_target
+
+        # Determine which element to use for state storage:
+        # - If we're re-rendering and the current element is the one being re-rendered
+        #   (same parent as rerender_target), use the OLD element (rerender_target)
+        # - Otherwise use current_element (for children during re-render, or first render)
+        element: Element | None = None
+        if rerender_target is not None and current is not None:
+            # Check if this is the element being re-rendered (not a child)
+            if current.parent == rerender_target.parent:
+                element = rerender_target
             else:
-                raise AttributeError(
-                    f"State property '{self.name}' has not been set and has no default value."
-                )
+                element = current
+        elif current is not None:
+            element = current
+        elif rerender_target is not None:
+            element = rerender_target
 
+        if element is None:
+            return object.__new__(cls)
+
+        # Simple key: just (class, call_index) - element is implicit via storage location
+        call_idx = element._state_call_count
+        element._state_call_count += 1
+        key = (cls, call_idx)
+
+        if key in element._local_state:
+            return element._local_state[key]  # Return cached instance
+
+        # Create new instance and cache it on the element
+        instance = object.__new__(cls)
+        object.__setattr__(instance, "_owner_element", element)
+        element._local_state[key] = instance
+        return instance
+
+    def __getattribute__(self, name: str) -> tp.Any:
+        value = object.__getattribute__(self, name)
+
+        # Skip internal attributes
+        if name.startswith("_"):
+            return value
+
+        # Register dependency during render
         context = get_active_render_context()
-        print(
-            f"Accessing state property '{self.name}' with value '{state_info.value}' in context '{context}'"
-        )
         if context is not None and context.rendering:
-            # Register the current element as dependent on this state property
-            if (current_element := context.current_element) is not None:
-                print(
-                    f"Registering element {current_element.component.name} for state property '{self.name}'"
-                )
+            current_element = context.current_element
+            if current_element is not None:
+                # Lazy init _state_deps (needed when @dataclass doesn't call super().__init__)
+                try:
+                    deps = object.__getattribute__(self, "_state_deps")
+                except AttributeError:
+                    deps = {}
+                    object.__setattr__(self, "_state_deps", deps)
+
+                if name not in deps:
+                    deps[name] = StatePropertyInfo(name=name)
+                state_info = deps[name]
+
                 if isinstance(current_element, BlockElement):
                     state_info.elements.add((context, current_element.parent))
                 else:
                     state_info.elements.add((context, current_element))
-        return state_info.value
 
-    def __set__(self, instance: Stateful, value: tp.Any) -> None:
-        state_info = instance._state_properties[self.name]
-        state_info.value = value
-        print(
-            f"Setting state property '{self.name}' to value '{value}' for instance '{instance}' number of dependent elements: {len(state_info.elements)}"
-        )
-        # Mark all associated elements as dirty
-        for context, element in state_info.elements:
-            print(
-                f"Marking element {element.component.name} in context {context} as dirty due to state change of '{self.name}'"
-            )
-            context.mark_dirty(element)
+        return value
+
+    def __setattr__(self, name: str, value: tp.Any) -> None:
+        # Always set the value first
+        object.__setattr__(self, name, value)
+
+        # Skip internal attributes
+        if name.startswith("_"):
+            return
+
+        # Mark dependent elements as dirty (if we have deps tracking initialized)
+        try:
+            deps = object.__getattribute__(self, "_state_deps")
+        except AttributeError:
+            return  # Not initialized yet
+
+        if name in deps:
+            state_info = deps[name]
+            for context, element in state_info.elements:
+                context.mark_dirty(element)
+
+    def on_mount(self) -> None:
+        """Called after owning element mounts. Override for initialization."""
+        pass
+
+    def on_unmount(self) -> None:
+        """Called before owning element unmounts. Override for cleanup."""
+        pass
+
+    @property
+    def owner_element(self) -> Element | None:
+        """The element that owns this state instance."""
+        try:
+            return object.__getattribute__(self, "_owner_element")
+        except AttributeError:
+            return None

@@ -37,8 +37,13 @@ class Element:
 
     parent: Element | None = None
     depth: int = 0
+    _mounted: bool = False
 
-    def __hash__(self):
+    # Local state storage (replaces RenderContext.local_state)
+    _local_state: dict[tuple[type, int], tp.Any] = field(default_factory=dict)
+    _state_call_count: int = 0
+
+    def __hash__(self) -> int:
         # TODO: Find a less naive way to do this
         return id(self)
 
@@ -48,6 +53,14 @@ class Element:
         ), "Can only replace an element with another of the same type!"
         for f in fields(self):
             setattr(self, f.name, getattr(other, f.name))
+
+    def on_mount(self) -> None:
+        """Called when element is added to tree. Override in subclasses."""
+        pass
+
+    def on_unmount(self) -> None:
+        """Called when element is removed from tree. Override in subclasses."""
+        pass
 
     def __rich_repr__(self):
         if self.key:
@@ -77,6 +90,7 @@ class RenderContext:
     rendering: bool
     element_stack: list[Element]
     block_stack: list[IActiveBlock]
+    _rerender_target: Element | None  # Old element being re-rendered (has existing state)
 
     def __init__(self, root: IComponent) -> None:
         self.root_component = root
@@ -85,9 +99,12 @@ class RenderContext:
         self.lock = threading.RLock()
         self.rendering = False
         self.element_stack = []
+        self._rerender_target = None
 
     @with_lock
     def render(self, from_element: Element | None) -> None:
+        from trellis.core.reconcile import mount_tree, reconcile_element
+
         if (
             get_active_render_context()
         ):  #  Todo: this really should throw when we set, otherwise it's a race
@@ -98,23 +115,27 @@ class RenderContext:
             self.element_stack = []
             set_active_render_context(self)
 
-            # If we're rendering the root element
             if from_element is None:
+                # First render
                 new_element = self.root_component()
                 if self.root_element is None:
                     self.root_element = new_element
+                    mount_tree(new_element, self)
                 else:
                     self.root_element.replace(new_element)
-                return
-
-            if from_element.parent is not None:
-                self.element_stack.append(from_element.parent)
-            new_element = from_element.component(**from_element.properties)
-            from_element.replace(new_element)
+            else:
+                # Re-render: set target so Stateful.__new__ uses old element's state
+                self._rerender_target = from_element
+                from_element._state_call_count = 0  # Reset for consistent hook ordering
+                if from_element.parent is not None:
+                    self.element_stack.append(from_element.parent)
+                new_element = from_element.component(**from_element.properties)
+                reconcile_element(from_element, new_element, self)
 
         finally:
             self.rendering = False
             self.element_stack = []
+            self._rerender_target = None
             set_active_render_context(None)
 
     @with_lock

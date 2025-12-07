@@ -46,6 +46,7 @@ target-version = ["py313"]
 [tool.ruff]
 line-length = 100
 target-version = "py313"
+exclude = ["docs/"]
 
 [tool.ruff.lint]
 select = [
@@ -79,6 +80,7 @@ ignore = [
     "F403",     # star imports - used intentionally in __init__.py
     "SLF001",   # private member access - needed for descriptor protocol
     "PLW0603",  # global statement - needed for render context
+    "PLC0415",  # import not at top level - needed to avoid circular imports
     "UP046",    # generic class style - defer to later cleanup
     "UP047",    # generic function style - defer to later cleanup
 ]
@@ -92,3 +94,4 @@ disallow_untyped_defs = true
 warn_redundant_casts = true
 warn_no_return = true
 warn_unreachable = true
+exclude = ["docs/"]

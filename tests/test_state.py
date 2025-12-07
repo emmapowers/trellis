@@ -38,7 +38,7 @@ class TestStateful:
         ctx.render(from_element=None)
 
         # The component should be registered as dependent on state.text
-        state_info = state._state_properties["text"]
+        state_info = state._state_deps["text"]
         assert len(state_info.elements) == 1
 
     def test_stateful_marks_dirty_on_change(self) -> None:
@@ -152,3 +152,154 @@ class TestStateful:
         state.value = "one"
         state.value = "two"
         assert state.value == "two"
+
+
+class TestLocalStatePersistence:
+    """Tests for component-local state that persists across re-renders."""
+
+    def test_local_state_persists_across_rerenders(self) -> None:
+        """State created in a component persists when re-rendered."""
+
+        instances_created = [0]
+
+        @dataclass(kw_only=True)
+        class CounterState(Stateful):
+            count: int = 0
+
+            def __init__(self) -> None:
+                # Track if this is a fresh instance (before super().__init__ sets _initialized)
+                is_new = not getattr(self, "_initialized", False)
+                super().__init__()
+                if is_new:
+                    instances_created[0] += 1
+
+        captured_states: list[Stateful] = []
+
+        @component
+        def Counter() -> Elements:
+            state = CounterState()
+            captured_states.append(state)
+            _ = state.count  # Access to register dependency
+            return None
+
+        ctx = RenderContext(Counter)
+        ctx.render(from_element=None)
+
+        assert instances_created[0] == 1
+
+        # Re-render - should reuse same instance
+        ctx.render(from_element=ctx.root_element)
+
+        assert instances_created[0] == 1  # Still 1, not 2
+        assert len(captured_states) == 2
+        assert captured_states[0] is captured_states[1]  # Same instance
+
+    def test_local_state_values_preserved(self) -> None:
+        """State values are preserved across re-renders."""
+
+        @dataclass(kw_only=True)
+        class CounterState(Stateful):
+            count: int = 0
+
+        observed_counts: list[int] = []
+
+        @component
+        def Counter() -> Elements:
+            state = CounterState()
+            state.count = state.count  # Initialize on first render
+            observed_counts.append(state.count)
+            state.count += 1  # Increment each render
+            return None
+
+        ctx = RenderContext(Counter)
+        ctx.render(from_element=None)
+        ctx.render(from_element=ctx.root_element)
+        ctx.render(from_element=ctx.root_element)
+
+        # Should see 0, 1, 2 as count persists and increments
+        assert observed_counts == [0, 1, 2]
+
+    def test_multiple_state_instances_same_type(self) -> None:
+        """Multiple instances of same state type use call order."""
+
+        @dataclass(kw_only=True)
+        class ToggleState(Stateful):
+            on: bool = False
+
+        @component
+        def MultiToggle() -> Elements:
+            first = ToggleState()
+            second = ToggleState()
+            first.on = True
+            second.on = False
+            return None
+
+        ctx = RenderContext(MultiToggle)
+        ctx.render(from_element=None)
+
+        # Re-render - each should get its own cached instance
+        ctx.render(from_element=ctx.root_element)
+
+        # Check that we have 2 distinct state entries in the root element's cache
+        state_keys = [k for k in ctx.root_element._local_state.keys() if k[0].__name__ == "ToggleState"]
+        assert len(state_keys) == 2
+
+        # Check they have different call indices
+        indices = [k[1] for k in state_keys]
+        assert 0 in indices
+        assert 1 in indices
+
+    def test_subclass_state_works(self) -> None:
+        """Subclassed state types work correctly."""
+
+        @dataclass(kw_only=True)
+        class BaseState(Stateful):
+            value: int = 0
+
+        @dataclass(kw_only=True)
+        class ExtendedState(BaseState):
+            extra: str = ""
+
+        @component
+        def MyComponent() -> Elements:
+            base = BaseState()
+            extended = ExtendedState()
+            base.value = 10
+            extended.value = 20
+            extended.extra = "hello"
+            return None
+
+        ctx = RenderContext(MyComponent)
+        ctx.render(from_element=None)
+
+        # Both should be cached separately by their actual types on the element
+        local_state = ctx.root_element._local_state
+        base_keys = [k for k in local_state.keys() if k[0].__name__ == "BaseState"]
+        ext_keys = [k for k in local_state.keys() if k[0].__name__ == "ExtendedState"]
+
+        assert len(base_keys) == 1
+        assert len(ext_keys) == 1
+
+        # Values should be preserved on re-render
+        ctx.render(from_element=ctx.root_element)
+
+        base_instance = local_state[base_keys[0]]
+        ext_instance = local_state[ext_keys[0]]
+
+        assert base_instance.value == 10
+        assert ext_instance.value == 20
+        assert ext_instance.extra == "hello"
+
+    def test_state_outside_render_not_cached(self) -> None:
+        """State created outside render context is not cached."""
+
+        @dataclass(kw_only=True)
+        class MyState(Stateful):
+            value: int = 0
+
+        # Create outside any render
+        state1 = MyState()
+        state2 = MyState()
+
+        # Should be different instances
+        assert state1 is not state2
