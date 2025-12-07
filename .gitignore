@@ -21,7 +21,6 @@ htmlcov/
 
 # Pixi
 .pixi/
-pixi.lock
 
 # IDE
 .idea/
