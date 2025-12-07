@@ -31,7 +31,7 @@ from trellis.core.rendering import Element
 from trellis import widgets as w
 from trellis import html as h
 from trellis import navigation as nav
-from trellis import App, Mutable, mutable
+from trellis import Trellis, Mutable, mutable
 from trellis.utils import async_main
 
 routerState = nav.RouterState()
@@ -134,5 +134,5 @@ def top() -> None:
 
 @async_main
 async def main() -> None:
-    app = App()
-    await app.serve(top)
+    app = Trellis(top=top)
+    await app.serve()

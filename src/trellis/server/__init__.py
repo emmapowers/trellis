@@ -1,5 +1,5 @@
 """Trellis server module."""
 
-from trellis.server.app import App
+from trellis.server.app import Trellis
 
-__all__ = ["App"]
+__all__ = ["Trellis"]

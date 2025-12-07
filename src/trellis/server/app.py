@@ -1,9 +1,9 @@
 """Main App class for Trellis server."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import perf_counter
-from typing import TYPE_CHECKING
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -13,9 +13,6 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.responses import Response
 
 from trellis.server.routes import create_static_dir, router
-
-if TYPE_CHECKING:
-    from trellis.core.base_component import Component
 
 _console = Console()
 
@@ -79,14 +76,15 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 @dataclass
-class App:
+class Trellis:
     """Trellis application server.
 
     Usage:
-        app = App(port=8080)
-        await app.serve(root_component)
+        app = Trellis(top=MyRootComponent, port=8080)
+        await app.serve()
     """
 
+    top: Callable[[], None] | None = None
     host: str = "127.0.0.1"
     port: int = 8000
     static_dir: Path | None = None
@@ -117,14 +115,9 @@ class App:
         console.print("  [dim]Press[/dim] [bold]Ctrl+C[/bold] [dim]to stop[/dim]")
         console.print()
 
-    async def serve(self, root: "Component | None" = None) -> None:
-        """Start the server.
-
-        Args:
-            root: The root component to render (not yet implemented).
-        """
-        # Future: use root component to render initial tree
-        _ = root
+    async def serve(self) -> None:
+        """Start the server."""
+        # Future: use self.top component to render initial tree
 
         self._print_startup_banner()
 
