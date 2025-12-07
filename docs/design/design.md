@@ -1,6 +1,38 @@
 # Trellis Design
 
-Reactive UI framework for Python with fine-grained state tracking.
+This document describes the current and planned design for Trellis. It serves both as documentation of what exists and as a place to plan future work.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Use Cases](#use-cases)
+- [Goals](#goals)
+- [Design Philosophy](#design-philosophy)
+- [Architecture](#architecture)
+- [Component Patterns](#component-patterns)
+- [Widgets](#widgets)
+- [Navigation](#navigation)
+- [React Integration](#react-integration)
+- [Architectural Decisions](#architectural-decisions)
+
+## Overview
+
+Trellis is a reactive UI framework for Python with fine-grained state tracking. `App()` starts a web server hosting static files, a WebSocket endpoint, and a `/` route. When `/` is hit, a render occurs and a page is sent with React and bundled components. The page connects via WebSocket for updates. User actions or server-side I/O trigger re-renders, sending diffs over WebSocket to update the UI.
+
+## Use Cases
+
+### What It's For
+
+- **Complex UIs**: Dense interfaces with many controls that update frequently
+- **Real-Time Data Visualization**: Stream and display waveforms, images, etc.
+- **Connection Handling**: Detect disconnects and re-sync UI state on reconnection
+
+### What It's **Not** For
+
+- **Static websites**: No reactivity needed; use a static site generator
+- **Simple forms**: Standard HTML forms with page reloads are simpler
+- **Mobile apps**: Browser-based only; not a native mobile framework
+- **Public-facing web apps**: Optimized for internal tools, not SEO or first-load performance
 
 ## Goals
 
@@ -8,13 +40,31 @@ Reactive UI framework for Python with fine-grained state tracking.
 - **Scalability**: Support large, data-intensive applications with many interactive controls
 - **Error Prevention**: Consistent state management to help developers avoid common mistakes
 
-## Use Cases
+## Design Philosophy
 
-- **Complex UIs**: Dense interfaces with many controls that update frequently
-- **Real-Time Data Visualization**: Stream and display waveforms, images, etc.
-- **Connection Handling**: Detect disconnects and re-sync UI state on reconnection
+- **Fine-grained reactivity**: Property-level dependency tracking, not component-level. Only re-render what actually changed.
+- **Implicit child collection**: Components don't return children—they're auto-collected via the element stack.
+- **Thread safety by default**: State changes can happen from any thread; the framework handles locking.
+- **Python-first API**: Leverage `with` blocks, dataclasses, and type hints for a natural Python feel.
 
 ## Architecture
+
+### Tech Stack
+
+**Python (3.14)**
+- FastAPI — Async web framework with WebSocket support
+- msgspec — Fast serialization/validation (Pydantic alternative)
+- watchfiles — Hot reload during development
+- pytest — Testing
+
+**JavaScript/TypeScript**
+- esbuild — Fast bundling (pip-installable)
+- React — UI framework
+- Blueprint — Desktop-first component library (Palantir)
+- uPlot — High-performance time-series charts
+- Recharts — General-purpose charts
+- Vitest — Testing
+- Playwright — E2E testing
 
 ### Element Tree
 
@@ -33,7 +83,7 @@ Reactive UI framework for Python with fine-grained state tracking.
   - Maintains element stack during rendering
   - Sorts dirty elements by depth (shallowest first) for efficient updates
 
-### Component Types
+### Component Model
 
 - **Functional components** (`@component`): Simple render functions
   ```python
@@ -42,7 +92,7 @@ Reactive UI framework for Python with fine-grained state tracking.
       return w.Label(text=message, textColor='red')
   ```
 
-- **Block components** (`@blockComponent`): Use `with` syntax to collect children
+- **Container components**: Use `with` syntax to collect children
   ```python
   with w.Column() as out:
       w.Label("First")
@@ -62,9 +112,9 @@ Reactive UI framework for Python with fine-grained state tracking.
       """
   ```
 
-## State Management
+### State Management
 
-### Stateful Base Class
+#### Stateful Base Class
 
 - Subclass `Stateful` with `@dataclass` decorator
 - All fields become reactive properties with automatic dependency tracking
@@ -80,13 +130,13 @@ class FormState(Stateful):
     error: str = ""
 ```
 
-### Reactivity Patterns
+#### Reactivity Patterns
 
 - **Property-granular tracking**: Only re-render when accessed properties change
 - **Automatic dependency tracking**: Framework notes which state is used in render
 - **Nested state**: Tracking applies to nested `Stateful` objects as well
 
-### Observable Collections
+#### Observable Collections
 
 `Stateful` auto-wraps `list`, `dict`, and `set` fields in observable wrappers that track mutations:
 
@@ -106,24 +156,7 @@ state.todos[0] = updated_todo
 - `dict` → `ObservableDict` (tracks `__setitem__`, `__delitem__`, `pop`, `clear`, `update`, etc.)
 - `set` → `ObservableSet` (tracks `add`, `remove`, `discard`, `pop`, `clear`, `update`, etc.)
 
-**Auto-wrapping in StatefulProperty setter:**
-```python
-WRAPPABLE_TYPES = {
-    list: ObservableList,
-    dict: ObservableDict,
-    set: ObservableSet,
-}
-
-def __set__(self, instance, value):
-    wrapper_cls = WRAPPABLE_TYPES.get(type(value))
-    if wrapper_cls and not isinstance(value, wrapper_cls):
-        value = wrapper_cls(value, owner=instance, name=self.name)
-    # ... store and notify
-```
-
-**Nested Stateful objects:** If list/dict contains `Stateful` items, their property changes also trigger re-renders automatically - no wrapper needed for that.
-
-### Bidirectional Binding
+#### Bidirectional Binding
 
 - `Mutable[T]` type for two-way data binding
 - `mutable(state.field)` to create a mutable reference
@@ -136,12 +169,17 @@ TextWithLabel(
 )
 ```
 
+### Reconciliation
+
+- Shallowest-first re-rendering for efficient updates
+- Key-based matching for list items
+- Tree diffing to minimize client updates
+
 ## Component Patterns
 
 ### Stateless Components
 
-- Receive all data via props
-- No internal state
+Receive all data via props, no internal state.
 
 ```python
 @component
@@ -154,8 +192,7 @@ def TextWithLabel(label: str, text: Mutable[str]) -> Elements:
 
 ### Stateful Components
 
-- Create local state in render function
-- State persists across re-renders
+Create local state in render function; state persists across re-renders.
 
 ```python
 @component
@@ -232,23 +269,6 @@ if state.error:
     Notification(message=state.error)
 ```
 
-## Navigation
-
-- `RouterState`: Holds current route
-- `Router`: Container for routes
-- `Route`: Maps path to component
-- `navigate(path)`: Programmatic navigation
-
-```python
-routerState = nav.RouterState()
-
-with nav.Router(state=routerState):
-    nav.Route(path="/", target=Form(state=formState))
-    with nav.Route(path="/done"):
-        w.Label("Done!")
-        w.Button(label="Back", onClick=lambda: routerState.navigate("/"))
-```
-
 ## Widgets
 
 ### Layout
@@ -274,6 +294,23 @@ with nav.Router(state=routerState):
 - `textColor`: Color string
 - `disabled`: Boolean
 - `placeholderText`: Hint text
+
+## Navigation
+
+- `RouterState`: Holds current route
+- `Router`: Container for routes
+- `Route`: Maps path to component
+- `navigate(path)`: Programmatic navigation
+
+```python
+routerState = nav.RouterState()
+
+with nav.Router(state=routerState):
+    nav.Route(path="/", target=Form(state=formState))
+    with nav.Route(path="/done"):
+        w.Label("Done!")
+        w.Button(label="Back", onClick=lambda: routerState.navigate("/"))
+```
 
 ## React Integration
 
@@ -308,34 +345,24 @@ class ColumnFromFiles(ReactComponent):
     ]
 ```
 
-## Thread Safety
+## Architectural Decisions
 
-- State updates can happen from any thread
-- `RenderContext` uses `RLock` for thread-safe operations
-- `@with_lock` decorator for protected methods
-- Developers don't need to manage concurrency manually
+### Implicit child collection over return values
 
-## Developer Experience
+Components don't return their children—instead, children are automatically collected via an element stack during rendering. This enables natural `with` block syntax and removes boilerplate, at the cost of some "magic" behavior.
 
-### Two Modes
+### Property-level reactivity
 
-- **Development**: Hot reloading, source maps, runtime checks
-- **Release**: Bundled and optimized for deployment
+Dependencies are tracked at the property level, not the component level. Reading `state.name` only creates a dependency on `name`, not on the entire state object. This minimizes unnecessary re-renders for data-intensive UIs.
 
-### App Lifecycle
+### Thread safety by default
 
-```python
-async def main():
-    app = App()
-    await app.serve(top)
+State updates can happen from any thread (e.g., async callbacks, background tasks). The framework uses `RLock` internally so developers don't need to manage concurrency manually.
 
-if __name__ == "__main__":
-    asyncio.run(main())
-```
+### msgspec over Pydantic
 
-### Rendering Cycle
+msgspec provides faster serialization/validation with lower overhead, which matters for high-frequency state updates over WebSocket.
 
-1. Initial render creates the Element tree
-2. State changes mark dependent elements dirty
-3. Periodically (~20ms), dirty elements are re-rendered shallowest-first
-4. Tree is diffed, changes sent to client
+### Python 3.14
+
+Using the latest Python version for performance improvements and language features. Type hints are first-class throughout the codebase.
