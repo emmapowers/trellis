@@ -29,5 +29,12 @@ class RenderMessage(msgspec.Struct, tag="render", tag_field="type"):
     tree: dict[str, tp.Any]
 
 
+class EventMessage(msgspec.Struct, tag="event", tag_field="type"):
+    """Client event triggering a server callback."""
+
+    callback_id: str
+    args: list[tp.Any] = []
+
+
 # Union type for all messages - enables type-safe dispatch
-Message = HelloMessage | HelloResponseMessage | RenderMessage
+Message = HelloMessage | HelloResponseMessage | RenderMessage | EventMessage

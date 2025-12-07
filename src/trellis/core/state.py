@@ -319,17 +319,17 @@ class Stateful:
         # During render, walk up the element tree
         ctx = get_active_render_context()
         if ctx is not None and ctx.executing and ctx.current_node is not None:
-            element = ctx.current_node
+            element: Element | None = ctx.current_node
             while element is not None:
                 if cls in element._context:
-                    return element._context[cls]  # type: ignore[return-value]
+                    return tp.cast("tp.Self", element._context[cls])
                 element = element.parent
 
         # Fall back to global stack (for non-render usage)
         with _context_lock:
             stack = _context_stacks.get(cls)
             if stack:
-                return stack[-1]  # type: ignore[return-value]
+                return tp.cast("tp.Self", stack[-1])
 
         raise LookupError(
             f"No {cls.__name__} found in context. "
@@ -350,13 +350,13 @@ class Stateful:
         # During render, walk up the element tree
         ctx = get_active_render_context()
         if ctx is not None and ctx.executing and ctx.current_node is not None:
-            element = ctx.current_node
+            element: Element | None = ctx.current_node
             while element is not None:
                 if cls in element._context:
-                    return element._context[cls]  # type: ignore[return-value]
+                    return tp.cast("tp.Self", element._context[cls])
                 element = element.parent
 
         # Fall back to global stack
         with _context_lock:
             stack = _context_stacks.get(cls)
-            return stack[-1] if stack else None  # type: ignore[return-value]
+            return tp.cast("tp.Self", stack[-1]) if stack else None

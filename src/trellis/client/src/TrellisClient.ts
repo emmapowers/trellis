@@ -6,7 +6,7 @@ import {
   MessageType,
   HelloMessage,
   HelloResponseMessage,
-  RenderMessage,
+  EventMessage,
   SerializedElement,
 } from "./types";
 
@@ -103,6 +103,16 @@ export class TrellisClient {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(encode(msg));
     }
+  }
+
+  /** Send an event to the server to invoke a callback. */
+  sendEvent(callbackId: string, args: unknown[] = []): void {
+    const msg: EventMessage = {
+      type: MessageType.EVENT,
+      callback_id: callbackId,
+      args,
+    };
+    this.send(msg);
   }
 
   disconnect(): void {

@@ -114,6 +114,11 @@ class IComponent(tp.Protocol):
     name: str
     """Human-readable name of the component (used for debugging)."""
 
+    @property
+    def react_type(self) -> str:
+        """The React component type name used to render this on the client."""
+        ...
+
     def __call__(self, /, **props: tp.Any) -> ElementDescriptor:
         """Create a descriptor for this component with the given props.
 

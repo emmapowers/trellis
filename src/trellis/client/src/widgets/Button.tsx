@@ -1,5 +1,6 @@
 import React from "react";
 import { isCallbackRef, CallbackRef } from "../types";
+import { useTrellisClient } from "../TrellisContext";
 
 interface ButtonProps {
   text?: string;
@@ -12,10 +13,11 @@ export function Button({
   on_click,
   disabled = false,
 }: ButtonProps): React.ReactElement {
+  const client = useTrellisClient();
+
   const handleClick = () => {
     if (on_click && isCallbackRef(on_click)) {
-      // For now, just log. Events will be sent to server in future.
-      console.log("Button clicked, callback:", on_click.__callback__);
+      client.sendEvent(on_click.__callback__);
     }
   };
 

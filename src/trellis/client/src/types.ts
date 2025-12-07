@@ -4,6 +4,7 @@ export const MessageType = {
   HELLO: "hello",
   HELLO_RESPONSE: "hello_response",
   RENDER: "render",
+  EVENT: "event",
 } as const;
 
 export interface HelloMessage {
@@ -46,4 +47,14 @@ export interface RenderMessage {
   tree: SerializedElement;
 }
 
-export type Message = HelloMessage | HelloResponseMessage | RenderMessage;
+export interface EventMessage {
+  type: typeof MessageType.EVENT;
+  callback_id: string;
+  args: unknown[];
+}
+
+export type Message =
+  | HelloMessage
+  | HelloResponseMessage
+  | RenderMessage
+  | EventMessage;
