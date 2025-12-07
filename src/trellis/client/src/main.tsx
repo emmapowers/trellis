@@ -3,11 +3,14 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { TrellisClient, ConnectionState } from "./TrellisClient";
+import { SerializedElement } from "./types";
+import { TreeRenderer } from "./TreeRenderer";
 
 function App() {
   const [state, setState] = useState<ConnectionState>("disconnected");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [serverVersion, setServerVersion] = useState<string | null>(null);
+  const [tree, setTree] = useState<SerializedElement | null>(null);
 
   useEffect(() => {
     const client = new TrellisClient({
@@ -15,6 +18,9 @@ function App() {
       onConnected: (response) => {
         setSessionId(response.session_id);
         setServerVersion(response.server_version);
+      },
+      onRender: (newTree) => {
+        setTree(newTree);
       },
     });
 
@@ -25,6 +31,12 @@ function App() {
     return () => client.disconnect();
   }, []);
 
+  // If we have a tree, render it
+  if (tree) {
+    return <TreeRenderer node={tree} />;
+  }
+
+  // Otherwise show connection status
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", padding: "20px" }}>
       <h1>Trellis</h1>

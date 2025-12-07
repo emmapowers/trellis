@@ -55,6 +55,7 @@ class Component(ABC, tp.Generic[T]):
     Attributes:
         name: Human-readable component name (used for debugging and error messages)
         elementType: The Element subclass to use for this component's nodes
+        react_type: The React component type used to render this on the client
 
     Type Parameters:
         T: The Element type this component produces (defaults to Element)
@@ -62,6 +63,16 @@ class Component(ABC, tp.Generic[T]):
 
     name: str
     elementType: type[Element] = Element
+
+    @property
+    @abstractmethod
+    def react_type(self) -> str:
+        """The React component type name used to render this component on the client.
+
+        For FunctionalComponents, this is always "FunctionalComponent".
+        For ReactComponents, this is the specific React component name.
+        """
+        ...
 
     def __call__(self, /, **props: tp.Any) -> ElementDescriptor:
         """Create an ElementDescriptor for this component invocation.

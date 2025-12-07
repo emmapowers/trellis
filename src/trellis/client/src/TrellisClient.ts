@@ -6,6 +6,8 @@ import {
   MessageType,
   HelloMessage,
   HelloResponseMessage,
+  RenderMessage,
+  SerializedElement,
 } from "./types";
 
 export type ConnectionState = "disconnected" | "connecting" | "connected";
@@ -13,6 +15,7 @@ export type ConnectionState = "disconnected" | "connecting" | "connected";
 export interface TrellisClientCallbacks {
   onStateChange?: (state: ConnectionState) => void;
   onConnected?: (response: HelloResponseMessage) => void;
+  onRender?: (tree: SerializedElement) => void;
 }
 
 export class TrellisClient {
@@ -21,6 +24,8 @@ export class TrellisClient {
   private sessionId: string | null = null;
   private state: ConnectionState = "disconnected";
   private callbacks: TrellisClientCallbacks;
+  private connectResolver: ((response: HelloResponseMessage) => void) | null =
+    null;
 
   constructor(callbacks: TrellisClientCallbacks = {}) {
     this.clientId = crypto.randomUUID();
@@ -42,6 +47,7 @@ export class TrellisClient {
 
   async connect(): Promise<HelloResponseMessage> {
     return new Promise((resolve, reject) => {
+      this.connectResolver = resolve;
       this.setState("connecting");
 
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -59,7 +65,7 @@ export class TrellisClient {
 
       this.ws.onmessage = (event) => {
         const msg = decode(new Uint8Array(event.data)) as Message;
-        this.handleMessage(msg, resolve);
+        this.handleMessage(msg);
       };
 
       this.ws.onerror = () => {
@@ -73,19 +79,23 @@ export class TrellisClient {
     });
   }
 
-  private handleMessage(
-    msg: Message,
-    onFirstResponse: (response: HelloResponseMessage) => void
-  ): void {
+  private handleMessage(msg: Message): void {
     switch (msg.type) {
       case MessageType.HELLO_RESPONSE:
         this.sessionId = msg.session_id;
         this.setState("connected");
         console.log(`Connected to Trellis server v${msg.server_version}`);
         this.callbacks.onConnected?.(msg);
-        onFirstResponse(msg);
+        if (this.connectResolver) {
+          this.connectResolver(msg);
+          this.connectResolver = null;
+        }
         break;
-      // Future: handle tree diffs, etc.
+
+      case MessageType.RENDER:
+        console.log("Received render message:", msg.tree);
+        this.callbacks.onRender?.(msg.tree);
+        break;
     }
   }
 

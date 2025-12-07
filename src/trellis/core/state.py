@@ -9,6 +9,7 @@ Key Features:
       re-render when that property changes
     - **Component-local caching**: State instances are cached per-component,
       similar to React hooks
+    - **Context API**: Share state with descendants via `with state:` blocks
     - **Lifecycle hooks**: `on_mount()` and `on_unmount()` for setup/cleanup
 
 Example:
@@ -26,12 +27,42 @@ Example:
 
 When `state.count` is modified, only components that accessed `state.count`
 will be marked dirty and re-rendered.
+
+Context API example:
+    ```python
+    @dataclass(kw_only=True)
+    class AppState(Stateful):
+        user: str = ""
+
+    @component
+    def App() -> None:
+        with AppState(user="alice"):  # Provide state to descendants
+            ChildComponent()
+
+    @component
+    def ChildComponent() -> None:
+        state = AppState.from_context()  # Retrieve ancestor state
+        Label(text=f"Hello, {state.user}!")
+    ```
 """
 
+import threading
 import typing as tp
 from dataclasses import dataclass, field
+from types import TracebackType
 
 from trellis.core.rendering import Element, get_active_render_context
+
+# Thread-local context stacks for each Stateful subclass.
+# When using `with state:`, the instance is pushed onto its class's stack.
+_context_stacks: dict[type["Stateful"], list["Stateful"]] = {}
+_context_lock = threading.Lock()
+
+
+def clear_context_stacks() -> None:
+    """Clear all context stacks. For testing only."""
+    with _context_lock:
+        _context_stacks.clear()
 
 
 @dataclass(kw_only=True)
@@ -209,3 +240,123 @@ class Stateful:
     def on_unmount(self) -> None:
         """Called before owning element unmounts. Override for cleanup."""
         pass
+
+    # -------------------------------------------------------------------------
+    # Context API - share state with descendant components
+    # -------------------------------------------------------------------------
+
+    def __enter__(self) -> tp.Self:
+        """Push this state instance onto the context stack for its type.
+
+        This makes the instance retrievable by descendant components via
+        `from_context()`. Context is stored on the current element (if rendering)
+        so that child components can find it by walking up the element tree.
+
+        Example:
+            ```python
+            state = AppState(user="alice")
+            with state:
+                # Descendants can access via AppState.from_context()
+                ChildComponent()
+            ```
+
+        Returns:
+            This instance (for use in `with ... as` pattern)
+        """
+        cls = type(self)
+
+        # If we're inside a render context, store on the current element
+        ctx = get_active_render_context()
+        if ctx is not None and ctx.executing and ctx.current_node is not None:
+            ctx.current_node._context[cls] = self
+
+        # Also push to global stack for non-render usage
+        with _context_lock:
+            if cls not in _context_stacks:
+                _context_stacks[cls] = []
+            _context_stacks[cls].append(self)
+
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        """Pop this state instance from the context stack.
+
+        Note: Context stored on elements is NOT removed here - it persists
+        for the lifetime of the element so child components can find it.
+        """
+        with _context_lock:
+            cls = type(self)
+            stack = _context_stacks.get(cls)
+            if stack:
+                stack.pop()
+
+    @classmethod
+    def from_context(cls) -> tp.Self:
+        """Retrieve the nearest ancestor instance of this state type.
+
+        During rendering, walks up the element tree looking for context.
+        Outside rendering, uses the global context stack.
+
+        Example:
+            ```python
+            @component
+            def Child() -> None:
+                state = AppState.from_context()  # Get ancestor AppState
+                Label(text=state.user)
+            ```
+
+        Returns:
+            The nearest ancestor instance of this type
+
+        Raises:
+            LookupError: If no instance of this type is in the context stack
+        """
+        # During render, walk up the element tree
+        ctx = get_active_render_context()
+        if ctx is not None and ctx.executing and ctx.current_node is not None:
+            element = ctx.current_node
+            while element is not None:
+                if cls in element._context:
+                    return element._context[cls]  # type: ignore[return-value]
+                element = element.parent
+
+        # Fall back to global stack (for non-render usage)
+        with _context_lock:
+            stack = _context_stacks.get(cls)
+            if stack:
+                return stack[-1]  # type: ignore[return-value]
+
+        raise LookupError(
+            f"No {cls.__name__} found in context. "
+            f"Ensure a {cls.__name__} instance is provided via "
+            f"'with {cls.__name__}():'"
+        )
+
+    @classmethod
+    def try_from_context(cls) -> tp.Self | None:
+        """Retrieve ancestor instance if available, else None.
+
+        Like `from_context()`, but returns None instead of raising if
+        no instance is in the context stack.
+
+        Returns:
+            The nearest ancestor instance, or None if not found
+        """
+        # During render, walk up the element tree
+        ctx = get_active_render_context()
+        if ctx is not None and ctx.executing and ctx.current_node is not None:
+            element = ctx.current_node
+            while element is not None:
+                if cls in element._context:
+                    return element._context[cls]  # type: ignore[return-value]
+                element = element.parent
+
+        # Fall back to global stack
+        with _context_lock:
+            stack = _context_stacks.get(cls)
+            return stack[-1] if stack else None  # type: ignore[return-value]

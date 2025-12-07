@@ -63,6 +63,10 @@ class FunctionalComponent(Component[T], tp.Generic[T]):
     as a Trellis component. The function is called during the execution
     phase when the component needs to render.
 
+    All FunctionalComponents share the same React component type ("FunctionalComponent")
+    which simply renders their children. The Python component name is preserved
+    for debugging purposes.
+
     Attributes:
         render_func: The function that renders this component
         _has_children_param: True if render_func accepts a `children` parameter
@@ -83,6 +87,11 @@ class FunctionalComponent(Component[T], tp.Generic[T]):
 
     render_func: RenderFunc
     _has_children_param: bool = field(init=False, default=False)
+
+    @property
+    def react_type(self) -> str:
+        """All FunctionalComponents use the same React wrapper component."""
+        return "FunctionalComponent"
 
     def __post_init__(self) -> None:
         """Inspect the render function to determine if it accepts children."""

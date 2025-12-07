@@ -302,6 +302,10 @@ class Element:
     _local_state: dict[tuple[type, int], tp.Any] = field(default_factory=dict)
     _state_call_count: int = 0
 
+    # Context storage for state provided via `with state:` blocks.
+    # Maps state class to the state instance provided in this element's scope.
+    _context: dict[type, tp.Any] = field(default_factory=dict)
+
     @property
     def component(self) -> IComponent:
         """The component that created this element."""

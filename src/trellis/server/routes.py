@@ -7,7 +7,14 @@ import msgspec
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 
-from trellis.server.messages import HelloMessage, HelloResponseMessage, Message
+from trellis.core.rendering import RenderContext
+from trellis.core.serialization import serialize_element
+from trellis.server.messages import (
+    HelloMessage,
+    HelloResponseMessage,
+    Message,
+    RenderMessage,
+)
 
 router = APIRouter()
 
@@ -61,10 +68,22 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
         )
         await websocket.send_bytes(_encoder.encode(response))
 
+        # Render and send the component tree if a top component is configured
+        top_component = getattr(websocket.app.state, "top_component", None)
+        if top_component is not None:
+            # Perform initial render
+            ctx = RenderContext(top_component)
+            ctx.render(from_element=None)
+
+            # Serialize the tree and send to client
+            tree_data = serialize_element(ctx.root_element)
+            render_msg = RenderMessage(tree=tree_data)
+            await websocket.send_bytes(_encoder.encode(render_msg))
+
         # Keep connection open for future messages
         while True:
             data = await websocket.receive_bytes()
-            # Future: handle other message types
+            # Future: handle other message types (events, etc.)
             _ = _decoder.decode(data)
 
     except WebSocketDisconnect:

@@ -97,6 +97,9 @@ class Trellis:
 
         self._fastapi.include_router(router)
 
+        # Store top component in app state for routes to access
+        self._fastapi.state.top_component = self.top
+
         # Set up static file serving
         static = self.static_dir or create_static_dir()
         if static.exists():
