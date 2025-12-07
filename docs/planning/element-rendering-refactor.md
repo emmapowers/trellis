@@ -3,7 +3,7 @@
 ## Goal
 Separate "declaring what to render" from "actually rendering" by introducing:
 1. **ElementDescriptor** - lightweight, immutable description (`Button(text="hi")` returns this)
-2. **ElementNode** - runtime tree node with state/lifecycle (created by reconciler)
+2. **Element** - runtime tree node with state/lifecycle (created by reconciler when mounting)
 
 ## Core Concept
 
@@ -11,7 +11,103 @@ Separate "declaring what to render" from "actually rendering" by introducing:
 Current:  Button(text="hi") → immediately executes → creates Element with children
 
 Proposed: Button(text="hi") → returns ElementDescriptor (no execution)
-          Reconciler sees descriptor → decides to execute or skip → creates/updates ElementNode
+          Reconciler sees descriptor → decides to execute or skip → creates/updates Element
+```
+
+## Two Distinct Phases
+
+### Phase 1: Descriptor Creation
+
+Component function body runs, but only creates descriptors - no Elements, no mounting:
+
+```python
+@component
+def MyComponent() -> None:
+    with Column():           # Creates ColumnDescriptor, pushes to descriptor stack
+        Text("what")         # Creates TextDescriptor, added to Column's pending children
+        Button("Click Me!")  # Creates ButtonDescriptor, added to Column's pending children
+    # __exit__: Column descriptor's children = [TextDescriptor, ButtonDescriptor]
+    # Column descriptor added to MyComponent's pending children
+```
+
+At this point:
+- No Elements created yet
+- No reconciliation yet
+- Just a tree of immutable descriptors
+
+### Phase 2: Execution (Reconciler-driven)
+
+When the reconciler decides to render a component, it calls `component.execute(node, **props)`:
+
+```python
+@component
+def Column(children: list[ElementDescriptor]) -> None:  # children are DESCRIPTORS
+    with html.div():
+        for child in children:
+            with html.div():  # wrapper
+                child()       # still inside a `with` block - adds to wrapper's pending children
+            # __exit__: wrapper.children = [child]
+    # __exit__: div.children = [all wrappers]
+
+@component
+def div(children: list[ElementDescriptor]) -> None:
+    for child in children:
+        child()  # NOT inside a `with` block → actually mounts!
+```
+
+## The `child()` Rule
+
+When `child()` is called on a descriptor:
+- **Inside a `with` block** → adds to that block's pending children (still building descriptors)
+- **Outside any `with` block** → triggers reconciler to mount/reconcile
+
+This means:
+- Containers can nest arbitrarily, just passing descriptors down
+- Mounting only happens at the "leaves" of the container chain
+- Reconciler can skip entire subtrees if props unchanged
+
+## Dirty Elements and Re-rendering
+
+When state changes, Elements are marked dirty. The reconciler:
+
+1. Finds dirty elements, sorted by depth (shallowest first)
+2. For each dirty element:
+   - Re-runs descriptor creation for that component (Phase 1)
+   - Compares new descriptor tree with old
+   - If props unchanged and not dirty → skip execution, reuse Element
+   - If props changed or dirty → execute component, reconcile children
+
+```python
+def render_dirty() -> None:
+    elements = sorted(dirty_elements, key=lambda e: e.depth)
+    for element in elements:
+        if element.dirty:  # May have been rendered as part of parent
+            new_desc = element.component(**element.properties)  # Phase 1: create descriptors
+            reconcile(element, new_desc)  # Phase 2: compare, execute if needed
+            element.dirty = False
+```
+
+### Skipping Unchanged Subtrees
+
+The key optimization:
+
+```python
+def reconcile(old_node: Element | None, new_desc: ElementDescriptor) -> Element:
+    if old_node is None:
+        return mount_new(new_desc)
+
+    if old_node.descriptor.component != new_desc.component:
+        unmount(old_node)
+        return mount_new(new_desc)
+
+    # OPTIMIZATION: skip if props unchanged and not dirty
+    if old_node.descriptor.props == new_desc.props and not old_node.dirty:
+        return old_node  # Reuse without re-executing!
+
+    # Props changed or dirty - must re-execute
+    old_node.descriptor = new_desc
+    execute_and_reconcile_children(old_node)
+    return old_node
 ```
 
 ## New Types
@@ -22,132 +118,113 @@ class ElementDescriptor:
     """Immutable description of what to render."""
     component: IComponent
     key: str = ""
-    props: FrozenDict[str, Any]  # immutable for comparison
+    props: tuple[tuple[str, Any], ...]  # Immutable for comparison
+    children: tuple[ElementDescriptor, ...] = ()  # Collected via `with` block
+
+    def __enter__(self) -> ElementDescriptor:
+        """Push collection stack for children."""
+        _descriptor_stack.append([])
+        return self
+
+    def __exit__(self, *exc) -> None:
+        """Pop children, store in descriptor, add to parent."""
+        collected = _descriptor_stack.pop()
+        # Validate: can't have children prop AND with block
+        if "children" in dict(self.props):
+            raise RuntimeError("Cannot provide 'children' prop and use 'with' block")
+        object.__setattr__(self, "children", tuple(collected))
+        if _descriptor_stack:
+            _descriptor_stack[-1].append(self)
+
+    def __call__(self) -> None:
+        """Mount this descriptor at current position."""
+        if _descriptor_stack:
+            # Inside a `with` block - add to pending children
+            _descriptor_stack[-1].append(self)
+        else:
+            # Outside `with` block - actually mount via reconciler
+            reconcile_and_mount(self)
 
 @dataclass
-class ElementNode:
+class Element:
     """Runtime tree node with state and lifecycle."""
     descriptor: ElementDescriptor
-    parent: ElementNode | None
-    children: list[ElementNode]
+    parent: Element | None
+    children: list[Element]
     depth: int
-    mounted: bool
-    local_state: dict[tuple[type, int], Any]  # Stateful instances
-    state_call_count: int
     dirty: bool
+    _mounted: bool
+    _local_state: dict[tuple[type, int], Any]
+    _state_call_count: int
+    render_context: RenderContext
 ```
 
-## Component API Change
+## Component API
 
 ```python
 class Component:
     def __call__(self, **props) -> ElementDescriptor:
         """Create descriptor only - NO execution."""
-        return ElementDescriptor(component=self, props=freeze(props), ...)
+        return ElementDescriptor(
+            component=self,
+            key=props.pop("key", ""),
+            props=freeze_props(props)
+        )
 
-    def execute(self, node: ElementNode, **props) -> Elements:
+    def execute(self, node: Element, **props) -> None:
         """Called by reconciler when this component needs to render."""
-        ...
-```
-
-## Reconciler Flow
-
-```python
-def reconcile(old_node: ElementNode | None, new_desc: ElementDescriptor) -> ElementNode:
-    if old_node is None:
-        return mount_new(new_desc)
-
-    if old_node.descriptor.component != new_desc.component:
-        unmount(old_node)
-        return mount_new(new_desc)
-
-    # OPTIMIZATION: skip if props unchanged and not dirty
-    if old_node.descriptor.props == new_desc.props and not old_node.dirty:
-        return old_node  # reuse without re-executing
-
-    # Re-execute component
-    old_node.descriptor = new_desc
-    execute_and_reconcile_children(old_node)
-    return old_node
+        # For FunctionalComponent: calls the render function
+        pass
 ```
 
 ## State Simplification
 
-Current `Stateful.__new__()` has complex `_rerender_target` logic to figure out which element owns the state. With lazy rendering:
+With lazy rendering, during `execute()` the `current_node` is always correct:
 
 ```python
 def __new__(cls, *args, **kwargs):
     ctx = get_active_render_context()
-    if not ctx.rendering:
+    if not ctx or not ctx.executing:
         return object.__new__(cls)
 
-    # SIMPLE: current_node is always correct during execute()
-    node = ctx.current_node
-    key = (cls, node.state_call_count)
-    node.state_call_count += 1
+    node = ctx.current_node  # Always correct during execute()
+    key = (cls, node._state_call_count)
+    node._state_call_count += 1
 
-    if key in node.local_state:
-        return node.local_state[key]
+    if key in node._local_state:
+        return node._local_state[key]
 
     instance = object.__new__(cls)
-    node.local_state[key] = instance
+    node._local_state[key] = instance
     return instance
 ```
 
-## BlockComponent with Lazy Rendering
-
-Keep `with` syntax but collect descriptors instead of executing:
-
-```python
-class BlockDescriptor(ElementDescriptor):
-    """Descriptor that collects children via context manager."""
-    children: list[ElementDescriptor]  # Mutable during collection phase
-
-    def __enter__(self):
-        # Push self onto descriptor collection stack
-        _descriptor_stack.append(self)
-        return self
-
-    def __exit__(self, *exc):
-        _descriptor_stack.pop()
-        # Parent descriptor (if any) gets us as a child
-        if _descriptor_stack:
-            _descriptor_stack[-1].children.append(self)
-```
-
-Usage unchanged:
-```python
-with Column():      # Creates BlockDescriptor, pushes to stack
-    Button()        # Creates descriptor, appends to Column's children
-    Text()          # Same
-# __exit__ pops Column, it becomes child of its parent (or root)
-```
-
-Key insight: Children collection happens at descriptor level (no execution).
-The reconciler later executes the component function with `props["children"] = collected_descriptors`.
+No more `_rerender_target` heuristics needed.
 
 ## Files to Modify
 
-1. **rendering.py** - Add `ElementDescriptor`, `BlockDescriptor`, rename `Element` → `ElementNode`, update `RenderContext`
-2. **base_component.py** - Split `render()` into `__call__()` (descriptor) and `execute()` (runtime)
+1. **rendering.py** - Add `ElementDescriptor`, `_descriptor_stack`, update `Element`
+2. **base_component.py** - `__call__()` returns descriptor, add `execute()` method
 3. **functional_component.py** - Implement `execute()` to call render function
-4. **block_component.py** - Return `BlockDescriptor` from `__call__()`, simplify to just collect children
-5. **reconcile.py** - Rewrite to reconcile descriptors vs nodes, add props comparison
-6. **state.py** - Simplify `__new__()` to use `current_node` only, remove `_rerender_target`
+4. **reconcile.py** - Rewrite to reconcile descriptors vs nodes, add props comparison
+5. **state.py** - Simplify `__new__()`, remove `_rerender_target`
 
 ## Implementation Order
 
-1. Add `ElementDescriptor` type (additive, no breaking changes)
-2. Rename `Element` → `ElementNode`, add descriptor field
+1. Add `ElementDescriptor` type with `__enter__/__exit__/__call__` (additive)
+2. Add `freeze_props`/`unfreeze_props` helpers
 3. Update `Component.__call__()` to return descriptors
 4. Add `Component.execute()` method
-5. Rewrite `RenderContext.render()` with reconcile-then-commit flow
-6. Simplify `Stateful.__new__()`
-7. Update tests
+5. Add `descriptor` field to `Element`
+6. Rewrite `RenderContext.render()` with reconcile-then-execute flow
+7. Update reconciler to compare descriptors
+8. Simplify `Stateful.__new__()`
+9. Update tests
 
 ## Benefits
 
 - **Performance**: Skip execution when props unchanged
 - **Simpler state**: No `_rerender_target` heuristics
 - **Cleaner mental model**: Describe vs Execute separation
+- **Composable containers**: Nest arbitrarily, mount at leaves
 - **Future-proof**: Foundation for async/concurrent rendering

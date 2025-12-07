@@ -45,7 +45,7 @@ g_active_render_context: RenderContext | None = None
 
 # Global stack for collecting child descriptors during `with` blocks.
 # Each entry is a list that collects descriptors created within that scope.
-_descriptor_stack: list[list["ElementDescriptor"]] = []
+_descriptor_stack: list[list[ElementDescriptor]] = []
 
 
 def freeze_props(props: dict[str, tp.Any]) -> FrozenProps:
@@ -107,7 +107,7 @@ class IComponent(tp.Protocol):
     name: str
     """Human-readable name of the component (used for debugging)."""
 
-    def __call__(self, /, **props: tp.Any) -> "ElementDescriptor":
+    def __call__(self, /, **props: tp.Any) -> ElementDescriptor:
         """Create a descriptor for this component with the given props.
 
         This does NOT execute the component - it only creates a description
@@ -121,7 +121,7 @@ class IComponent(tp.Protocol):
         """
         ...
 
-    def execute(self, /, node: "Element", **props: tp.Any) -> None:
+    def execute(self, /, node: Element, **props: tp.Any) -> None:
         """Execute the component to produce child descriptors.
 
         Called by the reconciler when this component needs to render.
@@ -163,9 +163,9 @@ class ElementDescriptor:
     component: IComponent
     key: str = ""
     props: FrozenProps = ()
-    children: tuple["ElementDescriptor", ...] = ()
+    children: tuple[ElementDescriptor, ...] = ()
 
-    def __enter__(self) -> "ElementDescriptor":
+    def __enter__(self) -> ElementDescriptor:
         """Enter a `with` block to collect children for a container component.
 
         This validates that the component accepts a `children` parameter,

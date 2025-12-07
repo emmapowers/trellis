@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from trellis.core.rendering import Elements, RenderContext
+from trellis.core.rendering import RenderContext
 from trellis.core.functional_component import component
 from trellis.core.state import Stateful
 
@@ -13,17 +13,18 @@ class TestReconciliation:
     def test_key_based_matching_preserves_element(self) -> None:
         """Elements with matching keys preserve identity."""
         render_order: list[str] = []
+        items_ref = [["a", "b", "c"]]
 
         @component
-        def Child(name: str = "") -> Elements:
+        def Child(name: str = "") -> None:
             render_order.append(name)
-            return None
 
         @component
-        def Parent(items: list[str]) -> Elements:
-            return [Child(key=item, name=item) for item in items]
+        def Parent() -> None:
+            for item in items_ref[0]:
+                Child(key=item, name=item)
 
-        ctx = RenderContext(lambda: Parent(items=["a", "b", "c"]))
+        ctx = RenderContext(Parent)
         ctx.render(from_element=None)
 
         # Capture original element ids
@@ -32,8 +33,9 @@ class TestReconciliation:
 
         # Re-render with reordered items
         render_order.clear()
-        ctx.root_element.properties["items"] = ["c", "a", "b"]
-        ctx.render(from_element=ctx.root_element)
+        items_ref[0] = ["c", "a", "b"]
+        ctx.mark_dirty(ctx.root_element)
+        ctx.render_dirty()
 
         # Elements should be preserved (same id) despite reordering
         new_children = list(ctx.root_element.children)
@@ -43,24 +45,25 @@ class TestReconciliation:
     def test_position_type_matching_without_keys(self) -> None:
         """Unkeyed elements match by position and type."""
         render_count = [0]
+        count_ref = [3]
 
         @component
-        def Child() -> Elements:
+        def Child() -> None:
             render_count[0] += 1
-            return None
 
         @component
-        def Parent(count: int) -> Elements:
-            return [Child() for _ in range(count)]
+        def Parent() -> None:
+            for _ in range(count_ref[0]):
+                Child()
 
-        ctx = RenderContext(lambda: Parent(count=3))
+        ctx = RenderContext(Parent)
         ctx.render(from_element=None)
 
         original_ids = [id(c) for c in ctx.root_element.children]
 
         # Re-render with same count
-        ctx.root_element.properties["count"] = 3
-        ctx.render(from_element=ctx.root_element)
+        ctx.mark_dirty(ctx.root_element)
+        ctx.render_dirty()
 
         # Same elements should be reused
         new_ids = [id(c) for c in ctx.root_element.children]
@@ -82,25 +85,23 @@ class TestReconciliation:
                 unmount_log.append(self.name)
 
         @component
-        def TypeA() -> Elements:
+        def TypeA() -> None:
             state = TrackedState()
             state.name = "A"
-            return None
 
         @component
-        def TypeB() -> Elements:
+        def TypeB() -> None:
             state = TrackedState()
             state.name = "B"
-            return None
 
         show_a = [True]
 
         @component
-        def Parent() -> Elements:
+        def Parent() -> None:
             if show_a[0]:
-                return TypeA()
+                TypeA()
             else:
-                return TypeB()
+                TypeB()
 
         ctx = RenderContext(Parent)
         ctx.render(from_element=None)
@@ -111,7 +112,8 @@ class TestReconciliation:
         # Switch type
         show_a[0] = False
         mount_log.clear()
-        ctx.render(from_element=ctx.root_element)
+        ctx.mark_dirty(ctx.root_element)
+        ctx.render_dirty()
 
         assert "A" in unmount_log
         assert "B" in mount_log
@@ -128,23 +130,24 @@ class TestReconciliation:
                 unmount_log.append(self.name)
 
         @component
-        def Child(name: str = "") -> Elements:
+        def Child(name: str = "") -> None:
             state = TrackedState()
             state.name = name
-            return None
 
         items = [["a", "b", "c"]]
 
         @component
-        def Parent() -> Elements:
-            return [Child(key=item, name=item) for item in items[0]]
+        def Parent() -> None:
+            for item in items[0]:
+                Child(key=item, name=item)
 
         ctx = RenderContext(Parent)
         ctx.render(from_element=None)
 
         # Remove "b"
         items[0] = ["a", "c"]
-        ctx.render(from_element=ctx.root_element)
+        ctx.mark_dirty(ctx.root_element)
+        ctx.render_dirty()
 
         assert "b" in unmount_log
         assert "a" not in unmount_log
@@ -156,11 +159,10 @@ class TestElementLifecycle:
 
     def test_element_on_mount_called(self) -> None:
         """on_mount is called when element is first rendered."""
-        mount_called = [False]
 
         @component
-        def MyComponent() -> Elements:
-            return None
+        def MyComponent() -> None:
+            pass
 
         ctx = RenderContext(MyComponent)
         ctx.render(from_element=None)
@@ -177,15 +179,15 @@ class TestElementLifecycle:
                 mount_count[0] += 1
 
         @component
-        def MyComponent() -> Elements:
+        def MyComponent() -> None:
             CountingState()
-            return None
 
         ctx = RenderContext(MyComponent)
         ctx.render(from_element=None)
         assert mount_count[0] == 1
 
-        ctx.render(from_element=ctx.root_element)
+        ctx.mark_dirty(ctx.root_element)
+        ctx.render_dirty()
         assert mount_count[0] == 1  # Still 1, not called again
 
 
@@ -202,9 +204,8 @@ class TestStatefulLifecycle:
                 mount_log.append("state_mounted")
 
         @component
-        def MyComponent() -> Elements:
+        def MyComponent() -> None:
             MyState()
-            return None
 
         ctx = RenderContext(MyComponent)
         ctx.render(from_element=None)
@@ -223,22 +224,21 @@ class TestStatefulLifecycle:
         show = [True]
 
         @component
-        def Child() -> Elements:
+        def Child() -> None:
             MyState()
-            return None
 
         @component
-        def Parent() -> Elements:
+        def Parent() -> None:
             if show[0]:
-                return Child()
-            return None
+                Child()
 
         ctx = RenderContext(Parent)
         ctx.render(from_element=None)
 
         # Remove child
         show[0] = False
-        ctx.render(from_element=ctx.root_element)
+        ctx.mark_dirty(ctx.root_element)
+        ctx.render_dirty()
 
         assert "state_unmounted" in unmount_log
 
@@ -251,10 +251,9 @@ class TestStatefulLifecycle:
             pass
 
         @component
-        def MyComponent() -> Elements:
+        def MyComponent() -> None:
             state = MyState()
             captured_owner[0] = state.owner_element
-            return None
 
         ctx = RenderContext(MyComponent)
         ctx.render(from_element=None)
@@ -270,15 +269,13 @@ class TestStatefulLifecycle:
             value: int = 0
 
         @component
-        def Child() -> Elements:
+        def Child() -> None:
             MyState()
-            return None
 
         @component
-        def Parent() -> Elements:
+        def Parent() -> None:
             if show[0]:
-                return Child()
-            return None
+                Child()
 
         ctx = RenderContext(Parent)
         ctx.render(from_element=None)
@@ -289,7 +286,8 @@ class TestStatefulLifecycle:
 
         # Remove child
         show[0] = False
-        ctx.render(from_element=ctx.root_element)
+        ctx.mark_dirty(ctx.root_element)
+        ctx.render_dirty()
 
         # Child was unmounted, state should be cleaned up
         assert len(child_element._local_state) == 0
@@ -310,16 +308,16 @@ class TestLifecycleOrder:
                 mount_order.append(self.name)
 
         @component
-        def Child(name: str = "") -> Elements:
+        def Child(name: str = "") -> None:
             state = TrackedState()
             state.name = name
-            return None
 
         @component
-        def Parent() -> Elements:
+        def Parent() -> None:
             state = TrackedState()
             state.name = "parent"
-            return [Child(name="child1"), Child(name="child2")]
+            Child(name="child1")
+            Child(name="child2")
 
         ctx = RenderContext(Parent)
         ctx.render(from_element=None)
@@ -340,31 +338,31 @@ class TestLifecycleOrder:
                 unmount_order.append(self.name)
 
         @component
-        def Child(name: str = "") -> Elements:
+        def Child(name: str = "") -> None:
             state = TrackedState()
             state.name = name
-            return None
 
         @component
-        def InnerParent() -> Elements:
+        def InnerParent() -> None:
             state = TrackedState()
             state.name = "inner_parent"
-            return [Child(name="child1"), Child(name="child2")]
+            Child(name="child1")
+            Child(name="child2")
 
         show = [True]
 
         @component
-        def OuterParent() -> Elements:
+        def OuterParent() -> None:
             if show[0]:
-                return InnerParent()
-            return None
+                InnerParent()
 
         ctx = RenderContext(OuterParent)
         ctx.render(from_element=None)
 
         # Remove inner parent and its children
         show[0] = False
-        ctx.render(from_element=ctx.root_element)
+        ctx.mark_dirty(ctx.root_element)
+        ctx.render_dirty()
 
         # Children should unmount before parent
         assert unmount_order.index("child1") < unmount_order.index("inner_parent")

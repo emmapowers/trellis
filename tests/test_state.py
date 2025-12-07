@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from trellis.core.rendering import Elements, RenderContext
+from trellis.core.rendering import RenderContext
 from trellis.core.functional_component import component
 from trellis.core.state import Stateful
 
@@ -30,9 +30,8 @@ class TestStateful:
         state.text = "hello"
 
         @component
-        def MyComponent() -> Elements:
+        def MyComponent() -> None:
             _ = state.text  # Access the state
-            return None
 
         ctx = RenderContext(MyComponent)
         ctx.render(from_element=None)
@@ -52,9 +51,8 @@ class TestStateful:
         state.text = "hello"
 
         @component
-        def MyComponent() -> Elements:
+        def MyComponent() -> None:
             _ = state.text
-            return None
 
         ctx = RenderContext(MyComponent)
         ctx.render(from_element=None)
@@ -82,10 +80,9 @@ class TestStateful:
         render_count = [0]
 
         @component
-        def MyComponent() -> Elements:
+        def MyComponent() -> None:
             render_count[0] += 1
             _ = state.text
-            return None
 
         ctx = RenderContext(MyComponent)
         ctx.render(from_element=None)
@@ -111,22 +108,19 @@ class TestStateful:
         count_renders = [0]
 
         @component
-        def NameComponent() -> Elements:
+        def NameComponent() -> None:
             name_renders[0] += 1
             _ = state.name
-            return None
 
         @component
-        def CountComponent() -> Elements:
+        def CountComponent() -> None:
             count_renders[0] += 1
             _ = state.count
-            return None
 
         @component
-        def Parent() -> Elements:
+        def Parent() -> None:
             NameComponent()
             CountComponent()
-            return None
 
         ctx = RenderContext(Parent)
         ctx.render(from_element=None)
@@ -176,19 +170,19 @@ class TestLocalStatePersistence:
         captured_states: list[Stateful] = []
 
         @component
-        def Counter() -> Elements:
+        def Counter() -> None:
             state = CounterState()
             captured_states.append(state)
             _ = state.count  # Access to register dependency
-            return None
 
         ctx = RenderContext(Counter)
         ctx.render(from_element=None)
 
         assert instances_created[0] == 1
 
-        # Re-render - should reuse same instance
-        ctx.render(from_element=ctx.root_element)
+        # Re-render by marking dirty - should reuse same instance
+        ctx.mark_dirty(ctx.root_element)
+        ctx.render_dirty()
 
         assert instances_created[0] == 1  # Still 1, not 2
         assert len(captured_states) == 2
@@ -204,17 +198,18 @@ class TestLocalStatePersistence:
         observed_counts: list[int] = []
 
         @component
-        def Counter() -> Elements:
+        def Counter() -> None:
             state = CounterState()
             state.count = state.count  # Initialize on first render
             observed_counts.append(state.count)
             state.count += 1  # Increment each render
-            return None
 
         ctx = RenderContext(Counter)
         ctx.render(from_element=None)
-        ctx.render(from_element=ctx.root_element)
-        ctx.render(from_element=ctx.root_element)
+        ctx.mark_dirty(ctx.root_element)
+        ctx.render_dirty()
+        ctx.mark_dirty(ctx.root_element)
+        ctx.render_dirty()
 
         # Should see 0, 1, 2 as count persists and increments
         assert observed_counts == [0, 1, 2]
@@ -227,18 +222,18 @@ class TestLocalStatePersistence:
             on: bool = False
 
         @component
-        def MultiToggle() -> Elements:
+        def MultiToggle() -> None:
             first = ToggleState()
             second = ToggleState()
             first.on = True
             second.on = False
-            return None
 
         ctx = RenderContext(MultiToggle)
         ctx.render(from_element=None)
 
         # Re-render - each should get its own cached instance
-        ctx.render(from_element=ctx.root_element)
+        ctx.mark_dirty(ctx.root_element)
+        ctx.render_dirty()
 
         # Check that we have 2 distinct state entries in the root element's cache
         state_keys = [k for k in ctx.root_element._local_state.keys() if k[0].__name__ == "ToggleState"]
@@ -261,13 +256,12 @@ class TestLocalStatePersistence:
             extra: str = ""
 
         @component
-        def MyComponent() -> Elements:
+        def MyComponent() -> None:
             base = BaseState()
             extended = ExtendedState()
             base.value = 10
             extended.value = 20
             extended.extra = "hello"
-            return None
 
         ctx = RenderContext(MyComponent)
         ctx.render(from_element=None)
@@ -281,7 +275,8 @@ class TestLocalStatePersistence:
         assert len(ext_keys) == 1
 
         # Values should be preserved on re-render
-        ctx.render(from_element=ctx.root_element)
+        ctx.mark_dirty(ctx.root_element)
+        ctx.render_dirty()
 
         base_instance = local_state[base_keys[0]]
         ext_instance = local_state[ext_keys[0]]

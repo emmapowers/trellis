@@ -1,3 +1,33 @@
+"""Reactive state management for the Trellis UI framework.
+
+This module provides the `Stateful` base class for creating reactive state
+objects. Stateful objects automatically track which components read their
+properties and trigger re-renders when those properties change.
+
+Key Features:
+    - **Fine-grained reactivity**: Only components that read a specific property
+      re-render when that property changes
+    - **Component-local caching**: State instances are cached per-component,
+      similar to React hooks
+    - **Lifecycle hooks**: `on_mount()` and `on_unmount()` for setup/cleanup
+
+Example:
+    ```python
+    @dataclass(kw_only=True)
+    class CounterState(Stateful):
+        count: int = 0
+
+    @component
+    def Counter() -> None:
+        state = CounterState()  # Cached across re-renders
+        Text(f"Count: {state.count}")  # Registers dependency
+        Button(text="+", on_click=lambda: setattr(state, 'count', state.count + 1))
+    ```
+
+When `state.count` is modified, only components that accessed `state.count`
+will be marked dirty and re-rendered.
+"""
+
 import typing as tp
 from dataclasses import dataclass, field
 
@@ -6,7 +36,16 @@ from trellis.core.rendering import Element, RenderContext, get_active_render_con
 
 @dataclass(kw_only=True)
 class StatePropertyInfo:
-    """Tracks which elements depend on a state property."""
+    """Tracks which elements depend on a specific state property.
+
+    When a component reads a state property during execution, the element
+    is added to this property's dependency set. When the property changes,
+    all dependent elements are marked dirty.
+
+    Attributes:
+        name: The property name being tracked
+        elements: Set of (context, element) tuples that depend on this property
+    """
 
     name: str
     elements: set[tuple[RenderContext, Element]] = field(default_factory=set)
@@ -36,8 +75,17 @@ class Stateful:
     _owner_element: Element | None
 
     def __init_subclass__(cls, **kwargs: tp.Any) -> None:
+        """Set up subclass to skip re-initialization on cached instances.
+
+        When a Stateful subclass is defined, this wraps its `__init__` to
+        check if the instance is already initialized (from cache). If so,
+        initialization is skipped to preserve existing state values.
+
+        This allows the pattern:
+            state = MyState()  # Returns cached instance on re-render
+        without re-initializing the state each time.
+        """
         super().__init_subclass__(**kwargs)
-        # Wrap __init__ to skip re-initialization on cached instances
         original_init = cls.__init__
 
         def wrapped_init(self: Stateful, *args: tp.Any, **kw: tp.Any) -> None:
@@ -49,36 +97,33 @@ class Stateful:
         cls.__init__ = wrapped_init  # type: ignore[assignment,method-assign]
 
     def __new__(cls, *args: tp.Any, **kwargs: tp.Any) -> "Stateful":
-        """Cache instances per-element during render (like React hooks)."""
+        """Create or retrieve a cached Stateful instance.
+
+        During component execution, state instances are cached on the
+        current element. This implements React-like hooks behavior where
+        the same state instance is returned across re-renders.
+
+        The cache key is (class, call_index), ensuring that:
+        - Different state classes don't collide
+        - Multiple instances of the same class are distinguished by call order
+
+        Outside of execution context, creates a new uncached instance.
+
+        Returns:
+            A new or cached Stateful instance
+        """
         ctx = get_active_render_context()
 
-        # Outside render context - create normally
-        if ctx is None or not ctx.rendering:
+        # Outside execution context - create normally
+        if ctx is None or not ctx.executing:
             return object.__new__(cls)
 
-        current = ctx.current_element
-        rerender_target = ctx._rerender_target
-
-        # Determine which element to use for state storage:
-        # - If we're re-rendering and the current element is the one being re-rendered
-        #   (same parent as rerender_target), use the OLD element (rerender_target)
-        # - Otherwise use current_element (for children during re-render, or first render)
-        element: Element | None = None
-        if rerender_target is not None and current is not None:
-            # Check if this is the element being re-rendered (not a child)
-            if current.parent == rerender_target.parent:
-                element = rerender_target
-            else:
-                element = current
-        elif current is not None:
-            element = current
-        elif rerender_target is not None:
-            element = rerender_target
-
+        # With lazy rendering, current_node is always correct during execute()
+        element = ctx.current_node
         if element is None:
             return object.__new__(cls)
 
-        # Simple key: just (class, call_index) - element is implicit via storage location
+        # Simple key: (class, call_index) - ensures consistent hook ordering
         call_idx = element._state_call_count
         element._state_call_count += 1
         key = (cls, call_idx)
@@ -93,16 +138,28 @@ class Stateful:
         return instance
 
     def __getattribute__(self, name: str) -> tp.Any:
+        """Get an attribute, registering dependencies for public attributes.
+
+        When a public attribute (not starting with '_') is accessed during
+        component execution, the current element is registered as dependent
+        on that attribute. This enables fine-grained reactivity.
+
+        Args:
+            name: The attribute name to access
+
+        Returns:
+            The attribute value
+        """
         value = object.__getattribute__(self, name)
 
-        # Skip internal attributes
+        # Skip internal attributes - no dependency tracking
         if name.startswith("_"):
             return value
 
-        # Register dependency during render
+        # Register dependency during execution
         context = get_active_render_context()
-        if context is not None and context.rendering:
-            current_element = context.current_element
+        if context is not None and context.executing:
+            current_element = context.current_node
             if current_element is not None:
                 # Lazy init _state_deps (needed when @dataclass doesn't call super().__init__)
                 try:
@@ -114,20 +171,24 @@ class Stateful:
                 if name not in deps:
                     deps[name] = StatePropertyInfo(name=name)
                 state_info = deps[name]
-
-                # If inside a block context, register dependency on parent
-                if current_element._block_active and current_element.parent is not None:
-                    state_info.elements.add((context, current_element.parent))
-                else:
-                    state_info.elements.add((context, current_element))
+                state_info.elements.add((context, current_element))
 
         return value
 
     def __setattr__(self, name: str, value: tp.Any) -> None:
+        """Set an attribute, marking dependent elements as dirty.
+
+        When a public attribute is modified, all elements that previously
+        read that attribute are marked dirty and will re-render.
+
+        Args:
+            name: The attribute name to set
+            value: The new value
+        """
         # Always set the value first
         object.__setattr__(self, name, value)
 
-        # Skip internal attributes
+        # Skip internal attributes - no dirty marking
         if name.startswith("_"):
             return
 

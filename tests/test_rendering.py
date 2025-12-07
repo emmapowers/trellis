@@ -1,11 +1,10 @@
 """Tests for trellis.core.rendering module."""
 
-import pytest
-
 from trellis.core.rendering import (
     Element,
-    Elements,
+    ElementDescriptor,
     RenderContext,
+    freeze_props,
     get_active_render_context,
     set_active_render_context,
 )
@@ -17,10 +16,34 @@ def make_component(name: str) -> FunctionalComponent:
     return FunctionalComponent(name=name, render_func=lambda: None)
 
 
+def make_descriptor(
+    comp: FunctionalComponent,
+    key: str = "",
+    props: dict | None = None,
+) -> ElementDescriptor:
+    """Helper to create an ElementDescriptor."""
+    return ElementDescriptor(
+        component=comp,
+        key=key,
+        props=freeze_props(props or {}),
+    )
+
+
+def make_element(
+    comp: FunctionalComponent,
+    key: str = "",
+    props: dict | None = None,
+    depth: int = 0,
+) -> Element:
+    """Helper to create an Element with a descriptor."""
+    desc = make_descriptor(comp, key, props)
+    return Element(descriptor=desc, depth=depth)
+
+
 class TestElement:
     def test_element_creation(self) -> None:
         comp = make_component("Test")
-        elem = Element(component=comp)
+        elem = make_element(comp)
 
         assert elem.component == comp
         assert elem.key == ""
@@ -32,28 +55,28 @@ class TestElement:
 
     def test_element_with_key(self) -> None:
         comp = make_component("Test")
-        elem = Element(component=comp, key="my-key")
+        elem = make_element(comp, key="my-key")
 
         assert elem.key == "my-key"
 
     def test_element_with_properties(self) -> None:
         comp = make_component("Test")
-        elem = Element(component=comp, properties={"foo": "bar", "count": 42})
+        elem = make_element(comp, props={"foo": "bar", "count": 42})
 
         assert elem.properties == {"foo": "bar", "count": 42}
 
     def test_element_hash_uses_identity(self) -> None:
         comp = make_component("Test")
-        elem1 = Element(component=comp)
-        elem2 = Element(component=comp)
+        elem1 = make_element(comp)
+        elem2 = make_element(comp)
 
         assert hash(elem1) != hash(elem2)
         assert hash(elem1) == hash(elem1)
 
     def test_element_replace(self) -> None:
         comp = make_component("Test")
-        elem1 = Element(component=comp, properties={"a": 1}, depth=0)
-        elem2 = Element(component=comp, properties={"b": 2}, depth=5)
+        elem1 = make_element(comp, props={"a": 1}, depth=0)
+        elem2 = make_element(comp, props={"b": 2}, depth=5)
 
         elem1.replace(elem2)
 
@@ -89,7 +112,7 @@ class TestRenderContext:
     def test_mark_dirty(self) -> None:
         comp = make_component("Root")
         ctx = RenderContext(comp)
-        elem = Element(component=comp)
+        elem = make_element(comp)
 
         ctx.mark_dirty(elem)
 

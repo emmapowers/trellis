@@ -5,12 +5,12 @@ This module implements a reconciliation algorithm inspired by React's approach,
 used to efficiently update the element tree when components re-render. The goal
 is to minimize DOM-like mutations by reusing existing elements where possible.
 
-## Algorithm Overview
+## Two-Phase Architecture
 
-The reconciliation process compares old and new child lists to determine:
-1. Which elements can be reused (matched by key or position+type)
-2. Which elements need to be mounted (new additions)
-3. Which elements need to be unmounted (removed)
+The rendering system uses two phases:
+1. **Descriptor Creation**: Components return ElementDescriptors (no execution)
+2. **Reconciliation/Execution**: Compare descriptors with existing Elements,
+   execute components only when needed
 
 ## Matching Strategy
 
@@ -33,12 +33,6 @@ Elements are matched using a multi-phase approach for optimal performance:
 - Best case (append/prepend): O(n) where n = list length
 - Average case (keyed lists): O(n)
 - Worst case (shuffled non-keyed): O(k²) where k = middle section size
-
-## Usage Notes
-
-- Always use keys for dynamic lists to ensure O(n) reconciliation
-- Keys must be unique among siblings and stable across renders
-- Component identity (same component function/class) is required for matching
 """
 
 from __future__ import annotations
@@ -47,85 +41,233 @@ import logging
 import typing as tp
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering import Element, RenderContext
+    from trellis.core.rendering import Element, ElementDescriptor, RenderContext
     from trellis.core.state import Stateful
+
+
+def reconcile(
+    old_node: Element | None,
+    new_desc: ElementDescriptor,
+    parent: Element | None,
+    ctx: RenderContext,
+) -> Element:
+    """
+    Reconcile an old element (or None) with a new descriptor.
+
+    This is the main entry point for reconciliation. It decides whether to:
+    - Create a new element (if old_node is None or component changed)
+    - Reuse the old element (if props unchanged and not dirty)
+    - Update the old element (if props changed or dirty)
+
+    Args:
+        old_node: Existing element to reconcile against, or None for new mount
+        new_desc: The new descriptor describing what to render
+        parent: Parent element for the new/updated element
+        ctx: The render context
+
+    Returns:
+        The reconciled element (may be old_node or a new element)
+    """
+
+    # Case 1: No old element - mount new
+    if old_node is None:
+        return mount_new(new_desc, parent, ctx)
+
+    # Case 2: Component changed - unmount old, mount new
+    if old_node.descriptor.component != new_desc.component:
+        unmount_tree(old_node, ctx)
+        return mount_new(new_desc, parent, ctx)
+
+    # Case 3: Same component - check if we can skip execution
+    if old_node.descriptor.props == new_desc.props and not old_node.dirty:
+        # Props unchanged and not dirty - skip execution entirely!
+        # But still need to reconcile children if they're descriptors
+        if new_desc.children:
+            old_node.children = reconcile_children(old_node.children, list(new_desc.children), ctx)
+            fixup_children(old_node, old_node.children)
+        return old_node
+
+    # Case 4: Props changed or dirty - re-execute
+    old_node.descriptor = new_desc
+    old_node.dirty = False
+    execute_and_reconcile(old_node, ctx)
+    return old_node
+
+
+def mount_new(
+    desc: ElementDescriptor,
+    parent: Element | None,
+    ctx: RenderContext,
+    *,
+    defer_mount: bool = False,
+) -> Element:
+    """
+    Create and mount a new element from a descriptor.
+
+    Args:
+        desc: The descriptor to mount
+        parent: Parent element (None for root)
+        ctx: The render context
+        defer_mount: If True, don't mount the tree (caller will do it)
+
+    Returns:
+        The newly created and mounted element
+    """
+    from trellis.core.rendering import Element
+
+    # Create the element
+    element = Element(
+        descriptor=desc,
+        parent=parent,
+        depth=parent.depth + 1 if parent else 0,
+        render_context=ctx,
+    )
+
+    # Execute the component to get child descriptors (children created with defer_mount=True)
+    execute_and_reconcile(element, ctx, defer_mount=True)
+
+    # Mount the tree (parent first, then children)
+    if not defer_mount:
+        mount_tree(element, ctx)
+
+    # Add to parent's children if parent exists
+    if parent is not None:
+        parent.children.append(element)
+
+    return element
+
+
+def execute_and_reconcile(
+    element: Element, ctx: RenderContext, *, defer_mount: bool = False
+) -> None:
+    """
+    Execute a component and reconcile its children.
+
+    This sets up the execution context, calls component.execute(),
+    then reconciles the resulting children.
+
+    Args:
+        element: The element to execute
+        ctx: The render context
+        defer_mount: If True, don't mount new children (caller will do it)
+    """
+    from trellis.core.rendering import _descriptor_stack, unfreeze_props
+
+    # Get props including children if component has children param
+    props = unfreeze_props(element.descriptor.props)
+    has_children_param = getattr(element.component, "_has_children_param", False)
+    if has_children_param:
+        # Always pass children (may be empty list)
+        props["children"] = list(element.descriptor.children)
+
+    # Set up execution context
+    old_executing = ctx.executing
+    old_node = ctx._current_node
+    ctx.executing = True
+    ctx._current_node = element
+
+    # Reset state call count for consistent hook ordering
+    element._state_call_count = 0
+
+    # Push a descriptor stack for any child descriptors created during execution
+    _descriptor_stack.append([])
+
+    try:
+        # Execute the component
+        element.component.execute(element, **props)
+
+        # Get child descriptors created during execution
+        child_descs = _descriptor_stack.pop()
+
+        # Reconcile children
+        if child_descs:
+            element.children = reconcile_children(
+                element.children, child_descs, ctx, defer_mount=defer_mount
+            )
+            fixup_children(element, element.children)
+        elif not element.children:
+            # No children created and no existing children - nothing to do
+            pass
+        else:
+            # Had children before but none now - unmount all
+            for child in element.children:
+                unmount_tree(child, ctx)
+            element.children = []
+
+    finally:
+        ctx.executing = old_executing
+        ctx._current_node = old_node
 
 
 def reconcile_children(
     old_children: list[Element],
-    new_children: list[Element],
-    context: RenderContext,
+    new_descs: list[ElementDescriptor],
+    ctx: RenderContext,
+    *,
+    defer_mount: bool = False,
 ) -> list[Element]:
     """
-    Reconcile old and new children using a React-like algorithm.
+    Reconcile old child elements with new child descriptors.
 
-    This function compares two lists of child elements and produces a reconciled
-    list that reuses old element instances where possible. This preserves element
-    identity and any associated state.
-
-    The algorithm uses a multi-phase approach:
-
-    1. Handle empty edge cases (all new or all removed)
-    2. Two-pointer scan from head - match consecutive elements from start
-    3. Two-pointer scan from tail - match consecutive elements from end
+    Uses a multi-phase algorithm for efficient matching:
+    1. Handle empty edge cases
+    2. Two-pointer scan from head
+    3. Two-pointer scan from tail
     4. Key-based matching for middle section
-    5. Linear fallback for non-keyed middle elements
-    6. Unmount any unmatched old elements
+    5. Linear fallback for non-keyed elements
+    6. Unmount unmatched old elements
 
     Args:
-        old_children: Current child elements in the tree
-        new_children: Newly rendered child elements
-        context: The render context for mount/unmount operations
+        old_children: Current child elements
+        new_descs: New child descriptors
+        ctx: The render context
+        defer_mount: If True, don't mount new elements (caller will do it)
 
     Returns:
-        List of reconciled elements, preserving old element identity where matched.
-        New elements are mounted, unmatched old elements are unmounted.
-
-    Complexity:
-        - O(n) for appends, prepends, or keyed lists
-        - O(k²) worst case where k = size of non-keyed middle section
+        List of reconciled elements
     """
-    # -------------------------------------------------------------------------
     # Phase 1: Handle empty edge cases
-    # -------------------------------------------------------------------------
     if not old_children:
         # All new - mount everything
-        for child in new_children:
-            mount_tree(child, context)
-        return list(new_children)
+        result = []
+        for desc in new_descs:
+            # Get parent from context
+            parent = ctx._current_node
+            elem = mount_new(desc, parent, ctx, defer_mount=defer_mount)
+            # Remove from parent.children since mount_new adds it
+            if parent and elem in parent.children:
+                parent.children.remove(elem)
+            result.append(elem)
+        return result
 
-    if not new_children:
+    if not new_descs:
         # All removed - unmount everything
         for child in old_children:
-            unmount_tree(child, context)
+            unmount_tree(child, ctx)
         return []
 
     old_len = len(old_children)
-    new_len = len(new_children)
+    new_len = len(new_descs)
     result: list[Element] = []
     matched_old_ids: set[int] = set()
 
-    # -------------------------------------------------------------------------
     # Phase 2: Two-pointer scan from head
-    # Match consecutive elements from the start while component types match.
-    # This efficiently handles the common case of appending to a list.
-    # -------------------------------------------------------------------------
     head = 0
     while head < old_len and head < new_len:
         old_child = old_children[head]
-        new_child = new_children[head]
+        new_desc = new_descs[head]
 
-        # Keys must match if present (None == None is fine for non-keyed)
-        if old_child.key != new_child.key:
+        # Keys must match
+        if old_child.key != new_desc.key:
             break
 
-        # Component types must match for reuse
-        if old_child.component != new_child.component:
+        # Component types must match
+        if old_child.component != new_desc.component:
             break
 
-        # Match found - update old element with new properties and reconcile
+        # Match found - reconcile
         matched_old_ids.add(id(old_child))
-        update_element(old_child, new_child, context)
+        reconcile(old_child, new_desc, old_child.parent, ctx)
         result.append(old_child)
         head += 1
 
@@ -133,153 +275,94 @@ def reconcile_children(
     if head == old_len and head == new_len:
         return result
 
-    # -------------------------------------------------------------------------
     # Phase 3: Two-pointer scan from tail
-    # Match consecutive elements from the end while component types match.
-    # This efficiently handles the common case of prepending to a list.
-    # We build a separate list for tail matches and prepend later.
-    # -------------------------------------------------------------------------
     tail_matches: list[Element] = []
     old_tail = old_len - 1
     new_tail = new_len - 1
 
     while old_tail >= head and new_tail >= head:
         old_child = old_children[old_tail]
-        new_child = new_children[new_tail]
+        new_desc = new_descs[new_tail]
 
-        # Keys must match if present
-        if old_child.key != new_child.key:
+        if old_child.key != new_desc.key:
             break
 
-        # Component types must match
-        if old_child.component != new_child.component:
+        if old_child.component != new_desc.component:
             break
 
-        # Match found - update and save for later (we're going backwards)
         matched_old_ids.add(id(old_child))
-        update_element(old_child, new_child, context)
+        reconcile(old_child, new_desc, old_child.parent, ctx)
         tail_matches.append(old_child)
         old_tail -= 1
         new_tail -= 1
 
-    # Reverse tail matches since we collected them backwards
     tail_matches.reverse()
 
-    # -------------------------------------------------------------------------
-    # Phase 4: Process middle section (between head and tail pointers)
-    # For elements not matched by the two-pointer scans, use key-based
-    # lookup first, then fall back to linear scan for non-keyed elements.
-    # -------------------------------------------------------------------------
-
-    # Build keyed lookup only for unmatched old elements in the middle
+    # Phase 4: Process middle section
     middle_old_start = head
-    middle_old_end = old_tail + 1  # exclusive
+    middle_old_end = old_tail + 1
     middle_new_start = head
-    middle_new_end = new_tail + 1  # exclusive
+    middle_new_end = new_tail + 1
 
+    # Build keyed lookup for unmatched old elements
     keyed_old: dict[str, Element] = {}
     for i in range(middle_old_start, middle_old_end):
         old_child = old_children[i]
         if old_child.key and id(old_child) not in matched_old_ids:
             keyed_old[old_child.key] = old_child
 
-    # Process middle section of new children
+    # Process middle section
     for i in range(middle_new_start, middle_new_end):
-        new_child = new_children[i]
+        new_desc = new_descs[i]
         matched: Element | None = None
 
-        if new_child.key:
-            # Key-based match - O(1) lookup
-            old = keyed_old.get(new_child.key)
-            if old and old.component == new_child.component:
+        if new_desc.key:
+            # Key-based match
+            old = keyed_old.get(new_desc.key)
+            if old and old.component == new_desc.component:
                 if id(old) not in matched_old_ids:
                     matched = old
         else:
-            # Linear fallback for non-keyed elements - O(k) per element
-            # Only scan the middle section, not the entire old list
+            # Linear fallback for non-keyed
             for j in range(middle_old_start, middle_old_end):
                 old = old_children[j]
-                if id(old) not in matched_old_ids and old.component == new_child.component:
-                    # Non-keyed old element can match non-keyed new element
+                if id(old) not in matched_old_ids and old.component == new_desc.component:
                     if not old.key:
                         matched = old
                         break
 
         if matched:
             matched_old_ids.add(id(matched))
-            update_element(matched, new_child, context)
+            reconcile(matched, new_desc, matched.parent, ctx)
             result.append(matched)
         else:
-            # No match found - mount new element
-            mount_tree(new_child, context)
-            result.append(new_child)
+            # No match - mount new
+            parent = ctx._current_node
+            elem = mount_new(new_desc, parent, ctx, defer_mount=defer_mount)
+            if parent and elem in parent.children:
+                parent.children.remove(elem)
+            result.append(elem)
 
-    # Append tail matches
     result.extend(tail_matches)
 
-    # -------------------------------------------------------------------------
     # Phase 5: Unmount unmatched old elements
-    # Any old element not matched during reconciliation must be unmounted.
-    # -------------------------------------------------------------------------
     for old in old_children:
         if id(old) not in matched_old_ids:
-            unmount_tree(old, context)
+            unmount_tree(old, ctx)
 
     return result
 
 
-def reconcile_element(
-    old_element: Element,
-    new_element: Element,
-    context: RenderContext,
-) -> None:
-    """
-    Reconcile an old element with a newly rendered element.
-
-    Updates the old element's properties to match the new element and
-    recursively reconciles their children. The old element's identity
-    is preserved, maintaining any associated state.
-
-    Args:
-        old_element: The existing element in the tree to update
-        new_element: The newly rendered element with updated properties
-        context: The render context for child reconciliation
-
-    Note:
-        This function modifies old_element in place. After reconciliation,
-        old_element will have new_element's properties and reconciled children.
-    """
-    old_element.properties = new_element.properties
-    old_element.children = reconcile_children(
-        old_element.children, new_element.children, context
-    )
-
-    # Update parent references and depths for reconciled children
-    for child in old_element.children:
-        child.parent = old_element
-        child.depth = old_element.depth + 1
-
-
-def mount_tree(element: Element, context: RenderContext) -> None:
+def mount_tree(element: Element, ctx: RenderContext) -> None:
     """
     Mount an element and all its descendants.
 
-    Mounting is performed parent-first, then children (pre-order traversal).
-    This ensures parents are fully initialized before their children attempt
-    to access them.
-
-    The mount process:
-    1. Mark element as mounted
-    2. Call element's on_mount() lifecycle hook
-    3. Call on_mount() for each Stateful instance associated with the element
-    4. Recursively mount all children
+    Mounting is performed parent-first (pre-order traversal).
+    This ensures parents are initialized before children.
 
     Args:
         element: The element to mount
-        context: The render context (used for state lookup)
-
-    Note:
-        This function is idempotent - already-mounted elements are skipped.
+        ctx: The render context
     """
     if element._mounted:
         return
@@ -287,120 +370,91 @@ def mount_tree(element: Element, context: RenderContext) -> None:
     element._mounted = True
     element.on_mount()
 
-    # Mount states for this element (in creation order)
-    for state in get_states_for_element(context, element):
+    # Mount states in creation order
+    for state in get_states_for_element(ctx, element):
         state.on_mount()
 
-    # Then mount children (depth-first)
+    # Then mount children
     for child in element.children:
-        mount_tree(child, context)
+        mount_tree(child, ctx)
 
 
-def unmount_tree(element: Element, context: RenderContext) -> None:
+def unmount_tree(element: Element, ctx: RenderContext) -> None:
     """
     Unmount an element and all its descendants.
 
-    Unmounting is performed children-first, then parent (post-order traversal).
-    This ensures children can still access their parent during cleanup.
-
-    The unmount process:
-    1. Recursively unmount all children
-    2. Call on_unmount() for each Stateful instance (reverse creation order)
-    3. Call element's on_unmount() lifecycle hook
-    4. Mark element as unmounted
-    5. Clean up element's state cache
+    Unmounting is performed children-first (post-order traversal).
+    This ensures children can access parents during cleanup.
 
     Args:
         element: The element to unmount
-        context: The render context (used for state cleanup)
-
-    Note:
-        This function is idempotent - already-unmounted elements are skipped.
-        Exceptions in lifecycle hooks are logged but don't prevent cleanup.
+        ctx: The render context
     """
     if not element._mounted:
         return
 
-    # Unmount children first (depth-first, post-order)
+    # Unmount children first
     for child in element.children:
-        unmount_tree(child, context)
+        unmount_tree(child, ctx)
 
     # Unmount states in reverse creation order
-    for state in reversed(get_states_for_element(context, element)):
+    for state in reversed(get_states_for_element(ctx, element)):
         try:
             state.on_unmount()
         except Exception as e:
             logging.exception(f"Error in Stateful.on_unmount: {e}")
 
-    # Then unmount self
     try:
         element.on_unmount()
     except Exception as e:
         logging.exception(f"Error in Element.on_unmount: {e}")
 
     element._mounted = False
-
-    # Clean up state cache to prevent memory leaks
-    cleanup_element_state(context, element)
+    cleanup_element_state(ctx, element)
 
 
-def update_element(old: Element, new: Element, context: RenderContext) -> None:
-    """
-    Update an existing element with new properties and reconcile children.
+def fixup_children(parent: Element, children: list[Element]) -> None:
+    """Update parent references and depths for a list of child elements.
 
-    This is the core update operation during reconciliation. The old element's
-    identity is preserved while its properties are replaced with new values.
-    Children are recursively reconciled.
+    Called after reconciling children to ensure the tree structure is
+    consistent. Each child gets its parent set and depth calculated.
 
     Args:
-        old: The existing element to update
-        new: The new element with updated properties
-        context: The render context for child reconciliation
-
-    Note:
-        After this call, old.properties == new.properties and old.children
-        contains the reconciled child list.
+        parent: The parent element
+        children: List of child elements to update
     """
-    old.properties = new.properties
-    old.children = reconcile_children(old.children, new.children, context)
-
-    # Update parent references and depths for reconciled children
-    for child in old.children:
-        child.parent = old
-        child.depth = old.depth + 1
+    for child in children:
+        child.parent = parent
+        child.depth = parent.depth + 1
 
 
 def get_states_for_element(ctx: RenderContext, element: Element) -> list[Stateful]:
-    """
-    Get all Stateful instances associated with an element.
+    """Get all Stateful instances cached on an element, in creation order.
 
-    Returns Stateful instances in creation order, which is important for
-    consistent lifecycle hook ordering (mount in creation order, unmount
-    in reverse).
+    State instances are keyed by (class, call_index) to ensure consistent
+    ordering across re-renders (like React hooks).
 
     Args:
-        ctx: The render context (currently unused but kept for API consistency)
-        element: The element to get states for
+        ctx: The render context (unused but kept for API consistency)
+        element: The element to get states from
 
     Returns:
-        List of Stateful instances, sorted by creation order (call index).
+        List of Stateful instances sorted by creation order (call index)
     """
     items = list(element._local_state.items())
-    # Sort by call index (second element of the (type, index) key tuple)
-    items.sort(key=lambda x: x[0][1])
+    items.sort(key=lambda x: x[0][1])  # Sort by call index
     return [state for _, state in items]
 
 
 def cleanup_element_state(ctx: RenderContext, element: Element) -> None:
-    """
-    Clean up an element's state cache and remove from dirty tracking.
+    """Clean up an element's state when it's unmounted.
 
-    Called during unmount to prevent memory leaks. Clears the element's
-    local state cache and removes it from the context's dirty set.
+    This clears the local state cache, resets the state call counter,
+    and removes the element from the dirty set.
 
     Args:
-        ctx: The render context containing the dirty elements set
-        element: The element to clean up
+        ctx: The render context (to remove from dirty_elements)
+        element: The element being cleaned up
     """
     element._local_state.clear()
     element._state_call_count = 0
