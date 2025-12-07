@@ -23,19 +23,19 @@ Notes:
 """
 
 
-import asyncio
 from dataclasses import dataclass
 
 from trellis.core.state import Stateful
 from trellis.core.functional_component import component
-from trellis.core.block_component import blockComponent
-from trellis.core.rendering import Elements
+from trellis.core.rendering import Element
 from trellis import widgets as w
 from trellis import html as h
 from trellis import navigation as nav
 from trellis import App, Mutable, mutable
+from trellis.utils import async_main
 
 routerState = nav.RouterState()
+
 
 @dataclass
 class FormState(Stateful):
@@ -62,25 +62,22 @@ class FormState(Stateful):
         except RuntimeError as e:
             self.error = e.msg
         except Exception:
-            raise # This is safe, by default exceptoin from callbacks are logged, but there's a hook so you can show an error message
+            raise  # This is safe, by default exception from callbacks are logged, but there's a hook so you can show an error message
+
 
 @component
-def Form() -> Elements:
+def Form() -> None:
     """Form component - gets FormState from context."""
     state = FormState.from_context()
 
-    with w.Column() as out:
+    with w.Column():
         if state.error:
             Notification(message=state.error)
 
-        TextWithLabel(
-            label="text",
-            text=mutable(state.text)
-        )
+        TextWithLabel(label="text", text=mutable(state.text))
         with ButtonBar():
             Button(label="Cancel")
             Button(label="Submit", disabled=not state.valid, onClicked=state.submit)
-
 
 
 # Component with local state
@@ -88,57 +85,54 @@ def Form() -> Elements:
 class NotificationState(Stateful):
     shownTime: float | None = None
 
+
 @component
-def Notification(message: str, duration: float) -> Elements:
+def Notification(message: str, duration: float) -> None:
     state = NotificationState(showTime=time.time())
 
     if (time.time() - state.shownTime) < duration:
-        with h.Div() as out:
+        with h.Div():
             ErrorText(message=message)
-        return out
-    
-    return w.Empty()
-
-    
+    else:
+        w.Empty()
 
 
 # ---------------------------------------------------
 # Stateless Component, state variable used for bi-directional sync to state held outside the component
 # ---------------------------------------------------
 @component
-def TextWithLabel(label: str, text: Mutable[str], placeholderText: str | None = None) -> Elements:
-    with w.Row() as out:
-        w.Label(label=label, width=150) # pixels assumed
+def TextWithLabel(
+    label: str, text: Mutable[str], placeholderText: str | None = None
+) -> None:
+    with w.Row():
+        w.Label(label=label, width=150)  # pixels assumed
         w.TextInput(text=text, placeholderText=placeholderText)
 
-    return out
 
 # ---------------------------------------------------
 # Simple stateless Component, component functions must be sync
 # ---------------------------------------------------
 @component
-def ErrorText(message: str) -> Elements:
-    return w.Label(text=message, textColor='red')
+def ErrorText(message: str) -> None:
+    w.Label(text=message, textColor="red")
+
 
 # ---------------------------------------------------
 # Top, app has a router for navigation
 # ---------------------------------------------------
 @component
-def top() -> Elements:
-    with nav.Router(state=routerState) as out:
+def top() -> None:
+    with nav.Router(state=routerState):
         # FormState provided via context - children access it with FormState.from_context()
-        with FormState() as formState:
+        with FormState():
             nav.Route(path="/", target=Form())  # No props needed!
         with nav.Route(path="/done"):
-            w.Column(hAlign=w.Align.Center)
-            w.Label("Hurray, you submited the form!")
-            w.Button(label="Try Again!", onClick=lambda: routerState.navigate("/"))
+            with w.Column(hAlign=w.Align.Center):
+                w.Label("Hurray, you submited the form!")
+                w.Button(label="Try Again!", onClick=lambda: routerState.navigate("/"))
 
-async def main():
+
+@async_main
+async def main() -> None:
     app = App()
-
     await app.serve(top)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

@@ -7,11 +7,10 @@ due dates, and tag categorization.
 Run with: python -m docs.planning.examples.todo.app
 """
 
-import asyncio
-
 from trellis import App
 from trellis.core.functional_component import component
 from trellis.core.rendering import Elements
+from trellis.utils import async_main
 
 from .components import TodoApp
 from .state import TodosState
@@ -27,14 +26,11 @@ def top() -> Elements:
         return TodoApp()
 
 
-async def main():
+@async_main
+async def main() -> None:
     # Load initial data before serving
     todos = TodosState()
     await todos.load_data()
 
     app = App()
     await app.serve(top)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
