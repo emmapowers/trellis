@@ -26,6 +26,7 @@ dependencies = [
 
 [project.urls]
 Repository = "https://github.com/emmapowers/trellis"
+Issues = "https://github.com/emmapowers/trellis/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/trellis"]
