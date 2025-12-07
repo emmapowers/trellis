@@ -13,6 +13,7 @@ from rich.console import Console
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
 
+from trellis.bundler import build_client
 from trellis.server.routes import create_static_dir, router
 
 _console = Console()
@@ -121,6 +122,9 @@ class Trellis:
 
     def __post_init__(self) -> None:
         """Set up FastAPI app with routes."""
+        # Build client bundle if needed
+        build_client()
+
         # Add request logging middleware
         self._fastapi.add_middleware(RequestLoggingMiddleware)
 
