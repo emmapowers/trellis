@@ -6,6 +6,8 @@
 
 A reactive UI framework for Python with fine-grained state tracking.
 
+Try it in your browser: [Trellis Playground](https://emmapowers.github.io/trellis/)
+
 <p align="center">
   <img src="docs/demo-preview.gif" alt="Demo" width="387">
 </p>
