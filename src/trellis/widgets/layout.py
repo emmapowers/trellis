@@ -32,9 +32,12 @@ _row = _RowComponent()
 
 def Column(
     *,
-    gap: int = 0,
-    padding: int = 0,
-    align: tp.Literal["start", "center", "end", "stretch"] = "stretch",
+    gap: int | None = None,
+    padding: int | None = None,
+    align: tp.Literal["start", "center", "end", "stretch"] | None = None,
+    justify: tp.Literal["start", "center", "end", "between", "around"] | None = None,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
     key: str | None = None,
 ) -> ElementDescriptor:
     """Vertical flex container.
@@ -43,9 +46,12 @@ def Column(
     Use as a context manager to add children.
 
     Args:
-        gap: Space between children in pixels.
-        padding: Inner padding in pixels.
-        align: Cross-axis alignment of children.
+        gap: Space between children in pixels. Defaults to 12.
+        padding: Inner padding in pixels. Defaults to 0.
+        align: Cross-axis alignment of children. Defaults to "stretch".
+        justify: Main-axis alignment of children. Defaults to "start".
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
         key: Optional key for reconciliation.
 
     Returns:
@@ -60,15 +66,21 @@ def Column(
         gap=gap,
         padding=padding,
         align=align,
+        justify=justify,
+        className=class_name,
+        style=style,
         key=key,
     )
 
 
 def Row(
     *,
-    gap: int = 0,
-    padding: int = 0,
-    align: tp.Literal["start", "center", "end", "stretch"] = "stretch",
+    gap: int | None = None,
+    padding: int | None = None,
+    align: tp.Literal["start", "center", "end", "stretch"] | None = None,
+    justify: tp.Literal["start", "center", "end", "between", "around"] | None = None,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
     key: str | None = None,
 ) -> ElementDescriptor:
     """Horizontal flex container.
@@ -77,9 +89,12 @@ def Row(
     Use as a context manager to add children.
 
     Args:
-        gap: Space between children in pixels.
-        padding: Inner padding in pixels.
-        align: Cross-axis alignment of children.
+        gap: Space between children in pixels. Defaults to 12.
+        padding: Inner padding in pixels. Defaults to 0.
+        align: Cross-axis alignment of children. Defaults to "center".
+        justify: Main-axis alignment of children. Defaults to "start".
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
         key: Optional key for reconciliation.
 
     Returns:
@@ -94,5 +109,8 @@ def Row(
         gap=gap,
         padding=padding,
         align=align,
+        justify=justify,
+        className=class_name,
+        style=style,
         key=key,
     )

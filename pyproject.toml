@@ -33,7 +33,7 @@ Repository = "https://github.com/emmapowers/trellis"
 Issues = "https://github.com/emmapowers/trellis/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/trellis"]
+packages = ["src/trellis", "src/trellis_playground"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

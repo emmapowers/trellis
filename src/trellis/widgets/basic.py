@@ -40,6 +40,8 @@ def Label(
     color: str | None = None,
     bold: bool = False,
     italic: bool = False,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
     key: str | None = None,
 ) -> ElementDescriptor:
     """Text display widget.
@@ -50,6 +52,8 @@ def Label(
         color: Text color (CSS color string).
         bold: Whether to render text in bold.
         italic: Whether to render text in italics.
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
         key: Optional key for reconciliation.
 
     Returns:
@@ -64,6 +68,8 @@ def Label(
         color=color,
         bold=bold,
         italic=italic,
+        className=class_name,
+        style=style,
         key=key,
     )
 
@@ -73,9 +79,11 @@ def Button(
     *,
     on_click: Callable[[], None] | None = None,
     disabled: bool = False,
-    variant: str = "primary",
-    size: str = "md",
+    variant: tp.Literal["primary", "secondary", "outline", "ghost", "danger"] = "primary",
+    size: tp.Literal["sm", "md", "lg"] = "md",
     full_width: bool = False,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
     key: str | None = None,
 ) -> ElementDescriptor:
     """Clickable button widget with modern styling.
@@ -92,6 +100,8 @@ def Button(
             - "danger": Red/destructive action
         size: Button size. One of "sm", "md" (default), "lg".
         full_width: Whether button should take full container width.
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
         key: Optional key for reconciliation.
 
     Returns:
@@ -109,5 +119,7 @@ def Button(
         variant=variant,
         size=size,
         full_width=full_width,
+        className=class_name,
+        style=style,
         key=key,
     )

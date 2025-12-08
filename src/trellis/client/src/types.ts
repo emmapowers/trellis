@@ -1,5 +1,8 @@
 /** Message types for WebSocket communication. */
 
+// Re-export core types for backward compatibility
+export { SerializedElement, CallbackRef, isCallbackRef } from "./core";
+
 export const MessageType = {
   HELLO: "hello",
   HELLO_RESPONSE: "hello_response",
@@ -19,32 +22,9 @@ export interface HelloResponseMessage {
   server_version: string;
 }
 
-/** Serialized element tree node from the server. */
-export interface SerializedElement {
-  type: string;
-  name: string; // Python component name for debugging
-  key: string | null;
-  props: Record<string, unknown>;
-  children: SerializedElement[];
-}
-
-/** Callback reference in props. */
-export interface CallbackRef {
-  __callback__: string;
-}
-
-export function isCallbackRef(value: unknown): value is CallbackRef {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "__callback__" in value &&
-    typeof (value as CallbackRef).__callback__ === "string"
-  );
-}
-
 export interface RenderMessage {
   type: typeof MessageType.RENDER;
-  tree: SerializedElement;
+  tree: import("./core").SerializedElement;
 }
 
 export interface EventMessage {

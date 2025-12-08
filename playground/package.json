@@ -1,0 +1,20 @@
+{
+  "name": "trellis-playground",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/main.tsx --bundle --outfile=dist/playground.js --format=iife --platform=browser --target=es2022 --jsx=automatic --loader:.tsx=tsx --loader:.ts=ts --alias:react=./node_modules/react --alias:react-dom=./node_modules/react-dom --alias:react/jsx-runtime=./node_modules/react/jsx-runtime",
+    "watch": "esbuild src/main.tsx --bundle --outfile=dist/playground.js --format=iife --platform=browser --target=es2022 --jsx=automatic --loader:.tsx=tsx --loader:.ts=ts --alias:react=./node_modules/react --alias:react-dom=./node_modules/react-dom --alias:react/jsx-runtime=./node_modules/react/jsx-runtime --watch"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -10,6 +10,8 @@ interface ButtonProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
   full_width?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
 const baseStyles: React.CSSProperties = {
@@ -111,26 +113,30 @@ export function Button({
   variant = "primary",
   size = "md",
   full_width = false,
+  className,
+  style,
 }: ButtonProps): React.ReactElement {
   const [isHovered, setIsHovered] = React.useState(false);
 
   const variantStyle = variantStyles[variant] || variantStyles.primary;
   const sizeStyle = sizeStyles[size] || sizeStyles.md;
 
-  const style: React.CSSProperties = {
+  const computedStyle: React.CSSProperties = {
     ...baseStyles,
     ...sizeStyle,
     ...variantStyle.normal,
     ...(isHovered && !disabled ? variantStyle.hover : {}),
     ...(disabled ? disabledStyles : {}),
     ...(full_width ? { width: "100%" } : {}),
+    ...style,
   };
 
   return (
     <button
+      className={className}
       onClick={on_click}
       disabled={disabled}
-      style={style}
+      style={computedStyle}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
