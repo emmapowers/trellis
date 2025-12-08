@@ -13,7 +13,9 @@ from trellis.core.rendering import IComponent, RenderContext
 __all__ = ["BrowserRuntime"]
 
 
-def _serialize_value(value: tp.Any, callback_registry: dict[str, tp.Callable[..., tp.Any]]) -> tp.Any:
+def _serialize_value(
+    value: tp.Any, callback_registry: dict[str, tp.Callable[..., tp.Any]]
+) -> tp.Any:
     """Serialize a single value, handling special cases.
 
     Args:
