@@ -25,15 +25,15 @@ fmt-check = { cmd = "black --check src", description = "Check black formatting" 
 ruff-fix = { cmd = "ruff check --fix src", depends-on = ["fmt"], description = "Run ruff with auto-fix" }
 ruff-check = { cmd = "ruff check src", description = "Check ruff linting" }
 
-typecheck = { cmd = "dmypy run src", description = "Run mypy (daemon)" }
-typecheck-ci = { cmd = "mypy src", description = "Run mypy (full check)" }
+mypy = { cmd = "dmypy run src", description = "Run mypy (daemon)" }
+mypy-ci = { cmd = "mypy src", description = "Run mypy (full check)" }
 
 test = { cmd = "pytest", description = "Run unit tests" }
 test-cov = { cmd = "pytest --cov=src/trellis --cov-report=term-missing", description = "Run unit tests with coverage" }
 test-integration = { cmd = "pytest tests/integration -vv", description = "Run integration tests (requires network)" }
 
 cleanup = { depends-on = ["fmt", "ruff-fix"], description = "Run formatters with auto-fix" }
-lint = { depends-on = ["fmt-check", "ruff-check", "typecheck-ci"], description = "Check all linters (no fix)" }
+lint = { depends-on = ["fmt-check", "ruff-check", "mypy-ci"], description = "Check all linters (no fix)" }
 ci = { depends-on = ["lint", "test", "test-integration"], description = "Run CI checks" }
 
 build = { cmd = "pip wheel . -w dist --no-deps", description = "Build wheel" }
