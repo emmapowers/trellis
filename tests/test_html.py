@@ -93,6 +93,42 @@ class TestHtmlElements:
         div = ctx.root_element.children[0]
         assert div.properties["className"] == "container"
 
+    def test_text_renders_plain_text(self) -> None:
+        """Text element renders plain text without wrapper."""
+
+        @component
+        def App() -> None:
+            with h.Div():
+                h.Span("Count: ")
+                h.Text(42)
+
+        ctx = RenderContext(App)
+        ctx.render(from_element=None)
+
+        div = ctx.root_element.children[0]
+        assert len(div.children) == 2
+        assert div.children[0].component.name == "Span"
+        assert div.children[1].component.name == "Text"
+        assert div.children[1].properties["_text"] == "42"
+
+    def test_text_converts_values_to_string(self) -> None:
+        """Text converts any value to string."""
+
+        @component
+        def App() -> None:
+            h.Text(123)
+            h.Text(3.14)
+            h.Text(True)
+            h.Text(None)
+
+        ctx = RenderContext(App)
+        ctx.render(from_element=None)
+
+        assert ctx.root_element.children[0].properties["_text"] == "123"
+        assert ctx.root_element.children[1].properties["_text"] == "3.14"
+        assert ctx.root_element.children[2].properties["_text"] == "True"
+        assert ctx.root_element.children[3].properties["_text"] == "None"
+
 
 class TestHtmlSerialization:
     """Tests for HTML element serialization."""
@@ -225,6 +261,30 @@ class TestHtmlSerialization:
         assert a_data["props"]["_text"] == "Click here"
         assert a_data["props"]["href"] == "https://example.com"
         assert a_data["props"]["target"] == "_blank"
+
+    def test_serialize_text_node(self) -> None:
+        """Text element serializes with special _text type."""
+
+        @component
+        def App() -> None:
+            with h.Div():
+                h.Span("Label: ")
+                h.Text("value")
+
+        ctx = RenderContext(App)
+        ctx.render(from_element=None)
+
+        result = serialize_element(ctx.root_element)
+        div_data = result["children"][0]
+
+        assert len(div_data["children"]) == 2
+        span_data = div_data["children"][0]
+        text_data = div_data["children"][1]
+
+        assert span_data["type"] == "span"
+        assert text_data["type"] == "_text"
+        assert text_data["name"] == "Text"
+        assert text_data["props"]["_text"] == "value"
 
 
 class TestHybridElements:

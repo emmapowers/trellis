@@ -6,7 +6,7 @@ channels = ["conda-forge"]
 platforms = ["osx-arm64", "linux-64"]
 
 [dependencies]
-python = "3.13.*"
+python = "3.14.*"
 pip = ">=24,<26"
 black = ">=25.1.0,<26"
 ruff = ">=0.8,<1"

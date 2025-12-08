@@ -91,6 +91,12 @@ export function TreeRenderer({ node }: TreeRendererProps): React.ReactElement {
   // Process props for ALL components (transforms callback refs to functions)
   const processedProps = processProps(node.props, client);
 
+  // Plain text nodes - render text directly without wrapper element
+  if (node.type === "_text") {
+    const textContent = (node.props as { _text?: string })._text ?? "";
+    return <>{textContent}</>;
+  }
+
   // Native HTML elements - render directly with React.createElement
   if (HTML_TAGS.has(node.type)) {
     // Extract _text prop for text content (since 'children' prop is reserved)

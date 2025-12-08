@@ -22,6 +22,7 @@ __all__ = [
     "P",
     "Pre",
     "Strong",
+    "Text",
 ]
 
 # Singleton instances
@@ -36,6 +37,7 @@ _strong = HtmlElement(_tag="strong", name="Strong")
 _em = HtmlElement(_tag="em", name="Em")
 _code = HtmlElement(_tag="code", name="Code")
 _pre = HtmlElement(_tag="pre", name="Pre")
+_text_node = HtmlElement(_tag="_text", name="Text")
 
 
 def P(
@@ -248,3 +250,20 @@ def Pre(
         key=key,
         **props,
     )
+
+
+def Text(
+    value: tp.Any,
+    *,
+    key: str | None = None,
+) -> ElementDescriptor:
+    """A plain text node without any wrapper element.
+
+    Use this to insert raw text into the DOM without wrapping it
+    in a span or other element.
+
+    Args:
+        value: Any value to display (will be converted to string)
+        key: Optional key for reconciliation
+    """
+    return _text_node(_text=str(value), key=key)

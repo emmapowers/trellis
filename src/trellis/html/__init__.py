@@ -109,6 +109,7 @@ from trellis.html.text import (
     P,
     Pre,
     Strong,
+    Text,
 )
 
 __all__ = [
@@ -167,6 +168,7 @@ __all__ = [
     "Table",
     "Tbody",
     "Td",
+    "Text",
     "Textarea",
     "Th",
     "Thead",

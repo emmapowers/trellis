@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "A reactive UI framework for Python"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 authors = [{ name = "Emma Powers", email = "emma@emmaponders.com" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -90,7 +90,7 @@ ignore = [
 ]
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 strict = true
 warn_return_any = true
 warn_unused_ignores = true
