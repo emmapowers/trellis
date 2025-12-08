@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "trellis"
 version = "0.1.0"
 authors = ["Emma Powers <emma@emmaponders.com>"]
@@ -10,13 +10,13 @@ python = "3.14.*"
 pip = ">=24,<26"
 black = ">=25.1.0,<26"
 ruff = ">=0.8,<1"
-mypy = ">=1.15,<2"
 pytest = ">=8,<9"
 pytest-cov = ">=6,<7"
 nodejs = ">=22"
 
 [pypi-dependencies]
 trellis = { path = ".", editable = true }
+mypy = ">=1.15,<2"
 
 [tasks]
 fmt = { cmd = "black src", description = "Format code with black" }
