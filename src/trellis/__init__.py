@@ -7,7 +7,7 @@ __version__ = "0.1.0"
 
 # Server imports are optional (they require uvicorn/fastapi which don't work in Pyodide)
 try:
-    from trellis.server import Trellis
+    from trellis.server import Trellis  # noqa: F401
 
     __all__.append("Trellis")
 except ImportError:
