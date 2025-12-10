@@ -26,7 +26,7 @@ class TestContainerComponent:
                 Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert ctx.root_element is not None
         # Parent has Column as child
@@ -60,7 +60,7 @@ class TestContainerComponent:
                     Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         column_elem = ctx.root_element.children[0]
         assert column_elem.component.name == "Column"
@@ -89,7 +89,7 @@ class TestContainerComponent:
                 Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert len(received_children) == 2
         for child in received_children:
@@ -109,7 +109,7 @@ class TestContainerComponent:
 
         ctx = RenderContext(Parent)
         with pytest.raises(TypeError, match="does not have a 'children' parameter"):
-            ctx.render(from_element=None)
+            ctx.render_tree(from_element=None)
 
     def test_cannot_provide_children_prop_and_use_with(self) -> None:
         """Can't pass children as prop AND use with block."""
@@ -126,7 +126,7 @@ class TestContainerComponent:
 
         ctx = RenderContext(Parent)
         with pytest.raises(RuntimeError, match="Cannot provide 'children'.*and use 'with' block"):
-            ctx.render(from_element=None)
+            ctx.render_tree(from_element=None)
 
     def test_empty_with_block(self) -> None:
         """Empty with block results in empty children list."""
@@ -145,7 +145,7 @@ class TestContainerComponent:
                 pass
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert received_children == []
 
@@ -170,7 +170,7 @@ class TestContainerComponent:
                 Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         wrapper = ctx.root_element.children[0]
         # Only one child mounted, even though 3 were collected
@@ -196,7 +196,7 @@ class TestContainerComponent:
                 Item(value=3)
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         reverse_elem = ctx.root_element.children[0]
         # Children should be in reverse order

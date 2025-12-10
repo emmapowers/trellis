@@ -34,7 +34,7 @@ class TestDeepTrees:
             make_level(1)()
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Verify tree structure
         def count_depth(element: Element) -> int:
@@ -62,7 +62,7 @@ class TestDeepTrees:
             make_level(1)()
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         def verify_depths(element: Element, expected_depth: int) -> None:
             if element.depth != expected_depth:
@@ -92,7 +92,7 @@ class TestDeepTrees:
             make_level(1)()
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         def verify_relationships(element: Element) -> None:
             for child in element.children:
@@ -121,7 +121,7 @@ class TestDeepTrees:
             Level(n=1)
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         def collect_ids(element: Element, ids: list[int]) -> None:
             ids.append(id(element))
@@ -167,7 +167,7 @@ class TestDeepTrees:
             Level(n=1)
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # One state per level (not including root)
         assert mount_count[0] == DEPTH
@@ -195,7 +195,7 @@ class TestWideTrees:
                 Child(n=i)
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert len(ctx.root_element.children) == WIDTH
 
@@ -213,7 +213,7 @@ class TestWideTrees:
                 Child(n=i)
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         original_ids = [id(c) for c in ctx.root_element.children]
 
@@ -237,7 +237,7 @@ class TestWideTrees:
                 Child(n=i)
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert len(ctx.root_element.children) == 3
 
@@ -271,7 +271,7 @@ class TestWideTrees:
                 Child(key=str(i), n=i)
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert len(ctx.root_element.children) == 50
 
@@ -305,7 +305,7 @@ class TestCombinedDeepAndWide:
             Level(depth=1)
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Count total elements
         def count_elements(element: Element) -> int:
@@ -350,7 +350,7 @@ class TestCombinedDeepAndWide:
             make_level(1)()
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Navigate to leaf level and check
         element = ctx.root_element
@@ -391,7 +391,7 @@ class TestMountingOrder:
             make_level(1)()
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Should be in order 0, 1, 2, ..., DEPTH
         assert mount_order == list(range(DEPTH + 1))
@@ -424,7 +424,7 @@ class TestMountingOrder:
                 Container()
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Remove container
         show_ref[0] = False
@@ -445,7 +445,7 @@ class TestTreeTraversal:
             pass
 
         ctx = RenderContext(Empty)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert ctx.root_element is not None
         assert len(ctx.root_element.children) == 0
@@ -466,7 +466,7 @@ class TestTreeTraversal:
             make_level(1)()
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Traverse and verify single-child chain
         element = ctx.root_element
@@ -500,7 +500,7 @@ class TestTreeTraversal:
             ShallowBranch()       # Shallow right branch
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Root has 2 children
         assert len(ctx.root_element.children) == 2

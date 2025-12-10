@@ -3,7 +3,7 @@
 from trellis import html as h
 from trellis.core.functional_component import component
 from trellis.core.rendering import RenderContext
-from trellis.core.serialization import clear_callbacks, get_callback, serialize_element
+from trellis.core.serialization import serialize_element
 
 
 class TestHtmlElements:
@@ -18,7 +18,7 @@ class TestHtmlElements:
                 h.Span("Hello")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         div = ctx.root_element.children[0]
         assert div.component.name == "Div"
@@ -35,7 +35,7 @@ class TestHtmlElements:
                     h.Span("Nested")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         outer = ctx.root_element.children[0]
         inner = outer.children[0]
@@ -55,7 +55,7 @@ class TestHtmlElements:
             h.Span("Inline text")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         h1 = ctx.root_element.children[0]
         p = ctx.root_element.children[1]
@@ -74,7 +74,7 @@ class TestHtmlElements:
                 pass
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         div = ctx.root_element.children[0]
         assert div.properties["style"] == {"backgroundColor": "red", "padding": "10px"}
@@ -88,7 +88,7 @@ class TestHtmlElements:
                 pass
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         div = ctx.root_element.children[0]
         assert div.properties["className"] == "container"
@@ -103,7 +103,7 @@ class TestHtmlElements:
                 h.Text(42)
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         div = ctx.root_element.children[0]
         assert len(div.children) == 2
@@ -122,7 +122,7 @@ class TestHtmlElements:
             h.Text(None)
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert ctx.root_element.children[0].properties["_text"] == "123"
         assert ctx.root_element.children[1].properties["_text"] == "3.14"
@@ -133,14 +133,6 @@ class TestHtmlElements:
 class TestHtmlSerialization:
     """Tests for HTML element serialization."""
 
-    def setup_method(self) -> None:
-        """Clear callbacks between tests."""
-        clear_callbacks()
-
-    def teardown_method(self) -> None:
-        """Clean up after tests."""
-        clear_callbacks()
-
     def test_serialize_div_as_tag_name(self) -> None:
         """Div serializes with type='div' (not a React component)."""
 
@@ -150,7 +142,7 @@ class TestHtmlSerialization:
                 pass
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         result = serialize_element(ctx.root_element)
         div_data = result["children"][0]
@@ -169,7 +161,7 @@ class TestHtmlSerialization:
             h.A("link", href="https://example.com")  # A is hybrid, needs text or with
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         result = serialize_element(ctx.root_element)
 
@@ -186,7 +178,7 @@ class TestHtmlSerialization:
             h.H1("Hello World")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         result = serialize_element(ctx.root_element)
         h1_data = result["children"][0]
@@ -205,7 +197,7 @@ class TestHtmlSerialization:
                     h.P("Content")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         result = serialize_element(ctx.root_element)
         outer = result["children"][0]
@@ -232,7 +224,7 @@ class TestHtmlSerialization:
                 pass
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         result = serialize_element(ctx.root_element)
         div_data = result["children"][0]
@@ -241,7 +233,7 @@ class TestHtmlSerialization:
 
         # Verify callback works
         cb_id = div_data["props"]["onClick"]["__callback__"]
-        get_callback(cb_id)()
+        ctx.get_callback(cb_id)()
         assert clicked == [True]
 
     def test_serialize_link_props(self) -> None:
@@ -252,7 +244,7 @@ class TestHtmlSerialization:
             h.A("Click here", href="https://example.com", target="_blank")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         result = serialize_element(ctx.root_element)
         a_data = result["children"][0]
@@ -272,7 +264,7 @@ class TestHtmlSerialization:
                 h.Text("value")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         result = serialize_element(ctx.root_element)
         div_data = result["children"][0]
@@ -300,7 +292,7 @@ class TestHybridElements:
                 h.Td("Cell 2")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         tr = ctx.root_element.children[0]
         assert len(tr.children) == 2
@@ -318,7 +310,7 @@ class TestHybridElements:
                     h.Span(" text")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         tr = ctx.root_element.children[0]
         td = tr.children[0]
@@ -336,7 +328,7 @@ class TestHybridElements:
                 h.Li("Item 2")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         ul = ctx.root_element.children[0]
         assert len(ul.children) == 2
@@ -351,7 +343,7 @@ class TestHybridElements:
                     h.Strong("Bold item")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         ul = ctx.root_element.children[0]
         li = ul.children[0]
@@ -367,7 +359,7 @@ class TestHybridElements:
                 h.A("Click here", href="/path")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         div = ctx.root_element.children[0]
         assert len(div.children) == 1
@@ -384,7 +376,7 @@ class TestHybridElements:
                     h.Span("Link text")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         div = ctx.root_element.children[0]
         a = div.children[0]
@@ -402,7 +394,7 @@ class TestHybridElements:
                     pass
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         div = ctx.root_element.children[0]
         # Should only have one Td child, not two
@@ -423,7 +415,7 @@ class TestHtmlContainerBehavior:
                 h.P("Section content")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         section = ctx.root_element.children[0]
         assert section.component.name == "Section"
@@ -438,7 +430,7 @@ class TestHtmlContainerBehavior:
                 h.H2("Article Title")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         article = ctx.root_element.children[0]
         assert article.component.name == "Article"
@@ -455,7 +447,7 @@ class TestHtmlContainerBehavior:
                 h.Li("Item 3")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         ul = ctx.root_element.children[0]
         assert ul.component.name == "Ul"

@@ -1,17 +1,21 @@
 """Typed event definitions for HTML elements.
 
 Provides React-compatible event types for use with HTML element callbacks.
-Currently callbacks don't receive event data, but these types document
-the expected signatures and can be extended for full event support.
+Event data is automatically serialized from JavaScript and converted to
+the appropriate dataclass on the Python side.
 
 Example:
     ```python
-    from trellis.html.events import MouseEventHandler
+    from trellis.html.events import MouseEvent, ChangeEvent
 
     def handle_click(event: MouseEvent) -> None:
         print(f"Clicked at {event.clientX}, {event.clientY}")
 
+    def handle_change(event: ChangeEvent) -> None:
+        print(f"New value: {event.value}")
+
     h.Div(onClick=handle_click)
+    h.Input(onChange=handle_change)
     ```
 """
 
@@ -21,6 +25,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 __all__ = [
+    "BaseEvent",
     "ChangeEvent",
     "ChangeEventHandler",
     "EventHandler",
@@ -46,7 +51,7 @@ __all__ = [
 class BaseEvent:
     """Base class for all events."""
 
-    type: str
+    type: str = ""
     """The type of event (e.g., 'click', 'keydown')."""
 
     timestamp: float = 0.0

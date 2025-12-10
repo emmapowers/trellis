@@ -7,7 +7,7 @@ import pytest
 from trellis.core.functional_component import component
 from trellis.core.react_component import ReactComponent, react_component
 from trellis.core.rendering import RenderContext
-from trellis.core.serialization import clear_callbacks, serialize_element
+from trellis.core.serialization import serialize_element
 from trellis.widgets import Button, Column, Label, Row
 
 
@@ -62,7 +62,7 @@ class TestReactTypeProperty:
                 pass
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         children = ctx.root_element.children
         assert children[0].component.react_type == "Label"
@@ -136,14 +136,6 @@ class TestReactComponentDecorator:
 class TestReactComponentSerialization:
     """Tests for serialization of ReactComponents."""
 
-    def setup_method(self) -> None:
-        """Clear callbacks between tests."""
-        clear_callbacks()
-
-    def teardown_method(self) -> None:
-        """Clean up after tests."""
-        clear_callbacks()
-
     def test_react_component_type_equals_name(self) -> None:
         """For ReactComponents, type and name are both the component name."""
 
@@ -152,7 +144,7 @@ class TestReactComponentSerialization:
             Label(text="test")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         result = serialize_element(ctx.root_element)
         label_data = result["children"][0]
@@ -169,7 +161,7 @@ class TestReactComponentSerialization:
             pass
 
         ctx = RenderContext(MyCustomComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         result = serialize_element(ctx.root_element)
 
@@ -191,7 +183,7 @@ class TestReactComponentSerialization:
                 Button(text="Click")
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         result = serialize_element(ctx.root_element)
 

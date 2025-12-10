@@ -42,7 +42,7 @@ class TestMinimalRerenders:
             Sibling()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts == {"parent": 1, "counter": 1, "sibling": 1}
 
@@ -87,7 +87,7 @@ class TestMinimalRerenders:
             FlagReader()
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts == {"app": 1, "name": 1, "count": 1, "flag": 1}
 
@@ -143,7 +143,7 @@ class TestMinimalRerenders:
             ReaderBoth()
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts == {"a": 1, "b": 1, "both": 1}
 
@@ -173,7 +173,7 @@ class TestPropsUnchangedOptimization:
             Child(value=42)  # Always same props
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts == {"parent": 1, "child": 1}
 
@@ -198,7 +198,7 @@ class TestPropsUnchangedOptimization:
             Child(value=value_ref[0])
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts == {"parent": 1, "child": 1}
 
@@ -238,7 +238,7 @@ class TestPropsUnchangedOptimization:
             Level1()
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts == {
             "root": 1, "level1": 1, "level2": 1, "level3": 1, "leaf": 1
@@ -276,7 +276,7 @@ class TestDirtyMarkingBehavior:
             Child2()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts == {"parent": 1, "child1": 1, "child2": 1}
 
@@ -302,7 +302,7 @@ class TestDirtyMarkingBehavior:
             Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
         render_order.clear()
 
         # Mark both dirty (child first to test ordering)
@@ -336,7 +336,7 @@ class TestDirtyMarkingBehavior:
             Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts == {"parent": 1, "child": 1}
 
@@ -383,7 +383,7 @@ class TestDeeplyNestedStateUpdates:
             make_level(1)()
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # All components should have rendered once
         expected = {"root": 1, "leaf": 1}
@@ -431,7 +431,7 @@ class TestDeeplyNestedStateUpdates:
             Level1Reader()
 
         ctx = RenderContext(RootReader)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts == {"root": 1, "level1": 1, "level2": 1, "level3": 1}
 
@@ -477,7 +477,7 @@ class TestStateWithMultipleComponents:
             NonReader()
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts == {"reader1": 1, "reader2": 1, "non_reader": 1}
 
@@ -514,7 +514,7 @@ class TestStateWithMultipleComponents:
             ReaderB()
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts == {"a": 1, "b": 1}
 

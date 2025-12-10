@@ -34,7 +34,7 @@ class TestStateful:
             _ = state.text  # Access the state
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # The component should be registered as dependent on state.text
         state_info = state._state_deps["text"]
@@ -55,7 +55,7 @@ class TestStateful:
             _ = state.text
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Clear dirty state
         ctx.dirty_elements.clear()
@@ -85,7 +85,7 @@ class TestStateful:
             _ = state.text
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
         assert render_count[0] == 1
 
         state.text = "changed"
@@ -123,7 +123,7 @@ class TestStateful:
             CountComponent()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert name_renders[0] == 1
         assert count_renders[0] == 1
@@ -176,7 +176,7 @@ class TestLocalStatePersistence:
             _ = state.count  # Access to register dependency
 
         ctx = RenderContext(Counter)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert instances_created[0] == 1
 
@@ -205,7 +205,7 @@ class TestLocalStatePersistence:
             state.count += 1  # Increment each render
 
         ctx = RenderContext(Counter)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
         ctx.mark_dirty(ctx.root_element)
         ctx.render_dirty()
         ctx.mark_dirty(ctx.root_element)
@@ -229,7 +229,7 @@ class TestLocalStatePersistence:
             second.on = False
 
         ctx = RenderContext(MultiToggle)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Re-render - each should get its own cached instance
         ctx.mark_dirty(ctx.root_element)
@@ -264,7 +264,7 @@ class TestLocalStatePersistence:
             extended.extra = "hello"
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Both should be cached separately by their actual types on the element
         local_state = ctx.root_element._local_state

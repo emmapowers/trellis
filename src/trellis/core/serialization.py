@@ -3,80 +3,40 @@
 This module converts the server-side Element tree to a JSON-serializable
 format that can be sent to the client for rendering.
 
-Callbacks are registered and replaced with IDs that the client can use
-to invoke them via events.
+Callbacks are registered on the RenderContext and replaced with IDs that
+the client can use to invoke them via events.
 """
 
 from __future__ import annotations
 
 import typing as tp
 
+from trellis.core.functional_component import FunctionalComponent
+
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering import Element
-
-# Callback registry - maps callback IDs to callables
-_callback_registry: dict[str, tp.Callable[..., tp.Any]] = {}
-_callback_counter = 0
+    from trellis.core.rendering import Element, RenderContext
 
 
-def _generate_callback_id() -> str:
-    """Generate a unique callback ID."""
-    global _callback_counter
-    _callback_counter += 1
-    return f"cb_{_callback_counter}"
-
-
-def register_callback(callback: tp.Callable[..., tp.Any]) -> str:
-    """Register a callback and return its ID.
-
-    Args:
-        callback: The callable to register
-
-    Returns:
-        A unique string ID for this callback
-    """
-    cb_id = _generate_callback_id()
-    _callback_registry[cb_id] = callback
-    return cb_id
-
-
-def get_callback(cb_id: str) -> tp.Callable[..., tp.Any] | None:
-    """Retrieve a callback by ID.
-
-    Args:
-        cb_id: The callback ID to look up
-
-    Returns:
-        The registered callback, or None if not found
-    """
-    return _callback_registry.get(cb_id)
-
-
-def clear_callbacks() -> None:
-    """Clear all registered callbacks. For testing only."""
-    global _callback_counter
-    _callback_registry.clear()
-    _callback_counter = 0
-
-
-def _serialize_value(value: tp.Any) -> tp.Any:
+def _serialize_value(value: tp.Any, ctx: RenderContext) -> tp.Any:
     """Serialize a single value, handling special cases.
 
     Args:
         value: The value to serialize
+        ctx: The render context for callback registration
 
     Returns:
         A JSON-serializable version of the value
     """
     if callable(value):
-        # Register callback and return reference
-        return {"__callback__": register_callback(value)}
+        # Register callback on the context and return reference
+        cb_id = ctx.register_callback(value)
+        return {"__callback__": cb_id}
     if isinstance(value, (str, int, float, bool, type(None))):
         return value
     if isinstance(value, (list, tuple)):
-        return [_serialize_value(v) for v in value]
+        return [_serialize_value(v, ctx) for v in value]
     if isinstance(value, dict):
-        return {k: _serialize_value(v) for k, v in value.items()}
+        return {k: _serialize_value(v, ctx) for k, v in value.items()}
     # For other types, convert to string
     return str(value)
 
@@ -99,18 +59,29 @@ def serialize_element(element: Element) -> dict[str, tp.Any]:
             "props": {...},
             "children": [...]
         }
+
+    Raises:
+        RuntimeError: If element has no render_context
     """
-    # Serialize props, excluding children (handled separately)
-    props: dict[str, tp.Any] = {}
-    for key, value in element.properties.items():
-        if key == "children":
-            continue  # Children are serialized separately
-        props[key] = _serialize_value(value)
+    ctx = element.render_context
+    if ctx is None:
+        raise RuntimeError("Cannot serialize element without render_context")
+
+    # Skip props for FunctionalComponents - they're layout-only and not used by React
+    if isinstance(element.component, FunctionalComponent):
+        props: dict[str, tp.Any] = {}
+    else:
+        # Serialize props, excluding children (handled separately)
+        props = {}
+        for key, value in element.properties.items():
+            if key == "children":
+                continue  # Children are serialized separately
+            props[key] = _serialize_value(value, ctx)
 
     return {
         "type": element.component.react_type,  # React component to use
         "name": element.component.name,  # Python component name for debugging
-        "key": element.key or None,
+        "key": element.key or element.stable_id,  # User key or server-assigned ID
         "props": props,
         "children": [serialize_element(child) for child in element.children],
     }

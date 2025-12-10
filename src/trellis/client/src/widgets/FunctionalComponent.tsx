@@ -10,26 +10,17 @@ import React from "react";
 interface FunctionalComponentProps {
   /** Python component name for debugging */
   name?: string;
-  className?: string;
-  style?: React.CSSProperties;
   children?: React.ReactNode;
 }
 
 export function FunctionalComponent({
   name,
-  className,
-  style,
   children,
 }: FunctionalComponentProps): React.ReactElement {
-  // Render children in a fragment with a data attribute for debugging
-  // Using a span with display:contents to be invisible in the DOM while
-  // providing a hook for debugging tools
+  // Render children in a span with display:contents to be invisible in the DOM
+  // while providing a data attribute for debugging tools
   return (
-    <span
-      data-trellis-component={name}
-      className={className}
-      style={{ display: "contents", ...style }}
-    >
+    <span data-trellis-component={name} style={{ display: "contents" }}>
       {children}
     </span>
   );

@@ -131,10 +131,16 @@ export function Button({
     ...style,
   };
 
+  const handleClick = () => {
+    if (on_click) {
+      on_click();
+    }
+  };
+
   return (
     <button
       className={className}
-      onClick={on_click}
+      onClick={handleClick}
       disabled={disabled}
       style={computedStyle}
       onMouseEnter={() => setIsHovered(true)}

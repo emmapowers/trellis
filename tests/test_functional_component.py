@@ -19,7 +19,7 @@ class TestFunctionalComponent:
             pass
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert ctx.root_element is not None
         assert isinstance(ctx.root_element, Element)
@@ -35,7 +35,7 @@ class TestFunctionalComponent:
             Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert ctx.root_element is not None
         assert len(ctx.root_element.children) == 1
@@ -55,7 +55,7 @@ class TestFunctionalComponent:
             Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert ctx.root_element.depth == 0
         assert ctx.root_element.children[0].depth == 1
@@ -74,7 +74,7 @@ class TestFunctionalComponent:
             Child(text="hello")
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert received_text == ["hello"]
 
@@ -90,7 +90,7 @@ class TestFunctionalComponent:
             Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert len(ctx.root_element.children) == 3
 
@@ -108,7 +108,7 @@ class TestFunctionalComponent:
             Item(label="c")
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert len(ctx.root_element.children) == 3
         assert ctx.root_element.children[0].properties["label"] == "a"
@@ -131,11 +131,11 @@ class TestFunctionalComponent:
             pass  # No Item created
 
         ctx = RenderContext(ConditionalTrue)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
         assert len(ctx.root_element.children) == 1
 
         ctx2 = RenderContext(ConditionalFalse)
-        ctx2.render(from_element=None)
+        ctx2.render_tree(from_element=None)
         assert len(ctx2.root_element.children) == 0
 
     def test_loop_children(self) -> None:
@@ -151,7 +151,7 @@ class TestFunctionalComponent:
                 Item(value=i)
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert len(ctx.root_element.children) == 5
         for i, child in enumerate(ctx.root_element.children):

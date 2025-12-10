@@ -31,8 +31,8 @@ from dataclasses import dataclass
 from trellis.core.rendering import (
     Element,
     ElementDescriptor,
-    _descriptor_stack,
     freeze_props,
+    get_active_render_context,
 )
 
 __all__ = ["Component"]
@@ -111,12 +111,21 @@ class Component(ABC, tp.Generic[T]):
             props=freeze_props(props),
         )
 
+        # Ensure we're inside a render context - components cannot be created
+        # in callbacks or other code outside of rendering
+        ctx = get_active_render_context()
+        if ctx is None:
+            raise RuntimeError(
+                f"Cannot create component '{self.name}' outside of render context. "
+                f"Components must be created during rendering, not in callbacks."
+            )
+
         # Auto-collect: add to parent descriptor's pending children (if any)
         # BUT only if this component doesn't have a children param - those will
         # be added in __exit__ of the with block instead
         has_children_param = getattr(self, "_has_children_param", False)
-        if _descriptor_stack and not has_children_param:
-            _descriptor_stack[-1].append(descriptor)
+        if ctx.has_active_frame() and not has_children_param:
+            ctx.add_to_current_frame(descriptor)
             # Mark as auto-collected to prevent double-collection if used with `with`
             object.__setattr__(descriptor, "_auto_collected", True)
 

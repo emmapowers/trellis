@@ -33,7 +33,7 @@ class TestListReversal:
                 Item(key=str(i), n=i)
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Map key -> element id
         original_ids = {c.key: id(c) for c in ctx.root_element.children}
@@ -74,7 +74,7 @@ class TestListReversal:
                 Item(key=str(i), n=i)
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Each item should have state value = n * 10
         assert state_values == {i: i * 10 for i in range(10)}
@@ -119,7 +119,7 @@ class TestRandomShuffles:
                 Item(key=str(i), n=i)
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         original_ids = {c.key: id(c) for c in ctx.root_element.children}
 
@@ -159,7 +159,7 @@ class TestRandomShuffles:
                 Item(key=str(i), n=i)
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Record the unique_id for each key
         initial_state_ids: dict[str, int] = {}
@@ -213,7 +213,7 @@ class TestBulkOperations:
                 Item(key=str(i), n=i)
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert len(mount_log) == 20
         mount_log.clear()
@@ -250,7 +250,7 @@ class TestBulkOperations:
                 Item(key=str(i), n=i)
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Keep track of remaining element ids
         remaining_ids = {str(i): id(c) for i, c in zip(items_ref[0], ctx.root_element.children)}
@@ -279,7 +279,7 @@ class TestBulkOperations:
                 Item(key=str(i), n=i)
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         remaining_ids = {str(i): id(c) for i, c in zip(items_ref[0], ctx.root_element.children)}
 
@@ -306,7 +306,7 @@ class TestBulkOperations:
                 Item(key=str(i), n=i)
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         remaining_ids = {str(i): id(c) for i, c in zip(items_ref[0], ctx.root_element.children)}
 
@@ -333,7 +333,7 @@ class TestBulkOperations:
                 Item(key=str(i), n=i)
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         original_ids = {str(i): id(c) for i, c in zip(items_ref[0], ctx.root_element.children)}
 
@@ -362,7 +362,7 @@ class TestBulkOperations:
                 Item(key=str(i), n=i)
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         original_ids = {str(i): id(c) for i, c in zip(items_ref[0], ctx.root_element.children)}
 
@@ -394,7 +394,7 @@ class TestKeyEdgeCases:
                 Item(key=key, value=value)
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Should have 3 children
         assert len(ctx.root_element.children) == 3
@@ -413,7 +413,7 @@ class TestKeyEdgeCases:
                 Item(key=str(i), n=i)  # Explicit string conversion
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         original_ids = {c.key: id(c) for c in ctx.root_element.children}
 
@@ -445,7 +445,7 @@ class TestKeyEdgeCases:
             UnkeyedItem(n=2)
 
         ctx = RenderContext(List)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert len(ctx.root_element.children) == 4
 
@@ -475,7 +475,7 @@ class TestPropsComparison:
             Child(value=value_ref[0])
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts["child"] == 1
 
@@ -520,7 +520,7 @@ class TestPropsComparison:
             Child(on_click=handler_ref[0])
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts["child"] == 1
 
@@ -550,7 +550,7 @@ class TestPropsComparison:
             NoProps()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts["no_props"] == 1
 
@@ -574,7 +574,7 @@ class TestPropsComparison:
             Child(items=tuple_ref[0])
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts["child"] == 1
 
@@ -633,7 +633,7 @@ class TestComponentTypeChange:
                 TypeB()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Switch from TypeA to TypeB
         use_type_a[0] = False
@@ -689,7 +689,7 @@ class TestComponentTypeChange:
             Sibling()  # Another sibling
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Clear mount log after initial render
         mount_log.clear()
