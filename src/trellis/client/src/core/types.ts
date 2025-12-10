@@ -24,4 +24,4 @@ export function isCallbackRef(value: unknown): value is CallbackRef {
 }
 
 /** Event handler function type - called when a callback is triggered. */
-export type EventHandler = (callbackId: string) => void;
+export type EventHandler = (callbackId: string, args?: unknown[]) => void;

@@ -17,6 +17,29 @@ CACHE_DIR = Path.home() / ".cache" / "trellis"
 BIN_DIR = CACHE_DIR / "bin"
 PACKAGES_DIR = CACHE_DIR / "node_modules"
 
+
+def _safe_extract(tar: tarfile.TarFile, dest: Path) -> None:
+    """Safely extract a tarball, preventing path traversal attacks.
+
+    Validates that all extracted paths stay within the destination directory.
+    This prevents malicious tarballs from writing files outside the intended
+    directory via paths like "../../../etc/passwd".
+
+    Args:
+        tar: The tarfile to extract
+        dest: The destination directory
+
+    Raises:
+        ValueError: If any member would extract outside the destination
+    """
+    dest = dest.resolve()
+    for member in tar.getmembers():
+        member_path = (dest / member.name).resolve()
+        if not member_path.is_relative_to(dest):
+            raise ValueError(f"Tarball contains path traversal: {member.name}")
+    tar.extractall(dest)
+
+
 # Core packages with pinned versions (and their transitive deps)
 CORE_PACKAGES = {
     "react": "18.3.1",
@@ -62,7 +85,7 @@ def ensure_esbuild() -> Path:
 
     extract_dir.mkdir(parents=True, exist_ok=True)
     with tarfile.open(tgz_path) as tar:
-        tar.extractall(extract_dir)
+        _safe_extract(tar, extract_dir)
 
     tgz_path.unlink()
     binary_path.chmod(0o755)
@@ -115,7 +138,7 @@ def _fetch_npm_package(name: str, version: str, client: httpx.Client) -> Path:
         # Extract to a temp location then rename
         temp_dir = CACHE_DIR / "temp_extract"
         temp_dir.mkdir(exist_ok=True)
-        tar.extractall(temp_dir)
+        _safe_extract(tar, temp_dir)
         (temp_dir / "package").rename(pkg_dir)
         temp_dir.rmdir()
 

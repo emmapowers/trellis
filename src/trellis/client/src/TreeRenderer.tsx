@@ -19,7 +19,7 @@ export function TreeRenderer({ node }: TreeRendererProps): React.ReactElement {
   const client = useTrellisClient();
 
   return renderNode(node, {
-    onEvent: (callbackId) => client.sendEvent(callbackId),
+    onEvent: (callbackId, args) => client.sendEvent(callbackId, args),
     getWidget,
   });
 }

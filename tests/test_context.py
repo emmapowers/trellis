@@ -126,7 +126,7 @@ class TestContextAPI:
                 Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert captured == ["hello from parent"]
 
@@ -159,7 +159,7 @@ class TestContextAPI:
                 Wrapper()
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert captured == ["deep"]
 

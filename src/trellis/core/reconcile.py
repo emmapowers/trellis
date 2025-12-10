@@ -115,12 +115,13 @@ def mount_new(
     """
     from trellis.core.rendering import Element
 
-    # Create the element
+    # Create the element with a stable ID for React reconciliation
     element = Element(
         descriptor=desc,
         parent=parent,
         depth=parent.depth + 1 if parent else 0,
         render_context=ctx,
+        stable_id=ctx.next_element_id(),
     )
 
     # Execute the component to get child descriptors (children created with defer_mount=True)
@@ -151,7 +152,7 @@ def execute_and_reconcile(
         ctx: The render context
         defer_mount: If True, don't mount new children (caller will do it)
     """
-    from trellis.core.rendering import _descriptor_stack, unfreeze_props
+    from trellis.core.rendering import unfreeze_props
 
     # Get props including children if component has children param
     props = unfreeze_props(element.descriptor.props)
@@ -170,14 +171,14 @@ def execute_and_reconcile(
     element._state_call_count = 0
 
     # Push a descriptor stack for any child descriptors created during execution
-    _descriptor_stack.append([])
+    ctx.push_descriptor_frame()
 
     try:
         # Execute the component
         element.component.execute(element, **props)
 
         # Get child descriptors created during execution
-        child_descs = _descriptor_stack.pop()
+        child_descs = ctx.pop_descriptor_frame()
 
         # Reconcile children
         if child_descs:
@@ -193,6 +194,13 @@ def execute_and_reconcile(
             for child in element.children:
                 unmount_tree(child, ctx)
             element.children = []
+
+    except BaseException:
+        # Clean up descriptor stack on exception to prevent stack corruption.
+        # The frame we pushed must be popped even if execute() fails.
+        if ctx._descriptor_stack:
+            ctx.pop_descriptor_frame()
+        raise
 
     finally:
         ctx.executing = old_executing

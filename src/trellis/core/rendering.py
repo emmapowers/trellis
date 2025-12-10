@@ -21,13 +21,14 @@ Example:
         Text(f"Count: {state.count}")
 
     ctx = RenderContext(Counter)
-    ctx.render(from_element=None)  # Initial render
-    ctx.render_dirty()  # Re-render dirty elements after state changes
+    tree = ctx.render()  # Render and serialize
+    # After state changes, call render() again for updated tree
     ```
 """
 
 from __future__ import annotations
 
+import contextvars
 import threading
 import typing as tp
 from dataclasses import dataclass, field, fields
@@ -47,12 +48,12 @@ __all__ = [
 # Immutable props type for ElementDescriptor - tuple of (key, value) pairs
 type FrozenProps = tuple[tuple[str, tp.Any], ...]
 
-# Thread-local storage for the active render context
-g_active_render_context: RenderContext | None = None
-
-# Global stack for collecting child descriptors during `with` blocks.
-# Each entry is a list that collects descriptors created within that scope.
-_descriptor_stack: list[list[ElementDescriptor]] = []
+# Thread-safe, task-local storage for the active render context.
+# Using contextvars ensures each asyncio task or thread has its own context,
+# enabling concurrent rendering (e.g., multiple WebSocket connections).
+_active_render_context: contextvars.ContextVar[RenderContext | None] = contextvars.ContextVar(
+    "active_render_context", default=None
+)
 
 
 def freeze_props(props: dict[str, tp.Any]) -> FrozenProps:
@@ -88,20 +89,19 @@ def get_active_render_context() -> RenderContext | None:
     Returns:
         The active RenderContext, or None if not currently rendering
     """
-    return g_active_render_context
+    return _active_render_context.get()
 
 
 def set_active_render_context(ctx: RenderContext | None) -> None:
     """Set the active render context.
 
-    This is called internally by RenderContext.render() to establish
+    This is called internally by RenderContext.render_tree() to establish
     the current context for component execution.
 
     Args:
         ctx: The RenderContext to make active, or None to clear
     """
-    global g_active_render_context
-    g_active_render_context = ctx
+    _active_render_context.set(ctx)
 
 
 class IComponent(tp.Protocol):
@@ -189,8 +189,18 @@ class ElementDescriptor:
 
         Raises:
             TypeError: If the component doesn't have a `children` parameter
+            RuntimeError: If called outside of a render context
         """
         import inspect
+
+        # Ensure we're inside a render context - containers cannot be used
+        # in callbacks or other code outside of rendering
+        ctx = get_active_render_context()
+        if ctx is None:
+            raise RuntimeError(
+                f"Cannot use 'with {self.component.name}()' outside of render context. "
+                f"Container components must be created during rendering, not in callbacks."
+            )
 
         # Validate that the component accepts a 'children' parameter
         render_func = getattr(self.component, "render_func", None)
@@ -203,7 +213,7 @@ class ElementDescriptor:
                 )
 
         # Push new collection list for children created in this scope
-        _descriptor_stack.append([])
+        ctx.push_descriptor_frame()
         return self
 
     def __exit__(
@@ -223,7 +233,11 @@ class ElementDescriptor:
             exc_val: Exception value if an error occurred, else None
             exc_tb: Traceback if an error occurred, else None
         """
-        children = _descriptor_stack.pop()
+        ctx = get_active_render_context()
+        if ctx is None:
+            return
+
+        children = ctx.pop_descriptor_frame()
 
         # Don't process children if an exception occurred
         if exc_type is not None:
@@ -241,8 +255,8 @@ class ElementDescriptor:
 
         # Add self to parent's collection (if inside another with block)
         # Skip if already auto-collected to prevent double-collection
-        if _descriptor_stack and not self._auto_collected:
-            _descriptor_stack[-1].append(self)
+        if ctx.has_active_frame() and not self._auto_collected:
+            ctx.add_to_current_frame(self)
 
     def __call__(self) -> None:
         """Mount this descriptor at the current position (the "child() rule").
@@ -258,15 +272,15 @@ class ElementDescriptor:
         Raises:
             RuntimeError: If called outside both `with` block and render context
         """
-        if _descriptor_stack:
+        ctx = get_active_render_context()
+        if ctx is not None and ctx.has_active_frame():
             # Inside a `with` block - just add to pending children
-            _descriptor_stack[-1].append(self)
-        else:
+            ctx.add_to_current_frame(self)
+        elif ctx is not None:
             # Outside `with` block - actually mount via reconciler
-            ctx = get_active_render_context()
-            if ctx is None:
-                raise RuntimeError("Cannot mount descriptor outside of render context")
             ctx.mount_descriptor(self)
+        else:
+            raise RuntimeError("Cannot mount descriptor outside of render context")
 
 
 @dataclass(kw_only=True)
@@ -289,6 +303,7 @@ class Element:
         depth: Depth in the tree (0 for root)
         render_context: The RenderContext managing this element
         dirty: Whether this element needs re-rendering
+        stable_id: Server-assigned stable identifier for React reconciliation
     """
 
     # The descriptor that created this element
@@ -303,6 +318,9 @@ class Element:
     render_context: RenderContext | None = None
     dirty: bool = False
     _mounted: bool = False
+
+    # Server-assigned stable identifier, used as React key when no user key provided
+    stable_id: str = ""
 
     # Local state storage for Stateful instances.
     # Key is (StateClass, call_index) to ensure consistent ordering.
@@ -398,10 +416,10 @@ class RenderContext(ClassWithLock):
     Example:
         ```python
         ctx = RenderContext(MyApp)
-        ctx.render(from_element=None)  # Initial render
+        tree = ctx.render()  # Initial render, returns serialized tree
 
         # After state changes...
-        ctx.render_dirty()  # Re-render only what changed
+        tree = ctx.render()  # Re-renders dirty elements and serializes
         ```
 
     Attributes:
@@ -435,16 +453,78 @@ class RenderContext(ClassWithLock):
         self.rendering = False
         self.executing = False
         self._current_node = None
+        # Descriptor stack for collecting children during `with` blocks.
+        # Each entry is a list that collects descriptors created within that scope.
+        self._descriptor_stack: list[list[ElementDescriptor]] = []
+        # Callback registry for this session - maps callback IDs to callables.
+        # Scoped to RenderContext to ensure proper cleanup on session end.
+        self._callback_registry: dict[str, tp.Callable[..., tp.Any]] = {}
+        self._callback_counter: int = 0
+        # Element ID counter for stable IDs used as React keys
+        self._element_counter: int = 0
+
+    def push_descriptor_frame(self) -> None:
+        """Push a new frame for collecting child descriptors.
+
+        Called when entering a `with` block on a container component.
+        Child descriptors created in that scope will be added to this frame.
+        """
+        self._descriptor_stack.append([])
+
+    def pop_descriptor_frame(self) -> list[ElementDescriptor]:
+        """Pop and return the current descriptor frame.
+
+        Called when exiting a `with` block. Returns the list of child
+        descriptors collected in that scope.
+
+        Returns:
+            List of child descriptors from the completed frame
+        """
+        return self._descriptor_stack.pop()
+
+    def add_to_current_frame(self, descriptor: ElementDescriptor) -> None:
+        """Add a descriptor to the current frame if one exists.
+
+        Called when a child component is invoked inside a `with` block.
+
+        Args:
+            descriptor: The child descriptor to add
+        """
+        if self._descriptor_stack:
+            self._descriptor_stack[-1].append(descriptor)
+
+    def has_active_frame(self) -> bool:
+        """Check if there's an active descriptor collection frame.
+
+        Returns:
+            True if inside a `with` block, False otherwise
+        """
+        return bool(self._descriptor_stack)
+
+    def next_element_id(self) -> str:
+        """Generate a unique stable ID for an element.
+
+        IDs are assigned once at element creation and remain stable
+        for the element's lifetime. Used as React keys when no
+        user-provided key exists.
+
+        Returns:
+            A unique string ID (e.g., "e1", "e2", ...)
+        """
+        self._element_counter += 1
+        return f"e{self._element_counter}"
 
     @with_lock
-    def render(self, from_element: Element | None) -> None:
+    def render_tree(self, from_element: Element | None) -> None:
         """Render the component tree, starting from a specific element.
 
-        This is the main render entry point. It:
+        This is the internal render entry point. It:
         1. Creates descriptors by calling components
         2. Reconciles descriptors against existing elements
         3. Executes components that need updating
         4. Mounts new elements and unmounts removed ones
+
+        For the public API that returns serialized output, use render().
 
         Args:
             from_element: Element to re-render from, or None for initial render
@@ -493,7 +573,7 @@ class RenderContext(ClassWithLock):
         for element in elements:
             # Check dirty flag again - may have been rendered as part of parent
             if element.dirty:
-                self.render(from_element=element)
+                self.render_tree(from_element=element)
                 element.dirty = False
         self.dirty_elements.clear()
 
@@ -548,3 +628,63 @@ class RenderContext(ClassWithLock):
     def current_element(self) -> Element | None:
         """Alias for current_node (backwards compatibility)."""
         return self._current_node
+
+    def register_callback(self, callback: tp.Callable[..., tp.Any]) -> str:
+        """Register a callback and return its ID.
+
+        Callbacks are stored on this RenderContext, ensuring they are
+        scoped to the current session and cleaned up properly.
+
+        Args:
+            callback: The callable to register
+
+        Returns:
+            A unique string ID for this callback (e.g., "cb_1")
+        """
+        self._callback_counter += 1
+        cb_id = f"cb_{self._callback_counter}"
+        self._callback_registry[cb_id] = callback
+        return cb_id
+
+    def get_callback(self, cb_id: str) -> tp.Callable[..., tp.Any] | None:
+        """Retrieve a callback by ID.
+
+        Args:
+            cb_id: The callback ID to look up
+
+        Returns:
+            The registered callback, or None if not found
+        """
+        return self._callback_registry.get(cb_id)
+
+    def clear_callbacks(self) -> None:
+        """Clear all registered callbacks.
+
+        Called between renders to ensure stale callbacks don't accumulate.
+        """
+        self._callback_registry.clear()
+        self._callback_counter = 0
+
+    def render(self) -> dict[str, tp.Any]:
+        """Render and return the serialized element tree.
+
+        This is the main public API for rendering. It:
+        1. Clears stale callbacks from the previous render
+        2. Renders the tree (initial or re-render of dirty elements)
+        3. Serializes the result for transmission
+
+        Returns:
+            Serialized element tree as a dict, suitable for JSON/msgpack encoding.
+            Callbacks are replaced with {"__callback__": "cb_N"} references.
+        """
+        from trellis.core.serialization import serialize_element
+
+        self.clear_callbacks()
+
+        if self.root_element is None:
+            self.render_tree(from_element=None)
+        else:
+            self.render_dirty()
+
+        assert self.root_element is not None
+        return serialize_element(self.root_element)

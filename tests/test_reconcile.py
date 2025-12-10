@@ -25,7 +25,7 @@ class TestReconciliation:
                 Child(key=item, name=item)
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Capture original element ids
         original_children = list(ctx.root_element.children)
@@ -57,7 +57,7 @@ class TestReconciliation:
                 Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         original_ids = [id(c) for c in ctx.root_element.children]
 
@@ -104,7 +104,7 @@ class TestReconciliation:
                 TypeB()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert "A" in mount_log
         assert len(unmount_log) == 0
@@ -142,7 +142,7 @@ class TestReconciliation:
                 Child(key=item, name=item)
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Remove "b"
         items[0] = ["a", "c"]
@@ -165,7 +165,7 @@ class TestElementLifecycle:
             pass
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert ctx.root_element._mounted is True
 
@@ -183,7 +183,7 @@ class TestElementLifecycle:
             CountingState()
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
         assert mount_count[0] == 1
 
         ctx.mark_dirty(ctx.root_element)
@@ -208,7 +208,7 @@ class TestStatefulLifecycle:
             MyState()
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert "state_mounted" in mount_log
 
@@ -233,7 +233,7 @@ class TestStatefulLifecycle:
                 Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Remove child
         show[0] = False
@@ -260,7 +260,7 @@ class TestStatefulLifecycle:
                 Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # State should be in cache on the child element
         child_element = ctx.root_element.children[0]
@@ -302,7 +302,7 @@ class TestLifecycleOrder:
             Child(name="child2")
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Parent should mount before children
         assert mount_order.index("parent") < mount_order.index("child1")
@@ -339,7 +339,7 @@ class TestLifecycleOrder:
                 InnerParent()
 
         ctx = RenderContext(OuterParent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Remove inner parent and its children
         show[0] = False
@@ -397,7 +397,7 @@ class TestReconciliationAdditional:
                 TypeB()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Switch type - entire TypeA subtree should unmount
         use_type_a[0] = False
@@ -437,7 +437,7 @@ class TestReconciliationAdditional:
                 Child(key=item, name=item)
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert set(mount_log) == {"a", "b"}
         mount_log.clear()
@@ -493,7 +493,7 @@ class TestReconciliationAdditional:
                 Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         show_ref[0] = False
         ctx.mark_dirty(ctx.root_element)
@@ -517,7 +517,7 @@ class TestReconciliationAdditional:
             Child(value=value_ref[0])
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Capture original element id
         child = ctx.root_element.children[0]
@@ -560,7 +560,7 @@ class TestReconciliationAdditional:
                 Child(key=item, name=item)
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert len(ctx.root_element.children) == 0
         assert len(mount_log) == 0
@@ -596,7 +596,7 @@ class TestReconciliationAdditional:
                 Child(key=item, name=item)
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert len(ctx.root_element.children) == 20
 

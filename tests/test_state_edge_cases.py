@@ -43,7 +43,7 @@ class TestDeepDependencyTracking:
             Level(n=1)
 
         ctx = RenderContext(Root)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # All should have rendered once
         assert render_counts["root"] == 1
@@ -80,7 +80,7 @@ class TestDeepDependencyTracking:
                 Reader(name=name)
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert all(render_counts[n] == 1 for n in ["a", "b", "c", "d", "e"])
 
@@ -110,7 +110,7 @@ class TestDeepDependencyTracking:
             Reader()
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts["reader"] == 1
 
@@ -138,7 +138,7 @@ class TestStateLifecycle:
             TrackedState()
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert mount_count[0] == 1
 
@@ -173,7 +173,7 @@ class TestStateLifecycle:
                 Child()
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert len(unmount_log) == 0
 
@@ -199,7 +199,7 @@ class TestStateLifecycle:
             state.counter += 1
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Re-render
         ctx.mark_dirty(ctx.root_element)
@@ -242,7 +242,7 @@ class TestHookOrdering:
             c.value = True
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Check local_state keys
         keys = list(ctx.root_element._local_state.keys())
@@ -273,7 +273,7 @@ class TestHookOrdering:
             captured_values.append([a.value, b.value, c.value])
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # First render
         assert captured_values[-1] == [1, 10, 100]
@@ -306,7 +306,7 @@ class TestHookOrdering:
                     state.index = i
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Should have 3 state instances
         assert len(ctx.root_element._local_state) == 3
@@ -349,7 +349,7 @@ class TestDependencyAcrossComponents:
             Child()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts == {"parent": 1, "child": 1}
 
@@ -390,7 +390,7 @@ class TestDependencyAcrossComponents:
             SiblingB()
 
         ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_counts == {"a": 1, "b": 1}
 
@@ -430,7 +430,7 @@ class TestStateCleanup:
                 Child()
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Capture child element
         child = ctx.root_element.children[0]
@@ -464,7 +464,7 @@ class TestStateCleanup:
                 Child()
 
         ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         child = ctx.root_element.children[0]
 
@@ -506,7 +506,7 @@ class TestMultipleStateTypes:
             _ = name.name
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         assert render_count[0] == 1
 
@@ -540,7 +540,7 @@ class TestMultipleStateTypes:
             extended.extended_value = "hello"
 
         ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx.render_tree(from_element=None)
 
         # Both should be cached
         assert len(ctx.root_element._local_state) == 2
