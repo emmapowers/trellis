@@ -1,94 +1,55 @@
-"""Serialization of Element trees for WebSocket transmission.
+"""Serialization of ElementNode trees for WebSocket transmission.
 
-This module converts the server-side Element tree to a JSON-serializable
+This module converts the server-side ElementNode trees to a JSON-serializable
 format that can be sent to the client for rendering.
 
-Callbacks are registered and replaced with IDs that the client can use
-to invoke them via events.
+Callbacks are registered on the RenderTree and replaced with IDs that
+the client can use to invoke them via events.
 """
 
 from __future__ import annotations
 
 import typing as tp
 
+from trellis.core.functional_component import FunctionalComponent
+
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering import Element
-
-# Callback registry - maps callback IDs to callables
-_callback_registry: dict[str, tp.Callable[..., tp.Any]] = {}
-_callback_counter = 0
+    from trellis.core.rendering import ElementNode, RenderTree
 
 
-def _generate_callback_id() -> str:
-    """Generate a unique callback ID."""
-    global _callback_counter
-    _callback_counter += 1
-    return f"cb_{_callback_counter}"
-
-
-def register_callback(callback: tp.Callable[..., tp.Any]) -> str:
-    """Register a callback and return its ID.
-
-    Args:
-        callback: The callable to register
-
-    Returns:
-        A unique string ID for this callback
-    """
-    cb_id = _generate_callback_id()
-    _callback_registry[cb_id] = callback
-    return cb_id
-
-
-def get_callback(cb_id: str) -> tp.Callable[..., tp.Any] | None:
-    """Retrieve a callback by ID.
-
-    Args:
-        cb_id: The callback ID to look up
-
-    Returns:
-        The registered callback, or None if not found
-    """
-    return _callback_registry.get(cb_id)
-
-
-def clear_callbacks() -> None:
-    """Clear all registered callbacks. For testing only."""
-    global _callback_counter
-    _callback_registry.clear()
-    _callback_counter = 0
-
-
-def _serialize_value(value: tp.Any) -> tp.Any:
+def _serialize_value(value: tp.Any, ctx: RenderTree) -> tp.Any:
     """Serialize a single value, handling special cases.
 
     Args:
         value: The value to serialize
+        ctx: The render tree for callback registration
 
     Returns:
         A JSON-serializable version of the value
     """
     if callable(value):
-        # Register callback and return reference
-        return {"__callback__": register_callback(value)}
+        # Register callback on the context and return reference
+        cb_id = ctx.register_callback(value)
+        return {"__callback__": cb_id}
     if isinstance(value, (str, int, float, bool, type(None))):
         return value
     if isinstance(value, (list, tuple)):
-        return [_serialize_value(v) for v in value]
+        return [_serialize_value(v, ctx) for v in value]
     if isinstance(value, dict):
-        return {k: _serialize_value(v) for k, v in value.items()}
+        return {k: _serialize_value(v, ctx) for k, v in value.items()}
     # For other types, convert to string
     return str(value)
 
 
-def serialize_element(element: Element) -> dict[str, tp.Any]:
-    """Convert an Element tree to a serializable dict.
+def serialize_node(node: ElementNode, ctx: RenderTree) -> dict[str, tp.Any]:
+    """Convert an ElementNode tree to a serializable dict.
 
     The resulting structure can be JSON-encoded and sent to the client.
     Callbacks are replaced with `{"__callback__": "cb_123"}` references.
 
     Args:
-        element: The Element to serialize
+        node: The ElementNode to serialize
+        ctx: The RenderTree for callback registration
 
     Returns:
         A dict with structure:
@@ -100,17 +61,21 @@ def serialize_element(element: Element) -> dict[str, tp.Any]:
             "children": [...]
         }
     """
-    # Serialize props, excluding children (handled separately)
-    props: dict[str, tp.Any] = {}
-    for key, value in element.properties.items():
-        if key == "children":
-            continue  # Children are serialized separately
-        props[key] = _serialize_value(value)
+    # Skip props for FunctionalComponents - they're layout-only and not used by React
+    if isinstance(node.component, FunctionalComponent):
+        props: dict[str, tp.Any] = {}
+    else:
+        # Serialize props, excluding children (handled separately)
+        props = {}
+        for key, value in node.properties.items():
+            if key == "children":
+                continue  # Children are serialized separately
+            props[key] = _serialize_value(value, ctx)
 
     return {
-        "type": element.component.react_type,  # React component to use
-        "name": element.component.name,  # Python component name for debugging
-        "key": element.key or None,
+        "type": node.component.react_type,  # React component to use
+        "name": node.component.name,  # Python component name for debugging
+        "key": node.key or node.id,  # User key or server-assigned ID
         "props": props,
-        "children": [serialize_element(child) for child in element.children],
+        "children": [serialize_node(child, ctx) for child in node.children],
     }
