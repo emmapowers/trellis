@@ -6,8 +6,8 @@ import pytest
 
 from trellis.core.functional_component import component
 from trellis.core.react_component import ReactComponent, react_component
-from trellis.core.rendering import RenderContext
-from trellis.core.serialization import serialize_element
+from trellis.core.rendering import RenderTree
+from trellis.core.serialization import serialize_node
 from trellis.widgets import Button, Column, Label, Row
 
 
@@ -61,10 +61,10 @@ class TestReactTypeProperty:
             with Row():
                 pass
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        children = ctx.root_element.children
+        children = ctx.root_node.children
         assert children[0].component.react_type == "Label"
         assert children[1].component.react_type == "Button"
         assert children[2].component.react_type == "Column"
@@ -143,10 +143,10 @@ class TestReactComponentSerialization:
         def App() -> None:
             Label(text="test")
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
         label_data = result["children"][0]
 
         # ReactComponent: type is the React component, name is Python name
@@ -160,10 +160,10 @@ class TestReactComponentSerialization:
         def MyCustomComponent() -> None:
             pass
 
-        ctx = RenderContext(MyCustomComponent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(MyCustomComponent)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
         # FunctionalComponent: type is generic, name is Python function name
         assert result["type"] == "FunctionalComponent"
@@ -182,10 +182,10 @@ class TestReactComponentSerialization:
                 Header()
                 Button(text="Click")
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
         # Root is FunctionalComponent
         assert result["type"] == "FunctionalComponent"

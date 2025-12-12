@@ -31,15 +31,12 @@ import typing as tp
 from dataclasses import dataclass
 
 from trellis.core.base_component import Component
-from trellis.core.rendering import Element
 
 __all__ = ["ReactComponent"]
 
-T = tp.TypeVar("T", bound=Element, default=Element)
-
 
 @dataclass(kw_only=True)
-class ReactComponent(Component[T], tp.Generic[T]):
+class ReactComponent(Component):
     """Base class for components with React implementations.
 
     ReactComponent is used for "leaf" components that have corresponding
@@ -89,14 +86,13 @@ class ReactComponent(Component[T], tp.Generic[T]):
             )
         return self._react_type
 
-    def execute(self, /, node: T, **props: tp.Any) -> None:
+    def execute(self, /, **props: tp.Any) -> None:
         """Execute this component.
 
         For leaf ReactComponents (no children), this is a no-op.
         For container ReactComponents, this mounts the children.
 
         Args:
-            node: The Element instance
             **props: Properties including `children` for containers
         """
         # If this is a container, mount the children

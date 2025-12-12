@@ -46,16 +46,21 @@ Context API example:
     ```
 """
 
+from __future__ import annotations
+
 import threading
 import typing as tp
 from dataclasses import dataclass, field
 from types import TracebackType
 
-from trellis.core.rendering import Element, get_active_render_context
+if tp.TYPE_CHECKING:
+    from trellis.core.rendering import RenderTree
+
+from trellis.core.rendering import get_active_render_tree
 
 # Thread-local context stacks for each Stateful subclass.
 # When using `with state:`, the instance is pushed onto its class's stack.
-_context_stacks: dict[type["Stateful"], list["Stateful"]] = {}
+_context_stacks: dict[type[Stateful], list[Stateful]] = {}
 _context_lock = threading.Lock()
 
 
@@ -65,21 +70,47 @@ def clear_context_stacks() -> None:
         _context_stacks.clear()
 
 
+def clear_node_dependencies(node_id: str, watched_deps: dict[int, tuple[tp.Any, set[str]]]) -> None:
+    """Clear a node's dependency registrations from all watched Stateful instances.
+
+    Called before a node re-renders (to allow fresh registration) and on unmount
+    (to prevent stale references).
+
+    Args:
+        node_id: The node ID to remove from dependencies
+        watched_deps: Dict mapping id(Stateful) -> (Stateful, {prop_names})
+    """
+    for stateful, prop_names in watched_deps.values():
+        try:
+            deps = object.__getattribute__(stateful, "_state_deps")
+            for prop_name in prop_names:
+                if prop_name in deps:
+                    state_info = deps[prop_name]
+                    state_info.node_ids.discard(node_id)
+                    state_info.node_trees.pop(node_id, None)
+        except AttributeError:
+            pass  # Stateful may not have _state_deps yet
+    watched_deps.clear()
+
+
 @dataclass(kw_only=True)
 class StatePropertyInfo:
-    """Tracks which elements depend on a specific state property.
+    """Tracks which nodes depend on a specific state property.
 
-    When a component reads a state property during execution, the element
+    When a component reads a state property during execution, the node
     is added to this property's dependency set. When the property changes,
-    all dependent elements are marked dirty.
+    all dependent nodes are marked dirty.
 
     Attributes:
         name: The property name being tracked
-        elements: Set of elements that depend on this property
+        node_ids: Set of node IDs that depend on this property
+        node_trees: Dict mapping node_id to RenderTree for dirty marking
     """
 
     name: str
-    elements: set[Element] = field(default_factory=set)
+    node_ids: set[str] = field(default_factory=set)
+    # Map node_id to RenderTree so we can mark dirty outside of render
+    node_trees: dict[str, RenderTree] = field(default_factory=dict)
 
 
 class Stateful:
@@ -126,12 +157,12 @@ class Stateful:
 
         cls.__init__ = wrapped_init  # type: ignore[assignment,method-assign]
 
-    def __new__(cls, *args: tp.Any, **kwargs: tp.Any) -> "Stateful":
+    def __new__(cls, *args: tp.Any, **kwargs: tp.Any) -> Stateful:
         """Create or retrieve a cached Stateful instance.
 
         During component execution, state instances are cached on the
-        current element. This implements React-like hooks behavior where
-        the same state instance is returned across re-renders.
+        current node's ElementState. This implements React-like hooks behavior
+        where the same state instance is returned across re-renders.
 
         The cache key is (class, call_index), ensuring that:
         - Different state classes don't collide
@@ -142,35 +173,34 @@ class Stateful:
         Returns:
             A new or cached Stateful instance
         """
-        ctx = get_active_render_context()
+        ctx = get_active_render_tree()
 
         # Outside execution context - create normally
         if ctx is None or not ctx.executing:
             return object.__new__(cls)
 
-        # With lazy rendering, current_node is always correct during execute()
-        element = ctx.current_node
-        if element is None:
+        # Use _current_node_id and _element_state for caching
+        node_id = ctx._current_node_id
+        if node_id is None:
             return object.__new__(cls)
 
-        # Simple key: (class, call_index) - ensures consistent hook ordering
-        call_idx = element._state_call_count
-        element._state_call_count += 1
+        state = ctx.get_element_state(node_id)
+        call_idx = state.state_call_count
+        state.state_call_count += 1
         key = (cls, call_idx)
 
-        if key in element._local_state:
-            return tp.cast("Stateful", element._local_state[key])  # Return cached instance
+        if key in state.local_state:
+            return tp.cast("Stateful", state.local_state[key])
 
-        # Create new instance and cache it on the element
         instance = object.__new__(cls)
-        element._local_state[key] = instance
+        state.local_state[key] = instance
         return instance
 
     def __getattribute__(self, name: str) -> tp.Any:
         """Get an attribute, registering dependencies for public attributes.
 
         When a public attribute (not starting with '_') is accessed during
-        component execution, the current element is registered as dependent
+        component execution, the current node is registered as dependent
         on that attribute. This enables fine-grained reactivity.
 
         Args:
@@ -186,28 +216,39 @@ class Stateful:
             return value
 
         # Register dependency during execution
-        context = get_active_render_context()
+        context = get_active_render_tree()
         if context is not None and context.executing:
-            current_element = context.current_node
-            if current_element is not None:
-                # Lazy init _state_deps (needed when @dataclass doesn't call super().__init__)
-                try:
-                    deps = object.__getattribute__(self, "_state_deps")
-                except AttributeError:
-                    deps = {}
-                    object.__setattr__(self, "_state_deps", deps)
+            # Lazy init _state_deps (needed when @dataclass doesn't call super().__init__)
+            try:
+                deps = object.__getattribute__(self, "_state_deps")
+            except AttributeError:
+                deps = {}
+                object.__setattr__(self, "_state_deps", deps)
 
-                if name not in deps:
-                    deps[name] = StatePropertyInfo(name=name)
-                state_info = deps[name]
-                state_info.elements.add(current_element)
+            if name not in deps:
+                deps[name] = StatePropertyInfo(name=name)
+            state_info = deps[name]
+
+            # Track by node ID and store RenderTree reference for dirty marking
+            node_id = context._current_node_id
+            if node_id is not None:
+                state_info.node_ids.add(node_id)
+                state_info.node_trees[node_id] = context
+
+                # Register reverse mapping for cleanup on re-render/unmount
+                element_state = context.get_element_state(node_id)
+                stateful_id = id(self)
+                if stateful_id in element_state.watched_deps:
+                    element_state.watched_deps[stateful_id][1].add(name)
+                else:
+                    element_state.watched_deps[stateful_id] = (self, {name})
 
         return value
 
     def __setattr__(self, name: str, value: tp.Any) -> None:
-        """Set an attribute, marking dependent elements as dirty.
+        """Set an attribute, marking dependent nodes as dirty.
 
-        When a public attribute is modified, all elements that previously
+        When a public attribute is modified, all nodes that previously
         read that attribute are marked dirty and will re-render.
 
         Args:
@@ -221,7 +262,7 @@ class Stateful:
         if name.startswith("_"):
             return
 
-        # Mark dependent elements as dirty (if we have deps tracking initialized)
+        # Mark dependent nodes as dirty (if we have deps tracking initialized)
         try:
             deps = object.__getattribute__(self, "_state_deps")
         except AttributeError:
@@ -229,9 +270,12 @@ class Stateful:
 
         if name in deps:
             state_info = deps[name]
-            for element in state_info.elements:
-                if element.render_context is not None:
-                    element.render_context.mark_dirty(element)
+
+            # Mark node IDs dirty using stored RenderTree references
+            for node_id in state_info.node_ids:
+                tree = state_info.node_trees.get(node_id)
+                if tree is not None:
+                    tree.mark_dirty_id(node_id)
 
     def on_mount(self) -> None:
         """Called after owning element mounts. Override for initialization."""
@@ -249,8 +293,8 @@ class Stateful:
         """Push this state instance onto the context stack for its type.
 
         This makes the instance retrievable by descendant components via
-        `from_context()`. Context is stored on the current element (if rendering)
-        so that child components can find it by walking up the element tree.
+        `from_context()`. Context is stored on the current node's ElementState
+        (if rendering) so that child components can find it by walking up the tree.
 
         Example:
             ```python
@@ -265,10 +309,13 @@ class Stateful:
         """
         cls = type(self)
 
-        # If we're inside a render context, store on the current element
-        ctx = get_active_render_context()
-        if ctx is not None and ctx.executing and ctx.current_node is not None:
-            ctx.current_node._context[cls] = self
+        # If we're inside a render context, store on the current node's ElementState
+        ctx = get_active_render_tree()
+        if ctx is not None and ctx.executing:
+            node_id = ctx._current_node_id
+            if node_id is not None:
+                state = ctx.get_element_state(node_id)
+                state.context[cls] = self
 
         # Also push to global stack for non-render usage
         with _context_lock:
@@ -286,8 +333,8 @@ class Stateful:
     ) -> None:
         """Pop this state instance from the context stack.
 
-        Note: Context stored on elements is NOT removed here - it persists
-        for the lifetime of the element so child components can find it.
+        Note: Context stored on nodes is NOT removed here - it persists
+        for the lifetime of the node so child components can find it.
         """
         with _context_lock:
             cls = type(self)
@@ -299,7 +346,7 @@ class Stateful:
     def from_context(cls) -> tp.Self:
         """Retrieve the nearest ancestor instance of this state type.
 
-        During rendering, walks up the element tree looking for context.
+        During rendering, walks up the node tree looking for context.
         Outside rendering, uses the global context stack.
 
         Example:
@@ -316,14 +363,19 @@ class Stateful:
         Raises:
             LookupError: If no instance of this type is in the context stack
         """
-        # During render, walk up the element tree
-        ctx = get_active_render_context()
-        if ctx is not None and ctx.executing and ctx.current_node is not None:
-            element: Element | None = ctx.current_node
-            while element is not None:
-                if cls in element._context:
-                    return tp.cast("tp.Self", element._context[cls])
-                element = element.parent
+        ctx = get_active_render_tree()
+        if ctx is not None and ctx.executing:
+            # Walk up the parent_id chain with cycle detection
+            node_id = ctx._current_node_id
+            visited: set[str] = set()
+            while node_id is not None:
+                if node_id in visited:
+                    break  # Cycle detected
+                visited.add(node_id)
+                state = ctx._element_state.get(node_id)
+                if state is not None and cls in state.context:
+                    return tp.cast("tp.Self", state.context[cls])
+                node_id = state.parent_id if state else None
 
         # Fall back to global stack (for non-render usage)
         with _context_lock:
@@ -347,14 +399,19 @@ class Stateful:
         Returns:
             The nearest ancestor instance, or None if not found
         """
-        # During render, walk up the element tree
-        ctx = get_active_render_context()
-        if ctx is not None and ctx.executing and ctx.current_node is not None:
-            element: Element | None = ctx.current_node
-            while element is not None:
-                if cls in element._context:
-                    return tp.cast("tp.Self", element._context[cls])
-                element = element.parent
+        ctx = get_active_render_tree()
+        if ctx is not None and ctx.executing:
+            # Walk up the parent_id chain with cycle detection
+            node_id = ctx._current_node_id
+            visited: set[str] = set()
+            while node_id is not None:
+                if node_id in visited:
+                    break  # Cycle detected
+                visited.add(node_id)
+                state = ctx._element_state.get(node_id)
+                if state is not None and cls in state.context:
+                    return tp.cast("tp.Self", state.context[cls])
+                node_id = state.parent_id if state else None
 
         # Fall back to global stack
         with _context_lock:

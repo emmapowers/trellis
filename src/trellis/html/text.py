@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering import ElementDescriptor
+from trellis.core.rendering import ElementNode
 from trellis.html.base import HtmlElement, Style
 
 __all__ = [
@@ -48,7 +48,7 @@ def P(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A paragraph element."""
     return _p(
         _text=text if text else None,
@@ -68,7 +68,7 @@ def H1(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A level 1 heading."""
     return _h1(
         _text=text if text else None,
@@ -88,7 +88,7 @@ def H2(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A level 2 heading."""
     return _h2(
         _text=text if text else None,
@@ -108,7 +108,7 @@ def H3(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A level 3 heading."""
     return _h3(
         _text=text if text else None,
@@ -128,7 +128,7 @@ def H4(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A level 4 heading."""
     return _h4(
         _text=text if text else None,
@@ -148,7 +148,7 @@ def H5(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A level 5 heading."""
     return _h5(
         _text=text if text else None,
@@ -168,7 +168,7 @@ def H6(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A level 6 heading."""
     return _h6(
         _text=text if text else None,
@@ -187,7 +187,7 @@ def Strong(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A strong (bold) text element."""
     return _strong(
         _text=text if text else None,
@@ -205,7 +205,7 @@ def Em(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """An emphasis (italic) text element."""
     return _em(
         _text=text if text else None,
@@ -223,7 +223,7 @@ def Code(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """An inline code element."""
     return _code(
         _text=text if text else None,
@@ -241,7 +241,7 @@ def Pre(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A preformatted text element."""
     return _pre(
         _text=text if text else None,
@@ -256,7 +256,7 @@ def Text(
     value: tp.Any,
     *,
     key: str | None = None,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A plain text node without any wrapper element.
 
     Use this to insert raw text into the DOM without wrapping it

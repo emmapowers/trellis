@@ -1,6 +1,6 @@
 """Tests for trellis.core.functional_component module."""
 
-from trellis.core.rendering import Element, RenderContext
+from trellis.core.rendering import ElementNode, RenderTree
 from trellis.core.functional_component import FunctionalComponent, component
 
 
@@ -13,17 +13,17 @@ class TestFunctionalComponent:
         assert isinstance(MyComponent, FunctionalComponent)
         assert MyComponent.name == "MyComponent"
 
-    def test_component_returns_element(self) -> None:
+    def test_component_returns_node(self) -> None:
         @component
         def Parent() -> None:
             pass
 
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
-        assert ctx.root_element is not None
-        assert isinstance(ctx.root_element, Element)
-        assert ctx.root_element.component == Parent
+        assert ctx.root_node is not None
+        assert isinstance(ctx.root_node, ElementNode)
+        assert ctx.root_node.component == Parent
 
     def test_nested_components(self) -> None:
         @component
@@ -34,35 +34,15 @@ class TestFunctionalComponent:
         def Parent() -> None:
             Child()
 
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
-        assert ctx.root_element is not None
-        assert len(ctx.root_element.children) == 1
-        assert ctx.root_element.children[0].component == Child
-
-    def test_component_depth_tracking(self) -> None:
-        @component
-        def GrandChild() -> None:
-            pass
-
-        @component
-        def Child() -> None:
-            GrandChild()
-
-        @component
-        def Parent() -> None:
-            Child()
-
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
-
-        assert ctx.root_element.depth == 0
-        assert ctx.root_element.children[0].depth == 1
-        assert ctx.root_element.children[0].children[0].depth == 2
+        assert ctx.root_node is not None
+        assert len(ctx.root_node.children) == 1
+        assert ctx.root_node.children[0].component == Child
 
     def test_component_with_props_via_parent(self) -> None:
-        """Props are passed when component is called from parent, not from RenderContext."""
+        """Props are passed when component is called from parent, not from RenderTree."""
         received_text: list[str] = []
 
         @component
@@ -73,8 +53,8 @@ class TestFunctionalComponent:
         def Parent() -> None:
             Child(text="hello")
 
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         assert received_text == ["hello"]
 
@@ -89,10 +69,10 @@ class TestFunctionalComponent:
             Child()
             Child()
 
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
-        assert len(ctx.root_element.children) == 3
+        assert len(ctx.root_node.children) == 3
 
     def test_implicit_child_collection(self) -> None:
         """Elements created in component body are auto-collected as children."""
@@ -107,13 +87,13 @@ class TestFunctionalComponent:
             Item(label="b")
             Item(label="c")
 
-        ctx = RenderContext(List)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(List)
+        ctx.render()
 
-        assert len(ctx.root_element.children) == 3
-        assert ctx.root_element.children[0].properties["label"] == "a"
-        assert ctx.root_element.children[1].properties["label"] == "b"
-        assert ctx.root_element.children[2].properties["label"] == "c"
+        assert len(ctx.root_node.children) == 3
+        assert ctx.root_node.children[0].properties["label"] == "a"
+        assert ctx.root_node.children[1].properties["label"] == "b"
+        assert ctx.root_node.children[2].properties["label"] == "c"
 
     def test_conditional_children(self) -> None:
         """Only created elements are collected."""
@@ -130,13 +110,13 @@ class TestFunctionalComponent:
         def ConditionalFalse() -> None:
             pass  # No Item created
 
-        ctx = RenderContext(ConditionalTrue)
-        ctx.render_tree(from_element=None)
-        assert len(ctx.root_element.children) == 1
+        ctx = RenderTree(ConditionalTrue)
+        ctx.render()
+        assert len(ctx.root_node.children) == 1
 
-        ctx2 = RenderContext(ConditionalFalse)
-        ctx2.render_tree(from_element=None)
-        assert len(ctx2.root_element.children) == 0
+        ctx2 = RenderTree(ConditionalFalse)
+        ctx2.render()
+        assert len(ctx2.root_node.children) == 0
 
     def test_loop_children(self) -> None:
         """Elements created in loops are collected."""
@@ -150,9 +130,9 @@ class TestFunctionalComponent:
             for i in range(5):
                 Item(value=i)
 
-        ctx = RenderContext(List)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(List)
+        ctx.render()
 
-        assert len(ctx.root_element.children) == 5
-        for i, child in enumerate(ctx.root_element.children):
+        assert len(ctx.root_node.children) == 5
+        for i, child in enumerate(ctx.root_node.children):
             assert child.properties["value"] == i

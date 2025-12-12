@@ -1,9 +1,9 @@
-"""Serialization of Element trees for WebSocket transmission.
+"""Serialization of ElementNode trees for WebSocket transmission.
 
-This module converts the server-side Element tree to a JSON-serializable
+This module converts the server-side ElementNode trees to a JSON-serializable
 format that can be sent to the client for rendering.
 
-Callbacks are registered on the RenderContext and replaced with IDs that
+Callbacks are registered on the RenderTree and replaced with IDs that
 the client can use to invoke them via events.
 """
 
@@ -14,15 +14,15 @@ import typing as tp
 from trellis.core.functional_component import FunctionalComponent
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering import Element, RenderContext
+    from trellis.core.rendering import ElementNode, RenderTree
 
 
-def _serialize_value(value: tp.Any, ctx: RenderContext) -> tp.Any:
+def _serialize_value(value: tp.Any, ctx: RenderTree) -> tp.Any:
     """Serialize a single value, handling special cases.
 
     Args:
         value: The value to serialize
-        ctx: The render context for callback registration
+        ctx: The render tree for callback registration
 
     Returns:
         A JSON-serializable version of the value
@@ -41,14 +41,15 @@ def _serialize_value(value: tp.Any, ctx: RenderContext) -> tp.Any:
     return str(value)
 
 
-def serialize_element(element: Element) -> dict[str, tp.Any]:
-    """Convert an Element tree to a serializable dict.
+def serialize_node(node: ElementNode, ctx: RenderTree) -> dict[str, tp.Any]:
+    """Convert an ElementNode tree to a serializable dict.
 
     The resulting structure can be JSON-encoded and sent to the client.
     Callbacks are replaced with `{"__callback__": "cb_123"}` references.
 
     Args:
-        element: The Element to serialize
+        node: The ElementNode to serialize
+        ctx: The RenderTree for callback registration
 
     Returns:
         A dict with structure:
@@ -59,29 +60,22 @@ def serialize_element(element: Element) -> dict[str, tp.Any]:
             "props": {...},
             "children": [...]
         }
-
-    Raises:
-        RuntimeError: If element has no render_context
     """
-    ctx = element.render_context
-    if ctx is None:
-        raise RuntimeError("Cannot serialize element without render_context")
-
     # Skip props for FunctionalComponents - they're layout-only and not used by React
-    if isinstance(element.component, FunctionalComponent):
+    if isinstance(node.component, FunctionalComponent):
         props: dict[str, tp.Any] = {}
     else:
         # Serialize props, excluding children (handled separately)
         props = {}
-        for key, value in element.properties.items():
+        for key, value in node.properties.items():
             if key == "children":
                 continue  # Children are serialized separately
             props[key] = _serialize_value(value, ctx)
 
     return {
-        "type": element.component.react_type,  # React component to use
-        "name": element.component.name,  # Python component name for debugging
-        "key": element.key or element.stable_id,  # User key or server-assigned ID
+        "type": node.component.react_type,  # React component to use
+        "name": node.component.name,  # Python component name for debugging
+        "key": node.key or node.id,  # User key or server-assigned ID
         "props": props,
-        "children": [serialize_element(child) for child in element.children],
+        "children": [serialize_node(child, ctx) for child in node.children],
     }

@@ -2,16 +2,16 @@
 
 This module implements the two-phase rendering architecture:
 
-1. **Descriptor Phase**: Components create lightweight `ElementDescriptor` objects
+1. **Node Phase**: Components create lightweight `ElementNode` objects
    that describe what should be rendered, without actually executing anything.
 
-2. **Execution Phase**: The reconciler compares descriptors with existing elements
+2. **Execution Phase**: The reconciler compares nodes with existing state
    and only executes components when necessary (props changed or marked dirty).
 
 Key Types:
-    - `ElementDescriptor`: Immutable description of a component invocation
-    - `Element`: Runtime tree node with state, lifecycle hooks, and children
-    - `RenderContext`: Manages the render lifecycle and element tree
+    - `ElementNode`: Immutable tree node representing a component invocation
+    - `ElementState`: Mutable runtime state for an ElementNode (keyed by node.id)
+    - `RenderTree`: Manages the render lifecycle and node tree
 
 Example:
     ```python
@@ -20,8 +20,8 @@ Example:
         state = CounterState()
         Text(f"Count: {state.count}")
 
-    ctx = RenderContext(Counter)
-    tree = ctx.render()  # Render and serialize
+    tree = RenderTree(Counter)
+    result = tree.render()  # Render and serialize
     # After state changes, call render() again for updated tree
     ```
 """
@@ -31,35 +31,36 @@ from __future__ import annotations
 import contextvars
 import threading
 import typing as tp
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
+from dataclasses import replace as dataclass_replace
 
 from trellis.utils.lock_helper import ClassWithLock, with_lock
 
 __all__ = [
-    "Element",
-    "ElementDescriptor",
+    "ElementNode",
+    "ElementState",
     "FrozenProps",
     "IComponent",
-    "RenderContext",
-    "get_active_render_context",
-    "set_active_render_context",
+    "RenderTree",
+    "get_active_render_tree",
+    "set_active_render_tree",
 ]
 
-# Immutable props type for ElementDescriptor - tuple of (key, value) pairs
+# Immutable props type for ElementNode - tuple of (key, value) pairs
 type FrozenProps = tuple[tuple[str, tp.Any], ...]
 
-# Thread-safe, task-local storage for the active render context.
+# Thread-safe, task-local storage for the active render tree.
 # Using contextvars ensures each asyncio task or thread has its own context,
 # enabling concurrent rendering (e.g., multiple WebSocket connections).
-_active_render_context: contextvars.ContextVar[RenderContext | None] = contextvars.ContextVar(
-    "active_render_context", default=None
+_active_render_tree: contextvars.ContextVar[RenderTree | None] = contextvars.ContextVar(
+    "active_render_tree", default=None
 )
 
 
 def freeze_props(props: dict[str, tp.Any]) -> FrozenProps:
     """Convert a props dictionary to an immutable tuple for comparison.
 
-    Props are frozen so that ElementDescriptor can be immutable and props
+    Props are frozen so that ElementNode can be immutable and props
     can be compared for equality to determine if re-execution is needed.
 
     Args:
@@ -83,32 +84,32 @@ def unfreeze_props(frozen: FrozenProps) -> dict[str, tp.Any]:
     return dict(frozen)
 
 
-def get_active_render_context() -> RenderContext | None:
-    """Get the currently active render context, if any.
+def get_active_render_tree() -> RenderTree | None:
+    """Get the currently active render tree, if any.
 
     Returns:
-        The active RenderContext, or None if not currently rendering
+        The active RenderTree, or None if not currently rendering
     """
-    return _active_render_context.get()
+    return _active_render_tree.get()
 
 
-def set_active_render_context(ctx: RenderContext | None) -> None:
-    """Set the active render context.
+def set_active_render_tree(tree: RenderTree | None) -> None:
+    """Set the active render tree.
 
-    This is called internally by RenderContext.render_tree() to establish
-    the current context for component execution.
+    This is called internally by RenderTree.render() to establish
+    the current tree for component execution.
 
     Args:
-        ctx: The RenderContext to make active, or None to clear
+        tree: The RenderTree to make active, or None to clear
     """
-    _active_render_context.set(ctx)
+    _active_render_tree.set(tree)
 
 
 class IComponent(tp.Protocol):
     """Protocol defining the component interface.
 
     All components (functional or class-based) must implement this protocol.
-    Components are callable and return ElementDescriptors when invoked.
+    Components are callable and return ElementNodes when invoked.
     """
 
     name: str
@@ -119,8 +120,8 @@ class IComponent(tp.Protocol):
         """The React component type name used to render this on the client."""
         ...
 
-    def __call__(self, /, **props: tp.Any) -> ElementDescriptor:
-        """Create a descriptor for this component with the given props.
+    def __call__(self, /, **props: tp.Any) -> ElementNode:
+        """Create a node for this component with the given props.
 
         This does NOT execute the component - it only creates a description
         of what should be rendered. Execution happens later during reconciliation.
@@ -129,56 +130,76 @@ class IComponent(tp.Protocol):
             **props: Properties to pass to the component
 
         Returns:
-            An ElementDescriptor describing this component invocation
+            An ElementNode describing this component invocation
         """
         ...
 
-    def execute(self, /, node: Element, **props: tp.Any) -> None:
-        """Execute the component to produce child descriptors.
+    def execute(self, /, **props: tp.Any) -> None:
+        """Execute the component to produce child nodes.
 
         Called by the reconciler when this component needs to render.
-        The component should create child descriptors by calling other
+        The component should create child nodes by calling other
         components or using `with` blocks for containers.
 
         Args:
-            node: The Element this component is rendering into
             **props: Properties passed to the component
         """
         ...
 
 
+# =============================================================================
+# Core types: ElementNode (immutable tree) + ElementState (mutable state)
+# =============================================================================
+
+
 @dataclass(frozen=True)
-class ElementDescriptor:
-    """Immutable description of a component invocation.
+class ElementNode:
+    """Immutable tree node representing a component invocation.
 
-    ElementDescriptor is the core of the lazy rendering system. When you call
-    a component like `Button(text="Click me")`, it returns an ElementDescriptor
-    rather than immediately executing. The reconciler later decides whether
-    to execute based on whether props have changed.
+    ElementNode is the immutable type for component nodes in the tree.
+    It is frozen for safe comparison and serialization, while mutable runtime
+    state is stored separately in ElementState (keyed by node.id in
+    RenderTree._element_state).
 
-    Descriptors can be used as context managers for container components:
+    Nodes can be used as context managers for container components:
 
     ```python
-    with Column():      # Creates descriptor, pushes to collection stack
-        Button()        # Creates descriptor, added to Column's children
+    with Column():      # Creates node, pushes to collection stack
+        Button()        # Creates node, added to Column's children
         Text("hello")   # Same
     # __exit__ pops Column, stores children, adds to parent
     ```
 
+    When reconciling, nodes are matched by component + key. If matched,
+    the new node's ID is replaced with the old node's ID via dataclass.replace()
+    to preserve state associations.
+
     Attributes:
-        component: The component that will be executed
-        key: Optional stable identifier for reconciliation
+        component: The component that will be/was executed
         props: Immutable tuple of (key, value) property pairs
-        children: Child descriptors collected via `with` block
+        key: Optional stable identifier for reconciliation
+        children: Child nodes (tuple for immutability)
+        id: Stable identifier assigned by RenderTree (empty until reconciled)
     """
 
     component: IComponent
-    key: str = ""
     props: FrozenProps = ()
-    children: tuple[ElementDescriptor, ...] = ()
-    _auto_collected: bool = False  # Track if already added to parent
+    key: str = ""
+    children: tuple[ElementNode, ...] = ()
+    id: str = ""  # Assigned by RenderTree.next_id() during reconciliation
 
-    def __enter__(self) -> ElementDescriptor:
+    # Internal flag for child collection (set via object.__setattr__)
+    _auto_collected: bool = False
+
+    @property
+    def properties(self) -> dict[str, tp.Any]:
+        """Get props as a mutable dictionary, including children if present."""
+        props = unfreeze_props(self.props)
+        if self.children:
+            props["children"] = list(self.children)
+        return props
+
+    def __enter__(self) -> ElementNode:
         """Enter a `with` block to collect children for a container component.
 
         This validates that the component accepts a `children` parameter,
@@ -195,7 +216,7 @@ class ElementDescriptor:
 
         # Ensure we're inside a render context - containers cannot be used
         # in callbacks or other code outside of rendering
-        ctx = get_active_render_context()
+        ctx = get_active_render_tree()
         if ctx is None:
             raise RuntimeError(
                 f"Cannot use 'with {self.component.name}()' outside of render context. "
@@ -225,7 +246,7 @@ class ElementDescriptor:
         """Exit the `with` block, collecting children and registering with parent.
 
         Pops the collection list from the stack, stores the collected children
-        on this descriptor, and adds this descriptor to the parent's collection
+        on this node, and adds this node to the parent's collection
         (if there is a parent scope).
 
         Args:
@@ -233,7 +254,7 @@ class ElementDescriptor:
             exc_val: Exception value if an error occurred, else None
             exc_tb: Traceback if an error occurred, else None
         """
-        ctx = get_active_render_context()
+        ctx = get_active_render_tree()
         if ctx is None:
             return
 
@@ -259,7 +280,7 @@ class ElementDescriptor:
             ctx.add_to_current_frame(self)
 
     def __call__(self) -> None:
-        """Mount this descriptor at the current position (the "child() rule").
+        """Mount this node at the current position (the "child() rule").
 
         This implements the key behavior for container components:
         - If called inside a `with` block: add to that block's pending children
@@ -267,178 +288,90 @@ class ElementDescriptor:
 
         This allows container components to control when and where children
         are mounted by iterating over their `children` prop and calling
-        `child()` on each descriptor.
+        `child()` on each node.
 
         Raises:
             RuntimeError: If called outside both `with` block and render context
         """
-        ctx = get_active_render_context()
+        ctx = get_active_render_tree()
         if ctx is not None and ctx.has_active_frame():
             # Inside a `with` block - just add to pending children
             ctx.add_to_current_frame(self)
         elif ctx is not None:
-            # Outside `with` block - actually mount via reconciler
-            ctx.mount_descriptor(self)
+            # Inside render context but outside any component execution frame
+            raise RuntimeError(
+                "Cannot call child() outside component execution. "
+                "Ensure you're inside a component function or with block."
+            )
         else:
-            raise RuntimeError("Cannot mount descriptor outside of render context")
+            raise RuntimeError("Cannot mount node outside of render context")
 
 
-@dataclass(kw_only=True)
-class Element:
-    """Runtime tree node representing a mounted component instance.
+@dataclass
+class ElementState:
+    """Mutable runtime state for an ElementNode.
 
-    Elements are the "live" nodes in the component tree. They hold:
-    - Reference to the descriptor that created them
-    - Tree structure (parent, children, depth)
-    - Local state for Stateful instances
-    - Lifecycle state (mounted, dirty)
-
-    Elements are created by the reconciler when mounting new components,
-    and are reused across re-renders when props haven't changed.
+    ElementState holds all per-node mutable data (local state, context, etc.)
+    keyed by node.id in RenderTree._element_state.
 
     Attributes:
-        descriptor: The ElementDescriptor that created this element
-        children: Child elements in the tree
-        parent: Parent element, or None for root
-        depth: Depth in the tree (0 for root)
-        render_context: The RenderContext managing this element
-        dirty: Whether this element needs re-rendering
-        stable_id: Server-assigned stable identifier for React reconciliation
+        dirty: Whether this node needs re-rendering
+        mounted: Whether on_mount() has been called
+        local_state: Cached Stateful instances, keyed by (class, call_index)
+        state_call_count: Counter for consistent hook ordering
+        context: State context from `with state:` blocks
+        parent_id: Parent node's ID (for context walking)
     """
 
-    # The descriptor that created this element
-    descriptor: ElementDescriptor
-
-    # Runtime tree structure
-    children: list[Element] = field(default_factory=list)
-    parent: Element | None = None
-    depth: int = 0
-
-    # Render context and state
-    render_context: RenderContext | None = None
     dirty: bool = False
-    _mounted: bool = False
+    mounted: bool = False
+    local_state: dict[tuple[type, int], tp.Any] = field(default_factory=dict)
+    state_call_count: int = 0
+    context: dict[type, tp.Any] = field(default_factory=dict)
+    parent_id: str | None = None
+    watched_deps: dict[int, tuple[tp.Any, set[str]]] = field(default_factory=dict)
+    """Maps id(Stateful) -> (Stateful, {prop_names}) for cleanup on re-render/unmount.
 
-    # Server-assigned stable identifier, used as React key when no user key provided
-    stable_id: str = ""
-
-    # Local state storage for Stateful instances.
-    # Key is (StateClass, call_index) to ensure consistent ordering.
-    _local_state: dict[tuple[type, int], tp.Any] = field(default_factory=dict)
-    _state_call_count: int = 0
-
-    # Context storage for state provided via `with state:` blocks.
-    # Maps state class to the state instance provided in this element's scope.
-    _context: dict[type, tp.Any] = field(default_factory=dict)
-
-    @property
-    def component(self) -> IComponent:
-        """The component that created this element."""
-        return self.descriptor.component
-
-    @property
-    def key(self) -> str:
-        """The stable key for reconciliation, if any."""
-        return self.descriptor.key
-
-    @property
-    def properties(self) -> dict[str, tp.Any]:
-        """Get props as a mutable dictionary.
-
-        This includes both regular props and children (if any were
-        collected via a `with` block).
-
-        Returns:
-            Dictionary of all properties including children
-        """
-        props = unfreeze_props(self.descriptor.props)
-        if self.descriptor.children:
-            props["children"] = list(self.descriptor.children)
-        return props
-
-    def __hash__(self) -> int:
-        """Hash by identity since elements are mutable."""
-        return id(self)
-
-    def replace(self, other: Element) -> None:
-        """Replace all fields of this element with another's values.
-
-        Used during reconciliation to update an element in place while
-        preserving its identity (important for external references).
-
-        Args:
-            other: Element to copy values from
-
-        Raises:
-            AssertionError: If other is a different Element subclass
-        """
-        assert type(self) is type(
-            other
-        ), "Can only replace an element with another of the same type!"
-        for f in fields(self):
-            setattr(self, f.name, getattr(other, f.name))
-
-    def on_mount(self) -> None:
-        """Lifecycle hook called when element is added to the tree.
-
-        Override in Element subclasses to perform initialization.
-        Called after the element is fully constructed and added to parent.
-        """
-        pass
-
-    def on_unmount(self) -> None:
-        """Lifecycle hook called when element is removed from the tree.
-
-        Override in Element subclasses to perform cleanup.
-        Called before the element is removed, while parent is still accessible.
-        """
-        pass
-
-    def __rich_repr__(self) -> tp.Iterator[tp.Any]:
-        """Rich library representation for pretty printing."""
-        if self.key:
-            yield self.component.name + f" (d={self.depth}, key={self.key})"
-        else:
-            yield self.component.name + f" (d={self.depth})"
-        yield "properties", self.properties
-        yield "children", self.children
+    Before each render, these are cleared from each Stateful._state_deps.
+    During render, __getattribute__ re-registers fresh dependencies.
+    Uses id() as key since Stateful instances may not be hashable.
+    """
 
 
-class RenderContext(ClassWithLock):
+class RenderTree(ClassWithLock):
     """Manages the rendering lifecycle for a component tree.
 
-    RenderContext is the main entry point for rendering. It:
-    - Holds the root component and element tree
-    - Tracks which elements are dirty and need re-rendering
+    RenderTree is the main entry point for rendering. It:
+    - Holds the root component and node tree
+    - Tracks which nodes are dirty and need re-rendering
     - Manages the render/execute phases
     - Provides thread-safe rendering via locking
 
     Example:
         ```python
-        ctx = RenderContext(MyApp)
-        tree = ctx.render()  # Initial render, returns serialized tree
+        tree = RenderTree(MyApp)
+        result = tree.render()  # Initial render, returns serialized tree
 
         # After state changes...
-        tree = ctx.render()  # Re-renders dirty elements and serializes
+        result = tree.render()  # Re-renders dirty nodes and serializes
         ```
 
     Attributes:
         root_component: The top-level component
-        root_element: The root of the element tree (after first render)
-        dirty_elements: Set of elements needing re-render
+        root_node: The root of the node tree (after first render)
         rendering: True during descriptor creation phase
         executing: True during component execution phase
     """
 
     root_component: IComponent
-    root_element: Element | None
-    dirty_elements: set[Element]
+    root_node: ElementNode | None  # Root of ElementNode tree
+    _dirty_ids: set[str]  # Dirty node IDs
     lock: threading.RLock
 
     # Render state flags
     rendering: bool  # In descriptor creation phase
     executing: bool  # In execution phase
-    _current_node: Element | None  # Element being executed (for state lookup)
+    _current_node_id: str | None  # ID of node being executed
 
     def __init__(self, root: IComponent) -> None:
         """Create a new render context for a root component.
@@ -447,51 +380,53 @@ class RenderContext(ClassWithLock):
             root: The root component to render
         """
         self.root_component = root
-        self.root_element = None
-        self.dirty_elements = set()
+        self.root_node = None
+        self._dirty_ids: set[str] = set()
         self.lock = threading.RLock()
         self.rendering = False
         self.executing = False
-        self._current_node = None
-        # Descriptor stack for collecting children during `with` blocks.
-        # Each entry is a list that collects descriptors created within that scope.
-        self._descriptor_stack: list[list[ElementDescriptor]] = []
+        self._current_node_id: str | None = None
+        # Node stack for collecting children during `with` blocks.
+        # Each entry is a list that collects nodes created within that scope.
+        self._descriptor_stack: list[list[ElementNode]] = []
         # Callback registry for this session - maps callback IDs to callables.
-        # Scoped to RenderContext to ensure proper cleanup on session end.
+        # Scoped to RenderTree to ensure proper cleanup on session end.
         self._callback_registry: dict[str, tp.Callable[..., tp.Any]] = {}
         self._callback_counter: int = 0
-        # Element ID counter for stable IDs used as React keys
-        self._element_counter: int = 0
+        # Node ID counter for stable IDs used as React keys
+        self._node_counter: int = 0
+        # State store keyed by node.id
+        self._element_state: dict[str, ElementState] = {}
 
     def push_descriptor_frame(self) -> None:
-        """Push a new frame for collecting child descriptors.
+        """Push a new frame for collecting child nodes.
 
         Called when entering a `with` block on a container component.
-        Child descriptors created in that scope will be added to this frame.
+        Child nodes created in that scope will be added to this frame.
         """
         self._descriptor_stack.append([])
 
-    def pop_descriptor_frame(self) -> list[ElementDescriptor]:
-        """Pop and return the current descriptor frame.
+    def pop_descriptor_frame(self) -> list[ElementNode]:
+        """Pop and return the current node frame.
 
         Called when exiting a `with` block. Returns the list of child
-        descriptors collected in that scope.
+        nodes collected in that scope.
 
         Returns:
-            List of child descriptors from the completed frame
+            List of child nodes from the completed frame
         """
         return self._descriptor_stack.pop()
 
-    def add_to_current_frame(self, descriptor: ElementDescriptor) -> None:
-        """Add a descriptor to the current frame if one exists.
+    def add_to_current_frame(self, node: ElementNode) -> None:
+        """Add a node to the current frame if one exists.
 
         Called when a child component is invoked inside a `with` block.
 
         Args:
-            descriptor: The child descriptor to add
+            node: The child node to add
         """
         if self._descriptor_stack:
-            self._descriptor_stack[-1].append(descriptor)
+            self._descriptor_stack[-1].append(node)
 
     def has_active_frame(self) -> bool:
         """Check if there's an active descriptor collection frame.
@@ -502,137 +437,154 @@ class RenderContext(ClassWithLock):
         return bool(self._descriptor_stack)
 
     def next_element_id(self) -> str:
-        """Generate a unique stable ID for an element.
+        """Generate a unique stable ID for a node.
 
-        IDs are assigned once at element creation and remain stable
-        for the element's lifetime. Used as React keys when no
+        IDs are assigned once at node creation and remain stable
+        for the node's lifetime. Used as React keys when no
         user-provided key exists.
 
         Returns:
             A unique string ID (e.g., "e1", "e2", ...)
         """
-        self._element_counter += 1
-        return f"e{self._element_counter}"
+        self._node_counter += 1
+        return f"e{self._node_counter}"
 
     @with_lock
-    def render_tree(self, from_element: Element | None) -> None:
-        """Render the component tree, starting from a specific element.
+    def _render_node_tree(self, from_node_id: str | None = None) -> None:
+        """Render the component tree using ElementNode architecture.
 
-        This is the internal render entry point. It:
-        1. Creates descriptors by calling components
-        2. Reconciles descriptors against existing elements
-        3. Executes components that need updating
-        4. Mounts new elements and unmounts removed ones
-
-        For the public API that returns serialized output, use render().
+        This is the new render entry point using ElementNode + ElementState.
 
         Args:
-            from_element: Element to re-render from, or None for initial render
+            from_node_id: Node ID to re-render from, or None for initial render
 
         Raises:
             RuntimeError: If another render is already in progress
         """
-        from trellis.core.reconcile import reconcile
+        from trellis.core.reconcile import reconcile_node
 
-        if get_active_render_context():
+        if get_active_render_tree():
             raise RuntimeError("Attempted to start rendering with another context active!")
 
         try:
             self.rendering = True
-            set_active_render_context(self)
+            set_active_render_tree(self)
 
-            if from_element is None:
-                # Initial render - create descriptor tree from root component
-                root_desc = self.root_component()
+            if from_node_id is None:
+                # Initial render - create node tree from root component
+                # root_component() returns an ElementNode via Component.__call__
+                root_node = self.root_component()
+
                 # Reconcile against None to mount the entire tree
-                self.root_element = reconcile(None, root_desc, None, self)
+                self.root_node = reconcile_node(None, root_node, None, self)
             else:
-                # Re-render from a dirty element
-                from_element._state_call_count = 0  # Reset for consistent hook ordering
-                # Create new descriptor tree for this component with current props
-                new_desc = from_element.component(**from_element.properties)
-                # Reconcile against the existing element
-                reconcile(from_element, new_desc, from_element.parent, self)
+                # Re-render from a dirty node
+                if self.root_node is None:
+                    return
+
+                # Find the node and its parent
+                node, parent_id = self._find_node_with_parent(self.root_node, from_node_id)
+                if node is None:
+                    return
+
+                # Get node state and reset state call count
+                state = self._element_state.get(from_node_id)
+                if state:
+                    state.state_call_count = 0
+
+                # Create new node for this component with current props
+                # component(**props) returns an ElementNode via Component.__call__
+                # IMPORTANT: Include the key to preserve identity during reconciliation
+                props = dict(node.props)
+                if node.key:
+                    props["key"] = node.key
+                has_children_param = getattr(node.component, "_has_children_param", False)
+                if node.children and has_children_param:
+                    props["children"] = list(node.children)
+                new_node = node.component(**props)
+
+                # Reconcile and update tree
+                updated_node = reconcile_node(node, new_node, parent_id, self)
+                self.root_node = self._replace_node_in_tree(
+                    self.root_node, from_node_id, updated_node
+                )
 
         finally:
             self.rendering = False
-            set_active_render_context(None)
+            set_active_render_tree(None)
+
+    def _find_node_with_parent(
+        self, root: ElementNode, target_id: str, parent_id: str | None = None
+    ) -> tuple[ElementNode | None, str | None]:
+        """Find a node by ID and return it with its parent's ID."""
+        if root.id == target_id:
+            return root, parent_id
+        for child in root.children:
+            result, found_parent = self._find_node_with_parent(child, target_id, root.id)
+            if result is not None:
+                return result, found_parent
+        return None, None
+
+    def _replace_node_in_tree(
+        self, root: ElementNode, target_id: str, replacement: ElementNode
+    ) -> ElementNode:
+        """Replace a node in the tree by ID, returning the new tree."""
+        if root.id == target_id:
+            return replacement
+
+        new_children = tuple(
+            self._replace_node_in_tree(child, target_id, replacement) for child in root.children
+        )
+
+        if new_children != root.children:
+            return dataclass_replace(root, children=new_children)
+        return root
 
     @with_lock
-    def render_dirty(self) -> None:
-        """Re-render all elements marked as dirty.
+    def _render_dirty_nodes(self) -> None:
+        """Re-render all nodes marked as dirty.
 
-        Elements are rendered in depth order (shallowest first) to ensure
-        parents are updated before children. An element may be skipped if
-        it was already rendered as part of its parent's render.
+        Nodes are rendered in arbitrary order. If a parent and child are both dirty,
+        the child's dirty flag will be cleared when the parent re-renders it, so
+        we check the dirty flag again before rendering each node.
         """
-        elements = list(self.dirty_elements)
-        # Sort by depth - render parents before children
-        elements.sort(key=lambda e: e.depth)
+        dirty_ids = list(self._dirty_ids)
 
-        for element in elements:
+        for node_id in dirty_ids:
+            state = self._element_state.get(node_id)
             # Check dirty flag again - may have been rendered as part of parent
-            if element.dirty:
-                self.render_tree(from_element=element)
-                element.dirty = False
-        self.dirty_elements.clear()
+            if state and state.dirty:
+                self._render_node_tree(from_node_id=node_id)
+                state.dirty = False
+
+        self._dirty_ids.clear()
+
+    @property
+    def current_node_id(self) -> str | None:
+        """The ID of the node currently being executed.
+
+        Used by Stateful to look up state in _element_state.
+
+        Returns:
+            The current node ID during execution, or None
+        """
+        return self._current_node_id
 
     @with_lock
-    def mark_dirty(self, element: Element) -> None:
-        """Mark an element as needing re-render.
-
-        Called automatically when state that an element depends on changes.
+    def mark_dirty_id(self, node_id: str) -> None:
+        """Mark a node ID as needing re-render.
 
         Args:
-            element: The element to mark dirty
+            node_id: The ID of the node to mark dirty
         """
-        self.dirty_elements.add(element)
-        element.dirty = True
-
-    def mount_descriptor(self, desc: ElementDescriptor) -> Element:
-        """Mount a descriptor during component execution.
-
-        This is called by ElementDescriptor.__call__() when a child descriptor
-        is invoked outside of any `with` block, meaning it should be mounted
-        immediately at the current position in the tree.
-
-        Args:
-            desc: The descriptor to mount
-
-        Returns:
-            The newly mounted Element
-
-        Raises:
-            RuntimeError: If called outside of execution phase
-        """
-        from trellis.core.reconcile import reconcile
-
-        if not self.executing:
-            raise RuntimeError("mount_descriptor called outside of execution phase")
-
-        parent = self._current_node
-        return reconcile(None, desc, parent, self)
-
-    @property
-    def current_node(self) -> Element | None:
-        """The Element currently being executed.
-
-        Used by Stateful to determine which element to cache state on.
-
-        Returns:
-            The current element during execution, or None
-        """
-        return self._current_node
-
-    @property
-    def current_element(self) -> Element | None:
-        """Alias for current_node (backwards compatibility)."""
-        return self._current_node
+        self._dirty_ids.add(node_id)
+        if node_id in self._element_state:
+            self._element_state[node_id].dirty = True
 
     def register_callback(self, callback: tp.Callable[..., tp.Any]) -> str:
         """Register a callback and return its ID.
 
-        Callbacks are stored on this RenderContext, ensuring they are
+        Callbacks are stored on this RenderTree, ensuring they are
         scoped to the current session and cleaned up properly.
 
         Args:
@@ -666,25 +618,46 @@ class RenderContext(ClassWithLock):
         self._callback_counter = 0
 
     def render(self) -> dict[str, tp.Any]:
-        """Render and return the serialized element tree.
+        """Render and return the serialized node tree.
 
         This is the main public API for rendering. It:
         1. Clears stale callbacks from the previous render
-        2. Renders the tree (initial or re-render of dirty elements)
+        2. Renders the tree (initial or re-render of dirty nodes)
         3. Serializes the result for transmission
 
         Returns:
-            Serialized element tree as a dict, suitable for JSON/msgpack encoding.
+            Serialized node tree as a dict, suitable for JSON/msgpack encoding.
             Callbacks are replaced with {"__callback__": "cb_N"} references.
         """
-        from trellis.core.serialization import serialize_element
+        from trellis.core.serialization import serialize_node
 
         self.clear_callbacks()
 
-        if self.root_element is None:
-            self.render_tree(from_element=None)
+        if self.root_node is None:
+            self._render_node_tree(from_node_id=None)
         else:
-            self.render_dirty()
+            self._render_dirty_nodes()
 
-        assert self.root_element is not None
-        return serialize_element(self.root_element)
+        assert self.root_node is not None
+        return serialize_node(self.root_node, self)
+
+    def get_element_state(self, node_id: str) -> ElementState:
+        """Get or create ElementState for a node ID.
+
+        Args:
+            node_id: The node's stable ID
+
+        Returns:
+            The ElementState for this node (created if needed)
+        """
+        if node_id not in self._element_state:
+            self._element_state[node_id] = ElementState()
+        return self._element_state[node_id]
+
+    def remove_element_state(self, node_id: str) -> None:
+        """Remove ElementState for a node ID (called on unmount).
+
+        Args:
+            node_id: The node's stable ID to remove
+        """
+        self._element_state.pop(node_id, None)

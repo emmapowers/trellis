@@ -1,30 +1,30 @@
-"""Tests for Element tree serialization."""
+"""Tests for ElementNode tree serialization."""
 
 from trellis.core.functional_component import component
-from trellis.core.rendering import RenderContext
-from trellis.core.serialization import serialize_element
+from trellis.core.rendering import RenderTree
+from trellis.core.serialization import serialize_node
 from trellis.widgets.basic import Button
 import trellis.html as h
 
 
-class TestSerializeElement:
-    """Tests for serialize_element function."""
+class TestSerializeNode:
+    """Tests for serialize_node function."""
 
-    def test_serialize_simple_element(self) -> None:
-        """Basic element serializes correctly."""
+    def test_serialize_simple_node(self) -> None:
+        """Basic node serializes correctly."""
 
         @component
         def Simple() -> None:
             pass
 
-        ctx = RenderContext(Simple)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Simple)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
         assert result["type"] == "FunctionalComponent"  # React component type
         assert result["name"] == "Simple"  # Python component name
-        # Elements always have a key (user-provided or server-assigned stable ID)
+        # Nodes always have a key (user-provided or server-assigned ID)
         assert result["key"] is not None
         assert result["key"].startswith("e")  # Server-assigned IDs start with "e"
         assert result["props"] == {}
@@ -41,20 +41,20 @@ class TestSerializeElement:
         def App() -> None:
             WithProps(text="hello", count=42)
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
         # Get the WithProps child
-        child = ctx.root_element.children[0]
-        result = serialize_element(child)
+        child = ctx.root_node.children[0]
+        result = serialize_node(child, ctx)
 
         assert result["type"] == "FunctionalComponent"
         assert result["name"] == "WithProps"
         # FunctionalComponent props should NOT be serialized
         assert result["props"] == {}
 
-    def test_serialize_element_with_key(self) -> None:
-        """Element with key serializes correctly."""
+    def test_serialize_node_with_key(self) -> None:
+        """Node with key serializes correctly."""
 
         @component
         def Keyed() -> None:
@@ -64,16 +64,16 @@ class TestSerializeElement:
         def App() -> None:
             Keyed(key="my-key")
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        child = ctx.root_element.children[0]
-        result = serialize_element(child)
+        child = ctx.root_node.children[0]
+        result = serialize_node(child, ctx)
 
         assert result["key"] == "my-key"
 
     def test_serialize_nested_children(self) -> None:
-        """Nested elements serialize with children inline."""
+        """Nested nodes serialize with children inline."""
 
         @component
         def Child() -> None:
@@ -90,16 +90,16 @@ class TestSerializeElement:
                 Child()
                 Child()
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
         # App has Parent as child
         assert len(result["children"]) == 1
         parent_result = result["children"][0]
 
-        # Parent has two Child elements
+        # Parent has two Child nodes
         assert parent_result["type"] == "FunctionalComponent"
         assert parent_result["name"] == "Parent"
         assert len(parent_result["children"]) == 2
@@ -118,11 +118,11 @@ class TestSerializeElement:
             # Use Button (a ReactComponent) to test callback serialization
             Button(text="Click me", on_click=on_click)
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        child = ctx.root_element.children[0]
-        result = serialize_element(child)
+        child = ctx.root_node.children[0]
+        result = serialize_node(child, ctx)
 
         # Should have callback reference
         assert "__callback__" in result["props"]["on_click"]
@@ -152,11 +152,11 @@ class TestSerializeElement:
             ):
                 pass
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        child = ctx.root_element.children[0]
-        result = serialize_element(child)
+        child = ctx.root_node.children[0]
+        result = serialize_node(child, ctx)
         props = result["props"]
 
         assert props["id"] == "test"
@@ -185,11 +185,11 @@ class TestSerializeElement:
             with h.Div(data_handlers=[handler1, handler2]):
                 pass
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        child = ctx.root_element.children[0]
-        result = serialize_element(child)
+        child = ctx.root_node.children[0]
+        result = serialize_node(child, ctx)
 
         handlers = result["props"]["data_handlers"]
         assert len(handlers) == 2
@@ -211,11 +211,11 @@ class TestSerializeElement:
             with h.Div(onClick=lambda: None, onMouseEnter=lambda: None):
                 pass
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        child = ctx.root_element.children[0]
-        result = serialize_element(child)
+        child = ctx.root_node.children[0]
+        result = serialize_node(child, ctx)
 
         id_a = result["props"]["onClick"]["__callback__"]
         id_b = result["props"]["onMouseEnter"]["__callback__"]

@@ -8,7 +8,7 @@ These tests ensure that the fine-grained reactivity system actually works:
 
 from dataclasses import dataclass
 
-from trellis.core.rendering import RenderContext
+from trellis.core.rendering import RenderTree
 from trellis.core.functional_component import component
 from trellis.core.state import Stateful
 
@@ -41,14 +41,14 @@ class TestMinimalRerenders:
             Counter()
             Sibling()
 
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         assert render_counts == {"parent": 1, "counter": 1, "sibling": 1}
 
         # Change state - only Counter should re-render
         counter.value = 1
-        ctx.render_dirty()
+        ctx.render()
 
         assert render_counts == {"parent": 1, "counter": 2, "sibling": 1}
 
@@ -86,26 +86,26 @@ class TestMinimalRerenders:
             CountReader()
             FlagReader()
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
         assert render_counts == {"app": 1, "name": 1, "count": 1, "flag": 1}
 
         # Change only name - only NameReader should re-render
         state.name = "Alice"
-        ctx.render_dirty()
+        ctx.render()
 
         assert render_counts == {"app": 1, "name": 2, "count": 1, "flag": 1}
 
         # Change only count - only CountReader should re-render
         state.count = 42
-        ctx.render_dirty()
+        ctx.render()
 
         assert render_counts == {"app": 1, "name": 2, "count": 2, "flag": 1}
 
         # Change only flag - only FlagReader should re-render
         state.flag = True
-        ctx.render_dirty()
+        ctx.render()
 
         assert render_counts == {"app": 1, "name": 2, "count": 2, "flag": 2}
 
@@ -142,15 +142,15 @@ class TestMinimalRerenders:
             ReaderB()
             ReaderBoth()
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
         assert render_counts == {"a": 1, "b": 1, "both": 1}
 
         # Multiple changes, single render_dirty call
         state.a = 1
         state.b = 2
-        ctx.render_dirty()
+        ctx.render()
 
         # ReaderA, ReaderB, and ReaderBoth should all re-render exactly once
         assert render_counts == {"a": 2, "b": 2, "both": 2}
@@ -172,14 +172,14 @@ class TestPropsUnchangedOptimization:
             render_counts["parent"] = render_counts.get("parent", 0) + 1
             Child(value=42)  # Always same props
 
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         assert render_counts == {"parent": 1, "child": 1}
 
         # Re-render parent - child should NOT re-execute since props unchanged
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         assert render_counts == {"parent": 2, "child": 1}  # Child still 1!
 
@@ -197,15 +197,15 @@ class TestPropsUnchangedOptimization:
             render_counts["parent"] = render_counts.get("parent", 0) + 1
             Child(value=value_ref[0])
 
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         assert render_counts == {"parent": 1, "child": 1}
 
         # Change props
         value_ref[0] = 1
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         assert render_counts == {"parent": 2, "child": 2}  # Child re-executed
 
@@ -237,16 +237,16 @@ class TestPropsUnchangedOptimization:
             render_counts["root"] = render_counts.get("root", 0) + 1
             Level1()
 
-        ctx = RenderContext(Root)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Root)
+        ctx.render()
 
         assert render_counts == {
             "root": 1, "level1": 1, "level2": 1, "level3": 1, "leaf": 1
         }
 
         # Re-render only root - nothing else should change
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         # Only root re-executes since all children have unchanged props
         assert render_counts == {
@@ -275,45 +275,48 @@ class TestDirtyMarkingBehavior:
             Child1()
             Child2()
 
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         assert render_counts == {"parent": 1, "child1": 1, "child2": 1}
 
         # Mark only child1 dirty
-        child1_element = ctx.root_element.children[0]
-        ctx.mark_dirty(child1_element)
-        ctx.render_dirty()
+        child1_node = ctx.root_node.children[0]
+        ctx.mark_dirty_id(child1_node.id)
+        ctx.render()
 
         # Only child1 should re-render
         assert render_counts == {"parent": 1, "child1": 2, "child2": 1}
 
-    def test_dirty_elements_rendered_in_depth_order(self) -> None:
-        """Dirty elements should render parent before child."""
-        render_order: list[str] = []
+    def test_dirty_parent_and_child_renders_child_once(self) -> None:
+        """When both parent and child are dirty, child renders only once."""
+        render_counts: dict[str, int] = {"parent": 0, "child": 0}
 
         @component
         def Child() -> None:
-            render_order.append("child")
+            render_counts["child"] += 1
 
         @component
         def Parent() -> None:
-            render_order.append("parent")
+            render_counts["parent"] += 1
             Child()
 
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
-        render_order.clear()
+        ctx = RenderTree(Parent)
+        ctx.render()
+        render_counts["parent"] = 0
+        render_counts["child"] = 0
 
-        # Mark both dirty (child first to test ordering)
-        child_element = ctx.root_element.children[0]
-        ctx.mark_dirty(child_element)
-        ctx.mark_dirty(ctx.root_element)
+        # Mark both dirty (child first to test that order doesn't matter)
+        child_node = ctx.root_node.children[0]
+        ctx.mark_dirty_id(child_node.id)
+        ctx.mark_dirty_id(ctx.root_node.id)
 
-        ctx.render_dirty()
+        ctx.render()
 
-        # Parent should render before child (depth order)
-        assert render_order[0] == "parent"
+        # Child should render exactly once (via parent re-render)
+        # Parent clears child's dirty flag when it re-renders child
+        assert render_counts["parent"] == 1
+        assert render_counts["child"] == 1
 
     def test_child_dirty_cleared_by_parent_rerender(self) -> None:
         """If parent re-renders child, child's dirty flag should be handled."""
@@ -335,15 +338,15 @@ class TestDirtyMarkingBehavior:
             render_counts["parent"] = render_counts.get("parent", 0) + 1
             Child()
 
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         assert render_counts == {"parent": 1, "child": 1}
 
         # Mark parent dirty - child will be re-rendered as part of parent
         # But child's props unchanged so it should be skipped
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         assert render_counts == {"parent": 2, "child": 1}
 
@@ -382,8 +385,8 @@ class TestDeeplyNestedStateUpdates:
             render_counts["root"] = render_counts.get("root", 0) + 1
             make_level(1)()
 
-        ctx = RenderContext(Root)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Root)
+        ctx.render()
 
         # All components should have rendered once
         expected = {"root": 1, "leaf": 1}
@@ -393,7 +396,7 @@ class TestDeeplyNestedStateUpdates:
 
         # Change leaf state - only leaf should re-render
         leaf_state.value = 1
-        ctx.render_dirty()
+        ctx.render()
 
         expected["leaf"] = 2
         assert render_counts == expected
@@ -430,15 +433,15 @@ class TestDeeplyNestedStateUpdates:
             _ = state.value
             Level1Reader()
 
-        ctx = RenderContext(RootReader)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(RootReader)
+        ctx.render()
 
         assert render_counts == {"root": 1, "level1": 1, "level2": 1, "level3": 1}
 
         # Change state - root, level1, and level3 should re-render (they all read it)
         # level2 doesn't read state so shouldn't re-render
         state.value = 1
-        ctx.render_dirty()
+        ctx.render()
 
         assert render_counts == {"root": 2, "level1": 2, "level2": 1, "level3": 2}
 
@@ -476,13 +479,13 @@ class TestStateWithMultipleComponents:
             Reader2()
             NonReader()
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
         assert render_counts == {"reader1": 1, "reader2": 1, "non_reader": 1}
 
         state.value = 1
-        ctx.render_dirty()
+        ctx.render()
 
         # Both readers re-render, non-reader doesn't
         assert render_counts == {"reader1": 2, "reader2": 2, "non_reader": 1}
@@ -513,19 +516,19 @@ class TestStateWithMultipleComponents:
             ReaderA()
             ReaderB()
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
         assert render_counts == {"a": 1, "b": 1}
 
         # Change only state_a
         state_a.value = 1
-        ctx.render_dirty()
+        ctx.render()
 
         assert render_counts == {"a": 2, "b": 1}
 
         # Change only state_b
         state_b.value = 1
-        ctx.render_dirty()
+        ctx.render()
 
         assert render_counts == {"a": 2, "b": 2}

@@ -14,7 +14,7 @@ import msgspec
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 
-from trellis.core.rendering import RenderContext
+from trellis.core.rendering import RenderTree
 from trellis.html.events import (
     BaseEvent,
     ChangeEvent,
@@ -178,7 +178,7 @@ async def index() -> str:
 async def websocket_endpoint(websocket: WebSocket) -> None:
     """Handle WebSocket connections."""
     await websocket.accept()
-    ctx: RenderContext | None = None
+    ctx: RenderTree | None = None
 
     try:
         # Wait for hello message
@@ -200,7 +200,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
         # Render and send the component tree if a top component is configured
         top_component = getattr(websocket.app.state, "top_component", None)
         if top_component is not None:
-            ctx = RenderContext(top_component)
+            ctx = RenderTree(top_component)
             try:
                 tree_data = ctx.render()
             except Exception as e:

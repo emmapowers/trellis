@@ -77,7 +77,7 @@ Trellis is a reactive UI framework for Python with fine-grained state tracking. 
   - `key`: Optional stable identifier for reconciliation
   - `dirty`: Whether element needs re-rendering
 
-- **RenderContext**: Manages the element tree
+- **RenderTree**: Manages the element tree
   - Tracks dirty elements for efficient updates
   - Handles re-rendering with automatic locking
   - Maintains element stack during rendering

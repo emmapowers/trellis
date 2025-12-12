@@ -3,7 +3,7 @@
 import pytest
 
 from trellis.core.functional_component import component
-from trellis.core.rendering import RenderContext
+from trellis.core.rendering import RenderTree
 from trellis.core.state import Stateful, clear_context_stacks
 
 
@@ -125,8 +125,8 @@ class TestContextAPI:
             with shared:
                 Child()
 
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         assert captured == ["hello from parent"]
 
@@ -158,8 +158,8 @@ class TestContextAPI:
             with app_state:
                 Wrapper()
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
         assert captured == ["deep"]
 

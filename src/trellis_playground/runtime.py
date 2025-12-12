@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering import IComponent, RenderContext
+from trellis.core.rendering import IComponent, RenderTree
 
 __all__ = ["BrowserRuntime"]
 
@@ -16,7 +16,7 @@ __all__ = ["BrowserRuntime"]
 class BrowserRuntime:
     """Runs Trellis apps without FastAPI/WebSocket.
 
-    This is a lightweight adapter that wraps RenderContext and provides
+    This is a lightweight adapter that wraps RenderTree and provides
     a simple API for JavaScript to interact with.
 
     Example usage from JavaScript (via Pyodide):
@@ -37,11 +37,11 @@ class BrowserRuntime:
         ```
 
     Attributes:
-        context: The underlying RenderContext
+        tree: The underlying RenderTree
         root_component: The root component being rendered
     """
 
-    context: RenderContext
+    tree: RenderTree
     root_component: IComponent
 
     def __init__(self, root_component: IComponent) -> None:
@@ -51,7 +51,7 @@ class BrowserRuntime:
             root_component: The root Trellis component to render
         """
         self.root_component = root_component
-        self.context = RenderContext(root_component)
+        self.tree = RenderTree(root_component)
 
     def render(self) -> dict[str, tp.Any]:
         """Render and return the serialized element tree.
@@ -63,7 +63,7 @@ class BrowserRuntime:
             Serialized element tree as a dict, suitable for JSON encoding.
             Callbacks are replaced with {"__callback__": "cb_N"} references.
         """
-        return self.context.render()
+        return self.tree.render()
 
     def handle_event(self, callback_id: str, args: list[tp.Any] | None = None) -> dict[str, tp.Any]:
         """Handle a user event by invoking a callback and re-rendering.
@@ -81,7 +81,7 @@ class BrowserRuntime:
         if args is None:
             args = []
 
-        callback = self.context.get_callback(callback_id)
+        callback = self.tree.get_callback(callback_id)
         if callback is None:
             raise KeyError(f"Callback not found: {callback_id}")
 
