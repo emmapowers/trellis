@@ -54,7 +54,7 @@ watch-playground = { cmd = "npm run watch", cwd = "docs/static/playground", depe
 
 # Documentation tasks
 generate-api-docs = { cmd = "pydoc-markdown", description = "Generate API docs from docstrings" }
-copy-wheel-to-docs = { cmd = "rm -f docs/static/*.whl && cp dist/trellis-*.whl docs/static/", depends-on = ["build-wheel"], description = "Copy wheel to docs static folder" }
+copy-wheel-to-docs = { cmd = "find docs/static -name '*.whl' -delete && cp dist/trellis-*.whl docs/static/", depends-on = ["build-wheel"], description = "Copy wheel to docs static folder" }
 build-docs = { cmd = "npm ci && npm run build", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "copy-wheel-to-docs"], description = "Build documentation site" }
 serve-docs = { cmd = "npm run start", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "copy-wheel-to-docs"], description = "Serve docs locally with hot reload" }
 watch-api-docs = { cmd = "watchfiles 'pixi run generate-api-docs' src/trellis", description = "Watch Python source and regenerate API docs" }
