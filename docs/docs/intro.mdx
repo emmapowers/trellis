@@ -1,0 +1,73 @@
+---
+sidebar_position: 1
+slug: /
+---
+
+import TrellisPlayground from '@site/src/components/TrellisPlayground';
+
+# Introduction
+
+Trellis is a reactive UI framework for Python. Build complex web applications with fine-grained state tracking and a clean, declarative API.
+
+## What is Trellis?
+
+Trellis lets you build web UIs entirely in Python. Your components run on the server, render to a React frontend, and stay synchronized via WebSocket.
+
+<TrellisPlayground
+  title="Counter Example"
+  code={`from trellis.core import component
+from trellis.core.state import Stateful
+from trellis.html import Div, P, H1
+from trellis.widgets import Button, Column, Row
+
+class CounterState(Stateful):
+    count: int = 0
+
+    def increment(self):
+        self.count += 1
+
+    def decrement(self):
+        self.count -= 1
+
+@component
+def Counter():
+    state = CounterState()
+
+    with Div(style={"padding": "20px", "fontFamily": "system-ui"}):
+        with Column():
+            H1("Trellis Counter")
+            P(f"Count: {state.count}")
+            with Row():
+                Button(text="-", on_click=state.decrement)
+                Button(text="+", on_click=state.increment)
+
+App = Counter`}
+/>
+
+## Key Features
+
+- **Fine-grained reactivity**: Only components that read a property re-render when it changes
+- **Server-side logic**: All your Python code runs on the server
+- **Declarative components**: Describe what the UI should look like, not how to update it
+- **Context API**: Share state between components with `with` blocks
+
+## When to Use Trellis
+
+Trellis is designed for:
+
+- Instrument control applications
+- Internal tools and admin panels
+- Line-of-business applications
+- Data-intensive interfaces
+- Products where UI is incidental to the core value
+
+It's explicitly **not** for:
+
+- Mobile apps (no native support)
+- Slow/unreliable networks (requires persistent WebSocket)
+- Marketing sites (not SEO-friendly)
+- High-traffic public applications (server-per-user model)
+
+## Next Steps
+
+- Read the [Design Overview](./design/overview) for architecture details

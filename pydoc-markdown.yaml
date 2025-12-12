@@ -1,0 +1,15 @@
+loaders:
+  - type: python
+    search_path: [src]
+    packages: [trellis]
+
+processors:
+  - type: filter
+    skip_empty_modules: true
+  - type: smart
+  - type: crossref
+
+renderer:
+  type: docusaurus
+  docs_base_path: docs/docs/api
+  sidebar_top_level_label: API Reference

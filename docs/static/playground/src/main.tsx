@@ -7,29 +7,16 @@
 
 import React from "react";
 import { createRoot, Root } from "react-dom/client";
-import { SerializedElement, renderNode } from "../../src/trellis/client/src/core";
-import { getWidget } from "../../src/trellis/client/src/widgets";
+import { SerializedElement, renderNode } from "../../../../src/trellis/client/src/core";
+import { getWidget } from "../../../../src/trellis/client/src/widgets";
+import { initPyodide, PyodideInterface, PyProxy } from "../../../src/lib/pyodide-init";
 
-// Pyodide types (loaded from CDN)
-declare const loadPyodide: () => Promise<PyodideInterface>;
+// Monaco types (loaded from CDN)
 declare const require: {
   config: (config: { paths: Record<string, string> }) => void;
   (deps: string[], callback: () => void): void;
 };
 declare const monaco: MonacoNamespace;
-
-interface PyodideInterface {
-  loadPackage(packages: string | string[]): Promise<void>;
-  pyimport(name: string): PyProxy;
-  runPythonAsync(code: string): Promise<unknown>;
-}
-
-interface PyProxy {
-  install(pkg: string): Promise<void>;
-  toJs(options?: { dict_converter: typeof Object.fromEntries }): unknown;
-  render(): PyProxy;
-  handle_event(callbackId: string): PyProxy;
-}
 
 interface MonacoNamespace {
   editor: {
@@ -51,6 +38,7 @@ interface MonacoEditorOptions {
 
 interface MonacoEditor {
   getValue(): string;
+  setValue(value: string): void;
 }
 
 // ============================================================================
@@ -97,58 +85,11 @@ App = Counter
 `;
 
 // ============================================================================
-// Pyodide Setup
+// Pyodide Setup (uses shared module)
 // ============================================================================
 
-async function initPyodide(): Promise<PyodideInterface> {
-  updateStatus("Loading Pyodide...");
-
-  pyodide = await loadPyodide();
-
-  updateStatus("Installing packages...");
-
-  // Load packages built into Pyodide
-  await pyodide.loadPackage(["micropip", "msgspec", "pygments"]);
-
-  updateStatus("Installing Trellis...");
-
-  // Install rich from PyPI (pure Python, works in Pyodide)
-  // pygments is already loaded above, so rich's dependency is satisfied
-  const micropip = pyodide.pyimport("micropip");
-  await micropip.install("rich");
-
-  // Install trellis wheel - try multiple sources
-  // deps=false because server dependencies (uvicorn, fastapi, httpx) don't work in Pyodide
-  const wheelSources = [
-    "/dist/trellis-0.1.0-py3-none-any.whl", // Local development (served from project root)
-    "./trellis-0.1.0-py3-none-any.whl", // Same directory (for standalone deployment)
-    "https://emmapowers.github.io/trellis/trellis-0.1.0-py3-none-any.whl", // GitHub Pages
-  ];
-
-  let installed = false;
-  for (const wheelUrl of wheelSources) {
-    try {
-      console.log(`Trying to install from ${wheelUrl}...`);
-      // Call micropip.install via Python to use deps=False correctly
-      await pyodide.runPythonAsync(`
-import micropip
-await micropip.install("${wheelUrl}", deps=False)
-`);
-      console.log(`Successfully installed from ${wheelUrl}`);
-      installed = true;
-      break;
-    } catch (e) {
-      console.log(`Failed to install from ${wheelUrl}: ${(e as Error).message}`);
-    }
-  }
-
-  if (!installed) {
-    throw new Error(
-      "Could not install trellis wheel. For local development, run: pixi run build-wheel"
-    );
-  }
-
-  updateStatus("Ready");
+async function setupPyodide(): Promise<PyodideInterface> {
+  pyodide = await initPyodide(updateStatus);
   return pyodide;
 }
 
@@ -256,13 +197,37 @@ BrowserRuntime(App)
 }
 
 // ============================================================================
+// URL Code Loading
+// ============================================================================
+
+function getCodeFromUrl(): string | null {
+  const hash = window.location.hash;
+  if (hash.startsWith('#code=')) {
+    try {
+      const encoded = hash.slice(6); // Remove '#code='
+      return decodeURIComponent(atob(encoded));
+    } catch (e) {
+      console.warn('Failed to decode code from URL:', e);
+      return null;
+    }
+  }
+  return null;
+}
+
+// ============================================================================
 // Initialization
 // ============================================================================
 
 async function init(): Promise<void> {
   try {
     // Initialize in parallel
-    await Promise.all([initPyodide(), initMonaco()]);
+    await Promise.all([setupPyodide(), initMonaco()]);
+
+    // Check for code in URL hash
+    const urlCode = getCodeFromUrl();
+    if (urlCode && editor) {
+      editor.setValue(urlCode);
+    }
 
     // Enable run button
     const runBtn = document.getElementById("run-btn") as HTMLButtonElement;
