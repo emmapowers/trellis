@@ -6,12 +6,11 @@ import threading
 import pytest
 
 from trellis.core.rendering import (
-    Element,
-    ElementDescriptor,
-    RenderContext,
+    ElementNode,
+    RenderTree,
     freeze_props,
-    get_active_render_context,
-    set_active_render_context,
+    get_active_render_tree,
+    set_active_render_tree,
 )
 from trellis.core.functional_component import FunctionalComponent, component
 from trellis.core.state import Stateful
@@ -27,118 +26,104 @@ def make_descriptor(
     comp: FunctionalComponent,
     key: str = "",
     props: dict | None = None,
-) -> ElementDescriptor:
-    """Helper to create an ElementDescriptor."""
-    return ElementDescriptor(
+) -> ElementNode:
+    """Helper to create an ElementNode."""
+    return ElementNode(
         component=comp,
         key=key,
         props=freeze_props(props or {}),
     )
 
 
-def make_element(
-    comp: FunctionalComponent,
-    key: str = "",
-    props: dict | None = None,
-    depth: int = 0,
-) -> Element:
-    """Helper to create an Element with a descriptor."""
-    desc = make_descriptor(comp, key, props)
-    return Element(descriptor=desc, depth=depth)
-
-
-class TestElement:
-    def test_element_creation(self) -> None:
+class TestElementNode:
+    def test_element_node_creation(self) -> None:
         comp = make_component("Test")
-        elem = make_element(comp)
+        node = make_descriptor(comp)
 
-        assert elem.component == comp
-        assert elem.key == ""
-        assert elem.properties == {}
-        assert elem.children == []
-        assert elem.dirty is False
-        assert elem.parent is None
-        assert elem.depth == 0
+        assert node.component == comp
+        assert node.key == ""
+        assert node.props == freeze_props({})
+        assert node.children == ()
+        assert node.id == ""
 
-    def test_element_with_key(self) -> None:
+    def test_element_node_with_key(self) -> None:
         comp = make_component("Test")
-        elem = make_element(comp, key="my-key")
+        node = make_descriptor(comp, key="my-key")
 
-        assert elem.key == "my-key"
+        assert node.key == "my-key"
 
-    def test_element_with_properties(self) -> None:
+    def test_element_node_with_properties(self) -> None:
         comp = make_component("Test")
-        elem = make_element(comp, props={"foo": "bar", "count": 42})
+        node = make_descriptor(comp, props={"foo": "bar", "count": 42})
 
-        assert elem.properties == {"foo": "bar", "count": 42}
+        assert node.properties == {"foo": "bar", "count": 42}
 
-    def test_element_hash_uses_identity(self) -> None:
+    def test_element_node_is_immutable(self) -> None:
         comp = make_component("Test")
-        elem1 = make_element(comp)
-        elem2 = make_element(comp)
+        node = make_descriptor(comp, props={"a": 1})
 
-        assert hash(elem1) != hash(elem2)
-        assert hash(elem1) == hash(elem1)
+        # ElementNode is a frozen dataclass, should be hashable
+        hash(node)  # Should not raise
 
-    def test_element_replace(self) -> None:
-        comp = make_component("Test")
-        elem1 = make_element(comp, props={"a": 1}, depth=0)
-        elem2 = make_element(comp, props={"b": 2}, depth=5)
-
-        elem1.replace(elem2)
-
-        assert elem1.properties == {"b": 2}
-        assert elem1.depth == 5
+        # Can't modify attributes
+        with pytest.raises(AttributeError):
+            node.key = "new-key"  # type: ignore[misc]
 
 
-class TestActiveRenderContext:
+class TestActiveRenderTree:
     def test_default_is_none(self) -> None:
-        assert get_active_render_context() is None
+        assert get_active_render_tree() is None
 
     def test_set_and_get(self) -> None:
         comp = make_component("Root")
-        ctx = RenderContext(comp)
+        ctx = RenderTree(comp)
 
-        set_active_render_context(ctx)
-        assert get_active_render_context() is ctx
+        set_active_render_tree(ctx)
+        assert get_active_render_tree() is ctx
 
-        set_active_render_context(None)
-        assert get_active_render_context() is None
+        set_active_render_tree(None)
+        assert get_active_render_tree() is None
 
 
-class TestRenderContext:
+class TestRenderTree:
     def test_creation(self) -> None:
         comp = make_component("Root")
-        ctx = RenderContext(comp)
+        ctx = RenderTree(comp)
 
         assert ctx.root_component == comp
-        assert ctx.root_element is None
-        assert ctx.dirty_elements == set()
+        assert ctx.root_node is None
+        assert ctx._dirty_ids == set()
         assert ctx.rendering is False
 
-    def test_mark_dirty(self) -> None:
-        comp = make_component("Root")
-        ctx = RenderContext(comp)
-        elem = make_element(comp)
+    def test_mark_dirty_id(self) -> None:
+        @component
+        def Root() -> None:
+            pass
 
-        ctx.mark_dirty(elem)
+        ctx = RenderTree(Root)
+        ctx.render()
 
-        assert elem in ctx.dirty_elements
-        assert elem.dirty is True
+        # The root node should have an ID now
+        assert ctx.root_node is not None
+        node_id = ctx.root_node.id
 
-    def test_current_element_empty_stack(self) -> None:
-        comp = make_component("Root")
-        ctx = RenderContext(comp)
+        # Clear dirty state
+        ctx._dirty_ids.clear()
+        ctx._element_state[node_id].dirty = False
 
-        assert ctx.current_element is None
+        # Mark dirty by ID
+        ctx.mark_dirty_id(node_id)
+
+        assert node_id in ctx._dirty_ids
+        assert ctx._element_state[node_id].dirty is True
 
 
-class TestConcurrentRenderContextIsolation:
-    """Tests for thread/task isolation of render contexts using contextvars."""
+class TestConcurrentRenderTreeIsolation:
+    """Tests for thread/task isolation of render trees using contextvars."""
 
-    def test_concurrent_threads_have_isolated_contexts(self) -> None:
-        """Each thread has its own active render context."""
-        results: dict[str, RenderContext | None] = {}
+    def test_concurrent_threads_have_isolated_trees(self) -> None:
+        """Each thread has its own active render tree."""
+        results: dict[str, RenderTree | None] = {}
         barrier = threading.Barrier(2)
 
         @component
@@ -150,18 +135,18 @@ class TestConcurrentRenderContextIsolation:
             pass
 
         def thread_a() -> None:
-            ctx = RenderContext(AppA)
-            set_active_render_context(ctx)
+            ctx = RenderTree(AppA)
+            set_active_render_tree(ctx)
             barrier.wait()  # Sync with thread B
-            results["a"] = get_active_render_context()
-            set_active_render_context(None)
+            results["a"] = get_active_render_tree()
+            set_active_render_tree(None)
 
         def thread_b() -> None:
-            ctx = RenderContext(AppB)
-            set_active_render_context(ctx)
+            ctx = RenderTree(AppB)
+            set_active_render_tree(ctx)
             barrier.wait()  # Sync with thread A
-            results["b"] = get_active_render_context()
-            set_active_render_context(None)
+            results["b"] = get_active_render_tree()
+            set_active_render_tree(None)
 
         t1 = threading.Thread(target=thread_a)
         t2 = threading.Thread(target=thread_b)
@@ -200,12 +185,12 @@ class TestConcurrentRenderContextIsolation:
                 ChildB(name=f"b_{i}")
 
         def render_app_a() -> None:
-            ctx = RenderContext(AppA)
-            ctx.render_tree(from_element=None)
+            ctx = RenderTree(AppA)
+            ctx.render()
 
         def render_app_b() -> None:
-            ctx = RenderContext(AppB)
-            ctx.render_tree(from_element=None)
+            ctx = RenderTree(AppB)
+            ctx.render()
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             futures = [executor.submit(render_app_a), executor.submit(render_app_b)]
@@ -216,8 +201,8 @@ class TestConcurrentRenderContextIsolation:
         assert render_results["b"] == [f"b_{i}" for i in range(5)]
 
 
-class TestComponentOutsideRenderContext:
-    """Tests for RuntimeError when creating components outside render context."""
+class TestComponentOutsideRenderTree:
+    """Tests for RuntimeError when creating components outside render tree."""
 
     def test_component_outside_render_raises(self) -> None:
         """Creating a component outside render context raises RuntimeError."""
@@ -227,7 +212,7 @@ class TestComponentOutsideRenderContext:
             pass
 
         # Ensure no active context
-        set_active_render_context(None)
+        set_active_render_tree(None)
 
         with pytest.raises(RuntimeError, match="outside of render context"):
             MyComponent()
@@ -240,7 +225,7 @@ class TestComponentOutsideRenderContext:
             for c in children:
                 c()
 
-        set_active_render_context(None)
+        set_active_render_tree(None)
 
         with pytest.raises(RuntimeError, match="outside of render context"):
             with Container():
@@ -261,10 +246,10 @@ class TestDescriptorStackCleanupOnException:
         def Parent() -> None:
             FailingChild()
 
-        ctx = RenderContext(Parent)
+        ctx = RenderTree(Parent)
 
         with pytest.raises(ValueError, match="intentional failure"):
-            ctx.render_tree(from_element=None)
+            ctx.render()
 
         # Stack should be clean after exception
         assert ctx._descriptor_stack == []
@@ -286,10 +271,10 @@ class TestDescriptorStackCleanupOnException:
             with Container():
                 FailingComponent()
 
-        ctx = RenderContext(App)
+        ctx = RenderTree(App)
 
         with pytest.raises(RuntimeError, match="nested failure"):
-            ctx.render_tree(from_element=None)
+            ctx.render()
 
         assert ctx._descriptor_stack == []
 
@@ -322,8 +307,8 @@ class TestThreadSafeStateUpdates:
                     state.value = initial
                 results[name] = state.value
 
-            ctx = RenderContext(LocalApp)
-            ctx.render_tree(from_element=None)
+            ctx = RenderTree(LocalApp)
+            ctx.render()
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
             futures = [
@@ -340,15 +325,15 @@ class TestThreadSafeStateUpdates:
         assert results["ctx_300"] == 300
         assert results["ctx_400"] == 400
 
-    def test_callback_registry_isolated_per_context(self) -> None:
-        """Callback registries are isolated per RenderContext."""
+    def test_callback_registry_isolated_per_tree(self) -> None:
+        """Callback registries are isolated per RenderTree."""
 
         @component
         def App() -> None:
             pass
 
-        ctx1 = RenderContext(App)
-        ctx2 = RenderContext(App)
+        ctx1 = RenderTree(App)
+        ctx2 = RenderTree(App)
 
         cb1 = lambda: "callback1"
         cb2 = lambda: "callback2"
@@ -369,8 +354,8 @@ class TestThreadSafeStateUpdates:
     def test_state_update_blocks_during_render(self) -> None:
         """State updates on another thread block while render holds the lock.
 
-        This tests that mark_dirty() blocks when called from another thread
-        while a render is in progress on the same RenderContext.
+        This tests that mark_dirty_id() blocks when called from another thread
+        while a render is in progress on the same RenderTree.
         """
         import time
 
@@ -399,7 +384,7 @@ class TestThreadSafeStateUpdates:
                 # Re-render triggered by state change
                 events.append("rerender_started")
 
-        ctx = RenderContext(SlowApp)
+        ctx = RenderTree(SlowApp)
 
         def background_update() -> None:
             # Wait for render to start and state to be created
@@ -409,7 +394,7 @@ class TestThreadSafeStateUpdates:
             time.sleep(0.05)
             state = state_holder[0]
             events.append("update_start")
-            # This triggers mark_dirty which needs the lock
+            # This triggers mark_dirty_id which needs the lock
             state.value = 42
             events.append("update_done")
 
@@ -417,14 +402,14 @@ class TestThreadSafeStateUpdates:
         updater.start()
 
         # Start render (holds lock via @with_lock on render_tree)
-        ctx.render_tree(from_element=None)
+        ctx.render()
 
         updater.join()
 
         # Verify ordering: update_start happens during render (before first_render_done)
-        # but update_done happens after first_render_done because mark_dirty blocks
+        # but update_done happens after first_render_done because mark_dirty_id blocks
         assert "update_start" in events
         assert "first_render_done" in events
         assert "update_done" in events
-        # The key assertion: mark_dirty blocks, so update_done must come after render releases lock
+        # The key assertion: mark_dirty_id blocks, so update_done must come after render releases lock
         assert events.index("first_render_done") < events.index("update_done")

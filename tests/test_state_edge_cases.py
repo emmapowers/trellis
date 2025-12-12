@@ -9,7 +9,7 @@ These tests verify correct behavior in complex state scenarios:
 
 from dataclasses import dataclass
 
-from trellis.core.rendering import RenderContext
+from trellis.core.rendering import RenderTree
 from trellis.core.functional_component import component
 from trellis.core.state import Stateful
 
@@ -42,8 +42,8 @@ class TestDeepDependencyTracking:
             render_counts["root"] = render_counts.get("root", 0) + 1
             Level(n=1)
 
-        ctx = RenderContext(Root)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Root)
+        ctx.render()
 
         # All should have rendered once
         assert render_counts["root"] == 1
@@ -51,7 +51,7 @@ class TestDeepDependencyTracking:
 
         # Change state - only deepest level should re-render
         state.value = 1
-        ctx.render_dirty()
+        ctx.render()
 
         assert render_counts["root"] == 1
         assert render_counts[f"level_{DEPTH}"] == 2
@@ -79,14 +79,14 @@ class TestDeepDependencyTracking:
             for name in ["a", "b", "c", "d", "e"]:
                 Reader(name=name)
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
         assert all(render_counts[n] == 1 for n in ["a", "b", "c", "d", "e"])
 
         # All readers should re-render on state change
         state.value = 1
-        ctx.render_dirty()
+        ctx.render()
 
         assert all(render_counts[n] == 2 for n in ["a", "b", "c", "d", "e"])
 
@@ -109,13 +109,13 @@ class TestDeepDependencyTracking:
         def App() -> None:
             Reader()
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
         assert render_counts["reader"] == 1
 
         state.value = 1
-        ctx.render_dirty()
+        ctx.render()
 
         # Should still re-render because dependency was created
         assert render_counts["reader"] == 2
@@ -137,15 +137,15 @@ class TestStateLifecycle:
         def MyComponent() -> None:
             TrackedState()
 
-        ctx = RenderContext(MyComponent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(MyComponent)
+        ctx.render()
 
         assert mount_count[0] == 1
 
         # Re-render multiple times
         for _ in range(5):
-            ctx.mark_dirty(ctx.root_element)
-            ctx.render_dirty()
+            ctx.mark_dirty_id(ctx.root_node.id)
+            ctx.render()
 
         # Still only 1 mount
         assert mount_count[0] == 1
@@ -172,15 +172,15 @@ class TestStateLifecycle:
             if show_ref[0]:
                 Child()
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
         assert len(unmount_log) == 0
 
         # Remove child
         show_ref[0] = False
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         assert "child_state" in unmount_log
 
@@ -198,15 +198,15 @@ class TestStateLifecycle:
             state_instances.append(id(state))
             state.counter += 1
 
-        ctx = RenderContext(MyComponent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(MyComponent)
+        ctx.render()
 
         # Re-render
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         # All should be the same instance
         assert len(state_instances) == 3
@@ -241,11 +241,12 @@ class TestHookOrdering:
             b.value = "hello"
             c.value = True
 
-        ctx = RenderContext(MyComponent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(MyComponent)
+        ctx.render()
 
         # Check local_state keys
-        keys = list(ctx.root_element._local_state.keys())
+        root_state = ctx._element_state[ctx.root_node.id]
+        keys = list(root_state.local_state.keys())
         # Keys are (class, call_index)
         indices = [k[1] for k in keys]
         assert sorted(indices) == [0, 1, 2]
@@ -272,21 +273,21 @@ class TestHookOrdering:
 
             captured_values.append([a.value, b.value, c.value])
 
-        ctx = RenderContext(MyComponent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(MyComponent)
+        ctx.render()
 
         # First render
         assert captured_values[-1] == [1, 10, 100]
 
         # Re-render - values should accumulate
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         assert captured_values[-1] == [2, 20, 200]
 
         # Third render
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         assert captured_values[-1] == [3, 30, 300]
 
@@ -305,22 +306,23 @@ class TestHookOrdering:
                 if state.index == -1:
                     state.index = i
 
-        ctx = RenderContext(MyComponent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(MyComponent)
+        ctx.render()
 
         # Should have 3 state instances
-        assert len(ctx.root_element._local_state) == 3
+        root_state = ctx._element_state[ctx.root_node.id]
+        assert len(root_state.local_state) == 3
 
         # Each should have a different index
-        indices = [s.index for s in ctx.root_element._local_state.values()]
+        indices = [s.index for s in root_state.local_state.values()]
         assert sorted(indices) == [0, 1, 2]
 
         # Re-render with same count - states preserved
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
-        assert len(ctx.root_element._local_state) == 3
-        indices = [s.index for s in ctx.root_element._local_state.values()]
+        assert len(root_state.local_state) == 3
+        indices = [s.index for s in root_state.local_state.values()]
         assert sorted(indices) == [0, 1, 2]
 
 
@@ -348,13 +350,13 @@ class TestDependencyAcrossComponents:
             _ = state.value
             Child()
 
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         assert render_counts == {"parent": 1, "child": 1}
 
         state.value = 1
-        ctx.render_dirty()
+        ctx.render()
 
         # Both should re-render
         assert render_counts == {"parent": 2, "child": 2}
@@ -389,20 +391,20 @@ class TestDependencyAcrossComponents:
             SiblingA()
             SiblingB()
 
-        ctx = RenderContext(Parent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         assert render_counts == {"a": 1, "b": 1}
 
         # Change only state_a
         state_a.value = 1
-        ctx.render_dirty()
+        ctx.render()
 
         assert render_counts == {"a": 2, "b": 1}
 
         # Change only state_b
         state_b.value = 1
-        ctx.render_dirty()
+        ctx.render()
 
         assert render_counts == {"a": 2, "b": 2}
 
@@ -418,8 +420,6 @@ class TestStateCleanup:
         class MyState(Stateful):
             value: int = 42
 
-        child_element_ref: list = []
-
         @component
         def Child() -> None:
             MyState()
@@ -429,20 +429,22 @@ class TestStateCleanup:
             if show_ref[0]:
                 Child()
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        # Capture child element
-        child = ctx.root_element.children[0]
-        assert len(child._local_state) == 1
+        # Capture child node and state
+        child_node = ctx.root_node.children[0]
+        child_id = child_node.id
+        child_state = ctx._element_state[child_id]
+        assert len(child_state.local_state) == 1
 
         # Unmount
         show_ref[0] = False
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
-        # State should be cleared
-        assert len(child._local_state) == 0
+        # State should be cleaned up - element state removed entirely
+        assert child_id not in ctx._element_state
 
     def test_dirty_elements_cleaned_on_unmount(self) -> None:
         """Element removed from dirty set when unmounted."""
@@ -463,22 +465,23 @@ class TestStateCleanup:
             if show_ref[0]:
                 Child()
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        child = ctx.root_element.children[0]
+        child_node = ctx.root_node.children[0]
+        child_id = child_node.id
 
         # Mark child dirty by changing state
         state.value = 1
-        assert child in ctx.dirty_elements
+        assert child_id in ctx._dirty_ids
 
         # Unmount child (without render_dirty first)
         show_ref[0] = False
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         # Child should be removed from dirty set
-        assert child not in ctx.dirty_elements
+        assert child_id not in ctx._dirty_ids
 
 
 class TestMultipleStateTypes:
@@ -505,19 +508,19 @@ class TestMultipleStateTypes:
             _ = counter.count
             _ = name.name
 
-        ctx = RenderContext(MyComponent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(MyComponent)
+        ctx.render()
 
         assert render_count[0] == 1
 
         # Change counter - should re-render
         counter.count = 1
-        ctx.render_dirty()
+        ctx.render()
         assert render_count[0] == 2
 
         # Change name - should re-render
         name.name = "Alice"
-        ctx.render_dirty()
+        ctx.render()
         assert render_count[0] == 3
 
     def test_state_inheritance(self) -> None:
@@ -539,14 +542,15 @@ class TestMultipleStateTypes:
             extended.base_value = 2
             extended.extended_value = "hello"
 
-        ctx = RenderContext(MyComponent)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(MyComponent)
+        ctx.render()
 
         # Both should be cached
-        assert len(ctx.root_element._local_state) == 2
+        root_state = ctx._element_state[ctx.root_node.id]
+        assert len(root_state.local_state) == 2
 
         # Verify values
-        states = list(ctx.root_element._local_state.values())
+        states = list(root_state.local_state.values())
         base_states = [s for s in states if type(s).__name__ == "BaseState"]
         ext_states = [s for s in states if type(s).__name__ == "ExtendedState"]
 

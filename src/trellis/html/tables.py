@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering import ElementDescriptor
+from trellis.core.rendering import ElementNode
 from trellis.html.base import HtmlElement, Style, auto_collect_hybrid
 
 __all__ = [
@@ -35,7 +35,7 @@ def Table(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A table element."""
     return _table(className=className, style=style, id=id, key=key, **props)
 
@@ -46,7 +46,7 @@ def Thead(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A table header section element."""
     return _thead(className=className, style=style, key=key, **props)
 
@@ -57,7 +57,7 @@ def Tbody(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A table body section element."""
     return _tbody(className=className, style=style, key=key, **props)
 
@@ -68,7 +68,7 @@ def Tr(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A table row element."""
     return _tr(className=className, style=style, key=key, **props)
 
@@ -83,7 +83,7 @@ def Th(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A table header cell element.
 
     Can be used as text-only or as a container:
@@ -116,7 +116,7 @@ def Td(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A table data cell element.
 
     Can be used as text-only or as a container:

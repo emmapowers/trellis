@@ -10,7 +10,7 @@ import typing as tp
 from dataclasses import dataclass, field
 
 from trellis.core.react_component import ReactComponent
-from trellis.core.rendering import ElementDescriptor, get_active_render_context
+from trellis.core.rendering import ElementNode, get_active_render_tree
 
 __all__ = [
     "HtmlElement",
@@ -52,7 +52,7 @@ class HtmlElement(ReactComponent):
         return self._tag
 
 
-def auto_collect_hybrid(descriptor: ElementDescriptor) -> ElementDescriptor:
+def auto_collect_hybrid(descriptor: ElementNode) -> ElementNode:
     """Auto-collect a hybrid element descriptor when text is provided.
 
     Hybrid elements (like Td, Li, A) can work either as:
@@ -67,7 +67,7 @@ def auto_collect_hybrid(descriptor: ElementDescriptor) -> ElementDescriptor:
     Returns:
         The same descriptor, for chaining
     """
-    ctx = get_active_render_context()
+    ctx = get_active_render_tree()
     if ctx is not None and ctx.has_active_frame():
         ctx.add_to_current_frame(descriptor)
         object.__setattr__(descriptor, "_auto_collected", True)

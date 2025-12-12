@@ -156,7 +156,7 @@ class Element:
     _mounted: bool
     _local_state: dict[tuple[type, int], Any]
     _state_call_count: int
-    render_context: RenderContext
+    render_tree: RenderTree
 ```
 
 ## Component API
@@ -183,7 +183,7 @@ With lazy rendering, during `execute()` the `current_node` is always correct:
 
 ```python
 def __new__(cls, *args, **kwargs):
-    ctx = get_active_render_context()
+    ctx = get_active_render_tree()
     if not ctx or not ctx.executing:
         return object.__new__(cls)
 
@@ -216,7 +216,7 @@ No more `_rerender_target` heuristics needed.
 3. Update `Component.__call__()` to return descriptors
 4. Add `Component.execute()` method
 5. Add `descriptor` field to `Element`
-6. Rewrite `RenderContext.render()` with reconcile-then-execute flow
+6. Rewrite `RenderTree.render()` with reconcile-then-execute flow
 7. Update reconciler to compare descriptors
 8. Simplify `Stateful.__new__()`
 9. Update tests

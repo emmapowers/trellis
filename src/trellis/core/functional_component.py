@@ -18,7 +18,7 @@ Example:
 
     # Container component (receives children)
     @component
-    def Card(title: str, children: list[ElementDescriptor]) -> None:
+    def Card(title: str, children: list[ElementNode]) -> None:
         with Column():
             Text(title)
             for child in children:
@@ -26,7 +26,7 @@ Example:
     ```
 
 The decorated function becomes a FunctionalComponent that can be called
-to create ElementDescriptors and used in the component tree.
+to create ElementNodes and used in the component tree.
 """
 
 from __future__ import annotations
@@ -36,11 +36,8 @@ import typing as tp
 from dataclasses import dataclass, field
 
 from trellis.core.base_component import Component
-from trellis.core.rendering import Element
 
 __all__ = ["FunctionalComponent", "RenderFunc", "component"]
-
-T = tp.TypeVar("T", bound=Element, default=Element)
 
 
 class RenderFunc(tp.Protocol):
@@ -56,7 +53,7 @@ class RenderFunc(tp.Protocol):
 
 
 @dataclass(kw_only=True)
-class FunctionalComponent(Component[T], tp.Generic[T]):
+class FunctionalComponent(Component):
     """A component implemented by a render function.
 
     FunctionalComponent wraps a plain Python function to make it usable
@@ -98,15 +95,14 @@ class FunctionalComponent(Component[T], tp.Generic[T]):
         sig = inspect.signature(self.render_func)
         self._has_children_param = "children" in sig.parameters
 
-    def execute(self, /, node: T, **props: tp.Any) -> None:
+    def execute(self, /, **props: tp.Any) -> None:
         """Execute the render function with the given props.
 
         For container components, `props['children']` contains a list of
-        ElementDescriptors. The render function should call `child()` on
+        ElementNodes. The render function should call `child()` on
         each descriptor to mount it at the appropriate location.
 
         Args:
-            node: The Element instance (available but typically unused)
             **props: Properties passed to the component, including `children`
                 for container components
         """
@@ -118,11 +114,11 @@ class FunctionalComponent(Component[T], tp.Generic[T]):
         return id(self)
 
 
-def component(render_func: RenderFunc) -> FunctionalComponent[Element]:
+def component(render_func: RenderFunc) -> FunctionalComponent:
     """Decorator to create a component from a render function.
 
     This is the primary way to define components in Trellis. The decorated
-    function becomes callable and returns ElementDescriptors when invoked.
+    function becomes callable and returns ElementNodes when invoked.
 
     Args:
         render_func: A function that renders the component. Should accept
@@ -139,11 +135,11 @@ def component(render_func: RenderFunc) -> FunctionalComponent[Element]:
             Text(f"Hello, {name}!")
 
         # Use it
-        Greeting(name="Alice")  # Creates ElementDescriptor
+        Greeting(name="Alice")  # Creates ElementNode
 
         # Container component
         @component
-        def Box(children: list[ElementDescriptor]) -> None:
+        def Box(children: list[ElementNode]) -> None:
             with Div(class_name="box"):
                 for child in children:
                     child()

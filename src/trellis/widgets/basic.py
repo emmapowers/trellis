@@ -6,7 +6,7 @@ import typing as tp
 from dataclasses import dataclass
 
 from trellis.core.react_component import ReactComponent, react_component
-from trellis.core.rendering import ElementDescriptor
+from trellis.core.rendering import ElementNode
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -52,7 +52,7 @@ def Label(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementDescriptor:
+) -> ElementNode:
     """Text display widget.
 
     Args:
@@ -66,7 +66,7 @@ def Label(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementDescriptor for the Label component.
+        An ElementNode for the Label component.
 
     Example:
         Label(text="Hello, world!", font_size=16, color="blue")
@@ -94,7 +94,7 @@ def Button(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementDescriptor:
+) -> ElementNode:
     """Clickable button widget with modern styling.
 
     Args:
@@ -114,7 +114,7 @@ def Button(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementDescriptor for the Button component.
+        An ElementNode for the Button component.
 
     Example:
         Button(text="Save", on_click=save_handler, variant="primary")
@@ -145,7 +145,7 @@ def Slider(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementDescriptor:
+) -> ElementNode:
     """Range slider widget.
 
     Args:
@@ -160,7 +160,7 @@ def Slider(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementDescriptor for the Slider component.
+        An ElementNode for the Slider component.
 
     Example:
         Slider(value=50, min=0, max=100, on_change=handle_change)

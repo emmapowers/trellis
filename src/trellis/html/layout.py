@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering import ElementDescriptor
+from trellis.core.rendering import ElementNode
 from trellis.html.base import HtmlElement, Style
 from trellis.html.events import MouseHandler
 
@@ -45,7 +45,7 @@ def Div(
     onMouseLeave: MouseHandler | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A div container element."""
     return _div(
         className=className,
@@ -68,7 +68,7 @@ def Span(
     onClick: MouseHandler | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """An inline span element."""
     return _span(
         _text=text if text else None,
@@ -88,7 +88,7 @@ def Section(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A section element for grouping content."""
     return _section(className=className, style=style, id=id, key=key, **props)
 
@@ -100,7 +100,7 @@ def Article(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """An article element for self-contained content."""
     return _article(className=className, style=style, id=id, key=key, **props)
 
@@ -112,7 +112,7 @@ def Header(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A header element."""
     return _header(className=className, style=style, id=id, key=key, **props)
 
@@ -124,7 +124,7 @@ def Footer(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A footer element."""
     return _footer(className=className, style=style, id=id, key=key, **props)
 
@@ -136,7 +136,7 @@ def Nav(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A navigation element."""
     return _nav(className=className, style=style, id=id, key=key, **props)
 
@@ -148,7 +148,7 @@ def Main(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A main content element."""
     return _main(className=className, style=style, id=id, key=key, **props)
 
@@ -160,6 +160,6 @@ def Aside(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """An aside element for tangential content."""
     return _aside(className=className, style=style, id=id, key=key, **props)

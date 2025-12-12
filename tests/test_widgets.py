@@ -1,8 +1,8 @@
 """Tests for built-in widgets."""
 
 from trellis.core.functional_component import component
-from trellis.core.rendering import RenderContext
-from trellis.core.serialization import serialize_element
+from trellis.core.rendering import RenderTree
+from trellis.core.serialization import serialize_node
 from trellis.widgets import Button, Column, Label, Row, Slider
 
 
@@ -18,11 +18,11 @@ class TestLayoutWidgets:
                 Label(text="A")
                 Label(text="B")
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
         # App has Column as child
-        column = ctx.root_element.children[0]
+        column = ctx.root_node.children[0]
         assert column.component.name == "Column"
         assert len(column.children) == 2
         assert column.children[0].component.name == "Label"
@@ -37,10 +37,10 @@ class TestLayoutWidgets:
                 Button(text="Left")
                 Button(text="Right")
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        row = ctx.root_element.children[0]
+        row = ctx.root_node.children[0]
         assert row.component.name == "Row"
         assert len(row.children) == 2
 
@@ -52,10 +52,10 @@ class TestLayoutWidgets:
             with Column(gap=16, padding=8):
                 Label(text="Test")
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        column = ctx.root_element.children[0]
+        column = ctx.root_node.children[0]
         assert column.properties["gap"] == 16
         assert column.properties["padding"] == 8
 
@@ -72,10 +72,10 @@ class TestLayoutWidgets:
                     Label(text="C")
                     Label(text="D")
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        column = ctx.root_element.children[0]
+        column = ctx.root_node.children[0]
         assert len(column.children) == 2
 
         row1 = column.children[0]
@@ -97,10 +97,10 @@ class TestBasicWidgets:
         def App() -> None:
             Label(text="Hello World")
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        label = ctx.root_element.children[0]
+        label = ctx.root_node.children[0]
         assert label.component.name == "Label"
         assert label.properties["text"] == "Hello World"
 
@@ -111,10 +111,10 @@ class TestBasicWidgets:
         def App() -> None:
             Label(text="Styled", font_size=24, color="red")
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        label = ctx.root_element.children[0]
+        label = ctx.root_node.children[0]
         assert label.properties["font_size"] == 24
         assert label.properties["color"] == "red"
 
@@ -125,10 +125,10 @@ class TestBasicWidgets:
         def App() -> None:
             Button(text="Click Me")
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        button = ctx.root_element.children[0]
+        button = ctx.root_node.children[0]
         assert button.component.name == "Button"
         assert button.properties["text"] == "Click Me"
 
@@ -140,10 +140,10 @@ class TestBasicWidgets:
         def App() -> None:
             Button(text="Click", on_click=lambda: clicked.append(True))
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        button = ctx.root_element.children[0]
+        button = ctx.root_node.children[0]
         assert callable(button.properties["on_click"])
 
         # Invoke the callback
@@ -157,10 +157,10 @@ class TestBasicWidgets:
         def App() -> None:
             Button(text="Disabled", disabled=True)
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        button = ctx.root_element.children[0]
+        button = ctx.root_node.children[0]
         assert button.properties["disabled"] is True
 
     def test_slider_with_value(self) -> None:
@@ -170,10 +170,10 @@ class TestBasicWidgets:
         def App() -> None:
             Slider(value=50, min=0, max=100, step=1)
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        slider = ctx.root_element.children[0]
+        slider = ctx.root_node.children[0]
         assert slider.component.name == "Slider"
         assert slider.properties["value"] == 50
         assert slider.properties["min"] == 0
@@ -188,15 +188,60 @@ class TestBasicWidgets:
         def App() -> None:
             Slider(value=25, on_change=lambda v: values.append(v))
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        slider = ctx.root_element.children[0]
+        slider = ctx.root_node.children[0]
         assert callable(slider.properties["on_change"])
 
         # Invoke the callback
         slider.properties["on_change"](75.0)
         assert values == [75.0]
+
+    def test_slider_default_values(self) -> None:
+        """Slider uses default min/max/step values."""
+
+        @component
+        def App() -> None:
+            Slider()
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        slider = ctx.root_node.children[0]
+        assert slider.properties["value"] == 50  # default
+        assert slider.properties["min"] == 0  # default
+        assert slider.properties["max"] == 100  # default
+        assert slider.properties["step"] == 1  # default
+
+    def test_slider_disabled(self) -> None:
+        """Slider accepts disabled prop."""
+
+        @component
+        def App() -> None:
+            Slider(disabled=True)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        slider = ctx.root_node.children[0]
+        assert slider.properties["disabled"] is True
+
+    def test_slider_custom_range(self) -> None:
+        """Slider can have custom min/max/step."""
+
+        @component
+        def App() -> None:
+            Slider(value=5.5, min=-10, max=10, step=0.5)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        slider = ctx.root_node.children[0]
+        assert slider.properties["value"] == 5.5
+        assert slider.properties["min"] == -10
+        assert slider.properties["max"] == 10
+        assert slider.properties["step"] == 0.5
 
 
 class TestWidgetSerialization:
@@ -209,10 +254,10 @@ class TestWidgetSerialization:
         def App() -> None:
             Label(text="Test")
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
         label_data = result["children"][0]
         assert label_data["type"] == "Label"
@@ -225,10 +270,10 @@ class TestWidgetSerialization:
         def App() -> None:
             Button(text="Click", on_click=lambda: None)
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
         button_data = result["children"][0]
         assert button_data["type"] == "Button"
@@ -245,10 +290,10 @@ class TestWidgetSerialization:
                     Button(text="OK")
                     Button(text="Cancel")
 
-        ctx = RenderContext(App)
-        ctx.render_tree(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
         column_data = result["children"][0]
         assert column_data["type"] == "Column"

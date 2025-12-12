@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering import ElementDescriptor
+from trellis.core.rendering import ElementNode
 from trellis.html.base import HtmlElement, Style, auto_collect_hybrid
 from trellis.html.events import (
     ChangeHandler,
@@ -46,7 +46,7 @@ def Form(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A form element."""
     return _form(
         action=action,
@@ -76,7 +76,7 @@ def Input(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """An input element.
 
     Args:
@@ -119,7 +119,7 @@ def HtmlButton(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A native HTML button element.
 
     Note: Named HtmlButton to avoid conflict with trellis.widgets.Button.
@@ -163,7 +163,7 @@ def Textarea(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A textarea element."""
     return _textarea(
         value=value,
@@ -195,7 +195,7 @@ def Select(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A select dropdown element."""
     return _select(
         value=value,
@@ -218,7 +218,7 @@ def Option(
     selected: bool = False,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """An option element for use within Select."""
     return _option(
         _text=text if text else None,
@@ -238,7 +238,7 @@ def HtmlLabel(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """A label element.
 
     Note: Named HtmlLabel to avoid conflict with trellis.widgets.Label.

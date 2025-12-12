@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering import ElementDescriptor
+from trellis.core.rendering import ElementNode
 from trellis.html.base import HtmlElement, Style, auto_collect_hybrid
 from trellis.html.events import MouseHandler
 
@@ -32,7 +32,7 @@ def A(
     onClick: MouseHandler | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """An anchor (link) element.
 
     Can be used as text-only or as a container:
@@ -68,7 +68,7 @@ def Img(
     onClick: MouseHandler | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementDescriptor:
+) -> ElementNode:
     """An image element."""
     return _img(
         src=src,
