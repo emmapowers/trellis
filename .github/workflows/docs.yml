@@ -1,4 +1,4 @@
-name: Deploy Playground to GitHub Pages
+name: Deploy Docs to GitHub Pages
 
 on:
   push:
@@ -30,15 +30,22 @@ jobs:
       - name: Build playground
         run: pixi run build-playground
 
-      - name: Prepare deployment
+      - name: Generate API docs
+        run: pixi run generate-api-docs
+
+      - name: Copy wheel to docs static
+        run: pixi run copy-wheel-to-docs
+
+      - name: Build docs site
         run: |
-          mkdir -p _site
-          cp playground/index.html _site/
-          cp -r playground/dist _site/
-          cp dist/trellis-*.whl _site/
+          cd docs
+          npm ci
+          npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/build
 
   deploy:
     environment:

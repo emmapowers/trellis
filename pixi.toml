@@ -17,6 +17,7 @@ nodejs = ">=22"
 [pypi-dependencies]
 trellis = { path = ".", editable = true }
 mypy = ">=1.15,<2"
+pydoc-markdown = ">=4.8,<5"
 
 [tasks]
 fmt = { cmd = "black src", description = "Format code with black" }
@@ -46,9 +47,18 @@ watch-client = { cmd = "npm install && npm run watch", cwd = "src/trellis/client
 # Run demo
 demo = { cmd = "python examples/demo.py", description = "Run the demo app" }
 
-# Playground build tasks
-build-playground = { cmd = "npm install && npm run build", cwd = "playground", depends-on = ["build-wheel"], description = "Build playground bundle" }
-watch-playground = { cmd = "npm install && npm run watch", cwd = "playground", description = "Watch and rebuild playground" }
+# Playground build tasks (now in docs/static/playground)
+install-playground-deps = { cmd = "npm install", cwd = "docs/static/playground", description = "Install playground dependencies" }
+build-playground = { cmd = "npm run build", cwd = "docs/static/playground", depends-on = ["build-wheel", "install-playground-deps"], description = "Build playground bundle" }
+watch-playground = { cmd = "npm run watch", cwd = "docs/static/playground", depends-on = ["install-playground-deps"], description = "Watch and rebuild playground" }
 
-# Run playground test server (serve from project root so wheel is accessible)
-playground = { cmd = "python -m http.server 8000", depends-on = ["build-playground"], description = "Run playground server (open http://localhost:8000/playground/)" }
+# Documentation tasks
+generate-api-docs = { cmd = "pydoc-markdown", description = "Generate API docs from docstrings" }
+copy-wheel-to-docs = { cmd = "rm -f docs/static/*.whl && cp dist/trellis-*.whl docs/static/", depends-on = ["build-wheel"], description = "Copy wheel to docs static folder" }
+build-docs = { cmd = "npm ci && npm run build", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "copy-wheel-to-docs"], description = "Build documentation site" }
+serve-docs = { cmd = "npm run start", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "copy-wheel-to-docs"], description = "Serve docs locally with hot reload" }
+watch-api-docs = { cmd = "watchfiles 'pixi run generate-api-docs' src/trellis", description = "Watch Python source and regenerate API docs" }
+
+# For full docs dev workflow, run in two terminals:
+#   Terminal 1: pixi run serve-docs
+#   Terminal 2: pixi run watch-api-docs
