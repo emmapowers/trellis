@@ -43,5 +43,6 @@ See Also:
 
 from trellis.core.base_component import *
 from trellis.core.composition_component import *
+from trellis.core.message_handler import *
 from trellis.core.react_component import *
 from trellis.core.rendering import *

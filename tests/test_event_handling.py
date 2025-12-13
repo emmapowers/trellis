@@ -13,7 +13,7 @@ from trellis.html.events import (
     KeyboardEvent,
     MouseEvent,
 )
-from trellis.server.routes import (
+from trellis.core.message_handler import (
     _convert_event_arg,
     _extract_args_kwargs,
     _process_callback_args,

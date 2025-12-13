@@ -25,6 +25,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 __all__ = [
+    "EVENT_TYPE_MAP",
     "BaseEvent",
     "ChangeEvent",
     "ChangeEventHandler",
@@ -39,6 +40,7 @@ __all__ = [
     "KeyboardEventHandler",
     "MouseEvent",
     "MouseEventHandler",
+    "get_event_class",
 ]
 
 
@@ -164,3 +166,45 @@ FocusHandler = EventHandler | FocusEventHandler
 FormHandler = EventHandler | FormEventHandler
 InputHandler = EventHandler | InputEventHandler
 ChangeHandler = EventHandler | ChangeEventHandler
+
+
+# =============================================================================
+# Event type mapping
+# =============================================================================
+
+# Map DOM event type strings to their corresponding dataclasses
+EVENT_TYPE_MAP: dict[str, type[BaseEvent]] = {
+    # Mouse events
+    "click": MouseEvent,
+    "dblclick": MouseEvent,
+    "mousedown": MouseEvent,
+    "mouseup": MouseEvent,
+    "mousemove": MouseEvent,
+    "mouseenter": MouseEvent,
+    "mouseleave": MouseEvent,
+    "mouseover": MouseEvent,
+    "mouseout": MouseEvent,
+    "contextmenu": MouseEvent,
+    # Keyboard events
+    "keydown": KeyboardEvent,
+    "keyup": KeyboardEvent,
+    "keypress": KeyboardEvent,
+    # Form events
+    "change": ChangeEvent,
+    "input": InputEvent,
+    "focus": FocusEvent,
+    "blur": FocusEvent,
+    "submit": FormEvent,
+}
+
+
+def get_event_class(event_type: str) -> type[BaseEvent]:
+    """Get the event class for a DOM event type.
+
+    Args:
+        event_type: DOM event type string (e.g., "click", "keydown")
+
+    Returns:
+        The corresponding event dataclass, or BaseEvent if unknown
+    """
+    return EVENT_TYPE_MAP.get(event_type, BaseEvent)
