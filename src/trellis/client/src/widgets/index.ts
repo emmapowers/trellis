@@ -6,7 +6,7 @@ import { Row } from "./Row";
 import { Label } from "./Label";
 import { Button } from "./Button";
 import { Slider } from "./Slider";
-import { FunctionalComponent } from "./FunctionalComponent";
+import { CompositionComponent } from "./CompositionComponent";
 
 // Registry maps component type names to React components
 const widgetRegistry: Record<string, React.ComponentType<any>> = {
@@ -15,7 +15,7 @@ const widgetRegistry: Record<string, React.ComponentType<any>> = {
   Label,
   Button,
   Slider,
-  FunctionalComponent,
+  CompositionComponent,
 };
 
 export function getWidget(
@@ -31,4 +31,4 @@ export function registerWidget(
   widgetRegistry[name] = component;
 }
 
-export { Column, Row, Label, Button, Slider, FunctionalComponent };
+export { Column, Row, Label, Button, Slider, CompositionComponent };

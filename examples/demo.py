@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from trellis import Trellis, html as h
-from trellis.core.functional_component import component
+from trellis.core.composition_component import component
 from trellis.core.state import Stateful
 from trellis.utils.async_main import async_main
 from trellis.widgets import Button

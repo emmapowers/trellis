@@ -4,7 +4,7 @@ This package provides the fundamental building blocks for Trellis applications:
 
 Components:
     - `Component`: Abstract base class for all components
-    - `FunctionalComponent`: Component implementation using render functions
+    - `CompositionComponent`: Component implementation using render functions
     - `component`: Decorator to create components from functions
 
 Rendering:
@@ -36,12 +36,12 @@ Example:
 See Also:
     - `trellis.core.rendering`: Core rendering types and tree
     - `trellis.core.base_component`: Abstract component base class
-    - `trellis.core.functional_component`: @component decorator
+    - `trellis.core.composition_component`: @component decorator
     - `trellis.core.state`: Reactive state management
     - `trellis.core.reconcile`: Tree reconciliation algorithm
 """
 
 from trellis.core.base_component import *
-from trellis.core.functional_component import *
+from trellis.core.composition_component import *
 from trellis.core.react_component import *
 from trellis.core.rendering import *

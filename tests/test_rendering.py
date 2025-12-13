@@ -12,19 +12,19 @@ from trellis.core.rendering import (
     get_active_render_tree,
     set_active_render_tree,
 )
-from trellis.core.functional_component import FunctionalComponent, component
+from trellis.core.composition_component import CompositionComponent, component
 from trellis.core.state import Stateful
 from dataclasses import dataclass
 
 
-def make_component(name: str) -> FunctionalComponent:
+def make_component(name: str) -> CompositionComponent:
     """Helper to create a simple test component."""
-    return FunctionalComponent(name=name, render_func=lambda: None)
+    return CompositionComponent(name=name, render_func=lambda: None)
 
 
 def make_descriptor(
-    comp: FunctionalComponent,
-    key: str = "",
+    comp: CompositionComponent,
+    key: str | None = None,
     props: dict | None = None,
 ) -> ElementNode:
     """Helper to create an ElementNode."""
@@ -41,7 +41,7 @@ class TestElementNode:
         node = make_descriptor(comp)
 
         assert node.component == comp
-        assert node.key == ""
+        assert node.key is None
         assert node.props == freeze_props({})
         assert node.children == ()
         assert node.id == ""
@@ -93,7 +93,6 @@ class TestRenderTree:
         assert ctx.root_component == comp
         assert ctx.root_node is None
         assert ctx._dirty_ids == set()
-        assert ctx.rendering is False
 
     def test_mark_dirty_id(self) -> None:
         @component
@@ -196,9 +195,9 @@ class TestConcurrentRenderTreeIsolation:
             futures = [executor.submit(render_app_a), executor.submit(render_app_b)]
             concurrent.futures.wait(futures)
 
-        # Each render should have created its own children
-        assert render_results["a"] == [f"a_{i}" for i in range(5)]
-        assert render_results["b"] == [f"b_{i}" for i in range(5)]
+        # Each render should have created its own children (order may vary due to set iteration)
+        assert sorted(render_results["a"]) == [f"a_{i}" for i in range(5)]
+        assert sorted(render_results["b"]) == [f"b_{i}" for i in range(5)]
 
 
 class TestComponentOutsideRenderTree:
@@ -252,7 +251,7 @@ class TestDescriptorStackCleanupOnException:
             ctx.render()
 
         # Stack should be clean after exception
-        assert ctx._descriptor_stack == []
+        assert ctx._frame_stack == []
 
     def test_exception_in_nested_with_block_cleans_up(self) -> None:
         """Exception in nested with block doesn't corrupt stack."""
@@ -276,7 +275,7 @@ class TestDescriptorStackCleanupOnException:
         with pytest.raises(RuntimeError, match="nested failure"):
             ctx.render()
 
-        assert ctx._descriptor_stack == []
+        assert ctx._frame_stack == []
 
 
 class TestThreadSafeStateUpdates:
@@ -338,18 +337,19 @@ class TestThreadSafeStateUpdates:
         cb1 = lambda: "callback1"
         cb2 = lambda: "callback2"
 
-        id1 = ctx1.register_callback(cb1)
-        id2 = ctx2.register_callback(cb2)
+        # Register with deterministic IDs (node_id:prop_name)
+        id1 = ctx1.register_callback(cb1, "e1", "on_click")
+        id2 = ctx2.register_callback(cb2, "e1", "on_click")
 
-        # Same ID format but different registries
-        assert id1 == id2 == "cb_1"
+        # Same ID format (deterministic) but different registries
+        assert id1 == id2 == "e1:on_click"
 
         # But they resolve to different callbacks
         assert ctx1.get_callback(id1)() == "callback1"
         assert ctx2.get_callback(id2)() == "callback2"
 
         # Cross-lookup returns None
-        assert ctx1.get_callback("cb_999") is None
+        assert ctx1.get_callback("e999:on_click") is None
 
     def test_state_update_blocks_during_render(self) -> None:
         """State updates on another thread block while render holds the lock.
@@ -413,3 +413,64 @@ class TestThreadSafeStateUpdates:
         assert "update_done" in events
         # The key assertion: mark_dirty_id blocks, so update_done must come after render releases lock
         assert events.index("first_render_done") < events.index("update_done")
+
+
+class TestElementStateParentId:
+    """Tests for ElementState.parent_id tracking."""
+
+    def test_element_state_parent_id_tracking(self) -> None:
+        """ElementState.parent_id correctly tracks parent node."""
+
+        @component
+        def Child() -> None:
+            pass
+
+        @component
+        def Parent() -> None:
+            Child()
+
+        ctx = RenderTree(Parent)
+        ctx.render()
+
+        # Root has no parent
+        root_state = ctx._element_state[ctx.root_node.id]
+        assert root_state.parent_id is None
+
+        # Child's parent should be root
+        child_id = ctx.root_node.children[0].id
+        child_state = ctx._element_state[child_id]
+        assert child_state.parent_id == ctx.root_node.id
+
+    def test_parent_id_preserved_on_rerender(self) -> None:
+        """parent_id is preserved when component re-renders."""
+        from dataclasses import dataclass
+        from trellis.core.state import Stateful
+
+        @dataclass
+        class Counter(Stateful):
+            value: int = 0
+
+        state_holder: list[Counter] = []
+
+        @component
+        def Child() -> None:
+            pass
+
+        @component
+        def Parent() -> None:
+            state = Counter()
+            state_holder.append(state)
+            Child()
+
+        ctx = RenderTree(Parent)
+        ctx.render()
+
+        child_id = ctx.root_node.children[0].id
+        original_parent_id = ctx._element_state[child_id].parent_id
+
+        # Trigger re-render
+        state_holder[0].value += 1
+        ctx.render()
+
+        # parent_id should be preserved
+        assert ctx._element_state[child_id].parent_id == original_parent_id

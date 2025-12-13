@@ -1,4 +1,4 @@
-"""Functional component implementation for the Trellis UI framework.
+"""Composition component implementation for the Trellis UI framework.
 
 This module provides the `@component` decorator for creating components
 from plain Python functions. This is the primary way to define components
@@ -25,7 +25,7 @@ Example:
                 child()  # Mount each child
     ```
 
-The decorated function becomes a FunctionalComponent that can be called
+The decorated function becomes a CompositionComponent that can be called
 to create ElementNodes and used in the component tree.
 """
 
@@ -35,9 +35,10 @@ import inspect
 import typing as tp
 from dataclasses import dataclass, field
 
+from trellis.core.base import ElementKind
 from trellis.core.base_component import Component
 
-__all__ = ["FunctionalComponent", "RenderFunc", "component"]
+__all__ = ["CompositionComponent", "RenderFunc", "component"]
 
 
 class RenderFunc(tp.Protocol):
@@ -53,14 +54,14 @@ class RenderFunc(tp.Protocol):
 
 
 @dataclass(kw_only=True)
-class FunctionalComponent(Component):
+class CompositionComponent(Component):
     """A component implemented by a render function.
 
-    FunctionalComponent wraps a plain Python function to make it usable
-    as a Trellis component. The function is called during the execution
+    CompositionComponent wraps a plain Python function to make it usable
+    as a Trellis component. The function is called during the render
     phase when the component needs to render.
 
-    All FunctionalComponents share the same React component type ("FunctionalComponent")
+    All CompositionComponents share the same element_name ("CompositionComponent")
     which simply renders their children. The Python component name is preserved
     for debugging purposes.
 
@@ -74,29 +75,34 @@ class FunctionalComponent(Component):
             # Create native button element
             NativeButton(text=text, on_click=on_click)
 
-        MyButton = FunctionalComponent(name="MyButton", render_func=my_button)
+        MyButton = CompositionComponent(name="MyButton", render_func=my_button)
         ```
 
     Note:
         Prefer using the `@component` decorator instead of creating
-        FunctionalComponent instances directly.
+        CompositionComponent instances directly.
     """
 
     render_func: RenderFunc
     _has_children_param: bool = field(init=False, default=False)
 
     @property
-    def react_type(self) -> str:
-        """All FunctionalComponents use the same React wrapper component."""
-        return "FunctionalComponent"
+    def element_kind(self) -> ElementKind:
+        """CompositionComponents are React components on the client."""
+        return ElementKind.REACT_COMPONENT
+
+    @property
+    def element_name(self) -> str:
+        """All CompositionComponents use the same wrapper component."""
+        return "CompositionComponent"
 
     def __post_init__(self) -> None:
         """Inspect the render function to determine if it accepts children."""
         sig = inspect.signature(self.render_func)
         self._has_children_param = "children" in sig.parameters
 
-    def execute(self, /, **props: tp.Any) -> None:
-        """Execute the render function with the given props.
+    def render(self, /, **props: tp.Any) -> None:
+        """Render this component by calling the render function.
 
         For container components, `props['children']` contains a list of
         ElementNodes. The render function should call `child()` on
@@ -114,7 +120,7 @@ class FunctionalComponent(Component):
         return id(self)
 
 
-def component(render_func: RenderFunc) -> FunctionalComponent:
+def component(render_func: RenderFunc) -> CompositionComponent:
     """Decorator to create a component from a render function.
 
     This is the primary way to define components in Trellis. The decorated
@@ -126,7 +132,7 @@ def component(render_func: RenderFunc) -> FunctionalComponent:
             accept a `children` parameter to become a container component.
 
     Returns:
-        A FunctionalComponent wrapping the render function.
+        A CompositionComponent wrapping the render function.
 
     Example:
         ```python
@@ -149,7 +155,7 @@ def component(render_func: RenderFunc) -> FunctionalComponent:
             Text("Inside the box")
         ```
     """
-    return FunctionalComponent(
+    return CompositionComponent(
         name=render_func.__name__,
         render_func=render_func,
     )

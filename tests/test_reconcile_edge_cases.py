@@ -12,7 +12,7 @@ import random
 from dataclasses import dataclass
 
 from trellis.core.rendering import RenderTree
-from trellis.core.functional_component import component
+from trellis.core.composition_component import component
 from trellis.core.state import Stateful
 
 
@@ -554,7 +554,7 @@ class TestKeyEdgeCases:
         ctx.render()
 
         # Start with unkeyed
-        assert all(c.key == "" for c in ctx.root_node.children)
+        assert all(c.key is None for c in ctx.root_node.children)
 
         # Switch to keyed
         use_keys[0] = True
@@ -562,7 +562,7 @@ class TestKeyEdgeCases:
         ctx.render()
 
         # All children should now have keys
-        assert all(c.key != "" for c in ctx.root_node.children)
+        assert all(c.key is not None for c in ctx.root_node.children)
         # Keys should be the string versions of indices
         keys = [c.key for c in ctx.root_node.children]
         assert keys == ["0", "1", "2", "3", "4"]
@@ -805,7 +805,7 @@ class TestComponentTypeChange:
         mount_log.clear()
 
         # Get sibling element ids
-        sibling_ids = [id(c) for c in ctx.root_node.children if c.key == ""]
+        sibling_ids = [id(c) for c in ctx.root_node.children if c.key is None]
 
         # Switch type
         use_type_a[0] = False

@@ -1,7 +1,7 @@
 """Tests for native HTML elements."""
 
 from trellis import html as h
-from trellis.core.functional_component import component
+from trellis.core.composition_component import component
 from trellis.core.rendering import RenderTree
 from trellis.core.serialization import serialize_node
 
@@ -274,7 +274,8 @@ class TestHtmlSerialization:
         text_data = div_data["children"][1]
 
         assert span_data["type"] == "span"
-        assert text_data["type"] == "_text"
+        assert text_data["type"] == "__text__"
+        assert text_data["kind"] == "text"  # TEXT ElementKind
         assert text_data["name"] == "Text"
         assert text_data["props"]["_text"] == "value"
 

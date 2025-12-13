@@ -6,8 +6,10 @@ Elements for displaying and formatting text content.
 from __future__ import annotations
 
 import typing as tp
+from dataclasses import dataclass
 
-from trellis.core.rendering import ElementNode
+from trellis.core.react_component import ReactComponentBase
+from trellis.core.rendering import ElementKind, ElementNode
 from trellis.html.base import HtmlElement, Style
 
 __all__ = [
@@ -25,6 +27,26 @@ __all__ = [
     "Text",
 ]
 
+
+@dataclass(kw_only=True)
+class TextNode(ReactComponentBase):
+    """Special component for raw text nodes.
+
+    Unlike HtmlElement which renders as an intrinsic JSX element, TextNode
+    renders as a raw text node in React (just a string child).
+    """
+
+    @property
+    def element_kind(self) -> ElementKind:
+        """Text nodes have their own kind for special client handling."""
+        return ElementKind.TEXT
+
+    @property
+    def element_name(self) -> str:
+        """Special marker for text nodes."""
+        return "__text__"
+
+
 # Singleton instances
 _p = HtmlElement(_tag="p", name="P")
 _h1 = HtmlElement(_tag="h1", name="H1")
@@ -37,7 +59,7 @@ _strong = HtmlElement(_tag="strong", name="Strong")
 _em = HtmlElement(_tag="em", name="Em")
 _code = HtmlElement(_tag="code", name="Code")
 _pre = HtmlElement(_tag="pre", name="Pre")
-_text_node = HtmlElement(_tag="_text", name="Text")
+_text_node = TextNode(name="Text")
 
 
 def P(

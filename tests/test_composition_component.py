@@ -1,16 +1,16 @@
-"""Tests for trellis.core.functional_component module."""
+"""Tests for trellis.core.composition_component module."""
 
 from trellis.core.rendering import ElementNode, RenderTree
-from trellis.core.functional_component import FunctionalComponent, component
+from trellis.core.composition_component import CompositionComponent, component
 
 
-class TestFunctionalComponent:
+class TestCompositionComponent:
     def test_component_decorator(self) -> None:
         @component
         def MyComponent() -> None:
             pass
 
-        assert isinstance(MyComponent, FunctionalComponent)
+        assert isinstance(MyComponent, CompositionComponent)
         assert MyComponent.name == "MyComponent"
 
     def test_component_returns_node(self) -> None:
@@ -136,3 +136,25 @@ class TestFunctionalComponent:
         assert len(ctx.root_node.children) == 5
         for i, child in enumerate(ctx.root_node.children):
             assert child.properties["value"] == i
+
+    def test_component_with_explicit_none_key(self) -> None:
+        """Explicit key=None should result in None key, not 'None' string."""
+
+        @component
+        def Item() -> None:
+            pass
+
+        @component
+        def App() -> None:
+            Item(key=None)  # Explicit None
+            Item()  # No key parameter
+            Item(key="explicit")  # Explicit string key
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        # First two should have None key
+        assert ctx.root_node.children[0].key is None
+        assert ctx.root_node.children[1].key is None
+        # Third should have explicit key
+        assert ctx.root_node.children[2].key == "explicit"

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from trellis import mutable
-from trellis.core.functional_component import component
+from trellis.core.composition_component import component
 from trellis.core.rendering import Element
 from trellis.core.state import Stateful
 from trellis import widgets as w

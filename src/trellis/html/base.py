@@ -9,8 +9,8 @@ from __future__ import annotations
 import typing as tp
 from dataclasses import dataclass, field
 
-from trellis.core.react_component import ReactComponent
-from trellis.core.rendering import ElementNode, get_active_render_tree
+from trellis.core.react_component import ReactComponentBase
+from trellis.core.rendering import ElementKind, ElementNode, get_active_render_tree
 
 __all__ = [
     "HtmlElement",
@@ -23,12 +23,12 @@ Style = dict[str, str | int | float]
 
 
 @dataclass(kw_only=True)
-class HtmlElement(ReactComponent):
+class HtmlElement(ReactComponentBase):
     """Base class for native HTML elements.
 
-    Unlike regular ReactComponents which map to custom React components,
-    HtmlElement returns the HTML tag name as its react_type, causing React
-    to render it as a native DOM element.
+    Unlike regular ReactComponentBase which maps to custom React components,
+    HtmlElement returns JSX_ELEMENT kind and the HTML tag name as its element_name,
+    causing React to render it as a native DOM element.
 
     Attributes:
         _tag: The HTML tag name (e.g., "div", "span")
@@ -47,7 +47,12 @@ class HtmlElement(ReactComponent):
         return self._is_container
 
     @property
-    def react_type(self) -> str:
+    def element_kind(self) -> ElementKind:
+        """HTML elements are JSX intrinsic elements."""
+        return ElementKind.JSX_ELEMENT
+
+    @property
+    def element_name(self) -> str:
         """Return the HTML tag name for native DOM rendering."""
         return self._tag
 

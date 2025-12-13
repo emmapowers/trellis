@@ -3,7 +3,7 @@
 import pytest
 
 from trellis.core.rendering import ElementNode, RenderTree
-from trellis.core.functional_component import component
+from trellis.core.composition_component import component
 
 
 class TestContainerComponent:
@@ -108,7 +108,7 @@ class TestContainerComponent:
                 pass
 
         ctx = RenderTree(Parent)
-        with pytest.raises(TypeError, match="does not have a 'children' parameter"):
+        with pytest.raises(TypeError, match="does not accept children"):
             ctx.render()
 
     def test_cannot_provide_children_prop_and_use_with(self) -> None:

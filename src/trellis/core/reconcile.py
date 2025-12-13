@@ -44,10 +44,11 @@ import logging
 import typing as tp
 from dataclasses import replace as dataclass_replace
 
-if tp.TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode, IComponent, RenderTree
+# Import shared types from base (no circular dependency)
+from trellis.core.base import IComponent
 
-from trellis.core.state import clear_node_dependencies
+if tp.TYPE_CHECKING:
+    from trellis.core.rendering import ElementNode, RenderTree
 
 
 def reconcile_node(
@@ -106,9 +107,10 @@ def reconcile_node(
             node_with_id = dataclass_replace(node_with_id, children=old_node.children)
         return node_with_id
 
-    # Case 4: Props changed or dirty - re-execute
-    state.dirty = False
-    return execute_node(node_with_id, parent_id, ctx, old_children=list(old_node.children))
+    # Case 4: Props changed or dirty - mark dirty for later rendering
+    # Keep old children - they'll be reconciled when this node is rendered
+    ctx.mark_dirty_id(node_with_id.id)
+    return dataclass_replace(node_with_id, children=old_node.children)
 
 
 def mount_new_node(
@@ -120,133 +122,39 @@ def mount_new_node(
 ) -> ElementNode:
     """Create and mount a new node (ElementNode architecture).
 
-    Assigns a new ID, creates ElementState, executes the component.
+    Assigns a new ID, creates ElementState, marks dirty for later rendering.
+    The actual component execution happens in _render_dirty_nodes.
 
     Args:
         node: The node to mount (will have empty id)
         parent_id: Parent node's ID
         ctx: The render tree
-        call_hooks: Whether to call mount hooks immediately. Set False for
-                   bulk mounting where hooks are called later via mount_node_tree.
+        call_hooks: Whether to track mount hooks. Set False for internal
+                   reconciliation where parent handles hook tracking.
 
     Returns:
-        The mounted node with ID and children populated
+        The mounted node with ID assigned (children empty until rendered)
     """
     from trellis.core.rendering import ElementState
 
-    # Assign new ID
+    # Assign new ID (keep original children - they're descriptors from with block
+    # that will be passed to render(), then replaced with mounted children)
     new_id = ctx.next_element_id()
     node_with_id = dataclass_replace(node, id=new_id)
 
-    # Create ElementState
-    state = ElementState(parent_id=parent_id)
+    # Create ElementState and mark as mounted
+    # (hooks are deferred but node is conceptually mounted now)
+    state = ElementState(parent_id=parent_id, mounted=True)
     ctx._element_state[new_id] = state
 
-    # Execute component to get children (don't call hooks recursively)
-    result = execute_node(node_with_id, parent_id, ctx, call_hooks=call_hooks)
+    # Mark dirty so _render_dirty_nodes will render this node
+    ctx.mark_dirty_id(new_id)
 
-    if call_hooks:
-        # Call hooks for this node and all descendants in parent-first order
-        mount_node_tree(result, ctx)
-    # Note: if call_hooks=False, caller is responsible for calling mount_node_tree
+    # Track for mount hooks (called after render completes)
+    ctx.track_mount(new_id)
 
-    return result
-
-
-def execute_node(
-    node: ElementNode,
-    parent_id: str | None,
-    ctx: RenderTree,
-    old_children: list[ElementNode] | None = None,
-    *,
-    call_hooks: bool = True,
-) -> ElementNode:
-    """Execute a component and collect its children (ElementNode architecture).
-
-    Args:
-        node: The node to execute (must have id assigned)
-        parent_id: Parent node's ID
-        ctx: The render tree
-        old_children: Previous children to reconcile against (None for initial mount)
-        call_hooks: Whether to call mount hooks for children. Set False when
-                   parent will call mount_node_tree to handle all hooks.
-
-    Returns:
-        Node with children populated from execution
-    """
-    from trellis.core.rendering import unfreeze_props
-
-    # Get state for this node
-    state = ctx.get_element_state(node.id)
-    state.parent_id = parent_id
-
-    # Get props including children if component accepts them
-    props = unfreeze_props(node.props)
-    has_children_param = getattr(node.component, "_has_children_param", False)
-    if has_children_param:
-        props["children"] = list(node.children)
-
-    # Set up execution context
-    old_executing = ctx.executing
-    old_node_id = ctx._current_node_id
-    ctx.executing = True
-    ctx._current_node_id = node.id
-
-    # Reset state call count for consistent hook ordering
-    state.state_call_count = 0
-
-    # Clear existing dependency tracking before re-execution
-    # Dependencies will be re-registered fresh during execution
-    clear_node_dependencies(node.id, state.watched_deps)
-
-    # Push a frame for child nodes created during execution
-    ctx.push_descriptor_frame()
-    frame_popped = False
-
-    try:
-        # Execute the component (creates child nodes via component calls)
-        node.component.execute(**props)
-
-        # Get child nodes created during execution
-        child_nodes = ctx.pop_descriptor_frame()
-        frame_popped = True
-
-        # Reconcile or mount children
-        if child_nodes:
-            # Reconcile with old children if this is a re-execution
-            if old_children:
-                new_children = reconcile_node_children(old_children, child_nodes, node.id, ctx)
-            else:
-                # Initial mount - mount all new children
-                # Don't call hooks here - parent will call mount_node_tree
-                new_children = [
-                    mount_new_node(child, node.id, ctx, call_hooks=False) for child in child_nodes
-                ]
-
-            # Call mount hooks for any newly created children during re-render
-            # For initial mount (old_children is None), parent's mount_node_tree handles this
-            # mount_node_tree checks state.mounted and skips already-mounted nodes
-            if call_hooks and old_children is not None:
-                for child in new_children:
-                    mount_node_tree(child, ctx)
-
-            return dataclass_replace(node, children=tuple(new_children))
-
-        # No new children created
-        if old_children:
-            # Had children before but none now - unmount all
-            for child in old_children:
-                unmount_node_tree(child, ctx)
-        return dataclass_replace(node, children=())
-
-    except BaseException:
-        if not frame_popped:
-            ctx.pop_descriptor_frame()
-        raise
-
-    finally:
-        ctx.executing = old_executing
-        ctx._current_node_id = old_node_id
+    # Return node - children are descriptors from with block, will be replaced when rendered
+    return node_with_id
 
 
 def reconcile_node_children(
@@ -378,7 +286,8 @@ def reconcile_node_children(
 def mount_node_tree(node: ElementNode, ctx: RenderTree) -> None:
     """Mount a node and all its descendants (ElementNode architecture).
 
-    Mounting is performed parent-first.
+    Mounting is performed parent-first. Hooks are tracked for deferred
+    execution after the render phase completes.
 
     Args:
         node: The node to mount
@@ -389,7 +298,8 @@ def mount_node_tree(node: ElementNode, ctx: RenderTree) -> None:
         return
 
     state.mounted = True
-    call_mount_hooks(node.id, ctx)
+    # Track mount hook (called after render completes)
+    ctx.track_mount(node.id)
 
     for child in node.children:
         mount_node_tree(child, ctx)
@@ -398,7 +308,9 @@ def mount_node_tree(node: ElementNode, ctx: RenderTree) -> None:
 def unmount_node_tree(node: ElementNode, ctx: RenderTree) -> None:
     """Unmount a node and all its descendants (ElementNode architecture).
 
-    Unmounting is performed children-first.
+    Unmounting is performed children-first. Hooks are tracked for deferred
+    execution after the render phase completes. State cleanup is also deferred
+    so hooks can access local_state.
 
     Args:
         node: The node to unmount
@@ -408,25 +320,22 @@ def unmount_node_tree(node: ElementNode, ctx: RenderTree) -> None:
     if state is None or not state.mounted:
         return
 
-    # Unmount children first
+    # Unmount children first (depth-first)
     for child in node.children:
         unmount_node_tree(child, ctx)
 
-    # Call unmount hooks
-    call_unmount_hooks(node.id, ctx)
+    # Track unmount hook (called after render completes)
+    # State cleanup is deferred to _process_pending_hooks so hooks can access local_state
+    ctx.track_unmount(node.id)
 
     state.mounted = False
-
-    # Clean up dependency tracking before removing state
-    clear_node_dependencies(node.id, state.watched_deps)
-
-    # Clean up state
-    ctx._element_state.pop(node.id, None)
     ctx._dirty_ids.discard(node.id)
 
 
 def call_mount_hooks(node_id: str, ctx: RenderTree) -> None:
     """Call on_mount() for all Stateful instances on a node.
+
+    Exceptions are logged but not propagated, to ensure all mount hooks run.
 
     Args:
         node_id: The node's ID
@@ -441,7 +350,10 @@ def call_mount_hooks(node_id: str, ctx: RenderTree) -> None:
     items.sort(key=lambda x: x[0][1])
     for _, stateful in items:
         if hasattr(stateful, "on_mount"):
-            stateful.on_mount()
+            try:
+                stateful.on_mount()
+            except Exception as e:
+                logging.exception(f"Error in Stateful.on_mount: {e}")
 
 
 def call_unmount_hooks(node_id: str, ctx: RenderTree) -> None:

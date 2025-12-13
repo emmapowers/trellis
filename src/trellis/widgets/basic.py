@@ -3,46 +3,16 @@
 from __future__ import annotations
 
 import typing as tp
-from dataclasses import dataclass
 
-from trellis.core.react_component import ReactComponent, react_component
+from trellis.core.react_component import react_component_base
 from trellis.core.rendering import ElementNode
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
 
 
-@react_component("Slider")
-@dataclass(kw_only=True)
-class _SliderComponent(ReactComponent):
-    """Range slider widget."""
-
-    name: str = "Slider"
-
-
-@react_component("Label")
-@dataclass(kw_only=True)
-class _LabelComponent(ReactComponent):
-    """Text display widget."""
-
-    name: str = "Label"
-
-
-@react_component("Button")
-@dataclass(kw_only=True)
-class _ButtonComponent(ReactComponent):
-    """Clickable button widget."""
-
-    name: str = "Button"
-
-
-# Singleton instances used by factory functions
-_slider = _SliderComponent()
-_label = _LabelComponent()
-_button = _ButtonComponent()
-
-
-def Label(
+@react_component_base("Label")
+def Label(  # type: ignore[empty-body]
     text: str = "",
     *,
     font_size: int | None = None,
@@ -71,19 +41,11 @@ def Label(
     Example:
         Label(text="Hello, world!", font_size=16, color="blue")
     """
-    return _label(
-        text=text,
-        font_size=font_size,
-        color=color,
-        bold=bold,
-        italic=italic,
-        className=class_name,
-        style=style,
-        key=key,
-    )
+    ...
 
 
-def Button(
+@react_component_base("Button")
+def Button(  # type: ignore[empty-body]
     text: str = "",
     *,
     on_click: Callable[[], None] | None = None,
@@ -121,20 +83,11 @@ def Button(
         Button(text="Cancel", on_click=cancel_handler, variant="secondary")
         Button(text="Delete", on_click=delete_handler, variant="danger")
     """
-    return _button(
-        text=text,
-        on_click=on_click,
-        disabled=disabled,
-        variant=variant,
-        size=size,
-        full_width=full_width,
-        className=class_name,
-        style=style,
-        key=key,
-    )
+    ...
 
 
-def Slider(
+@react_component_base("Slider")
+def Slider(  # type: ignore[empty-body]
     *,
     value: float = 50,
     min: float = 0,
@@ -165,14 +118,4 @@ def Slider(
     Example:
         Slider(value=50, min=0, max=100, on_change=handle_change)
     """
-    return _slider(
-        value=value,
-        min=min,
-        max=max,
-        step=step,
-        on_change=on_change,
-        disabled=disabled,
-        className=class_name,
-        style=style,
-        key=key,
-    )
+    ...

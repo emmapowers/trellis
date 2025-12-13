@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 from trellis.core.rendering import RenderTree
-from trellis.core.functional_component import component
+from trellis.core.composition_component import component
 from trellis.core.state import Stateful
 
 
