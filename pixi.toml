@@ -58,3 +58,6 @@ watch-api-docs = { cmd = "watchfiles 'pixi run generate-api-docs' src/trellis", 
 # For full docs dev workflow, run in two terminals:
 #   Terminal 1: pixi run serve-docs
 #   Terminal 2: pixi run watch-api-docs
+
+[target.unix.activation]
+scripts = ["scripts/install-npm-deps.sh"]
