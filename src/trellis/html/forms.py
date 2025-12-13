@@ -8,7 +8,7 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.rendering import ElementNode
-from trellis.html.base import HtmlElement, Style, auto_collect_hybrid
+from trellis.html.base import Style, auto_collect_hybrid, html_element
 from trellis.html.events import (
     ChangeHandler,
     FocusHandler,
@@ -26,16 +26,8 @@ __all__ = [
     "Textarea",
 ]
 
-# Singleton instances
-_form = HtmlElement(_tag="form", name="Form", _is_container=True)
-_input = HtmlElement(_tag="input", name="Input")  # Self-closing
-_button = HtmlElement(_tag="button", name="HtmlButton", _is_container=True)  # Hybrid
-_textarea = HtmlElement(_tag="textarea", name="Textarea")
-_select = HtmlElement(_tag="select", name="Select", _is_container=True)
-_option = HtmlElement(_tag="option", name="Option")  # Text only
-_label = HtmlElement(_tag="label", name="HtmlLabel", _is_container=True)  # Hybrid
 
-
+@html_element("form", is_container=True)
 def Form(
     *,
     action: str | None = None,
@@ -48,18 +40,10 @@ def Form(
     **props: tp.Any,
 ) -> ElementNode:
     """A form element."""
-    return _form(
-        action=action,
-        method=method,
-        onSubmit=onSubmit,
-        className=className,
-        style=style,
-        id=id,
-        key=key,
-        **props,
-    )
+    ...
 
 
+@html_element("input")
 def Input(
     *,
     type: str = "text",
@@ -90,24 +74,96 @@ def Input(
         onFocus: Called when the input gains focus
         onBlur: Called when the input loses focus
     """
-    return _input(
-        type=type,
-        value=value,
-        placeholder=placeholder,
-        disabled=disabled,
-        readOnly=readOnly,
-        name=name,
-        onChange=onChange,
-        onFocus=onFocus,
-        onBlur=onBlur,
-        className=className,
-        style=style,
-        id=id,
-        key=key,
-        **props,
-    )
+    ...
 
 
+@html_element("textarea")
+def Textarea(
+    *,
+    value: str | None = None,
+    placeholder: str | None = None,
+    rows: int | None = None,
+    cols: int | None = None,
+    disabled: bool = False,
+    readOnly: bool = False,
+    name: str | None = None,
+    onChange: ChangeHandler | None = None,
+    onFocus: FocusHandler | None = None,
+    onBlur: FocusHandler | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A textarea element."""
+    ...
+
+
+@html_element("select", is_container=True)
+def Select(
+    *,
+    value: str | None = None,
+    disabled: bool = False,
+    name: str | None = None,
+    onChange: ChangeHandler | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A select dropdown element."""
+    ...
+
+
+# Hybrid elements need special handling for text vs container mode
+@html_element("button", is_container=True, name="HtmlButton")
+def _HtmlButton(
+    *,
+    _text: str | None = None,
+    type: str = "button",
+    disabled: bool = False,
+    onClick: MouseHandler | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A native HTML button element."""
+    ...
+
+
+@html_element("option", name="Option")
+def _Option(
+    *,
+    _text: str | None = None,
+    value: str | None = None,
+    disabled: bool = False,
+    selected: bool = False,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """An option element for use within Select."""
+    ...
+
+
+@html_element("label", is_container=True, name="HtmlLabel")
+def _HtmlLabel(
+    *,
+    _text: str | None = None,
+    htmlFor: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A label element."""
+    ...
+
+
+# Public API for hybrid elements with positional text support
 def HtmlButton(
     text: str = "",
     *,
@@ -130,7 +186,7 @@ def HtmlButton(
             h.Span("Icon")
             h.Span("Text")
     """
-    desc = _button(
+    desc = _HtmlButton(
         _text=text if text else None,
         type=type,
         disabled=disabled,
@@ -146,70 +202,6 @@ def HtmlButton(
     return desc
 
 
-def Textarea(
-    *,
-    value: str | None = None,
-    placeholder: str | None = None,
-    rows: int | None = None,
-    cols: int | None = None,
-    disabled: bool = False,
-    readOnly: bool = False,
-    name: str | None = None,
-    onChange: ChangeHandler | None = None,
-    onFocus: FocusHandler | None = None,
-    onBlur: FocusHandler | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    key: str | None = None,
-    **props: tp.Any,
-) -> ElementNode:
-    """A textarea element."""
-    return _textarea(
-        value=value,
-        placeholder=placeholder,
-        rows=rows,
-        cols=cols,
-        disabled=disabled,
-        readOnly=readOnly,
-        name=name,
-        onChange=onChange,
-        onFocus=onFocus,
-        onBlur=onBlur,
-        className=className,
-        style=style,
-        id=id,
-        key=key,
-        **props,
-    )
-
-
-def Select(
-    *,
-    value: str | None = None,
-    disabled: bool = False,
-    name: str | None = None,
-    onChange: ChangeHandler | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    key: str | None = None,
-    **props: tp.Any,
-) -> ElementNode:
-    """A select dropdown element."""
-    return _select(
-        value=value,
-        disabled=disabled,
-        name=name,
-        onChange=onChange,
-        className=className,
-        style=style,
-        id=id,
-        key=key,
-        **props,
-    )
-
-
 def Option(
     text: str = "",
     *,
@@ -220,7 +212,7 @@ def Option(
     **props: tp.Any,
 ) -> ElementNode:
     """An option element for use within Select."""
-    return _option(
+    return _Option(
         _text=text if text else None,
         value=value,
         disabled=disabled,
@@ -249,7 +241,7 @@ def HtmlLabel(
             h.Span("Name")
             h.Input(id="name-input")
     """
-    desc = _label(
+    desc = _HtmlLabel(
         _text=text if text else None,
         htmlFor=htmlFor,
         className=className,

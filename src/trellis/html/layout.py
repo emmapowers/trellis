@@ -8,7 +8,7 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.rendering import ElementNode
-from trellis.html.base import HtmlElement, Style
+from trellis.html.base import Style, html_element
 from trellis.html.events import MouseHandler
 
 __all__ = [
@@ -23,18 +23,8 @@ __all__ = [
     "Span",
 ]
 
-# Singleton instances
-_div = HtmlElement(_tag="div", name="Div", _is_container=True)
-_span = HtmlElement(_tag="span", name="Span")  # Inline, usually has text
-_section = HtmlElement(_tag="section", name="Section", _is_container=True)
-_article = HtmlElement(_tag="article", name="Article", _is_container=True)
-_header = HtmlElement(_tag="header", name="Header", _is_container=True)
-_footer = HtmlElement(_tag="footer", name="Footer", _is_container=True)
-_nav = HtmlElement(_tag="nav", name="Nav", _is_container=True)
-_main = HtmlElement(_tag="main", name="Main", _is_container=True)
-_aside = HtmlElement(_tag="aside", name="Aside", _is_container=True)
 
-
+@html_element("div", is_container=True)
 def Div(
     *,
     className: str | None = None,
@@ -47,16 +37,22 @@ def Div(
     **props: tp.Any,
 ) -> ElementNode:
     """A div container element."""
-    return _div(
-        className=className,
-        style=style,
-        id=id,
-        onClick=onClick,
-        onMouseEnter=onMouseEnter,
-        onMouseLeave=onMouseLeave,
-        key=key,
-        **props,
-    )
+    ...
+
+
+@html_element("span", name="Span")
+def _Span(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    onClick: MouseHandler | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """An inline span element."""
+    ...
 
 
 def Span(
@@ -70,7 +66,7 @@ def Span(
     **props: tp.Any,
 ) -> ElementNode:
     """An inline span element."""
-    return _span(
+    return _Span(
         _text=text if text else None,
         className=className,
         style=style,
@@ -81,6 +77,7 @@ def Span(
     )
 
 
+@html_element("section", is_container=True)
 def Section(
     *,
     className: str | None = None,
@@ -90,9 +87,10 @@ def Section(
     **props: tp.Any,
 ) -> ElementNode:
     """A section element for grouping content."""
-    return _section(className=className, style=style, id=id, key=key, **props)
+    ...
 
 
+@html_element("article", is_container=True)
 def Article(
     *,
     className: str | None = None,
@@ -102,9 +100,10 @@ def Article(
     **props: tp.Any,
 ) -> ElementNode:
     """An article element for self-contained content."""
-    return _article(className=className, style=style, id=id, key=key, **props)
+    ...
 
 
+@html_element("header", is_container=True)
 def Header(
     *,
     className: str | None = None,
@@ -114,9 +113,10 @@ def Header(
     **props: tp.Any,
 ) -> ElementNode:
     """A header element."""
-    return _header(className=className, style=style, id=id, key=key, **props)
+    ...
 
 
+@html_element("footer", is_container=True)
 def Footer(
     *,
     className: str | None = None,
@@ -126,9 +126,10 @@ def Footer(
     **props: tp.Any,
 ) -> ElementNode:
     """A footer element."""
-    return _footer(className=className, style=style, id=id, key=key, **props)
+    ...
 
 
+@html_element("nav", is_container=True)
 def Nav(
     *,
     className: str | None = None,
@@ -138,9 +139,10 @@ def Nav(
     **props: tp.Any,
 ) -> ElementNode:
     """A navigation element."""
-    return _nav(className=className, style=style, id=id, key=key, **props)
+    ...
 
 
+@html_element("main", is_container=True)
 def Main(
     *,
     className: str | None = None,
@@ -150,9 +152,10 @@ def Main(
     **props: tp.Any,
 ) -> ElementNode:
     """A main content element."""
-    return _main(className=className, style=style, id=id, key=key, **props)
+    ...
 
 
+@html_element("aside", is_container=True)
 def Aside(
     *,
     className: str | None = None,
@@ -162,4 +165,4 @@ def Aside(
     **props: tp.Any,
 ) -> ElementNode:
     """An aside element for tangential content."""
-    return _aside(className=className, style=style, id=id, key=key, **props)
+    ...

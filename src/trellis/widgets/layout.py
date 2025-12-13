@@ -9,7 +9,7 @@ from trellis.core.rendering import ElementNode
 
 
 @react_component_base("Column", has_children=True)
-def Column(  # type: ignore[empty-body]
+def Column(
     *,
     gap: int | None = None,
     padding: int | None = None,
@@ -45,7 +45,7 @@ def Column(  # type: ignore[empty-body]
 
 
 @react_component_base("Row", has_children=True)
-def Row(  # type: ignore[empty-body]
+def Row(
     *,
     gap: int | None = None,
     padding: int | None = None,

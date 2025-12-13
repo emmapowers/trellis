@@ -12,7 +12,7 @@ if tp.TYPE_CHECKING:
 
 
 @react_component_base("Label")
-def Label(  # type: ignore[empty-body]
+def Label(
     text: str = "",
     *,
     font_size: int | None = None,
@@ -45,7 +45,7 @@ def Label(  # type: ignore[empty-body]
 
 
 @react_component_base("Button")
-def Button(  # type: ignore[empty-body]
+def Button(
     text: str = "",
     *,
     on_click: Callable[[], None] | None = None,
@@ -87,7 +87,7 @@ def Button(  # type: ignore[empty-body]
 
 
 @react_component_base("Slider")
-def Slider(  # type: ignore[empty-body]
+def Slider(
     *,
     value: float = 50,
     min: float = 0,

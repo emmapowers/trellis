@@ -99,3 +99,9 @@ warn_redundant_casts = true
 warn_no_return = true
 warn_unreachable = true
 exclude = ["docs/"]
+
+# Decorators like @html_element and @react_component_base replace the function
+# body entirely, so the stub functions legitimately have empty bodies.
+[[tool.mypy.overrides]]
+module = ["trellis.html.*", "trellis.widgets.*"]
+disable_error_code = ["empty-body"]

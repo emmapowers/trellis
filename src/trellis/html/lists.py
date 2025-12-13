@@ -8,7 +8,7 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.rendering import ElementNode
-from trellis.html.base import HtmlElement, Style, auto_collect_hybrid
+from trellis.html.base import Style, auto_collect_hybrid, html_element
 
 __all__ = [
     "Li",
@@ -16,12 +16,8 @@ __all__ = [
     "Ul",
 ]
 
-# Singleton instances
-_ul = HtmlElement(_tag="ul", name="Ul", _is_container=True)
-_ol = HtmlElement(_tag="ol", name="Ol", _is_container=True)
-_li = HtmlElement(_tag="li", name="Li", _is_container=True)  # Hybrid: text or children
 
-
+@html_element("ul", is_container=True)
 def Ul(
     *,
     className: str | None = None,
@@ -31,9 +27,10 @@ def Ul(
     **props: tp.Any,
 ) -> ElementNode:
     """An unordered list element."""
-    return _ul(className=className, style=style, id=id, key=key, **props)
+    ...
 
 
+@html_element("ol", is_container=True)
 def Ol(
     *,
     className: str | None = None,
@@ -44,7 +41,21 @@ def Ol(
     **props: tp.Any,
 ) -> ElementNode:
     """An ordered list element."""
-    return _ol(className=className, style=style, id=id, start=start, key=key, **props)
+    ...
+
+
+# Hybrid element needs special handling
+@html_element("li", is_container=True, name="Li")
+def _Li(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A list item element."""
+    ...
 
 
 def Li(
@@ -62,7 +73,7 @@ def Li(
         with h.Li():         # Container with children
             h.Strong("Bold")
     """
-    desc = _li(
+    desc = _Li(
         _text=text if text else None,
         className=className,
         style=style,

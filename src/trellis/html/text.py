@@ -8,9 +8,10 @@ from __future__ import annotations
 import typing as tp
 from dataclasses import dataclass
 
-from trellis.core.react_component import ReactComponentBase
-from trellis.core.rendering import ElementKind, ElementNode
-from trellis.html.base import HtmlElement, Style
+from trellis.core.base import ElementKind
+from trellis.core.base_component import Component
+from trellis.core.rendering import ElementNode
+from trellis.html.base import Style, html_element
 
 __all__ = [
     "H1",
@@ -29,12 +30,20 @@ __all__ = [
 
 
 @dataclass(kw_only=True)
-class TextNode(ReactComponentBase):
+class TextNode(Component):
     """Special component for raw text nodes.
 
     Unlike HtmlElement which renders as an intrinsic JSX element, TextNode
     renders as a raw text node in React (just a string child).
+
+    TextNode extends Component directly (like HtmlElement) but with
+    a special element_kind for text handling.
     """
+
+    @property
+    def _has_children_param(self) -> bool:
+        """Text nodes don't accept children."""
+        return False
 
     @property
     def element_kind(self) -> ElementKind:
@@ -46,22 +55,167 @@ class TextNode(ReactComponentBase):
         """Special marker for text nodes."""
         return "__text__"
 
+    def render(self, /, **props: tp.Any) -> None:
+        """Text nodes are leaf nodes - no rendering needed."""
+        pass
 
-# Singleton instances
-_p = HtmlElement(_tag="p", name="P")
-_h1 = HtmlElement(_tag="h1", name="H1")
-_h2 = HtmlElement(_tag="h2", name="H2")
-_h3 = HtmlElement(_tag="h3", name="H3")
-_h4 = HtmlElement(_tag="h4", name="H4")
-_h5 = HtmlElement(_tag="h5", name="H5")
-_h6 = HtmlElement(_tag="h6", name="H6")
-_strong = HtmlElement(_tag="strong", name="Strong")
-_em = HtmlElement(_tag="em", name="Em")
-_code = HtmlElement(_tag="code", name="Code")
-_pre = HtmlElement(_tag="pre", name="Pre")
+
+# Text elements use decorators but need wrappers for positional text args
+@html_element("p", name="P")
+def _P(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A paragraph element."""
+    ...
+
+
+@html_element("h1", name="H1")
+def _H1(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A level 1 heading."""
+    ...
+
+
+@html_element("h2", name="H2")
+def _H2(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A level 2 heading."""
+    ...
+
+
+@html_element("h3", name="H3")
+def _H3(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A level 3 heading."""
+    ...
+
+
+@html_element("h4", name="H4")
+def _H4(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A level 4 heading."""
+    ...
+
+
+@html_element("h5", name="H5")
+def _H5(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A level 5 heading."""
+    ...
+
+
+@html_element("h6", name="H6")
+def _H6(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A level 6 heading."""
+    ...
+
+
+@html_element("strong", name="Strong")
+def _Strong(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A strong (bold) text element."""
+    ...
+
+
+@html_element("em", name="Em")
+def _Em(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """An emphasis (italic) text element."""
+    ...
+
+
+@html_element("code", name="Code")
+def _Code(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """An inline code element."""
+    ...
+
+
+@html_element("pre", name="Pre")
+def _Pre(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    key: str | None = None,
+    **props: tp.Any,
+) -> ElementNode:
+    """A preformatted text element."""
+    ...
+
+
+# Text node singleton
 _text_node = TextNode(name="Text")
 
 
+# Public API with positional text parameter support
 def P(
     text: str = "",
     *,
@@ -72,7 +226,7 @@ def P(
     **props: tp.Any,
 ) -> ElementNode:
     """A paragraph element."""
-    return _p(
+    return _P(
         _text=text if text else None,
         className=className,
         style=style,
@@ -92,7 +246,7 @@ def H1(
     **props: tp.Any,
 ) -> ElementNode:
     """A level 1 heading."""
-    return _h1(
+    return _H1(
         _text=text if text else None,
         className=className,
         style=style,
@@ -112,7 +266,7 @@ def H2(
     **props: tp.Any,
 ) -> ElementNode:
     """A level 2 heading."""
-    return _h2(
+    return _H2(
         _text=text if text else None,
         className=className,
         style=style,
@@ -132,7 +286,7 @@ def H3(
     **props: tp.Any,
 ) -> ElementNode:
     """A level 3 heading."""
-    return _h3(
+    return _H3(
         _text=text if text else None,
         className=className,
         style=style,
@@ -152,7 +306,7 @@ def H4(
     **props: tp.Any,
 ) -> ElementNode:
     """A level 4 heading."""
-    return _h4(
+    return _H4(
         _text=text if text else None,
         className=className,
         style=style,
@@ -172,7 +326,7 @@ def H5(
     **props: tp.Any,
 ) -> ElementNode:
     """A level 5 heading."""
-    return _h5(
+    return _H5(
         _text=text if text else None,
         className=className,
         style=style,
@@ -192,7 +346,7 @@ def H6(
     **props: tp.Any,
 ) -> ElementNode:
     """A level 6 heading."""
-    return _h6(
+    return _H6(
         _text=text if text else None,
         className=className,
         style=style,
@@ -211,7 +365,7 @@ def Strong(
     **props: tp.Any,
 ) -> ElementNode:
     """A strong (bold) text element."""
-    return _strong(
+    return _Strong(
         _text=text if text else None,
         className=className,
         style=style,
@@ -229,7 +383,7 @@ def Em(
     **props: tp.Any,
 ) -> ElementNode:
     """An emphasis (italic) text element."""
-    return _em(
+    return _Em(
         _text=text if text else None,
         className=className,
         style=style,
@@ -247,7 +401,7 @@ def Code(
     **props: tp.Any,
 ) -> ElementNode:
     """An inline code element."""
-    return _code(
+    return _Code(
         _text=text if text else None,
         className=className,
         style=style,
@@ -265,7 +419,7 @@ def Pre(
     **props: tp.Any,
 ) -> ElementNode:
     """A preformatted text element."""
-    return _pre(
+    return _Pre(
         _text=text if text else None,
         className=className,
         style=style,

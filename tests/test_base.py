@@ -10,7 +10,8 @@ from trellis.core.base import (
 )
 from trellis.core.composition_component import CompositionComponent, component
 from trellis.core.react_component import ReactComponentBase
-from trellis.html.base import HtmlElement
+from trellis.core.rendering import ElementNode
+from trellis.html.base import HtmlElement, html_element
 from trellis.html.text import TextNode
 
 
@@ -113,7 +114,13 @@ class TestIComponentProtocolConformance:
 
     def test_html_element_has_jsx_element_kind(self) -> None:
         """HtmlElement should return JSX_ELEMENT kind."""
-        elem = HtmlElement(_tag="div", name="Div")
+
+        @html_element("div")
+        def TestDiv() -> ElementNode:
+            ...
+
+        # Access the underlying component via the decorator's _component attribute
+        elem = TestDiv._component
         assert elem.element_kind == ElementKind.JSX_ELEMENT
 
     def test_text_node_has_text_kind(self) -> None:

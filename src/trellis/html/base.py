@@ -1,50 +1,73 @@
 """Base classes and helpers for HTML elements.
 
 This module provides the HtmlElement class that powers all native HTML
-element wrappers, plus helper functions for hybrid element behavior.
+element wrappers, plus the @html_element decorator for defining elements.
 """
 
 from __future__ import annotations
 
+import functools
 import typing as tp
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from trellis.core.react_component import ReactComponentBase
-from trellis.core.rendering import ElementKind, ElementNode, get_active_render_tree
+from trellis.core.base import ElementKind
+from trellis.core.base_component import Component
+from trellis.core.rendering import ElementNode, get_active_render_tree
 
 __all__ = [
     "HtmlElement",
     "Style",
     "auto_collect_hybrid",
+    "html_element",
 ]
 
 # Type alias for inline styles
 Style = dict[str, str | int | float]
 
 
+class _DecoratedHtmlElement(tp.Protocol):
+    """Protocol for functions decorated with @html_element."""
+
+    _component: HtmlElement
+
+    def __call__(self, **props: tp.Any) -> ElementNode: ...
+
+
 @dataclass(kw_only=True)
-class HtmlElement(ReactComponentBase):
-    """Base class for native HTML elements.
+class HtmlElement(Component):
+    """Base class for native HTML elements like div, span, button, etc.
 
-    Unlike regular ReactComponentBase which maps to custom React components,
-    HtmlElement returns JSX_ELEMENT kind and the HTML tag name as its element_name,
-    causing React to render it as a native DOM element.
+    HtmlElement provides type-safe wrappers around standard HTML tags. Elements
+    are rendered directly as native DOM nodes on the client (not as React
+    components), enabling full HTML/CSS capabilities with Python type hints.
 
-    Attributes:
-        _tag: The HTML tag name (e.g., "div", "span")
-        _is_container: Whether this element can contain children via `with` block
+    Use the `@html_element` decorator to define elements rather than
+    subclassing directly. See `trellis.html` for pre-defined elements.
+
+    Example:
+        ```python
+        from trellis import html as h
+
+        # Leaf element
+        h.Button("Click me", onClick=handler)
+
+        # Container element
+        with h.Div(className="card", style={"padding": "20px"}):
+            h.H1("Title")
+            h.P("Content")
+        ```
     """
 
-    _tag: str = field(default="div", repr=False)
-    _is_container: bool = field(default=False, repr=False)
+    # Subclasses must set this
+    _tag: tp.ClassVar[str] = ""
 
-    # Class-level default - overridden by instance property
-    _has_children: tp.ClassVar[bool] = False
+    # Whether this component accepts children via `with` block (class var)
+    _is_container: tp.ClassVar[bool] = False
 
     @property
     def _has_children_param(self) -> bool:
-        """Whether this specific instance accepts children via with block."""
-        return self._is_container
+        """Whether this element accepts children via with block."""
+        return self.__class__._is_container
 
     @property
     def element_kind(self) -> ElementKind:
@@ -54,7 +77,94 @@ class HtmlElement(ReactComponentBase):
     @property
     def element_name(self) -> str:
         """Return the HTML tag name for native DOM rendering."""
-        return self._tag
+        if not self.__class__._tag:
+            raise NotImplementedError(f"{self.__class__.__name__} must set _tag class attribute")
+        return self.__class__._tag
+
+    def render(self, /, **props: tp.Any) -> None:
+        """Render this element.
+
+        For leaf elements (no children), this is a no-op.
+        For container elements, this mounts the children.
+
+        Args:
+            **props: Properties including `children` for containers
+        """
+        # If this is a container, mount the children
+        children = props.get("children")
+        if children:
+            for child in children:
+                child()
+
+
+def html_element(
+    tag: str,
+    *,
+    is_container: bool = False,
+    name: str | None = None,
+) -> tp.Callable[[tp.Callable[..., tp.Any]], _DecoratedHtmlElement]:
+    """Decorator to create an HtmlElement from a function signature.
+
+    This is the standard way to define HTML elements. The function body is
+    ignored; only the signature is used for documentation and type hints.
+    Internally, a singleton HtmlElement instance is created.
+
+    Args:
+        tag: The HTML tag name (e.g., "div", "span", "button")
+        is_container: Whether this element accepts children via `with` block
+        name: Optional name override (defaults to function name). Useful for
+            internal functions prefixed with underscore.
+
+    Returns:
+        A decorator that creates a callable returning ElementNodes
+
+    Example:
+        ```python
+        @html_element("div", is_container=True)
+        def Div(
+            *,
+            className: str | None = None,
+            style: Style | None = None,
+        ) -> ElementNode:
+            '''A div container element.'''
+            ...  # Body ignored
+
+        # Use like a regular function
+        Div(className="container", style={"padding": "20px"})
+
+        # Or as a container
+        with Div(className="wrapper"):
+            Span(text="Hello")
+        ```
+    """
+
+    def decorator(
+        func: tp.Callable[..., tp.Any],
+    ) -> _DecoratedHtmlElement:
+        # Use provided name or function name
+        element_name = name or func.__name__
+
+        # Create a generated class with the element name
+        @dataclass(kw_only=True)
+        class _Generated(HtmlElement):
+            pass
+
+        _Generated._tag = tag
+        _Generated._is_container = is_container
+
+        # Create singleton instance with explicit name
+        _singleton = _Generated(name=element_name)
+
+        @functools.wraps(func)
+        def wrapper(**props: tp.Any) -> ElementNode:
+            return _singleton._place(**props)
+
+        # Expose the underlying component for introspection
+        wrapper._component = _singleton  # type: ignore[attr-defined]
+
+        return tp.cast("_DecoratedHtmlElement", wrapper)
+
+    return decorator
 
 
 def auto_collect_hybrid(descriptor: ElementNode) -> ElementNode:
