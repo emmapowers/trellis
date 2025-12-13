@@ -1,6 +1,6 @@
 """Tests for built-in widgets."""
 
-from trellis.core.functional_component import component
+from trellis.core.composition_component import component
 from trellis.core.rendering import RenderTree
 from trellis.core.serialization import serialize_node
 from trellis.widgets import Button, Column, Label, Row, Slider
@@ -199,7 +199,12 @@ class TestBasicWidgets:
         assert values == [75.0]
 
     def test_slider_default_values(self) -> None:
-        """Slider uses default min/max/step values."""
+        """Slider with no explicit props has empty properties.
+
+        Default values (value=50, min=0, max=100, step=1) are defined in the
+        function signature for documentation but applied by the React client.
+        Only explicitly passed props appear in properties.
+        """
 
         @component
         def App() -> None:
@@ -209,10 +214,12 @@ class TestBasicWidgets:
         ctx.render()
 
         slider = ctx.root_node.children[0]
-        assert slider.properties["value"] == 50  # default
-        assert slider.properties["min"] == 0  # default
-        assert slider.properties["max"] == 100  # default
-        assert slider.properties["step"] == 1  # default
+        # No explicit props passed, so properties should be empty
+        # (React client applies defaults)
+        assert "value" not in slider.properties
+        assert "min" not in slider.properties
+        assert "max" not in slider.properties
+        assert "step" not in slider.properties
 
     def test_slider_disabled(self) -> None:
         """Slider accepts disabled prop."""

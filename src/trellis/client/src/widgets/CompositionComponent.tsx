@@ -1,22 +1,22 @@
-/** Generic wrapper for Python FunctionalComponents.
+/** Generic wrapper for Python CompositionComponents.
  *
- * FunctionalComponents are Python-only organizational components that have no
+ * CompositionComponents are Python-only organizational components that have no
  * specific React implementation. This wrapper simply renders their children
  * while providing a data attribute for debugging purposes.
  */
 
 import React from "react";
 
-interface FunctionalComponentProps {
+interface CompositionComponentProps {
   /** Python component name for debugging */
   name?: string;
   children?: React.ReactNode;
 }
 
-export function FunctionalComponent({
+export function CompositionComponent({
   name,
   children,
-}: FunctionalComponentProps): React.ReactElement {
+}: CompositionComponentProps): React.ReactElement {
   // Render children in a span with display:contents to be invisible in the DOM
   // while providing a data attribute for debugging tools
   return (

@@ -8,7 +8,7 @@ Run with: python -m docs.planning.examples.todo.app
 """
 
 from trellis import Trellis
-from trellis.core.functional_component import component
+from trellis.core.composition_component import component
 from trellis.utils import async_main
 
 from .components import TodoApp

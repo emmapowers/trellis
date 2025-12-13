@@ -11,32 +11,39 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.functional_component import FunctionalComponent
+from trellis.core.composition_component import CompositionComponent
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering import ElementNode, RenderTree
 
 
-def _serialize_value(value: tp.Any, ctx: RenderTree) -> tp.Any:
+def _serialize_value(
+    value: tp.Any,
+    ctx: RenderTree,
+    node_id: str,
+    prop_name: str,
+) -> tp.Any:
     """Serialize a single value, handling special cases.
 
     Args:
         value: The value to serialize
         ctx: The render tree for callback registration
+        node_id: The node ID for deterministic callback IDs
+        prop_name: The property name for deterministic callback IDs
 
     Returns:
         A JSON-serializable version of the value
     """
     if callable(value):
-        # Register callback on the context and return reference
-        cb_id = ctx.register_callback(value)
+        # Register callback with deterministic ID based on node and prop
+        cb_id = ctx.register_callback(value, node_id, prop_name)
         return {"__callback__": cb_id}
     if isinstance(value, (str, int, float, bool, type(None))):
         return value
     if isinstance(value, (list, tuple)):
-        return [_serialize_value(v, ctx) for v in value]
+        return [_serialize_value(v, ctx, node_id, f"{prop_name}[{i}]") for i, v in enumerate(value)]
     if isinstance(value, dict):
-        return {k: _serialize_value(v, ctx) for k, v in value.items()}
+        return {k: _serialize_value(v, ctx, node_id, f"{prop_name}.{k}") for k, v in value.items()}
     # For other types, convert to string
     return str(value)
 
@@ -54,15 +61,16 @@ def serialize_node(node: ElementNode, ctx: RenderTree) -> dict[str, tp.Any]:
     Returns:
         A dict with structure:
         {
-            "type": "ReactComponentType",  # The React component to render
+            "kind": "react_component" | "jsx_element" | "text",
+            "type": "ComponentOrTagName",  # The component/element to render
             "name": "PythonComponentName",  # For debugging
             "key": "optional-key" or null,
             "props": {...},
             "children": [...]
         }
     """
-    # Skip props for FunctionalComponents - they're layout-only and not used by React
-    if isinstance(node.component, FunctionalComponent):
+    # Skip props for CompositionComponents - they're layout-only and not used by React
+    if isinstance(node.component, CompositionComponent):
         props: dict[str, tp.Any] = {}
     else:
         # Serialize props, excluding children (handled separately)
@@ -70,10 +78,11 @@ def serialize_node(node: ElementNode, ctx: RenderTree) -> dict[str, tp.Any]:
         for key, value in node.properties.items():
             if key == "children":
                 continue  # Children are serialized separately
-            props[key] = _serialize_value(value, ctx)
+            props[key] = _serialize_value(value, ctx, node.id, key)
 
     return {
-        "type": node.component.react_type,  # React component to use
+        "kind": node.component.element_kind.value,  # Element kind for client handling
+        "type": node.component.element_name,  # Component/element type to render
         "name": node.component.name,  # Python component name for debugging
         "key": node.key or node.id,  # User key or server-assigned ID
         "props": props,

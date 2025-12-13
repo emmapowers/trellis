@@ -1,6 +1,6 @@
 """Tests for ElementNode tree serialization."""
 
-from trellis.core.functional_component import component
+from trellis.core.composition_component import component
 from trellis.core.rendering import RenderTree
 from trellis.core.serialization import serialize_node
 from trellis.widgets.basic import Button
@@ -22,7 +22,7 @@ class TestSerializeNode:
 
         result = serialize_node(ctx.root_node, ctx)
 
-        assert result["type"] == "FunctionalComponent"  # React component type
+        assert result["type"] == "CompositionComponent"  # React component type
         assert result["name"] == "Simple"  # Python component name
         # Nodes always have a key (user-provided or server-assigned ID)
         assert result["key"] is not None
@@ -30,8 +30,8 @@ class TestSerializeNode:
         assert result["props"] == {}
         assert result["children"] == []
 
-    def test_functional_component_props_not_serialized(self) -> None:
-        """FunctionalComponent props are NOT serialized (layout-only)."""
+    def test_composition_component_props_not_serialized(self) -> None:
+        """CompositionComponent props are NOT serialized (layout-only)."""
 
         @component
         def WithProps(text: str = "", count: int = 0) -> None:
@@ -48,9 +48,9 @@ class TestSerializeNode:
         child = ctx.root_node.children[0]
         result = serialize_node(child, ctx)
 
-        assert result["type"] == "FunctionalComponent"
+        assert result["type"] == "CompositionComponent"
         assert result["name"] == "WithProps"
-        # FunctionalComponent props should NOT be serialized
+        # CompositionComponent props should NOT be serialized
         assert result["props"] == {}
 
     def test_serialize_node_with_key(self) -> None:
@@ -100,7 +100,7 @@ class TestSerializeNode:
         parent_result = result["children"][0]
 
         # Parent has two Child nodes
-        assert parent_result["type"] == "FunctionalComponent"
+        assert parent_result["type"] == "CompositionComponent"
         assert parent_result["name"] == "Parent"
         assert len(parent_result["children"]) == 2
         assert parent_result["children"][0]["name"] == "Child"

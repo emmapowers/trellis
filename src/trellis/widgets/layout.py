@@ -3,34 +3,13 @@
 from __future__ import annotations
 
 import typing as tp
-from dataclasses import dataclass
 
-from trellis.core.react_component import ReactComponent, react_component
+from trellis.core.react_component import react_component_base
 from trellis.core.rendering import ElementNode
 
 
-@react_component("Column", has_children=True)
-@dataclass(kw_only=True)
-class _ColumnComponent(ReactComponent):
-    """Vertical flex container."""
-
-    name: str = "Column"
-
-
-@react_component("Row", has_children=True)
-@dataclass(kw_only=True)
-class _RowComponent(ReactComponent):
-    """Horizontal flex container."""
-
-    name: str = "Row"
-
-
-# Singleton instances used by factory functions
-_column = _ColumnComponent()
-_row = _RowComponent()
-
-
-def Column(
+@react_component_base("Column", has_children=True)
+def Column(  # type: ignore[empty-body]
     *,
     gap: int | None = None,
     padding: int | None = None,
@@ -62,18 +41,11 @@ def Column(
             Label(text="First")
             Label(text="Second")
     """
-    return _column(
-        gap=gap,
-        padding=padding,
-        align=align,
-        justify=justify,
-        className=class_name,
-        style=style,
-        key=key,
-    )
+    ...
 
 
-def Row(
+@react_component_base("Row", has_children=True)
+def Row(  # type: ignore[empty-body]
     *,
     gap: int | None = None,
     padding: int | None = None,
@@ -105,12 +77,4 @@ def Row(
             Button(text="Left")
             Button(text="Right")
     """
-    return _row(
-        gap=gap,
-        padding=padding,
-        align=align,
-        justify=justify,
-        className=class_name,
-        style=style,
-        key=key,
-    )
+    ...
