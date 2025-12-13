@@ -68,3 +68,17 @@ See `docs/planning/` for API design mockups:
 - `api_example.py` - Target developer experience
 - `component_tree.py` - Tree data structures
 - `react_integration.py` - React/TSX integration concepts
+
+## UI Testing with Playwright MCP
+
+Use Playwright MCP to test demos and iterate on UI designs.
+
+**Workflow:**
+1. Start the demo server in background: `pixi run demo`
+2. Navigate: `browser_navigate` to `http://127.0.0.1:8004`
+3. Inspect: `browser_snapshot` for element tree with refs for interaction
+4. Interact: `browser_click`, `browser_type` etc. using element refs
+5. Screenshot: `browser_take_screenshot` saves to `.playwright-mcp/`
+6. View: `open .playwright-mcp/<filename>.png` to open in Preview
+
+**When working on designs:** Use `browser_take_screenshot` to see what users see visually, not just accessibility snapshots. Screenshots capture styling, layout, and visual hierarchy that snapshots miss.
