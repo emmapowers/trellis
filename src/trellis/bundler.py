@@ -187,6 +187,9 @@ def build_client(
     dist_dir.mkdir(parents=True, exist_ok=True)
 
     # Build command
+    # esbuild bundles all files reachable from the entry point via imports.
+    # No need to list individual source files - the import graph from main.tsx
+    # includes all .ts/.tsx files in src/ (core/, widgets/, etc.)
     cmd = [
         str(esbuild),
         str(src_dir / "main.tsx"),

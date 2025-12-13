@@ -20,13 +20,11 @@ export default function TrellisPlayground({ code, title }: TrellisPlaygroundProp
   const runtimeRef = useRef<PyProxy | null>(null);
   const pyodideRef = useRef<PyodideInterface | null>(null);
 
-  const handleEvent = useCallback(async (cbId: string) => {
+  const handleEvent = useCallback((cbId: string, args?: unknown[]) => {
     if (!runtimeRef.current) return;
     try {
-      const updatedTree = runtimeRef.current
-        .handle_event(cbId)
-        .toJs({ dict_converter: Object.fromEntries }) as SerializedElement;
-      setTree(updatedTree);
+      // Post event to Python - render callback will update tree via setTree
+      runtimeRef.current.post_event(cbId, args ?? []);
     } catch (e) {
       setError(`Event error: ${(e as Error).message}`);
     }
@@ -48,17 +46,30 @@ export default function TrellisPlayground({ code, title }: TrellisPlaygroundProp
       // Execute user code
       await pyodide.runPythonAsync(code);
 
-      // Create runtime and render
+      // Register JS render callback
+      const jsCallbacks = {
+        render: (treeProxy: PyProxy) => {
+          const newTree = treeProxy.toJs({ dict_converter: Object.fromEntries }) as SerializedElement;
+          setTree(newTree);
+        }
+      };
+      pyodide.registerJsModule("js_callbacks", jsCallbacks);
+
+      // Create runtime and start message loop in background
       runtimeRef.current = await pyodide.runPythonAsync(`
-from trellis_playground import BrowserRuntime
-BrowserRuntime(App)
+import asyncio
+import js_callbacks
+from trellis_playground import PlaygroundMessageHandler
+
+handler = PlaygroundMessageHandler(App)
+handler.set_render_callback(js_callbacks.render)
+
+# Start the message loop in the background
+asyncio.ensure_future(handler.run())
+
+handler
 `) as PyProxy;
 
-      const renderedTree = runtimeRef.current
-        .render()
-        .toJs({ dict_converter: Object.fromEntries }) as SerializedElement;
-
-      setTree(renderedTree);
       setStatus('idle');
     } catch (e) {
       setError((e as Error).message);

@@ -6,8 +6,7 @@
  */
 
 import React from "react";
-import { SerializedElement, EventHandler, isCallbackRef } from "./types";
-import { HTML_TAGS } from "./htmlTags";
+import { SerializedElement, ElementKind, EventHandler, isCallbackRef } from "./types";
 
 /** Widget component type. */
 export type WidgetComponent = React.ComponentType<any>;
@@ -134,13 +133,17 @@ export function renderNode(
   const processedProps = processProps(node.props, onEvent);
 
   // Plain text nodes
-  if (node.type === "_text") {
+  if (node.kind === ElementKind.TEXT) {
     const textContent = (node.props as { _text?: string })._text ?? "";
     return <React.Fragment key={key}>{textContent}</React.Fragment>;
   }
 
-  // Native HTML elements
-  if (HTML_TAGS.has(node.type)) {
+  // Native HTML/JSX elements (div, span, p, etc.)
+  if (node.kind === ElementKind.JSX_ELEMENT) {
+    // HTML elements can have a _text prop containing inline text content.
+    // This is extracted and prepended to children to support patterns like:
+    //   <p _text="Hello "><strong>world</strong></p>
+    // Which renders as: Hello <strong>world</strong>
     const { _text, ...htmlProps } = processedProps as Record<string, unknown> & {
       _text?: string;
     };
@@ -174,8 +177,9 @@ export function renderNode(
   }
 
   // Pass props and children to the component
+  // __name__ carries the Python component name for debugging (uses __ prefix to avoid conflicts)
   return (
-    <Component key={key} {...processedProps} name={node.name}>
+    <Component key={key} {...processedProps} __name__={node.name}>
       {children}
     </Component>
   );

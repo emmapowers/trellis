@@ -155,15 +155,12 @@ function renderTree(tree: SerializedElement): void {
   reactRoot.render(element);
 }
 
-async function handleEvent(callbackId: string): Promise<void> {
+function handleEvent(callbackId: string, args?: unknown[]): void {
   if (!runtime) return;
 
   try {
-    // Call the Python callback and get updated tree
-    const updatedTree = runtime
-      .handle_event(callbackId)
-      .toJs({ dict_converter: Object.fromEntries }) as SerializedElement;
-    renderTree(updatedTree);
+    // Post event to Python - render callback will be called with updated tree
+    runtime.post_event(callbackId, args ?? []);
   } catch (e) {
     showError(`Event error: ${(e as Error).message}`);
   }
@@ -179,15 +176,30 @@ async function runCode(): Promise<void> {
     // Execute user code
     await pyodide!.runPythonAsync(code);
 
-    // Get the App component and create runtime
-    runtime = (await pyodide!.runPythonAsync(`
-from trellis_playground import BrowserRuntime
-BrowserRuntime(App)
-`)) as PyProxy;
+    // Register JS render callback in Python globals via pyodide.registerJsModule
+    // The callback receives tree dicts from Python and renders them
+    const jsCallbacks = {
+      render: (treeProxy: PyProxy) => {
+        const tree = treeProxy.toJs({ dict_converter: Object.fromEntries }) as SerializedElement;
+        renderTree(tree);
+      }
+    };
+    pyodide!.registerJsModule("js_callbacks", jsCallbacks);
 
-    // Initial render
-    const tree = runtime.render().toJs({ dict_converter: Object.fromEntries }) as SerializedElement;
-    renderTree(tree);
+    // Create runtime and start message loop in background
+    runtime = (await pyodide!.runPythonAsync(`
+import asyncio
+import js_callbacks
+from trellis_playground import PlaygroundMessageHandler
+
+handler = PlaygroundMessageHandler(App)
+handler.set_render_callback(js_callbacks.render)
+
+# Start the message loop in the background
+asyncio.ensure_future(handler.run())
+
+handler
+`)) as PyProxy;
 
     updateStatus("Running");
   } catch (e) {

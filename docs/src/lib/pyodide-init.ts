@@ -10,13 +10,13 @@ export interface PyodideInterface {
   loadPackage(packages: string | string[]): Promise<void>;
   pyimport(name: string): PyProxy;
   runPythonAsync(code: string): Promise<unknown>;
+  registerJsModule(name: string, module: object): void;
 }
 
 export interface PyProxy {
   install(pkg: string): Promise<void>;
   toJs(options?: { dict_converter: typeof Object.fromEntries }): unknown;
-  render(): PyProxy;
-  handle_event(callbackId: string): PyProxy;
+  post_event(callbackId: string, args: unknown[]): void;
 }
 
 // Global Pyodide instance (shared across all playground instances on the page)

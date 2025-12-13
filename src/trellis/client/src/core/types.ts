@@ -1,7 +1,15 @@
 /** Core types for Trellis tree rendering. */
 
+/** Element kind enum - matches Python ElementKind in base.py. */
+export enum ElementKind {
+  REACT_COMPONENT = "react_component",
+  JSX_ELEMENT = "jsx_element",
+  TEXT = "text",
+}
+
 /** Serialized element tree node. */
 export interface SerializedElement {
+  kind: ElementKind;
   type: string;
   name: string;
   key: string | null;
