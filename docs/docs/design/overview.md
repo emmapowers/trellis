@@ -111,7 +111,7 @@ Trellis draws from over twenty years of building UIs across C++ desktop applicat
 
 - **Fine-grained updates** — Only affected components re-render. Efficient diffs transmitted over the wire. Scales to large, complex UIs.
 
-- **Three runtime environments** — Same codebase runs as a web app (Server), native desktop app (Desktop), or entirely in-browser (Browser). Each adapts to platform strengths and constraints.
+- **Three platforms** — Same codebase runs as a web app (Server), native desktop app (Desktop), or entirely in-browser (Browser). Each adapts to platform strengths and constraints.
 
 - **Type-safe throughout** — Full type hints from Python to TypeScript. Catch errors at typecheck time. IDE autocompletion works.
 
@@ -176,9 +176,9 @@ Trellis draws from over twenty years of building UIs across C++ desktop applicat
   - Virtual DOM diffing
   - Minimal actual DOM manipulation
 
-### Runtime Environments
+### Platforms
 
-Trellis applications can run in three environments. A single codebase can target multiple environments, with the framework adapting to each platform's strengths and constraints.
+Trellis applications can run on three platforms. A single codebase can target multiple platforms, with the framework adapting to each platform's strengths and constraints.
 
 - **Server** — Web application with Python backend.
   - Python runs on server, browser renders UI
