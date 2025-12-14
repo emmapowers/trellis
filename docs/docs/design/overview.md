@@ -5,11 +5,6 @@ title: Design Overview
 
 # Trellis Design Document
 
-**Version:** 0.1 Draft  
-**Last Updated:** December 2025
-
----
-
 ## Table of Contents
 
 1. [Purpose](#purpose)
@@ -110,19 +105,29 @@ Trellis draws from over twenty years of building UIs across C++ desktop applicat
 
 ## Features
 
+- **Declarative UI in Python** — Define UI as functions of state using `@component`. Hierarchical nesting with context-manager syntax. No templates, no separate frontend language.
+
+- **Reactive state** — Automatic dependency tracking. Components re-render when their dependencies change—no manual subscriptions or explicit wiring.
+
+- **Fine-grained updates** — Only affected components re-render. Efficient diffs transmitted over the wire. Scales to large, complex UIs.
+
+- **Three platforms** — Same codebase runs as a web app (Server), native desktop app (Desktop), or entirely in-browser (Browser). Each adapts to platform strengths and constraints.
+
+- **Type-safe throughout** — Full type hints from Python to TypeScript. Catch errors at typecheck time. IDE autocompletion works.
+
+- **Desktop-first widget set** — Comprehensive components for forms, data display, overlays, and navigation. Full HTML support when you need lower-level control.
+
 ### UI
 
 - **Declarative components** — Define UI as functions of state using `@component` decorator.
   - Context-manager syntax for hierarchical nesting
   - Props and children support
 
-- **Widget toolkit** — Built on Palantir's Blueprint library.
-  - Desktop-first design language
+- **Widget toolkit** — Desktop-first widget set.
   - Comprehensive form inputs (text, numeric, select, date/time)
   - Data display (tables, trees, cards)
   - Overlays (dialogs, popovers, tooltips)
   - Navigation and layout components
-  - Accessibility handled by Blueprint
 
 - **Full HTML support** — Native HTML elements with typed DOM events.
   - Type-safe event handlers
@@ -131,7 +136,6 @@ Trellis draws from over twenty years of building UIs across C++ desktop applicat
 - **CSS styling system** — Comprehensive styling options.
   - Inline styles
   - CSS classes
-  - Blueprint theming
 
 - **Routing** — Client-side navigation in react-router style.
   - URL-based routing
@@ -172,31 +176,27 @@ Trellis draws from over twenty years of building UIs across C++ desktop applicat
   - Virtual DOM diffing
   - Minimal actual DOM manipulation
 
-### Server
+### Platforms
 
-- **FastAPI backend** — Async-first web framework.
-  - WebSocket support for live updates
-  - Custom HTTP routes alongside UI
-  - Static file serving
+Trellis applications can run on three platforms. A single codebase can target multiple platforms, with the framework adapting to each platform's strengths and constraints.
 
-- **msgspec serialization** — Fast, lightweight serialization.
-  - msgpack encoding
-  - Struct definitions without Pydantic overhead
+- **Server** — Web application with Python backend.
+  - Python runs on server, browser renders UI
+  - WebSocket connection for live updates
+  - *Capabilities:* Multi-user sessions, external I/O (databases, APIs, hardware), custom HTTP routes
+  - *Limitations:* Requires network connection, server infrastructure
 
-### Error Handling
+- **Desktop** — Native application with embedded Python.
+  - Python runs in native process, system webview renders UI
+  - IPC communication with webview for low latency
+  - *Capabilities:* Native window management, system tray, menus, file system access, native dialogs, offline operation, single-file distribution
+  - *Limitations:* Requires installation, platform-specific builds
 
-- **Error boundaries** — Contain failures to component subtrees.
-  - Graceful degradation
-  - Recovery options
-
-- **Callback errors** — Errors in event handlers surfaced clearly.
-  - No silent failures
-
-### Callbacks
-
-- **Async support** — Callbacks can be async functions.
-  - Non-blocking operations
-  - Server-side async/await
+- **Browser** — Runs entirely in browser via WebAssembly.
+  - Python runs in browser (Pyodide), same browser renders UI
+  - No server required
+  - *Capabilities:* Shareable via URL, no installation, works offline, instant deployment
+  - *Limitations:* No filesystem I/O, no external network (without CORS), constrained compute, larger initial download
 
 ### Developer Experience
 
@@ -216,165 +216,98 @@ Trellis draws from over twenty years of building UIs across C++ desktop applicat
   - Browser automation
   - Python test integration
 
-### Deployment
-
-- **Web deployment** — Run as a web application.
-  - uvicorn server
-  - Single process, multi-user
-
-- **Desktop deployment** — PyTauri for native packaging.
-  - Native window management
-  - Single-file distribution
-  - System webview
-  - Native APIs: windows, menus, system tray, native dialogs
-
-- **Playground deployment** — Browser-based demos.
-  - Pyodide runtime
-  - No server required
-
-- **CLI** — Command-line tools.
-  - Create release builds
-
 ---
 
 ## Architecture
 
-Trellis applications run as a Python server communicating with a browser client. The server owns application state and renders the component tree; the client displays the UI and sends user interactions back.
+Trellis splits work between Python and React. Python owns application state and defines the UI as a tree of components. React renders that tree to the DOM and captures user interactions. The two communicate through a transport layer that varies by environment—WebSocket for Server mode, IPC for Desktop, or direct calls for Browser mode.
+
+### Core Concepts
+
+**Components produce a tree.** Python functions decorated with `@component` describe what the UI should look like. When executed, they produce an immutable tree of `ElementNode` objects—a complete description of the current UI state.
+
+**RenderTree manages the lifecycle.** The RenderTree orchestrates rendering, tracks which components need to re-render, reconciles changes when the tree updates, and maintains per-component state. It's the central coordinator between your components and the React client.
+
+**Reactive state drives updates.** State objects automatically track which components read them. When state changes, dependent components are marked dirty and re-render on the next frame. You modify state; the framework figures out what to update.
+
+**React renders the UI.** The ElementNode tree is serialized and sent to React, which renders it to the DOM. React handles the actual browser interaction—event listeners, DOM updates, accessibility.
+
+**Callbacks close the loop.** User interactions trigger callbacks that execute Python functions. Those functions modify state, which marks components dirty, which triggers re-renders, which sends updates back to React.
 
 ### Overview
 
 ```mermaid
 graph TB
-    subgraph Browser
-        ReactRuntime[React Runtime]
-        ClientState[Client State / Tree]
-        Serializer1[Serializer]
+    subgraph Python
+        Components[Components + State]
+        RenderTree[RenderTree]
+        Serialize[Serialization]
     end
 
-    subgraph Server
-        Trellis[Trellis Server]
-        FastAPI[FastAPI]
-        ConnContext[Connection Context]
-        RenderContext[Render Context]
-        ComponentTree[Component Tree]
-        CallbackRegistry[Callback Registry]
-        Serializer2[Serializer]
+    subgraph Transport
+        Channel[WebSocket / IPC / Direct]
     end
 
-    Browser <-->|HTTP: Initial page, static files| FastAPI
-    Serializer1 <-->|WebSocket| Serializer2
-    
-    Serializer2 --> ConnContext
-    ConnContext --> RenderContext
-    RenderContext --> ComponentTree
-    RenderContext --> CallbackRegistry
-    
-    Serializer1 --> ClientState
-    ClientState --> ReactRuntime
+    subgraph React
+        Deserialize[Deserialization]
+        ReactLib[React]
+        DOM[DOM]
+    end
+
+    Components --> RenderTree
+    RenderTree --> Serialize
+    Serialize -->|UI Tree| Channel
+    Channel -->|Callbacks| RenderTree
+    Channel -->|UI Tree| Deserialize
+    Deserialize --> ReactLib
+    ReactLib --> DOM
 ```
 
-### Communication
-
-- **HTTP** — Serves the initial page and static files
-- **WebSocket** — Bidirectional communication for live updates
-  - Server → Client: Render state updates (diffs)
-  - Client → Server: Callback invocations
-
-### Server Components
-
-- **Trellis** — Main server object containing the FastAPI application
-- **Connection Context** — Context variable holding per-connection state
-- **Render Context** — Contains the component tree and callback registry for a connection
-- **Callback Registry** — Maps callback IDs to Python functions
-
-### Component Model
-
-Three component types, each with corresponding client-side representation:
-
-| Server Type | Description | Client Mapping |
-|-------------|-------------|----------------|
-| FunctionalComponent | User-defined `@component` functions | Generic FunctionalComponent wrapper |
-| ReactComponent | Wraps React components (Button, etc.) | Instantiated as the specific React component |
-| HTMLElement | Native HTML elements | JSX HTML elements directly |
-
-### Data Structures
-
-- **Components** — The component definitions (FunctionalComponent, ReactComponent, HTMLElement)
-- **Elements** — Component instances with props and children
-- **ElementDescriptors** — Stored between renders, used to compute diffs
-
-### Client Components
-
-- **Serializer** — Decodes patches from server, encodes callbacks to server
-- **Client State** — Holds the current element tree
-- **React Runtime** — Renders the tree to DOM; diffs to client state trigger React updates
-
-### Render Sequence
+### Interaction Flow
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Browser
-    participant WebSocket
-    participant Server
-    participant RenderContext
+    participant React
+    participant Python
 
-    User->>Browser: Interaction (click, input, etc.)
-    Browser->>WebSocket: Callback invocation
-    WebSocket->>Server: Callback message
-    Server->>RenderContext: Execute callback
-    RenderContext->>RenderContext: Update state
-    RenderContext->>RenderContext: Re-render dirty components
-    RenderContext->>RenderContext: Diff against previous tree
-    Server->>WebSocket: Patch message
-    WebSocket->>Browser: Patch message
-    Browser->>Browser: Apply diff to client state
-    Browser->>Browser: React updates DOM
-    Browser->>User: Updated UI
+    User->>React: Click button
+    React->>Python: Callback (button.on_click)
+    Python->>Python: Execute callback, modify state
+    Python->>Python: Mark dependent components dirty
+    Python->>Python: Re-render dirty components
+    Python->>Python: Diff against previous tree
+    Python->>React: Send UI patch
+    React->>React: Apply patch, update DOM
+    React->>User: Updated UI
 ```
-
-### Rendering Pipeline
-
-1. User interaction triggers callback
-2. Callback executes on server, modifying state
-3. Dirty components re-render (30fps batching, skip if nothing dirty)
-4. New tree diffed against previous ElementDescriptors
-5. Patch sent to client over WebSocket
-6. Client applies patch to its state copy
-7. React reconciles and updates DOM
 
 ---
 
 ## Follow-up Documents
 
-The following design documents should be created, in order:
+The following design documents cover specific areas in detail:
 
-1. **UI and Rendering** — Declarative UI, rendering pipeline, efficient updates, custom components, callbacks (excluding state)
+1. **[UI and Rendering](./ui-rendering)** — Declarative UI, rendering pipeline, efficient updates, custom components, callbacks (excluding state)
 
-2. **State** — State storage, fine-grained updates, context management, mutable wrappers
+2. **[State](./state)** — State storage, fine-grained updates, context management, mutable wrappers
 
-3. **Web Server** — Server component, WebSocket communication, connection vs session, session management
+3. **[Web Server](./web-server)** — Server component, WebSocket communication, connection vs session, session management
 
-4. **Security** — XSS prevention, WebSocket security, callback validation, state isolation, session security, CSRF, input validation, deserialization safety, native API exposure (desktop), sandboxing (playground)
+4. **[Security](./security)** — XSS prevention, WebSocket security, callback validation, state isolation, session security, CSRF, input validation, deserialization safety, native API exposure (desktop), sandboxing (playground)
 
-5. **HTML Components** — UI elements mirroring HTML tags
+5. **[HTML Components](./html-components)** — UI elements mirroring HTML tags
 
-6. **CSS APIs** — CSS builder API
+6. **[CSS APIs](./css)** — CSS builder API
 
-7. **Widgets** — Blueprint implementation
+7. **[Widgets](./widgets)** — Blueprint implementation
 
-8. **Router** — Implementing the router pattern
+8. **[Imperative API](./imperative-api)** — Events, refs, and imperative DOM operations
 
-9. **Desktop App** — Adapting server concepts to desktop, native APIs (window management, menus, system tray, etc.), building desktop apps
+9. **[Router](./router)** — Implementing the router pattern
 
-10. **Playground** — How the Trellis playground works, Pyodide integration, JSFiddle-style experience
+10. **[Desktop App](./desktop-app)** — Adapting server concepts to desktop, native APIs (window management, menus, system tray, etc.), building desktop apps
 
-11. **Hot Reload** — File watching, rebuild, state preservation
+11. **[Playground](./playground)** — How the Trellis playground works, Pyodide integration, JSFiddle-style experience
 
----
-
-## Document History
-
-| Date | Version | Changes |
-|------|---------|---------|
-| Dec 2025 | 0.1 | Initial draft |
+12. **[Hot Reload](./hot-reload)** — File watching, rebuild, state preservation

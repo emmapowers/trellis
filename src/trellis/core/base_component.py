@@ -4,8 +4,8 @@ This module provides the abstract Component base class that all components
 inherit from. Components are the building blocks of Trellis UIs.
 
 The Component class implements the IComponent protocol and provides:
-- `__call__()`: Creates an ElementDescriptor (phase 1 - no execution)
-- `execute()`: Abstract method that subclasses implement for rendering (phase 2)
+- `__call__()`: Creates an ElementNode (placement phase - no rendering)
+- `render()`: Abstract method that subclasses implement for rendering
 
 Example:
     ```python
@@ -13,13 +13,13 @@ Example:
     class MyComponent(Component):
         name: str = "MyComponent"
 
-        def execute(self, node: Element, **props) -> None:
+        def render(self, **props) -> None:
             Text(f"Hello, {props.get('name', 'World')}!")
     ```
 
 See Also:
-    - `FunctionalComponent`: Concrete implementation using decorated functions
-    - `ElementDescriptor`: The descriptor type returned by `__call__()`
+    - `CompositionComponent`: Concrete implementation using decorated functions
+    - `ElementNode`: The node type returned by `__call__()`
 """
 
 from __future__ import annotations
@@ -29,71 +29,86 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from trellis.core.rendering import (
-    Element,
-    ElementDescriptor,
-    _descriptor_stack,
+    ElementKind,
+    ElementNode,
     freeze_props,
+    get_active_render_tree,
 )
 
 __all__ = ["Component"]
 
-T = tp.TypeVar("T", bound=Element, default=Element)
-
 
 @dataclass(kw_only=True)
-class Component(ABC, tp.Generic[T]):
+class Component(ABC):
     """Abstract base class for all Trellis components.
 
     Components define reusable UI elements. They follow a two-phase rendering model:
 
-    1. **Descriptor Phase**: When called (e.g., `Button(text="Click")`), creates an
-       immutable ElementDescriptor that describes the component invocation.
+    1. **Placement Phase**: When called (e.g., `Button(text="Click")`), creates an
+       immutable ElementNode that describes the component invocation.
 
-    2. **Execution Phase**: When the reconciler determines this component needs to
-       render, it calls `execute()` which produces child descriptors.
+    2. **Render Phase**: When the reconciler determines this component needs to
+       render, it calls `render()` which produces child descriptors.
 
     Attributes:
         name: Human-readable component name (used for debugging and error messages)
-        elementType: The Element subclass to use for this component's nodes
-        react_type: The React component type used to render this on the client
-
-    Type Parameters:
-        T: The Element type this component produces (defaults to Element)
+        element_kind: The kind of element (REACT_COMPONENT, JSX_ELEMENT, TEXT)
+        element_name: The type name used to render this on the client
     """
 
     name: str
-    elementType: type[Element] = Element
 
     @property
     @abstractmethod
-    def react_type(self) -> str:
-        """The React component type name used to render this component on the client.
+    def element_kind(self) -> ElementKind:
+        """The kind of element (REACT_COMPONENT, JSX_ELEMENT, or TEXT).
 
-        For FunctionalComponents, this is always "FunctionalComponent".
-        For ReactComponents, this is the specific React component name.
+        Must be overridden by subclasses:
+        - Most components return REACT_COMPONENT
+        - HTML elements return JSX_ELEMENT
+        - Text nodes return TEXT
         """
         ...
 
-    def __call__(self, /, **props: tp.Any) -> ElementDescriptor:
-        """Create an ElementDescriptor for this component invocation.
+    @property
+    @abstractmethod
+    def element_name(self) -> str:
+        """The element type name used to render this component on the client.
 
-        This is phase 1 of rendering - NO execution occurs here. The descriptor
+        For CompositionComponents, this is always "CompositionComponent".
+        For ReactComponentBase subclasses, this is the specific React component name.
+        For HTML elements, this is the tag name (e.g., "div").
+        """
+        ...
+
+    @property
+    def _has_children_param(self) -> bool:
+        """Whether this component accepts children via `with` block.
+
+        Override in subclasses that support children. Default is False.
+        """
+        return False
+
+    def _place(self, /, **props: tp.Any) -> ElementNode:
+        """Place this component, creating an ElementNode.
+
+        This is the placement phase - NO execution occurs here. The node
         captures the component reference, key, and props for later reconciliation.
 
         If called inside a `with` block (and this component doesn't accept children),
-        the descriptor is automatically added to the parent's pending children.
+        the node is automatically added to the parent's pending children.
 
         Args:
             **props: Properties to pass to the component. The special `key` prop
-                is extracted for reconciliation and not passed to `execute()`.
+                is extracted for reconciliation and not passed to `render()`.
 
         Returns:
-            An immutable ElementDescriptor describing this component invocation.
+            An immutable ElementNode describing this component invocation.
 
         Example:
             ```python
-            # Creates descriptor, doesn't execute yet
-            desc = Button(text="Click me", key="btn-1")
+            # Creates node, doesn't render yet
+            node = Button(text="Click me", key="btn-1")
 
             # Inside a with block, auto-collected
             with Column():
@@ -101,59 +116,80 @@ class Component(ABC, tp.Generic[T]):
                 Button(text="Second")  # Added to Column's children
             ```
         """
-        key = ""
+        key: str | None = None
         if "key" in props:
-            key = str(props.pop("key"))
+            raw_key = props.pop("key")
+            if raw_key is not None:
+                key = str(raw_key)
 
-        descriptor = ElementDescriptor(
-            component=self,  # type: ignore[arg-type]  # T is bound to Element
+        node = ElementNode(
+            component=self,
             key=key,
             props=freeze_props(props),
         )
 
-        # Auto-collect: add to parent descriptor's pending children (if any)
+        # Ensure we're inside a render context - components cannot be created
+        # in callbacks or other code outside of rendering
+        ctx = get_active_render_tree()
+        if ctx is None:
+            raise RuntimeError(
+                f"Cannot create component '{self.name}' outside of render context. "
+                f"Components must be created during rendering, not in callbacks."
+            )
+
+        # Auto-collect: add to parent node's pending children (if any)
         # BUT only if this component doesn't have a children param - those will
         # be added in __exit__ of the with block instead
-        has_children_param = getattr(self, "_has_children_param", False)
-        if _descriptor_stack and not has_children_param:
-            _descriptor_stack[-1].append(descriptor)
+        if ctx.has_active_frame() and not self._has_children_param:
+            ctx.add_to_current_frame(node)
             # Mark as auto-collected to prevent double-collection if used with `with`
-            object.__setattr__(descriptor, "_auto_collected", True)
+            object.__setattr__(node, "_auto_collected", True)
 
-        return descriptor
+        return node
+
+    def __call__(self, /, **props: tp.Any) -> ElementNode:
+        """Create an ElementNode for this component invocation.
+
+        Delegates to _place(). This is the standard way to invoke a component.
+
+        Args:
+            **props: Properties to pass to the component.
+
+        Returns:
+            An immutable ElementNode describing this component invocation.
+        """
+        return self._place(**props)
 
     @abstractmethod
-    def execute(self, /, node: T, **props: tp.Any) -> None:
-        """Execute this component to produce child descriptors.
+    def render(self, /, **props: tp.Any) -> None:
+        """Render this component to produce child nodes.
 
-        This is phase 2 of rendering - called by the reconciler when the
-        component needs to render (new mount, props changed, or marked dirty).
+        Called by RenderTree when the component needs to render
+        (new mount, props changed, or marked dirty).
 
-        During execution, the component should create child components by
-        calling them (e.g., `Text("Hello")`), which creates descriptors that
+        During rendering, the component should create child components by
+        calling them (e.g., `Text("Hello")`), which creates nodes that
         are collected and reconciled after this method returns.
 
         For container components (those with a `children` parameter), the
-        `children` prop contains a list of ElementDescriptors. The component
+        `children` prop contains a list of ElementNodes. The component
         should call `child()` on each to mount them at the desired location.
 
         Args:
-            node: The Element instance this component is rendering into.
-                  Can be used to access local state via `node._local_state`.
             **props: The properties passed to this component invocation.
-                     For containers, includes `children: list[ElementDescriptor]`.
+                     For containers, includes `children: list[ElementNode]`.
 
         Example:
             ```python
-            def execute(self, node: Element, **props) -> None:
+            def render(self, **props) -> None:
                 # Simple component - just create children
                 Text(f"Count: {props['count']}")
                 Button(text="Increment", on_click=props['on_increment'])
 
             # Container component
-            def execute(self, node: Element, children: list, **props) -> None:
-                for child_desc in children:
-                    child_desc()  # Mount each child
+            def render(self, children: list, **props) -> None:
+                for child_node in children:
+                    child_node()  # Mount each child
             ```
         """
         pass

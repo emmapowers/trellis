@@ -2,7 +2,7 @@
 
 import socket
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 
@@ -14,7 +14,9 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.responses import Response
 
 from trellis.bundler import build_client
-from trellis.server.routes import create_static_dir, router
+from trellis.server.routes import create_static_dir
+from trellis.server.routes import router as http_router
+from trellis.server.websocket import router as ws_router
 
 _console = Console()
 
@@ -104,6 +106,12 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 @dataclass
+class TrellisAppState:
+    """Typed state attached to FastAPI app."""
+
+    top_component: Callable[[], None] | None = None
+
+
 class Trellis:
     """Trellis application server.
 
@@ -114,24 +122,47 @@ class Trellis:
     If port is None, the first available port starting at 8000 is used.
     """
 
-    top: Callable[[], None] | None = None
-    host: str = "127.0.0.1"
-    port: int | None = None
-    static_dir: Path | None = None
-    _fastapi: FastAPI = field(default_factory=FastAPI, repr=False)
+    top: Callable[[], None] | None
+    host: str
+    port: int | None
+    static_dir: Path | None
+    _fastapi: FastAPI
 
-    def __post_init__(self) -> None:
-        """Set up FastAPI app with routes."""
+    def __init__(
+        self,
+        top: Callable[[], None] | None = None,
+        host: str = "127.0.0.1",
+        port: int | None = None,
+        static_dir: Path | None = None,
+    ) -> None:
+        """Initialize the Trellis server.
+
+        Args:
+            top: The root component to render
+            host: Host to bind to (default: 127.0.0.1)
+            port: Port to bind to (default: auto-find available)
+            static_dir: Custom static files directory
+        """
+        self.top = top
+        self.host = host
+        self.port = port
+        self.static_dir = static_dir
+
         # Build client bundle if needed
         build_client()
+
+        # Create FastAPI app
+        self._fastapi = FastAPI()
 
         # Add request logging middleware
         self._fastapi.add_middleware(RequestLoggingMiddleware)
 
-        self._fastapi.include_router(router)
+        # Include routers
+        self._fastapi.include_router(http_router)
+        self._fastapi.include_router(ws_router)
 
-        # Store top component in app state for routes to access
-        self._fastapi.state.top_component = self.top
+        # Store top component in typed app state
+        self._fastapi.state.trellis = TrellisAppState(top_component=self.top)
 
         # Set up static file serving
         static = self.static_dir or create_static_dir()

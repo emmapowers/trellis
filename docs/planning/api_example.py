@@ -26,7 +26,7 @@ Notes:
 from dataclasses import dataclass
 
 from trellis.core.state import Stateful
-from trellis.core.functional_component import component
+from trellis.core.composition_component import component
 from trellis.core.rendering import Element
 from trellis import widgets as w
 from trellis import html as h

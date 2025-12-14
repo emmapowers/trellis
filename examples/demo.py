@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from trellis import Trellis, html as h
-from trellis.core.functional_component import component
+from trellis.core.composition_component import component
 from trellis.core.state import Stateful
 from trellis.utils.async_main import async_main
 from trellis.widgets import Button
@@ -123,13 +123,13 @@ def progress_bar_style(percent: float) -> dict:
 # =============================================================================
 
 
-@dataclass(kw_only=True)
+@dataclass
 class CounterState(Stateful):
     """Counter state with value constrained between min and max."""
 
-    count: int = 5
-    min_val: int = 1
-    max_val: int = 10
+    count: int
+    min_val: int
+    max_val: int
 
     def increment(self) -> None:
         self.count = min(self.max_val, self.count + 1)
@@ -205,7 +205,7 @@ def RangeLabels(min_val: int, max_val: int) -> None:
 @component
 def App() -> None:
     """Main application component with interactive counter."""
-    state = CounterState()
+    state = CounterState(count=5, min_val=1, max_val=10)
 
     with h.Div(style=STYLE_PAGE):
         with h.Div(style=STYLE_CARD):

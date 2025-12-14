@@ -2,16 +2,16 @@
 
 from dataclasses import dataclass
 
-from trellis.core.rendering import RenderContext
-from trellis.core.functional_component import component
+from trellis.core.rendering import RenderTree
+from trellis.core.composition_component import component
 from trellis.core.state import Stateful
 
 
 class TestReconciliation:
     """Tests for the reconciliation algorithm."""
 
-    def test_key_based_matching_preserves_element(self) -> None:
-        """Elements with matching keys preserve identity."""
+    def test_key_based_matching_preserves_node_id(self) -> None:
+        """Nodes with matching keys preserve their ID (for state continuity)."""
         render_order: list[str] = []
         items_ref = [["a", "b", "c"]]
 
@@ -24,26 +24,26 @@ class TestReconciliation:
             for item in items_ref[0]:
                 Child(key=item, name=item)
 
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
-        # Capture original element ids
-        original_children = list(ctx.root_element.children)
-        original_ids = {c.key: id(c) for c in original_children}
+        # Capture original node IDs (string IDs used for state tracking)
+        original_children = list(ctx.root_node.children)
+        original_node_ids = {c.key: c.id for c in original_children}
 
         # Re-render with reordered items
         render_order.clear()
         items_ref[0] = ["c", "a", "b"]
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
-        # Elements should be preserved (same id) despite reordering
-        new_children = list(ctx.root_element.children)
+        # Node IDs should be preserved (for state continuity) despite reordering
+        new_children = list(ctx.root_node.children)
         for child in new_children:
-            assert id(child) == original_ids[child.key]
+            assert child.id == original_node_ids[child.key]
 
     def test_position_type_matching_without_keys(self) -> None:
-        """Unkeyed elements match by position and type."""
+        """Unkeyed elements match by position and type, preserving node IDs."""
         render_count = [0]
         count_ref = [3]
 
@@ -56,18 +56,18 @@ class TestReconciliation:
             for _ in range(count_ref[0]):
                 Child()
 
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
-        original_ids = [id(c) for c in ctx.root_element.children]
+        original_node_ids = [c.id for c in ctx.root_node.children]
 
         # Re-render with same count
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
-        # Same elements should be reused
-        new_ids = [id(c) for c in ctx.root_element.children]
-        assert original_ids == new_ids
+        # Same node IDs should be preserved (for state continuity)
+        new_node_ids = [c.id for c in ctx.root_node.children]
+        assert original_node_ids == new_node_ids
 
     def test_type_change_unmounts_old_mounts_new(self) -> None:
         """When component type changes, old unmounts and new mounts."""
@@ -86,13 +86,11 @@ class TestReconciliation:
 
         @component
         def TypeA() -> None:
-            state = TrackedState()
-            state.name = "A"
+            TrackedState(name="A")
 
         @component
         def TypeB() -> None:
-            state = TrackedState()
-            state.name = "B"
+            TrackedState(name="B")
 
         show_a = [True]
 
@@ -103,8 +101,8 @@ class TestReconciliation:
             else:
                 TypeB()
 
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         assert "A" in mount_log
         assert len(unmount_log) == 0
@@ -112,8 +110,8 @@ class TestReconciliation:
         # Switch type
         show_a[0] = False
         mount_log.clear()
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         assert "A" in unmount_log
         assert "B" in mount_log
@@ -131,8 +129,7 @@ class TestReconciliation:
 
         @component
         def Child(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         items = [["a", "b", "c"]]
 
@@ -141,13 +138,13 @@ class TestReconciliation:
             for item in items[0]:
                 Child(key=item, name=item)
 
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         # Remove "b"
         items[0] = ["a", "c"]
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         assert "b" in unmount_log
         assert "a" not in unmount_log
@@ -164,10 +161,10 @@ class TestElementLifecycle:
         def MyComponent() -> None:
             pass
 
-        ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(MyComponent)
+        ctx.render()
 
-        assert ctx.root_element._mounted is True
+        assert ctx._element_state[ctx.root_node.id].mounted is True
 
     def test_element_not_remounted_on_rerender(self) -> None:
         """on_mount is not called again on re-render."""
@@ -182,12 +179,12 @@ class TestElementLifecycle:
         def MyComponent() -> None:
             CountingState()
 
-        ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(MyComponent)
+        ctx.render()
         assert mount_count[0] == 1
 
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
         assert mount_count[0] == 1  # Still 1, not called again
 
 
@@ -207,8 +204,8 @@ class TestStatefulLifecycle:
         def MyComponent() -> None:
             MyState()
 
-        ctx = RenderContext(MyComponent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(MyComponent)
+        ctx.render()
 
         assert "state_mounted" in mount_log
 
@@ -232,13 +229,13 @@ class TestStatefulLifecycle:
             if show[0]:
                 Child()
 
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         # Remove child
         show[0] = False
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         assert "state_unmounted" in unmount_log
 
@@ -259,20 +256,24 @@ class TestStatefulLifecycle:
             if show[0]:
                 Child()
 
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         # State should be in cache on the child element
-        child_element = ctx.root_element.children[0]
-        assert len(child_element._local_state) == 1
+        child_node = ctx.root_node.children[0]
+        child_state = ctx._element_state[child_node.id]
+        assert len(child_state.local_state) == 1
+
+        # Capture child ID before unmounting
+        child_id = child_node.id
 
         # Remove child
         show[0] = False
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
-        # Child was unmounted, state should be cleaned up
-        assert len(child_element._local_state) == 0
+        # Child was unmounted, state should be cleaned up from the dict
+        assert child_id not in ctx._element_state
 
 
 class TestLifecycleOrder:
@@ -291,18 +292,16 @@ class TestLifecycleOrder:
 
         @component
         def Child(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         @component
         def Parent() -> None:
-            state = TrackedState()
-            state.name = "parent"
+            TrackedState(name="parent")
             Child(name="child1")
             Child(name="child2")
 
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         # Parent should mount before children
         assert mount_order.index("parent") < mount_order.index("child1")
@@ -321,13 +320,11 @@ class TestLifecycleOrder:
 
         @component
         def Child(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         @component
         def InnerParent() -> None:
-            state = TrackedState()
-            state.name = "inner_parent"
+            TrackedState(name="inner_parent")
             Child(name="child1")
             Child(name="child2")
 
@@ -338,13 +335,13 @@ class TestLifecycleOrder:
             if show[0]:
                 InnerParent()
 
-        ctx = RenderContext(OuterParent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(OuterParent)
+        ctx.render()
 
         # Remove inner parent and its children
         show[0] = False
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         # Children should unmount before parent
         assert unmount_order.index("child1") < unmount_order.index("inner_parent")
@@ -368,26 +365,22 @@ class TestReconciliationAdditional:
 
         @component
         def DeepLeaf(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         @component
         def Middle(prefix: str = "") -> None:
-            state = TrackedState()
-            state.name = f"{prefix}_middle"
+            TrackedState(name=f"{prefix}_middle")
             DeepLeaf(name=f"{prefix}_leaf1")
             DeepLeaf(name=f"{prefix}_leaf2")
 
         @component
         def TypeA() -> None:
-            state = TrackedState()
-            state.name = "a_root"
+            TrackedState(name="a_root")
             Middle(prefix="a")
 
         @component
         def TypeB() -> None:
-            state = TrackedState()
-            state.name = "b_root"
+            TrackedState(name="b_root")
 
         @component
         def Parent() -> None:
@@ -396,13 +389,13 @@ class TestReconciliationAdditional:
             else:
                 TypeB()
 
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         # Switch type - entire TypeA subtree should unmount
         use_type_a[0] = False
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         # All TypeA components should be unmounted
         assert "a_root" in unmount_log
@@ -428,24 +421,23 @@ class TestReconciliationAdditional:
 
         @component
         def Child(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         @component
         def Parent() -> None:
             for item in items_ref[0]:
                 Child(key=item, name=item)
 
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         assert set(mount_log) == {"a", "b"}
         mount_log.clear()
 
         # Add new item
         items_ref[0] = ["a", "b", "c"]
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         assert "c" in mount_log
         assert "a" not in mount_log  # Preserved
@@ -455,8 +447,8 @@ class TestReconciliationAdditional:
         # Remove item
         mount_log.clear()
         items_ref[0] = ["a", "c"]
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         assert "b" in unmount_log
         assert len(mount_log) == 0
@@ -492,19 +484,18 @@ class TestReconciliationAdditional:
             if show_ref[0]:
                 Child()
 
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
         show_ref[0] = False
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
         # Should unmount in reverse order: C, B, A
         assert unmount_order == ["C", "B", "A"]
 
-    def test_element_replace_preserves_identity(self) -> None:
-        """Element.replace() updates fields but preserves object identity."""
-        element_refs: list[int] = []
+    def test_node_preserves_id_on_props_change(self) -> None:
+        """Node ID is preserved when props change (for state continuity)."""
 
         @component
         def Child(value: int = 0) -> None:
@@ -516,25 +507,24 @@ class TestReconciliationAdditional:
         def Parent() -> None:
             Child(value=value_ref[0])
 
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
-        # Capture original element id
-        child = ctx.root_element.children[0]
-        original_id = id(child)
-        element_refs.append(original_id)
+        # Capture original node ID
+        child = ctx.root_node.children[0]
+        original_node_id = child.id
 
-        # Change props - triggers reconciliation but should preserve element
+        # Change props - triggers reconciliation but should preserve node ID
         value_ref[0] = 2
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
-        # Same element object
-        new_child = ctx.root_element.children[0]
-        assert id(new_child) == original_id
+        # Node ID should be preserved for state continuity
+        new_child = ctx.root_node.children[0]
+        assert new_child.id == original_node_id
 
         # But props should be updated
-        props = dict(new_child.descriptor.props)
+        props = dict(new_child.props)
         assert props.get("value") == 2
 
     def test_reconcile_empty_to_many_children(self) -> None:
@@ -551,26 +541,25 @@ class TestReconciliationAdditional:
 
         @component
         def Child(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         @component
         def Parent() -> None:
             for item in items_ref[0]:
                 Child(key=item, name=item)
 
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
-        assert len(ctx.root_element.children) == 0
+        assert len(ctx.root_node.children) == 0
         assert len(mount_log) == 0
 
         # Add many children
         items_ref[0] = [f"item_{i}" for i in range(20)]
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
-        assert len(ctx.root_element.children) == 20
+        assert len(ctx.root_node.children) == 20
         assert len(mount_log) == 20
 
     def test_reconcile_many_to_empty_children(self) -> None:
@@ -587,23 +576,22 @@ class TestReconciliationAdditional:
 
         @component
         def Child(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         @component
         def Parent() -> None:
             for item in items_ref[0]:
                 Child(key=item, name=item)
 
-        ctx = RenderContext(Parent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Parent)
+        ctx.render()
 
-        assert len(ctx.root_element.children) == 20
+        assert len(ctx.root_node.children) == 20
 
         # Remove all children
         items_ref[0] = []
-        ctx.mark_dirty(ctx.root_element)
-        ctx.render_dirty()
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
 
-        assert len(ctx.root_element.children) == 0
+        assert len(ctx.root_node.children) == 0
         assert len(unmount_log) == 20

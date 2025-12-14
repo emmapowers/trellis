@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import io
+import tarfile
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -65,3 +68,81 @@ class TestGetPlatform:
             with patch("platform.machine", return_value="riscv64"):
                 with pytest.raises(RuntimeError, match="Unsupported platform"):
                     _get_platform()
+
+
+class TestSafeExtract:
+    """Tests for _safe_extract tarball security."""
+
+    def test_safe_extract_normal_paths(self, tmp_path: Path) -> None:
+        """Normal paths extract successfully."""
+        from trellis.bundler import _safe_extract
+
+        # Create a tarball with normal paths
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            # Add a file
+            data = b"hello world"
+            info = tarfile.TarInfo(name="package/index.js")
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+
+            # Add a subdirectory file
+            data2 = b"nested content"
+            info2 = tarfile.TarInfo(name="package/lib/utils.js")
+            info2.size = len(data2)
+            tar.addfile(info2, io.BytesIO(data2))
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            _safe_extract(tar, tmp_path)
+
+        assert (tmp_path / "package" / "index.js").read_bytes() == b"hello world"
+        assert (tmp_path / "package" / "lib" / "utils.js").read_bytes() == b"nested content"
+
+    def test_safe_extract_rejects_parent_traversal(self, tmp_path: Path) -> None:
+        """Rejects paths with parent directory traversal."""
+        from trellis.bundler import _safe_extract
+
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            data = b"malicious"
+            info = tarfile.TarInfo(name="../../../etc/passwd")
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            with pytest.raises(ValueError, match="path traversal"):
+                _safe_extract(tar, tmp_path)
+
+    def test_safe_extract_rejects_hidden_traversal(self, tmp_path: Path) -> None:
+        """Rejects paths with hidden traversal in middle of path."""
+        from trellis.bundler import _safe_extract
+
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            data = b"malicious"
+            info = tarfile.TarInfo(name="package/../../../etc/passwd")
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            with pytest.raises(ValueError, match="path traversal"):
+                _safe_extract(tar, tmp_path)
+
+    def test_safe_extract_rejects_absolute_paths(self, tmp_path: Path) -> None:
+        """Rejects absolute paths that escape destination."""
+        from trellis.bundler import _safe_extract
+
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            data = b"malicious"
+            info = tarfile.TarInfo(name="/etc/passwd")
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            with pytest.raises(ValueError, match="path traversal"):
+                _safe_extract(tar, tmp_path)

@@ -41,3 +41,4 @@ docs/static/*.whl
 
 # Generated API docs (from pydoc-markdown)
 docs/docs/api/
+.playwright-mcp/

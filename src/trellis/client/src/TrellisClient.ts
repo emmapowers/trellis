@@ -13,7 +13,7 @@ import {
 export type ConnectionState = "disconnected" | "connecting" | "connected";
 
 export interface TrellisClientCallbacks {
-  onStateChange?: (state: ConnectionState) => void;
+  onConnectionStateChange?: (state: ConnectionState) => void;
   onConnected?: (response: HelloResponseMessage) => void;
   onRender?: (tree: SerializedElement) => void;
 }
@@ -22,7 +22,7 @@ export class TrellisClient {
   private ws: WebSocket | null = null;
   private clientId: string;
   private sessionId: string | null = null;
-  private state: ConnectionState = "disconnected";
+  private connectionState: ConnectionState = "disconnected";
   private callbacks: TrellisClientCallbacks;
   private connectResolver: ((response: HelloResponseMessage) => void) | null =
     null;
@@ -32,13 +32,13 @@ export class TrellisClient {
     this.callbacks = callbacks;
   }
 
-  private setState(state: ConnectionState): void {
-    this.state = state;
-    this.callbacks.onStateChange?.(state);
+  private setConnectionState(state: ConnectionState): void {
+    this.connectionState = state;
+    this.callbacks.onConnectionStateChange?.(state);
   }
 
-  getState(): ConnectionState {
-    return this.state;
+  getConnectionState(): ConnectionState {
+    return this.connectionState;
   }
 
   getSessionId(): string | null {
@@ -48,7 +48,7 @@ export class TrellisClient {
   async connect(): Promise<HelloResponseMessage> {
     return new Promise((resolve, reject) => {
       this.connectResolver = resolve;
-      this.setState("connecting");
+      this.setConnectionState("connecting");
 
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       this.ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
@@ -69,12 +69,12 @@ export class TrellisClient {
       };
 
       this.ws.onerror = () => {
-        this.setState("disconnected");
+        this.setConnectionState("disconnected");
         reject(new Error("WebSocket connection failed"));
       };
 
       this.ws.onclose = () => {
-        this.setState("disconnected");
+        this.setConnectionState("disconnected");
       };
     });
   }
@@ -83,7 +83,7 @@ export class TrellisClient {
     switch (msg.type) {
       case MessageType.HELLO_RESPONSE:
         this.sessionId = msg.session_id;
-        this.setState("connected");
+        this.setConnectionState("connected");
         console.log(`Connected to Trellis server v${msg.server_version}`);
         this.callbacks.onConnected?.(msg);
         if (this.connectResolver) {
@@ -121,6 +121,6 @@ export class TrellisClient {
       this.ws = null;
     }
     this.sessionId = null;
-    this.setState("disconnected");
+    this.setConnectionState("disconnected");
   }
 }

@@ -1,41 +1,41 @@
-"""Tests for ReactComponent base class and decorator."""
+"""Tests for ReactComponentBase base class and react_component_base decorator."""
 
 from dataclasses import dataclass
 
 import pytest
 
-from trellis.core.functional_component import component
-from trellis.core.react_component import ReactComponent, react_component
-from trellis.core.rendering import RenderContext
-from trellis.core.serialization import clear_callbacks, serialize_element
+from trellis.core.composition_component import component
+from trellis.core.react_component import ReactComponentBase, react_component_base
+from trellis.core.rendering import ElementNode, RenderTree
+from trellis.core.serialization import serialize_node
 from trellis.widgets import Button, Column, Label, Row
 
 
-class TestReactTypeProperty:
-    """Tests for the react_type property on components."""
+class TestElementNameProperty:
+    """Tests for the element_name property on components."""
 
-    def test_react_component_returns_specific_type(self) -> None:
-        """ReactComponent subclasses return their _react_type."""
+    def test_react_component_subclass_returns_specific_type(self) -> None:
+        """ReactComponentBase subclasses return their _element_name."""
 
-        @react_component("CustomWidget")
         @dataclass(kw_only=True)
-        class CustomWidget(ReactComponent):
+        class CustomWidget(ReactComponentBase):
             name: str = "CustomWidget"
+            _element_name = "CustomWidget"
 
         widget = CustomWidget()
-        assert widget.react_type == "CustomWidget"
+        assert widget.element_name == "CustomWidget"
 
-    def test_functional_component_returns_functional_component(self) -> None:
-        """FunctionalComponents all return 'FunctionalComponent'."""
+    def test_composition_component_returns_composition_component(self) -> None:
+        """CompositionComponents all return 'CompositionComponent'."""
 
         @component
         def MyComponent() -> None:
             pass
 
-        assert MyComponent.react_type == "FunctionalComponent"
+        assert MyComponent.element_name == "CompositionComponent"
 
-    def test_different_functional_components_same_react_type(self) -> None:
-        """All FunctionalComponents share the same react_type."""
+    def test_different_composition_components_same_element_name(self) -> None:
+        """All CompositionComponents share the same element_name."""
 
         @component
         def ComponentA() -> None:
@@ -45,12 +45,12 @@ class TestReactTypeProperty:
         def ComponentB() -> None:
             pass
 
-        assert ComponentA.react_type == "FunctionalComponent"
-        assert ComponentB.react_type == "FunctionalComponent"
-        assert ComponentA.react_type == ComponentB.react_type
+        assert ComponentA.element_name == "CompositionComponent"
+        assert ComponentB.element_name == "CompositionComponent"
+        assert ComponentA.element_name == ComponentB.element_name
 
-    def test_widget_react_types(self) -> None:
-        """Built-in widgets have correct react_type values."""
+    def test_widget_element_names(self) -> None:
+        """Built-in widgets have correct element_name values."""
         # Get the underlying component from factory function result
         @component
         def App() -> None:
@@ -61,88 +61,146 @@ class TestReactTypeProperty:
             with Row():
                 pass
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        children = ctx.root_element.children
-        assert children[0].component.react_type == "Label"
-        assert children[1].component.react_type == "Button"
-        assert children[2].component.react_type == "Column"
-        assert children[3].component.react_type == "Row"
+        children = ctx.root_node.children
+        assert children[0].component.element_name == "Label"
+        assert children[1].component.element_name == "Button"
+        assert children[2].component.element_name == "Column"
+        assert children[3].component.element_name == "Row"
 
-    def test_react_component_without_react_type_raises(self) -> None:
-        """ReactComponent without _react_type raises NotImplementedError."""
+    def test_react_component_without_element_name_raises(self) -> None:
+        """ReactComponentBase without _element_name raises NotImplementedError."""
 
         @dataclass(kw_only=True)
-        class BadWidget(ReactComponent):
+        class BadWidget(ReactComponentBase):
             name: str = "BadWidget"
 
         widget = BadWidget()
-        with pytest.raises(NotImplementedError, match="must set _react_type"):
-            _ = widget.react_type
+        with pytest.raises(NotImplementedError, match="must set _element_name"):
+            _ = widget.element_name
 
 
-class TestReactComponentDecorator:
-    """Tests for the @react_component decorator."""
+class TestReactComponentBaseSubclass:
+    """Tests for direct subclassing of ReactComponentBase."""
 
-    def test_decorator_sets_react_type(self) -> None:
-        """Decorator sets _react_type class attribute."""
+    def test_subclass_sets_element_name(self) -> None:
+        """Subclass _element_name is accessible via element_name property."""
 
-        @react_component("MyType")
         @dataclass(kw_only=True)
-        class MyWidget(ReactComponent):
+        class MyWidget(ReactComponentBase):
             name: str = "MyWidget"
+            _element_name = "MyType"
 
-        assert MyWidget._react_type == "MyType"
-        assert MyWidget().react_type == "MyType"
+        assert MyWidget._element_name == "MyType"
+        assert MyWidget().element_name == "MyType"
 
-    def test_decorator_sets_has_children_false_by_default(self) -> None:
-        """Decorator leaves _has_children False by default."""
+    def test_subclass_has_children_false_by_default(self) -> None:
+        """Subclasses have _has_children False by default."""
 
-        @react_component("LeafWidget")
         @dataclass(kw_only=True)
-        class LeafWidget(ReactComponent):
+        class LeafWidget(ReactComponentBase):
             name: str = "LeafWidget"
+            _element_name = "LeafWidget"
 
         assert LeafWidget._has_children is False
 
-    def test_decorator_sets_has_children_true(self) -> None:
-        """Decorator sets _has_children True when specified."""
+    def test_subclass_has_children_true(self) -> None:
+        """Subclasses can set _has_children True."""
 
-        @react_component("ContainerWidget", has_children=True)
         @dataclass(kw_only=True)
-        class ContainerWidget(ReactComponent):
+        class ContainerWidget(ReactComponentBase):
             name: str = "ContainerWidget"
+            _element_name = "ContainerWidget"
+            _has_children = True
 
         assert ContainerWidget._has_children is True
 
     def test_has_children_param_property(self) -> None:
         """_has_children_param property reads from class variable."""
 
-        @react_component("Container", has_children=True)
         @dataclass(kw_only=True)
-        class Container(ReactComponent):
+        class Container(ReactComponentBase):
             name: str = "Container"
+            _element_name = "Container"
+            _has_children = True
 
-        @react_component("Leaf")
         @dataclass(kw_only=True)
-        class Leaf(ReactComponent):
+        class Leaf(ReactComponentBase):
             name: str = "Leaf"
+            _element_name = "Leaf"
 
         assert Container()._has_children_param is True
         assert Leaf()._has_children_param is False
 
 
-class TestReactComponentSerialization:
-    """Tests for serialization of ReactComponents."""
+class TestReactComponentBaseDecorator:
+    """Tests for the @react_component_base decorator."""
 
-    def setup_method(self) -> None:
-        """Clear callbacks between tests."""
-        clear_callbacks()
+    def test_decorator_creates_callable(self) -> None:
+        """Decorator creates a callable that returns ElementNode."""
 
-    def teardown_method(self) -> None:
-        """Clean up after tests."""
-        clear_callbacks()
+        @react_component_base("TestWidget")
+        def TestWidget(value: int = 0) -> ElementNode:
+            """Test widget."""
+            ...
+
+        @component
+        def App() -> None:
+            TestWidget(value=42)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        node = ctx.root_node.children[0]
+        assert node.component.element_name == "TestWidget"
+        assert dict(node.props).get("value") == 42
+
+    def test_decorator_preserves_function_metadata(self) -> None:
+        """Decorator preserves function name and docstring."""
+
+        @react_component_base("MyWidget")
+        def MyWidget(x: int = 0) -> ElementNode:
+            """My widget docstring."""
+            ...
+
+        assert MyWidget.__name__ == "MyWidget"
+        assert MyWidget.__doc__ == "My widget docstring."
+
+    def test_decorator_has_children_false_by_default(self) -> None:
+        """Decorator creates components with _has_children False by default."""
+
+        @react_component_base("LeafWidget")
+        def LeafWidget() -> ElementNode:
+            ...
+
+        # Access the underlying component
+        assert LeafWidget._component._has_children_param is False
+
+    def test_decorator_has_children_true(self) -> None:
+        """Decorator can create container components."""
+
+        @react_component_base("ContainerWidget", has_children=True)
+        def ContainerWidget() -> ElementNode:
+            ...
+
+        assert ContainerWidget._component._has_children_param is True
+
+    def test_decorator_exposes_component(self) -> None:
+        """Decorated function exposes _component for introspection."""
+
+        @react_component_base("Widget")
+        def Widget() -> ElementNode:
+            ...
+
+        assert hasattr(Widget, "_component")
+        assert isinstance(Widget._component, ReactComponentBase)
+        assert Widget._component.element_name == "Widget"
+
+
+class TestReactComponentBaseSerialization:
+    """Tests for serialization of ReactComponentBase."""
 
     def test_react_component_type_equals_name(self) -> None:
         """For ReactComponents, type and name are both the component name."""
@@ -151,30 +209,30 @@ class TestReactComponentSerialization:
         def App() -> None:
             Label(text="test")
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
         label_data = result["children"][0]
 
         # ReactComponent: type is the React component, name is Python name
         assert label_data["type"] == "Label"
         assert label_data["name"] == "Label"
 
-    def test_functional_component_type_differs_from_name(self) -> None:
-        """For FunctionalComponents, type is generic but name is specific."""
+    def test_composition_component_type_differs_from_name(self) -> None:
+        """For CompositionComponents, type is generic but name is specific."""
 
         @component
         def MyCustomComponent() -> None:
             pass
 
-        ctx = RenderContext(MyCustomComponent)
-        ctx.render(from_element=None)
+        ctx = RenderTree(MyCustomComponent)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
-        # FunctionalComponent: type is generic, name is Python function name
-        assert result["type"] == "FunctionalComponent"
+        # CompositionComponent: type is generic, name is Python function name
+        assert result["type"] == "CompositionComponent"
         assert result["name"] == "MyCustomComponent"
 
     def test_mixed_tree_serialization(self) -> None:
@@ -190,31 +248,31 @@ class TestReactComponentSerialization:
                 Header()
                 Button(text="Click")
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
-        # Root is FunctionalComponent
-        assert result["type"] == "FunctionalComponent"
+        # Root is CompositionComponent
+        assert result["type"] == "CompositionComponent"
         assert result["name"] == "App"
 
-        # Column is ReactComponent
+        # Column is ReactComponentBase
         column = result["children"][0]
         assert column["type"] == "Column"
         assert column["name"] == "Column"
 
-        # Header is FunctionalComponent
+        # Header is CompositionComponent
         header = column["children"][0]
-        assert header["type"] == "FunctionalComponent"
+        assert header["type"] == "CompositionComponent"
         assert header["name"] == "Header"
 
-        # Label inside Header is ReactComponent
+        # Label inside Header is ReactComponentBase
         label = header["children"][0]
         assert label["type"] == "Label"
         assert label["name"] == "Label"
 
-        # Button is ReactComponent
+        # Button is ReactComponentBase
         button = column["children"][1]
         assert button["type"] == "Button"
         assert button["name"] == "Button"

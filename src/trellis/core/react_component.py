@@ -1,19 +1,19 @@
 """React component base class for the Trellis UI framework.
 
-This module provides the ReactComponent base class for components that have
+This module provides the ReactComponentBase class for components that have
 their own React implementations on the client side. These are typically
 "leaf" components like buttons, inputs, and layout containers.
 
-Unlike FunctionalComponents which share a generic React wrapper, each
-ReactComponent subclass maps to a specific React component.
+Unlike CompositionComponents which share a generic wrapper, each
+ReactComponentBase subclass maps to a specific React component.
 
 Example:
     ```python
-    class Column(ReactComponent):
+    class Column(ReactComponentBase):
         '''Vertical flex container.'''
 
-        # Each ReactComponent specifies its React type
-        _react_type = "Column"
+        # Each ReactComponentBase specifies its element name
+        _element_name = "Column"
 
         def __init__(self, gap: int = 8, padding: int = 0):
             self.gap = gap
@@ -21,56 +21,66 @@ Example:
     ```
 
 See Also:
-    - `FunctionalComponent`: For Python-only organizational components
-    - `@component`: Decorator for creating FunctionalComponents
+    - `CompositionComponent`: For Python-only organizational components
+    - `@component`: Decorator for creating CompositionComponents
 """
 
 from __future__ import annotations
 
+import functools
 import typing as tp
 from dataclasses import dataclass
 
+from trellis.core.base import ElementKind
 from trellis.core.base_component import Component
-from trellis.core.rendering import Element
 
-__all__ = ["ReactComponent"]
+if tp.TYPE_CHECKING:
+    from trellis.core.rendering import ElementNode
 
-T = tp.TypeVar("T", bound=Element, default=Element)
+__all__ = ["ReactComponentBase", "react_component_base"]
+
+
+class _DecoratedComponent(tp.Protocol):
+    """Protocol for functions decorated with @react_component_base."""
+
+    _component: ReactComponentBase
+
+    def __call__(self, **props: tp.Any) -> ElementNode: ...
 
 
 @dataclass(kw_only=True)
-class ReactComponent(Component[T], tp.Generic[T]):
+class ReactComponentBase(Component):
     """Base class for components with React implementations.
 
-    ReactComponent is used for "leaf" components that have corresponding
+    ReactComponentBase is used for "leaf" components that have corresponding
     React components on the client side (e.g., Column, Row, Button, Label).
 
-    Subclasses must set the `_react_type` class attribute to specify which
+    Subclasses must set the `_element_name` class attribute to specify which
     React component renders them. Container components should also set
     `_has_children` = True.
 
     Attributes:
-        _react_type: Class attribute specifying the React component name.
+        _element_name: Class attribute specifying the React component name.
             Must be set by subclasses.
         _has_children: Class attribute indicating if this is a container.
 
     Example:
         ```python
-        class Button(ReactComponent):
-            _react_type = "Button"
+        class Button(ReactComponentBase):
+            _element_name = "Button"
 
             text: str = ""
             on_click: Callable[[], None] | None = None
             disabled: bool = False
 
-        class Column(ReactComponent):
-            _react_type = "Column"
+        class Column(ReactComponentBase):
+            _element_name = "Column"
             _has_children = True  # Container component
         ```
     """
 
     # Subclasses must override this
-    _react_type: tp.ClassVar[str] = ""
+    _element_name: tp.ClassVar[str] = ""
 
     # Whether this component accepts children via `with` block (class var)
     _has_children: tp.ClassVar[bool] = False
@@ -81,22 +91,26 @@ class ReactComponent(Component[T], tp.Generic[T]):
         return self.__class__._has_children
 
     @property
-    def react_type(self) -> str:
+    def element_kind(self) -> ElementKind:
+        """ReactComponentBase subclasses are React components."""
+        return ElementKind.REACT_COMPONENT
+
+    @property
+    def element_name(self) -> str:
         """The React component type for this component."""
-        if not self._react_type:
+        if not self.__class__._element_name:
             raise NotImplementedError(
-                f"{self.__class__.__name__} must set _react_type class attribute"
+                f"{self.__class__.__name__} must set _element_name class attribute"
             )
-        return self._react_type
+        return self.__class__._element_name
 
-    def execute(self, /, node: T, **props: tp.Any) -> None:
-        """Execute this component.
+    def render(self, /, **props: tp.Any) -> None:
+        """Render this component.
 
-        For leaf ReactComponents (no children), this is a no-op.
-        For container ReactComponents, this mounts the children.
+        For leaf ReactComponentBase (no children), this is a no-op.
+        For container ReactComponentBase, this mounts the children.
 
         Args:
-            node: The Element instance
             **props: Properties including `children` for containers
         """
         # If this is a container, mount the children
@@ -106,33 +120,61 @@ class ReactComponent(Component[T], tp.Generic[T]):
                 child()
 
 
-def react_component(
-    react_type: str,
+def react_component_base(
+    element_name: str,
     *,
     has_children: bool = False,
-) -> tp.Callable[[type[ReactComponent]], type[ReactComponent]]:
-    """Decorator to configure a ReactComponent class.
+) -> tp.Callable[[tp.Callable[..., tp.Any]], _DecoratedComponent]:
+    """Decorator to create a ReactComponentBase from a function signature.
+
+    This is the simplest way to define React components. The function body is
+    ignored; only the signature is used for documentation and type hints.
+    Internally, a singleton ReactComponentBase instance is created.
 
     Args:
-        react_type: The React component name on the client
+        element_name: The React component name on the client
         has_children: Whether this component accepts children via `with` block
 
     Returns:
-        A decorator that configures the class
+        A decorator that creates a callable returning ElementNodes
 
     Example:
         ```python
-        @react_component("Button")
-        class Button(ReactComponent):
-            text: str = ""
-            on_click: Callable[[], None] | None = None
+        @react_component_base("Button")
+        def Button(
+            text: str = "",
+            on_click: Callable[[], None] | None = None,
+            disabled: bool = False,
+        ) -> ElementNode:
+            '''Clickable button widget.'''
+            ...  # Body ignored
+
+        # Use like a regular function
+        Button(text="Click me", on_click=handle_click)
         ```
     """
 
-    def decorator(cls: type[ReactComponent]) -> type[ReactComponent]:
-        cls._react_type = react_type
-        if has_children:
-            cls._has_children = True
-        return cls
+    def decorator(
+        func: tp.Callable[..., tp.Any],
+    ) -> _DecoratedComponent:
+        # Create a generated class with the function's name
+        @dataclass(kw_only=True)
+        class _Generated(ReactComponentBase):
+            name: str = func.__name__
+
+        _Generated._element_name = element_name
+        _Generated._has_children = has_children
+
+        # Create singleton instance
+        _singleton = _Generated()
+
+        @functools.wraps(func)
+        def wrapper(**props: tp.Any) -> ElementNode:
+            return _singleton._place(**props)
+
+        # Expose the underlying component for introspection
+        wrapper._component = _singleton  # type: ignore[attr-defined]
+
+        return tp.cast("_DecoratedComponent", wrapper)
 
     return decorator

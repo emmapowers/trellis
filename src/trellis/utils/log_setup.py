@@ -61,7 +61,9 @@ def setup_logging(level: int = logging.INFO) -> None:
         force=True,
     )
 
-    # Configure uvicorn loggers to propagate to root (don't add separate handlers)
+    # Uvicorn adds its own handlers by default, which would bypass our Rich handler
+    # and produce duplicate or differently-formatted output. Clear them and propagate
+    # to root so all logs go through our unified Rich formatting.
     for logger_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
         uv_logger = logging.getLogger(logger_name)
         uv_logger.handlers.clear()

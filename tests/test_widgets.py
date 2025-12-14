@@ -1,9 +1,9 @@
 """Tests for built-in widgets."""
 
-from trellis.core.functional_component import component
-from trellis.core.rendering import RenderContext
-from trellis.core.serialization import clear_callbacks, serialize_element
-from trellis.widgets import Button, Column, Label, Row
+from trellis.core.composition_component import component
+from trellis.core.rendering import RenderTree
+from trellis.core.serialization import serialize_node
+from trellis.widgets import Button, Column, Label, Row, Slider
 
 
 class TestLayoutWidgets:
@@ -18,11 +18,11 @@ class TestLayoutWidgets:
                 Label(text="A")
                 Label(text="B")
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
         # App has Column as child
-        column = ctx.root_element.children[0]
+        column = ctx.root_node.children[0]
         assert column.component.name == "Column"
         assert len(column.children) == 2
         assert column.children[0].component.name == "Label"
@@ -37,10 +37,10 @@ class TestLayoutWidgets:
                 Button(text="Left")
                 Button(text="Right")
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        row = ctx.root_element.children[0]
+        row = ctx.root_node.children[0]
         assert row.component.name == "Row"
         assert len(row.children) == 2
 
@@ -52,10 +52,10 @@ class TestLayoutWidgets:
             with Column(gap=16, padding=8):
                 Label(text="Test")
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        column = ctx.root_element.children[0]
+        column = ctx.root_node.children[0]
         assert column.properties["gap"] == 16
         assert column.properties["padding"] == 8
 
@@ -72,10 +72,10 @@ class TestLayoutWidgets:
                     Label(text="C")
                     Label(text="D")
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        column = ctx.root_element.children[0]
+        column = ctx.root_node.children[0]
         assert len(column.children) == 2
 
         row1 = column.children[0]
@@ -90,14 +90,6 @@ class TestLayoutWidgets:
 class TestBasicWidgets:
     """Tests for Label and Button widgets."""
 
-    def setup_method(self) -> None:
-        """Clear callbacks between tests."""
-        clear_callbacks()
-
-    def teardown_method(self) -> None:
-        """Clean up after tests."""
-        clear_callbacks()
-
     def test_label_with_text(self) -> None:
         """Label stores text prop."""
 
@@ -105,10 +97,10 @@ class TestBasicWidgets:
         def App() -> None:
             Label(text="Hello World")
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        label = ctx.root_element.children[0]
+        label = ctx.root_node.children[0]
         assert label.component.name == "Label"
         assert label.properties["text"] == "Hello World"
 
@@ -119,10 +111,10 @@ class TestBasicWidgets:
         def App() -> None:
             Label(text="Styled", font_size=24, color="red")
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        label = ctx.root_element.children[0]
+        label = ctx.root_node.children[0]
         assert label.properties["font_size"] == 24
         assert label.properties["color"] == "red"
 
@@ -133,10 +125,10 @@ class TestBasicWidgets:
         def App() -> None:
             Button(text="Click Me")
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        button = ctx.root_element.children[0]
+        button = ctx.root_node.children[0]
         assert button.component.name == "Button"
         assert button.properties["text"] == "Click Me"
 
@@ -148,10 +140,10 @@ class TestBasicWidgets:
         def App() -> None:
             Button(text="Click", on_click=lambda: clicked.append(True))
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        button = ctx.root_element.children[0]
+        button = ctx.root_node.children[0]
         assert callable(button.properties["on_click"])
 
         # Invoke the callback
@@ -165,23 +157,102 @@ class TestBasicWidgets:
         def App() -> None:
             Button(text="Disabled", disabled=True)
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        button = ctx.root_element.children[0]
+        button = ctx.root_node.children[0]
         assert button.properties["disabled"] is True
+
+    def test_slider_with_value(self) -> None:
+        """Slider stores value and range props."""
+
+        @component
+        def App() -> None:
+            Slider(value=50, min=0, max=100, step=1)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        slider = ctx.root_node.children[0]
+        assert slider.component.name == "Slider"
+        assert slider.properties["value"] == 50
+        assert slider.properties["min"] == 0
+        assert slider.properties["max"] == 100
+        assert slider.properties["step"] == 1
+
+    def test_slider_with_callback(self) -> None:
+        """Slider captures on_change callback."""
+        values: list[float] = []
+
+        @component
+        def App() -> None:
+            Slider(value=25, on_change=lambda v: values.append(v))
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        slider = ctx.root_node.children[0]
+        assert callable(slider.properties["on_change"])
+
+        # Invoke the callback
+        slider.properties["on_change"](75.0)
+        assert values == [75.0]
+
+    def test_slider_default_values(self) -> None:
+        """Slider with no explicit props has empty properties.
+
+        Default values (value=50, min=0, max=100, step=1) are defined in the
+        function signature for documentation but applied by the React client.
+        Only explicitly passed props appear in properties.
+        """
+
+        @component
+        def App() -> None:
+            Slider()
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        slider = ctx.root_node.children[0]
+        # No explicit props passed, so properties should be empty
+        # (React client applies defaults)
+        assert "value" not in slider.properties
+        assert "min" not in slider.properties
+        assert "max" not in slider.properties
+        assert "step" not in slider.properties
+
+    def test_slider_disabled(self) -> None:
+        """Slider accepts disabled prop."""
+
+        @component
+        def App() -> None:
+            Slider(disabled=True)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        slider = ctx.root_node.children[0]
+        assert slider.properties["disabled"] is True
+
+    def test_slider_custom_range(self) -> None:
+        """Slider can have custom min/max/step."""
+
+        @component
+        def App() -> None:
+            Slider(value=5.5, min=-10, max=10, step=0.5)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        slider = ctx.root_node.children[0]
+        assert slider.properties["value"] == 5.5
+        assert slider.properties["min"] == -10
+        assert slider.properties["max"] == 10
+        assert slider.properties["step"] == 0.5
 
 
 class TestWidgetSerialization:
     """Tests for serializing widgets."""
-
-    def setup_method(self) -> None:
-        """Clear callbacks between tests."""
-        clear_callbacks()
-
-    def teardown_method(self) -> None:
-        """Clean up after tests."""
-        clear_callbacks()
 
     def test_serialize_label(self) -> None:
         """Label serializes correctly."""
@@ -190,10 +261,10 @@ class TestWidgetSerialization:
         def App() -> None:
             Label(text="Test")
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
         label_data = result["children"][0]
         assert label_data["type"] == "Label"
@@ -206,10 +277,10 @@ class TestWidgetSerialization:
         def App() -> None:
             Button(text="Click", on_click=lambda: None)
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
         button_data = result["children"][0]
         assert button_data["type"] == "Button"
@@ -226,10 +297,10 @@ class TestWidgetSerialization:
                     Button(text="OK")
                     Button(text="Cancel")
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
         column_data = result["children"][0]
         assert column_data["type"] == "Column"

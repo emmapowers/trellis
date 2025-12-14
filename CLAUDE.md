@@ -28,21 +28,24 @@ Reactive UI framework for Python with fine-grained state tracking.
 ```
 src/trellis/
 ├── core/
-│   ├── rendering.py         # Element, RenderContext, Elements type
+│   ├── rendering.py         # ElementNode, ElementState, RenderTree
+│   ├── reconcile.py         # Tree reconciliation algorithm
+│   ├── serialization.py     # ElementNode tree serialization
 │   ├── base_component.py    # Component base class
 │   ├── functional_component.py  # @component decorator
-│   ├── block_component.py   # @blockComponent decorator (context manager)
+│   ├── react_component.py   # ReactComponent base for widgets
 │   └── state.py             # Stateful base class, automatic dependency tracking
-└── util/
+└── utils/
     └── lock_helper.py       # @with_lock decorator
 ```
 
 ## Key Concepts
 
-- **Element**: Node in the component tree with component reference, properties, children, parent, depth
-- **RenderContext**: Manages the element tree, tracks dirty elements, handles re-rendering
-- **Stateful**: Base class for reactive state; properties auto-track which elements read them
-- **BlockComponent**: Components that use `with` syntax to collect children
+- **ElementNode**: Immutable tree node representing a component invocation (component, props, key, children, id)
+- **ElementState**: Mutable runtime state for an ElementNode, keyed by node.id (dirty flag, local_state, context)
+- **RenderTree**: Manages the render lifecycle and node tree; tracks dirty nodes, handles re-rendering
+- **Stateful**: Base class for reactive state; properties auto-track which nodes read them
+- **FunctionalComponent**: Components created via `@component` decorator that use `with` syntax to collect children
 
 ## Commands
 
@@ -65,3 +68,17 @@ See `docs/planning/` for API design mockups:
 - `api_example.py` - Target developer experience
 - `component_tree.py` - Tree data structures
 - `react_integration.py` - React/TSX integration concepts
+
+## UI Testing with Playwright MCP
+
+Use Playwright MCP to test demos and iterate on UI designs.
+
+**Workflow:**
+1. Start the demo server in background: `pixi run demo`
+2. Navigate: `browser_navigate` to `http://127.0.0.1:8004`
+3. Inspect: `browser_snapshot` for element tree with refs for interaction
+4. Interact: `browser_click`, `browser_type` etc. using element refs
+5. Screenshot: `browser_take_screenshot` saves to `.playwright-mcp/`
+6. View: `open .playwright-mcp/<filename>.png` to open in Preview
+
+**When working on designs:** Use `browser_take_screenshot` to see what users see visually, not just accessibility snapshots. Screenshots capture styling, layout, and visual hierarchy that snapshots miss.

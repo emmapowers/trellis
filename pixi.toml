@@ -40,10 +40,6 @@ ci = { depends-on = ["lint", "test", "test-integration"], description = "Run CI 
 build-wheel = { cmd = "pip wheel . -w dist --no-deps", description = "Build wheel" }
 clean = { cmd = "rm -rf dist build .mypy_cache .ruff_cache .pytest_cache .coverage", description = "Clean build artifacts" }
 
-# Client build tasks
-build-client = { cmd = "npm install && npm run build", cwd = "src/trellis/client", description = "Build client bundle" }
-watch-client = { cmd = "npm install && npm run watch", cwd = "src/trellis/client", description = "Watch and rebuild client" }
-
 # Run demo
 demo = { cmd = "python examples/demo.py", description = "Run the demo app" }
 
@@ -51,6 +47,7 @@ demo = { cmd = "python examples/demo.py", description = "Run the demo app" }
 install-playground-deps = { cmd = "npm install", cwd = "docs/static/playground", description = "Install playground dependencies" }
 build-playground = { cmd = "npm run build", cwd = "docs/static/playground", depends-on = ["build-wheel", "install-playground-deps"], description = "Build playground bundle" }
 watch-playground = { cmd = "npm run watch", cwd = "docs/static/playground", depends-on = ["install-playground-deps"], description = "Watch and rebuild playground" }
+playground = { cmd = "python -m http.server 8000", cwd = "docs/static", depends-on = ["build-playground", "copy-wheel-to-docs"], description = "Run playground server (open http://localhost:8000/playground/)" }
 
 # Documentation tasks
 generate-api-docs = { cmd = "pydoc-markdown", description = "Generate API docs from docstrings" }
@@ -62,3 +59,6 @@ watch-api-docs = { cmd = "watchfiles 'pixi run generate-api-docs' src/trellis", 
 # For full docs dev workflow, run in two terminals:
 #   Terminal 1: pixi run serve-docs
 #   Terminal 2: pixi run watch-api-docs
+
+[target.unix.activation]
+scripts = ["scripts/install-npm-deps.sh"]

@@ -8,7 +8,7 @@ import { SerializedElement } from "./types";
 import { TreeRenderer } from "./TreeRenderer";
 
 function App() {
-  const [state, setState] = useState<ConnectionState>("disconnected");
+  const [connectionState, setConnectionState] = useState<ConnectionState>("disconnected");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [serverVersion, setServerVersion] = useState<string | null>(null);
   const [tree, setTree] = useState<SerializedElement | null>(null);
@@ -17,7 +17,7 @@ function App() {
   const client = useMemo(
     () =>
       new TrellisClient({
-        onStateChange: setState,
+        onConnectionStateChange: setConnectionState,
         onConnected: (response) => {
           setSessionId(response.session_id);
           setServerVersion(response.server_version);
@@ -55,14 +55,14 @@ function App() {
         <strong
           style={{
             color:
-              state === "connected"
+              connectionState === "connected"
                 ? "green"
-                : state === "connecting"
+                : connectionState === "connecting"
                   ? "orange"
                   : "red",
           }}
         >
-          {state}
+          {connectionState}
         </strong>
       </p>
       {sessionId && (

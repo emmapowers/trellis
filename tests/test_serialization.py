@@ -1,45 +1,37 @@
-"""Tests for Element tree serialization."""
+"""Tests for ElementNode tree serialization."""
 
-from trellis.core.functional_component import component
-from trellis.core.rendering import RenderContext
-from trellis.core.serialization import (
-    clear_callbacks,
-    get_callback,
-    serialize_element,
-)
+from trellis.core.composition_component import component
+from trellis.core.rendering import RenderTree
+from trellis.core.serialization import serialize_node
+from trellis.widgets.basic import Button
+import trellis.html as h
 
 
-class TestSerializeElement:
-    """Tests for serialize_element function."""
+class TestSerializeNode:
+    """Tests for serialize_node function."""
 
-    def setup_method(self) -> None:
-        """Clear callback registry between tests."""
-        clear_callbacks()
-
-    def teardown_method(self) -> None:
-        """Clean up callbacks after tests."""
-        clear_callbacks()
-
-    def test_serialize_simple_element(self) -> None:
-        """Basic element serializes correctly."""
+    def test_serialize_simple_node(self) -> None:
+        """Basic node serializes correctly."""
 
         @component
         def Simple() -> None:
             pass
 
-        ctx = RenderContext(Simple)
-        ctx.render(from_element=None)
+        ctx = RenderTree(Simple)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
-        assert result["type"] == "FunctionalComponent"  # React component type
+        assert result["type"] == "CompositionComponent"  # React component type
         assert result["name"] == "Simple"  # Python component name
-        assert result["key"] is None
+        # Nodes always have a key (user-provided or server-assigned ID)
+        assert result["key"] is not None
+        assert result["key"].startswith("e")  # Server-assigned IDs start with "e"
         assert result["props"] == {}
         assert result["children"] == []
 
-    def test_serialize_element_with_props(self) -> None:
-        """Element with props serializes correctly."""
+    def test_composition_component_props_not_serialized(self) -> None:
+        """CompositionComponent props are NOT serialized (layout-only)."""
 
         @component
         def WithProps(text: str = "", count: int = 0) -> None:
@@ -49,20 +41,20 @@ class TestSerializeElement:
         def App() -> None:
             WithProps(text="hello", count=42)
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
         # Get the WithProps child
-        child = ctx.root_element.children[0]
-        result = serialize_element(child)
+        child = ctx.root_node.children[0]
+        result = serialize_node(child, ctx)
 
-        assert result["type"] == "FunctionalComponent"
+        assert result["type"] == "CompositionComponent"
         assert result["name"] == "WithProps"
-        assert result["props"]["text"] == "hello"
-        assert result["props"]["count"] == 42
+        # CompositionComponent props should NOT be serialized
+        assert result["props"] == {}
 
-    def test_serialize_element_with_key(self) -> None:
-        """Element with key serializes correctly."""
+    def test_serialize_node_with_key(self) -> None:
+        """Node with key serializes correctly."""
 
         @component
         def Keyed() -> None:
@@ -72,16 +64,16 @@ class TestSerializeElement:
         def App() -> None:
             Keyed(key="my-key")
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        child = ctx.root_element.children[0]
-        result = serialize_element(child)
+        child = ctx.root_node.children[0]
+        result = serialize_node(child, ctx)
 
         assert result["key"] == "my-key"
 
     def test_serialize_nested_children(self) -> None:
-        """Nested elements serialize with children inline."""
+        """Nested nodes serialize with children inline."""
 
         @component
         def Child() -> None:
@@ -98,97 +90,86 @@ class TestSerializeElement:
                 Child()
                 Child()
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        result = serialize_element(ctx.root_element)
+        result = serialize_node(ctx.root_node, ctx)
 
         # App has Parent as child
         assert len(result["children"]) == 1
         parent_result = result["children"][0]
 
-        # Parent has two Child elements
-        assert parent_result["type"] == "FunctionalComponent"
+        # Parent has two Child nodes
+        assert parent_result["type"] == "CompositionComponent"
         assert parent_result["name"] == "Parent"
         assert len(parent_result["children"]) == 2
         assert parent_result["children"][0]["name"] == "Child"
         assert parent_result["children"][1]["name"] == "Child"
 
     def test_serialize_callback_creates_reference(self) -> None:
-        """Callbacks are replaced with ID references."""
+        """Callbacks are replaced with ID references (using ReactComponent)."""
         called = []
 
         def on_click() -> None:
             called.append(True)
 
         @component
-        def WithCallback(on_click=None) -> None:
-            pass
-
-        @component
         def App() -> None:
-            WithCallback(on_click=on_click)
+            # Use Button (a ReactComponent) to test callback serialization
+            Button(text="Click me", on_click=on_click)
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        child = ctx.root_element.children[0]
-        result = serialize_element(child)
+        child = ctx.root_node.children[0]
+        result = serialize_node(child, ctx)
 
         # Should have callback reference
         assert "__callback__" in result["props"]["on_click"]
         cb_id = result["props"]["on_click"]["__callback__"]
 
         # Should be able to look up and invoke the callback
-        callback = get_callback(cb_id)
+        callback = ctx.get_callback(cb_id)
         assert callback is not None
         callback()
         assert called == [True]
 
     def test_serialize_various_prop_types(self) -> None:
-        """Various prop types serialize correctly."""
-
-        @component
-        def ManyProps(
-            string_val: str = "",
-            int_val: int = 0,
-            float_val: float = 0.0,
-            bool_val: bool = False,
-            none_val: None = None,
-            list_val: list | None = None,
-            dict_val: dict | None = None,
-        ) -> None:
-            pass
+        """Various prop types serialize correctly (using HTML element)."""
 
         @component
         def App() -> None:
-            ManyProps(
-                string_val="hello",
-                int_val=42,
-                float_val=3.14,
-                bool_val=True,
-                none_val=None,
-                list_val=[1, 2, 3],
-                dict_val={"a": 1, "b": 2},
-            )
+            # Use HTML element (a ReactComponent) to test prop serialization
+            with h.Div(
+                id="test",
+                data_string="hello",
+                data_int=42,
+                data_float=3.14,
+                data_bool=True,
+                data_none=None,
+                data_list=[1, 2, 3],
+                data_dict={"a": 1, "b": 2},
+            ):
+                pass
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        child = ctx.root_element.children[0]
-        result = serialize_element(child)
+        child = ctx.root_node.children[0]
+        result = serialize_node(child, ctx)
         props = result["props"]
 
-        assert props["string_val"] == "hello"
-        assert props["int_val"] == 42
-        assert props["float_val"] == 3.14
-        assert props["bool_val"] is True
-        assert props["none_val"] is None
-        assert props["list_val"] == [1, 2, 3]
-        assert props["dict_val"] == {"a": 1, "b": 2}
+        assert props["id"] == "test"
+        assert props["data_string"] == "hello"
+        assert props["data_int"] == 42
+        assert props["data_float"] == 3.14
+        assert props["data_bool"] is True
+        assert props["data_none"] is None
+        assert props["data_list"] == [1, 2, 3]
+        assert props["data_dict"] == {"a": 1, "b": 2}
 
     def test_serialize_nested_callbacks(self) -> None:
-        """Callbacks nested in lists/dicts are handled."""
+        """Callbacks nested in lists/dicts are handled (using HTML element)."""
         handler1_calls = []
         handler2_calls = []
 
@@ -199,48 +180,44 @@ class TestSerializeElement:
             handler2_calls.append(2)
 
         @component
-        def WithHandlers(handlers: list | None = None) -> None:
-            pass
-
-        @component
         def App() -> None:
-            WithHandlers(handlers=[handler1, handler2])
+            # Use HTML element with data prop containing list of callbacks
+            with h.Div(data_handlers=[handler1, handler2]):
+                pass
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        child = ctx.root_element.children[0]
-        result = serialize_element(child)
+        child = ctx.root_node.children[0]
+        result = serialize_node(child, ctx)
 
-        handlers = result["props"]["handlers"]
+        handlers = result["props"]["data_handlers"]
         assert len(handlers) == 2
         assert "__callback__" in handlers[0]
         assert "__callback__" in handlers[1]
 
         # Verify callbacks work
-        get_callback(handlers[0]["__callback__"])()
-        get_callback(handlers[1]["__callback__"])()
+        ctx.get_callback(handlers[0]["__callback__"])()
+        ctx.get_callback(handlers[1]["__callback__"])()
         assert handler1_calls == [1]
         assert handler2_calls == [2]
 
     def test_multiple_callbacks_get_unique_ids(self) -> None:
-        """Each callback gets a unique ID."""
-
-        @component
-        def TwoCallbacks(on_a=None, on_b=None) -> None:
-            pass
+        """Each callback gets a unique ID (using HTML element)."""
 
         @component
         def App() -> None:
-            TwoCallbacks(on_a=lambda: None, on_b=lambda: None)
+            # Use HTML element with two callback props
+            with h.Div(onClick=lambda: None, onMouseEnter=lambda: None):
+                pass
 
-        ctx = RenderContext(App)
-        ctx.render(from_element=None)
+        ctx = RenderTree(App)
+        ctx.render()
 
-        child = ctx.root_element.children[0]
-        result = serialize_element(child)
+        child = ctx.root_node.children[0]
+        result = serialize_node(child, ctx)
 
-        id_a = result["props"]["on_a"]["__callback__"]
-        id_b = result["props"]["on_b"]["__callback__"]
+        id_a = result["props"]["onClick"]["__callback__"]
+        id_b = result["props"]["onMouseEnter"]["__callback__"]
 
         assert id_a != id_b

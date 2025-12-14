@@ -3,36 +3,15 @@
 from __future__ import annotations
 
 import typing as tp
-from dataclasses import dataclass
 
-from trellis.core.react_component import ReactComponent, react_component
-from trellis.core.rendering import ElementDescriptor
+from trellis.core.react_component import react_component_base
+from trellis.core.rendering import ElementNode
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
 
 
-@react_component("Label")
-@dataclass(kw_only=True)
-class _LabelComponent(ReactComponent):
-    """Text display widget."""
-
-    name: str = "Label"
-
-
-@react_component("Button")
-@dataclass(kw_only=True)
-class _ButtonComponent(ReactComponent):
-    """Clickable button widget."""
-
-    name: str = "Button"
-
-
-# Singleton instances used by factory functions
-_label = _LabelComponent()
-_button = _ButtonComponent()
-
-
+@react_component_base("Label")
 def Label(
     text: str = "",
     *,
@@ -43,7 +22,7 @@ def Label(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementDescriptor:
+) -> ElementNode:
     """Text display widget.
 
     Args:
@@ -57,23 +36,15 @@ def Label(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementDescriptor for the Label component.
+        An ElementNode for the Label component.
 
     Example:
         Label(text="Hello, world!", font_size=16, color="blue")
     """
-    return _label(
-        text=text,
-        font_size=font_size,
-        color=color,
-        bold=bold,
-        italic=italic,
-        className=class_name,
-        style=style,
-        key=key,
-    )
+    ...
 
 
+@react_component_base("Button")
 def Button(
     text: str = "",
     *,
@@ -85,7 +56,7 @@ def Button(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementDescriptor:
+) -> ElementNode:
     """Clickable button widget with modern styling.
 
     Args:
@@ -105,21 +76,46 @@ def Button(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementDescriptor for the Button component.
+        An ElementNode for the Button component.
 
     Example:
         Button(text="Save", on_click=save_handler, variant="primary")
         Button(text="Cancel", on_click=cancel_handler, variant="secondary")
         Button(text="Delete", on_click=delete_handler, variant="danger")
     """
-    return _button(
-        text=text,
-        on_click=on_click,
-        disabled=disabled,
-        variant=variant,
-        size=size,
-        full_width=full_width,
-        className=class_name,
-        style=style,
-        key=key,
-    )
+    ...
+
+
+@react_component_base("Slider")
+def Slider(
+    *,
+    value: float = 50,
+    min: float = 0,
+    max: float = 100,
+    step: float = 1,
+    on_change: Callable[[float], None] | None = None,
+    disabled: bool = False,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Range slider widget.
+
+    Args:
+        value: Current slider value.
+        min: Minimum value.
+        max: Maximum value.
+        step: Step increment.
+        on_change: Callback invoked with new value when slider changes.
+        disabled: Whether the slider is disabled.
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+        key: Optional key for reconciliation.
+
+    Returns:
+        An ElementNode for the Slider component.
+
+    Example:
+        Slider(value=50, min=0, max=100, on_change=handle_change)
+    """
+    ...
