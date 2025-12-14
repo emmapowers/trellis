@@ -7,11 +7,21 @@ import TrellisPlayground from '@site/src/components/TrellisPlayground';
 
 # Introduction
 
-Trellis is a reactive UI framework for Python. Build complex web applications with fine-grained state tracking and a clean, declarative API.
+Build complex web applications in Python—control panels, internal tools, data-intensive interfaces—without the frontend plumbing.
 
 ## What is Trellis?
 
-Trellis lets you build web UIs entirely in Python. Your components run on the server, render to a React frontend, and stay synchronized via WebSocket.
+Trellis is a Python framework for building web applications. You write functions that describe what your UI should look like. The framework handles rendering, state management, and browser communication. When state changes, only affected components re-render—no manual wiring, no full-page refreshes. You work entirely in Python; there's no JavaScript to write, no templates, no REST API plumbing.
+
+### Why another framework?
+
+Dashboard frameworks like Streamlit and Gradio made Python UI development accessible—simple scripts become interactive apps in minutes. But they hit limits quickly. Performance degrades, state becomes tangled, and what started simple becomes painful to maintain.
+
+Traditional web development—React frontend, REST API—scales well and produces maintainable code. But you spend a lot of time on plumbing that has nothing to do with your actual problem.
+
+Trellis aims for both: simple to start, maintainable as applications grow.
+
+## Try It
 
 <TrellisPlayground
   title="Counter Example"
@@ -45,30 +55,50 @@ def Counter():
 App = Counter`}
 />
 
-## Key Features
+## Features
 
-- **Fine-grained reactivity**: Only components that read a property re-render when it changes
-- **Server-side logic**: All your Python code runs on the server
-- **Declarative components**: Describe what the UI should look like, not how to update it
-- **Context API**: Share state between components with `with` blocks
+- **Declarative UI in Python** — `@component` functions with context-manager syntax. No templates, no separate frontend language.
+- **Reactive state** — Automatic dependency tracking. Components re-render when dependencies change.
+- **Fine-grained updates** — Only affected components re-render.
+- **Type-safe throughout** — Full type hints. IDE autocompletion works.
+- **Widget toolkit** — Forms, layout, buttons. Full HTML support when you need lower-level control.
 
-## When to Use Trellis
+## Use Cases
 
-Trellis is designed for:
+**Good for:**
 
-- Instrument control applications
-- Internal tools and admin panels
-- Line-of-business applications
-- Data-intensive interfaces
-- Products where UI is incidental to the core value
+- Instrument control applications—hardware interfaces, data capture
+- Internal tools and developer interfaces—remote access, rapid development
+- Line-of-business apps—workflows, data entry, admin panels
 
-It's explicitly **not** for:
+**Not for:**
 
-- Mobile apps (no native support)
-- Slow/unreliable networks (requires persistent WebSocket)
-- Marketing sites (not SEO-friendly)
-- High-traffic public applications (server-per-user model)
+- Mobile apps or slow networks
+- Marketing sites or static content
+- High-traffic public applications
+
+## Implementation Status
+
+> **Early development** — The API is unstable and may change significantly, including the widget framework.
+
+**Status:** ✅ implemented · 🚧 partial · ❌ not yet
+
+|     | Feature |
+|:----|:--------|
+| ✅ | Core rendering and reconciliation |
+| ✅ | Reactive state with dependency tracking |
+| ✅ | Server platform |
+| ✅ | Browser platform (Pyodide) |
+| ✅ | HTML elements |
+| ✅ | Type safety |
+| 🚧 | Widget toolkit (basics only) |
+| ❌ | Partial updates (sends full tree) |
+| ❌ | Bidirectional binding (`Mutable[T]`) |
+| ❌ | Routing |
+| ❌ | Live reload |
+| ❌ | Desktop platform |
 
 ## Next Steps
 
-- Read the [Design Overview](./design/overview) for architecture details
+- [Quickstart](./quickstart) — Install Trellis and build your first app
+- [Design Overview](./design/overview) — Architecture and design decisions

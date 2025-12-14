@@ -1,0 +1,255 @@
+---
+sidebar_position: 4
+title: Building UIs
+---
+
+import TrellisPlayground from '@site/src/components/TrellisPlayground';
+
+# Building UIs
+
+How to build user interfaces with HTML elements, widgets, and styles.
+
+## HTML Elements
+
+The `html` module (typically imported as `h`) provides all standard HTML elements:
+
+```python
+from trellis import html as h
+
+h.Div()      # <div>
+h.Span()     # <span>
+h.P()        # <p>
+h.H1()       # <h1> through h.H6()
+h.A()        # <a>
+h.Img()      # <img>
+h.Input()    # <input>
+h.Form()     # <form>
+# ... and more
+```
+
+### Text Content
+
+Pass text as the first argument:
+
+```python
+h.H1("Welcome")
+h.P("This is a paragraph.")
+h.Span("Inline text")
+```
+
+### Nesting Elements
+
+Use `with` blocks to nest elements:
+
+```python
+with h.Div():
+    h.H1("Title")
+    with h.Div():
+        h.P("Nested paragraph")
+```
+
+### Attributes
+
+Pass HTML attributes as keyword arguments:
+
+```python
+h.A("Click here", href="https://example.com", target="_blank")
+h.Img(src="/image.png", alt="Description")
+h.Input(type="text", placeholder="Enter text...")
+```
+
+Note: Use `className` instead of `class` (since `class` is a Python keyword):
+
+```python
+h.Div(className="container")
+```
+
+## Widgets
+
+Widgets are higher-level components built on HTML. They're imported from `trellis.widgets`:
+
+```python
+from trellis.widgets import Button, Column, Row, Slider, Label
+```
+
+### Available Widgets
+
+**Button** — Clickable button with variants:
+
+```python
+Button(text="Click me", on_click=handler)
+Button(text="Submit", variant="primary")
+Button(text="Delete", variant="danger", disabled=True)
+```
+
+Variants: `primary`, `secondary`, `outline`, `ghost`, `danger`
+
+**Column** — Vertical flex container:
+
+```python
+with Column():
+    h.P("First")
+    h.P("Second")
+    h.P("Third")
+```
+
+**Row** — Horizontal flex container:
+
+```python
+with Row():
+    Button(text="A")
+    Button(text="B")
+    Button(text="C")
+```
+
+**Slider** — Range input:
+
+```python
+Slider(value=state.volume, min=0, max=100, on_change=state.set_volume)
+```
+
+**Label** — Text display:
+
+```python
+Label(text="Status: Ready")
+```
+
+## Styling
+
+### Inline Styles
+
+Pass a `style` dictionary to any element:
+
+```python
+h.Div(style={
+    "backgroundColor": "#f0f0f0",
+    "padding": "16px",
+    "borderRadius": "8px",
+})
+```
+
+Style property names use camelCase (like React), not kebab-case:
+
+- `backgroundColor` not `background-color`
+- `fontSize` not `font-size`
+- `borderRadius` not `border-radius`
+
+### CSS Classes
+
+Use `className` to apply CSS classes:
+
+```python
+h.Div(className="card card-primary")
+```
+
+### Combining Styles
+
+<TrellisPlayground
+  title="Styled Card"
+  code={`from trellis.core import component
+from trellis.html import Div, H2, P
+
+CARD_STYLE = {
+    "backgroundColor": "#ffffff",
+    "border": "1px solid #e0e0e0",
+    "borderRadius": "8px",
+    "padding": "20px",
+    "boxShadow": "0 2px 4px rgba(0,0,0,0.1)",
+    "maxWidth": "300px",
+}
+
+TITLE_STYLE = {
+    "margin": "0 0 8px 0",
+    "color": "#333",
+}
+
+TEXT_STYLE = {
+    "margin": "0",
+    "color": "#666",
+}
+
+@component
+def Card():
+    with Div(style=CARD_STYLE):
+        H2("Card Title", style=TITLE_STYLE)
+        P("This is a styled card component.", style=TEXT_STYLE)
+
+App = Card`}
+/>
+
+## Combining HTML and Widgets
+
+Mix HTML elements and widgets freely:
+
+<TrellisPlayground
+  title="Mixed UI"
+  code={`from dataclasses import dataclass
+from trellis.core import component
+from trellis.core.state import Stateful
+from trellis.html import Div, H1, P, Span
+from trellis.widgets import Button, Column, Row, Slider
+
+@dataclass
+class Settings(Stateful):
+    volume: int = 50
+    brightness: int = 75
+
+@component
+def SettingsPanel():
+    state = Settings()
+
+    with Div(style={"padding": "20px", "fontFamily": "system-ui"}):
+        H1("Settings", style={"marginBottom": "20px"})
+
+        with Column():
+            with Row():
+                Span("Volume:", style={"width": "100px"})
+                Slider(value=state.volume, min=0, max=100)
+                Span(f"{state.volume}%", style={"width": "50px"})
+
+            with Row():
+                Span("Brightness:", style={"width": "100px"})
+                Slider(value=state.brightness, min=0, max=100)
+                Span(f"{state.brightness}%", style={"width": "50px"})
+
+            with Row():
+                Button(text="Reset", variant="outline")
+                Button(text="Apply", variant="primary")
+
+App = SettingsPanel`}
+/>
+
+## Layout Patterns
+
+### Centering Content
+
+```python
+h.Div(style={
+    "display": "flex",
+    "justifyContent": "center",
+    "alignItems": "center",
+    "minHeight": "100vh",
+})
+```
+
+### Grid Layout
+
+```python
+h.Div(style={
+    "display": "grid",
+    "gridTemplateColumns": "repeat(3, 1fr)",
+    "gap": "16px",
+})
+```
+
+### Spacing
+
+```python
+h.Div(style={"marginBottom": "16px"})
+h.Div(style={"padding": "8px 16px"})
+```
+
+## Next Steps
+
+- [Patterns](./patterns) — Common patterns for state, callbacks, and lists
+- [Design Overview](./design/overview) — How Trellis works under the hood

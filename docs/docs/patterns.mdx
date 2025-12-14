@@ -1,0 +1,273 @@
+---
+sidebar_position: 5
+title: Patterns
+---
+
+import TrellisPlayground from '@site/src/components/TrellisPlayground';
+
+# Common Patterns
+
+Patterns you'll use frequently when building Trellis applications.
+
+## Passing State via Props
+
+State lives in one component but can be passed to children as props:
+
+```python
+@dataclass
+class AppState(Stateful):
+    user_name: str = "Alice"
+
+@component
+def Header(name: str) -> None:
+    h.H1(f"Welcome, {name}!")
+
+@component
+def App() -> None:
+    state = AppState()
+
+    with Column():
+        Header(name=state.user_name)  # Pass state as prop
+        h.P("Content goes here")
+```
+
+The `Header` component re-renders when `user_name` changes, even though it doesn't own the state.
+
+## Callbacks That Modify State
+
+Pass state methods as callbacks to child components:
+
+<TrellisPlayground
+  title="Callbacks"
+  code={`from dataclasses import dataclass
+from trellis.core import component
+from trellis.core.state import Stateful
+from trellis.html import Div, H2, P
+from trellis.widgets import Button, Column, Row
+
+@dataclass
+class CounterState(Stateful):
+    count: int = 0
+
+    def increment(self):
+        self.count += 1
+
+    def decrement(self):
+        self.count -= 1
+
+    def reset(self):
+        self.count = 0
+
+@component
+def Controls(on_increment, on_decrement, on_reset):
+    with Row():
+        Button(text="-", on_click=on_decrement)
+        Button(text="+", on_click=on_increment)
+        Button(text="Reset", on_click=on_reset, variant="outline")
+
+@component
+def App():
+    state = CounterState()
+
+    with Column():
+        H2(f"Count: {state.count}")
+        Controls(
+            on_increment=state.increment,
+            on_decrement=state.decrement,
+            on_reset=state.reset,
+        )
+
+App = App`}
+/>
+
+This pattern keeps state management centralized while letting child components trigger updates.
+
+## Conditional Rendering
+
+Use Python's `if` statements to conditionally render elements:
+
+```python
+@component
+def App() -> None:
+    state = AppState()
+
+    with Column():
+        if state.is_loading:
+            h.P("Loading...")
+        elif state.error:
+            h.P(f"Error: {state.error}", style={"color": "red"})
+        else:
+            h.P(f"Data: {state.data}")
+```
+
+<TrellisPlayground
+  title="Conditional Rendering"
+  code={`from dataclasses import dataclass
+from trellis.core import component
+from trellis.core.state import Stateful
+from trellis.html import Div, H2, P
+from trellis.widgets import Button, Column
+
+@dataclass
+class ToggleState(Stateful):
+    show_details: bool = False
+
+    def toggle(self):
+        self.show_details = not self.show_details
+
+@component
+def App():
+    state = ToggleState()
+
+    with Column():
+        H2("Product")
+        P("A great product for all your needs.")
+
+        Button(
+            text="Hide Details" if state.show_details else "Show Details",
+            on_click=state.toggle,
+        )
+
+        if state.show_details:
+            with Div(style={"marginTop": "16px", "padding": "12px", "backgroundColor": "#f5f5f5"}):
+                P("Price: $99.99")
+                P("In stock: Yes")
+                P("Ships in 2-3 days")
+
+App = App`}
+/>
+
+## Lists
+
+Render lists by iterating with `for`:
+
+```python
+@component
+def ItemList() -> None:
+    items = ["Apple", "Banana", "Cherry"]
+
+    with Column():
+        for item in items:
+            h.P(item)
+```
+
+### Dynamic Lists with State
+
+<TrellisPlayground
+  title="Dynamic List"
+  code={`from dataclasses import dataclass, field
+from trellis.core import component
+from trellis.core.state import Stateful
+from trellis.html import Div, H2, P, Span
+from trellis.widgets import Button, Column, Row
+
+@dataclass
+class ListState(Stateful):
+    items: list[str] = field(default_factory=lambda: ["First item", "Second item"])
+    counter: int = 3
+
+    def add(self):
+        self.items = [*self.items, f"Item {self.counter}"]
+        self.counter += 1
+
+    def remove(self, item: str):
+        self.items = [i for i in self.items if i != item]
+
+@component
+def App():
+    state = ListState()
+
+    with Column():
+        H2("Items")
+
+        if not state.items:
+            P("No items yet.", style={"color": "#888"})
+        else:
+            for item in state.items:
+                with Row():
+                    Span(item, style={"flex": "1"})
+                    Button(text="Remove", on_click=lambda i=item: state.remove(i), variant="ghost")
+
+        Button(text="Add Item", on_click=state.add)
+
+App = App`}
+/>
+
+### The Lambda Capture Pattern
+
+When creating callbacks in a loop, capture the loop variable with a default argument:
+
+```python
+# Wrong - all callbacks use the last value of `item`
+for item in items:
+    Button(text="Remove", on_click=lambda: remove(item))
+
+# Correct - each callback captures its own value
+for item in items:
+    Button(text="Remove", on_click=lambda i=item: remove(i))
+```
+
+The `i=item` creates a new binding for each iteration.
+
+## Component Composition
+
+Break complex UIs into smaller components:
+
+<TrellisPlayground
+  title="Composition"
+  code={`from dataclasses import dataclass
+from trellis.core import component
+from trellis.core.state import Stateful
+from trellis.html import Div, H1, H3, P, Span
+from trellis.widgets import Button, Column, Row
+
+# Reusable card component
+@component
+def Card(title: str, children=None):
+    with Div(style={"border": "1px solid #ddd", "borderRadius": "8px", "padding": "16px", "marginBottom": "12px"}):
+        H3(title, style={"margin": "0 0 8px 0"})
+        if children:
+            for child in children:
+                child()
+
+# Reusable stat display
+@component
+def Stat(label: str, value: str):
+    with Row():
+        Span(f"{label}:", style={"fontWeight": "bold", "marginRight": "8px"})
+        Span(value)
+
+@dataclass
+class DashboardState(Stateful):
+    users: int = 1234
+    revenue: int = 56789
+
+    def refresh(self):
+        self.users += 10
+        self.revenue += 100
+
+@component
+def Dashboard():
+    state = DashboardState()
+
+    with Column():
+        H1("Dashboard")
+
+        with Card(title="User Stats"):
+            Stat(label="Total Users", value=str(state.users))
+            Stat(label="Active Today", value="89")
+
+        with Card(title="Revenue"):
+            Stat(label="Total", value=str(state.revenue))
+            Stat(label="This Month", value="$12,345")
+
+        Button(text="Refresh Data", on_click=state.refresh)
+
+App = Dashboard`}
+/>
+
+## Next Steps
+
+- [Design Overview](./design/overview) — How Trellis works under the hood
+- [State Management](./design/state) — Deep dive into the state system
+- [UI and Rendering](./design/ui-rendering) — How rendering works
