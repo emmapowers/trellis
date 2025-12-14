@@ -6,7 +6,6 @@ Elements for displaying and formatting text content.
 from __future__ import annotations
 
 import typing as tp
-from dataclasses import dataclass
 
 from trellis.core.base import ElementKind
 from trellis.core.base_component import Component
@@ -29,7 +28,6 @@ __all__ = [
 ]
 
 
-@dataclass(kw_only=True)
 class TextNode(Component):
     """Special component for raw text nodes.
 
@@ -212,7 +210,7 @@ def _Pre(
 
 
 # Text node singleton
-_text_node = TextNode(name="Text")
+_text_node = TextNode("Text")
 
 
 # Public API with positional text parameter support

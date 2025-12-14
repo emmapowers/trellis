@@ -33,7 +33,6 @@ from __future__ import annotations
 
 import inspect
 import typing as tp
-from dataclasses import dataclass, field
 
 from trellis.core.base import ElementKind
 from trellis.core.base_component import Component
@@ -53,7 +52,6 @@ class RenderFunc(tp.Protocol):
     def __call__(self, /, **props: tp.Any) -> None: ...
 
 
-@dataclass(kw_only=True)
 class CompositionComponent(Component):
     """A component implemented by a render function.
 
@@ -84,7 +82,19 @@ class CompositionComponent(Component):
     """
 
     render_func: RenderFunc
-    _has_children_param: bool = field(init=False, default=False)
+    _children_param: bool
+
+    def __init__(self, name: str, render_func: RenderFunc) -> None:
+        super().__init__(name)
+        self.render_func = render_func
+        # Inspect the render function to determine if it accepts children
+        sig = inspect.signature(render_func)
+        self._children_param = "children" in sig.parameters
+
+    @property
+    def _has_children_param(self) -> bool:
+        """Whether this component accepts children via `with` block."""
+        return self._children_param
 
     @property
     def element_kind(self) -> ElementKind:
@@ -95,11 +105,6 @@ class CompositionComponent(Component):
     def element_name(self) -> str:
         """All CompositionComponents use the same wrapper component."""
         return "CompositionComponent"
-
-    def __post_init__(self) -> None:
-        """Inspect the render function to determine if it accepts children."""
-        sig = inspect.signature(self.render_func)
-        self._has_children_param = "children" in sig.parameters
 
     def render(self, /, **props: tp.Any) -> None:
         """Render this component by calling the render function.
@@ -113,11 +118,6 @@ class CompositionComponent(Component):
                 for container components
         """
         self.render_func(**props)
-
-    def __hash__(self) -> int:
-        """Hash by identity since components are mutable objects."""
-        # TODO: Find a less naive way to do this
-        return id(self)
 
 
 def component(render_func: RenderFunc) -> CompositionComponent:
@@ -155,7 +155,4 @@ def component(render_func: RenderFunc) -> CompositionComponent:
             Text("Inside the box")
         ```
     """
-    return CompositionComponent(
-        name=render_func.__name__,
-        render_func=render_func,
-    )
+    return CompositionComponent(render_func.__name__, render_func)
