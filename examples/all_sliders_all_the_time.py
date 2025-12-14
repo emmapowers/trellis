@@ -9,11 +9,8 @@ from __future__ import annotations
 import typing as tp
 from dataclasses import dataclass
 
-from trellis import Trellis
-from trellis.core.composition_component import component
-from trellis.core.state import Stateful
-from trellis.utils.async_main import async_main
-from trellis.widgets import Button, Card, Column, Label, NumberInput, Row, Slider
+from trellis import Stateful, Trellis, async_main, component
+from trellis import widgets as w
 
 # =============================================================================
 # Styles
@@ -69,8 +66,8 @@ def ControlPanel() -> None:
     def handle_value_change(value: float) -> None:
         state.set_value(value)
 
-    with Card(padding=24, style={"width": "400px", "marginBottom": "24px"}):
-        Label(
+    with w.Card(padding=24, style={"width": "400px", "marginBottom": "24px"}):
+        w.Label(
             text="Slider Performance Test",
             font_size=24,
             color="#f1f5f9",
@@ -78,25 +75,25 @@ def ControlPanel() -> None:
             style={"textAlign": "center", "display": "block", "marginBottom": "16px"},
         )
 
-        with Row(gap=12, align="center", style={"marginBottom": "12px"}):
-            Label(text="Num Sliders:", color="#94a3b8", style={"width": "100px"})
-            NumberInput(
+        with w.Row(gap=12, align="center", style={"marginBottom": "12px"}):
+            w.Label(text="Num Sliders:", color="#94a3b8", style={"width": "100px"})
+            w.NumberInput(
                 value=float(state.num_sliders),
                 min=1,
                 on_change=handle_num_change,
                 style={"width": "80px"},
             )
 
-        with Row(gap=12, align="center", style={"marginBottom": "12px"}):
-            Label(text="Value:", color="#94a3b8", style={"width": "100px"})
-            NumberInput(
+        with w.Row(gap=12, align="center", style={"marginBottom": "12px"}):
+            w.Label(text="Value:", color="#94a3b8", style={"width": "100px"})
+            w.NumberInput(
                 value=state.value,
                 on_change=handle_value_change,
                 style={"width": "80px"},
             )
 
-        with Row(justify="center", gap=12):
-            Button(text="Reset", on_click=state.reset, variant="outline")
+        with w.Row(justify="center", gap=12):
+            w.Button(text="Reset", on_click=state.reset, variant="outline")
 
 
 @component
@@ -104,20 +101,20 @@ def SliderColumn() -> None:
     """Column of sliders."""
     state = SliderState.from_context()
 
-    with Card(
+    with w.Card(
         padding=24,
         style={"width": "400px", "maxHeight": "60vh", "overflowY": "auto"},
     ):
-        with Column(gap=4):
+        with w.Column(gap=4):
             for i in range(state.num_sliders):
-                with Row(gap=12, align="center", key=f"slider-row-{i}"):
-                    Label(
+                with w.Row(gap=12, align="center", key=f"slider-row-{i}"):
+                    w.Label(
                         text=f"#{i + 1}",
                         font_size=12,
                         color="#64748b",
                         style={"width": "60px", "textAlign": "right"},
                     )
-                    Slider(
+                    w.Slider(
                         value=state.value,
                         min=1,
                         max=100,
@@ -125,7 +122,7 @@ def SliderColumn() -> None:
                         on_change=state.set_value,
                         key=f"slider-{i}",
                     )
-                    Label(
+                    w.Label(
                         text=str(int(state.value)),
                         font_size=14,
                         color="#f1f5f9",
@@ -140,7 +137,7 @@ def App() -> None:
     state = SliderState(num_sliders=3, value=50)
 
     with state:
-        with Column(style=STYLE_PAGE, align="center"):
+        with w.Column(style=STYLE_PAGE, align="center"):
             ControlPanel()
             SliderColumn()
 

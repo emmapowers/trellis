@@ -47,6 +47,20 @@ src/trellis/
 - **Stateful**: Base class for reactive state; properties auto-track which nodes read them
 - **FunctionalComponent**: Components created via `@component` decorator that use `with` syntax to collect children
 
+## Import Style
+
+Canonical import style for Trellis applications:
+
+```python
+from trellis import Trellis, async_main, component, Stateful
+from trellis import widgets as w
+from trellis import html as h
+```
+
+- `trellis` exports core primitives (`component`, `Stateful`, `RenderTree`, etc.) plus `async_main` and `Trellis`
+- Widgets are accessed via `w.Button`, `w.Label`, `w.Column`, etc.
+- HTML elements are accessed via `h.Div`, `h.Span`, `h.P`, etc.
+
 ## Commands
 
 - `pixi run cleanup` - Format and lint with auto-fix

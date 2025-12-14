@@ -55,10 +55,9 @@ let reactRoot: Root | null = null;
 // ============================================================================
 
 const DEFAULT_CODE = `from dataclasses import dataclass
-from trellis.core import component
-from trellis.core.state import Stateful
-from trellis.html import *
-from trellis.widgets import *
+from trellis import Stateful, component
+from trellis import html as h
+from trellis import widgets as w
 
 @dataclass
 class CounterState(Stateful):
@@ -74,13 +73,13 @@ class CounterState(Stateful):
 def Counter():
     state = CounterState(count=0)
 
-    with Div(style={"padding": "20px", "fontFamily": "system-ui"}):
-        with Column():
-            H1("Trellis Counter")
-            P(f"Count: {state.count}")
-            with Row():
-                Button(text="-", on_click=state.decrement)
-                Button(text="+", on_click=state.increment)
+    with h.Div(style={"padding": "20px", "fontFamily": "system-ui"}):
+        with w.Column():
+            h.H1("Trellis Counter")
+            h.P(f"Count: {state.count}")
+            with w.Row():
+                w.Button(text="-", on_click=state.decrement)
+                w.Button(text="+", on_click=state.increment)
 
 # Export the root component
 App = Counter

@@ -25,14 +25,10 @@ Notes:
 
 from dataclasses import dataclass
 
-from trellis.core.state import Stateful
-from trellis.core.composition_component import component
-from trellis.core.rendering import Element
-from trellis import widgets as w
+from trellis import Mutable, Stateful, Trellis, async_main, component, mutable  # Mutable/mutable planned
 from trellis import html as h
-from trellis import navigation as nav
-from trellis import Trellis, Mutable, mutable
-from trellis.utils import async_main
+from trellis import navigation as nav  # Planned feature
+from trellis import widgets as w
 
 routerState = nav.RouterState()
 

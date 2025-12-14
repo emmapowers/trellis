@@ -5,7 +5,7 @@ These examples show how React components could be defined for use with Trellis.
 """
 
 from trellis.core.rendering import Element
-from trellis.react import reactComponent, ReactComponent
+from trellis.react import ReactComponent, reactComponent  # Planned feature
 
 
 # Compact, inline definition
