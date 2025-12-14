@@ -16,6 +16,7 @@ export interface TrellisClientCallbacks {
   onConnectionStateChange?: (state: ConnectionState) => void;
   onConnected?: (response: HelloResponseMessage) => void;
   onRender?: (tree: SerializedElement) => void;
+  onError?: (error: string, context: "render" | "callback") => void;
 }
 
 export class TrellisClient {
@@ -95,6 +96,11 @@ export class TrellisClient {
       case MessageType.RENDER:
         console.log("Received render message:", msg.tree);
         this.callbacks.onRender?.(msg.tree);
+        break;
+
+      case MessageType.ERROR:
+        console.error(`Trellis ${msg.context} error:`, msg.error);
+        this.callbacks.onError?.(msg.error, msg.context);
         break;
     }
   }

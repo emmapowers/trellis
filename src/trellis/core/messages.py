@@ -27,5 +27,15 @@ class EventMessage(msgspec.Struct, tag="event", tag_field="type"):
     args: list[tp.Any] = []
 
 
+class ErrorMessage(msgspec.Struct, tag="error", tag_field="type"):
+    """Error message sent to client when an exception occurs.
+
+    Contains a formatted traceback and context about where the error occurred.
+    """
+
+    error: str  # Formatted traceback
+    context: str  # "render" | "callback"
+
+
 # Union type for core messages - used by MessageHandler
-Message = RenderMessage | EventMessage
+Message = RenderMessage | EventMessage | ErrorMessage

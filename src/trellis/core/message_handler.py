@@ -10,9 +10,10 @@ import asyncio
 import dataclasses
 import inspect
 import logging
+import traceback
 import typing as tp
 
-from trellis.core.messages import EventMessage, Message, RenderMessage
+from trellis.core.messages import ErrorMessage, EventMessage, Message, RenderMessage
 from trellis.core.rendering import IComponent, RenderTree
 from trellis.html.events import get_event_class
 
@@ -21,6 +22,16 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "MessageHandler",
 ]
+
+
+# =============================================================================
+# Exception formatting
+# =============================================================================
+
+
+def _format_exception(e: BaseException) -> str:
+    """Format an exception as a string with traceback."""
+    return "".join(traceback.format_exception(type(e), e, e.__traceback__))
 
 
 # =============================================================================
@@ -130,9 +141,17 @@ class MessageHandler:
         self.tree = RenderTree(root_component)
         self._background_tasks = set()
 
-    def initial_render(self) -> RenderMessage:
-        """Generate initial render message."""
-        return RenderMessage(tree=self.tree.render())
+    def initial_render(self) -> Message:
+        """Generate initial render message.
+
+        Returns:
+            RenderMessage on success, ErrorMessage on exception
+        """
+        try:
+            return RenderMessage(tree=self.tree.render())
+        except Exception as e:
+            logger.exception(f"Error during initial render: {e}")
+            return ErrorMessage(error=_format_exception(e), context="render")
 
     async def handle_message(self, msg: Message) -> Message | None:
         """Process incoming message, return response message.
@@ -141,24 +160,24 @@ class MessageHandler:
             msg: The incoming message to process
 
         Returns:
-            Response message (typically RenderMessage), or None if no response
+            Response message (RenderMessage or ErrorMessage), or None if no response
         """
         if isinstance(msg, EventMessage):
             try:
                 await self._invoke_callback(msg.callback_id, msg.args)
-            except KeyError:
-                logger.warning(f"Unknown callback: {msg.callback_id}")
-                return None
+            except KeyError as e:
+                logger.exception(f"Unknown callback: {msg.callback_id}")
+                return ErrorMessage(error=_format_exception(e), context="callback")
             except Exception as e:
                 logger.exception(f"Error in callback {msg.callback_id}: {e}")
-                # Continue - don't crash the connection
+                return ErrorMessage(error=_format_exception(e), context="callback")
 
             # Re-render and return updated tree
             try:
                 return RenderMessage(tree=self.tree.render())
             except Exception as e:
                 logger.exception(f"Error during render after callback: {e}")
-                return None
+                return ErrorMessage(error=_format_exception(e), context="render")
 
         return None
 

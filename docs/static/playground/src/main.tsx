@@ -177,12 +177,15 @@ async function runCode(): Promise<void> {
     // Execute user code
     await pyodide!.runPythonAsync(code);
 
-    // Register JS render callback in Python globals via pyodide.registerJsModule
-    // The callback receives tree dicts from Python and renders them
+    // Register JS callbacks for render and errors
     const jsCallbacks = {
       render: (treeProxy: PyProxy) => {
         const tree = treeProxy.toJs({ dict_converter: Object.fromEntries }) as SerializedElement;
         renderTree(tree);
+      },
+      error: (errorMsg: string) => {
+        showError(errorMsg);
+        updateStatus("Error");
       }
     };
     pyodide!.registerJsModule("js_callbacks", jsCallbacks);
@@ -195,6 +198,7 @@ from trellis_playground import PlaygroundMessageHandler
 
 handler = PlaygroundMessageHandler(App)
 handler.set_render_callback(js_callbacks.render)
+handler.set_error_callback(js_callbacks.error)
 
 # Start the message loop in the background
 asyncio.ensure_future(handler.run())

@@ -11,7 +11,7 @@ import typing as tp
 from collections.abc import Callable
 
 from trellis.core.message_handler import MessageHandler
-from trellis.core.messages import EventMessage, Message, RenderMessage
+from trellis.core.messages import ErrorMessage, EventMessage, Message, RenderMessage
 from trellis.core.rendering import IComponent
 
 __all__ = ["BrowserRuntime", "PlaygroundMessageHandler"]
@@ -31,9 +31,12 @@ class PlaygroundMessageHandler(MessageHandler):
             PlaygroundMessageHandler(App)
         `);
 
-        // Register callback for render updates
+        // Register callbacks for render updates and errors
         handler.set_render_callback((tree) => {
             renderToDOM(tree.toJs());
+        });
+        handler.set_error_callback((error) => {
+            showError(error);
         });
 
         // Start the message loop
@@ -46,6 +49,7 @@ class PlaygroundMessageHandler(MessageHandler):
 
     _inbox: asyncio.Queue[Message]
     _on_render: Callable[[dict[str, tp.Any]], None] | None
+    _on_error: Callable[[str], None] | None
 
     def __init__(self, root_component: IComponent) -> None:
         """Create a new playground message handler.
@@ -56,6 +60,7 @@ class PlaygroundMessageHandler(MessageHandler):
         super().__init__(root_component)
         self._inbox = asyncio.Queue()
         self._on_render = None
+        self._on_error = None
 
     def set_render_callback(self, callback: Callable[[dict[str, tp.Any]], None]) -> None:
         """Register callback to receive render updates.
@@ -65,10 +70,20 @@ class PlaygroundMessageHandler(MessageHandler):
         """
         self._on_render = callback
 
+    def set_error_callback(self, callback: Callable[[str], None]) -> None:
+        """Register callback to receive error messages.
+
+        Args:
+            callback: Function called with error string when an exception occurs
+        """
+        self._on_error = callback
+
     async def send_message(self, msg: Message) -> None:
-        """Push render updates to JS via callback."""
+        """Push render/error updates to JS via callbacks."""
         if isinstance(msg, RenderMessage) and self._on_render is not None:
             self._on_render(msg.tree)
+        elif isinstance(msg, ErrorMessage) and self._on_error is not None:
+            self._on_error(msg.error)
 
     async def receive_message(self) -> Message:
         """Wait for JS to post a message."""

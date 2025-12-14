@@ -12,6 +12,7 @@ function App() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [serverVersion, setServerVersion] = useState<string | null>(null);
   const [tree, setTree] = useState<SerializedElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Create client once (stable reference for context)
   const client = useMemo(
@@ -24,6 +25,10 @@ function App() {
         },
         onRender: (newTree) => {
           setTree(newTree);
+          setError(null); // Clear error on successful render
+        },
+        onError: (errorMsg) => {
+          setError(errorMsg);
         },
       }),
     []
@@ -36,6 +41,27 @@ function App() {
 
     return () => client.disconnect();
   }, [client]);
+
+  // Show error if present
+  if (error) {
+    return (
+      <div style={{ padding: "20px", fontFamily: "monospace" }}>
+        <h2 style={{ color: "#d32f2f", margin: "0 0 16px 0" }}>Error</h2>
+        <pre
+          style={{
+            whiteSpace: "pre-wrap",
+            background: "#ffebee",
+            padding: "16px",
+            borderRadius: "4px",
+            border: "1px solid #ef9a9a",
+            overflow: "auto",
+          }}
+        >
+          {error}
+        </pre>
+      </div>
+    );
+  }
 
   // If we have a tree, render it within context
   if (tree) {

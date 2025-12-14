@@ -8,6 +8,7 @@ export const MessageType = {
   HELLO_RESPONSE: "hello_response",
   RENDER: "render",
   EVENT: "event",
+  ERROR: "error",
 } as const;
 
 export interface HelloMessage {
@@ -33,8 +34,15 @@ export interface EventMessage {
   args: unknown[];
 }
 
+export interface ErrorMessage {
+  type: typeof MessageType.ERROR;
+  error: string;
+  context: "render" | "callback";
+}
+
 export type Message =
   | HelloMessage
   | HelloResponseMessage
   | RenderMessage
-  | EventMessage;
+  | EventMessage
+  | ErrorMessage;
