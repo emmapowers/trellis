@@ -8,7 +8,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from trellis import Stateful, Trellis, async_main, component
-from trellis import html as h
 from trellis import widgets as w
 
 # =============================================================================
@@ -29,24 +28,6 @@ STYLE_COUNT_DISPLAY = {
     "width": "120px",
     "textAlign": "center",
 }
-
-STYLE_PROGRESS_BG = {
-    "backgroundColor": "#0f172a",
-    "borderRadius": "9999px",
-    "height": "8px",
-    "overflow": "hidden",
-}
-
-
-def progress_bar_style(percent: float) -> dict:
-    """Generate style for progress bar fill."""
-    return {
-        "backgroundColor": "#6366f1",
-        "height": "100%",
-        "width": f"{percent}%",
-        "borderRadius": "9999px",
-        "transition": "width 200ms ease",
-    }
 
 
 # =============================================================================
@@ -122,16 +103,6 @@ def CounterControls(
 
 
 @component
-def ProgressBar(value: int, min_val: int = 1, max_val: int = 10) -> None:
-    """Visual progress indicator."""
-    percent = (value - min_val) / (max_val - min_val) * 100
-    with w.Column(style={"marginBottom": "24px"}):
-        with h.Div(style=STYLE_PROGRESS_BG):
-            with h.Div(style=progress_bar_style(percent)):
-                pass
-
-
-@component
 def RangeLabels(min_val: int, max_val: int) -> None:
     """Min/max range labels."""
     with w.Row(justify="between", style={"marginBottom": "32px"}):
@@ -154,7 +125,12 @@ def App() -> None:
                 min_val=state.min_val,
                 max_val=state.max_val,
             )
-            ProgressBar(value=state.count, min_val=state.min_val, max_val=state.max_val)
+            w.ProgressBar(
+                value=state.count,
+                min=state.min_val,
+                max=state.max_val,
+                style={"marginBottom": "24px"},
+            )
             RangeLabels(min_val=state.min_val, max_val=state.max_val)
 
             with w.Row(justify="center", gap=12):

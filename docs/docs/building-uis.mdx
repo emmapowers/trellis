@@ -89,8 +89,8 @@ Variants: `primary`, `secondary`, `outline`, `ghost`, `danger`
 **Card** — Container with border and padding:
 
 ```python
-with w.Card(title="Settings"):
-    h.P("Card content goes here")
+with w.Card():
+    w.Label(text="Card content goes here")
 ```
 
 **Checkbox** — Boolean toggle:
@@ -103,9 +103,9 @@ w.Checkbox(checked=state.enabled, on_change=state.toggle, label="Enable feature"
 
 ```python
 with w.Column(gap=16, padding=20):
-    h.P("First")
-    h.P("Second")
-    h.P("Third")
+    w.Label(text="First")
+    w.Label(text="Second")
+    w.Label(text="Third")
 ```
 
 Props: `gap`, `padding`, `align`, `justify`
@@ -115,6 +115,15 @@ Props: `gap`, `padding`, `align`, `justify`
 ```python
 w.Divider()
 ```
+
+**Heading** — Semantic heading text:
+
+```python
+w.Heading(text="Welcome", level=1)
+w.Heading(text="Section Title", level=2, color="#333")
+```
+
+Levels 1-6 render as `<h1>` through `<h6>`.
 
 **Label** — Text display:
 
@@ -127,6 +136,15 @@ w.Label(text="Status: Ready", font_size=14)
 ```python
 w.NumberInput(value=state.count, on_change=state.set_count, min=0, max=100)
 ```
+
+**ProgressBar** — Progress indicator:
+
+```python
+w.ProgressBar(value=50, min=0, max=100)
+w.ProgressBar(loading=True)  # Indeterminate loading state
+```
+
+Props: `value`, `min`, `max`, `loading`, `disabled`, `color`, `height`
 
 **Row** — Horizontal flex container:
 
@@ -230,33 +248,25 @@ Mix HTML elements and widgets freely:
 
 <TrellisPlayground
   title="Mixed UI"
-  code={`from dataclasses import dataclass
-from trellis import Stateful, component
+  code={`from trellis import component
 from trellis import html as h
 from trellis import widgets as w
 
-@dataclass
-class Settings(Stateful):
-    volume: int
-    brightness: int
-
 @component
 def SettingsPanel():
-    state = Settings(volume=50, brightness=75)
-
     with h.Div(style={"padding": "20px", "fontFamily": "system-ui"}):
         h.H1("Settings", style={"marginBottom": "20px"})
 
         with w.Column(gap=12):
             with w.Row(gap=8, align="center"):
                 h.Span("Volume:", style={"width": "100px"})
-                w.Slider(value=state.volume, min=0, max=100)
-                h.Span(f"{state.volume}%", style={"width": "50px"})
+                w.Slider(value=50, min=0, max=100)
+                h.Span("50%", style={"width": "50px"})
 
             with w.Row(gap=8, align="center"):
                 h.Span("Brightness:", style={"width": "100px"})
-                w.Slider(value=state.brightness, min=0, max=100)
-                h.Span(f"{state.brightness}%", style={"width": "50px"})
+                w.Slider(value=75, min=0, max=100)
+                h.Span("75%", style={"width": "50px"})
 
             with w.Row(gap=8):
                 w.Button(text="Reset", variant="outline")

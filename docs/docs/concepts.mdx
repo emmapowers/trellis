@@ -106,7 +106,7 @@ def Counter():
     state = CounterState(count=0)
 
     with w.Column():
-        h.P(f"Count: {state.count}")
+        w.Label(text=f"Count: {state.count}")
         w.Button(text="Increment", on_click=state.increment)
 
 App = Counter`}
@@ -199,10 +199,10 @@ def TodoList():
     state = TodoState(items=["Learn Trellis", "Build an app"], next_id=3)
 
     with w.Column():
-        h.H1("Todo List")
+        w.Heading(text="Todo List")
         for item in state.items:
             with w.Row():
-                h.Span(item)
+                w.Label(text=item)
                 w.Button(text="×", on_click=lambda i=item: state.remove(i))
         w.Button(text="Add Task", on_click=state.add)
 

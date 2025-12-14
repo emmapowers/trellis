@@ -44,13 +44,12 @@ class CounterState(Stateful):
 def Counter():
     state = CounterState(count=0)
 
-    with h.Div(style={"padding": "20px", "fontFamily": "system-ui"}):
-        with w.Column():
-            h.H1("Trellis Counter")
-            h.P(f"Count: {state.count}")
-            with w.Row():
-                w.Button(text="-", on_click=state.decrement)
-                w.Button(text="+", on_click=state.increment)
+    with w.Column(padding=20):
+        w.Heading(text="Trellis Counter")
+        w.Label(text=f"Count: {state.count}")
+        with w.Row():
+            w.Button(text="-", on_click=state.decrement)
+            w.Button(text="+", on_click=state.increment)
 
 App = Counter`}
 />

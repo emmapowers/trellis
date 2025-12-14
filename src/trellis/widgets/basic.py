@@ -285,3 +285,75 @@ def Select(
         )
     """
     ...
+
+
+@react_component_base("Heading")
+def Heading(
+    text: str = "",
+    *,
+    level: tp.Literal[1, 2, 3, 4, 5, 6] = 1,
+    color: str | None = None,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Semantic heading widget.
+
+    Renders an HTML heading element (<h1> through <h6>) based on the level.
+
+    Args:
+        text: The heading text to display.
+        level: Heading level from 1-6, corresponding to <h1>-<h6>. Defaults to 1.
+        color: Text color (CSS color string).
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+        key: Optional key for reconciliation.
+
+    Returns:
+        An ElementNode for the Heading component.
+
+    Example:
+        Heading(text="Welcome", level=1)
+        Heading(text="Section Title", level=2, color="#333")
+    """
+    ...
+
+
+@react_component_base("ProgressBar")
+def ProgressBar(
+    *,
+    value: float = 0,
+    min: float = 0,
+    max: float = 100,
+    loading: bool = False,
+    disabled: bool = False,
+    color: str | None = None,
+    height: int | None = None,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Progress bar widget.
+
+    Displays a horizontal progress indicator with optional loading animation.
+
+    Args:
+        value: Current progress value. Defaults to 0.
+        min: Minimum value. Defaults to 0.
+        max: Maximum value. Defaults to 100.
+        loading: Whether to show indeterminate loading animation. Defaults to False.
+        disabled: Whether the progress bar is disabled (grayed out). Defaults to False.
+        color: Fill color (CSS color string). Defaults to indigo (#6366f1).
+        height: Bar height in pixels. Defaults to 8.
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+        key: Optional key for reconciliation.
+
+    Returns:
+        An ElementNode for the ProgressBar component.
+
+    Example:
+        ProgressBar(value=50, min=0, max=100)
+        ProgressBar(loading=True)  # Indeterminate loading state
+    """
+    ...

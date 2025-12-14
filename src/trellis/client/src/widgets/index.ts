@@ -7,8 +7,10 @@ import { Checkbox } from "./Checkbox";
 import { Column } from "./Column";
 import { CompositionComponent } from "./CompositionComponent";
 import { Divider } from "./Divider";
+import { Heading } from "./Heading";
 import { Label } from "./Label";
 import { NumberInput } from "./NumberInput";
+import { ProgressBar } from "./ProgressBar";
 import { Row } from "./Row";
 import { Select } from "./Select";
 import { Slider } from "./Slider";
@@ -22,8 +24,10 @@ const widgetRegistry: Record<string, React.ComponentType<any>> = {
   Column,
   CompositionComponent,
   Divider,
+  Heading,
   Label,
   NumberInput,
+  ProgressBar,
   Row,
   Select,
   Slider,
@@ -50,8 +54,10 @@ export {
   Column,
   CompositionComponent,
   Divider,
+  Heading,
   Label,
   NumberInput,
+  ProgressBar,
   Row,
   Select,
   Slider,

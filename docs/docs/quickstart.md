@@ -50,8 +50,8 @@ def App() -> None:
     state = Counter()
 
     with w.Column():
-        h.H1("My First Trellis App")
-        h.P(f"Count: {state.count}")
+        w.Heading(text="My First Trellis App")
+        w.Label(text=f"Count: {state.count}")
         w.Button(text="Increment", on_click=state.increment)
 
 
@@ -77,7 +77,7 @@ Open http://127.0.0.1:8000. Click the button—the count updates.
 
 3. **`with w.Column():`** — Components nest using Python's `with` blocks. `Column` arranges children vertically.
 
-4. **`h.H1()`, `h.P()`** — HTML elements. The `h` module provides all standard HTML tags.
+4. **`w.Heading()`, `w.Label()`** — Widgets for displaying text. `Heading` renders semantic HTML headings.
 
 5. **`w.Button(..., on_click=...)`** — A widget with an event handler. When clicked, it calls `state.increment()`.
 

@@ -25,7 +25,7 @@ class AppState(Stateful):
 
 @component
 def Header(name: str) -> None:
-    h.H1(f"Welcome, {name}!")
+    w.Heading(text=f"Welcome, {name}!")
 
 @component
 def App() -> None:
@@ -33,7 +33,7 @@ def App() -> None:
 
     with w.Column():
         Header(name=state.user_name)  # Pass state as prop
-        h.P("Content goes here")
+        w.Label(text="Content goes here")
 ```
 
 The `Header` component re-renders when `user_name` changes, even though it doesn't own the state.
@@ -74,7 +74,7 @@ def App():
     state = CounterState(count=0)
 
     with w.Column(gap=12):
-        h.H2(f"Count: {state.count}")
+        w.Heading(text=f"Count: {state.count}", level=2)
         Controls(
             on_increment=state.increment,
             on_decrement=state.decrement,
@@ -97,11 +97,11 @@ def App() -> None:
 
     with w.Column():
         if state.is_loading:
-            h.P("Loading...")
+            w.Label(text="Loading...")
         elif state.error:
-            h.P(f"Error: {state.error}", style={"color": "red"})
+            w.Label(text=f"Error: {state.error}", color="red")
         else:
-            h.P(f"Data: {state.data}")
+            w.Label(text=f"Data: {state.data}")
 ```
 
 <TrellisPlayground
@@ -123,8 +123,8 @@ def App():
     state = ToggleState(show_details=False)
 
     with w.Column(gap=12):
-        h.H2("Product")
-        h.P("A great product for all your needs.")
+        w.Heading(text="Product", level=2)
+        w.Label(text="A great product for all your needs.")
 
         w.Button(
             text="Hide Details" if state.show_details else "Show Details",
@@ -132,10 +132,10 @@ def App():
         )
 
         if state.show_details:
-            with h.Div(style={"marginTop": "16px", "padding": "12px", "backgroundColor": "#f5f5f5"}):
-                h.P("Price: $99.99")
-                h.P("In stock: Yes")
-                h.P("Ships in 2-3 days")
+            with w.Card():
+                w.Label(text="Price: $99.99")
+                w.Label(text="In stock: Yes")
+                w.Label(text="Ships in 2-3 days")
 
 App = App`}
 />
@@ -151,7 +151,7 @@ def ItemList() -> None:
 
     with w.Column():
         for item in items:
-            h.P(item)
+            w.Label(text=item)
 ```
 
 ### Dynamic Lists with State
@@ -180,14 +180,14 @@ def App():
     state = ListState(items=["First item", "Second item"], counter=3)
 
     with w.Column(gap=12):
-        h.H2("Items")
+        w.Heading(text="Items", level=2)
 
         if not state.items:
-            h.P("No items yet.", style={"color": "#888"})
+            w.Label(text="No items yet.", color="#888")
         else:
             for item in state.items:
                 with w.Row(gap=8, align="center"):
-                    h.Span(item, style={"flex": "1"})
+                    w.Label(text=item, style={"flex": "1"})
                     w.Button(text="Remove", on_click=lambda i=item: state.remove(i), variant="ghost")
 
         w.Button(text="Add Item", on_click=state.add)
@@ -226,8 +226,8 @@ from trellis import widgets as w
 @component
 def Stat(label: str, value: str):
     with w.Row(gap=8):
-        h.Span(f"{label}:", style={"fontWeight": "bold"})
-        h.Span(value)
+        w.Label(text=f"{label}:", bold=True)
+        w.Label(text=value)
 
 @dataclass
 class DashboardState(Stateful):
@@ -243,13 +243,13 @@ def Dashboard():
     state = DashboardState(users=1234, revenue=56789)
 
     with w.Column(gap=16):
-        h.H1("Dashboard")
+        w.Heading(text="Dashboard")
 
-        with w.Card(title="User Stats"):
+        with w.Card():
             Stat(label="Total Users", value=str(state.users))
             Stat(label="Active Today", value="89")
 
-        with w.Card(title="Revenue"):
+        with w.Card():
             Stat(label="Total", value=str(state.revenue))
             Stat(label="This Month", value="$12,345")
 
