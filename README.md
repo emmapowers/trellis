@@ -62,6 +62,11 @@ Trellis aims for both: simple to start, maintainable as applications grow.
 ## Example
 
 ```python
+from dataclasses import dataclass
+from trellis import Stateful, component
+from trellis import html as h
+from trellis import widgets as w
+
 @dataclass
 class Counter(Stateful):
     count: int = 0
@@ -71,9 +76,9 @@ class Counter(Stateful):
 @component
 def App() -> None:
     state = Counter()
-    with Column():
-        h.Span(f"Count: {state.count}")
-        Button(text="Increment", on_click=state.increment)
+    with w.Column():
+        w.Label(text=f"Count: {state.count}", font_size=24)
+        w.Button(text="Increment", on_click=state.increment)
 ```
 
 ## Installation

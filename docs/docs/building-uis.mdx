@@ -66,10 +66,12 @@ h.Div(className="container")
 
 ## Widgets
 
-Widgets are higher-level components built on HTML. They're imported from `trellis.widgets`:
+Widgets are higher-level components built on HTML. Import them from `trellis.widgets`:
 
 ```python
-from trellis.widgets import Button, Column, Row, Slider, Label
+from trellis import widgets as w
+
+w.Button(text="Click me", on_click=handler)
 ```
 
 ### Available Widgets
@@ -77,41 +79,86 @@ from trellis.widgets import Button, Column, Row, Slider, Label
 **Button** — Clickable button with variants:
 
 ```python
-Button(text="Click me", on_click=handler)
-Button(text="Submit", variant="primary")
-Button(text="Delete", variant="danger", disabled=True)
+w.Button(text="Click me", on_click=handler)
+w.Button(text="Submit", variant="primary")
+w.Button(text="Delete", variant="danger", disabled=True)
 ```
 
 Variants: `primary`, `secondary`, `outline`, `ghost`, `danger`
 
+**Card** — Container with border and padding:
+
+```python
+with w.Card(title="Settings"):
+    h.P("Card content goes here")
+```
+
+**Checkbox** — Boolean toggle:
+
+```python
+w.Checkbox(checked=state.enabled, on_change=state.toggle, label="Enable feature")
+```
+
 **Column** — Vertical flex container:
 
 ```python
-with Column():
+with w.Column(gap=16, padding=20):
     h.P("First")
     h.P("Second")
     h.P("Third")
 ```
 
-**Row** — Horizontal flex container:
+Props: `gap`, `padding`, `align`, `justify`
+
+**Divider** — Visual separator:
 
 ```python
-with Row():
-    Button(text="A")
-    Button(text="B")
-    Button(text="C")
-```
-
-**Slider** — Range input:
-
-```python
-Slider(value=state.volume, min=0, max=100, on_change=state.set_volume)
+w.Divider()
 ```
 
 **Label** — Text display:
 
 ```python
-Label(text="Status: Ready")
+w.Label(text="Status: Ready", font_size=14)
+```
+
+**NumberInput** — Numeric input field:
+
+```python
+w.NumberInput(value=state.count, on_change=state.set_count, min=0, max=100)
+```
+
+**Row** — Horizontal flex container:
+
+```python
+with w.Row(gap=8, align="center"):
+    w.Button(text="A")
+    w.Button(text="B")
+    w.Button(text="C")
+```
+
+Props: `gap`, `padding`, `align`, `justify`
+
+**Select** — Dropdown selection:
+
+```python
+w.Select(
+    value=state.choice,
+    options=["Option A", "Option B", "Option C"],
+    on_change=state.set_choice,
+)
+```
+
+**Slider** — Range input:
+
+```python
+w.Slider(value=state.volume, min=0, max=100, on_change=state.set_volume)
+```
+
+**TextInput** — Text input field:
+
+```python
+w.TextInput(value=state.name, on_change=state.set_name, placeholder="Enter name")
 ```
 
 ## Styling
@@ -146,8 +193,8 @@ h.Div(className="card card-primary")
 
 <TrellisPlayground
   title="Styled Card"
-  code={`from trellis.core import component
-from trellis.html import Div, H2, P
+  code={`from trellis import component
+from trellis import html as h
 
 CARD_STYLE = {
     "backgroundColor": "#ffffff",
@@ -169,12 +216,12 @@ TEXT_STYLE = {
 }
 
 @component
-def Card():
-    with Div(style=CARD_STYLE):
-        H2("Card Title", style=TITLE_STYLE)
-        P("This is a styled card component.", style=TEXT_STYLE)
+def StyledCard():
+    with h.Div(style=CARD_STYLE):
+        h.H2("Card Title", style=TITLE_STYLE)
+        h.P("This is a styled card component.", style=TEXT_STYLE)
 
-App = Card`}
+App = StyledCard`}
 />
 
 ## Combining HTML and Widgets
@@ -184,37 +231,36 @@ Mix HTML elements and widgets freely:
 <TrellisPlayground
   title="Mixed UI"
   code={`from dataclasses import dataclass
-from trellis.core import component
-from trellis.core.state import Stateful
-from trellis.html import Div, H1, P, Span
-from trellis.widgets import Button, Column, Row, Slider
+from trellis import Stateful, component
+from trellis import html as h
+from trellis import widgets as w
 
 @dataclass
 class Settings(Stateful):
-    volume: int = 50
-    brightness: int = 75
+    volume: int
+    brightness: int
 
 @component
 def SettingsPanel():
-    state = Settings()
+    state = Settings(volume=50, brightness=75)
 
-    with Div(style={"padding": "20px", "fontFamily": "system-ui"}):
-        H1("Settings", style={"marginBottom": "20px"})
+    with h.Div(style={"padding": "20px", "fontFamily": "system-ui"}):
+        h.H1("Settings", style={"marginBottom": "20px"})
 
-        with Column():
-            with Row():
-                Span("Volume:", style={"width": "100px"})
-                Slider(value=state.volume, min=0, max=100)
-                Span(f"{state.volume}%", style={"width": "50px"})
+        with w.Column(gap=12):
+            with w.Row(gap=8, align="center"):
+                h.Span("Volume:", style={"width": "100px"})
+                w.Slider(value=state.volume, min=0, max=100)
+                h.Span(f"{state.volume}%", style={"width": "50px"})
 
-            with Row():
-                Span("Brightness:", style={"width": "100px"})
-                Slider(value=state.brightness, min=0, max=100)
-                Span(f"{state.brightness}%", style={"width": "50px"})
+            with w.Row(gap=8, align="center"):
+                h.Span("Brightness:", style={"width": "100px"})
+                w.Slider(value=state.brightness, min=0, max=100)
+                h.Span(f"{state.brightness}%", style={"width": "50px"})
 
-            with Row():
-                Button(text="Reset", variant="outline")
-                Button(text="Apply", variant="primary")
+            with w.Row(gap=8):
+                w.Button(text="Reset", variant="outline")
+                w.Button(text="Apply", variant="primary")
 
 App = SettingsPanel`}
 />
