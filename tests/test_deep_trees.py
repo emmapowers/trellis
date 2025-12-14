@@ -130,8 +130,7 @@ class TestDeepTrees:
 
         @component
         def Level(n: int = 0) -> None:
-            state = LevelState()
-            state.level = n
+            LevelState(level=n)
             if n < DEPTH:
                 Level(n=n + 1)
 
@@ -235,8 +234,7 @@ class TestWideTrees:
 
         @component
         def Child(n: int = 0) -> None:
-            state = TrackedState()
-            state.n = n
+            TrackedState(n=n)
 
         @component
         def Parent() -> None:
@@ -351,16 +349,14 @@ class TestMountingOrder:
         def make_level(n: int):
             @component
             def Level() -> None:
-                state = TrackedState()
-                state.level = n
+                TrackedState(level=n)
                 if n < DEPTH:
                     make_level(n + 1)()
             return Level
 
         @component
         def Root() -> None:
-            state = TrackedState()
-            state.level = 0
+            TrackedState(level=0)
             make_level(1)()
 
         ctx = RenderTree(Root)
@@ -383,8 +379,7 @@ class TestMountingOrder:
 
         @component
         def Child(n: int = 0) -> None:
-            state = TrackedState()
-            state.n = n
+            TrackedState(n=n)
 
         @component
         def Container() -> None:

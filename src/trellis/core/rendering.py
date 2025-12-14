@@ -29,6 +29,7 @@ Example:
 from __future__ import annotations
 
 import contextvars
+import logging
 import threading
 import typing as tp
 from dataclasses import dataclass, field
@@ -670,13 +671,7 @@ class RenderTree(ClassWithLock):
         Returns:
             Node with children populated from execution
         """
-        from trellis.core.reconcile import (
-            mount_new_node,
-            mount_node_tree,
-            reconcile_node_children,
-            unmount_node_tree,
-        )
-        from trellis.core.state import clear_node_dependencies
+        from trellis.core.reconcile import reconcile_node_children
 
         # Get state for this node
         state = self.get_element_state(node.id)
@@ -696,7 +691,7 @@ class RenderTree(ClassWithLock):
 
         # Clear existing dependency tracking before re-execution
         # Dependencies will be re-registered fresh during execution
-        clear_node_dependencies(node.id, state.watched_deps)
+        self.clear_node_dependencies(node.id)
 
         # Push a frame for child nodes created during execution
         self.push_descriptor_frame()
@@ -719,7 +714,7 @@ class RenderTree(ClassWithLock):
                     # Initial mount - mount all new children
                     # Don't call hooks here - parent will call mount_node_tree
                     new_children = [
-                        mount_new_node(child, node.id, self, call_hooks=False)
+                        self.mount_new_node(child, node.id, call_hooks=False)
                         for child in child_nodes
                     ]
 
@@ -728,7 +723,7 @@ class RenderTree(ClassWithLock):
                 # mount_node_tree checks state.mounted and skips already-mounted nodes
                 if call_hooks and old_children is not None:
                     for child in new_children:
-                        mount_node_tree(child, self)
+                        self.mount_node_tree(child)
 
                 return dataclass_replace(node, children=tuple(new_children))
 
@@ -736,7 +731,7 @@ class RenderTree(ClassWithLock):
             if old_children:
                 # Had children before but none now - unmount all
                 for child in old_children:
-                    unmount_node_tree(child, self)
+                    self.unmount_node_tree(child)
             return dataclass_replace(node, children=())
 
         except BaseException:
@@ -800,23 +795,18 @@ class RenderTree(ClassWithLock):
         Hooks are called in no particular order since they are just
         convenience methods and don't interact with DOM.
         """
-        from trellis.core.reconcile import call_mount_hooks, call_unmount_hooks
-        from trellis.core.state import clear_node_dependencies
-
         # Process unmounts first (cleanup before new mounts)
         for node_id in self._pending_unmounts:
-            call_unmount_hooks(node_id, self)
+            self.call_unmount_hooks(node_id)
             # Now clean up state (deferred from unmount_node_tree so hooks could access it)
-            state = self._element_state.get(node_id)
-            if state:
-                clear_node_dependencies(node_id, state.watched_deps)
-                self.clear_callbacks_for_node(node_id)
-                self._element_state.pop(node_id, None)
+            self.clear_node_dependencies(node_id)
+            self.clear_callbacks_for_node(node_id)
+            self._element_state.pop(node_id, None)
         self._pending_unmounts.clear()
 
         # Process mounts
         for node_id in self._pending_mounts:
-            call_mount_hooks(node_id, self)
+            self.call_mount_hooks(node_id)
         self._pending_mounts.clear()
 
     def register_callback(
@@ -928,3 +918,156 @@ class RenderTree(ClassWithLock):
             node_id: The node's stable ID to remove
         """
         self._element_state.pop(node_id, None)
+
+    def mount_new_node(
+        self,
+        node: ElementNode,
+        parent_id: str | None,
+        *,
+        call_hooks: bool = True,
+    ) -> ElementNode:
+        """Create and mount a new node.
+
+        Assigns a new ID, creates ElementState, marks dirty for later rendering.
+        The actual component execution happens in _render_dirty_nodes.
+
+        Args:
+            node: The node to mount (will have empty id)
+            parent_id: Parent node's ID
+            call_hooks: Whether to track mount hooks. Set False for internal
+                       reconciliation where parent handles hook tracking.
+
+        Returns:
+            The mounted node with ID assigned (children empty until rendered)
+        """
+        # Assign new ID (keep original children - they're descriptors from with block
+        # that will be passed to render(), then replaced with mounted children)
+        new_id = self.next_element_id()
+        node_with_id = dataclass_replace(node, id=new_id)
+
+        # Create ElementState and mark as mounted
+        # (hooks are deferred but node is conceptually mounted now)
+        state = ElementState(parent_id=parent_id, mounted=True)
+        self._element_state[new_id] = state
+
+        # Mark dirty so _render_dirty_nodes will render this node
+        self.mark_dirty_id(new_id)
+
+        # Track for mount hooks (called after render completes)
+        self.track_mount(new_id)
+
+        # Return node - children are descriptors from with block, will be replaced when rendered
+        return node_with_id
+
+    def mount_node_tree(self, node: ElementNode) -> None:
+        """Mount a node and all its descendants.
+
+        Mounting is performed parent-first. Hooks are tracked for deferred
+        execution after the render phase completes.
+
+        Args:
+            node: The node to mount
+        """
+        state = self._element_state.get(node.id)
+        if state is None or state.mounted:
+            return
+
+        state.mounted = True
+        # Track mount hook (called after render completes)
+        self.track_mount(node.id)
+
+        for child in node.children:
+            self.mount_node_tree(child)
+
+    def unmount_node_tree(self, node: ElementNode) -> None:
+        """Unmount a node and all its descendants.
+
+        Unmounting is performed children-first. Hooks are tracked for deferred
+        execution after the render phase completes. State cleanup is also deferred
+        so hooks can access local_state.
+
+        Args:
+            node: The node to unmount
+        """
+        state = self._element_state.get(node.id)
+        if state is None or not state.mounted:
+            return
+
+        # Unmount children first (depth-first)
+        for child in node.children:
+            self.unmount_node_tree(child)
+
+        # Track unmount hook (called after render completes)
+        # State cleanup is deferred to _process_pending_hooks so hooks can access local_state
+        self.track_unmount(node.id)
+
+        state.mounted = False
+        self._dirty_ids.discard(node.id)
+
+    def call_mount_hooks(self, node_id: str) -> None:
+        """Call on_mount() for all Stateful instances on a node.
+
+        Exceptions are logged but not propagated, to ensure all mount hooks run.
+
+        Args:
+            node_id: The node's ID
+        """
+        state = self._element_state.get(node_id)
+        if state is None:
+            return
+
+        # Get states sorted by call index
+        items = list(state.local_state.items())
+        items.sort(key=lambda x: x[0][1])
+        for _, stateful in items:
+            if hasattr(stateful, "on_mount"):
+                try:
+                    stateful.on_mount()
+                except Exception as e:
+                    logging.exception(f"Error in Stateful.on_mount: {e}")
+
+    def call_unmount_hooks(self, node_id: str) -> None:
+        """Call on_unmount() for all Stateful instances on a node (reverse order).
+
+        Args:
+            node_id: The node's ID
+        """
+        state = self._element_state.get(node_id)
+        if state is None:
+            return
+
+        # Get states sorted by call index, reversed
+        items = list(state.local_state.items())
+        items.sort(key=lambda x: x[0][1], reverse=True)
+        for _, stateful in items:
+            if hasattr(stateful, "on_unmount"):
+                try:
+                    stateful.on_unmount()
+                except Exception as e:
+                    logging.exception(f"Error in Stateful.on_unmount: {e}")
+
+    def clear_node_dependencies(self, node_id: str) -> None:
+        """Clear a node's dependency registrations from all watched Stateful instances.
+
+        Called before a node re-renders (to allow fresh registration) and on unmount
+        (to prevent stale references).
+
+        Args:
+            node_id: The node ID to remove from dependencies
+        """
+        state = self._element_state.get(node_id)
+        if state is None:
+            return
+
+        watched_deps = state.watched_deps
+        for stateful, prop_names in watched_deps.values():
+            try:
+                deps = object.__getattribute__(stateful, "_state_props")
+                for prop_name in prop_names:
+                    if prop_name in deps:
+                        state_info = deps[prop_name]
+                        state_info.node_ids.discard(node_id)
+                        state_info.node_trees.pop(node_id, None)
+            except AttributeError:
+                pass  # Stateful may not have _state_props yet
+        watched_deps.clear()

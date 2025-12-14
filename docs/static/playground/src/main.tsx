@@ -54,13 +54,15 @@ let reactRoot: Root | null = null;
 // Default Example Code
 // ============================================================================
 
-const DEFAULT_CODE = `from trellis.core import component
+const DEFAULT_CODE = `from dataclasses import dataclass
+from trellis.core import component
 from trellis.core.state import Stateful
 from trellis.html import *
 from trellis.widgets import *
 
+@dataclass
 class CounterState(Stateful):
-    count: int = 0
+    count: int
 
     def increment(self):
         self.count += 1
@@ -70,7 +72,7 @@ class CounterState(Stateful):
 
 @component
 def Counter():
-    state = CounterState()
+    state = CounterState(count=0)
 
     with Div(style={"padding": "20px", "fontFamily": "system-ui"}):
         with Column():

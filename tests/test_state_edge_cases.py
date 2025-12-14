@@ -164,8 +164,7 @@ class TestStateLifecycle:
 
         @component
         def Child() -> None:
-            state = TrackedState()
-            state.name = "child_state"
+            TrackedState(name="child_state")
 
         @component
         def App() -> None:
@@ -196,7 +195,6 @@ class TestStateLifecycle:
         def MyComponent() -> None:
             state = MyState()
             state_instances.append(id(state))
-            state.counter += 1
 
         ctx = RenderTree(MyComponent)
         ctx.render()
@@ -218,7 +216,6 @@ class TestHookOrdering:
 
     def test_multiple_state_instances_order(self) -> None:
         """Multiple state instances in same component use call order."""
-        states: list[tuple[str, int]] = []  # (type_name, call_index)
 
         @dataclass
         class StateA(Stateful):
@@ -234,12 +231,9 @@ class TestHookOrdering:
 
         @component
         def MyComponent() -> None:
-            a = StateA()
-            b = StateB()
-            c = StateC()
-            a.value = 1
-            b.value = "hello"
-            c.value = True
+            StateA(value=1)
+            StateB(value="hello")
+            StateC(value=True)
 
         ctx = RenderTree(MyComponent)
         ctx.render()
@@ -258,38 +252,31 @@ class TestHookOrdering:
         class Counter(Stateful):
             value: int = 0
 
-        captured_values: list[list[int]] = []
+        state_ids: list[list[int]] = []  # Track identity via id()
 
         @component
         def MyComponent() -> None:
-            a = Counter()
-            b = Counter()
-            c = Counter()
+            a = Counter(value=1)
+            b = Counter(value=10)
+            c = Counter(value=100)
 
-            # Increment to track identity
-            a.value += 1
-            b.value += 10
-            c.value += 100
-
-            captured_values.append([a.value, b.value, c.value])
+            # Track identity across renders
+            state_ids.append([id(a), id(b), id(c)])
 
         ctx = RenderTree(MyComponent)
         ctx.render()
 
-        # First render
-        assert captured_values[-1] == [1, 10, 100]
-
-        # Re-render - values should accumulate
+        # Re-render - instances should be same
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
-
-        assert captured_values[-1] == [2, 20, 200]
 
         # Third render
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        assert captured_values[-1] == [3, 30, 300]
+        # All renders should use the same instances in the same order
+        assert len(state_ids) == 3
+        assert state_ids[0] == state_ids[1] == state_ids[2]
 
     def test_state_in_loop(self) -> None:
         """State created in a loop gets different instances per iteration."""
@@ -299,12 +286,16 @@ class TestHookOrdering:
         class LoopState(Stateful):
             index: int = -1
 
+        # Track which indices were used on first render
+        first_render_indices: list[int] = []
+
         @component
         def MyComponent() -> None:
             for i in range(count_ref[0]):
-                state = LoopState()
-                if state.index == -1:
-                    state.index = i
+                # Each iteration gets its own cached state instance, keyed by (LoopState, call_index)
+                state = LoopState(index=i)
+                if len(first_render_indices) < count_ref[0]:
+                    first_render_indices.append(state.index)
 
         ctx = RenderTree(MyComponent)
         ctx.render()
@@ -536,11 +527,8 @@ class TestMultipleStateTypes:
 
         @component
         def MyComponent() -> None:
-            base = BaseState()
-            extended = ExtendedState()
-            base.base_value = 1
-            extended.base_value = 2
-            extended.extended_value = "hello"
+            BaseState(base_value=1)
+            ExtendedState(base_value=2, extended_value="hello")
 
         ctx = RenderTree(MyComponent)
         ctx.render()

@@ -48,8 +48,8 @@ Context API example:
 
 from __future__ import annotations
 
-import threading
 import typing as tp
+import weakref
 from dataclasses import dataclass, field
 from types import TracebackType
 
@@ -58,39 +58,15 @@ if tp.TYPE_CHECKING:
 
 from trellis.core.rendering import get_active_render_tree
 
-# Thread-local context stacks for each Stateful subclass.
-# When using `with state:`, the instance is pushed onto its class's stack.
-_context_stacks: dict[type[Stateful], list[Stateful]] = {}
-_context_lock = threading.Lock()
+
+# Sentinel for missing default argument
+class _Missing:
+    """Sentinel to distinguish 'no default provided' from 'default=None'."""
+
+    pass
 
 
-def clear_context_stacks() -> None:
-    """Clear all context stacks. For testing only."""
-    with _context_lock:
-        _context_stacks.clear()
-
-
-def clear_node_dependencies(node_id: str, watched_deps: dict[int, tuple[tp.Any, set[str]]]) -> None:
-    """Clear a node's dependency registrations from all watched Stateful instances.
-
-    Called before a node re-renders (to allow fresh registration) and on unmount
-    (to prevent stale references).
-
-    Args:
-        node_id: The node ID to remove from dependencies
-        watched_deps: Dict mapping id(Stateful) -> (Stateful, {prop_names})
-    """
-    for stateful, prop_names in watched_deps.values():
-        try:
-            deps = object.__getattribute__(stateful, "_state_deps")
-            for prop_name in prop_names:
-                if prop_name in deps:
-                    state_info = deps[prop_name]
-                    state_info.node_ids.discard(node_id)
-                    state_info.node_trees.pop(node_id, None)
-        except AttributeError:
-            pass  # Stateful may not have _state_deps yet
-    watched_deps.clear()
+_MISSING = _Missing()
 
 
 @dataclass(kw_only=True)
@@ -109,8 +85,9 @@ class StatePropertyInfo:
 
     name: str
     node_ids: set[str] = field(default_factory=set)
-    # Map node_id to RenderTree so we can mark dirty outside of render
-    node_trees: dict[str, RenderTree] = field(default_factory=dict)
+    # Map node_id to weakref of RenderTree so we can mark dirty outside of render
+    # Uses weakref so sessions can be garbage collected when closed
+    node_trees: dict[str, weakref.ref[RenderTree]] = field(default_factory=dict)
 
 
 class Stateful:
@@ -132,30 +109,8 @@ class Stateful:
     Accessing state during render registers dependencies for fine-grained updates.
     """
 
-    _state_deps: dict[str, StatePropertyInfo]
+    _state_props: dict[str, StatePropertyInfo]
     _initialized: bool
-
-    def __init_subclass__(cls, **kwargs: tp.Any) -> None:
-        """Set up subclass to skip re-initialization on cached instances.
-
-        When a Stateful subclass is defined, this wraps its `__init__` to
-        check if the instance is already initialized (from cache). If so,
-        initialization is skipped to preserve existing state values.
-
-        This allows the pattern:
-            state = MyState()  # Returns cached instance on re-render
-        without re-initializing the state each time.
-        """
-        super().__init_subclass__(**kwargs)
-        original_init = cls.__init__
-
-        def wrapped_init(self: Stateful, *args: tp.Any, **kw: tp.Any) -> None:
-            if getattr(self, "_initialized", False):
-                return  # Skip - already initialized (cached instance)
-            original_init(self, *args, **kw)
-            object.__setattr__(self, "_initialized", True)
-
-        cls.__init__ = wrapped_init  # type: ignore[assignment,method-assign]
 
     def __new__(cls, *args: tp.Any, **kwargs: tp.Any) -> Stateful:
         """Create or retrieve a cached Stateful instance.
@@ -173,6 +128,21 @@ class Stateful:
         Returns:
             A new or cached Stateful instance
         """
+        # One-time setup: wrap __init__ to skip re-initialization on cached instances.
+        # Done here (not __init_subclass__) so @dataclass has finished setting up __init__.
+        # Check __dict__ directly to avoid inheriting from parent class.
+        if "_init_wrapped" not in cls.__dict__:
+            original_init = cls.__init__
+
+            def wrapped_init(self: Stateful, *a: tp.Any, **kw: tp.Any) -> None:
+                if getattr(self, "_initialized", False):
+                    return  # Skip - cached instance
+                original_init(self, *a, **kw)
+                object.__setattr__(self, "_initialized", True)
+
+            cls.__init__ = wrapped_init  # type: ignore[assignment]
+            cls._init_wrapped = True
+
         ctx = get_active_render_tree()
 
         # Outside execution context - create normally
@@ -217,22 +187,22 @@ class Stateful:
         # Register dependency during execution
         context = get_active_render_tree()
         if context is not None and context._current_node_id is not None:
-            # Lazy init _state_deps (needed when @dataclass doesn't call super().__init__)
+            # Lazy init _state_props (needed when @dataclass doesn't call super().__init__)
             try:
-                deps = object.__getattribute__(self, "_state_deps")
+                deps = object.__getattribute__(self, "_state_props")
             except AttributeError:
                 deps = {}
-                object.__setattr__(self, "_state_deps", deps)
+                object.__setattr__(self, "_state_props", deps)
 
             if name not in deps:
                 deps[name] = StatePropertyInfo(name=name)
             state_info = deps[name]
 
-            # Track by node ID and store RenderTree reference for dirty marking
+            # Track by node ID and store weakref to RenderTree for dirty marking
             node_id = context._current_node_id
             if node_id is not None:
                 state_info.node_ids.add(node_id)
-                state_info.node_trees[node_id] = context
+                state_info.node_trees[node_id] = weakref.ref(context)
 
                 # Register reverse mapping for cleanup on re-render/unmount
                 element_state = context.get_element_state(node_id)
@@ -253,37 +223,65 @@ class Stateful:
         Args:
             name: The attribute name to set
             value: The new value
+
+        Raises:
+            RuntimeError: If called during component rendering. State changes
+                must happen outside render (in callbacks, hooks, timers, etc.)
         """
         # Skip internal attributes - no dirty marking needed
         if name.startswith("_"):
             object.__setattr__(self, name, value)
             return
 
-        # Check if value actually changed (avoid infinite loops during render)
-        try:
-            old_value = object.__getattribute__(self, name)
+        # Check if this is initialization vs modification
+        # Use __dict__ to check instance attributes only (not class defaults from @dataclass)
+        instance_dict = object.__getattribute__(self, "__dict__")
+        if name in instance_dict:
+            old_value = instance_dict[name]
+            is_modification = True
+            # Check if value actually changed
             if old_value == value:
                 return  # Value unchanged, skip dirty marking
-        except AttributeError:
-            pass  # Attribute doesn't exist yet, will be created
+        else:
+            is_modification = False
+
+        # Prevent state modifications during render (but allow initialization)
+        if is_modification:
+            ctx = get_active_render_tree()
+            if ctx is not None and ctx._current_node_id is not None:
+                raise RuntimeError(
+                    f"Cannot modify state '{name}' during render. "
+                    f"State changes must happen outside of component execution "
+                    f"(e.g., in callbacks, mount/unmount hooks, or timers)."
+                )
 
         # Set the value
         object.__setattr__(self, name, value)
 
         # Mark dependent nodes as dirty (if we have deps tracking initialized)
         try:
-            deps = object.__getattribute__(self, "_state_deps")
+            deps = object.__getattribute__(self, "_state_props")
         except AttributeError:
             return  # Not initialized yet
 
         if name in deps:
             state_info = deps[name]
 
-            # Mark node IDs dirty using stored RenderTree references
+            # Mark node IDs dirty using stored RenderTree weakrefs
+            stale_node_ids: list[str] = []
             for node_id in state_info.node_ids:
-                tree = state_info.node_trees.get(node_id)
-                if tree is not None:
-                    tree.mark_dirty_id(node_id)
+                tree_ref = state_info.node_trees.get(node_id)
+                if tree_ref is not None:
+                    tree = tree_ref()
+                    if tree is not None:
+                        tree.mark_dirty_id(node_id)
+                    else:
+                        stale_node_ids.append(node_id)
+
+            # Clean up references to garbage-collected RenderTrees
+            for node_id in stale_node_ids:
+                state_info.node_ids.discard(node_id)
+                state_info.node_trees.pop(node_id, None)
 
     def on_mount(self) -> None:
         """Called after owning element mounts. Override for initialization."""
@@ -301,35 +299,34 @@ class Stateful:
         """Push this state instance onto the context stack for its type.
 
         This makes the instance retrievable by descendant components via
-        `from_context()`. Context is stored on the current node's ElementState
-        (if rendering) so that child components can find it by walking up the tree.
+        `from_context()`. Context is stored on the current node's ElementState.
 
         Example:
             ```python
-            state = AppState(user="alice")
-            with state:
-                # Descendants can access via AppState.from_context()
-                ChildComponent()
+            @component
+            def Parent() -> None:
+                state = AppState(user="alice")
+                with state:
+                    # Descendants can access via AppState.from_context()
+                    ChildComponent()
             ```
 
         Returns:
             This instance (for use in `with ... as` pattern)
+
+        Raises:
+            RuntimeError: If called outside of a render context
         """
-        cls = type(self)
-
-        # If we're inside a render context, store on the current node's ElementState
         ctx = get_active_render_tree()
-        if ctx is not None and ctx._current_node_id is not None:
-            node_id = ctx._current_node_id
-            state = ctx.get_element_state(node_id)
-            state.context[cls] = self
+        if ctx is None or ctx._current_node_id is None:
+            raise RuntimeError(
+                f"Cannot use 'with {type(self).__name__}()' outside of render context. "
+                f"Context API is only available within component execution."
+            )
 
-        # Also push to global stack for non-render usage
-        with _context_lock:
-            if cls not in _context_stacks:
-                _context_stacks[cls] = []
-            _context_stacks[cls].append(self)
-
+        node_id = ctx._current_node_id
+        state = ctx.get_element_state(node_id)
+        state.context[type(self)] = self
         return self
 
     def __exit__(
@@ -338,23 +335,32 @@ class Stateful:
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
-        """Pop this state instance from the context stack.
+        """Exit the context block.
 
         Note: Context stored on nodes is NOT removed here - it persists
         for the lifetime of the node so child components can find it.
         """
-        with _context_lock:
-            cls = type(self)
-            stack = _context_stacks.get(cls)
-            if stack:
-                stack.pop()
+        # Context is stored on the node, not on a stack, so nothing to pop
+        pass
+
+    @tp.overload
+    @classmethod
+    def from_context(cls) -> tp.Self: ...
+
+    @tp.overload
+    @classmethod
+    def from_context(cls, *, default: None) -> tp.Self | None: ...
+
+    @tp.overload
+    @classmethod
+    def from_context(cls, *, default: tp.Self) -> tp.Self: ...
 
     @classmethod
-    def from_context(cls) -> tp.Self:
+    def from_context(cls, *, default: tp.Self | None | _Missing = _MISSING) -> tp.Self | None:
         """Retrieve the nearest ancestor instance of this state type.
 
-        During rendering, walks up the node tree looking for context.
-        Outside rendering, uses the global context stack.
+        Walks up the node tree looking for context. Must be called during
+        component execution within a render context.
 
         Example:
             ```python
@@ -362,65 +368,52 @@ class Stateful:
             def Child() -> None:
                 state = AppState.from_context()  # Get ancestor AppState
                 Label(text=state.user)
+
+            @component
+            def OptionalChild() -> None:
+                # Returns None if no AppState provided
+                state = AppState.from_context(default=None)
+                if state:
+                    Label(text=state.user)
             ```
 
+        Args:
+            default: Value to return if no context found. If not provided,
+                raises LookupError when context is missing.
+
         Returns:
-            The nearest ancestor instance of this type
+            The nearest ancestor instance of this type, or default if not found
 
         Raises:
+            RuntimeError: If called outside of a render context
             LookupError: If no instance of this type is in the context stack
+                and no default was provided
         """
         ctx = get_active_render_tree()
-        if ctx is not None and ctx._current_node_id is not None:
-            # Walk up the parent_id chain with cycle detection
-            node_id: str | None = ctx._current_node_id
-            visited: set[str] = set()
-            while node_id is not None:
-                if node_id in visited:
-                    break  # Cycle detected
-                visited.add(node_id)
-                state = ctx._element_state.get(node_id)
-                if state is not None and cls in state.context:
-                    return tp.cast("tp.Self", state.context[cls])
-                node_id = state.parent_id if state else None
+        if ctx is None or ctx._current_node_id is None:
+            raise RuntimeError(
+                f"Cannot call {cls.__name__}.from_context() outside of render context. "
+                f"Context API is only available within component execution."
+            )
 
-        # Fall back to global stack (for non-render usage)
-        with _context_lock:
-            stack = _context_stacks.get(cls)
-            if stack:
-                return tp.cast("tp.Self", stack[-1])
+        # Walk up the parent_id chain with cycle detection
+        node_id: str | None = ctx._current_node_id
+        visited: set[str] = set()
+        while node_id is not None:
+            if node_id in visited:
+                break  # Cycle detected
+            visited.add(node_id)
+            state = ctx._element_state.get(node_id)
+            if state is not None and cls in state.context:
+                return tp.cast("tp.Self", state.context[cls])
+            node_id = state.parent_id if state else None
+
+        # No context found - return default or raise
+        if not isinstance(default, _Missing):
+            return default
 
         raise LookupError(
             f"No {cls.__name__} found in context. "
             f"Ensure a {cls.__name__} instance is provided via "
             f"'with {cls.__name__}():'"
         )
-
-    @classmethod
-    def try_from_context(cls) -> tp.Self | None:
-        """Retrieve ancestor instance if available, else None.
-
-        Like `from_context()`, but returns None instead of raising if
-        no instance is in the context stack.
-
-        Returns:
-            The nearest ancestor instance, or None if not found
-        """
-        ctx = get_active_render_tree()
-        if ctx is not None and ctx._current_node_id is not None:
-            # Walk up the parent_id chain with cycle detection
-            node_id: str | None = ctx._current_node_id
-            visited: set[str] = set()
-            while node_id is not None:
-                if node_id in visited:
-                    break  # Cycle detected
-                visited.add(node_id)
-                state = ctx._element_state.get(node_id)
-                if state is not None and cls in state.context:
-                    return tp.cast("tp.Self", state.context[cls])
-                node_id = state.parent_id if state else None
-
-        # Fall back to global stack
-        with _context_lock:
-            stack = _context_stacks.get(cls)
-            return tp.cast("tp.Self", stack[-1]) if stack else None

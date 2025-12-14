@@ -285,25 +285,16 @@ class TestThreadSafeStateUpdates:
         """State updates in one render don't affect another concurrent render."""
         results: dict[str, int] = {}
 
-        @dataclass
-        class Counter(Stateful):
-            value: int = 0
-
-        @component
-        def AppWithState(initial: int = 0, name: str = "") -> None:
-            state = Counter()
-            # On first render, state.value will be set
-            if state.value == 0:
-                state.value = initial
-            results[name] = state.value
-
         def render_with_value(initial: int, name: str) -> None:
-            # Create a fresh component for each render to avoid sharing
+            # Create a fresh Counter class per thread to avoid class-level state sharing
+            @dataclass
+            class Counter(Stateful):
+                value: int = 0
+
             @component
             def LocalApp() -> None:
-                state = Counter()
-                if state.value == 0:
-                    state.value = initial
+                # Initialize state via constructor kwargs
+                state = Counter(value=initial)
                 results[name] = state.value
 
             ctx = RenderTree(LocalApp)

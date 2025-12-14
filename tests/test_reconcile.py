@@ -86,13 +86,11 @@ class TestReconciliation:
 
         @component
         def TypeA() -> None:
-            state = TrackedState()
-            state.name = "A"
+            TrackedState(name="A")
 
         @component
         def TypeB() -> None:
-            state = TrackedState()
-            state.name = "B"
+            TrackedState(name="B")
 
         show_a = [True]
 
@@ -131,8 +129,7 @@ class TestReconciliation:
 
         @component
         def Child(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         items = [["a", "b", "c"]]
 
@@ -295,13 +292,11 @@ class TestLifecycleOrder:
 
         @component
         def Child(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         @component
         def Parent() -> None:
-            state = TrackedState()
-            state.name = "parent"
+            TrackedState(name="parent")
             Child(name="child1")
             Child(name="child2")
 
@@ -325,13 +320,11 @@ class TestLifecycleOrder:
 
         @component
         def Child(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         @component
         def InnerParent() -> None:
-            state = TrackedState()
-            state.name = "inner_parent"
+            TrackedState(name="inner_parent")
             Child(name="child1")
             Child(name="child2")
 
@@ -372,26 +365,22 @@ class TestReconciliationAdditional:
 
         @component
         def DeepLeaf(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         @component
         def Middle(prefix: str = "") -> None:
-            state = TrackedState()
-            state.name = f"{prefix}_middle"
+            TrackedState(name=f"{prefix}_middle")
             DeepLeaf(name=f"{prefix}_leaf1")
             DeepLeaf(name=f"{prefix}_leaf2")
 
         @component
         def TypeA() -> None:
-            state = TrackedState()
-            state.name = "a_root"
+            TrackedState(name="a_root")
             Middle(prefix="a")
 
         @component
         def TypeB() -> None:
-            state = TrackedState()
-            state.name = "b_root"
+            TrackedState(name="b_root")
 
         @component
         def Parent() -> None:
@@ -432,8 +421,7 @@ class TestReconciliationAdditional:
 
         @component
         def Child(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         @component
         def Parent() -> None:
@@ -553,8 +541,7 @@ class TestReconciliationAdditional:
 
         @component
         def Child(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         @component
         def Parent() -> None:
@@ -589,8 +576,7 @@ class TestReconciliationAdditional:
 
         @component
         def Child(name: str = "") -> None:
-            state = TrackedState()
-            state.name = name
+            TrackedState(name=name)
 
         @component
         def Parent() -> None:

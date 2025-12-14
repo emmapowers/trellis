@@ -112,12 +112,12 @@ STYLE_SLIDER_VALUE: dict[str, tp.Any] = {
 # =============================================================================
 
 
-@dataclass(kw_only=True)
+@dataclass
 class SliderState(Stateful):
     """State for the slider demo."""
 
-    num_sliders: int = 3
-    value: float = 50
+    num_sliders: int
+    value: float
 
     def reset(self) -> None:
         """Reset to default values."""
@@ -204,7 +204,7 @@ def SliderColumn() -> None:
 @component
 def App() -> None:
     """Main application."""
-    state = SliderState()
+    state = SliderState(num_sliders=3, value=50)
 
     with state:
         with h.Div(style=STYLE_PAGE):

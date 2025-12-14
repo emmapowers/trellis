@@ -37,7 +37,7 @@ class TestStateful:
         ctx.render()
 
         # The component should be registered as dependent on state.text
-        state_info = state._state_deps["text"]
+        state_info = state._state_props["text"]
         assert len(state_info.node_ids) == 1
 
     def test_stateful_marks_dirty_on_change(self) -> None:
@@ -154,39 +154,32 @@ class TestLocalStatePersistence:
     def test_local_state_persists_across_rerenders(self) -> None:
         """State created in a component persists when re-rendered."""
 
-        instances_created = [0]
-
         @dataclass(kw_only=True)
         class CounterState(Stateful):
             count: int = 0
 
-            def __init__(self) -> None:
-                # Track if this is a fresh instance (before super().__init__ sets _initialized)
-                is_new = not getattr(self, "_initialized", False)
-                super().__init__()
-                if is_new:
-                    instances_created[0] += 1
-
-        captured_states: list[Stateful] = []
+        captured_state_ids: list[int] = []
 
         @component
         def Counter() -> None:
             state = CounterState()
-            captured_states.append(state)
+            captured_state_ids.append(id(state))
             _ = state.count  # Access to register dependency
 
         ctx = RenderTree(Counter)
         ctx.render()
 
-        assert instances_created[0] == 1
-
         # Re-render by marking dirty - should reuse same instance
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        assert instances_created[0] == 1  # Still 1, not 2
-        assert len(captured_states) == 2
-        assert captured_states[0] is captured_states[1]  # Same instance
+        # Third render
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        # All renders should return the same state instance
+        assert len(captured_state_ids) == 3
+        assert captured_state_ids[0] == captured_state_ids[1] == captured_state_ids[2]
 
     def test_local_state_values_preserved(self) -> None:
         """State values are preserved across re-renders."""
@@ -196,22 +189,27 @@ class TestLocalStatePersistence:
             count: int = 0
 
         observed_counts: list[int] = []
+        state_ref: list[CounterState] = []
 
         @component
         def Counter() -> None:
             state = CounterState()
-            state.count = state.count  # Initialize on first render
+            state_ref.clear()
+            state_ref.append(state)
             observed_counts.append(state.count)
-            state.count += 1  # Increment each render
 
         ctx = RenderTree(Counter)
         ctx.render()
+        # Increment outside render
+        state_ref[0].count = 1
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
+        # Increment again outside render
+        state_ref[0].count = 2
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        # Should see 0, 1, 2 as count persists and increments
+        # Should see 0, 1, 2 as count persists across re-renders
         assert observed_counts == [0, 1, 2]
 
     def test_multiple_state_instances_same_type(self) -> None:
@@ -221,19 +219,30 @@ class TestLocalStatePersistence:
         class ToggleState(Stateful):
             on: bool = False
 
+        captured: list[ToggleState] = []
+
         @component
         def MultiToggle() -> None:
             first = ToggleState()
             second = ToggleState()
-            first.on = True
-            second.on = False
+            captured.append(first)
+            captured.append(second)
 
         ctx = RenderTree(MultiToggle)
         ctx.render()
 
+        # Verify we got two distinct instances
+        assert len(captured) == 2
+        assert captured[0] is not captured[1]
+
         # Re-render - each should get its own cached instance
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
+
+        # Should return same instances on re-render
+        assert len(captured) == 4
+        assert captured[0] is captured[2]  # first instance reused
+        assert captured[1] is captured[3]  # second instance reused
 
         # Check that we have 2 distinct state entries in the root element's cache
         root_state = ctx._element_state[ctx.root_node.id]
@@ -256,13 +265,14 @@ class TestLocalStatePersistence:
         class ExtendedState(BaseState):
             extra: str = ""
 
+        captured: list[Stateful] = []
+
         @component
         def MyComponent() -> None:
             base = BaseState()
             extended = ExtendedState()
-            base.value = 10
-            extended.value = 20
-            extended.extra = "hello"
+            captured.append(base)
+            captured.append(extended)
 
         ctx = RenderTree(MyComponent)
         ctx.render()
@@ -276,12 +286,16 @@ class TestLocalStatePersistence:
         assert len(base_keys) == 1
         assert len(ext_keys) == 1
 
+        # Set values outside of render
+        base_instance = local_state[base_keys[0]]
+        ext_instance = local_state[ext_keys[0]]
+        base_instance.value = 10
+        ext_instance.value = 20
+        ext_instance.extra = "hello"
+
         # Values should be preserved on re-render
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
-
-        base_instance = local_state[base_keys[0]]
-        ext_instance = local_state[ext_keys[0]]
 
         assert base_instance.value == 10
         assert ext_instance.value == 20
@@ -323,8 +337,8 @@ class TestStateDependencyTracking:
         ctx.render()
 
         # Check that node_id was recorded in state deps
-        assert "value" in state._state_deps
-        deps = state._state_deps["value"]
+        assert "value" in state._state_props
+        deps = state._state_props["value"]
         assert ctx.root_node.id in deps.node_ids
 
     def test_node_trees_dict_populated(self) -> None:
@@ -343,10 +357,11 @@ class TestStateDependencyTracking:
         ctx = RenderTree(Counter)
         ctx.render()
 
-        # Check that the RenderTree is recorded for this node
-        deps = state._state_deps["counter"]
+        # Check that the RenderTree weakref is recorded for this node
+        deps = state._state_props["counter"]
         assert ctx.root_node.id in deps.node_trees
-        assert deps.node_trees[ctx.root_node.id] is ctx
+        # node_trees stores weakrefs to allow RenderTree garbage collection
+        assert deps.node_trees[ctx.root_node.id]() is ctx
 
     def test_child_and_parent_track_same_state(self) -> None:
         """Parent and child accessing same state are tracked independently."""
@@ -373,7 +388,7 @@ class TestStateDependencyTracking:
         child_id = ctx.root_node.children[0].id
 
         # Both nodes should be tracked
-        deps = state._state_deps["value"]
+        deps = state._state_props["value"]
         assert parent_id in deps.node_ids
         assert child_id in deps.node_ids
         assert len(deps.node_ids) == 2
@@ -432,14 +447,14 @@ class TestStateDependencyTracking:
         node_id = ctx.root_node.id
 
         # Verify dependency exists
-        assert node_id in state._state_deps["value"].node_ids
+        assert node_id in state._state_props["value"].node_ids
 
         # Re-render
         ctx.mark_dirty_id(node_id)
         ctx.render()
 
         # Dependency should still exist
-        assert node_id in state._state_deps["value"].node_ids
+        assert node_id in state._state_props["value"].node_ids
 
     def test_multiple_properties_tracked_independently(self) -> None:
         """Different properties track dependencies independently."""
@@ -471,12 +486,12 @@ class TestStateDependencyTracking:
         count_id = ctx.root_node.children[1].id
 
         # Check name deps
-        name_deps = state._state_deps["name"]
+        name_deps = state._state_props["name"]
         assert name_id in name_deps.node_ids
         assert count_id not in name_deps.node_ids
 
         # Check count deps
-        count_deps = state._state_deps["count"]
+        count_deps = state._state_props["count"]
         assert count_id in count_deps.node_ids
         assert name_id not in count_deps.node_ids
 
@@ -506,7 +521,7 @@ class TestStateDependencyTracking:
         consumer_id = ctx.root_node.children[0].id
 
         # Verify consumer is tracking state
-        assert consumer_id in state._state_deps["value"].node_ids
+        assert consumer_id in state._state_props["value"].node_ids
 
         # Unmount Consumer by removing it
         show_consumer[0] = False
@@ -514,8 +529,8 @@ class TestStateDependencyTracking:
         ctx.render()
 
         # Consumer's dependency should be cleaned up
-        assert consumer_id not in state._state_deps["value"].node_ids
-        assert consumer_id not in state._state_deps["value"].node_trees
+        assert consumer_id not in state._state_props["value"].node_ids
+        assert consumer_id not in state._state_props["value"].node_trees
 
     def test_dependency_cleanup_on_rerender_without_read(self) -> None:
         """Dependencies are cleaned up when component stops reading state."""
@@ -538,7 +553,7 @@ class TestStateDependencyTracking:
         node_id = ctx.root_node.id
 
         # Initially tracking
-        assert node_id in state._state_deps["value"].node_ids
+        assert node_id in state._state_props["value"].node_ids
 
         # Stop reading state and re-render
         read_state[0] = False
@@ -546,4 +561,4 @@ class TestStateDependencyTracking:
         ctx.render()
 
         # No longer tracking (cleared before render, not re-registered)
-        assert node_id not in state._state_deps["value"].node_ids
+        assert node_id not in state._state_props["value"].node_ids

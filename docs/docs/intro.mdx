@@ -15,13 +15,15 @@ Trellis lets you build web UIs entirely in Python. Your components run on the se
 
 <TrellisPlayground
   title="Counter Example"
-  code={`from trellis.core import component
+  code={`from dataclasses import dataclass
+from trellis.core import component
 from trellis.core.state import Stateful
 from trellis.html import Div, P, H1
 from trellis.widgets import Button, Column, Row
 
+@dataclass
 class CounterState(Stateful):
-    count: int = 0
+    count: int
 
     def increment(self):
         self.count += 1
@@ -31,7 +33,7 @@ class CounterState(Stateful):
 
 @component
 def Counter():
-    state = CounterState()
+    state = CounterState(count=0)
 
     with Div(style={"padding": "20px", "fontFamily": "system-ui"}):
         with Column():
