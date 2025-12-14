@@ -68,7 +68,10 @@ function serializeEventArg(arg: unknown): unknown {
       syntheticEvent.target &&
       typeof syntheticEvent.target === "object"
     ) {
-      const target = syntheticEvent.target as HTMLInputElement;
+      const target = syntheticEvent.target as
+        | HTMLInputElement
+        | HTMLTextAreaElement
+        | HTMLSelectElement;
       return {
         ...base,
         value: target.value ?? "",
