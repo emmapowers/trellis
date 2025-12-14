@@ -119,3 +119,169 @@ def Slider(
         Slider(value=50, min=0, max=100, on_change=handle_change)
     """
     ...
+
+
+@react_component_base("TextInput")
+def TextInput(
+    value: str = "",
+    *,
+    placeholder: str | None = None,
+    on_change: Callable[[str], None] | None = None,
+    disabled: bool = False,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Single-line text input widget.
+
+    Args:
+        value: Current input value.
+        placeholder: Placeholder text when empty.
+        on_change: Callback invoked with new value when input changes.
+        disabled: Whether the input is disabled.
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+        key: Optional key for reconciliation.
+
+    Returns:
+        An ElementNode for the TextInput component.
+
+    Example:
+        TextInput(value="hello", placeholder="Enter text...", on_change=handle_change)
+    """
+    ...
+
+
+@react_component_base("NumberInput")
+def NumberInput(
+    *,
+    value: float | None = None,
+    min: float | None = None,
+    max: float | None = None,
+    step: float | None = None,
+    on_change: Callable[[float], None] | None = None,
+    disabled: bool = False,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Numeric input widget.
+
+    Args:
+        value: Current numeric value.
+        min: Minimum allowed value.
+        max: Maximum allowed value.
+        step: Step increment for value changes.
+        on_change: Callback invoked with new value when input changes.
+        disabled: Whether the input is disabled.
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+        key: Optional key for reconciliation.
+
+    Returns:
+        An ElementNode for the NumberInput component.
+
+    Example:
+        NumberInput(value=42, min=0, max=100, step=1, on_change=handle_change)
+    """
+    ...
+
+
+@react_component_base("Checkbox")
+def Checkbox(
+    *,
+    checked: bool = False,
+    label: str | None = None,
+    on_change: Callable[[bool], None] | None = None,
+    disabled: bool = False,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Checkbox toggle widget.
+
+    Args:
+        checked: Whether the checkbox is checked.
+        label: Optional label text displayed next to the checkbox.
+        on_change: Callback invoked with new checked state when toggled.
+        disabled: Whether the checkbox is disabled.
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+        key: Optional key for reconciliation.
+
+    Returns:
+        An ElementNode for the Checkbox component.
+
+    Example:
+        Checkbox(checked=True, label="Enable feature", on_change=handle_toggle)
+    """
+    ...
+
+
+@react_component_base("Divider")
+def Divider(
+    *,
+    orientation: tp.Literal["horizontal", "vertical"] = "horizontal",
+    margin: int | None = None,
+    color: str | None = None,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Divider line for separating content.
+
+    Args:
+        orientation: Direction of the divider. Use "horizontal" in Column,
+            "vertical" in Row. Defaults to "horizontal".
+        margin: Margin in pixels (vertical for horizontal, horizontal for vertical).
+            Defaults to 16.
+        color: Line color (CSS color string). Defaults to #334155.
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+        key: Optional key for reconciliation.
+
+    Returns:
+        An ElementNode for the Divider component.
+
+    Example:
+        Divider()  # horizontal divider
+        Divider(orientation="vertical", margin=12)  # vertical divider in a Row
+    """
+    ...
+
+
+@react_component_base("Select")
+def Select(
+    *,
+    value: str | None = None,
+    options: list[dict[str, str]] | None = None,
+    on_change: Callable[[str], None] | None = None,
+    placeholder: str | None = None,
+    disabled: bool = False,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Single-selection dropdown widget.
+
+    Args:
+        value: Currently selected value.
+        options: List of option dicts with "value" and "label" keys.
+        on_change: Callback invoked with selected value when selection changes.
+        placeholder: Placeholder text when no value selected.
+        disabled: Whether the select is disabled.
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+        key: Optional key for reconciliation.
+
+    Returns:
+        An ElementNode for the Select component.
+
+    Example:
+        Select(
+            value="opt1",
+            options=[{"value": "opt1", "label": "Option 1"}, {"value": "opt2", "label": "Option 2"}],
+            on_change=handle_select,
+        )
+    """
+    ...

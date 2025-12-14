@@ -3,7 +3,19 @@
 from trellis.core.composition_component import component
 from trellis.core.rendering import RenderTree
 from trellis.core.serialization import serialize_node
-from trellis.widgets import Button, Column, Label, Row, Slider
+from trellis.widgets import (
+    Button,
+    Card,
+    Checkbox,
+    Column,
+    Divider,
+    Label,
+    NumberInput,
+    Row,
+    Select,
+    Slider,
+    TextInput,
+)
 
 
 class TestLayoutWidgets:
@@ -313,3 +325,313 @@ class TestWidgetSerialization:
         assert label_data["type"] == "Label"
         assert row_data["type"] == "Row"
         assert len(row_data["children"]) == 2
+
+
+class TestInputWidgets:
+    """Tests for TextInput, NumberInput, Checkbox, and Select widgets."""
+
+    def test_text_input_with_value(self) -> None:
+        """TextInput stores value and placeholder props."""
+
+        @component
+        def App() -> None:
+            TextInput(value="hello", placeholder="Enter text...")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        text_input = ctx.root_node.children[0]
+        assert text_input.component.name == "TextInput"
+        assert text_input.properties["value"] == "hello"
+        assert text_input.properties["placeholder"] == "Enter text..."
+
+    def test_text_input_with_callback(self) -> None:
+        """TextInput captures on_change callback."""
+        values: list[str] = []
+
+        @component
+        def App() -> None:
+            TextInput(value="test", on_change=lambda v: values.append(v))
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        text_input = ctx.root_node.children[0]
+        assert callable(text_input.properties["on_change"])
+
+        text_input.properties["on_change"]("new value")
+        assert values == ["new value"]
+
+    def test_text_input_disabled(self) -> None:
+        """TextInput accepts disabled prop."""
+
+        @component
+        def App() -> None:
+            TextInput(disabled=True)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        text_input = ctx.root_node.children[0]
+        assert text_input.properties["disabled"] is True
+
+    def test_number_input_with_value(self) -> None:
+        """NumberInput stores value and range props."""
+
+        @component
+        def App() -> None:
+            NumberInput(value=42, min=0, max=100, step=1)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        number_input = ctx.root_node.children[0]
+        assert number_input.component.name == "NumberInput"
+        assert number_input.properties["value"] == 42
+        assert number_input.properties["min"] == 0
+        assert number_input.properties["max"] == 100
+        assert number_input.properties["step"] == 1
+
+    def test_number_input_with_callback(self) -> None:
+        """NumberInput captures on_change callback."""
+        values: list[float] = []
+
+        @component
+        def App() -> None:
+            NumberInput(value=10, on_change=lambda v: values.append(v))
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        number_input = ctx.root_node.children[0]
+        assert callable(number_input.properties["on_change"])
+
+        number_input.properties["on_change"](25.5)
+        assert values == [25.5]
+
+    def test_number_input_disabled(self) -> None:
+        """NumberInput accepts disabled prop."""
+
+        @component
+        def App() -> None:
+            NumberInput(disabled=True)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        number_input = ctx.root_node.children[0]
+        assert number_input.properties["disabled"] is True
+
+    def test_checkbox_with_checked(self) -> None:
+        """Checkbox stores checked and label props."""
+
+        @component
+        def App() -> None:
+            Checkbox(checked=True, label="Enable feature")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        checkbox = ctx.root_node.children[0]
+        assert checkbox.component.name == "Checkbox"
+        assert checkbox.properties["checked"] is True
+        assert checkbox.properties["label"] == "Enable feature"
+
+    def test_checkbox_with_callback(self) -> None:
+        """Checkbox captures on_change callback."""
+        states: list[bool] = []
+
+        @component
+        def App() -> None:
+            Checkbox(checked=False, on_change=lambda v: states.append(v))
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        checkbox = ctx.root_node.children[0]
+        assert callable(checkbox.properties["on_change"])
+
+        checkbox.properties["on_change"](True)
+        assert states == [True]
+
+    def test_checkbox_disabled(self) -> None:
+        """Checkbox accepts disabled prop."""
+
+        @component
+        def App() -> None:
+            Checkbox(disabled=True)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        checkbox = ctx.root_node.children[0]
+        assert checkbox.properties["disabled"] is True
+
+    def test_select_with_options(self) -> None:
+        """Select stores value and options props."""
+
+        @component
+        def App() -> None:
+            Select(
+                value="opt1",
+                options=[
+                    {"value": "opt1", "label": "Option 1"},
+                    {"value": "opt2", "label": "Option 2"},
+                ],
+                placeholder="Choose...",
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        select = ctx.root_node.children[0]
+        assert select.component.name == "Select"
+        assert select.properties["value"] == "opt1"
+        assert len(select.properties["options"]) == 2
+        assert select.properties["placeholder"] == "Choose..."
+
+    def test_select_with_callback(self) -> None:
+        """Select captures on_change callback."""
+        selections: list[str] = []
+
+        @component
+        def App() -> None:
+            Select(
+                value="opt1",
+                options=[{"value": "opt1", "label": "Option 1"}],
+                on_change=lambda v: selections.append(v),
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        select = ctx.root_node.children[0]
+        assert callable(select.properties["on_change"])
+
+        select.properties["on_change"]("opt2")
+        assert selections == ["opt2"]
+
+    def test_select_disabled(self) -> None:
+        """Select accepts disabled prop."""
+
+        @component
+        def App() -> None:
+            Select(disabled=True)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        select = ctx.root_node.children[0]
+        assert select.properties["disabled"] is True
+
+
+class TestCardAndDivider:
+    """Tests for Card and Divider widgets."""
+
+    def test_card_renders_children(self) -> None:
+        """Card component renders its children."""
+
+        @component
+        def App() -> None:
+            with Card():
+                Label(text="Inside card")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        card = ctx.root_node.children[0]
+        assert card.component.name == "Card"
+        assert len(card.children) == 1
+        assert card.children[0].component.name == "Label"
+
+    def test_card_with_padding(self) -> None:
+        """Card accepts padding prop."""
+
+        @component
+        def App() -> None:
+            with Card(padding=32):
+                Label(text="Content")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        card = ctx.root_node.children[0]
+        assert card.properties["padding"] == 32
+
+    def test_card_nested_in_layout(self) -> None:
+        """Card can be nested inside layout widgets."""
+
+        @component
+        def App() -> None:
+            with Column():
+                with Card():
+                    Label(text="Card 1")
+                with Card():
+                    Label(text="Card 2")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        column = ctx.root_node.children[0]
+        assert len(column.children) == 2
+        assert column.children[0].component.name == "Card"
+        assert column.children[1].component.name == "Card"
+
+    def test_divider_renders(self) -> None:
+        """Divider component renders."""
+
+        @component
+        def App() -> None:
+            Divider()
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        divider = ctx.root_node.children[0]
+        assert divider.component.name == "Divider"
+
+    def test_divider_with_props(self) -> None:
+        """Divider accepts margin and color props."""
+
+        @component
+        def App() -> None:
+            Divider(margin=24, color="#6366f1")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        divider = ctx.root_node.children[0]
+        assert divider.properties["margin"] == 24
+        assert divider.properties["color"] == "#6366f1"
+
+    def test_divider_vertical_orientation(self) -> None:
+        """Divider accepts orientation prop."""
+
+        @component
+        def App() -> None:
+            Divider(orientation="vertical")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        divider = ctx.root_node.children[0]
+        assert divider.properties["orientation"] == "vertical"
+
+    def test_divider_in_layout(self) -> None:
+        """Divider can separate content in a layout."""
+
+        @component
+        def App() -> None:
+            with Column():
+                Label(text="Above")
+                Divider()
+                Label(text="Below")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        column = ctx.root_node.children[0]
+        assert len(column.children) == 3
+        assert column.children[0].component.name == "Label"
+        assert column.children[1].component.name == "Divider"
+        assert column.children[2].component.name == "Label"

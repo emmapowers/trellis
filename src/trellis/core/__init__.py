@@ -17,8 +17,7 @@ State:
 
 Example:
     ```python
-    from trellis.core import component, RenderTree
-    from trellis.core.state import Stateful
+    from trellis.core import component, RenderTree, Stateful
 
     @dataclass(kw_only=True)
     class AppState(Stateful):
@@ -41,8 +40,22 @@ See Also:
     - `trellis.core.reconcile`: Tree reconciliation algorithm
 """
 
-from trellis.core.base_component import *
-from trellis.core.composition_component import *
-from trellis.core.message_handler import *
-from trellis.core.react_component import *
-from trellis.core.rendering import *
+from trellis.core.base_component import Component
+from trellis.core.composition_component import CompositionComponent, component
+from trellis.core.message_handler import MessageHandler
+from trellis.core.react_component import ReactComponentBase, react_component_base
+from trellis.core.rendering import ElementNode, ElementState, RenderTree
+from trellis.core.state import Stateful
+
+__all__ = [
+    "Component",
+    "CompositionComponent",
+    "ElementNode",
+    "ElementState",
+    "MessageHandler",
+    "ReactComponentBase",
+    "RenderTree",
+    "Stateful",
+    "component",
+    "react_component_base",
+]

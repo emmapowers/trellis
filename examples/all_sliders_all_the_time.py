@@ -9,13 +9,8 @@ from __future__ import annotations
 import typing as tp
 from dataclasses import dataclass
 
-from trellis import Trellis
-from trellis import html as h
-from trellis.core.composition_component import component
-from trellis.core.state import Stateful
-from trellis.html.events import ChangeEvent
-from trellis.utils.async_main import async_main
-from trellis.widgets import Button, Column, Row, Slider
+from trellis import Stateful, Trellis, async_main, component
+from trellis import widgets as w
 
 # =============================================================================
 # Styles
@@ -24,86 +19,8 @@ from trellis.widgets import Button, Column, Row, Slider
 STYLE_PAGE: dict[str, tp.Any] = {
     "backgroundColor": "#0f172a",
     "minHeight": "100vh",
-    "display": "flex",
-    "flexDirection": "column",
-    "alignItems": "center",
     "fontFamily": "'Inter', system-ui, -apple-system, sans-serif",
     "padding": "24px",
-}
-
-STYLE_CARD: dict[str, tp.Any] = {
-    "backgroundColor": "#1e293b",
-    "borderRadius": "16px",
-    "padding": "24px",
-    "boxShadow": "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-    "border": "1px solid #334155",
-    "width": "400px",
-    "marginBottom": "24px",
-}
-
-STYLE_TITLE: dict[str, tp.Any] = {
-    "color": "#f1f5f9",
-    "fontSize": "24px",
-    "fontWeight": "700",
-    "margin": "0 0 16px 0",
-    "textAlign": "center",
-}
-
-STYLE_CONTROL_ROW: dict[str, tp.Any] = {
-    "display": "flex",
-    "alignItems": "center",
-    "gap": "12px",
-    "marginBottom": "12px",
-}
-
-STYLE_LABEL: dict[str, tp.Any] = {
-    "color": "#94a3b8",
-    "fontSize": "14px",
-    "width": "100px",
-}
-
-STYLE_INPUT: dict[str, tp.Any] = {
-    "backgroundColor": "#0f172a",
-    "border": "1px solid #334155",
-    "borderRadius": "8px",
-    "padding": "8px 12px",
-    "color": "#f1f5f9",
-    "fontSize": "14px",
-    "width": "80px",
-    "outline": "none",
-}
-
-STYLE_SLIDERS_CONTAINER: dict[str, tp.Any] = {
-    "backgroundColor": "#1e293b",
-    "borderRadius": "16px",
-    "padding": "24px",
-    "boxShadow": "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-    "border": "1px solid #334155",
-    "width": "400px",
-    "maxHeight": "60vh",
-    "overflowY": "auto",
-}
-
-STYLE_SLIDER_ROW: dict[str, tp.Any] = {
-    "display": "flex",
-    "alignItems": "center",
-    "gap": "12px",
-    "marginBottom": "8px",
-}
-
-STYLE_SLIDER_LABEL: dict[str, tp.Any] = {
-    "color": "#64748b",
-    "fontSize": "12px",
-    "width": "60px",
-    "textAlign": "right",
-}
-
-STYLE_SLIDER_VALUE: dict[str, tp.Any] = {
-    "color": "#f1f5f9",
-    "fontSize": "14px",
-    "fontWeight": "600",
-    "fontVariantNumeric": "tabular-nums",
-    "width": "40px",
 }
 
 
@@ -143,41 +60,40 @@ def ControlPanel() -> None:
     """Top control panel with inputs and reset button."""
     state = SliderState.from_context()
 
-    def handle_num_change(event: ChangeEvent) -> None:
-        try:
-            state.set_num_sliders(int(event.value))
-        except ValueError:
-            pass
+    def handle_num_change(value: float) -> None:
+        state.set_num_sliders(int(value))
 
-    def handle_value_change(event: ChangeEvent) -> None:
-        try:
-            state.set_value(float(event.value))
-        except ValueError:
-            pass
+    def handle_value_change(value: float) -> None:
+        state.set_value(value)
 
-    with h.Div(style=STYLE_CARD):
-        h.H2("Slider Performance Test", style=STYLE_TITLE)
+    with w.Card(padding=24, style={"width": "400px", "marginBottom": "24px"}):
+        w.Label(
+            text="Slider Performance Test",
+            font_size=24,
+            color="#f1f5f9",
+            bold=True,
+            style={"textAlign": "center", "display": "block", "marginBottom": "16px"},
+        )
 
-        with h.Div(style=STYLE_CONTROL_ROW):
-            h.Span("Num Sliders:", style=STYLE_LABEL)
-            h.Input(
-                type="number",
-                value=str(state.num_sliders),
-                onChange=handle_num_change,
-                style=STYLE_INPUT,
+        with w.Row(gap=12, align="center", style={"marginBottom": "12px"}):
+            w.Label(text="Num Sliders:", color="#94a3b8", style={"width": "100px"})
+            w.NumberInput(
+                value=float(state.num_sliders),
+                min=1,
+                on_change=handle_num_change,
+                style={"width": "80px"},
             )
 
-        with h.Div(style=STYLE_CONTROL_ROW):
-            h.Span("Value:", style=STYLE_LABEL)
-            h.Input(
-                type="number",
-                value=str(int(state.value)),
-                onChange=handle_value_change,
-                style=STYLE_INPUT,
+        with w.Row(gap=12, align="center", style={"marginBottom": "12px"}):
+            w.Label(text="Value:", color="#94a3b8", style={"width": "100px"})
+            w.NumberInput(
+                value=state.value,
+                on_change=handle_value_change,
+                style={"width": "80px"},
             )
 
-        with Row(justify="center", gap=12):
-            Button(text="Reset", on_click=state.reset, variant="outline")
+        with w.Row(justify="center", gap=12):
+            w.Button(text="Reset", on_click=state.reset, variant="outline")
 
 
 @component
@@ -185,12 +101,20 @@ def SliderColumn() -> None:
     """Column of sliders."""
     state = SliderState.from_context()
 
-    with h.Div(style=STYLE_SLIDERS_CONTAINER):
-        with Column(gap=4):
+    with w.Card(
+        padding=24,
+        style={"width": "400px", "maxHeight": "60vh", "overflowY": "auto"},
+    ):
+        with w.Column(gap=4):
             for i in range(state.num_sliders):
-                with h.Div(style=STYLE_SLIDER_ROW, key=f"slider-row-{i}"):
-                    h.Span(f"#{i + 1}", style=STYLE_SLIDER_LABEL)
-                    Slider(
+                with w.Row(gap=12, align="center", key=f"slider-row-{i}"):
+                    w.Label(
+                        text=f"#{i + 1}",
+                        font_size=12,
+                        color="#64748b",
+                        style={"width": "60px", "textAlign": "right"},
+                    )
+                    w.Slider(
                         value=state.value,
                         min=1,
                         max=100,
@@ -198,7 +122,13 @@ def SliderColumn() -> None:
                         on_change=state.set_value,
                         key=f"slider-{i}",
                     )
-                    h.Span(str(int(state.value)), style=STYLE_SLIDER_VALUE)
+                    w.Label(
+                        text=str(int(state.value)),
+                        font_size=14,
+                        color="#f1f5f9",
+                        bold=True,
+                        style={"fontVariantNumeric": "tabular-nums", "width": "40px"},
+                    )
 
 
 @component
@@ -207,7 +137,7 @@ def App() -> None:
     state = SliderState(num_sliders=3, value=50)
 
     with state:
-        with h.Div(style=STYLE_PAGE):
+        with w.Column(style=STYLE_PAGE, align="center"):
             ControlPanel()
             SliderColumn()
 

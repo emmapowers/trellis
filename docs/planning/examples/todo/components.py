@@ -3,11 +3,10 @@
 from dataclasses import dataclass, field
 from datetime import date
 
-from trellis import mutable
-from trellis.core.composition_component import component
-from trellis.core.rendering import Element
-from trellis.core.state import Stateful
+from trellis import Stateful, component
 from trellis import widgets as w
+from trellis.core.rendering import Element
+from trellis.mutable import mutable  # Planned feature
 
 from .models import FilterType
 from .state import TodosState

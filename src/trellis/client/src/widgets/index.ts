@@ -1,21 +1,33 @@
 /** Widget registry for mapping component names to React components. */
 
 import React from "react";
-import { Column } from "./Column";
-import { Row } from "./Row";
-import { Label } from "./Label";
 import { Button } from "./Button";
-import { Slider } from "./Slider";
+import { Card } from "./Card";
+import { Checkbox } from "./Checkbox";
+import { Column } from "./Column";
 import { CompositionComponent } from "./CompositionComponent";
+import { Divider } from "./Divider";
+import { Label } from "./Label";
+import { NumberInput } from "./NumberInput";
+import { Row } from "./Row";
+import { Select } from "./Select";
+import { Slider } from "./Slider";
+import { TextInput } from "./TextInput";
 
 // Registry maps component type names to React components
 const widgetRegistry: Record<string, React.ComponentType<any>> = {
-  Column,
-  Row,
-  Label,
   Button,
-  Slider,
+  Card,
+  Checkbox,
+  Column,
   CompositionComponent,
+  Divider,
+  Label,
+  NumberInput,
+  Row,
+  Select,
+  Slider,
+  TextInput,
 };
 
 export function getWidget(
@@ -31,4 +43,17 @@ export function registerWidget(
   widgetRegistry[name] = component;
 }
 
-export { Column, Row, Label, Button, Slider, CompositionComponent };
+export {
+  Button,
+  Card,
+  Checkbox,
+  Column,
+  CompositionComponent,
+  Divider,
+  Label,
+  NumberInput,
+  Row,
+  Select,
+  Slider,
+  TextInput,
+};

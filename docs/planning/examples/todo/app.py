@@ -7,9 +7,7 @@ due dates, and tag categorization.
 Run with: python -m docs.planning.examples.todo.app
 """
 
-from trellis import Trellis
-from trellis.core.composition_component import component
-from trellis.utils import async_main
+from trellis import Trellis, async_main, component
 
 from .components import TodoApp
 from .state import TodosState

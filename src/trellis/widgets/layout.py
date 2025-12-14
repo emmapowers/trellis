@@ -78,3 +78,33 @@ def Row(
             Button(text="Right")
     """
     ...
+
+
+@react_component_base("Card", has_children=True)
+def Card(
+    *,
+    padding: int | None = None,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Visual container with card styling.
+
+    Renders children inside a styled container with background, border,
+    and shadow. Use as a context manager to add children.
+
+    Args:
+        padding: Inner padding in pixels. Defaults to 24.
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+        key: Optional key for reconciliation.
+
+    Returns:
+        An ElementNode for the Card component.
+
+    Example:
+        with Card(padding=16):
+            Label(text="Card content")
+            Button(text="Action")
+    """
+    ...
