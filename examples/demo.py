@@ -11,7 +11,7 @@ from trellis import Trellis, html as h
 from trellis.core.composition_component import component
 from trellis.core.state import Stateful
 from trellis.utils.async_main import async_main
-from trellis.widgets import Button
+from trellis.widgets import Button, Card, Column, Divider, Label, Row
 
 # =============================================================================
 # Styles
@@ -20,47 +20,8 @@ from trellis.widgets import Button
 STYLE_PAGE = {
     "backgroundColor": "#0f172a",
     "minHeight": "100vh",
-    "display": "flex",
-    "alignItems": "center",
-    "justifyContent": "center",
     "fontFamily": "'Inter', system-ui, -apple-system, sans-serif",
     "padding": "24px",
-}
-
-STYLE_CARD = {
-    "backgroundColor": "#1e293b",
-    "borderRadius": "16px",
-    "padding": "40px",
-    "boxShadow": "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-    "border": "1px solid #334155",
-    "width": "320px",
-}
-
-STYLE_HEADER = {
-    "textAlign": "center",
-    "marginBottom": "32px",
-}
-
-STYLE_TITLE = {
-    "color": "#f1f5f9",
-    "fontSize": "28px",
-    "fontWeight": "700",
-    "margin": "0 0 8px 0",
-    "letterSpacing": "-0.025em",
-}
-
-STYLE_SUBTITLE = {
-    "color": "#94a3b8",
-    "fontSize": "14px",
-    "margin": "0",
-}
-
-STYLE_COUNTER_ROW = {
-    "display": "flex",
-    "alignItems": "center",
-    "justifyContent": "center",
-    "gap": "24px",
-    "marginBottom": "32px",
 }
 
 STYLE_COUNT_DISPLAY = {
@@ -71,39 +32,11 @@ STYLE_COUNT_DISPLAY = {
     "textAlign": "center",
 }
 
-STYLE_COUNT_TEXT = {
-    "color": "#f1f5f9",
-    "fontSize": "48px",
-    "fontWeight": "700",
-    "fontVariantNumeric": "tabular-nums",
-}
-
-STYLE_PROGRESS_CONTAINER = {
-    "marginBottom": "24px",
-}
-
 STYLE_PROGRESS_BG = {
     "backgroundColor": "#0f172a",
     "borderRadius": "9999px",
     "height": "8px",
     "overflow": "hidden",
-}
-
-STYLE_RANGE_LABELS = {
-    "display": "flex",
-    "justifyContent": "space-between",
-    "marginBottom": "32px",
-}
-
-STYLE_RANGE_LABEL = {
-    "color": "#64748b",
-    "fontSize": "12px",
-}
-
-STYLE_ACTIONS = {
-    "display": "flex",
-    "gap": "12px",
-    "justifyContent": "center",
 }
 
 
@@ -149,9 +82,9 @@ class CounterState(Stateful):
 @component
 def Header(title: str, subtitle: str) -> None:
     """Page header with title and subtitle."""
-    with h.Div(style=STYLE_HEADER):
-        h.H1(title, style=STYLE_TITLE)
-        h.P(subtitle, style=STYLE_SUBTITLE)
+    with Column(align="center", gap=8, style={"marginBottom": "32px"}):
+        Label(text=title, font_size=28, color="#f1f5f9", bold=True)
+        Label(text=subtitle, font_size=14, color="#94a3b8")
 
 
 @component
@@ -163,7 +96,7 @@ def CounterControls(
     max_val: int = 10,
 ) -> None:
     """Counter display with increment/decrement buttons."""
-    with h.Div(style=STYLE_COUNTER_ROW):
+    with Row(gap=24, align="center", justify="center", style={"marginBottom": "32px"}):
         Button(
             text="-",
             on_click=on_decrement,
@@ -172,8 +105,14 @@ def CounterControls(
             size="lg",
         )
 
-        with h.Div(style=STYLE_COUNT_DISPLAY):
-            h.Span(str(count), style=STYLE_COUNT_TEXT)
+        with Column(style=STYLE_COUNT_DISPLAY):
+            Label(
+                text=str(count),
+                font_size=48,
+                color="#f1f5f9",
+                bold=True,
+                style={"fontVariantNumeric": "tabular-nums"},
+            )
 
         Button(
             text="+",
@@ -188,7 +127,7 @@ def CounterControls(
 def ProgressBar(value: int, min_val: int = 1, max_val: int = 10) -> None:
     """Visual progress indicator."""
     percent = (value - min_val) / (max_val - min_val) * 100
-    with h.Div(style=STYLE_PROGRESS_CONTAINER):
+    with Column(style={"marginBottom": "24px"}):
         with h.Div(style=STYLE_PROGRESS_BG):
             with h.Div(style=progress_bar_style(percent)):
                 pass
@@ -197,9 +136,9 @@ def ProgressBar(value: int, min_val: int = 1, max_val: int = 10) -> None:
 @component
 def RangeLabels(min_val: int, max_val: int) -> None:
     """Min/max range labels."""
-    with h.Div(style=STYLE_RANGE_LABELS):
-        h.Span(f"Min: {min_val}", style=STYLE_RANGE_LABEL)
-        h.Span(f"Max: {max_val}", style=STYLE_RANGE_LABEL)
+    with Row(justify="between", style={"marginBottom": "32px"}):
+        Label(text=f"Min: {min_val}", font_size=12, color="#64748b")
+        Label(text=f"Max: {max_val}", font_size=12, color="#64748b")
 
 
 @component
@@ -207,8 +146,8 @@ def App() -> None:
     """Main application component with interactive counter."""
     state = CounterState(count=5, min_val=1, max_val=10)
 
-    with h.Div(style=STYLE_PAGE):
-        with h.Div(style=STYLE_CARD):
+    with Column(style=STYLE_PAGE, align="center", justify="center"):
+        with Card(padding=40, style={"width": "320px"}):
             Header(title="Counter", subtitle="A simple interactive counter demo")
             CounterControls(
                 count=state.count,
@@ -220,7 +159,7 @@ def App() -> None:
             ProgressBar(value=state.count, min_val=state.min_val, max_val=state.max_val)
             RangeLabels(min_val=state.min_val, max_val=state.max_val)
 
-            with h.Div(style=STYLE_ACTIONS):
+            with Row(justify="center", gap=12):
                 Button(text="Reset", on_click=state.reset, variant="outline")
 
 
