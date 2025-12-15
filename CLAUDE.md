@@ -95,3 +95,11 @@ Use Playwright MCP to test demos and iterate on UI designs.
 6. View: `open .playwright-mcp/<filename>.png` to open in Preview
 
 **When working on designs:** Use `browser_take_screenshot` to see what users see visually, not just accessibility snapshots. Screenshots capture styling, layout, and visual hierarchy that snapshots miss.
+
+## Frontend-Backend Communication
+
+When implementing communication between frontend (TypeScript/JavaScript) and backend (Python):
+- **Always use the existing message passing framework** with serialized Message objects
+- **Never use direct function calls** (e.g., individual pyInvoke calls per action)
+- The client should construct the same message types used by other platforms
+- New platforms implement transport, not new message protocols

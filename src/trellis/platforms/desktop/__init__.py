@@ -1,25 +1,9 @@
-"""Desktop platform - PyTorii IPC.
+"""Desktop platform using PyTauri.
 
-This platform is not yet implemented.
+Provides native desktop applications using the system webview.
+Uses channel-based communication with the same message protocol as WebSocket.
 """
 
-from trellis.core.platform import Platform
-
-
-class DesktopPlatform(Platform):
-    """Desktop platform using PyTorii IPC.
-
-    Not yet implemented - raises NotImplementedError when used.
-    """
-
-    @property
-    def name(self) -> str:
-        return "desktop"
-
-    async def run(self, root_component, **kwargs) -> None:  # type: ignore[no-untyped-def]
-        raise NotImplementedError(
-            "Desktop platform is not yet implemented. Use platform='server' for now."
-        )
-
+from trellis.platforms.desktop.platform import DesktopPlatform
 
 __all__ = ["DesktopPlatform"]

@@ -8,6 +8,8 @@ import platform
 import shutil
 import subprocess
 import tarfile
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
@@ -46,6 +48,12 @@ CORE_PACKAGES = {
     "react-dom": "18.3.1",
     "scheduler": "0.23.2",  # react-dom dependency
     "@msgpack/msgpack": "3.0.0",
+}
+
+# Additional packages for desktop platform (PyTauri)
+DESKTOP_PACKAGES = {
+    "@tauri-apps/api": "2.8.0",
+    "tauri-plugin-pytauri-api": "0.8.0",
 }
 
 
@@ -161,47 +169,87 @@ def ensure_packages(packages: dict[str, str] | None = None) -> Path:
     return PACKAGES_DIR
 
 
-def build_client(
+# =============================================================================
+# Unified bundle building
+# =============================================================================
+
+
+@dataclass
+class BundleConfig:
+    """Configuration for building a client bundle."""
+
+    name: str
+    """Platform name for logging (e.g., 'server', 'desktop')."""
+
+    src_dir: Path
+    """Directory containing entry point (main.tsx)."""
+
+    dist_dir: Path
+    """Output directory for bundle.js."""
+
+    packages: dict[str, str]
+    """NPM packages to include."""
+
+    extra_outputs: list[Path] | None = None
+    """Additional output files that must exist for incremental build check."""
+
+    post_build: Callable[[], None] | None = None
+    """Optional callback to run after bundling (e.g., write index.html)."""
+
+
+def _build_bundle(
+    config: BundleConfig,
+    common_src_dir: Path,
     force: bool = False,
     extra_packages: dict[str, str] | None = None,
 ) -> None:
-    """Build the client bundle if needed.
+    """Build a client bundle using esbuild.
 
-    Bundles the server platform's client code, which imports common code
-    from platforms/common/client/src/.
+    This is the unified build function used by both server and desktop platforms.
+    It handles:
+    - Incremental build checking (skip if sources unchanged)
+    - Ensuring esbuild and npm packages are available
+    - Running esbuild with consistent options
+    - Calling post_build hook if provided
+
+    Args:
+        config: Bundle configuration
+        common_src_dir: Path to shared client code (platforms/common/client/src)
+        force: Force rebuild even if up to date
+        extra_packages: Additional packages to include beyond config.packages
     """
-    platforms_dir = Path(__file__).parent / "platforms"
-    server_client_dir = platforms_dir / "server" / "client"
-    common_client_dir = platforms_dir / "common" / "client"
-    src_dir = server_client_dir / "src"
-    dist_dir = server_client_dir / "dist"
-    bundle_path = dist_dir / "bundle.js"
+    bundle_path = config.dist_dir / "bundle.js"
 
-    # Check if rebuild needed - check both server and common source
-    if not force and bundle_path.exists():
-        bundle_mtime = bundle_path.stat().st_mtime
-        server_changed = any(f.stat().st_mtime > bundle_mtime for f in src_dir.rglob("*.ts*"))
-        common_changed = any(
-            f.stat().st_mtime > bundle_mtime for f in (common_client_dir / "src").rglob("*.ts*")
-        )
-        if not server_changed and not common_changed:
-            return
+    # Check if rebuild needed
+    if not force:
+        # All outputs must exist
+        outputs_exist = bundle_path.exists()
+        if config.extra_outputs:
+            outputs_exist = outputs_exist and all(p.exists() for p in config.extra_outputs)
+
+        if outputs_exist:
+            bundle_mtime = bundle_path.stat().st_mtime
+            platform_changed = any(
+                f.stat().st_mtime > bundle_mtime for f in config.src_dir.rglob("*.ts*")
+            )
+            common_changed = any(
+                f.stat().st_mtime > bundle_mtime for f in common_src_dir.rglob("*.ts*")
+            )
+            if not platform_changed and not common_changed:
+                return
 
     # Ensure dependencies
     esbuild = ensure_esbuild()
 
-    all_packages = {**CORE_PACKAGES, **(extra_packages or {})}
+    all_packages = {**config.packages, **(extra_packages or {})}
     node_modules = ensure_packages(all_packages)
 
-    dist_dir.mkdir(parents=True, exist_ok=True)
+    config.dist_dir.mkdir(parents=True, exist_ok=True)
 
     # Build command
-    # esbuild bundles all files reachable from the entry point via imports.
-    # No need to list individual source files - the import graph from main.tsx
-    # includes all .ts/.tsx files in src/ (core/, widgets/, etc.)
     cmd = [
         str(esbuild),
-        str(src_dir / "main.tsx"),
+        str(config.src_dir / "main.tsx"),
         "--bundle",
         f"--outfile={bundle_path}",
         "--format=esm",
@@ -217,3 +265,88 @@ def build_client(
     env["NODE_PATH"] = str(node_modules)
 
     subprocess.run(cmd, check=True, env=env)
+
+    # Run post-build hook if provided
+    if config.post_build:
+        config.post_build()
+
+
+# =============================================================================
+# Platform-specific build functions
+# =============================================================================
+
+
+def build_client(
+    force: bool = False,
+    extra_packages: dict[str, str] | None = None,
+) -> None:
+    """Build the server client bundle if needed.
+
+    Output: platforms/server/client/dist/bundle.js
+
+    The server platform serves this bundle via /static/bundle.js and returns
+    HTML dynamically from routes.py (no generated index.html needed).
+    """
+    platforms_dir = Path(__file__).parent / "platforms"
+    common_src_dir = platforms_dir / "common" / "client" / "src"
+
+    config = BundleConfig(
+        name="server",
+        src_dir=platforms_dir / "server" / "client" / "src",
+        dist_dir=platforms_dir / "server" / "client" / "dist",
+        packages=CORE_PACKAGES,
+    )
+
+    _build_bundle(config, common_src_dir, force, extra_packages)
+
+
+def _get_desktop_index_html() -> str:
+    """Generate the HTML page for desktop app."""
+    return """<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trellis App</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body, #root { margin: 0; padding: 0; height: 100%; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="bundle.js"></script>
+</body>
+</html>
+"""
+
+
+def build_desktop_client(
+    force: bool = False,
+    extra_packages: dict[str, str] | None = None,
+) -> None:
+    """Build the desktop client bundle if needed.
+
+    Output: platforms/desktop/client/dist/bundle.js + index.html
+
+    Unlike the server platform, desktop needs a generated index.html because
+    Tauri loads the webview from a file rather than a dynamic route.
+    """
+    platforms_dir = Path(__file__).parent / "platforms"
+    common_src_dir = platforms_dir / "common" / "client" / "src"
+    dist_dir = platforms_dir / "desktop" / "client" / "dist"
+    index_path = dist_dir / "index.html"
+
+    def write_index_html() -> None:
+        index_path.write_text(_get_desktop_index_html())
+
+    config = BundleConfig(
+        name="desktop",
+        src_dir=platforms_dir / "desktop" / "client" / "src",
+        dist_dir=dist_dir,
+        packages={**CORE_PACKAGES, **DESKTOP_PACKAGES},
+        extra_outputs=[index_path],
+        post_build=write_index_html,
+    )
+
+    _build_bundle(config, common_src_dir, force, extra_packages)

@@ -1,13 +1,58 @@
-/** Main entry point for Trellis client. */
+/** Main entry point for Trellis desktop client. */
 
 // Polyfill for Symbol.dispose (Explicit Resource Management)
-// Not yet supported in Safari/older WebKit versions
+// Required by @tauri-apps/api but not yet supported in all WebKit versions
 (Symbol as any).dispose ??= Symbol("Symbol.dispose");
 (Symbol as any).asyncDispose ??= Symbol("Symbol.asyncDispose");
 
+import { pyInvoke } from "tauri-plugin-pytauri-api";
+
+// Hook console methods to log to Python stdout
+function setupConsoleLogging() {
+  const stringify = (arg: unknown): string => {
+    if (arg instanceof Error) {
+      return `${arg.name}: ${arg.message}${arg.stack ? '\n' + arg.stack : ''}`;
+    }
+    if (typeof arg === 'object' && arg !== null) {
+      try {
+        return JSON.stringify(arg);
+      } catch {
+        return String(arg);
+      }
+    }
+    return String(arg);
+  };
+
+  const logToPython = (level: string, args: unknown[]) => {
+    const message = args.map(stringify).join(" ");
+    pyInvoke("trellis_log", { level, message }).catch(() => {
+      // Ignore errors from logging itself
+    });
+  };
+
+  const originalLog = console.log;
+  const originalError = console.error;
+  const originalWarn = console.warn;
+
+  console.log = (...args: unknown[]) => {
+    originalLog(...args);
+    logToPython("log", args);
+  };
+  console.error = (...args: unknown[]) => {
+    originalError(...args);
+    logToPython("error", args);
+  };
+  console.warn = (...args: unknown[]) => {
+    originalWarn(...args);
+    logToPython("warn", args);
+  };
+}
+
+setupConsoleLogging();
+
 import React, { useEffect, useState, useMemo } from "react";
 import { createRoot } from "react-dom/client";
-import { TrellisClient, ConnectionState } from "./TrellisClient";
+import { DesktopClient, ConnectionState } from "./DesktopClient";
 import { TrellisContext } from "../../../common/client/src/TrellisContext";
 import { SerializedElement } from "../../../common/client/src/types";
 import { TreeRenderer } from "../../../common/client/src/TreeRenderer";
@@ -22,7 +67,7 @@ function App() {
   // Create client once (stable reference for context)
   const client = useMemo(
     () =>
-      new TrellisClient({
+      new DesktopClient({
         onConnectionStateChange: setConnectionState,
         onConnected: (response) => {
           setSessionId(response.session_id);
@@ -80,7 +125,7 @@ function App() {
   // Otherwise show connection status
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", padding: "20px" }}>
-      <h1>Trellis</h1>
+      <h1>Trellis Desktop</h1>
       <p>
         Status:{" "}
         <strong
@@ -99,7 +144,7 @@ function App() {
       {sessionId && (
         <>
           <p>Session ID: {sessionId}</p>
-          <p>Server Version: {serverVersion}</p>
+          <p>Version: {serverVersion}</p>
         </>
       )}
     </div>

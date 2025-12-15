@@ -5,7 +5,7 @@ title: UI and Rendering
 
 # UI and Rendering Design Document
 
-**Related:** [Design Overview](./overview), [State Management](./state), [Web Server](./web-server)
+**Related:** [Design Overview](./overview), [State Management](./state), [Platforms](./platforms)
 
 ---
 
@@ -73,7 +73,7 @@ This document describes the UI and rendering system in Trellis—how components 
 **Related Documents:**
 - [Design Overview](./overview) (overview and philosophy)
 - [State Management](./state) (reactive state, dependency tracking)
-- [Web Server](./web-server) (WebSocket communication, sessions)
+- [Platforms](./platforms) (message protocol, server and desktop platforms)
 
 ---
 

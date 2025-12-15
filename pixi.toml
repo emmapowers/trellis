@@ -15,7 +15,7 @@ pytest-cov = ">=6,<7"
 nodejs = ">=22"
 
 [pypi-dependencies]
-trellis = { path = ".", editable = true }
+trellis = { path = ".", editable = true, extras = ["desktop"] }
 mypy = ">=1.15,<2"
 pydoc-markdown = ">=4.8,<5"
 

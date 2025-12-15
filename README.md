@@ -87,6 +87,12 @@ def App() -> None:
 pip install git+https://github.com/emmapowers/trellis.git
 ```
 
+For desktop app support, install with the desktop extra:
+
+```bash
+pip install "trellis[desktop] @ git+https://github.com/emmapowers/trellis.git"
+```
+
 ## Implementation Status
 
 > **Early development** — The API is unstable and may change significantly, including the widget framework.
@@ -99,6 +105,7 @@ pip install git+https://github.com/emmapowers/trellis.git
 | ✅ | Reactive state with dependency tracking |
 | ✅ | Server platform |
 | ✅ | Browser platform (Pyodide) |
+| ✅ | Desktop platform (PyTauri) |
 | ✅ | HTML elements |
 | ✅ | Type safety |
 | 🚧 | Widget toolkit (basics only) |
@@ -106,18 +113,17 @@ pip install git+https://github.com/emmapowers/trellis.git
 | ❌ | Bidirectional binding (`Mutable[T]`) |
 | ❌ | Routing |
 | ❌ | Live reload |
-| ❌ | Desktop platform |
 
 ## Development
 
 **Commands:**
 
 ```bash
-pixi run demo          # Run the demo app
-pixi run test          # Run tests
-pixi run lint          # Check linters
-pixi run cleanup       # Format and lint with auto-fix
-pixi run build-client  # Build TypeScript client
+pixi run demo             # Run the demo app (server)
+pixi run demo --desktop   # Run the demo app (desktop)
+pixi run test             # Run tests
+pixi run lint             # Check linters
+pixi run cleanup          # Format and lint with auto-fix
 ```
 
 **Project structure:**
@@ -127,8 +133,10 @@ src/trellis/
 ├── core/           # Rendering, state, reconciliation
 ├── html/           # HTML element components
 ├── widgets/        # Widget library
-├── server/         # FastAPI web server
-└── ...
+└── platforms/
+    ├── server/     # FastAPI web server + WebSocket
+    ├── desktop/    # PyTauri native desktop app
+    └── common/     # Shared client code
 ```
 
 See [docs/docs/design/](docs/docs/design/) for detailed design documents.

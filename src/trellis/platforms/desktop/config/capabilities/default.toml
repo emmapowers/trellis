@@ -1,0 +1,7 @@
+identifier = "default"
+description = "Default capabilities for Trellis desktop"
+windows = ["main"]
+permissions = [
+    "core:default",
+    "pytauri:default",
+]
