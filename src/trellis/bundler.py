@@ -165,17 +165,26 @@ def build_client(
     force: bool = False,
     extra_packages: dict[str, str] | None = None,
 ) -> None:
-    """Build the client bundle if needed."""
-    client_dir = Path(__file__).parent / "client"
-    src_dir = client_dir / "src"
-    dist_dir = client_dir / "dist"
+    """Build the client bundle if needed.
+
+    Bundles the server platform's client code, which imports common code
+    from platforms/common/client/src/.
+    """
+    platforms_dir = Path(__file__).parent / "platforms"
+    server_client_dir = platforms_dir / "server" / "client"
+    common_client_dir = platforms_dir / "common" / "client"
+    src_dir = server_client_dir / "src"
+    dist_dir = server_client_dir / "dist"
     bundle_path = dist_dir / "bundle.js"
 
-    # Check if rebuild needed
+    # Check if rebuild needed - check both server and common source
     if not force and bundle_path.exists():
         bundle_mtime = bundle_path.stat().st_mtime
-        needs_rebuild = any(f.stat().st_mtime > bundle_mtime for f in src_dir.rglob("*.ts*"))
-        if not needs_rebuild:
+        server_changed = any(f.stat().st_mtime > bundle_mtime for f in src_dir.rglob("*.ts*"))
+        common_changed = any(
+            f.stat().st_mtime > bundle_mtime for f in (common_client_dir / "src").rglob("*.ts*")
+        )
+        if not server_changed and not common_changed:
             return
 
     # Ensure dependencies

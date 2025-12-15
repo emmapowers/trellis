@@ -1,8 +1,8 @@
-"""Tests for WebSocket message types."""
+"""Tests for message types."""
 
 import msgspec
 
-from trellis.server.messages import (
+from trellis.core.messages import (
     EventMessage,
     HelloMessage,
     HelloResponseMessage,

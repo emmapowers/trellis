@@ -43,6 +43,7 @@ See Also:
 from trellis.core.base_component import Component
 from trellis.core.composition_component import CompositionComponent, component
 from trellis.core.message_handler import MessageHandler
+from trellis.core.platform import Platform, PlatformArgumentError, PlatformType
 from trellis.core.react_component import ReactComponentBase, react_component_base
 from trellis.core.rendering import ElementNode, ElementState, RenderTree
 from trellis.core.state import Stateful
@@ -53,6 +54,9 @@ __all__ = [
     "ElementNode",
     "ElementState",
     "MessageHandler",
+    "Platform",
+    "PlatformArgumentError",
+    "PlatformType",
     "ReactComponentBase",
     "RenderTree",
     "Stateful",

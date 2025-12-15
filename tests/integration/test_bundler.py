@@ -52,8 +52,9 @@ class TestBuildClient:
         """Builds client bundle successfully."""
         from trellis.bundler import build_client
 
-        client_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "client"
-        bundle_path = client_dir / "dist" / "bundle.js"
+        # Bundle is now at platforms/server/client/dist/
+        platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
+        bundle_path = platforms_dir / "server" / "client" / "dist" / "bundle.js"
 
         # Force rebuild
         build_client(force=True)

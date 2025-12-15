@@ -14,7 +14,6 @@ export const MessageType = {
 export interface HelloMessage {
   type: typeof MessageType.HELLO;
   client_id: string;
-  protocol_version: number;
 }
 
 export interface HelloResponseMessage {

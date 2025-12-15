@@ -1660,7 +1660,6 @@ All messages are msgpack-encoded for efficiency.
 class HelloMessage:
     type: Literal["hello"] = "hello"
     client_id: str
-    protocol_version: int = 1
 ```
 
 2. **HelloResponseMessage (server → client):**

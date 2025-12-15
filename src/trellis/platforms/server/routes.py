@@ -1,6 +1,6 @@
-"""HTTP routes for Trellis server.
+"""HTTP routes for server platform.
 
-WebSocket handling is in websocket.py.
+WebSocket handling is in handler.py.
 """
 
 from __future__ import annotations
@@ -41,7 +41,8 @@ async def index() -> str:
 
 
 def create_static_dir() -> Path:
-    """Get or create the static files directory."""
-    static_dir = Path(__file__).parent.parent / "client" / "dist"
+    """Get or create the static files directory for server platform."""
+    # Static files are in platforms/server/client/dist/
+    static_dir = Path(__file__).parent / "client" / "dist"
     static_dir.mkdir(parents=True, exist_ok=True)
     return static_dir

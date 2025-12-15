@@ -12,12 +12,31 @@ import inspect
 import logging
 import traceback
 import typing as tp
+from uuid import uuid4
 
-from trellis.core.messages import ErrorMessage, EventMessage, Message, RenderMessage
+from trellis.core.messages import (
+    ErrorMessage,
+    EventMessage,
+    HelloMessage,
+    HelloResponseMessage,
+    Message,
+    RenderMessage,
+)
 from trellis.core.rendering import IComponent, RenderTree
 from trellis.html.events import get_event_class
 
 logger = logging.getLogger(__name__)
+
+
+def _get_version() -> str:
+    """Get package version from metadata."""
+    from importlib.metadata import version
+
+    try:
+        return version("trellis")
+    except Exception:
+        return "0.0.0"
+
 
 __all__ = [
     "MessageHandler",
@@ -130,6 +149,7 @@ class MessageHandler:
     """
 
     tree: RenderTree
+    session_id: str | None
     _background_tasks: set[asyncio.Task[tp.Any]]
 
     def __init__(self, root_component: IComponent) -> None:
@@ -139,7 +159,33 @@ class MessageHandler:
             root_component: The root Trellis component to render
         """
         self.tree = RenderTree(root_component)
+        self.session_id = None
         self._background_tasks = set()
+
+    async def handle_hello(self) -> str:
+        """Handle hello handshake with client.
+
+        Receives HelloMessage from client, generates session ID,
+        and sends HelloResponseMessage. All platforms use this
+        handshake for session initialization.
+
+        Returns:
+            The generated session ID
+
+        Raises:
+            ValueError: If received message is not HelloMessage
+        """
+        msg = await self.receive_message()
+        if not isinstance(msg, HelloMessage):
+            raise ValueError(f"Expected HelloMessage, got {type(msg).__name__}")
+
+        self.session_id = str(uuid4())
+        response = HelloResponseMessage(
+            session_id=self.session_id,
+            server_version=_get_version(),
+        )
+        await self.send_message(response)
+        return self.session_id
 
     def initial_render(self) -> Message:
         """Generate initial render message.
@@ -223,11 +269,13 @@ class MessageHandler:
     # -------------------------------------------------------------------------
 
     async def run(self) -> None:
-        """Main message loop - receive, handle, send.
+        """Main message loop - hello, initial render, then event loop.
 
-        Sends initial render, then loops receiving messages and
-        sending responses.
+        1. Performs hello handshake with client
+        2. Sends initial render
+        3. Loops receiving messages and sending responses
         """
+        await self.handle_hello()
         await self.send_message(self.initial_render())
 
         while True:

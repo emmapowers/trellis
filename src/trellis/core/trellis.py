@@ -1,0 +1,334 @@
+"""Unified Trellis application entry point.
+
+The Trellis class provides a single entry point for all platforms.
+It handles platform detection, CLI argument parsing, and launches
+the appropriate backend.
+
+Usage:
+    from trellis import Trellis, async_main
+
+    @async_main
+    async def main():
+        app = Trellis(top=MyApp)
+        await app.serve()
+
+CLI arguments:
+    --platform=server|desktop|browser  Select platform explicitly
+    --desktop                          Shortcut for --platform=desktop
+    --host=HOST                        Server bind host (server only)
+    --port=PORT                        Server bind port (server only)
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any
+
+from trellis.core.platform import Platform, PlatformArgumentError, PlatformType
+
+# Define which arguments belong to which platform
+_SERVER_ARGS = {"host", "port", "static_dir"}
+_DESKTOP_ARGS = {"window_title", "window_width", "window_height"}
+_BROWSER_ARGS: set[str] = set()  # No browser-specific args yet
+
+
+class _TrellisArgs:
+    """Tracks configuration arguments and whether they were explicitly set."""
+
+    def __init__(self) -> None:
+        self._values: dict[str, Any] = {}
+        self._explicit: set[str] = set()
+
+    def set_default(self, key: str, value: Any) -> None:
+        """Set a default value (not marked as explicit)."""
+        if key not in self._values:
+            self._values[key] = value
+
+    def set(self, key: str, value: Any) -> None:
+        """Set a value explicitly."""
+        self._values[key] = value
+        self._explicit.add(key)
+
+    def get(self, key: str) -> Any:
+        """Get a value."""
+        return self._values.get(key)
+
+    def is_explicit(self, key: str) -> bool:
+        """Check if a value was explicitly set."""
+        return key in self._explicit
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return all values as a dictionary."""
+        return dict(self._values)
+
+    def explicit_args_for_platform(self, platform: PlatformType) -> list[str]:
+        """Return list of explicit args that belong to a specific platform."""
+        if platform == PlatformType.SERVER:
+            platform_args = _SERVER_ARGS
+        elif platform == PlatformType.DESKTOP:
+            platform_args = _DESKTOP_ARGS
+        else:  # BROWSER
+            platform_args = _BROWSER_ARGS
+        return [arg for arg in self._explicit if arg in platform_args]
+
+
+def _detect_platform() -> PlatformType:
+    """Auto-detect the appropriate platform.
+
+    Detection order:
+    1. Pyodide environment -> BROWSER
+    2. Default -> SERVER
+    """
+    # Check for Pyodide (browser environment)
+    if "pyodide" in sys.modules or hasattr(sys, "pyodide"):
+        return PlatformType.BROWSER
+
+    # Default to server
+    return PlatformType.SERVER
+
+
+def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
+    """Parse CLI arguments for platform selection and configuration.
+
+    Uses parse_known_args() to ignore app-specific arguments.
+
+    Returns:
+        Tuple of (platform_type or None, dict of other args)
+
+    Raises:
+        PlatformArgumentError: If both --desktop and --platform are provided
+    """
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument(
+        "--platform",
+        choices=["server", "desktop", "browser"],
+        help="Select platform",
+    )
+    parser.add_argument(
+        "--desktop",
+        action="store_true",
+        help="Shortcut for --platform=desktop",
+    )
+    parser.add_argument(
+        "--host",
+        type=str,
+        help="Server bind host",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        help="Server bind port",
+    )
+
+    # Ignore unknown args (app may have its own args)
+    args, _ = parser.parse_known_args()
+
+    # Check for conflict between --desktop and --platform
+    if args.desktop and args.platform:
+        raise PlatformArgumentError(
+            "Cannot specify both --desktop and --platform. Use one or the other."
+        )
+
+    # Determine platform
+    platform: PlatformType | None = None
+    if args.desktop:
+        platform = PlatformType.DESKTOP
+    elif args.platform:
+        platform = PlatformType(args.platform)
+
+    # Collect other args
+    other_args: dict[str, Any] = {}
+    if args.host is not None:
+        other_args["host"] = args.host
+    if args.port is not None:
+        other_args["port"] = args.port
+
+    return platform, other_args
+
+
+def _get_platform(platform_type: PlatformType) -> Platform:
+    """Get platform instance by type.
+
+    Args:
+        platform_type: The type of platform to instantiate
+
+    Returns:
+        Platform instance
+
+    Raises:
+        ImportError: If platform dependencies not available
+        ValueError: If platform type is unknown
+    """
+    if platform_type == PlatformType.SERVER:
+        from trellis.platforms.server import ServerPlatform
+
+        return ServerPlatform()
+    if platform_type == PlatformType.DESKTOP:
+        from trellis.platforms.desktop import DesktopPlatform
+
+        return DesktopPlatform()
+    if platform_type == PlatformType.BROWSER:
+        from trellis.platforms.browser import BrowserPlatform
+
+        return BrowserPlatform()
+    raise ValueError(f"Unknown platform: {platform_type}")
+
+
+class Trellis:
+    """Trellis application - unified entry point for all platforms.
+
+    Usage:
+        # Auto-detect platform (server by default)
+        app = Trellis(top=MyApp)
+        await app.serve()
+
+        # Explicit platform selection
+        app = Trellis(top=MyApp, platform="desktop")
+        await app.serve()
+
+        # Platform-specific args
+        app = Trellis(top=MyApp, host="0.0.0.0", port=8080)
+        await app.serve()
+
+    CLI args (when ignore_cli=False):
+        --platform=server|desktop|browser
+        --desktop (shortcut for --platform=desktop)
+        --host=HOST (server only)
+        --port=PORT (server only)
+
+    Attributes:
+        platform_type: The selected platform type
+        top: The root component to render
+    """
+
+    platform_type: PlatformType
+    top: Callable[[], None] | None
+    _platform: Platform
+    _args: _TrellisArgs
+
+    def __init__(
+        self,
+        top: Callable[[], None] | None = None,
+        *,
+        platform: PlatformType | str | None = None,
+        ignore_cli: bool = False,
+        # Server args
+        host: str | None = None,
+        port: int | None = None,
+        static_dir: Path | None = None,
+        # Desktop args (future)
+        window_title: str | None = None,
+        window_width: int | None = None,
+        window_height: int | None = None,
+    ) -> None:
+        """Initialize Trellis application.
+
+        Args:
+            top: Root component to render
+            platform: Target platform (auto-detect if None)
+            ignore_cli: If True, ignore CLI arguments
+            host: Server bind host (server only)
+            port: Server bind port (server only)
+            static_dir: Custom static files directory (server only)
+            window_title: Window title (desktop only)
+            window_width: Window width (desktop only)
+            window_height: Window height (desktop only)
+
+        Raises:
+            PlatformArgumentError: If platform-specific arg used with wrong platform
+        """
+        self.top = top
+
+        # Build args with defaults
+        self._args = _TrellisArgs()
+
+        # Set defaults for all platforms
+        self._args.set_default("platform", _detect_platform())
+        self._args.set_default("host", "127.0.0.1")
+        self._args.set_default("port", None)
+        self._args.set_default("static_dir", None)
+        self._args.set_default("window_title", "Trellis App")
+        self._args.set_default("window_width", 1024)
+        self._args.set_default("window_height", 768)
+
+        # Override with constructor args (if provided)
+        if host is not None:
+            self._args.set("host", host)
+        if port is not None:
+            self._args.set("port", port)
+        if static_dir is not None:
+            self._args.set("static_dir", static_dir)
+        if window_title is not None:
+            self._args.set("window_title", window_title)
+        if window_width is not None:
+            self._args.set("window_width", window_width)
+        if window_height is not None:
+            self._args.set("window_height", window_height)
+
+        # Parse CLI args (if enabled)
+        if not ignore_cli:
+            cli_platform, cli_args = _parse_cli_args()
+            if cli_platform is not None:
+                self._args.set("platform", cli_platform)
+            # Override with CLI args (only if not already set by constructor)
+            for key, value in cli_args.items():
+                if not self._args.is_explicit(key):
+                    self._args.set(key, value)
+
+        # Constructor platform arg has highest priority
+        if platform is not None:
+            if isinstance(platform, str):
+                platform = PlatformType(platform)
+            self._args.set("platform", platform)
+
+        self.platform_type = self._args.get("platform")
+
+        # Validate: check for explicit args from wrong platforms
+        self._validate_platform_args()
+
+        # Get platform implementation
+        self._platform = _get_platform(self.platform_type)
+
+    def _validate_platform_args(self) -> None:
+        """Validate that explicit args match the selected platform.
+
+        Raises:
+            PlatformArgumentError: If explicit args from wrong platform
+        """
+        # Check each platform's args
+        for check_platform in [PlatformType.SERVER, PlatformType.DESKTOP]:
+            if check_platform == self.platform_type:
+                continue
+            wrong_args = self._args.explicit_args_for_platform(check_platform)
+            if wrong_args:
+                raise PlatformArgumentError(
+                    f"{check_platform.value.title()} arguments {wrong_args} "
+                    f"cannot be used with platform '{self.platform_type}'"
+                )
+
+    @property
+    def platform(self) -> Platform:
+        """The platform instance."""
+        return self._platform
+
+    async def serve(self) -> None:
+        """Start the application on the selected platform.
+
+        This method runs until the application is shut down.
+
+        Raises:
+            ValueError: If no top component specified
+        """
+        if self.top is None:
+            raise ValueError("No top component specified")
+
+        await self._platform.run(
+            root_component=self.top,
+            **self._args.to_dict(),
+        )
+
+
+__all__ = ["Trellis"]

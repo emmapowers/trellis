@@ -8,7 +8,7 @@ import {
   HelloResponseMessage,
   EventMessage,
   SerializedElement,
-} from "./types";
+} from "../../../common/client/src/types";
 
 export type ConnectionState = "disconnected" | "connecting" | "connected";
 
@@ -59,7 +59,6 @@ export class TrellisClient {
         const hello: HelloMessage = {
           type: MessageType.HELLO,
           client_id: this.clientId,
-          protocol_version: 1,
         };
         this.send(hello);
       };

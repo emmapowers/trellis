@@ -3,9 +3,9 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import { TrellisClient, ConnectionState } from "./TrellisClient";
-import { TrellisContext } from "./TrellisContext";
-import { SerializedElement } from "./types";
-import { TreeRenderer } from "./TreeRenderer";
+import { TrellisContext } from "../../../common/client/src/TrellisContext";
+import { SerializedElement } from "../../../common/client/src/types";
+import { TreeRenderer } from "../../../common/client/src/TreeRenderer";
 
 function App() {
   const [connectionState, setConnectionState] = useState<ConnectionState>("disconnected");

@@ -1,8 +1,7 @@
 """Core message types for Trellis communication.
 
-These message types are shared across all backends (WebSocket, Tauri IPC, Playground).
-Transport-specific messages (like WebSocket hello handshake) live in their respective
-backend modules.
+These message types are shared across all platforms (Server, Desktop, Browser).
+All platforms use the same message protocol including HelloMessage handshake.
 """
 
 import typing as tp
@@ -37,5 +36,24 @@ class ErrorMessage(msgspec.Struct, tag="error", tag_field="type"):
     context: str  # "render" | "callback"
 
 
-# Union type for core messages - used by MessageHandler
-Message = RenderMessage | EventMessage | ErrorMessage
+class HelloMessage(msgspec.Struct, tag="hello", tag_field="type"):
+    """Client hello message sent on connection.
+
+    All platforms use this message for session initialization.
+    """
+
+    client_id: str
+
+
+class HelloResponseMessage(msgspec.Struct, tag="hello_response", tag_field="type"):
+    """Server response to client hello.
+
+    Contains session ID for tracking and server version for compatibility.
+    """
+
+    session_id: str
+    server_version: str
+
+
+# Union type for all messages - used by MessageHandler
+Message = HelloMessage | HelloResponseMessage | RenderMessage | EventMessage | ErrorMessage
