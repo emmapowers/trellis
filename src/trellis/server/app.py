@@ -39,6 +39,8 @@ def _find_available_port(start: int = _DEFAULT_PORT_START, end: int = _DEFAULT_P
     """
     for port in range(start, end):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            # Allow binding to TIME_WAIT ports (matches uvicorn's behavior)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 sock.bind(("127.0.0.1", port))
                 return port
