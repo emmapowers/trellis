@@ -44,6 +44,20 @@ class Platform(ABC):
         ...
 
     @abstractmethod
+    def bundle(
+        self,
+        force: bool = False,
+        extra_packages: dict[str, str] | None = None,
+    ) -> None:
+        """Build the client bundle for this platform.
+
+        Args:
+            force: Force rebuild even if sources unchanged
+            extra_packages: Additional npm packages beyond platform defaults
+        """
+        ...
+
+    @abstractmethod
     async def run(
         self,
         root_component: Callable[[], None],

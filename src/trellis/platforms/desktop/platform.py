@@ -15,7 +15,7 @@ from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
 from pytauri_wheel.lib import builder_factory, context_factory
 from rich.console import Console
 
-from trellis.bundler import build_desktop_client
+from trellis.bundler import CORE_PACKAGES, DESKTOP_PACKAGES, BundleConfig, build_bundle
 from trellis.core.platform import Platform
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
 
@@ -79,6 +79,32 @@ class DesktopPlatform(Platform):
     def name(self) -> str:
         return "desktop"
 
+    def bundle(
+        self,
+        force: bool = False,
+        extra_packages: dict[str, str] | None = None,
+    ) -> None:
+        """Build the desktop client bundle if needed.
+
+        Output: platforms/desktop/client/dist/bundle.js + index.html
+        """
+        platforms_dir = Path(__file__).parent.parent
+        common_src_dir = platforms_dir / "common" / "client" / "src"
+        client_dir = Path(__file__).parent / "client"
+        dist_dir = client_dir / "dist"
+        index_path = dist_dir / "index.html"
+
+        config = BundleConfig(
+            name="desktop",
+            src_dir=client_dir / "src",
+            dist_dir=dist_dir,
+            packages={**CORE_PACKAGES, **DESKTOP_PACKAGES},
+            static_files={"index.html": client_dir / "src" / "index.html"},
+            extra_outputs=[index_path],
+        )
+
+        build_bundle(config, common_src_dir, force, extra_packages)
+
     def _create_commands(self) -> Commands:
         """Create PyTauri commands with access to platform state via closure."""
         commands = Commands()
@@ -122,9 +148,6 @@ class DesktopPlatform(Platform):
             window_width: Initial window width in pixels
             window_height: Initial window height in pixels
         """
-        # Build client bundle if needed
-        build_desktop_client()
-
         # Store root component for handler access
         self._root_component = root_component  # type: ignore[assignment]
 

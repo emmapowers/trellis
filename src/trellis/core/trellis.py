@@ -17,6 +17,7 @@ CLI arguments:
     --desktop                          Shortcut for --platform=desktop
     --host=HOST                        Server bind host (server only)
     --port=PORT                        Server bind port (server only)
+    --build-bundle                     Force rebuild client bundle
 """
 
 from __future__ import annotations
@@ -122,6 +123,11 @@ def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
         type=int,
         help="Server bind port",
     )
+    parser.add_argument(
+        "--build-bundle",
+        action="store_true",
+        help="Force rebuild client bundle",
+    )
 
     # Ignore unknown args (app may have its own args)
     args, _ = parser.parse_known_args()
@@ -145,6 +151,8 @@ def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
         other_args["host"] = args.host
     if args.port is not None:
         other_args["port"] = args.port
+    if args.build_bundle:
+        other_args["build_bundle"] = True
 
     return platform, other_args
 
@@ -215,6 +223,7 @@ class Trellis:
         *,
         platform: PlatformType | str | None = None,
         ignore_cli: bool = False,
+        build_bundle: bool = False,
         # Server args
         host: str | None = None,
         port: int | None = None,
@@ -230,6 +239,7 @@ class Trellis:
             top: Root component to render
             platform: Target platform (auto-detect if None)
             ignore_cli: If True, ignore CLI arguments
+            build_bundle: Force rebuild client bundle
             host: Server bind host (server only)
             port: Server bind port (server only)
             static_dir: Custom static files directory (server only)
@@ -247,6 +257,7 @@ class Trellis:
 
         # Set defaults for all platforms
         self._args.set_default("platform", _detect_platform())
+        self._args.set_default("build_bundle", False)
         self._args.set_default("host", "127.0.0.1")
         self._args.set_default("port", None)
         self._args.set_default("static_dir", None)
@@ -255,6 +266,8 @@ class Trellis:
         self._args.set_default("window_height", 768)
 
         # Override with constructor args (if provided)
+        if build_bundle:
+            self._args.set("build_bundle", build_bundle)
         if host is not None:
             self._args.set("host", host)
         if port is not None:
@@ -324,6 +337,9 @@ class Trellis:
         """
         if self.top is None:
             raise ValueError("No top component specified")
+
+        # Build client bundle if needed
+        self._platform.bundle(force=self._args.get("build_bundle"))
 
         await self._platform.run(
             root_component=self.top,

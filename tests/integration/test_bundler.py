@@ -47,17 +47,42 @@ class TestEnsurePackages:
             assert (pkg_dir / "package.json").exists()
 
 
-class TestBuildClient:
+class TestServerPlatformBundle:
     def test_builds_bundle(self) -> None:
-        """Builds client bundle successfully."""
-        from trellis.bundler import build_client
+        """Builds client bundle successfully via ServerPlatform."""
+        from trellis.platforms.server.platform import ServerPlatform
 
         # Bundle is now at platforms/server/client/dist/
         platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
         bundle_path = platforms_dir / "server" / "client" / "dist" / "bundle.js"
 
         # Force rebuild
-        build_client(force=True)
+        platform = ServerPlatform()
+        platform.bundle(force=True)
 
         assert bundle_path.exists()
         assert bundle_path.stat().st_size > 0
+
+
+class TestDesktopPlatformBundle:
+    def test_builds_bundle_and_copies_html(self) -> None:
+        """Builds desktop bundle and copies static index.html."""
+        from trellis.platforms.desktop.platform import DesktopPlatform
+
+        # Bundle is at platforms/desktop/client/dist/
+        platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
+        dist_dir = platforms_dir / "desktop" / "client" / "dist"
+        bundle_path = dist_dir / "bundle.js"
+        index_path = dist_dir / "index.html"
+
+        # Force rebuild
+        platform = DesktopPlatform()
+        platform.bundle(force=True)
+
+        assert bundle_path.exists()
+        assert bundle_path.stat().st_size > 0
+        assert index_path.exists()
+        # Verify HTML contains expected content
+        html_content = index_path.read_text()
+        assert "<div id=\"root\"></div>" in html_content
+        assert "bundle.js" in html_content
