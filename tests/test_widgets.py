@@ -9,8 +9,10 @@ from trellis.widgets import (
     Checkbox,
     Column,
     Divider,
+    Heading,
     Label,
     NumberInput,
+    ProgressBar,
     Row,
     Select,
     Slider,
@@ -635,3 +637,159 @@ class TestCardAndDivider:
         assert column.children[0].component.name == "Label"
         assert column.children[1].component.name == "Divider"
         assert column.children[2].component.name == "Label"
+
+
+class TestHeadingWidget:
+    """Tests for Heading widget."""
+
+    def test_heading_with_text(self) -> None:
+        """Heading stores text prop."""
+
+        @component
+        def App() -> None:
+            Heading(text="Welcome")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        heading = ctx.root_node.children[0]
+        assert heading.component.name == "Heading"
+        assert heading.properties["text"] == "Welcome"
+
+    def test_heading_with_level(self) -> None:
+        """Heading accepts level prop for h1-h6."""
+
+        @component
+        def App() -> None:
+            Heading(text="Section", level=2)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        heading = ctx.root_node.children[0]
+        assert heading.properties["level"] == 2
+
+    def test_heading_with_color(self) -> None:
+        """Heading accepts color prop."""
+
+        @component
+        def App() -> None:
+            Heading(text="Colored", color="#333")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        heading = ctx.root_node.children[0]
+        assert heading.properties["color"] == "#333"
+
+    def test_heading_with_style(self) -> None:
+        """Heading accepts style dict."""
+
+        @component
+        def App() -> None:
+            Heading(text="Styled", style={"marginBottom": "16px"})
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        heading = ctx.root_node.children[0]
+        assert heading.properties["style"] == {"marginBottom": "16px"}
+
+    def test_heading_default_level(self) -> None:
+        """Heading without explicit level has no level in properties."""
+
+        @component
+        def App() -> None:
+            Heading(text="Default")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        heading = ctx.root_node.children[0]
+        # Default values are applied by React client, not stored in properties
+        assert "level" not in heading.properties
+
+
+class TestProgressBarWidget:
+    """Tests for ProgressBar widget."""
+
+    def test_progress_bar_with_value(self) -> None:
+        """ProgressBar stores value, min, max props."""
+
+        @component
+        def App() -> None:
+            ProgressBar(value=50, min=0, max=100)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        progress = ctx.root_node.children[0]
+        assert progress.component.name == "ProgressBar"
+        assert progress.properties["value"] == 50
+        assert progress.properties["min"] == 0
+        assert progress.properties["max"] == 100
+
+    def test_progress_bar_loading(self) -> None:
+        """ProgressBar accepts loading prop."""
+
+        @component
+        def App() -> None:
+            ProgressBar(loading=True)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        progress = ctx.root_node.children[0]
+        assert progress.properties["loading"] is True
+
+    def test_progress_bar_disabled(self) -> None:
+        """ProgressBar accepts disabled prop."""
+
+        @component
+        def App() -> None:
+            ProgressBar(disabled=True)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        progress = ctx.root_node.children[0]
+        assert progress.properties["disabled"] is True
+
+    def test_progress_bar_with_color(self) -> None:
+        """ProgressBar accepts color prop."""
+
+        @component
+        def App() -> None:
+            ProgressBar(value=75, color="#22c55e")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        progress = ctx.root_node.children[0]
+        assert progress.properties["color"] == "#22c55e"
+
+    def test_progress_bar_with_height(self) -> None:
+        """ProgressBar accepts height prop."""
+
+        @component
+        def App() -> None:
+            ProgressBar(value=25, height=12)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        progress = ctx.root_node.children[0]
+        assert progress.properties["height"] == 12
+
+    def test_progress_bar_with_style(self) -> None:
+        """ProgressBar accepts style dict."""
+
+        @component
+        def App() -> None:
+            ProgressBar(value=50, style={"marginBottom": "24px"})
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        progress = ctx.root_node.children[0]
+        assert progress.properties["style"] == {"marginBottom": "24px"}

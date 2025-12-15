@@ -1,0 +1,215 @@
+---
+sidebar_position: 3
+title: Concepts
+---
+
+import TrellisPlayground from '@site/src/components/TrellisPlayground';
+
+# Core Concepts
+
+The essential concepts you need to understand Trellis.
+
+## Components
+
+Components are functions that describe UI. Decorate a function with `@component` to make it a component:
+
+```python
+from trellis import component
+from trellis import html as h
+
+@component
+def Greeting() -> None:
+    h.H1("Hello, world!")
+```
+
+Components don't return anything—they add elements to the UI by calling other components and HTML elements.
+
+### Nesting with `with` Blocks
+
+Use Python's `with` statement to nest elements:
+
+```python
+@component
+def Card() -> None:
+    with h.Div(style={"border": "1px solid #ccc", "padding": "16px"}):
+        h.H2("Card Title")
+        h.P("Card content goes here.")
+```
+
+The `with` block collects everything inside it as children of the outer element.
+
+### Component Arguments
+
+Components can accept arguments just like regular functions:
+
+```python
+@component
+def UserCard(name: str, email: str) -> None:
+    with h.Div():
+        h.H3(name)
+        h.P(email)
+```
+
+Use it like this:
+
+```python
+UserCard(name="Alice", email="alice@example.com")
+```
+
+## State
+
+State holds data that changes over time. Define state as a dataclass that inherits from `Stateful`:
+
+```python
+from dataclasses import dataclass
+from trellis import Stateful
+
+@dataclass
+class CounterState(Stateful):
+    count: int = 0
+
+    def increment(self) -> None:
+        self.count += 1
+```
+
+Create state inside a component:
+
+```python
+@component
+def Counter() -> None:
+    state = CounterState()
+    h.P(f"Count: {state.count}")
+```
+
+The state persists across re-renders. Each time the component renders, it gets the same state instance.
+
+## Reactivity
+
+When you read a state property in a component, Trellis tracks that dependency. When the property changes, the component re-renders automatically.
+
+<TrellisPlayground
+  title="Automatic Reactivity"
+  code={`from dataclasses import dataclass
+from trellis import Stateful, component
+from trellis import html as h
+from trellis import widgets as w
+
+@dataclass
+class CounterState(Stateful):
+    count: int
+
+    def increment(self):
+        self.count += 1
+
+@component
+def Counter():
+    state = CounterState(count=0)
+
+    with w.Column():
+        w.Label(text=f"Count: {state.count}")
+        w.Button(text="Increment", on_click=state.increment)
+
+App = Counter`}
+/>
+
+**How it works:**
+
+1. When the component renders, it reads `state.count`
+2. Trellis records that this component depends on `count`
+3. When `increment()` modifies `count`, Trellis marks the component as dirty
+4. On the next render cycle, only dirty components re-render
+
+You don't subscribe to changes or call update functions—just read and write state normally.
+
+## Callbacks
+
+Callbacks are functions that run when events happen. Pass them as arguments to components:
+
+```python
+Button(text="Click me", on_click=handle_click)
+```
+
+Callbacks typically modify state:
+
+```python
+@dataclass
+class FormState(Stateful):
+    submitted: bool = False
+
+    def submit(self) -> None:
+        self.submitted = True
+
+@component
+def Form() -> None:
+    state = FormState()
+
+    if state.submitted:
+        h.P("Form submitted!")
+    else:
+        Button(text="Submit", on_click=state.submit)
+```
+
+### Callbacks with Arguments
+
+For callbacks that need arguments, use a lambda:
+
+```python
+@dataclass
+class ListState(Stateful):
+    items: list[str] = field(default_factory=lambda: ["A", "B", "C"])
+
+    def remove(self, item: str) -> None:
+        self.items.remove(item)
+
+@component
+def ItemList() -> None:
+    state = ListState()
+
+    for item in state.items:
+        with h.Div():
+            h.Span(item)
+            Button(text="Remove", on_click=lambda i=item: state.remove(i))
+```
+
+Note the `i=item` default argument—this captures the current value of `item` in the lambda.
+
+## Putting It Together
+
+<TrellisPlayground
+  title="Todo List"
+  code={`from dataclasses import dataclass, field
+from trellis import Stateful, component
+from trellis import html as h
+from trellis import widgets as w
+
+@dataclass
+class TodoState(Stateful):
+    items: list[str]
+    next_id: int
+
+    def add(self):
+        self.items = [*self.items, f"Task {self.next_id}"]
+        self.next_id += 1
+
+    def remove(self, item: str):
+        self.items = [i for i in self.items if i != item]
+
+@component
+def TodoList():
+    state = TodoState(items=["Learn Trellis", "Build an app"], next_id=3)
+
+    with w.Column():
+        w.Heading(text="Todo List")
+        for item in state.items:
+            with w.Row():
+                w.Label(text=item)
+                w.Button(text="×", on_click=lambda i=item: state.remove(i))
+        w.Button(text="Add Task", on_click=state.add)
+
+App = TodoList`}
+/>
+
+## Next Steps
+
+- [Building UIs](./building-uis) — HTML elements, widgets, and styling
+- [Patterns](./patterns) — Common patterns for state and components

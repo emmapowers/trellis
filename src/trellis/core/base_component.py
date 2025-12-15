@@ -9,9 +9,9 @@ The Component class implements the IComponent protocol and provides:
 
 Example:
     ```python
-    @dataclass(kw_only=True)
     class MyComponent(Component):
-        name: str = "MyComponent"
+        def __init__(self, name: str = "MyComponent") -> None:
+            super().__init__(name)
 
         def render(self, **props) -> None:
             Text(f"Hello, {props.get('name', 'World')}!")
@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import typing as tp
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 
 from trellis.core.rendering import (
     ElementKind,
@@ -38,7 +37,6 @@ from trellis.core.rendering import (
 __all__ = ["Component"]
 
 
-@dataclass(kw_only=True)
 class Component(ABC):
     """Abstract base class for all Trellis components.
 
@@ -57,6 +55,9 @@ class Component(ABC):
     """
 
     name: str
+
+    def __init__(self, name: str) -> None:
+        self.name = name
 
     @property
     @abstractmethod

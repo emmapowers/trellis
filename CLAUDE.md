@@ -65,9 +65,10 @@ from trellis import html as h
 
 - `pixi run cleanup` - Format and lint with auto-fix
 - `pixi run lint` - Check all linters (no fix)
+- `pixi run mypy` - Check for type errors
 - `pixi run test` - Run tests
 - `pixi run ci` - Full CI checks
-- `pixi run build-client` - Build the TypeScript/React client bundle
+- to build the client bundle run example/demo.py - Trellis builds the bundle on startup. If the demo comes up the bundle built.
 
 ## Dependencies
 
@@ -76,12 +77,10 @@ from trellis import html as h
 
 Since trellis is installed in editable mode, pyproject.toml dependencies are also available in the pixi environment.
 
-## Planning Docs
+## Documentation and Usage
 
-See `docs/planning/` for API design mockups:
-- `api_example.py` - Target developer experience
-- `component_tree.py` - Tree data structures
-- `react_integration.py` - React/TSX integration concepts
+- **docs/docs/** for usage and design docs
+- **examples/** for examples
 
 ## UI Testing with Playwright MCP
 

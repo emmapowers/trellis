@@ -16,6 +16,7 @@ Example:
         _element_name = "Column"
 
         def __init__(self, gap: int = 8, padding: int = 0):
+            super().__init__("Column")
             self.gap = gap
             self.padding = padding
     ```
@@ -29,7 +30,6 @@ from __future__ import annotations
 
 import functools
 import typing as tp
-from dataclasses import dataclass
 
 from trellis.core.base import ElementKind
 from trellis.core.base_component import Component
@@ -48,7 +48,6 @@ class _DecoratedComponent(tp.Protocol):
     def __call__(self, **props: tp.Any) -> ElementNode: ...
 
 
-@dataclass(kw_only=True)
 class ReactComponentBase(Component):
     """Base class for components with React implementations.
 
@@ -158,15 +157,12 @@ def react_component_base(
         func: tp.Callable[..., tp.Any],
     ) -> _DecoratedComponent:
         # Create a generated class with the function's name
-        @dataclass(kw_only=True)
         class _Generated(ReactComponentBase):
-            name: str = func.__name__
-
-        _Generated._element_name = element_name
-        _Generated._has_children = has_children
+            _element_name = element_name
+            _has_children = has_children
 
         # Create singleton instance
-        _singleton = _Generated()
+        _singleton = _Generated(func.__name__)
 
         @functools.wraps(func)
         def wrapper(**props: tp.Any) -> ElementNode:

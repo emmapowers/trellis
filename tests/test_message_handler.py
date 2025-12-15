@@ -7,7 +7,7 @@ import pytest
 
 from trellis.core.composition_component import component
 from trellis.core.message_handler import MessageHandler
-from trellis.core.messages import EventMessage, Message, RenderMessage
+from trellis.core.messages import ErrorMessage, EventMessage, Message, RenderMessage
 from trellis.core.rendering import IComponent
 from trellis.core.state import Stateful
 from trellis.widgets import Button, Label
@@ -54,7 +54,7 @@ class TestMessageHandler:
         assert clicked == [True]
 
     def test_handle_message_with_unknown_callback(self) -> None:
-        """handle_message() returns None for unknown callback."""
+        """handle_message() returns ErrorMessage for unknown callback."""
 
         @component
         def App() -> None:
@@ -66,8 +66,10 @@ class TestMessageHandler:
         event_msg = EventMessage(callback_id="unknown:callback", args=[])
         response = asyncio.run(handler.handle_message(event_msg))
 
-        # Returns None because callback not found (logged as warning)
-        assert response is None
+        # Returns ErrorMessage because callback not found
+        assert isinstance(response, ErrorMessage)
+        assert response.context == "callback"
+        assert "Callback not found: unknown:callback" in response.error
 
     def test_handle_message_with_state_update(self) -> None:
         """handle_message() re-renders after state change."""

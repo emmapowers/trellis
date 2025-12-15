@@ -13,12 +13,17 @@ interface TrellisPlaygroundProps {
 /**
  * Inline playground component with lazy Pyodide loading.
  */
+// Counter for generating unique IDs per component instance
+let instanceCounter = 0;
+
 export default function TrellisPlayground({ code, title }: TrellisPlaygroundProps): JSX.Element {
   const [status, setStatus] = useState<'idle' | 'loading' | 'running' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [tree, setTree] = useState<SerializedElement | null>(null);
   const runtimeRef = useRef<PyProxy | null>(null);
   const pyodideRef = useRef<PyodideInterface | null>(null);
+  // Unique ID for this component instance to isolate callbacks
+  const instanceIdRef = useRef<string>(`trellis_${++instanceCounter}`);
 
   const handleEvent = useCallback((cbId: string, args?: unknown[]) => {
     if (!runtimeRef.current) return;
@@ -43,31 +48,47 @@ export default function TrellisPlayground({ code, title }: TrellisPlaygroundProp
 
       setStatus('running');
 
-      // Execute user code
-      await pyodide.runPythonAsync(code);
+      const instanceId = instanceIdRef.current;
 
-      // Register JS render callback
+      // Execute user code and capture App in a unique variable
+      await pyodide.runPythonAsync(`
+${code}
+
+# Capture App in instance-specific variable before it gets overwritten
+${instanceId}_app = App
+`);
+
+      // Register JS callbacks with unique module name to isolate from other instances
+      const callbacksModuleName = `${instanceId}_callbacks`;
       const jsCallbacks = {
         render: (treeProxy: PyProxy) => {
           const newTree = treeProxy.toJs({ dict_converter: Object.fromEntries }) as SerializedElement;
           setTree(newTree);
+        },
+        error: (errorMsg: string) => {
+          setError(errorMsg);
+          setStatus('error');
         }
       };
-      pyodide.registerJsModule("js_callbacks", jsCallbacks);
+      pyodide.registerJsModule(callbacksModuleName, jsCallbacks);
 
       // Create runtime and start message loop in background
       runtimeRef.current = await pyodide.runPythonAsync(`
 import asyncio
-import js_callbacks
+
+# Import callbacks module dynamically using unique name
+_callbacks = __import__("${callbacksModuleName}")
+
 from trellis_playground import PlaygroundMessageHandler
 
-handler = PlaygroundMessageHandler(App)
-handler.set_render_callback(js_callbacks.render)
+${instanceId}_handler = PlaygroundMessageHandler(${instanceId}_app)
+${instanceId}_handler.set_render_callback(_callbacks.render)
+${instanceId}_handler.set_error_callback(_callbacks.error)
 
 # Start the message loop in the background
-asyncio.ensure_future(handler.run())
+asyncio.ensure_future(${instanceId}_handler.run())
 
-handler
+${instanceId}_handler
 `) as PyProxy;
 
       setStatus('idle');

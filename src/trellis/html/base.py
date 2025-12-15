@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import functools
 import typing as tp
-from dataclasses import dataclass
 
 from trellis.core.base import ElementKind
 from trellis.core.base_component import Component
@@ -33,7 +32,6 @@ class _DecoratedHtmlElement(tp.Protocol):
     def __call__(self, **props: tp.Any) -> ElementNode: ...
 
 
-@dataclass(kw_only=True)
 class HtmlElement(Component):
     """Base class for native HTML elements like div, span, button, etc.
 
@@ -145,15 +143,12 @@ def html_element(
         element_name = name or func.__name__
 
         # Create a generated class with the element name
-        @dataclass(kw_only=True)
         class _Generated(HtmlElement):
-            pass
-
-        _Generated._tag = tag
-        _Generated._is_container = is_container
+            _tag = tag
+            _is_container = is_container
 
         # Create singleton instance with explicit name
-        _singleton = _Generated(name=element_name)
+        _singleton = _Generated(element_name)
 
         @functools.wraps(func)
         def wrapper(**props: tp.Any) -> ElementNode:

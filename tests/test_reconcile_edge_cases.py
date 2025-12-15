@@ -800,3 +800,130 @@ class TestComponentTypeChange:
 
         # Siblings should NOT be unmounted (preserved)
         assert "sibling" not in unmount_log
+
+
+class TestBuiltinWidgetsReconciliation:
+    """Tests for reconciliation with built-in widgets (ReactComponentBase/HtmlElement).
+
+    These tests ensure that components created via @react_component_base and
+    @html_element decorators work correctly in the reconciler. Unlike @component
+    decorated functions, these use different class hierarchies that need to be
+    hashable for type-based matching in the middle section of reconciliation.
+
+    Regression tests for: TypeError: unhashable type: '_Generated'
+    """
+
+    def test_remove_widget_from_middle_of_list(self) -> None:
+        """Removing a widget from the middle exercises type-based matching.
+
+        When items are removed from the middle of a list:
+        1. Head matching covers some items
+        2. Tail matching covers some items
+        3. Middle section uses type-based matching (requires hashable components)
+        """
+        from trellis.widgets import Row, Button
+        from trellis import html as h
+
+        items_ref = [["a", "b", "c", "d"]]
+
+        @component
+        def TodoList() -> None:
+            h.H1("Tasks")  # Fixed head
+            for item in items_ref[0]:
+                with Row():
+                    h.Span(item)
+                    Button(text="×")
+            Button(text="Add")  # Fixed tail
+
+        ctx = RenderTree(TodoList)
+        ctx.render()
+
+        # Should have: H1, Row, Row, Row, Row, Button = 6 children
+        assert len(ctx.root_node.children) == 6
+
+        # Remove "b" from the middle - this triggers type-based matching
+        items_ref[0] = ["a", "c", "d"]
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        # Should have: H1, Row, Row, Row, Button = 5 children
+        assert len(ctx.root_node.children) == 5
+
+    def test_html_elements_in_dynamic_list(self) -> None:
+        """HTML elements (via @html_element) should be hashable for reconciliation."""
+        from trellis import html as h
+
+        items_ref = [["item1", "item2", "item3"]]
+
+        @component
+        def List() -> None:
+            for item in items_ref[0]:
+                with h.Div():
+                    h.Span(item)
+
+        ctx = RenderTree(List)
+        ctx.render()
+
+        assert len(ctx.root_node.children) == 3
+
+        # Remove from middle
+        items_ref[0] = ["item1", "item3"]
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        assert len(ctx.root_node.children) == 2
+
+    def test_widgets_in_dynamic_list(self) -> None:
+        """Widgets (via @react_component_base) should be hashable for reconciliation."""
+        from trellis.widgets import Column, Row, Label, Button
+
+        items_ref = [[1, 2, 3, 4, 5]]
+
+        @component
+        def List() -> None:
+            with Column():
+                for n in items_ref[0]:
+                    with Row():
+                        Label(text=f"Item {n}")
+                        Button(text="Delete")
+
+        ctx = RenderTree(List)
+        ctx.render()
+
+        column = ctx.root_node.children[0]
+        assert len(column.children) == 5
+
+        # Remove items 2 and 4 (from middle)
+        items_ref[0] = [1, 3, 5]
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        column = ctx.root_node.children[0]
+        assert len(column.children) == 3
+
+    def test_mixed_widgets_and_components_in_list(self) -> None:
+        """Mix of @component and @react_component_base in dynamic list."""
+        from trellis.widgets import Button
+
+        items_ref = [["a", "b", "c"]]
+
+        @component
+        def CustomItem(name: str = "") -> None:
+            Button(text=name)
+
+        @component
+        def List() -> None:
+            for item in items_ref[0]:
+                CustomItem(name=item)
+
+        ctx = RenderTree(List)
+        ctx.render()
+
+        assert len(ctx.root_node.children) == 3
+
+        # Reorder and remove
+        items_ref[0] = ["c", "a"]
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        assert len(ctx.root_node.children) == 2
