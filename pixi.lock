@@ -1676,13 +1676,14 @@ packages:
 - pypi: .
   name: trellis
   version: 0.1.0
-  sha256: a712ce8b362656e6a666b969eb7395ee496213d5b375ee66a65f301f94f6ebe1
+  sha256: 186956f44017df74f19f79a62ef1cf4c8b3c2edbdd981a77b86d9c93d588c615
   requires_dist:
   - rich>=13.0
   - fastapi>=0.115
   - uvicorn[standard]>=0.34
   - msgspec>=0.19
   - httpx>=0.27
+  - click>=8.0
   - pytauri-wheel>=0.8.0 ; extra == 'desktop'
   - pydantic>=2.0 ; extra == 'desktop'
   requires_python: '>=3.14'

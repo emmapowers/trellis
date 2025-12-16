@@ -26,6 +26,7 @@ dependencies = [
     "uvicorn[standard]>=0.34",
     "msgspec>=0.19",
     "httpx>=0.27",
+    "click>=8.0",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +38,9 @@ desktop = [
 [project.urls]
 Repository = "https://github.com/emmapowers/trellis"
 Issues = "https://github.com/emmapowers/trellis/issues"
+
+[project.scripts]
+trellis = "trellis.cli:trellis"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/trellis", "src/trellis_playground"]

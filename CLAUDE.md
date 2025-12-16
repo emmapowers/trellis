@@ -68,7 +68,9 @@ from trellis import html as h
 - `pixi run mypy` - Check for type errors
 - `pixi run test` - Run tests
 - `pixi run ci` - Full CI checks
-- to build the client bundle run example/demo.py - Trellis builds the bundle on startup. If the demo comes up the bundle built.
+- `trellis bundle build` - Build platform bundles (server + desktop)
+- `trellis bundle build --force` - Force rebuild even if sources unchanged
+- `trellis bundle build --platform server` - Build only server bundle
 
 ## Dependencies
 
