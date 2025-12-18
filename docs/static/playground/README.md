@@ -23,7 +23,7 @@ Then open http://localhost:8000/playground/ in your browser.
 
 ## Limitations
 
-- **Python 3.13**: Pyodide 0.29 uses Python 3.13. Trellis targets Python 3.14, but most features work.
+- **Python 3.13**: Pyodide 0.29 uses Python 3.13, which matches Trellis's target version.
 - **No hot reload**: After editing code, click "Run" (or Ctrl/Cmd+Enter) to re-render.
 
 ## Known Issues

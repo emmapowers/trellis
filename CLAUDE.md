@@ -8,7 +8,7 @@ Reactive UI framework for Python with fine-grained state tracking.
 
 ## Tech Stack
 
-**Python (3.14)**
+**Python (3.13)**
 - FastAPI — Async web framework with WebSocket support
 - msgspec — Fast serialization/validation (Pydantic alternative)
 - watchfiles — Hot reload during development
