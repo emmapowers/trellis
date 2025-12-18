@@ -1,38 +1,18 @@
-"""Browser platform - Pyodide function calls.
+"""Browser platform - runs Python in browser via Pyodide.
 
-This platform is not yet implemented.
+This platform has two execution paths:
+1. CLI mode (python app.py --browser): Build and serve static files
+2. Pyodide mode (running inside browser): Use JS bridge for messaging
+
+Usage:
+    # From command line - builds and serves for testing
+    python examples/demo.py --browser
+
+    # Inside Pyodide - runs via JS bridge (handled automatically)
+    # TrellisApp registers the bridge, then executes user code
 """
 
-from trellis.core.platform import Platform
+from trellis.platforms.browser.handler import BrowserMessageHandler
+from trellis.platforms.browser.platform import BrowserPlatform
 
-
-class BrowserPlatform(Platform):
-    """Browser platform using Pyodide function calls.
-
-    Not yet implemented - raises NotImplementedError when used.
-    """
-
-    @property
-    def name(self) -> str:
-        return "browser"
-
-    def bundle(
-        self,
-        force: bool = False,
-        extra_packages: dict[str, str] | None = None,
-    ) -> None:
-        """Build the browser client bundle if needed.
-
-        Not yet implemented.
-        """
-        raise NotImplementedError(
-            "Browser platform is not yet implemented. Use platform='server' for now."
-        )
-
-    async def run(self, root_component, **kwargs) -> None:  # type: ignore[no-untyped-def]
-        raise NotImplementedError(
-            "Browser platform is not yet implemented. Use platform='server' for now."
-        )
-
-
-__all__ = ["BrowserPlatform"]
+__all__ = ["BrowserMessageHandler", "BrowserPlatform"]

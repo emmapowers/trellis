@@ -14,7 +14,8 @@ Trellis applications can run on multiple platforms using the same component code
 3. [Key Classes](#key-classes)
 4. [Server Platform](#server-platform)
 5. [Desktop Platform](#desktop-platform)
-6. [Platform Selection](#platform-selection)
+6. [Browser Platform](#browser-platform)
+7. [Platform Selection](#platform-selection)
 
 ---
 
@@ -43,13 +44,13 @@ All platforms share the same fundamental architecture: Python manages applicatio
 
 What varies between platforms:
 
-| Aspect | Server | Desktop |
-|--------|--------|---------|
-| **Transport** | WebSocket | PyTauri IPC Channel |
-| **Python location** | Remote server | Local process |
-| **Frontend location** | Browser | System webview |
-| **Multiple clients** | Yes (multi-session) | No (single window) |
-| **Event loop** | asyncio on main thread | asyncio in background thread |
+| Aspect | Server | Desktop | Browser |
+|--------|--------|---------|---------|
+| **Transport** | WebSocket | PyTauri IPC Channel | postMessage (Worker) |
+| **Python location** | Remote server | Local process | Browser (Web Worker) |
+| **Frontend location** | Browser | System webview | Same browser |
+| **Multiple clients** | Yes (multi-session) | No (single window) | No (single app) |
+| **Event loop** | asyncio on main thread | asyncio in background thread | asyncio in Pyodide |
 
 What stays the same:
 
@@ -353,6 +354,185 @@ async def main():
 
 ---
 
+## Browser Platform
+
+The browser platform runs Python directly in the browser using [Pyodide](https://pyodide.org/) (Python compiled to WebAssembly). No server-side Python is required—the entire application runs client-side.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Browser Platform                              │
+│  ┌────────────────────────┐         ┌────────────────────────────┐  │
+│  │   Web Worker           │         │   Main Thread              │  │
+│  │                        │         │                            │  │
+│  │  Pyodide Runtime       │         │  React + BrowserClient     │  │
+│  │  BrowserMessageHandler │◄───────►│  TrellisApp + TreeRenderer │  │
+│  │                        │ postMsg │                            │  │
+│  └────────────────────────┘         └────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Components
+
+**BrowserPlatform** (`platforms/browser/platform.py`)
+- Runs inside Pyodide in the browser
+- Connects to JavaScript via a registered bridge module
+- `bundle()`: No-op (bundling done before loading)
+- `run()`: Sets up bridge, runs message loop
+
+**BrowserMessageHandler** (`platforms/browser/handler.py`)
+- Extends `MessageHandler` with queue-based transport
+- `send_message()`: calls bridge callback → `postMessage` to main thread
+- `receive_message()`: awaits on async queue populated by JavaScript
+- `enqueue_message()`: called by JS bridge to queue incoming messages
+
+**BrowserServePlatform** (`platforms/browser/serve_platform.py`)
+- CLI mode for development: `python app.py --browser`
+- Packages source code and serves via HTTP
+- Generates HTML with embedded source config
+
+**TrellisApp** (`platforms/browser/client/src/TrellisApp.tsx`)
+- React component orchestrating the browser platform
+- Creates and manages PyodideWorker
+- Wires up bidirectional messaging
+- Renders loading states, errors, and the UI tree
+
+**PyodideWorker** (`platforms/browser/client/src/PyodideWorker.ts`)
+- Manages the Web Worker lifecycle
+- Worker code is built separately and loaded via blob URL
+- Handles init/run/message protocol with worker
+
+**pyodide.worker.ts** (`platforms/browser/client/src/pyodide.worker.ts`)
+- Runs in isolated Web Worker context
+- Loads Pyodide runtime from CDN
+- Installs packages (micropip, msgspec, rich, trellis)
+- Registers `trellis_browser_bridge` JS module for Python
+- Executes Python source code
+
+### Worker Isolation Model
+
+The browser platform uses Web Worker isolation:
+
+1. **Clean Restarts**: Worker termination kills all Python state instantly
+2. **Non-blocking UI**: Pyodide runs off the main thread
+3. **Message Queue Safety**: Async queue prevents race conditions
+4. **Sandboxing**: Python can't access DOM directly (must use bridge)
+
+The worker acts as a process boundary—terminating it is equivalent to killing a subprocess.
+
+### Source Loading Modes
+
+The browser platform supports three ways to load Python code:
+
+**Code Mode** — Raw Python string (simplest, used by docs demos):
+```javascript
+source = { type: "code", code: "print('hello')" }
+```
+
+**Module Mode** — Package files (used by `--browser` CLI):
+```javascript
+source = {
+  type: "module",
+  files: {
+    "myapp/__init__.py": "...",
+    "myapp/app.py": "...",
+  },
+  moduleName: "myapp.app",
+}
+```
+Files are written to Pyodide's virtual filesystem, then executed via `runpy.run_module()`.
+
+**Wheel Mode** — Install from URL (production deployment):
+```javascript
+source = {
+  type: "wheel",
+  wheelUrl: "https://example.com/app-0.1.0-py3-none-any.whl",
+}
+```
+
+### Message Flow
+
+The browser platform uses a bridge pattern for communication:
+
+```
+TrellisApp creates PyodideWorker
+    ↓ (postMessage: "init")
+Worker loads Pyodide, installs packages
+Worker registers trellis_browser_bridge module
+    ↓ (postMessage: "ready")
+TrellisApp calls worker.run(source)
+    ↓ (postMessage: "run")
+Worker executes Python source
+Python imports bridge, creates handler
+Python calls bridge.set_handler(handler)
+Python calls handler.run() (waits for messages)
+    ↓
+TrellisApp calls client.sendHello()
+    ↓ (postMessage: "message" with HELLO)
+Worker calls handler.enqueue_message(HELLO)
+Python receives HELLO, sends HELLO_RESPONSE
+    ↓ (bridge.send_message → postMessage)
+TrellisApp receives HELLO_RESPONSE
+TrellisApp renders <TreeRenderer />
+```
+
+### Event Loop
+
+Python's asyncio runs inside Pyodide's event loop, which integrates with the browser's event loop. The message handler's `run()` loop works the same as other platforms:
+
+```python
+async def run(self):
+    await self.handle_hello()
+    await self.send_message(self.initial_render())
+    while True:
+        msg = await self.receive_message()  # Awaits on queue
+        response = await self.handle_message(msg)
+        if response:
+            await self.send_message(response)
+```
+
+### Bridge Module
+
+JavaScript registers a module that Python imports:
+
+```python
+# Python side (in BrowserPlatform.run)
+import trellis_browser_bridge as bridge
+bridge.set_handler(handler_proxy)  # Register Python handler
+bridge.send_message(msg)           # Send to JS
+```
+
+```typescript
+// JavaScript side (in worker)
+const workerBridge = {
+  set_handler(handler) {
+    pythonHandler = handler;
+    // Flush any queued messages
+  },
+  send_message(msg) {
+    self.postMessage({ type: "message", payload: msg });
+  },
+};
+pyodide.registerJsModule("trellis_browser_bridge", workerBridge);
+```
+
+### Usage
+
+**Development (CLI serve mode):**
+```bash
+python myapp.py --browser
+# Serves at http://localhost:PORT with auto-selected port
+```
+
+**Documentation/Playground:**
+The docs use `TrellisApp` directly to run interactive examples.
+
+**Production:**
+Build and deploy the HTML with embedded wheel URL.
+
+---
+
 ## Platform Selection
 
 ### Automatic Detection
@@ -370,6 +550,7 @@ app = Trellis(top=MyApp, platform="desktop")
 # Via CLI
 python myapp.py --platform=desktop
 python myapp.py --desktop  # Shortcut
+python myapp.py --browser  # Serve for browser via Pyodide
 ```
 
 ### Platform-Specific Arguments
@@ -404,4 +585,11 @@ Using an argument with the wrong platform raises `PlatformArgumentError`.
 | `platforms/desktop/platform.py` | `DesktopPlatform` |
 | `platforms/desktop/handler.py` | `PyTauriMessageHandler` |
 | `platforms/desktop/client/` | TypeScript PyTauri client |
+| `platforms/browser/platform.py` | `BrowserPlatform` (runs in Pyodide) |
+| `platforms/browser/handler.py` | `BrowserMessageHandler` (queue-based) |
+| `platforms/browser/serve_platform.py` | `BrowserServePlatform` (CLI serve mode) |
+| `platforms/browser/client/src/TrellisApp.tsx` | React component for browser apps |
+| `platforms/browser/client/src/PyodideWorker.ts` | Worker lifecycle manager |
+| `platforms/browser/client/src/pyodide.worker.ts` | Worker runtime (Pyodide init, bridge) |
+| `platforms/browser/client/src/BrowserClient.ts` | Message client for browser |
 | `platforms/common/client/` | Shared TypeScript (types, TreeRenderer, widgets) |

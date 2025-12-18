@@ -3,7 +3,7 @@ sidebar_position: 5
 title: Patterns
 ---
 
-import TrellisPlayground from '@site/src/components/TrellisPlayground';
+import TrellisDemo from '@site/src/components/TrellisDemo';
 
 # Common Patterns
 
@@ -42,7 +42,7 @@ The `Header` component re-renders when `user_name` changes, even though it doesn
 
 Pass state methods as callbacks to child components:
 
-<TrellisPlayground
+<TrellisDemo
   title="Callbacks"
   code={`from dataclasses import dataclass
 from trellis import Stateful, component
@@ -104,7 +104,7 @@ def App() -> None:
             w.Label(text=f"Data: {state.data}")
 ```
 
-<TrellisPlayground
+<TrellisDemo
   title="Conditional Rendering"
   code={`from dataclasses import dataclass
 from trellis import Stateful, component
@@ -156,7 +156,7 @@ def ItemList() -> None:
 
 ### Dynamic Lists with State
 
-<TrellisPlayground
+<TrellisDemo
   title="Dynamic List"
   code={`from dataclasses import dataclass
 from trellis import Stateful, component
@@ -215,7 +215,7 @@ The `i=item` creates a new binding for each iteration.
 
 Break complex UIs into smaller components:
 
-<TrellisPlayground
+<TrellisDemo
   title="Composition"
   code={`from dataclasses import dataclass
 from trellis import Stateful, component

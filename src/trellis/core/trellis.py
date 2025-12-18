@@ -15,6 +15,7 @@ Usage:
 CLI arguments:
     --platform=server|desktop|browser  Select platform explicitly
     --desktop                          Shortcut for --platform=desktop
+    --browser                          Shortcut for --platform=browser
     --host=HOST                        Server bind host (server only)
     --port=PORT                        Server bind port (server only)
     --build-bundle                     Force rebuild client bundle
@@ -33,7 +34,7 @@ from trellis.core.platform import Platform, PlatformArgumentError, PlatformType
 # Define which arguments belong to which platform
 _SERVER_ARGS = {"host", "port", "static_dir"}
 _DESKTOP_ARGS = {"window_title", "window_width", "window_height"}
-_BROWSER_ARGS: set[str] = set()  # No browser-specific args yet
+_BROWSER_ARGS = {"host", "port"}  # Browser CLI mode also serves HTTP
 
 
 class _TrellisArgs:
@@ -114,6 +115,11 @@ def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
         help="Shortcut for --platform=desktop",
     )
     parser.add_argument(
+        "--browser",
+        action="store_true",
+        help="Shortcut for --platform=browser",
+    )
+    parser.add_argument(
         "--host",
         type=str,
         help="Server bind host",
@@ -132,16 +138,23 @@ def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
     # Ignore unknown args (app may have its own args)
     args, _ = parser.parse_known_args()
 
-    # Check for conflict between --desktop and --platform
-    if args.desktop and args.platform:
+    # Check for conflicts between shortcuts and --platform
+    shortcuts_used = sum([args.desktop, args.browser])
+    if shortcuts_used > 1:
         raise PlatformArgumentError(
-            "Cannot specify both --desktop and --platform. Use one or the other."
+            "Cannot specify multiple platform shortcuts. Use only one of --desktop or --browser."
+        )
+    if shortcuts_used and args.platform:
+        raise PlatformArgumentError(
+            "Cannot specify both a shortcut (--desktop/--browser) and --platform. Use one or the other."
         )
 
     # Determine platform
     platform: PlatformType | None = None
     if args.desktop:
         platform = PlatformType.DESKTOP
+    elif args.browser:
+        platform = PlatformType.BROWSER
     elif args.platform:
         platform = PlatformType(args.platform)
 
@@ -155,6 +168,13 @@ def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
         other_args["build_bundle"] = True
 
     return platform, other_args
+
+
+def _is_pyodide() -> bool:
+    """Check if we're running inside Pyodide."""
+    import sys
+
+    return "pyodide" in sys.modules or hasattr(sys, "pyodide")
 
 
 def _get_platform(platform_type: PlatformType) -> Platform:
@@ -179,9 +199,18 @@ def _get_platform(platform_type: PlatformType) -> Platform:
 
         return DesktopPlatform()
     if platform_type == PlatformType.BROWSER:
-        from trellis.platforms.browser import BrowserPlatform
+        # Browser platform has two implementations:
+        # - BrowserPlatform: Runs inside Pyodide (WebAssembly). Minimal dependencies,
+        #   communicates with JS via the trellis_browser_bridge module.
+        # - BrowserServePlatform: Runs on CLI side. Serves static files (bundle.js,
+        #   wheel, HTML with embedded source) via HTTP for the browser to load.
+        if _is_pyodide():
+            from trellis.platforms.browser import BrowserPlatform
 
-        return BrowserPlatform()
+            return BrowserPlatform()
+        from trellis.platforms.browser.serve_platform import BrowserServePlatform
+
+        return BrowserServePlatform()
     raise ValueError(f"Unknown platform: {platform_type}")
 
 
@@ -311,11 +340,17 @@ class Trellis:
         Raises:
             PlatformArgumentError: If explicit args from wrong platform
         """
-        # Check each platform's args
-        for check_platform in [PlatformType.SERVER, PlatformType.DESKTOP]:
+        # Get current platform's allowed args
+        current_args = self._args.explicit_args_for_platform(self.platform_type)
+        current_args_set = set(current_args)
+
+        # Check each other platform's args
+        for check_platform in [PlatformType.SERVER, PlatformType.DESKTOP, PlatformType.BROWSER]:
             if check_platform == self.platform_type:
                 continue
             wrong_args = self._args.explicit_args_for_platform(check_platform)
+            # Exclude args that also belong to current platform
+            wrong_args = [arg for arg in wrong_args if arg not in current_args_set]
             if wrong_args:
                 raise PlatformArgumentError(
                     f"{check_platform.value.title()} arguments {wrong_args} "

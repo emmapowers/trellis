@@ -27,6 +27,7 @@ dependencies = [
     "msgspec>=0.19",
     "httpx>=0.27",
     "click>=8.0",
+    "jinja2>=3.1",
 ]
 
 [project.optional-dependencies]
@@ -43,7 +44,7 @@ Issues = "https://github.com/emmapowers/trellis/issues"
 trellis = "trellis.cli:trellis"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/trellis", "src/trellis_playground"]
+packages = ["src/trellis"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

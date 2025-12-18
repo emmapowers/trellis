@@ -3,7 +3,7 @@ sidebar_position: 3
 title: Concepts
 ---
 
-import TrellisPlayground from '@site/src/components/TrellisPlayground';
+import TrellisDemo from '@site/src/components/TrellisDemo';
 
 # Core Concepts
 
@@ -87,7 +87,7 @@ The state persists across re-renders. Each time the component renders, it gets t
 
 When you read a state property in a component, Trellis tracks that dependency. When the property changes, the component re-renders automatically.
 
-<TrellisPlayground
+<TrellisDemo
   title="Automatic Reactivity"
   code={`from dataclasses import dataclass
 from trellis import Stateful, component
@@ -175,7 +175,7 @@ Note the `i=item` default argument—this captures the current value of `item` i
 
 ## Putting It Together
 
-<TrellisPlayground
+<TrellisDemo
   title="Todo List"
   code={`from dataclasses import dataclass, field
 from trellis import Stateful, component

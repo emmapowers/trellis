@@ -34,6 +34,9 @@ htmlcov/
 # Node
 node_modules/
 
+# Generated worker bundles (built by esbuild, imported as text)
+*.worker-bundle
+
 # Docusaurus
 docs/build/
 docs/.docusaurus/

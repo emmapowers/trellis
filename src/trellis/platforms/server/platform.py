@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import socket
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -14,40 +13,13 @@ from rich.console import Console
 
 from trellis.bundler import CORE_PACKAGES, BundleConfig, build_bundle
 from trellis.core.platform import Platform
+from trellis.platforms.common import find_available_port
 from trellis.platforms.server.handler import router as ws_router
 from trellis.platforms.server.middleware import RequestLoggingMiddleware
 from trellis.platforms.server.routes import create_static_dir
 from trellis.platforms.server.routes import router as http_router
 
 _console = Console()
-
-_DEFAULT_PORT_START = 8000
-_DEFAULT_PORT_END = 8100
-
-
-def _find_available_port(start: int = _DEFAULT_PORT_START, end: int = _DEFAULT_PORT_END) -> int:
-    """Find an available port in the given range.
-
-    Args:
-        start: First port to try
-        end: Last port to try (exclusive)
-
-    Returns:
-        An available port number
-
-    Raises:
-        RuntimeError: If no port is available in the range
-    """
-    for port in range(start, end):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            # Allow binding to TIME_WAIT ports (matches uvicorn's behavior)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            try:
-                sock.bind(("127.0.0.1", port))
-                return port
-            except OSError:
-                continue
-    raise RuntimeError(f"No available port found in range {start}-{end}")
 
 
 def _print_startup_banner(host: str, port: int) -> None:
@@ -131,7 +103,7 @@ class ServerPlatform(Platform):
 
         # Find available port if not specified
         if port is None:
-            port = _find_available_port()
+            port = find_available_port(host=host)
 
         _print_startup_banner(host, port)
 

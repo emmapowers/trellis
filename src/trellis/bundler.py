@@ -195,6 +195,11 @@ class BundleConfig:
     extra_outputs: list[Path] | None = None
     """Additional output files that must exist for incremental build check."""
 
+    worker_entries: dict[str, Path] | None = None
+    """Worker entry points to build. Keys are output names (without extension),
+    values are source paths. Workers are built as IIFE and can be imported as text
+    via the .worker-bundle extension."""
+
 
 def build_bundle(
     config: BundleConfig,
@@ -250,7 +255,28 @@ def build_bundle(
 
     config.dist_dir.mkdir(parents=True, exist_ok=True)
 
-    # Build command
+    # Use NODE_PATH env var to resolve from our cached packages
+    env = os.environ.copy()
+    env["NODE_PATH"] = str(node_modules)
+
+    # Build worker entries first (as IIFE, imported as text by main bundle)
+    if config.worker_entries:
+        for name, entry_path in config.worker_entries.items():
+            worker_output = config.src_dir / f"{name}.worker-bundle"
+            worker_cmd = [
+                str(esbuild),
+                str(entry_path),
+                "--bundle",
+                f"--outfile={worker_output}",
+                "--format=iife",
+                "--platform=browser",
+                "--target=es2022",
+                "--loader:.tsx=tsx",
+                "--loader:.ts=ts",
+            ]
+            subprocess.run(worker_cmd, check=True, env=env)
+
+    # Build main bundle
     cmd = [
         str(esbuild),
         str(config.src_dir / "main.tsx"),
@@ -264,9 +290,9 @@ def build_bundle(
         "--loader:.ts=ts",
     ]
 
-    # Use NODE_PATH env var to resolve from our cached packages
-    env = os.environ.copy()
-    env["NODE_PATH"] = str(node_modules)
+    # Add text loader for worker bundles
+    if config.worker_entries:
+        cmd.append("--loader:.worker-bundle=text")
 
     subprocess.run(cmd, check=True, env=env)
 
