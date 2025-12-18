@@ -55,10 +55,16 @@ Each widget is a function decorated with `@react_component_base` that returns an
 - Managing callback references for event handlers
 
 ```python
+from collections.abc import Callable
+from typing import Literal
+
+from trellis.core.react_component import react_component_base
+from trellis.core.rendering import ElementNode
+
 @react_component_base("Button")
 def Button(
-    *,
     text: str = "",
+    *,
     on_click: Callable[[], None] | None = None,
     variant: Literal["primary", "secondary", "outline", "ghost", "danger"] = "primary",
     # ...
@@ -90,7 +96,7 @@ When widgets don't meet your needs, use HTML primitives directly:
 ```python
 from trellis import html as h
 
-with h.Div(class_name="custom-container"):
+with h.Div(className="custom-container"):
     h.Span(text="Custom content")
 ```
 

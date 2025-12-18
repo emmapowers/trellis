@@ -4,19 +4,42 @@ from trellis.core.composition_component import component
 from trellis.core.rendering import RenderTree
 from trellis.core.serialization import serialize_node
 from trellis.widgets import (
+    AreaChart,
+    Badge,
+    BarChart,
+    Breadcrumb,
     Button,
+    Callout,
     Card,
     Checkbox,
+    Collapsible,
     Column,
     Divider,
     Heading,
+    Icon,
     Label,
+    LineChart,
+    Menu,
+    MenuDivider,
+    MenuItem,
     NumberInput,
+    PieChart,
     ProgressBar,
     Row,
     Select,
     Slider,
+    Sparkline,
+    Stat,
+    StatusIndicator,
+    Tab,
+    Table,
+    Tabs,
+    Tag,
     TextInput,
+    TimeSeriesChart,
+    Toolbar,
+    Tooltip,
+    Tree,
 )
 
 
@@ -793,3 +816,739 @@ class TestProgressBarWidget:
 
         progress = ctx.root_node.children[0]
         assert progress.properties["style"] == {"marginBottom": "24px"}
+
+
+class TestStatusIndicatorWidget:
+    """Tests for StatusIndicator widget."""
+
+    def test_status_indicator_with_status(self) -> None:
+        """StatusIndicator stores status prop."""
+
+        @component
+        def App() -> None:
+            StatusIndicator(status="success")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        indicator = ctx.root_node.children[0]
+        assert indicator.component.name == "StatusIndicator"
+        assert indicator.properties["status"] == "success"
+
+    def test_status_indicator_with_label(self) -> None:
+        """StatusIndicator stores label prop."""
+
+        @component
+        def App() -> None:
+            StatusIndicator(status="error", label="Failed")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        indicator = ctx.root_node.children[0]
+        assert indicator.properties["status"] == "error"
+        assert indicator.properties["label"] == "Failed"
+
+    def test_status_indicator_hide_icon(self) -> None:
+        """StatusIndicator accepts show_icon prop."""
+
+        @component
+        def App() -> None:
+            StatusIndicator(status="warning", show_icon=False)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        indicator = ctx.root_node.children[0]
+        assert indicator.properties["show_icon"] is False
+
+
+class TestBadgeWidget:
+    """Tests for Badge widget."""
+
+    def test_badge_with_text(self) -> None:
+        """Badge stores text prop."""
+
+        @component
+        def App() -> None:
+            Badge(text="New")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        badge = ctx.root_node.children[0]
+        assert badge.component.name == "Badge"
+        assert badge.properties["text"] == "New"
+
+    def test_badge_with_variant(self) -> None:
+        """Badge accepts variant prop."""
+
+        @component
+        def App() -> None:
+            Badge(text="Error", variant="error")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        badge = ctx.root_node.children[0]
+        assert badge.properties["variant"] == "error"
+
+    def test_badge_with_size(self) -> None:
+        """Badge accepts size prop."""
+
+        @component
+        def App() -> None:
+            Badge(text="Large", size="md")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        badge = ctx.root_node.children[0]
+        assert badge.properties["size"] == "md"
+
+
+class TestTooltipWidget:
+    """Tests for Tooltip widget."""
+
+    def test_tooltip_with_content(self) -> None:
+        """Tooltip stores content prop."""
+
+        @component
+        def App() -> None:
+            with Tooltip(content="Helpful hint"):
+                Label(text="Hover me")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        tooltip = ctx.root_node.children[0]
+        assert tooltip.component.name == "Tooltip"
+        assert tooltip.properties["content"] == "Helpful hint"
+        assert len(tooltip.children) == 1
+
+    def test_tooltip_with_position(self) -> None:
+        """Tooltip accepts position prop."""
+
+        @component
+        def App() -> None:
+            with Tooltip(content="Below", position="bottom"):
+                Button(text="Click")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        tooltip = ctx.root_node.children[0]
+        assert tooltip.properties["position"] == "bottom"
+
+    def test_tooltip_with_delay(self) -> None:
+        """Tooltip accepts delay prop."""
+
+        @component
+        def App() -> None:
+            with Tooltip(content="Slow", delay=500):
+                Label(text="Wait")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        tooltip = ctx.root_node.children[0]
+        assert tooltip.properties["delay"] == 500
+
+
+class TestTableWidget:
+    """Tests for Table widget."""
+
+    def test_table_with_columns_and_data(self) -> None:
+        """Table stores columns and data props."""
+
+        @component
+        def App() -> None:
+            Table(
+                columns=[
+                    {"key": "name", "label": "Name"},
+                    {"key": "value", "label": "Value"},
+                ],
+                data=[
+                    {"name": "Item 1", "value": 100},
+                    {"name": "Item 2", "value": 200},
+                ],
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        table = ctx.root_node.children[0]
+        assert table.component.name == "Table"
+        assert len(table.properties["columns"]) == 2
+        assert len(table.properties["data"]) == 2
+
+    def test_table_with_styling_options(self) -> None:
+        """Table accepts striped, compact, bordered props."""
+
+        @component
+        def App() -> None:
+            Table(striped=True, compact=False, bordered=True)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        table = ctx.root_node.children[0]
+        assert table.properties["striped"] is True
+        assert table.properties["compact"] is False
+        assert table.properties["bordered"] is True
+
+
+class TestStatWidget:
+    """Tests for Stat widget."""
+
+    def test_stat_with_label_and_value(self) -> None:
+        """Stat stores label and value props."""
+
+        @component
+        def App() -> None:
+            Stat(label="Revenue", value="$12,345")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        stat = ctx.root_node.children[0]
+        assert stat.component.name == "Stat"
+        assert stat.properties["label"] == "Revenue"
+        assert stat.properties["value"] == "$12,345"
+
+    def test_stat_with_delta(self) -> None:
+        """Stat accepts delta and delta_type props."""
+
+        @component
+        def App() -> None:
+            Stat(label="Users", value="1,234", delta="+12%", delta_type="increase")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        stat = ctx.root_node.children[0]
+        assert stat.properties["delta"] == "+12%"
+        assert stat.properties["delta_type"] == "increase"
+
+    def test_stat_with_size(self) -> None:
+        """Stat accepts size prop."""
+
+        @component
+        def App() -> None:
+            Stat(label="Big", value="999", size="lg")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        stat = ctx.root_node.children[0]
+        assert stat.properties["size"] == "lg"
+
+
+class TestTagWidget:
+    """Tests for Tag widget."""
+
+    def test_tag_with_text(self) -> None:
+        """Tag stores text prop."""
+
+        @component
+        def App() -> None:
+            Tag(text="Python")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        tag = ctx.root_node.children[0]
+        assert tag.component.name == "Tag"
+        assert tag.properties["text"] == "Python"
+
+    def test_tag_with_variant(self) -> None:
+        """Tag accepts variant prop."""
+
+        @component
+        def App() -> None:
+            Tag(text="Success", variant="success")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        tag = ctx.root_node.children[0]
+        assert tag.properties["variant"] == "success"
+
+    def test_tag_removable_with_callback(self) -> None:
+        """Tag captures on_remove callback when removable."""
+        removed = []
+
+        @component
+        def App() -> None:
+            Tag(text="Remove me", removable=True, on_remove=lambda: removed.append(True))
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        tag = ctx.root_node.children[0]
+        assert tag.properties["removable"] is True
+        assert callable(tag.properties["on_remove"])
+
+        tag.properties["on_remove"]()
+        assert removed == [True]
+
+
+class TestChartWidgets:
+    """Tests for chart widgets."""
+
+    def test_time_series_chart_with_data(self) -> None:
+        """TimeSeriesChart stores data and series props."""
+
+        @component
+        def App() -> None:
+            TimeSeriesChart(
+                data=[
+                    [1700000000, 1700000001, 1700000002],
+                    [10, 20, 15],
+                ],
+                series=[{"label": "CPU", "stroke": "#6366f1"}],
+                height=300,
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        chart = ctx.root_node.children[0]
+        assert chart.component.name == "TimeSeriesChart"
+        assert len(chart.properties["data"]) == 2
+        assert chart.properties["height"] == 300
+
+    def test_line_chart_with_data(self) -> None:
+        """LineChart stores data and configuration props."""
+
+        @component
+        def App() -> None:
+            LineChart(
+                data=[{"month": "Jan", "value": 100}, {"month": "Feb", "value": 120}],
+                data_keys=["value"],
+                x_key="month",
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        chart = ctx.root_node.children[0]
+        assert chart.component.name == "LineChart"
+        assert len(chart.properties["data"]) == 2
+        assert chart.properties["x_key"] == "month"
+
+    def test_bar_chart_with_data(self) -> None:
+        """BarChart stores data and configuration props."""
+
+        @component
+        def App() -> None:
+            BarChart(
+                data=[{"category": "A", "value": 100}],
+                stacked=True,
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        chart = ctx.root_node.children[0]
+        assert chart.component.name == "BarChart"
+        assert chart.properties["stacked"] is True
+
+    def test_area_chart_with_data(self) -> None:
+        """AreaChart stores data and configuration props."""
+
+        @component
+        def App() -> None:
+            AreaChart(
+                data=[{"name": "Jan", "value": 100}],
+                curve_type="step",
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        chart = ctx.root_node.children[0]
+        assert chart.component.name == "AreaChart"
+        assert chart.properties["curve_type"] == "step"
+
+    def test_pie_chart_with_data(self) -> None:
+        """PieChart stores data and configuration props."""
+
+        @component
+        def App() -> None:
+            PieChart(
+                data=[{"name": "A", "value": 60}, {"name": "B", "value": 40}],
+                inner_radius=50,
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        chart = ctx.root_node.children[0]
+        assert chart.component.name == "PieChart"
+        assert chart.properties["inner_radius"] == 50
+
+    def test_sparkline_with_data(self) -> None:
+        """Sparkline stores data props."""
+
+        @component
+        def App() -> None:
+            Sparkline(data=[10, 20, 15, 25], height=30, color="#22c55e")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        chart = ctx.root_node.children[0]
+        assert chart.component.name == "Sparkline"
+        assert chart.properties["data"] == [10, 20, 15, 25]
+        assert chart.properties["height"] == 30
+        assert chart.properties["color"] == "#22c55e"
+
+
+class TestIconWidget:
+    """Tests for Icon widget."""
+
+    def test_icon_with_name(self) -> None:
+        """Icon stores name prop."""
+
+        @component
+        def App() -> None:
+            Icon(name="check")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        icon = ctx.root_node.children[0]
+        assert icon.component.name == "Icon"
+        assert icon.properties["name"] == "check"
+
+    def test_icon_with_size_and_color(self) -> None:
+        """Icon accepts size and color props."""
+
+        @component
+        def App() -> None:
+            Icon(name="alert-triangle", size=24, color="#d97706")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        icon = ctx.root_node.children[0]
+        assert icon.properties["size"] == 24
+        assert icon.properties["color"] == "#d97706"
+
+    def test_icon_with_stroke_width(self) -> None:
+        """Icon accepts stroke_width prop."""
+
+        @component
+        def App() -> None:
+            Icon(name="circle", stroke_width=3)
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        icon = ctx.root_node.children[0]
+        assert icon.properties["stroke_width"] == 3
+
+
+class TestNavigationWidgets:
+    """Tests for navigation widgets."""
+
+    def test_tabs_with_children(self) -> None:
+        """Tabs renders children and stores props."""
+
+        @component
+        def App() -> None:
+            with Tabs(selected="tab1", variant="enclosed"):
+                with Tab(id="tab1", label="First"):
+                    Label(text="Content 1")
+                with Tab(id="tab2", label="Second"):
+                    Label(text="Content 2")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        tabs = ctx.root_node.children[0]
+        assert tabs.component.name == "Tabs"
+        assert tabs.properties["selected"] == "tab1"
+        assert tabs.properties["variant"] == "enclosed"
+        assert len(tabs.children) == 2
+
+    def test_tabs_with_callback(self) -> None:
+        """Tabs captures on_change callback."""
+        selections: list[str] = []
+
+        @component
+        def App() -> None:
+            with Tabs(on_change=lambda v: selections.append(v)):
+                with Tab(id="t1", label="Tab 1"):
+                    Label(text="Content")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        tabs = ctx.root_node.children[0]
+        assert callable(tabs.properties["on_change"])
+
+        tabs.properties["on_change"]("t2")
+        assert selections == ["t2"]
+
+    def test_tab_with_props(self) -> None:
+        """Tab stores id, label, and other props."""
+
+        @component
+        def App() -> None:
+            with Tabs():
+                with Tab(id="disabled-tab", label="Disabled", disabled=True, icon="lock"):
+                    Label(text="Content")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        tabs = ctx.root_node.children[0]
+        tab = tabs.children[0]
+        assert tab.component.name == "Tab"
+        assert tab.properties["id"] == "disabled-tab"
+        assert tab.properties["label"] == "Disabled"
+        assert tab.properties["disabled"] is True
+        assert tab.properties["icon"] == "lock"
+
+    def test_tree_with_data(self) -> None:
+        """Tree stores data and selection props."""
+
+        @component
+        def App() -> None:
+            Tree(
+                data=[
+                    {"id": "1", "label": "Root", "children": [{"id": "1.1", "label": "Child"}]}
+                ],
+                selected="1",
+                expanded=["1"],
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        tree = ctx.root_node.children[0]
+        assert tree.component.name == "Tree"
+        assert tree.properties["selected"] == "1"
+        assert tree.properties["expanded"] == ["1"]
+
+    def test_tree_with_callbacks(self) -> None:
+        """Tree captures on_select and on_expand callbacks."""
+        selections: list[str] = []
+        expansions: list[tuple[str, bool]] = []
+
+        @component
+        def App() -> None:
+            Tree(
+                data=[{"id": "1", "label": "Root"}],
+                on_select=lambda v: selections.append(v),
+                on_expand=lambda id, exp: expansions.append((id, exp)),
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        tree = ctx.root_node.children[0]
+        tree.properties["on_select"]("1")
+        tree.properties["on_expand"]("1", True)
+
+        assert selections == ["1"]
+        assert expansions == [("1", True)]
+
+    def test_breadcrumb_with_items(self) -> None:
+        """Breadcrumb stores items and separator props."""
+
+        @component
+        def App() -> None:
+            Breadcrumb(
+                items=[{"label": "Home"}, {"label": "Products"}, {"label": "Details"}],
+                separator=">",
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        breadcrumb = ctx.root_node.children[0]
+        assert breadcrumb.component.name == "Breadcrumb"
+        assert len(breadcrumb.properties["items"]) == 3
+        assert breadcrumb.properties["separator"] == ">"
+
+    def test_breadcrumb_with_callback(self) -> None:
+        """Breadcrumb captures on_click callback."""
+        clicks: list[int] = []
+
+        @component
+        def App() -> None:
+            Breadcrumb(
+                items=[{"label": "Home"}, {"label": "Page"}],
+                on_click=lambda idx: clicks.append(idx),
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        breadcrumb = ctx.root_node.children[0]
+        breadcrumb.properties["on_click"](0)
+        assert clicks == [0]
+
+
+class TestFeedbackWidgets:
+    """Tests for feedback widgets."""
+
+    def test_callout_with_title_and_intent(self) -> None:
+        """Callout stores title and intent props."""
+
+        @component
+        def App() -> None:
+            with Callout(title="Warning", intent="warning"):
+                Label(text="Be careful!")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        callout = ctx.root_node.children[0]
+        assert callout.component.name == "Callout"
+        assert callout.properties["title"] == "Warning"
+        assert callout.properties["intent"] == "warning"
+        assert len(callout.children) == 1
+
+    def test_callout_dismissible_with_callback(self) -> None:
+        """Callout captures on_dismiss callback when dismissible."""
+        dismissed = []
+
+        @component
+        def App() -> None:
+            with Callout(dismissible=True, on_dismiss=lambda: dismissed.append(True)):
+                Label(text="Dismissable")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        callout = ctx.root_node.children[0]
+        assert callout.properties["dismissible"] is True
+        callout.properties["on_dismiss"]()
+        assert dismissed == [True]
+
+    def test_collapsible_with_title(self) -> None:
+        """Collapsible stores title and expanded props."""
+
+        @component
+        def App() -> None:
+            with Collapsible(title="Details", expanded=False):
+                Label(text="Hidden content")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        collapsible = ctx.root_node.children[0]
+        assert collapsible.component.name == "Collapsible"
+        assert collapsible.properties["title"] == "Details"
+        assert collapsible.properties["expanded"] is False
+
+    def test_collapsible_with_callback(self) -> None:
+        """Collapsible captures on_toggle callback."""
+        toggles: list[bool] = []
+
+        @component
+        def App() -> None:
+            with Collapsible(title="Toggle", on_toggle=lambda v: toggles.append(v)):
+                Label(text="Content")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        collapsible = ctx.root_node.children[0]
+        collapsible.properties["on_toggle"](True)
+        assert toggles == [True]
+
+
+class TestActionWidgets:
+    """Tests for action widgets."""
+
+    def test_menu_with_items(self) -> None:
+        """Menu renders children."""
+
+        @component
+        def App() -> None:
+            with Menu():
+                MenuItem(text="Open")
+                MenuItem(text="Save")
+                MenuDivider()
+                MenuItem(text="Exit")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        menu = ctx.root_node.children[0]
+        assert menu.component.name == "Menu"
+        assert len(menu.children) == 4
+
+    def test_menu_item_with_props(self) -> None:
+        """MenuItem stores text, icon, and other props."""
+
+        @component
+        def App() -> None:
+            with Menu():
+                MenuItem(text="Delete", icon="trash", disabled=True, shortcut="Ctrl+D")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        menu = ctx.root_node.children[0]
+        item = menu.children[0]
+        assert item.component.name == "MenuItem"
+        assert item.properties["text"] == "Delete"
+        assert item.properties["icon"] == "trash"
+        assert item.properties["disabled"] is True
+        assert item.properties["shortcut"] == "Ctrl+D"
+
+    def test_menu_item_with_callback(self) -> None:
+        """MenuItem captures on_click callback."""
+        clicks = []
+
+        @component
+        def App() -> None:
+            with Menu():
+                MenuItem(text="Click me", on_click=lambda: clicks.append(True))
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        menu = ctx.root_node.children[0]
+        item = menu.children[0]
+        item.properties["on_click"]()
+        assert clicks == [True]
+
+    def test_menu_divider_renders(self) -> None:
+        """MenuDivider component renders."""
+
+        @component
+        def App() -> None:
+            with Menu():
+                MenuDivider()
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        menu = ctx.root_node.children[0]
+        divider = menu.children[0]
+        assert divider.component.name == "MenuDivider"
+
+    def test_toolbar_with_children(self) -> None:
+        """Toolbar renders children and stores props."""
+
+        @component
+        def App() -> None:
+            with Toolbar(variant="minimal", orientation="vertical"):
+                Button(text="Bold")
+                Button(text="Italic")
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        toolbar = ctx.root_node.children[0]
+        assert toolbar.component.name == "Toolbar"
+        assert toolbar.properties["variant"] == "minimal"
+        assert toolbar.properties["orientation"] == "vertical"
+        assert len(toolbar.children) == 2
