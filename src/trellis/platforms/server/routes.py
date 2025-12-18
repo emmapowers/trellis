@@ -21,6 +21,7 @@ def get_index_html(static_path: str = "/static") -> str:
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Trellis App</title>
+    <link rel="stylesheet" href="{static_path}/bundle.css">
     <style>
         *, *::before, *::after {{ box-sizing: border-box; }}
         html, body, #root {{ margin: 0; padding: 0; height: 100%; min-height: 100vh; }}

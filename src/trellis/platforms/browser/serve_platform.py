@@ -230,6 +230,8 @@ class BrowserServePlatform(Platform):
                 "Run 'trellis bundle build --platform browser' first."
             )
 
+        css_path = dist_dir / "bundle.css"
+
         # Find the trellis wheel
         wheel_path = _find_wheel()
 
@@ -237,8 +239,10 @@ class BrowserServePlatform(Platform):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
-            # Copy bundle.js (worker is inlined)
+            # Copy bundle.js (worker is inlined) and bundle.css
             (temp_path / "bundle.js").write_bytes(bundle_path.read_bytes())
+            if css_path.exists():
+                (temp_path / "bundle.css").write_bytes(css_path.read_bytes())
 
             # Copy wheel for Pyodide to install
             (temp_path / wheel_path.name).write_bytes(wheel_path.read_bytes())
