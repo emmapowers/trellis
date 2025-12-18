@@ -1,5 +1,7 @@
-import React from "react";
-import { colors, radius, typography, spacing } from "../theme";
+import React, { useRef, useEffect } from "react";
+import { useSelect, useListBox, useOption, useButton, HiddenSelect, DismissButton, useOverlay } from "react-aria";
+import { useSelectState, Item } from "react-stately";
+import { colors, radius, typography, spacing, focusRing, shadows } from "../theme";
 
 interface SelectOption {
   value: string;
@@ -16,10 +18,7 @@ interface SelectProps {
   style?: React.CSSProperties;
 }
 
-// Arrow icon using secondary text color for light theme
-const arrowIcon = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`;
-
-const selectStyles: React.CSSProperties = {
+const buttonStyles: React.CSSProperties = {
   backgroundColor: colors.bg.input,
   border: `1px solid ${colors.border.default}`,
   borderRadius: `${radius.sm}px`,
@@ -31,11 +30,39 @@ const selectStyles: React.CSSProperties = {
   boxSizing: "border-box",
   cursor: "pointer",
   transition: "border-color 150ms ease, box-shadow 150ms ease",
-  appearance: "none",
-  backgroundImage: arrowIcon,
-  backgroundRepeat: "no-repeat",
-  backgroundPosition: "right 10px center",
-  paddingRight: "32px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  textAlign: "left",
+};
+
+const listBoxStyles: React.CSSProperties = {
+  marginTop: "4px",
+  backgroundColor: colors.bg.surface,
+  border: `1px solid ${colors.border.default}`,
+  borderRadius: `${radius.sm}px`,
+  boxShadow: shadows.md,
+  maxHeight: "200px",
+  overflowY: "auto",
+  zIndex: 1000,
+  padding: `${spacing.xs}px 0`,
+};
+
+// Overlay container positions the dropdown below the button
+const overlayContainerStyles: React.CSSProperties = {
+  position: "absolute",
+  top: "100%",
+  left: 0,
+  right: 0,
+  zIndex: 1000,
+};
+
+const optionStyles: React.CSSProperties = {
+  padding: `${spacing.sm}px ${spacing.md + 2}px`,
+  cursor: "pointer",
+  fontSize: `${typography.fontSize.md}px`,
+  color: colors.text.primary,
+  outline: "none", // Suppress default focus ring; we use background color for focus indication
 };
 
 const disabledStyles: React.CSSProperties = {
@@ -43,6 +70,96 @@ const disabledStyles: React.CSSProperties = {
   cursor: "not-allowed",
   backgroundColor: colors.neutral[50],
 };
+
+function ListBox({
+  state,
+  listBoxRef,
+  onClose,
+}: {
+  state: ReturnType<typeof useSelectState>;
+  listBoxRef: React.RefObject<HTMLUListElement | null>;
+  onClose: () => void;
+}) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const { listBoxProps } = useListBox(
+    { autoFocus: state.focusStrategy || true },
+    state,
+    listBoxRef
+  );
+
+  const { overlayProps } = useOverlay(
+    {
+      isOpen: true,
+      onClose,
+      shouldCloseOnBlur: true,
+      isDismissable: true,
+    },
+    overlayRef
+  );
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
+    } else {
+      // Let react-aria handle other keys
+      listBoxProps.onKeyDown?.(e as never);
+    }
+  };
+
+  return (
+    <div {...overlayProps} ref={overlayRef} style={overlayContainerStyles}>
+      <DismissButton onDismiss={onClose} />
+      <ul {...listBoxProps} ref={listBoxRef} style={listBoxStyles} onKeyDown={handleKeyDown}>
+        {[...state.collection].map((item) => (
+          <Option key={item.key} item={item} state={state} />
+        ))}
+      </ul>
+      <DismissButton onDismiss={onClose} />
+    </div>
+  );
+}
+
+function Option({ item, state }: { item: { key: React.Key; rendered: React.ReactNode }; state: ReturnType<typeof useSelectState> }) {
+  const ref = useRef<HTMLLIElement>(null);
+  const { optionProps, isSelected, isFocused } = useOption({ key: item.key }, state, ref);
+  const [isHovered, setIsHovered] = React.useState(false);
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLLIElement>) => {
+    setIsHovered(true);
+    optionProps.onMouseEnter?.(e as never);
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLLIElement>) => {
+    setIsHovered(false);
+    optionProps.onMouseLeave?.(e as never);
+  };
+
+  // Selected items get accent background, hover gets gray background
+  const getBackgroundColor = () => {
+    if (isSelected) return colors.accent.subtle;
+    if (isFocused || isHovered) return colors.bg.surfaceHover;
+    return "transparent";
+  };
+
+  return (
+    <li
+      {...optionProps}
+      ref={ref}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        ...optionStyles,
+        backgroundColor: getBackgroundColor(),
+        fontWeight: isSelected ? typography.fontWeight.medium : typography.fontWeight.normal,
+        color: isSelected ? colors.accent.primary : colors.text.primary,
+      }}
+    >
+      {item.rendered}
+    </li>
+  );
+}
 
 export function Select({
   value,
@@ -53,46 +170,79 @@ export function Select({
   className,
   style,
 }: SelectProps): React.ReactElement {
-  const [isFocused, setIsFocused] = React.useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listBoxRef = useRef<HTMLUListElement>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (on_change) {
-      on_change(e.target.value);
-    }
+  // Convert options to Item elements for react-stately
+  const items = options.map((opt) => ({ key: opt.value, label: opt.label }));
+
+  const state = useSelectState({
+    selectedKey: value,
+    onSelectionChange: (key) => on_change?.(key as string),
+    isDisabled: disabled,
+    children: items.map((item) => <Item key={item.key}>{item.label}</Item>),
+  });
+
+  const { triggerProps, valueProps, menuProps } = useSelect(
+    {
+      selectedKey: value,
+      onSelectionChange: (key) => on_change?.(key as string),
+      isDisabled: disabled,
+      children: items.map((item) => <Item key={item.key}>{item.label}</Item>),
+    },
+    state,
+    triggerRef
+  );
+
+  const { buttonProps } = useButton(triggerProps, triggerRef);
+  const [isFocusVisible, setIsFocusVisible] = React.useState(false);
+
+  const selectedItem = state.selectedItem;
+  const displayValue = selectedItem ? selectedItem.rendered : placeholder || "Select...";
+
+  const computedButtonStyle: React.CSSProperties = {
+    ...buttonStyles,
+    ...(isFocusVisible && !disabled ? focusRing : {}),
+    ...(disabled ? disabledStyles : {}),
   };
 
-  const computedStyle: React.CSSProperties = {
-    ...selectStyles,
-    ...(isFocused && !disabled
-      ? {
-          borderColor: colors.border.focus,
-          boxShadow: `0 0 0 2px ${colors.accent.subtle}`,
-        }
-      : {}),
-    ...(disabled ? disabledStyles : {}),
+  // Apply width/sizing styles to the container, not the button
+  const containerStyle: React.CSSProperties = {
+    position: "relative",
     ...style,
   };
 
   return (
-    <select
-      value={value ?? ""}
-      onChange={handleChange}
-      disabled={disabled}
-      className={className}
-      style={computedStyle}
-      onFocus={() => setIsFocused(true)}
-      onBlur={() => setIsFocused(false)}
-    >
-      {placeholder && (
-        <option value="" disabled>
-          {placeholder}
-        </option>
-      )}
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
+    <div className={className} style={containerStyle}>
+      <HiddenSelect state={state} triggerRef={triggerRef} name={undefined} />
+      <button
+        {...buttonProps}
+        ref={triggerRef}
+        style={computedButtonStyle}
+        onFocus={(e) => {
+          buttonProps.onFocus?.(e);
+          if (e.target.matches(":focus-visible")) {
+            setIsFocusVisible(true);
+          }
+        }}
+        onBlur={(e) => {
+          buttonProps.onBlur?.(e);
+          setIsFocusVisible(false);
+        }}
+      >
+        <span {...valueProps} style={{ color: selectedItem ? colors.text.primary : colors.text.muted }}>
+          {displayValue}
+        </span>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          style={{ marginLeft: "8px", transform: state.isOpen ? "rotate(180deg)" : undefined, transition: "transform 150ms" }}
+        >
+          <path fill={colors.text.secondary} d="M6 8L1 3h10z" />
+        </svg>
+      </button>
+      {state.isOpen && <ListBox {...menuProps} state={state} listBoxRef={listBoxRef} onClose={() => state.close()} />}
+    </div>
   );
 }

@@ -5,50 +5,31 @@
 (Symbol as any).dispose ??= Symbol("Symbol.dispose");
 (Symbol as any).asyncDispose ??= Symbol("Symbol.asyncDispose");
 
+// Set up shared console (filtering, etc.) before other imports
+import { addConsoleHandler } from "../../../common/client/src/console";
 import { pyInvoke } from "tauri-plugin-pytauri-api";
 
-// Hook console methods to log to Python stdout
-function setupConsoleLogging() {
-  const stringify = (arg: unknown): string => {
-    if (arg instanceof Error) {
-      return `${arg.name}: ${arg.message}${arg.stack ? '\n' + arg.stack : ''}`;
+// Forward console messages to Python stdout
+const stringify = (arg: unknown): string => {
+  if (arg instanceof Error) {
+    return `${arg.name}: ${arg.message}${arg.stack ? "\n" + arg.stack : ""}`;
+  }
+  if (typeof arg === "object" && arg !== null) {
+    try {
+      return JSON.stringify(arg);
+    } catch {
+      return String(arg);
     }
-    if (typeof arg === 'object' && arg !== null) {
-      try {
-        return JSON.stringify(arg);
-      } catch {
-        return String(arg);
-      }
-    }
-    return String(arg);
-  };
+  }
+  return String(arg);
+};
 
-  const logToPython = (level: string, args: unknown[]) => {
-    const message = args.map(stringify).join(" ");
-    pyInvoke("trellis_log", { level, message }).catch(() => {
-      // Ignore errors from logging itself
-    });
-  };
-
-  const originalLog = console.log;
-  const originalError = console.error;
-  const originalWarn = console.warn;
-
-  console.log = (...args: unknown[]) => {
-    originalLog(...args);
-    logToPython("log", args);
-  };
-  console.error = (...args: unknown[]) => {
-    originalError(...args);
-    logToPython("error", args);
-  };
-  console.warn = (...args: unknown[]) => {
-    originalWarn(...args);
-    logToPython("warn", args);
-  };
-}
-
-setupConsoleLogging();
+addConsoleHandler((level, args) => {
+  const message = args.map(stringify).join(" ");
+  pyInvoke("trellis_log", { level, message }).catch(() => {
+    // Ignore errors from logging itself
+  });
+});
 
 import React, { useEffect, useState, useMemo } from "react";
 import { createRoot } from "react-dom/client";

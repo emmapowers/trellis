@@ -33,10 +33,12 @@ mypy-ci = { cmd = "mypy src", description = "Run mypy (full check)" }
 test = { cmd = "pytest", description = "Run unit tests" }
 test-cov = { cmd = "pytest --cov=src/trellis --cov-report=term-missing", description = "Run unit tests with coverage" }
 test-integration = { cmd = "pytest tests/integration -vv", description = "Run integration tests (requires network)" }
+install-js-test-deps = { cmd = "npm install", cwd = "tests/js", description = "Install JavaScript test dependencies" }
+test-js = { cmd = "npm test", cwd = "tests/js", depends-on = ["install-js-test-deps"], description = "Run JavaScript unit tests" }
 
 cleanup = { depends-on = ["fmt", "ruff-fix"], description = "Run formatters with auto-fix" }
 lint = { depends-on = ["fmt-check", "ruff-check", "mypy-ci"], description = "Check all linters (no fix)" }
-ci = { depends-on = ["lint", "test", "test-integration"], description = "Run CI checks" }
+ci = { depends-on = ["lint", "test", "test-js", "test-integration"], description = "Run CI checks" }
 
 build-wheel = { cmd = "pip wheel . -w dist --no-deps", description = "Build wheel" }
 clean = { cmd = "rm -rf dist build .mypy_cache .ruff_cache .pytest_cache .coverage", description = "Clean build artifacts" }

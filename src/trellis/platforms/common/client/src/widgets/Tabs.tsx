@@ -1,5 +1,7 @@
-import React, { useState, useCallback, Children, isValidElement, cloneElement } from "react";
-import { colors, spacing, typography, radius } from "../theme";
+import React, { useRef, Children, isValidElement } from "react";
+import { useTabList, useTab, useTabPanel } from "react-aria";
+import { useTabListState, Item } from "react-stately";
+import { colors, spacing, typography, radius, focusRing } from "../theme";
 import { Icon } from "./Icon";
 
 interface TabsProps {
@@ -20,11 +22,6 @@ interface TabProps {
   className?: string;
   style?: React.CSSProperties;
   children?: React.ReactNode;
-  // Injected by Tabs
-  _selected?: boolean;
-  _onSelect?: () => void;
-  _variant?: "line" | "enclosed" | "pills";
-  _size?: "sm" | "md";
 }
 
 const sizeConfig = {
@@ -42,21 +39,31 @@ const sizeConfig = {
   },
 };
 
-export function Tab({
-  id,
-  label,
+// Tab is now just a marker component - Tabs extracts its props
+export function Tab(_props: TabProps): React.ReactElement | null {
+  return null;
+}
+
+function TabButton({
+  item,
+  state,
+  variant,
+  size,
   icon,
-  disabled = false,
-  className,
-  style,
-  children,
-  _selected,
-  _onSelect,
-  _variant = "line",
-  _size = "md",
-}: TabProps): React.ReactElement | null {
-  const config = sizeConfig[_size];
-  const isSelected = _selected;
+}: {
+  item: { key: React.Key; rendered: React.ReactNode };
+  state: ReturnType<typeof useTabListState>;
+  variant: "line" | "enclosed" | "pills";
+  size: "sm" | "md";
+  icon?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { tabProps } = useTab({ key: item.key }, state, ref);
+  const isSelected = state.selectedKey === item.key;
+  const isDisabled = state.disabledKeys.has(item.key);
+  const [isFocusVisible, setIsFocusVisible] = React.useState(false);
+
+  const config = sizeConfig[size];
 
   const getVariantStyles = (): React.CSSProperties => {
     const base: React.CSSProperties = {
@@ -66,15 +73,15 @@ export function Tab({
       padding: config.padding,
       fontSize: config.fontSize,
       fontWeight: typography.fontWeight.medium,
-      cursor: disabled ? "not-allowed" : "pointer",
-      opacity: disabled ? 0.5 : 1,
+      cursor: isDisabled ? "not-allowed" : "pointer",
+      opacity: isDisabled ? 0.5 : 1,
       transition: "all 0.15s ease",
       border: "none",
       outline: "none",
       background: "transparent",
     };
 
-    switch (_variant) {
+    switch (variant) {
       case "line":
         return {
           ...base,
@@ -106,23 +113,55 @@ export function Tab({
     }
   };
 
-  // If used outside Tabs context, just render nothing
-  if (!_onSelect) {
+  return (
+    <div
+      {...tabProps}
+      ref={ref}
+      style={{
+        ...getVariantStyles(),
+        ...(isFocusVisible ? focusRing : {}),
+      }}
+      onFocus={(e) => {
+        tabProps.onFocus?.(e);
+        if (e.target.matches(":focus-visible")) {
+          setIsFocusVisible(true);
+        }
+      }}
+      onBlur={(e) => {
+        tabProps.onBlur?.(e);
+        setIsFocusVisible(false);
+      }}
+    >
+      {icon && <Icon name={icon} size={config.iconSize} color="currentColor" />}
+      {item.rendered}
+    </div>
+  );
+}
+
+function TabPanel({
+  state,
+  contents,
+}: {
+  state: ReturnType<typeof useTabListState>;
+  contents: Map<string, React.ReactNode>;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { tabPanelProps } = useTabPanel({}, state, ref);
+
+  const contentStyles: React.CSSProperties = {
+    paddingTop: spacing.lg,
+  };
+
+  const selectedKey = state.selectedKey as string;
+
+  if (!selectedKey || !contents.has(selectedKey)) {
     return null;
   }
 
   return (
-    <button
-      className={className}
-      style={{ ...getVariantStyles(), ...style }}
-      onClick={!disabled ? _onSelect : undefined}
-      disabled={disabled}
-      role="tab"
-      aria-selected={isSelected}
-    >
-      {icon && <Icon name={icon} size={config.iconSize} color="currentColor" />}
-      {label}
-    </button>
+    <div {...tabPanelProps} ref={ref} style={contentStyles}>
+      {contents.get(selectedKey)}
+    </div>
   );
 }
 
@@ -135,22 +174,48 @@ export function Tabs({
   style,
   children,
 }: TabsProps): React.ReactElement {
-  // Find tabs and their content
-  const tabs: { id: string; element: React.ReactElement<TabProps> }[] = [];
-  const contents: Map<string, React.ReactNode> = new Map();
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Extract tab data from children
+  const tabData: { id: string; label: string; icon?: string; disabled?: boolean; content?: React.ReactNode }[] = [];
 
   Children.forEach(children, (child) => {
     if (isValidElement(child) && (child.type as any) === Tab) {
       const tabProps = child.props as TabProps;
-      tabs.push({ id: tabProps.id, element: child });
-      if (tabProps.children) {
-        contents.set(tabProps.id, tabProps.children);
-      }
+      tabData.push({
+        id: tabProps.id,
+        label: tabProps.label,
+        icon: tabProps.icon,
+        disabled: tabProps.disabled,
+        content: tabProps.children,
+      });
     }
   });
 
-  // Default to first tab if none selected
-  const effectiveSelected = selected || (tabs.length > 0 ? tabs[0].id : undefined);
+  const contents = new Map<string, React.ReactNode>();
+  tabData.forEach((tab) => {
+    if (tab.content) {
+      contents.set(tab.id, tab.content);
+    }
+  });
+
+  const state = useTabListState({
+    selectedKey: selected,
+    onSelectionChange: (key) => on_change?.(key as string),
+    disabledKeys: tabData.filter((t) => t.disabled).map((t) => t.id),
+    children: tabData.map((tab) => <Item key={tab.id}>{tab.label}</Item>),
+  });
+
+  const { tabListProps } = useTabList(
+    {
+      selectedKey: selected,
+      onSelectionChange: (key) => on_change?.(key as string),
+      disabledKeys: tabData.filter((t) => t.disabled).map((t) => t.id),
+      children: tabData.map((tab) => <Item key={tab.id}>{tab.label}</Item>),
+    },
+    state,
+    ref
+  );
 
   const tabListStyles: React.CSSProperties = {
     display: "flex",
@@ -158,31 +223,24 @@ export function Tabs({
     borderBottom: variant === "line" ? `1px solid ${colors.border.default}` : undefined,
   };
 
-  const contentStyles: React.CSSProperties = {
-    paddingTop: spacing.lg,
-  };
-
   return (
     <div className={className} style={style}>
-      {/* Tab list */}
-      <div role="tablist" style={tabListStyles}>
-        {tabs.map(({ id, element }) =>
-          cloneElement(element, {
-            key: id,
-            _selected: id === effectiveSelected,
-            _onSelect: () => on_change?.(id),
-            _variant: variant,
-            _size: size,
-          })
-        )}
+      <div {...tabListProps} ref={ref} style={tabListStyles}>
+        {[...state.collection].map((item) => {
+          const tabInfo = tabData.find((t) => t.id === item.key);
+          return (
+            <TabButton
+              key={item.key}
+              item={item}
+              state={state}
+              variant={variant}
+              size={size}
+              icon={tabInfo?.icon}
+            />
+          );
+        })}
       </div>
-
-      {/* Content */}
-      {effectiveSelected && contents.has(effectiveSelected) && (
-        <div role="tabpanel" style={contentStyles}>
-          {contents.get(effectiveSelected)}
-        </div>
-      )}
+      <TabPanel state={state} contents={contents} />
     </div>
   );
 }

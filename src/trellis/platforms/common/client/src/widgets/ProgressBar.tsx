@@ -1,4 +1,5 @@
 import React from "react";
+import { useProgressBar } from "react-aria";
 import { colors, radius } from "../theme";
 
 interface ProgressBarProps {
@@ -43,6 +44,13 @@ export function ProgressBar({
   className,
   style,
 }: ProgressBarProps): React.ReactElement {
+  const { progressBarProps } = useProgressBar({
+    value: loading ? undefined : value,
+    minValue: min,
+    maxValue: max,
+    isIndeterminate: loading,
+  });
+
   const percent = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
   const fillColor = disabled ? colors.text.muted : color;
 
@@ -50,6 +58,7 @@ export function ProgressBar({
     <>
       {loading && <style>{loadingKeyframes}</style>}
       <div
+        {...progressBarProps}
         className={className}
         style={{
           ...trackStyles,

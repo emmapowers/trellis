@@ -10,7 +10,7 @@ interface TableColumn {
 
 interface TableProps {
   columns?: TableColumn[];
-  data?: Record<string, any>[];
+  data?: Record<string, unknown>[];
   striped?: boolean;
   compact?: boolean;
   bordered?: boolean;
@@ -39,6 +39,10 @@ const cellStyles: React.CSSProperties = {
   borderBottom: `1px solid ${colors.border.subtle}`,
 };
 
+// Note: This table is presentational-only (no selection/interaction).
+// Semantic HTML table elements provide native accessibility.
+// For interactive tables with selection, sorting, or keyboard navigation,
+// use react-aria's useTable hooks with a proper collection.
 export function Table({
   columns = [],
   data = [],
@@ -69,6 +73,7 @@ export function Table({
           {columns.map((col) => (
             <th
               key={col.key}
+              scope="col"
               style={{
                 ...headerCellStyles,
                 padding: cellPadding,
@@ -110,7 +115,7 @@ export function Table({
                       : undefined,
                 }}
               >
-                {row[col.key]}
+                {row[col.key] as React.ReactNode}
               </td>
             ))}
           </tr>

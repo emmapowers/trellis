@@ -46,7 +46,7 @@ def App() -> None:
     state = ShowcaseState()
 
     with state:
-        with w.Column(gap=0):
+        with w.Column(gap=0, style={"height": "100vh"}):
             # Header
             with w.Row(
                 align="center",
@@ -55,13 +55,14 @@ def App() -> None:
                 style={
                     "borderBottom": "1px solid #e2e8f0",
                     "backgroundColor": "#ffffff",
+                    "flexShrink": "0",
                 },
             ):
                 w.Icon(name=IconName.LAYOUT_DASHBOARD, size=24, color="#6366f1")
                 w.Heading(text="Trellis Widget Showcase", level=2)
 
             # Main content with sidebar tabs
-            with w.Row(gap=0, flex=1):
+            with w.Row(gap=0, flex=1, style={"minHeight": "0", "alignItems": "stretch"}):
                 # Sidebar
                 with w.Column(
                     gap=2,
@@ -70,6 +71,8 @@ def App() -> None:
                     style={
                         "borderRight": "1px solid #e2e8f0",
                         "backgroundColor": "#f8fafc",
+                        "overflow": "auto",
+                        "flexShrink": "0",
                     },
                 ):
                     for tab_id, label, icon, _ in TABS:

@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useRef } from "react";
+import { useToolbar } from "@react-aria/toolbar";
 import { colors, spacing, radius } from "../theme";
 
 interface ToolbarProps {
   variant?: "default" | "minimal";
+  orientation?: "horizontal" | "vertical";
   className?: string;
   style?: React.CSSProperties;
   children?: React.ReactNode;
@@ -10,10 +12,20 @@ interface ToolbarProps {
 
 export function Toolbar({
   variant = "default",
+  orientation = "horizontal",
   className,
   style,
   children,
 }: ToolbarProps): React.ReactElement {
+  const ref = useRef<HTMLDivElement>(null);
+  const { toolbarProps } = useToolbar(
+    {
+      "aria-label": "Toolbar",
+      orientation,
+    },
+    ref
+  );
+
   const variantStyles: React.CSSProperties =
     variant === "default"
       ? {
@@ -28,11 +40,13 @@ export function Toolbar({
 
   return (
     <div
+      {...toolbarProps}
+      ref={ref}
       className={className}
-      role="toolbar"
       style={{
         display: "flex",
-        alignItems: "center",
+        flexDirection: orientation === "vertical" ? "column" : "row",
+        alignItems: orientation === "vertical" ? "stretch" : "center",
         gap: spacing.xs,
         ...variantStyles,
         ...style,

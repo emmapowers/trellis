@@ -72,14 +72,16 @@ def MenuDivider(
 def Toolbar(
     *,
     variant: Literal["default", "minimal"] = "default",
+    orientation: Literal["horizontal", "vertical"] = "horizontal",
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
 ) -> ElementNode:
-    """Horizontal toolbar container for action buttons.
+    """Toolbar container for action buttons with keyboard navigation.
 
     Args:
         variant: Visual style variant
+        orientation: Layout direction (horizontal or vertical)
         class_name: Additional CSS classes
         style: Inline styles
         key: Unique key for reconciliation

@@ -1,5 +1,6 @@
-import React from "react";
-import { colors, radius, typography, spacing } from "../theme";
+import React, { useRef } from "react";
+import { useTextField } from "react-aria";
+import { colors, radius, typography, spacing, focusRing } from "../theme";
 
 interface TextInputProps {
   value?: string;
@@ -37,37 +38,41 @@ export function TextInput({
   className,
   style,
 }: TextInputProps): React.ReactElement {
-  const [isFocused, setIsFocused] = React.useState(false);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (on_change) {
-      on_change(e.target.value);
-    }
-  };
+  const ref = useRef<HTMLInputElement>(null);
+  const { inputProps } = useTextField(
+    {
+      value,
+      onChange: on_change,
+      placeholder,
+      isDisabled: disabled,
+    },
+    ref
+  );
+  const [isFocusVisible, setIsFocusVisible] = React.useState(false);
 
   const computedStyle: React.CSSProperties = {
     ...inputStyles,
-    ...(isFocused && !disabled
-      ? {
-          borderColor: colors.border.focus,
-          boxShadow: `0 0 0 2px ${colors.accent.subtle}`,
-        }
-      : {}),
+    ...(isFocusVisible && !disabled ? focusRing : {}),
     ...(disabled ? disabledStyles : {}),
     ...style,
   };
 
   return (
     <input
-      type="text"
-      value={value}
-      placeholder={placeholder}
-      onChange={handleChange}
-      disabled={disabled}
+      {...inputProps}
+      ref={ref}
       className={className}
       style={computedStyle}
-      onFocus={() => setIsFocused(true)}
-      onBlur={() => setIsFocused(false)}
+      onFocus={(e) => {
+        inputProps.onFocus?.(e);
+        if (e.target.matches(":focus-visible")) {
+          setIsFocusVisible(true);
+        }
+      }}
+      onBlur={(e) => {
+        inputProps.onBlur?.(e);
+        setIsFocusVisible(false);
+      }}
     />
   );
 }

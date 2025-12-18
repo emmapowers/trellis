@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useRef } from "react";
+import { useTooltipTrigger, useTooltip } from "react-aria";
+import { useTooltipTriggerState } from "react-stately";
 import { colors, typography, radius, shadows, spacing } from "../theme";
 
 type TooltipPosition = "top" | "bottom" | "left" | "right";
@@ -53,6 +55,30 @@ const positionStyles: Record<TooltipPosition, React.CSSProperties> = {
   },
 };
 
+function TooltipContent({
+  state,
+  content,
+  position,
+}: {
+  state: ReturnType<typeof useTooltipTriggerState>;
+  content: string;
+  position: TooltipPosition;
+}) {
+  const { tooltipProps } = useTooltip({}, state);
+
+  return (
+    <span
+      {...tooltipProps}
+      style={{
+        ...tooltipStyles,
+        ...positionStyles[position],
+      }}
+    >
+      {content}
+    </span>
+  );
+}
+
 export function Tooltip({
   content = "",
   position = "top",
@@ -61,30 +87,13 @@ export function Tooltip({
   style,
   children,
 }: TooltipProps): React.ReactElement {
-  const [isVisible, setIsVisible] = React.useState(false);
-  const timeoutRef = React.useRef<number | null>(null);
-
-  const showTooltip = () => {
-    timeoutRef.current = window.setTimeout(() => {
-      setIsVisible(true);
-    }, delay);
-  };
-
-  const hideTooltip = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    setIsVisible(false);
-  };
-
-  React.useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
+  const triggerRef = useRef<HTMLSpanElement>(null);
+  const state = useTooltipTriggerState({ delay });
+  const { triggerProps, tooltipProps } = useTooltipTrigger(
+    { delay },
+    state,
+    triggerRef
+  );
 
   return (
     <span
@@ -94,19 +103,12 @@ export function Tooltip({
         display: "inline-flex",
         ...style,
       }}
-      onMouseEnter={showTooltip}
-      onMouseLeave={hideTooltip}
     >
-      {children}
-      {isVisible && content && (
-        <span
-          style={{
-            ...tooltipStyles,
-            ...positionStyles[position],
-          }}
-        >
-          {content}
-        </span>
+      <span {...triggerProps} ref={triggerRef}>
+        {children}
+      </span>
+      {state.isOpen && content && (
+        <TooltipContent state={state} content={content} position={position} />
       )}
     </span>
   );

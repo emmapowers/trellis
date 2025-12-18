@@ -114,6 +114,9 @@ export const typography = {
   },
 };
 
+// Input height (explicit to avoid cross-browser inconsistencies)
+export const inputHeight = 32;
+
 // Shadows (subtle for light theme)
 export const shadows = {
   none: "none",
@@ -122,8 +125,15 @@ export const shadows = {
   lg: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
 };
 
-// Focus ring style (reusable)
+// Focus ring style (reusable) - uses outline to avoid overlap with adjacent elements
 export const focusRing = {
-  outline: "none",
-  boxShadow: `0 0 0 2px ${colors.accent.subtle}, 0 0 0 4px ${colors.accent.primary}`,
+  outline: `2px solid ${colors.accent.primary}`,
+  outlineOffset: "-2px",
+};
+
+// Focus ring for dark/colored backgrounds - subtle double ring for contrast
+export const focusRingOnColor = {
+  outline: `1px solid rgba(255, 255, 255, 0.8)`,
+  outlineOffset: "-1px",
+  boxShadow: `0 0 0 2px ${colors.accent.primary}`,
 };

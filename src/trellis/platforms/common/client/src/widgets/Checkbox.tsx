@@ -1,5 +1,7 @@
-import React from "react";
-import { colors, typography, spacing } from "../theme";
+import React, { useRef } from "react";
+import { useCheckbox } from "react-aria";
+import { useToggleState } from "react-stately";
+import { colors, typography, spacing, focusRing } from "../theme";
 
 interface CheckboxProps {
   checked?: boolean;
@@ -42,11 +44,22 @@ export function Checkbox({
   className,
   style,
 }: CheckboxProps): React.ReactElement {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (on_change) {
-      on_change(e.target.checked);
-    }
-  };
+  const ref = useRef<HTMLInputElement>(null);
+  const state = useToggleState({
+    isSelected: checked,
+    onChange: on_change,
+  });
+  const { inputProps, labelProps } = useCheckbox(
+    {
+      isDisabled: disabled,
+      isSelected: checked,
+      onChange: on_change,
+      children: label,
+    },
+    state,
+    ref
+  );
+  const [isFocusVisible, setIsFocusVisible] = React.useState(false);
 
   const computedContainerStyle: React.CSSProperties = {
     ...containerStyles,
@@ -54,14 +67,27 @@ export function Checkbox({
     ...style,
   };
 
+  const computedCheckboxStyle: React.CSSProperties = {
+    ...checkboxStyles,
+    ...(isFocusVisible ? focusRing : {}),
+  };
+
   return (
-    <label className={className} style={computedContainerStyle}>
+    <label {...labelProps} className={className} style={computedContainerStyle}>
       <input
-        type="checkbox"
-        checked={checked}
-        onChange={handleChange}
-        disabled={disabled}
-        style={checkboxStyles}
+        {...inputProps}
+        ref={ref}
+        style={computedCheckboxStyle}
+        onFocus={(e) => {
+          inputProps.onFocus?.(e);
+          if (e.target.matches(":focus-visible")) {
+            setIsFocusVisible(true);
+          }
+        }}
+        onBlur={(e) => {
+          inputProps.onBlur?.(e);
+          setIsFocusVisible(false);
+        }}
       />
       {label && <span style={labelStyles}>{label}</span>}
     </label>

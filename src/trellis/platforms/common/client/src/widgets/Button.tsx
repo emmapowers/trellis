@@ -1,5 +1,6 @@
-import React from "react";
-import { colors, radius, typography, shadows } from "../theme";
+import React, { useRef } from "react";
+import { useButton } from "react-aria";
+import { colors, radius, typography, shadows, focusRing, focusRingOnColor } from "../theme";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
@@ -118,35 +119,56 @@ export function Button({
   className,
   style,
 }: ButtonProps): React.ReactElement {
+  const ref = useRef<HTMLButtonElement>(null);
+  const { buttonProps, isPressed } = useButton(
+    {
+      // Wrap on_click to avoid passing the PressEvent, which contains
+      // DOM references that can't be serialized
+      onPress: on_click ? () => on_click() : undefined,
+      isDisabled: disabled,
+    },
+    ref
+  );
   const [isHovered, setIsHovered] = React.useState(false);
+  const [isFocusVisible, setIsFocusVisible] = React.useState(false);
 
   const variantStyle = variantStyles[variant] || variantStyles.primary;
   const sizeStyle = sizeStyles[size] || sizeStyles.md;
+
+  // Use double-ring focus indicator for colored backgrounds (primary, danger)
+  const needsContrastFocusRing = variant === "primary" || variant === "danger";
+  const activeFocusRing = needsContrastFocusRing ? focusRingOnColor : focusRing;
 
   const computedStyle: React.CSSProperties = {
     ...baseStyles,
     ...sizeStyle,
     ...variantStyle.normal,
-    ...(isHovered && !disabled ? variantStyle.hover : {}),
+    ...((isHovered || isPressed) && !disabled ? variantStyle.hover : {}),
     ...(disabled ? disabledStyles : {}),
     ...(full_width ? { width: "100%" } : {}),
+    ...(isFocusVisible ? activeFocusRing : {}),
     ...style,
-  };
-
-  const handleClick = () => {
-    if (on_click) {
-      on_click();
-    }
   };
 
   return (
     <button
+      {...buttonProps}
+      ref={ref}
       className={className}
-      onClick={handleClick}
-      disabled={disabled}
       style={computedStyle}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onFocus={(e) => {
+        buttonProps.onFocus?.(e);
+        // Check if focus came from keyboard (not mouse)
+        if (e.target.matches(":focus-visible")) {
+          setIsFocusVisible(true);
+        }
+      }}
+      onBlur={(e) => {
+        buttonProps.onBlur?.(e);
+        setIsFocusVisible(false);
+      }}
     >
       {text}
     </button>
