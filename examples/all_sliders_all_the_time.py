@@ -6,22 +6,10 @@ Then open: http://127.0.0.1:8000
 
 from __future__ import annotations
 
-import typing as tp
 from dataclasses import dataclass
 
-from trellis import Stateful, Trellis, async_main, component
+from trellis import Height, Margin, Stateful, Trellis, async_main, component
 from trellis import widgets as w
-
-# =============================================================================
-# Styles
-# =============================================================================
-
-STYLE_PAGE: dict[str, tp.Any] = {
-    "backgroundColor": "#0f172a",
-    "minHeight": "100vh",
-    "fontFamily": "'Inter', system-ui, -apple-system, sans-serif",
-    "padding": "24px",
-}
 
 
 # =============================================================================
@@ -66,33 +54,34 @@ def ControlPanel() -> None:
     def handle_value_change(value: float) -> None:
         state.set_value(value)
 
-    with w.Card(padding=24, style={"width": "400px", "marginBottom": "24px"}):
+    with w.Card(padding=16, width=400, margin=Margin(bottom=16)):
         w.Label(
             text="Slider Performance Test",
-            font_size=24,
-            color="#f1f5f9",
+            font_size=16,
             bold=True,
-            style={"textAlign": "center", "display": "block", "marginBottom": "16px"},
+            margin=Margin(bottom=12),
+            text_align="center",
+            style={"display": "block"},
         )
 
-        with w.Row(gap=12, align="center", style={"marginBottom": "12px"}):
-            w.Label(text="Num Sliders:", color="#94a3b8", style={"width": "100px"})
+        with w.Row(gap=8, align="center", margin=Margin(bottom=8)):
+            w.Label(text="Num Sliders:", color="#64748b", width=100)
             w.NumberInput(
                 value=float(state.num_sliders),
                 min=1,
                 on_change=handle_num_change,
-                style={"width": "80px"},
+                width=80,
             )
 
-        with w.Row(gap=12, align="center", style={"marginBottom": "12px"}):
-            w.Label(text="Value:", color="#94a3b8", style={"width": "100px"})
+        with w.Row(gap=8, align="center", margin=Margin(bottom=8)):
+            w.Label(text="Value:", color="#64748b", width=100)
             w.NumberInput(
                 value=state.value,
                 on_change=handle_value_change,
-                style={"width": "80px"},
+                width=80,
             )
 
-        with w.Row(justify="center", gap=12):
+        with w.Row(justify="center", gap=8):
             w.Button(text="Reset", on_click=state.reset, variant="outline")
 
 
@@ -102,17 +91,20 @@ def SliderColumn() -> None:
     state = SliderState.from_context()
 
     with w.Card(
-        padding=24,
-        style={"width": "400px", "maxHeight": "60vh", "overflowY": "auto"},
+        padding=16,
+        width=400,
+        height=Height(max="60vh"),
+        style={"overflowY": "auto"},
     ):
         with w.Column(gap=4):
             for i in range(state.num_sliders):
-                with w.Row(gap=12, align="center", key=f"slider-row-{i}"):
+                with w.Row(gap=8, align="center", key=f"slider-row-{i}"):
                     w.Label(
                         text=f"#{i + 1}",
                         font_size=12,
                         color="#64748b",
-                        style={"width": "60px", "textAlign": "right"},
+                        width=50,
+                        text_align="right",
                     )
                     w.Slider(
                         value=state.value,
@@ -124,10 +116,10 @@ def SliderColumn() -> None:
                     )
                     w.Label(
                         text=str(int(state.value)),
-                        font_size=14,
-                        color="#f1f5f9",
+                        font_size=13,
                         bold=True,
-                        style={"fontVariantNumeric": "tabular-nums", "width": "40px"},
+                        width=36,
+                        style={"fontVariantNumeric": "tabular-nums"},
                     )
 
 
@@ -137,7 +129,7 @@ def App() -> None:
     state = SliderState(num_sliders=3, value=50)
 
     with state:
-        with w.Column(style=STYLE_PAGE, align="center"):
+        with w.Column(padding=24, align="center"):
             ControlPanel()
             SliderColumn()
 

@@ -5,6 +5,7 @@
 (Symbol as any).dispose ??= Symbol("Symbol.dispose");
 (Symbol as any).asyncDispose ??= Symbol("Symbol.asyncDispose");
 
+import "../../../common/client/src/console"; // Set up console filtering
 import React, { useEffect, useState, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import { TrellisClient, ConnectionState } from "./TrellisClient";

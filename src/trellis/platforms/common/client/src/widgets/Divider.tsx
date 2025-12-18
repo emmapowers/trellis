@@ -1,4 +1,5 @@
 import React from "react";
+import { colors, spacing } from "../theme";
 
 interface DividerProps {
   orientation?: "horizontal" | "vertical";
@@ -10,8 +11,8 @@ interface DividerProps {
 
 export function Divider({
   orientation = "horizontal",
-  margin = 16,
-  color = "#334155",
+  margin = spacing.lg,
+  color = colors.border.default,
   className,
   style,
 }: DividerProps): React.ReactElement {

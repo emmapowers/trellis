@@ -59,12 +59,11 @@ async def _trellis_main():
 
 const DEFAULT_CODE = `from dataclasses import dataclass
 from trellis import Stateful, component
-from trellis import html as h
 from trellis import widgets as w
 
 @dataclass
 class CounterState(Stateful):
-    count: int
+    count: int = 0
 
     def increment(self):
         self.count += 1
@@ -74,15 +73,14 @@ class CounterState(Stateful):
 
 @component
 def Counter():
-    state = CounterState(count=0)
+    state = CounterState()
 
-    with h.Div(style={"padding": "20px", "fontFamily": "system-ui"}):
-        with w.Column():
-            h.H1("Trellis Counter")
-            h.P(f"Count: {state.count}")
-            with w.Row():
-                w.Button(text="-", on_click=state.decrement)
-                w.Button(text="+", on_click=state.increment)
+    with w.Column(gap=12, style={"padding": "20px"}):
+        w.Heading(text="Trellis Counter", level=2)
+        w.Label(text=f"Count: {state.count}", font_size=16)
+        with w.Row(gap=8):
+            w.Button(text="-", on_click=state.decrement, size="sm")
+            w.Button(text="+", on_click=state.increment, size="sm")
 
 # Export the root component
 App = Counter

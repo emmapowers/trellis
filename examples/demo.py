@@ -7,26 +7,18 @@ Then open: http://127.0.0.1:8000
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from trellis import Stateful, Trellis, async_main, component
+from trellis import Margin, Padding, Stateful, Trellis, async_main, component
 from trellis import widgets as w
 
 # =============================================================================
 # Styles
 # =============================================================================
 
-STYLE_PAGE = {
-    "backgroundColor": "#0f172a",
-    "minHeight": "100vh",
-    "fontFamily": "'Inter', system-ui, -apple-system, sans-serif",
-    "padding": "24px",
-}
-
 STYLE_COUNT_DISPLAY = {
-    "backgroundColor": "#0f172a",
-    "borderRadius": "12px",
-    "padding": "16px 32px",
-    "width": "120px",
+    "backgroundColor": "#ffffff",
+    "borderRadius": "6px",
     "textAlign": "center",
+    "border": "1px solid #e2e8f0",
 }
 
 
@@ -61,9 +53,9 @@ class CounterState(Stateful):
 @component
 def Header(title: str, subtitle: str) -> None:
     """Page header with title and subtitle."""
-    with w.Column(align="center", gap=8, style={"marginBottom": "32px"}):
-        w.Label(text=title, font_size=28, color="#f1f5f9", bold=True)
-        w.Label(text=subtitle, font_size=14, color="#94a3b8")
+    with w.Column(align="center", gap=4, margin=Margin(bottom=24)):
+        w.Label(text=title, font_size=20, bold=True)
+        w.Label(text=subtitle, font_size=13, color="#64748b")
 
 
 @component
@@ -75,7 +67,7 @@ def CounterControls(
     max_val: int = 10,
 ) -> None:
     """Counter display with increment/decrement buttons."""
-    with w.Row(gap=24, align="center", justify="center", style={"marginBottom": "32px"}):
+    with w.Row(gap=16, align="center", justify="center", margin=Margin(bottom=24)):
         w.Button(
             text="-",
             on_click=on_decrement,
@@ -84,11 +76,12 @@ def CounterControls(
             size="lg",
         )
 
-        with w.Column(style=STYLE_COUNT_DISPLAY):
+        with w.Column(
+            width=120, padding=Padding(x=32, y=16), style=STYLE_COUNT_DISPLAY
+        ):
             w.Label(
                 text=str(count),
-                font_size=48,
-                color="#f1f5f9",
+                font_size=36,
                 bold=True,
                 style={"fontVariantNumeric": "tabular-nums"},
             )
@@ -105,7 +98,7 @@ def CounterControls(
 @component
 def RangeLabels(min_val: int, max_val: int) -> None:
     """Min/max range labels."""
-    with w.Row(justify="between", style={"marginBottom": "32px"}):
+    with w.Row(justify="between", margin=Margin(bottom=24)):
         w.Label(text=f"Min: {min_val}", font_size=12, color="#64748b")
         w.Label(text=f"Max: {max_val}", font_size=12, color="#64748b")
 
@@ -115,8 +108,8 @@ def App() -> None:
     """Main application component with interactive counter."""
     state = CounterState(count=5, min_val=1, max_val=10)
 
-    with w.Column(style=STYLE_PAGE, align="center", justify="center"):
-        with w.Card(padding=40, style={"width": "320px"}):
+    with w.Column(padding=24, align="center", justify="center"):
+        with w.Card(padding=32, width=320):
             Header(title="Counter", subtitle="A simple interactive counter demo")
             CounterControls(
                 count=state.count,
@@ -129,11 +122,11 @@ def App() -> None:
                 value=state.count,
                 min=state.min_val,
                 max=state.max_val,
-                style={"marginBottom": "24px"},
+                margin=Margin(bottom=16),
             )
             RangeLabels(min_val=state.min_val, max_val=state.max_val)
 
-            with w.Row(justify="center", gap=12):
+            with w.Row(justify="center", gap=8):
                 w.Button(text="Reset", on_click=state.reset, variant="outline")
 
 

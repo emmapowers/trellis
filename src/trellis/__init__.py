@@ -5,10 +5,11 @@ Canonical import style for applications::
     from trellis import Trellis, async_main
     from trellis import widgets as w
     from trellis import html as h
+    from trellis.widgets import IconName
 
 The trellis package exports core rendering primitives (component, Stateful, etc.)
 plus async_main and Trellis. Widgets and HTML elements are accessed via their
-respective submodules.
+respective submodules. Icons are available via ``trellis.widgets.IconName``.
 """
 
 from trellis import core

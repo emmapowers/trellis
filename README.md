@@ -55,9 +55,28 @@ Trellis aims for both: simple to start, maintainable as applications grow.
 - **Fine-grained updates** — Only affected components re-render. Efficient diffs over the wire.
 - **Three platforms** — Server (web app), Desktop (native), Browser (Pyodide). Same codebase, each adapts to platform strengths.
 - **Type-safe throughout** — Full type hints. IDE autocompletion works.
-- **Widget toolkit** — Forms, data display, overlays, navigation. Full HTML support when you need lower-level control.
+- **Widget toolkit** — Layout, forms, data display, charts, navigation. Full HTML support when you need lower-level control.
 - **Routing** — Client-side navigation, URL-based routing.
 - **Live reload** — File changes trigger rebuild. State preserved.
+
+## Widgets
+
+> **Prototype toolkit** — The widget library exists to build applications complex enough to test the core framework. The API will change significantly.
+
+Widgets are accessed via `trellis.widgets` (conventionally imported as `w`):
+
+| Category | Widgets |
+|----------|---------|
+| **Layout** | `Column`, `Row`, `Card` |
+| **Forms** | `Button`, `TextInput`, `NumberInput`, `Checkbox`, `Slider`, `Select` |
+| **Text** | `Label`, `Heading`, `Divider` |
+| **Data** | `Table`, `Stat`, `Tag`, `Badge` |
+| **Charts** | `TimeSeriesChart`, `LineChart`, `BarChart`, `AreaChart`, `PieChart`, `Sparkline` |
+| **Feedback** | `ProgressBar`, `StatusIndicator`, `Tooltip`, `Callout`, `Collapsible` |
+| **Navigation** | `Tabs`/`Tab`, `Breadcrumb`, `Tree`, `Menu`/`MenuItem`, `Toolbar` |
+| **Icons** | `Icon` (800+ [Lucide](https://lucide.dev) icons) |
+
+All widgets support React Aria for accessibility (keyboard navigation, focus management, ARIA attributes).
 
 ## Example
 
@@ -108,7 +127,7 @@ pip install "trellis[desktop] @ git+https://github.com/emmapowers/trellis.git"
 | ✅ | Desktop platform (PyTauri) |
 | ✅ | HTML elements |
 | ✅ | Type safety |
-| 🚧 | Widget toolkit (basics only) |
+| 🚧 | Widget toolkit |
 | ❌ | Partial updates (sends full tree) |
 | ❌ | Bidirectional binding (`Mutable[T]`) |
 | ❌ | Routing |

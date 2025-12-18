@@ -1,4 +1,8 @@
-"""Entry point for the todo app."""
+"""Entry point for the widget showcase.
+
+Run with: pixi run -- python -m examples.widget_showcase
+Or: pixi run -- python examples/widget_showcase
+"""
 
 from trellis import Trellis, async_main
 

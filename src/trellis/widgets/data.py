@@ -1,0 +1,69 @@
+"""Data display widgets for Trellis.
+
+Provides widgets for displaying metrics, stats, and tagged data.
+"""
+
+from __future__ import annotations
+
+import typing as tp
+from typing import Literal
+
+from trellis.core.react_component import react_component_base
+from trellis.core.rendering import ElementNode
+
+if tp.TYPE_CHECKING:
+    from collections.abc import Callable
+
+
+@react_component_base("Stat")
+def Stat(
+    *,
+    label: str = "",
+    value: str = "",
+    delta: str | None = None,
+    delta_type: Literal["increase", "decrease", "neutral"] | None = None,
+    icon: str | None = None,
+    size: Literal["sm", "md", "lg"] = "md",
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Display a key metric with label, value, and optional trend.
+
+    Args:
+        label: Descriptive label for the metric
+        value: The main value to display
+        delta: Change indicator (e.g., "+12%", "-5%")
+        delta_type: Visual style for delta ("increase" = green, "decrease" = red)
+        icon: Optional icon name to display
+        size: Size variant ("sm", "md", "lg")
+        class_name: Additional CSS classes
+        style: Inline styles
+        key: Unique key for reconciliation
+    """
+    ...
+
+
+@react_component_base("Tag")
+def Tag(
+    text: str = "",
+    *,
+    variant: Literal["default", "primary", "success", "warning", "error"] = "default",
+    removable: bool = False,
+    on_remove: Callable[[], None] | None = None,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Display a tag/chip label.
+
+    Args:
+        text: The tag text
+        variant: Color variant
+        removable: Whether to show a remove button
+        on_remove: Callback when remove is clicked
+        class_name: Additional CSS classes
+        style: Inline styles
+        key: Unique key for reconciliation
+    """
+    ...

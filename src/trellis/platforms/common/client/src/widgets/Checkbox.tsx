@@ -1,4 +1,7 @@
-import React from "react";
+import React, { useRef } from "react";
+import { useCheckbox } from "react-aria";
+import { useToggleState } from "react-stately";
+import { colors, typography, spacing, focusRing } from "../theme";
 
 interface CheckboxProps {
   checked?: boolean;
@@ -12,20 +15,20 @@ interface CheckboxProps {
 const containerStyles: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
-  gap: "8px",
+  gap: `${spacing.sm}px`,
   cursor: "pointer",
 };
 
 const checkboxStyles: React.CSSProperties = {
-  width: "18px",
-  height: "18px",
-  accentColor: "#6366f1",
+  width: "14px",
+  height: "14px",
+  accentColor: colors.accent.primary,
   cursor: "pointer",
 };
 
 const labelStyles: React.CSSProperties = {
-  color: "#f1f5f9",
-  fontSize: "14px",
+  color: colors.text.primary,
+  fontSize: `${typography.fontSize.md}px`,
 };
 
 const disabledStyles: React.CSSProperties = {
@@ -41,11 +44,22 @@ export function Checkbox({
   className,
   style,
 }: CheckboxProps): React.ReactElement {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (on_change) {
-      on_change(e.target.checked);
-    }
-  };
+  const ref = useRef<HTMLInputElement>(null);
+  const state = useToggleState({
+    isSelected: checked,
+    onChange: on_change,
+  });
+  const { inputProps, labelProps } = useCheckbox(
+    {
+      isDisabled: disabled,
+      isSelected: checked,
+      onChange: on_change,
+      children: label,
+    },
+    state,
+    ref
+  );
+  const [isFocusVisible, setIsFocusVisible] = React.useState(false);
 
   const computedContainerStyle: React.CSSProperties = {
     ...containerStyles,
@@ -53,14 +67,27 @@ export function Checkbox({
     ...style,
   };
 
+  const computedCheckboxStyle: React.CSSProperties = {
+    ...checkboxStyles,
+    ...(isFocusVisible ? focusRing : {}),
+  };
+
   return (
-    <label className={className} style={computedContainerStyle}>
+    <label {...labelProps} className={className} style={computedContainerStyle}>
       <input
-        type="checkbox"
-        checked={checked}
-        onChange={handleChange}
-        disabled={disabled}
-        style={checkboxStyles}
+        {...inputProps}
+        ref={ref}
+        style={computedCheckboxStyle}
+        onFocus={(e) => {
+          inputProps.onFocus?.(e);
+          if (e.target.matches(":focus-visible")) {
+            setIsFocusVisible(true);
+          }
+        }}
+        onBlur={(e) => {
+          inputProps.onBlur?.(e);
+          setIsFocusVisible(false);
+        }}
       />
       {label && <span style={labelStyles}>{label}</span>}
     </label>

@@ -5,6 +5,7 @@
  * Configuration is read from window.__TRELLIS_CONFIG__.
  */
 
+import "../../../common/client/src/console"; // Set up console filtering
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { TrellisApp, PythonSource } from "./TrellisApp";

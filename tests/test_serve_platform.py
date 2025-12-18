@@ -232,6 +232,7 @@ class TestGenerateHtml:
         assert "</html>" in result
         assert '<div id="root"></div>' in result
         assert "bundle.js" in result
+        assert "bundle.css" in result
         assert "__TRELLIS_CONFIG__" in result
 
     def test_escapes_special_characters(self) -> None:

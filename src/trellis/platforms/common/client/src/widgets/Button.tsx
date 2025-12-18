@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useRef } from "react";
+import { useButton } from "react-aria";
+import { colors, radius, typography, shadows, focusRing, focusRingOnColor } from "../theme";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
@@ -18,8 +20,8 @@ const baseStyles: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  fontWeight: 500,
-  borderRadius: "8px",
+  fontWeight: typography.fontWeight.medium,
+  borderRadius: `${radius.sm}px`,
   border: "none",
   cursor: "pointer",
   transition: "all 150ms ease",
@@ -29,19 +31,19 @@ const baseStyles: React.CSSProperties = {
 
 const sizeStyles: Record<ButtonSize, React.CSSProperties> = {
   sm: {
-    padding: "6px 12px",
-    fontSize: "13px",
-    minHeight: "32px",
+    padding: "4px 8px",
+    fontSize: `${typography.fontSize.sm}px`,
+    minHeight: "26px",
   },
   md: {
-    padding: "10px 18px",
-    fontSize: "14px",
-    minHeight: "40px",
+    padding: "6px 12px",
+    fontSize: `${typography.fontSize.md}px`,
+    minHeight: "32px",
   },
   lg: {
-    padding: "12px 24px",
-    fontSize: "16px",
-    minHeight: "48px",
+    padding: "8px 16px",
+    fontSize: `${typography.fontSize.lg}px`,
+    minHeight: "38px",
   },
 };
 
@@ -51,49 +53,50 @@ const variantStyles: Record<
 > = {
   primary: {
     normal: {
-      backgroundColor: "#6366f1",
-      color: "#ffffff",
-      boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+      backgroundColor: colors.accent.primary,
+      color: colors.text.inverse,
+      boxShadow: shadows.sm,
     },
     hover: {
-      backgroundColor: "#4f46e5",
+      backgroundColor: colors.accent.primaryHover,
     },
   },
   secondary: {
     normal: {
-      backgroundColor: "#374151",
-      color: "#ffffff",
-      boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+      backgroundColor: colors.neutral[100],
+      color: colors.text.primary,
+      boxShadow: shadows.sm,
     },
     hover: {
-      backgroundColor: "#4b5563",
+      backgroundColor: colors.neutral[200],
     },
   },
   outline: {
     normal: {
       backgroundColor: "transparent",
-      color: "#d1d5db",
-      border: "1px solid #4b5563",
+      color: colors.text.primary,
+      border: `1px solid ${colors.border.default}`,
     },
     hover: {
-      backgroundColor: "rgba(75, 85, 99, 0.3)",
-      borderColor: "#6b7280",
+      backgroundColor: colors.neutral[50],
+      borderColor: colors.border.strong,
     },
   },
   ghost: {
     normal: {
       backgroundColor: "transparent",
-      color: "#d1d5db",
+      color: colors.text.secondary,
     },
     hover: {
-      backgroundColor: "rgba(75, 85, 99, 0.3)",
+      backgroundColor: colors.neutral[100],
+      color: colors.text.primary,
     },
   },
   danger: {
     normal: {
-      backgroundColor: "#dc2626",
-      color: "#ffffff",
-      boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+      backgroundColor: colors.semantic.error,
+      color: colors.text.inverse,
+      boxShadow: shadows.sm,
     },
     hover: {
       backgroundColor: "#b91c1c",
@@ -116,35 +119,56 @@ export function Button({
   className,
   style,
 }: ButtonProps): React.ReactElement {
+  const ref = useRef<HTMLButtonElement>(null);
+  const { buttonProps, isPressed } = useButton(
+    {
+      // Wrap on_click to avoid passing the PressEvent, which contains
+      // DOM references that can't be serialized
+      onPress: on_click ? () => on_click() : undefined,
+      isDisabled: disabled,
+    },
+    ref
+  );
   const [isHovered, setIsHovered] = React.useState(false);
+  const [isFocusVisible, setIsFocusVisible] = React.useState(false);
 
   const variantStyle = variantStyles[variant] || variantStyles.primary;
   const sizeStyle = sizeStyles[size] || sizeStyles.md;
+
+  // Use double-ring focus indicator for colored backgrounds (primary, danger)
+  const needsContrastFocusRing = variant === "primary" || variant === "danger";
+  const activeFocusRing = needsContrastFocusRing ? focusRingOnColor : focusRing;
 
   const computedStyle: React.CSSProperties = {
     ...baseStyles,
     ...sizeStyle,
     ...variantStyle.normal,
-    ...(isHovered && !disabled ? variantStyle.hover : {}),
+    ...((isHovered || isPressed) && !disabled ? variantStyle.hover : {}),
     ...(disabled ? disabledStyles : {}),
     ...(full_width ? { width: "100%" } : {}),
+    ...(isFocusVisible ? activeFocusRing : {}),
     ...style,
-  };
-
-  const handleClick = () => {
-    if (on_click) {
-      on_click();
-    }
   };
 
   return (
     <button
+      {...buttonProps}
+      ref={ref}
       className={className}
-      onClick={handleClick}
-      disabled={disabled}
       style={computedStyle}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onFocus={(e) => {
+        buttonProps.onFocus?.(e);
+        // Check if focus came from keyboard (not mouse)
+        if (e.target.matches(":focus-visible")) {
+          setIsFocusVisible(true);
+        }
+      }}
+      onBlur={(e) => {
+        buttonProps.onBlur?.(e);
+        setIsFocusVisible(false);
+      }}
     >
       {text}
     </button>

@@ -1,4 +1,5 @@
 import React from "react";
+import { colors, radius, shadows, spacing } from "../theme";
 
 interface CardProps {
   padding?: number;
@@ -8,15 +9,14 @@ interface CardProps {
 }
 
 const cardStyles: React.CSSProperties = {
-  backgroundColor: "#1e293b",
-  borderRadius: "12px",
-  border: "1px solid #334155",
-  boxShadow:
-    "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
+  backgroundColor: colors.bg.surface,
+  borderRadius: `${radius.md}px`,
+  border: `1px solid ${colors.border.default}`,
+  boxShadow: shadows.md,
 };
 
 export function Card({
-  padding = 24,
+  padding = spacing.xl,
   className,
   style,
   children,

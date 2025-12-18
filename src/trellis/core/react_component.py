@@ -33,11 +33,70 @@ import typing as tp
 
 from trellis.core.base import ElementKind
 from trellis.core.base_component import Component
+from trellis.core.style_props import Height, Margin, Padding, Width
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering import ElementNode
 
 __all__ = ["ReactComponentBase", "react_component_base"]
+
+
+def _merge_style_props(props: dict[str, tp.Any]) -> dict[str, tp.Any]:
+    """Convert ergonomic style props to style dict entries.
+
+    This function processes Margin, Padding, Width, Height dataclasses and flex,
+    converting them to CSS style properties. Plain int/str values for margin,
+    padding, width, height are passed through unchanged (widget-specific).
+
+    Args:
+        props: The widget props, potentially containing style shorthand props
+
+    Returns:
+        Modified props dict with style props merged into the style dict
+    """
+    result = dict(props)
+    style: dict[str, tp.Any] = dict(props.get("style") or {})
+
+    # Handle margin - only convert dataclass instances
+    if "margin" in result and isinstance(result["margin"], Margin):
+        style.update(result.pop("margin").to_style())
+
+    # Handle padding - only convert dataclass instances
+    if "padding" in result and isinstance(result["padding"], Padding):
+        style.update(result.pop("padding").to_style())
+
+    # Handle width - convert dataclass or plain values (most widgets don't have width prop)
+    if "width" in result:
+        width = result.pop("width")
+        if isinstance(width, Width):
+            style.update(width.to_style())
+        elif isinstance(width, int):
+            style["width"] = f"{width}px"
+        elif isinstance(width, str):
+            style["width"] = width
+
+    # Handle height - only convert dataclass instances (ProgressBar has its own height)
+    if "height" in result and isinstance(result["height"], Height):
+        style.update(result.pop("height").to_style())
+
+    # Handle flex
+    if "flex" in result:
+        style["flex"] = result.pop("flex")
+
+    # Handle text_align
+    if "text_align" in result:
+        style["textAlign"] = result.pop("text_align")
+
+    # Handle font_weight
+    if "font_weight" in result:
+        fw = result.pop("font_weight")
+        weight_map = {"normal": 400, "medium": 500, "semibold": 600, "bold": 700}
+        style["fontWeight"] = weight_map.get(fw, fw) if isinstance(fw, str) else fw
+
+    if style:
+        result["style"] = style
+
+    return result
 
 
 class _DecoratedComponent(tp.Protocol):
@@ -166,7 +225,7 @@ def react_component_base(
 
         @functools.wraps(func)
         def wrapper(**props: tp.Any) -> ElementNode:
-            return _singleton._place(**props)
+            return _singleton._place(**_merge_style_props(props))
 
         # Expose the underlying component for introspection
         wrapper._component = _singleton  # type: ignore[attr-defined]
