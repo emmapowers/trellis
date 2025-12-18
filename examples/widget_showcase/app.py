@@ -2,7 +2,7 @@
 
 from trellis import Margin, Padding, component
 from trellis import widgets as w
-from trellis.icons import IconName
+from trellis.widgets import IconName
 
 from .sections import (
     ActionsSection,

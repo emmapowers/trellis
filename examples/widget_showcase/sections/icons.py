@@ -2,7 +2,7 @@
 
 from trellis import component
 from trellis import widgets as w
-from trellis.icons import IconName
+from trellis.widgets import IconName
 
 
 @component

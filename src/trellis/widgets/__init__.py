@@ -30,7 +30,7 @@ from trellis.widgets.charts import (
 )
 from trellis.widgets.data import Stat, Tag
 from trellis.widgets.feedback import Callout, Collapsible
-from trellis.widgets.icons import Icon
+from trellis.widgets.icons import Icon, IconName
 from trellis.widgets.layout import Card, Column, Row
 from trellis.widgets.navigation import Breadcrumb, Tab, Tabs, Tree
 
@@ -48,6 +48,7 @@ __all__ = [
     "Divider",
     "Heading",
     "Icon",
+    "IconName",
     "Label",
     "LineChart",
     "Menu",

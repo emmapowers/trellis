@@ -195,13 +195,6 @@ CORE_PACKAGES = {
     "@swc/helpers": "0.5.13",
 }
 
-# Dev dependencies for testing (not bundled with app)
-DEV_PACKAGES = {
-    "vitest": "2.1.0",
-    "@testing-library/react": "16.0.0",
-    "jsdom": "25.0.0",
-}
-
 # Additional packages for desktop platform (PyTauri)
 DESKTOP_PACKAGES = {
     "@tauri-apps/api": "2.8.0",
