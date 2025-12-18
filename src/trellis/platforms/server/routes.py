@@ -24,6 +24,11 @@ def get_index_html(static_path: str = "/static") -> str:
     <style>
         *, *::before, *::after {{ box-sizing: border-box; }}
         html, body, #root {{ margin: 0; padding: 0; height: 100%; }}
+        body {{
+            background-color: #f8fafc;
+            color: #0f172a;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }}
     </style>
 </head>
 <body>

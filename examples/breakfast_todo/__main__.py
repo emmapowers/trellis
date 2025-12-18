@@ -1,4 +1,4 @@
-"""Entry point for the todo app."""
+"""Entry point for the breakfast todo app."""
 
 from trellis import Trellis, async_main
 

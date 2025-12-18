@@ -1,4 +1,5 @@
 import React from "react";
+import { colors, radius } from "../theme";
 
 interface ProgressBarProps {
   value?: number;
@@ -13,14 +14,14 @@ interface ProgressBarProps {
 }
 
 const trackStyles: React.CSSProperties = {
-  backgroundColor: "#0f172a",
-  borderRadius: "9999px",
+  backgroundColor: colors.border.default,
+  borderRadius: `${radius.sm}px`,
   overflow: "hidden",
 };
 
 const fillStyles: React.CSSProperties = {
   height: "100%",
-  borderRadius: "9999px",
+  borderRadius: `${radius.sm}px`,
   transition: "width 200ms ease",
 };
 
@@ -37,13 +38,13 @@ export function ProgressBar({
   max = 100,
   loading = false,
   disabled = false,
-  color = "#6366f1",
-  height = 8,
+  color = colors.accent.primary,
+  height = 4,
   className,
   style,
 }: ProgressBarProps): React.ReactElement {
   const percent = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
-  const fillColor = disabled ? "#64748b" : color;
+  const fillColor = disabled ? colors.text.muted : color;
 
   return (
     <>

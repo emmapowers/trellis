@@ -357,3 +357,172 @@ def ProgressBar(
         ProgressBar(loading=True)  # Indeterminate loading state
     """
     ...
+
+
+@react_component_base("StatusIndicator")
+def StatusIndicator(
+    *,
+    status: tp.Literal["success", "error", "warning", "pending", "info"] = "pending",
+    label: str | None = None,
+    show_icon: bool = True,
+    size: tp.Literal["sm", "md"] = "md",
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Status indicator with icon and optional label.
+
+    Displays a semantic status (success, error, warning, etc.) with an icon
+    and optional text label. Useful for showing operation status, validation
+    state, or data health indicators.
+
+    Args:
+        status: The status type to display. One of:
+            - "success": Green checkmark (✓)
+            - "error": Red X (✗)
+            - "warning": Amber warning (⚠)
+            - "pending": Gray circle (○)
+            - "info": Blue info (i)
+        label: Optional text label to display next to the icon.
+        show_icon: Whether to show the status icon. Defaults to True.
+        size: Icon and text size. One of "sm", "md" (default).
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+        key: Optional key for reconciliation.
+
+    Returns:
+        An ElementNode for the StatusIndicator component.
+
+    Example:
+        StatusIndicator(status="success", label="Passed")
+        StatusIndicator(status="error", label="Failed")
+        StatusIndicator(status="pending")  # Icon only
+    """
+    ...
+
+
+@react_component_base("Badge")
+def Badge(
+    text: str = "",
+    *,
+    variant: tp.Literal["default", "success", "error", "warning", "info"] = "default",
+    size: tp.Literal["sm", "md"] = "sm",
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Small badge for counts or status labels.
+
+    Displays a compact, pill-shaped badge with semantic coloring.
+    Useful for tags, counts, status labels, or metadata.
+
+    Args:
+        text: The badge text to display.
+        variant: Badge color variant. One of:
+            - "default": Neutral gray
+            - "success": Green
+            - "error": Red
+            - "warning": Amber
+            - "info": Blue
+        size: Badge size. One of "sm" (default), "md".
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+        key: Optional key for reconciliation.
+
+    Returns:
+        An ElementNode for the Badge component.
+
+    Example:
+        Badge(text="New", variant="success")
+        Badge(text="3", variant="error")  # Count badge
+        Badge(text="Beta", variant="info")
+    """
+    ...
+
+
+@react_component_base("Tooltip", has_children=True)
+def Tooltip(
+    content: str = "",
+    *,
+    position: tp.Literal["top", "bottom", "left", "right"] = "top",
+    delay: int = 200,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Tooltip wrapper for hover hints.
+
+    Wraps child elements and shows a tooltip on hover. The tooltip appears
+    after a short delay and hides when the mouse leaves.
+
+    Args:
+        content: The tooltip text to display on hover.
+        position: Where the tooltip appears relative to the target. One of:
+            - "top": Above the element (default)
+            - "bottom": Below the element
+            - "left": To the left of the element
+            - "right": To the right of the element
+        delay: Delay in milliseconds before showing tooltip. Defaults to 200.
+        class_name: CSS class name(s) to apply to the wrapper.
+        style: Additional inline styles to apply to the wrapper.
+        key: Optional key for reconciliation.
+
+    Returns:
+        An ElementNode for the Tooltip component.
+
+    Example:
+        with w.Tooltip(content="Click to save"):
+            w.Button(text="Save")
+    """
+    ...
+
+
+@react_component_base("Table")
+def Table(
+    *,
+    columns: list[dict[str, tp.Any]] | None = None,
+    data: list[dict[str, tp.Any]] | None = None,
+    striped: bool = False,
+    compact: bool = True,
+    bordered: bool = False,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    key: str | None = None,
+) -> ElementNode:
+    """Data table widget.
+
+    Displays tabular data with configurable columns. Supports striped rows,
+    compact mode, and bordered styling for data-dense dashboard displays.
+
+    Args:
+        columns: List of column definitions. Each dict should have:
+            - "key": The data key to display in this column (required)
+            - "label": The column header text (required)
+            - "width": Optional column width (CSS string, e.g., "100px", "20%")
+            - "align": Text alignment ("left", "center", "right")
+        data: List of row data dicts. Keys should match column keys.
+        striped: Whether to show alternating row colors. Defaults to False.
+        compact: Whether to use compact row height. Defaults to True.
+        bordered: Whether to show cell borders. Defaults to False.
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+        key: Optional key for reconciliation.
+
+    Returns:
+        An ElementNode for the Table component.
+
+    Example:
+        Table(
+            columns=[
+                {"key": "name", "label": "Name"},
+                {"key": "status", "label": "Status", "align": "center"},
+                {"key": "value", "label": "Value", "align": "right"},
+            ],
+            data=[
+                {"name": "Item 1", "status": "Active", "value": 100},
+                {"name": "Item 2", "status": "Pending", "value": 50},
+            ],
+            striped=True,
+        )
+    """
+    ...

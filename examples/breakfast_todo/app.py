@@ -1,4 +1,4 @@
-"""Root application component."""
+"""Root application component for breakfast todo app."""
 
 from trellis import component
 from trellis import widgets as w
@@ -9,9 +9,7 @@ from .state import TodosState, Todo
 
 STYLE_PAGE = {
     "minHeight": "100vh",
-    "backgroundColor": "#0f172a",
     "padding": "40px 20px",
-    "fontFamily": "'Inter', system-ui, sans-serif",
 }
 
 
@@ -34,17 +32,17 @@ def App() -> None:
                 # Header
                 with w.Column(
                     align="center",
-                    style={"padding": "24px", "borderBottom": "1px solid #334155"},
+                    style={"padding": "20px", "borderBottom": "1px solid #e2e8f0"},
                 ):
                     w.Label(
-                        text="todos",
-                        font_size=32,
-                        color="#b83f45",
+                        text="🍳 breakfast todos",
+                        font_size=24,
+                        color="#6366f1",
                         style={"fontWeight": "300"},
                     )
 
                 # Input
-                with w.Column(style={"padding": "16px", "borderBottom": "1px solid #334155"}):
+                with w.Column(style={"padding": "12px", "borderBottom": "1px solid #e2e8f0"}):
                     TodoInput()
 
                 # List
@@ -52,5 +50,5 @@ def App() -> None:
 
                 # Footer (only show if there are todos)
                 if state.todos:
-                    with w.Column(style={"borderTop": "1px solid #334155"}):
+                    with w.Column(style={"borderTop": "1px solid #e2e8f0"}):
                         TodoFooter()

@@ -1,4 +1,5 @@
 import React from "react";
+import { colors, radius, typography, spacing } from "../theme";
 
 interface SelectOption {
   value: string;
@@ -15,28 +16,32 @@ interface SelectProps {
   style?: React.CSSProperties;
 }
 
+// Arrow icon using secondary text color for light theme
+const arrowIcon = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`;
+
 const selectStyles: React.CSSProperties = {
-  backgroundColor: "#0f172a",
-  border: "1px solid #334155",
-  borderRadius: "8px",
-  padding: "10px 14px",
-  color: "#f1f5f9",
-  fontSize: "14px",
+  backgroundColor: colors.bg.input,
+  border: `1px solid ${colors.border.default}`,
+  borderRadius: `${radius.sm}px`,
+  padding: `${spacing.sm}px ${spacing.md + 2}px`,
+  color: colors.text.primary,
+  fontSize: `${typography.fontSize.md}px`,
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
   cursor: "pointer",
-  transition: "border-color 150ms ease",
+  transition: "border-color 150ms ease, box-shadow 150ms ease",
   appearance: "none",
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+  backgroundImage: arrowIcon,
   backgroundRepeat: "no-repeat",
-  backgroundPosition: "right 12px center",
-  paddingRight: "36px",
+  backgroundPosition: "right 10px center",
+  paddingRight: "32px",
 };
 
 const disabledStyles: React.CSSProperties = {
   opacity: 0.5,
   cursor: "not-allowed",
+  backgroundColor: colors.neutral[50],
 };
 
 export function Select({
@@ -48,6 +53,8 @@ export function Select({
   className,
   style,
 }: SelectProps): React.ReactElement {
+  const [isFocused, setIsFocused] = React.useState(false);
+
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (on_change) {
       on_change(e.target.value);
@@ -56,6 +63,12 @@ export function Select({
 
   const computedStyle: React.CSSProperties = {
     ...selectStyles,
+    ...(isFocused && !disabled
+      ? {
+          borderColor: colors.border.focus,
+          boxShadow: `0 0 0 2px ${colors.accent.subtle}`,
+        }
+      : {}),
     ...(disabled ? disabledStyles : {}),
     ...style,
   };
@@ -67,6 +80,8 @@ export function Select({
       disabled={disabled}
       className={className}
       style={computedStyle}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
     >
       {placeholder && (
         <option value="" disabled>

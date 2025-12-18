@@ -1,6 +1,7 @@
 /** Widget registry for mapping component names to React components. */
 
 import React from "react";
+import { Badge } from "./Badge";
 import { Button } from "./Button";
 import { Card } from "./Card";
 import { Checkbox } from "./Checkbox";
@@ -14,10 +15,14 @@ import { ProgressBar } from "./ProgressBar";
 import { Row } from "./Row";
 import { Select } from "./Select";
 import { Slider } from "./Slider";
+import { StatusIndicator } from "./StatusIndicator";
+import { Table } from "./Table";
 import { TextInput } from "./TextInput";
+import { Tooltip } from "./Tooltip";
 
 // Registry maps component type names to React components
 const widgetRegistry: Record<string, React.ComponentType<any>> = {
+  Badge,
   Button,
   Card,
   Checkbox,
@@ -31,7 +36,10 @@ const widgetRegistry: Record<string, React.ComponentType<any>> = {
   Row,
   Select,
   Slider,
+  StatusIndicator,
+  Table,
   TextInput,
+  Tooltip,
 };
 
 export function getWidget(
@@ -48,6 +56,7 @@ export function registerWidget(
 }
 
 export {
+  Badge,
   Button,
   Card,
   Checkbox,
@@ -61,5 +70,8 @@ export {
   Row,
   Select,
   Slider,
+  StatusIndicator,
+  Table,
   TextInput,
+  Tooltip,
 };

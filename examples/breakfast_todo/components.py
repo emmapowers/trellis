@@ -41,8 +41,8 @@ def TodoItem(todo: Todo) -> None:
         gap=12,
         align="center",
         style={
-            "padding": "12px",
-            "borderBottom": "1px solid #334155",
+            "padding": "10px 12px",
+            "borderBottom": "1px solid #f1f5f9",
         },
     ):
         w.Checkbox(
@@ -55,7 +55,7 @@ def TodoItem(todo: Todo) -> None:
             style={
                 "flex": "1",
                 "textDecoration": "line-through" if todo.completed else "none",
-                "color": "#64748b" if todo.completed else "#f1f5f9",
+                "color": "#94a3b8" if todo.completed else None,
             },
         )
 
@@ -76,9 +76,9 @@ def TodoList() -> None:
         if not state.visible_todos:
             w.Label(
                 text="No todos to show",
-                color="#64748b",
+                color="#94a3b8",
                 style={
-                    "padding": "24px",
+                    "padding": "20px",
                     "textAlign": "center",
                 },
             )
@@ -95,10 +95,10 @@ def TodoFooter() -> None:
     def set_filter(f: FilterType) -> None:
         state.filter = f
 
-    with w.Row(gap=16, align="center", justify="between", style={"padding": "12px"}):
+    with w.Row(gap=12, align="center", justify="between", style={"padding": "10px 12px"}):
         # Item count
         count_text = f"{state.active_count} item{'s' if state.active_count != 1 else ''} left"
-        w.Label(text=count_text, color="#64748b")
+        w.Label(text=count_text, color="#64748b", font_size=12)
 
         # Filter buttons
         with w.Row(gap=4):

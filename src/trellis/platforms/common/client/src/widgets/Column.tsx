@@ -1,4 +1,5 @@
 import React from "react";
+import { spacing } from "../theme";
 
 interface ColumnProps {
   gap?: number;
@@ -26,7 +27,7 @@ const alignMap = {
 };
 
 export function Column({
-  gap = 12,
+  gap = spacing.md,
   padding = 0,
   align = "stretch",
   justify = "start",

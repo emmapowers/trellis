@@ -1,4 +1,5 @@
 import React from "react";
+import { colors, radius, typography, shadows } from "../theme";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
@@ -18,8 +19,8 @@ const baseStyles: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  fontWeight: 500,
-  borderRadius: "8px",
+  fontWeight: typography.fontWeight.medium,
+  borderRadius: `${radius.sm}px`,
   border: "none",
   cursor: "pointer",
   transition: "all 150ms ease",
@@ -29,19 +30,19 @@ const baseStyles: React.CSSProperties = {
 
 const sizeStyles: Record<ButtonSize, React.CSSProperties> = {
   sm: {
-    padding: "6px 12px",
-    fontSize: "13px",
-    minHeight: "32px",
+    padding: "4px 8px",
+    fontSize: `${typography.fontSize.sm}px`,
+    minHeight: "26px",
   },
   md: {
-    padding: "10px 18px",
-    fontSize: "14px",
-    minHeight: "40px",
+    padding: "6px 12px",
+    fontSize: `${typography.fontSize.md}px`,
+    minHeight: "32px",
   },
   lg: {
-    padding: "12px 24px",
-    fontSize: "16px",
-    minHeight: "48px",
+    padding: "8px 16px",
+    fontSize: `${typography.fontSize.lg}px`,
+    minHeight: "38px",
   },
 };
 
@@ -51,49 +52,50 @@ const variantStyles: Record<
 > = {
   primary: {
     normal: {
-      backgroundColor: "#6366f1",
-      color: "#ffffff",
-      boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+      backgroundColor: colors.accent.primary,
+      color: colors.text.inverse,
+      boxShadow: shadows.sm,
     },
     hover: {
-      backgroundColor: "#4f46e5",
+      backgroundColor: colors.accent.primaryHover,
     },
   },
   secondary: {
     normal: {
-      backgroundColor: "#374151",
-      color: "#ffffff",
-      boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+      backgroundColor: colors.neutral[100],
+      color: colors.text.primary,
+      boxShadow: shadows.sm,
     },
     hover: {
-      backgroundColor: "#4b5563",
+      backgroundColor: colors.neutral[200],
     },
   },
   outline: {
     normal: {
       backgroundColor: "transparent",
-      color: "#d1d5db",
-      border: "1px solid #4b5563",
+      color: colors.text.primary,
+      border: `1px solid ${colors.border.default}`,
     },
     hover: {
-      backgroundColor: "rgba(75, 85, 99, 0.3)",
-      borderColor: "#6b7280",
+      backgroundColor: colors.neutral[50],
+      borderColor: colors.border.strong,
     },
   },
   ghost: {
     normal: {
       backgroundColor: "transparent",
-      color: "#d1d5db",
+      color: colors.text.secondary,
     },
     hover: {
-      backgroundColor: "rgba(75, 85, 99, 0.3)",
+      backgroundColor: colors.neutral[100],
+      color: colors.text.primary,
     },
   },
   danger: {
     normal: {
-      backgroundColor: "#dc2626",
-      color: "#ffffff",
-      boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+      backgroundColor: colors.semantic.error,
+      color: colors.text.inverse,
+      boxShadow: shadows.sm,
     },
     hover: {
       backgroundColor: "#b91c1c",

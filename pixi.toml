@@ -13,6 +13,7 @@ ruff = ">=0.8,<1"
 pytest = ">=8,<9"
 pytest-cov = ">=6,<7"
 nodejs = ">=22"
+playwright = ">=1.57.0,<2"
 
 [pypi-dependencies]
 trellis = { path = ".", editable = true, extras = ["desktop"] }

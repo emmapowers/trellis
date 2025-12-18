@@ -1,4 +1,5 @@
 import React from "react";
+import { colors } from "../theme";
 
 interface SliderProps {
   value?: number;
@@ -13,10 +14,10 @@ interface SliderProps {
 
 const sliderStyles: React.CSSProperties = {
   width: "100%",
-  height: "8px",
-  borderRadius: "4px",
+  height: "4px",
+  borderRadius: "2px",
   appearance: "none",
-  background: "#374151",
+  background: colors.border.default,
   outline: "none",
   cursor: "pointer",
 };
@@ -48,7 +49,7 @@ export function Slider({
   const computedStyle: React.CSSProperties = {
     ...sliderStyles,
     ...(disabled ? disabledStyles : {}),
-    background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${percentage}%, #374151 ${percentage}%, #374151 100%)`,
+    background: `linear-gradient(to right, ${colors.accent.primary} 0%, ${colors.accent.primary} ${percentage}%, ${colors.border.default} ${percentage}%, ${colors.border.default} 100%)`,
     ...style,
   };
 

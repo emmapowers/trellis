@@ -1,4 +1,5 @@
 import React from "react";
+import { colors, typography, spacing } from "../theme";
 
 interface CheckboxProps {
   checked?: boolean;
@@ -12,20 +13,20 @@ interface CheckboxProps {
 const containerStyles: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
-  gap: "8px",
+  gap: `${spacing.sm}px`,
   cursor: "pointer",
 };
 
 const checkboxStyles: React.CSSProperties = {
-  width: "18px",
-  height: "18px",
-  accentColor: "#6366f1",
+  width: "14px",
+  height: "14px",
+  accentColor: colors.accent.primary,
   cursor: "pointer",
 };
 
 const labelStyles: React.CSSProperties = {
-  color: "#f1f5f9",
-  fontSize: "14px",
+  color: colors.text.primary,
+  fontSize: `${typography.fontSize.md}px`,
 };
 
 const disabledStyles: React.CSSProperties = {
