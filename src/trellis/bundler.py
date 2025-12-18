@@ -47,6 +47,37 @@ CORE_PACKAGES = {
     "react-dom": "18.3.1",
     "scheduler": "0.23.2",  # react-dom dependency
     "@msgpack/msgpack": "3.0.0",
+    # Icons
+    "lucide-react": "0.468.0",
+    # Charts
+    "uplot": "1.6.31",
+    "recharts": "2.15.0",
+    # Recharts dependencies
+    "@babel/runtime": "7.26.0",
+    "clsx": "2.1.1",
+    "d3-array": "3.2.4",
+    "dom-helpers": "5.2.1",
+    "d3-color": "3.1.0",
+    "d3-format": "3.1.0",
+    "d3-interpolate": "3.0.1",
+    "d3-path": "3.1.0",
+    "d3-scale": "4.0.2",
+    "d3-shape": "3.2.0",
+    "d3-time": "3.1.0",
+    "d3-time-format": "4.1.0",
+    "decimal.js-light": "2.5.1",
+    "eventemitter3": "4.0.7",
+    "fast-equals": "5.2.2",
+    "internmap": "2.0.3",
+    "lodash": "4.17.21",
+    "object-assign": "4.1.1",
+    "prop-types": "15.8.1",
+    "react-is": "18.3.1",
+    "react-smooth": "4.0.4",
+    "react-transition-group": "4.4.5",
+    "recharts-scale": "0.4.5",
+    "tiny-invariant": "1.3.3",
+    "victory-vendor": "36.9.2",
 }
 
 # Additional packages for desktop platform (PyTauri)

@@ -2,14 +2,29 @@
 
 import React from "react";
 import { Badge } from "./Badge";
+import { Breadcrumb } from "./Breadcrumb";
 import { Button } from "./Button";
+import { Callout } from "./Callout";
 import { Card } from "./Card";
 import { Checkbox } from "./Checkbox";
+import { Collapsible } from "./Collapsible";
 import { Column } from "./Column";
 import { CompositionComponent } from "./CompositionComponent";
 import { Divider } from "./Divider";
 import { Heading } from "./Heading";
+import { Icon } from "./Icon";
 import { Label } from "./Label";
+import { LineChart } from "./LineChart";
+import { Menu, MenuItem, MenuDivider } from "./Menu";
+import { AreaChart } from "./AreaChart";
+import { BarChart } from "./BarChart";
+import { PieChart } from "./PieChart";
+import { Sparkline } from "./Sparkline";
+import { Stat } from "./Stat";
+import { Tabs, Tab } from "./Tabs";
+import { Tag } from "./Tag";
+import { TimeSeriesChart } from "./TimeSeriesChart";
+import { Tree } from "./Tree";
 import { NumberInput } from "./NumberInput";
 import { ProgressBar } from "./ProgressBar";
 import { Row } from "./Row";
@@ -18,28 +33,48 @@ import { Slider } from "./Slider";
 import { StatusIndicator } from "./StatusIndicator";
 import { Table } from "./Table";
 import { TextInput } from "./TextInput";
+import { Toolbar } from "./Toolbar";
 import { Tooltip } from "./Tooltip";
 
 // Registry maps component type names to React components
 const widgetRegistry: Record<string, React.ComponentType<any>> = {
+  AreaChart,
   Badge,
+  BarChart,
+  Breadcrumb,
   Button,
+  Callout,
   Card,
   Checkbox,
+  Collapsible,
   Column,
   CompositionComponent,
   Divider,
   Heading,
+  Icon,
   Label,
+  LineChart,
+  Menu,
+  MenuDivider,
+  MenuItem,
   NumberInput,
+  PieChart,
   ProgressBar,
   Row,
   Select,
   Slider,
+  Sparkline,
+  Stat,
   StatusIndicator,
+  Tab,
   Table,
+  Tabs,
+  Tag,
   TextInput,
+  TimeSeriesChart,
+  Toolbar,
   Tooltip,
+  Tree,
 };
 
 export function getWidget(
@@ -56,22 +91,41 @@ export function registerWidget(
 }
 
 export {
+  AreaChart,
   Badge,
+  BarChart,
+  Breadcrumb,
   Button,
+  Callout,
   Card,
   Checkbox,
+  Collapsible,
   Column,
   CompositionComponent,
   Divider,
   Heading,
+  Icon,
   Label,
+  LineChart,
+  Menu,
+  MenuDivider,
+  MenuItem,
   NumberInput,
+  PieChart,
   ProgressBar,
   Row,
   Select,
   Slider,
+  Sparkline,
+  Stat,
   StatusIndicator,
+  Tab,
   Table,
+  Tabs,
+  Tag,
   TextInput,
+  TimeSeriesChart,
+  Toolbar,
   Tooltip,
+  Tree,
 };
