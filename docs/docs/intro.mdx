@@ -61,7 +61,7 @@ App = Counter`}
 - **Fine-grained updates** — Only affected components re-render.
 - **Three platforms** — Server (web app), Desktop (PyTauri), Browser (Pyodide). Same codebase, each adapts to platform strengths.
 - **Type-safe throughout** — Full type hints. IDE autocompletion works.
-- **Widget toolkit** — Forms, layout, buttons. Full HTML support when you need lower-level control.
+- **Widget toolkit** — Layout, forms, data display, charts, navigation. Full HTML support when you need lower-level control.
 
 ## Use Cases
 
@@ -92,11 +92,30 @@ App = Counter`}
 | ✅ | Desktop platform (PyTauri) |
 | ✅ | HTML elements |
 | ✅ | Type safety |
-| 🚧 | Widget toolkit (basics only) |
+| 🚧 | Widget toolkit |
 | ❌ | Partial updates (sends full tree) |
 | ❌ | Bidirectional binding (`Mutable[T]`) |
 | ❌ | Routing |
 | ❌ | Live reload |
+
+## Widgets
+
+> **Prototype toolkit** — The widget library exists to build applications complex enough to test the core framework. The API will change significantly.
+
+Widgets are accessed via `trellis.widgets` (conventionally imported as `w`):
+
+| Category | Widgets |
+|----------|---------|
+| **Layout** | `Column`, `Row`, `Card` |
+| **Forms** | `Button`, `TextInput`, `NumberInput`, `Checkbox`, `Slider`, `Select` |
+| **Text** | `Label`, `Heading`, `Divider` |
+| **Data** | `Table`, `Stat`, `Tag`, `Badge` |
+| **Charts** | `TimeSeriesChart`, `LineChart`, `BarChart`, `AreaChart`, `PieChart`, `Sparkline` |
+| **Feedback** | `ProgressBar`, `StatusIndicator`, `Tooltip`, `Callout`, `Collapsible` |
+| **Navigation** | `Tabs`/`Tab`, `Breadcrumb`, `Tree`, `Menu`/`MenuItem`, `Toolbar` |
+| **Icons** | `Icon` (800+ Lucide icons) |
+
+All widgets support React Aria for accessibility (keyboard navigation, focus management, ARIA attributes).
 
 ## Next Steps
 
