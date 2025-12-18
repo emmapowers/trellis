@@ -1,16 +1,10 @@
 """Root application component for breakfast todo app."""
 
-from trellis import component
+from trellis import Padding, component
 from trellis import widgets as w
 
 from .components import TodoFooter, TodoInput, TodoList
-from .state import TodosState, Todo
-
-
-STYLE_PAGE = {
-    "minHeight": "100vh",
-    "padding": "40px 20px",
-}
+from .state import Todo, TodosState
 
 
 @component
@@ -27,22 +21,23 @@ def App() -> None:
     )
 
     with state:  # Provide state as context for child components
-        with w.Column(style=STYLE_PAGE, align="center"):
-            with w.Card(padding=0, style={"width": "500px", "overflow": "hidden"}):
+        with w.Column(padding=Padding(x=20, y=40), align="center"):
+            with w.Card(padding=0, width=500, style={"overflow": "hidden"}):
                 # Header
                 with w.Column(
                     align="center",
-                    style={"padding": "20px", "borderBottom": "1px solid #e2e8f0"},
+                    padding=20,
+                    style={"borderBottom": "1px solid #e2e8f0"},
                 ):
                     w.Label(
                         text="🍳 breakfast todos",
                         font_size=24,
                         color="#6366f1",
-                        style={"fontWeight": "300"},
+                        font_weight=300,
                     )
 
                 # Input
-                with w.Column(style={"padding": "12px", "borderBottom": "1px solid #e2e8f0"}):
+                with w.Column(padding=12, style={"borderBottom": "1px solid #e2e8f0"}):
                     TodoInput()
 
                 # List

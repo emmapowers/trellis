@@ -47,19 +47,24 @@ from trellis.core.platform import Platform, PlatformArgumentError, PlatformType
 from trellis.core.react_component import ReactComponentBase, react_component_base
 from trellis.core.rendering import ElementNode, ElementState, RenderTree
 from trellis.core.state import Stateful
+from trellis.core.style_props import Height, Margin, Padding, Width
 
 __all__ = [
     "Component",
     "CompositionComponent",
     "ElementNode",
     "ElementState",
+    "Height",
+    "Margin",
     "MessageHandler",
+    "Padding",
     "Platform",
     "PlatformArgumentError",
     "PlatformType",
     "ReactComponentBase",
     "RenderTree",
     "Stateful",
+    "Width",
     "component",
     "react_component_base",
 ]

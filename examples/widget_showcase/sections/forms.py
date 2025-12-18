@@ -14,28 +14,28 @@ def FormInputsSection() -> None:
     with w.Column(gap=12):
         # Text input
         with w.Row(gap=8, align="center"):
-            w.Label(text="Text:", style={"width": "80px"})
+            w.Label(text="Text:", width=80)
             w.TextInput(
                 value=state.text_value,
                 placeholder="Enter text...",
                 on_change=lambda v: setattr(state, "text_value", v),
-                style={"width": "200px"},
+                width=200,
             )
 
         # Number input
         with w.Row(gap=8, align="center"):
-            w.Label(text="Number:", style={"width": "80px"})
+            w.Label(text="Number:", width=80)
             w.NumberInput(
                 value=state.number_value,
                 min=0,
                 max=100,
                 on_change=lambda v: setattr(state, "number_value", v),
-                style={"width": "200px"},
+                width=200,
             )
 
         # Select
         with w.Row(gap=8, align="center"):
-            w.Label(text="Select:", style={"width": "80px"})
+            w.Label(text="Select:", width=80)
             w.Select(
                 value=state.select_value,
                 options=[
@@ -44,12 +44,12 @@ def FormInputsSection() -> None:
                     {"value": "option3", "label": "Option 3"},
                 ],
                 on_change=lambda v: setattr(state, "select_value", v),
-                style={"width": "200px"},
+                width=200,
             )
 
         # Checkbox
         with w.Row(gap=8, align="center"):
-            w.Label(text="Toggle:", style={"width": "80px"})
+            w.Label(text="Toggle:", width=80)
             w.Checkbox(
                 checked=state.checkbox_value,
                 label="Enable feature",
@@ -58,12 +58,12 @@ def FormInputsSection() -> None:
 
         # Slider
         with w.Row(gap=8, align="center"):
-            w.Label(text="Slider:", style={"width": "80px"})
+            w.Label(text="Slider:", width=80)
             w.Slider(
                 value=state.slider_value,
                 min=0,
                 max=100,
                 on_change=lambda v: setattr(state, "slider_value", v),
-                style={"width": "200px"},
+                width=200,
             )
-            w.Label(text=f"{int(state.slider_value)}", style={"width": "40px"})
+            w.Label(text=f"{int(state.slider_value)}", width=40)

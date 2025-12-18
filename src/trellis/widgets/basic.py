@@ -19,6 +19,8 @@ def Label(
     color: str | None = None,
     bold: bool = False,
     italic: bool = False,
+    text_align: tp.Literal["left", "center", "right"] | None = None,
+    font_weight: tp.Literal["normal", "medium", "semibold", "bold"] | int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -31,6 +33,9 @@ def Label(
         color: Text color (CSS color string).
         bold: Whether to render text in bold.
         italic: Whether to render text in italics.
+        text_align: Text alignment ("left", "center", "right").
+        font_weight: Font weight as name ("normal", "medium", "semibold", "bold")
+            or numeric value (100-900).
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -40,6 +45,8 @@ def Label(
 
     Example:
         Label(text="Hello, world!", font_size=16, color="blue")
+        Label(text="Centered", text_align="center")
+        Label(text="Light weight", font_weight=300)
     """
     ...
 

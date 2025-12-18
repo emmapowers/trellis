@@ -1,9 +1,9 @@
 """UI components for the todo app."""
 
-from trellis import component
+from trellis import Padding, component
 from trellis import widgets as w
 
-from .state import FilterType, TodosState, Todo
+from .state import FilterType, Todo, TodosState
 
 
 @component
@@ -16,7 +16,7 @@ def TodoInput() -> None:
             value=state.input_text,
             placeholder="What needs to be done?",
             on_change=state.set_input,
-            style={"flex": "1"},
+            flex=1,
         )
         w.Button(
             text="Add",
@@ -33,17 +33,13 @@ def TodoItem(todo: Todo) -> None:
     def toggle(checked: bool) -> None:
         todo.completed = checked
 
-
     def delete() -> None:
         state.delete_todo(todo.id)
 
     with w.Row(
         gap=12,
         align="center",
-        style={
-            "padding": "10px 12px",
-            "borderBottom": "1px solid #f1f5f9",
-        },
+        padding=Padding(x=12, y=10),
     ):
         w.Checkbox(
             checked=todo.completed,
@@ -52,8 +48,8 @@ def TodoItem(todo: Todo) -> None:
 
         w.Label(
             text=todo.text,
+            flex=1,
             style={
-                "flex": "1",
                 "textDecoration": "line-through" if todo.completed else "none",
                 "color": "#94a3b8" if todo.completed else None,
             },
@@ -72,15 +68,13 @@ def TodoList() -> None:
     """List of visible todos."""
     state = TodosState.from_context()
 
-    with w.Column(gap=0):
+    with w.Column(gap=0, divider=True):
         if not state.visible_todos:
             w.Label(
                 text="No todos to show",
                 color="#94a3b8",
-                style={
-                    "padding": "20px",
-                    "textAlign": "center",
-                },
+                padding=20,
+                text_align="center",
             )
         else:
             for todo in state.visible_todos:
@@ -95,7 +89,7 @@ def TodoFooter() -> None:
     def set_filter(f: FilterType) -> None:
         state.filter = f
 
-    with w.Row(gap=12, align="center", justify="between", style={"padding": "10px 12px"}):
+    with w.Row(gap=12, align="center", justify="between", padding=Padding(x=12, y=10)):
         # Item count
         count_text = f"{state.active_count} item{'s' if state.active_count != 1 else ''} left"
         w.Label(text=count_text, color="#64748b", font_size=12)

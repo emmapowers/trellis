@@ -12,23 +12,23 @@ from trellis.core.rendering import ElementNode
 def Column(
     *,
     gap: int | None = None,
-    padding: int | None = None,
     align: tp.Literal["start", "center", "end", "stretch"] | None = None,
     justify: tp.Literal["start", "center", "end", "between", "around"] | None = None,
+    divider: bool = False,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
 ) -> ElementNode:
     """Vertical flex container.
 
-    Renders children stacked vertically with configurable gap and padding.
+    Renders children stacked vertically with configurable gap.
     Use as a context manager to add children.
 
     Args:
         gap: Space between children in pixels. Defaults to 12.
-        padding: Inner padding in pixels. Defaults to 0.
         align: Cross-axis alignment of children. Defaults to "stretch".
         justify: Main-axis alignment of children. Defaults to "start".
+        divider: Whether to show dividers between children. Defaults to False.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -40,6 +40,10 @@ def Column(
         with Column(gap=16):
             Label(text="First")
             Label(text="Second")
+
+        with Column(divider=True):  # Dividers between items
+            Label(text="Item 1")
+            Label(text="Item 2")
     """
     ...
 
@@ -48,23 +52,23 @@ def Column(
 def Row(
     *,
     gap: int | None = None,
-    padding: int | None = None,
     align: tp.Literal["start", "center", "end", "stretch"] | None = None,
     justify: tp.Literal["start", "center", "end", "between", "around"] | None = None,
+    divider: bool = False,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
 ) -> ElementNode:
     """Horizontal flex container.
 
-    Renders children in a row with configurable gap and padding.
+    Renders children in a row with configurable gap.
     Use as a context manager to add children.
 
     Args:
         gap: Space between children in pixels. Defaults to 12.
-        padding: Inner padding in pixels. Defaults to 0.
         align: Cross-axis alignment of children. Defaults to "center".
         justify: Main-axis alignment of children. Defaults to "start".
+        divider: Whether to show dividers between children. Defaults to False.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -83,7 +87,6 @@ def Row(
 @react_component_base("Card", has_children=True)
 def Card(
     *,
-    padding: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -94,7 +97,6 @@ def Card(
     and shadow. Use as a context manager to add children.
 
     Args:
-        padding: Inner padding in pixels. Defaults to 24.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
