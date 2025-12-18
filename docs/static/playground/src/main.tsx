@@ -2,14 +2,12 @@
  * Trellis Playground
  *
  * A browser-based playground for experimenting with Trellis UI components.
- * Uses Pyodide to run Python in the browser and React to render the UI.
+ * Uses TrellisApp for Pyodide/React integration.
  */
 
-import React from "react";
-import { createRoot, Root } from "react-dom/client";
-import { SerializedElement, renderNode } from "../../../../src/trellis/client/src/core";
-import { getWidget } from "../../../../src/trellis/client/src/widgets";
-import { initPyodide, PyodideInterface, PyProxy } from "../../../src/lib/pyodide-init";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { createRoot } from "react-dom/client";
+import { TrellisApp } from "../../../../src/trellis/platforms/browser/client/src/TrellisApp";
 
 // Monaco types (loaded from CDN)
 declare const require: {
@@ -41,18 +39,23 @@ interface MonacoEditor {
   setValue(value: string): void;
 }
 
-// ============================================================================
-// Global State
-// ============================================================================
+/**
+ * Wrap user code with Trellis boilerplate.
+ *
+ * The playground expects an `App` component to be defined. This wrapper
+ * adds the @async_main entry point that runs the app.
+ */
+function wrapWithBoilerplate(code: string): string {
+  return `${code}
 
-let pyodide: PyodideInterface | null = null;
-let runtime: PyProxy | null = null;
-let editor: MonacoEditor | null = null;
-let reactRoot: Root | null = null;
+from trellis import Trellis, async_main
 
-// ============================================================================
-// Default Example Code
-// ============================================================================
+@async_main
+async def _trellis_main():
+    app = Trellis(top=App)
+    await app.serve()
+`;
+}
 
 const DEFAULT_CODE = `from dataclasses import dataclass
 from trellis import Stateful, component
@@ -85,21 +88,30 @@ def Counter():
 App = Counter
 `;
 
-// ============================================================================
-// Pyodide Setup (uses shared module)
-// ============================================================================
-
-async function setupPyodide(): Promise<PyodideInterface> {
-  pyodide = await initPyodide(updateStatus);
-  return pyodide;
+function getCodeFromUrl(): string | null {
+  const hash = window.location.hash;
+  if (hash.startsWith("#code=")) {
+    try {
+      const encoded = hash.slice(6);
+      return decodeURIComponent(atob(encoded));
+    } catch (e) {
+      console.warn("Failed to decode code from URL:", e);
+      return null;
+    }
+  }
+  return null;
 }
 
-// ============================================================================
-// Monaco Editor Setup
-// ============================================================================
+function Playground(): React.ReactElement {
+  const [code, setCode] = useState(DEFAULT_CODE);
+  const [runId, setRunId] = useState(0);
+  const [status, setStatus] = useState("Initializing...");
+  const [error, setError] = useState<string | null>(null);
+  const [editorReady, setEditorReady] = useState(false);
+  const editorRef = useRef<MonacoEditor | null>(null);
 
-async function initMonaco(): Promise<MonacoEditor> {
-  return new Promise((resolve) => {
+  // Initialize Monaco editor
+  useEffect(() => {
     require.config({
       paths: {
         vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs",
@@ -108,10 +120,17 @@ async function initMonaco(): Promise<MonacoEditor> {
 
     require(["vs/editor/editor.main"], function () {
       const container = document.getElementById("editor-container")!;
-      container.innerHTML = ""; // Remove loading spinner
+      container.innerHTML = "";
 
-      editor = monaco.editor.create(container, {
-        value: DEFAULT_CODE,
+      // Check for code in URL hash
+      const urlCode = getCodeFromUrl();
+      const initialCode = urlCode ?? DEFAULT_CODE;
+      if (urlCode) {
+        setCode(urlCode);
+      }
+
+      editorRef.current = monaco.editor.create(container, {
+        value: initialCode,
         language: "python",
         theme: "vs-light",
         minimap: { enabled: false },
@@ -122,154 +141,88 @@ async function initMonaco(): Promise<MonacoEditor> {
         tabSize: 4,
       });
 
-      resolve(editor);
+      setEditorReady(true);
     });
-  });
-}
+  }, []);
 
-// ============================================================================
-// App Logic
-// ============================================================================
-
-function updateStatus(text: string): void {
-  document.getElementById("status")!.textContent = text;
-}
-
-function showError(error: string): void {
-  const errorDiv = document.getElementById("error")!;
-  errorDiv.textContent = error;
-  errorDiv.style.display = "block";
-}
-
-function hideError(): void {
-  document.getElementById("error")!.style.display = "none";
-}
-
-function renderTree(tree: SerializedElement): void {
-  const previewDiv = document.getElementById("preview")!;
-
-  if (!reactRoot) {
-    reactRoot = createRoot(previewDiv);
-  }
-
-  const element = renderNode(tree, { onEvent: handleEvent, getWidget }, "root");
-  reactRoot.render(element);
-}
-
-function handleEvent(callbackId: string, args?: unknown[]): void {
-  if (!runtime) return;
-
-  try {
-    // Post event to Python - render callback will be called with updated tree
-    runtime.post_event(callbackId, args ?? []);
-  } catch (e) {
-    showError(`Event error: ${(e as Error).message}`);
-  }
-}
-
-async function runCode(): Promise<void> {
-  hideError();
-  updateStatus("Running...");
-
-  const code = editor!.getValue();
-
-  try {
-    // Execute user code
-    await pyodide!.runPythonAsync(code);
-
-    // Register JS callbacks for render and errors
-    const jsCallbacks = {
-      render: (treeProxy: PyProxy) => {
-        const tree = treeProxy.toJs({ dict_converter: Object.fromEntries }) as SerializedElement;
-        renderTree(tree);
-      },
-      error: (errorMsg: string) => {
-        showError(errorMsg);
-        updateStatus("Error");
-      }
-    };
-    pyodide!.registerJsModule("js_callbacks", jsCallbacks);
-
-    // Create runtime and start message loop in background
-    runtime = (await pyodide!.runPythonAsync(`
-import asyncio
-import js_callbacks
-from trellis_playground import PlaygroundMessageHandler
-
-handler = PlaygroundMessageHandler(App)
-handler.set_render_callback(js_callbacks.render)
-handler.set_error_callback(js_callbacks.error)
-
-# Start the message loop in the background
-asyncio.ensure_future(handler.run())
-
-handler
-`)) as PyProxy;
-
-    updateStatus("Running");
-  } catch (e) {
-    showError((e as Error).message);
-    updateStatus("Error");
-  }
-}
-
-// ============================================================================
-// URL Code Loading
-// ============================================================================
-
-function getCodeFromUrl(): string | null {
-  const hash = window.location.hash;
-  if (hash.startsWith('#code=')) {
-    try {
-      const encoded = hash.slice(6); // Remove '#code='
-      return decodeURIComponent(atob(encoded));
-    } catch (e) {
-      console.warn('Failed to decode code from URL:', e);
-      return null;
+  // Auto-run on first load after editor is ready
+  useEffect(() => {
+    if (editorReady && runId === 0) {
+      handleRun();
     }
-  }
-  return null;
-}
+  }, [editorReady]);
 
-// ============================================================================
-// Initialization
-// ============================================================================
+  const handleRun = useCallback(() => {
+    if (!editorRef.current) return;
+    const newCode = editorRef.current.getValue();
+    setCode(newCode);
+    setError(null);
+    setRunId((id) => id + 1);
+  }, []);
 
-async function init(): Promise<void> {
-  try {
-    // Initialize in parallel
-    await Promise.all([setupPyodide(), initMonaco()]);
-
-    // Check for code in URL hash
-    const urlCode = getCodeFromUrl();
-    if (urlCode && editor) {
-      editor.setValue(urlCode);
-    }
-
-    // Enable run button
-    const runBtn = document.getElementById("run-btn") as HTMLButtonElement;
-    runBtn.disabled = false;
-    runBtn.addEventListener("click", runCode);
-
-    // Run the default code on startup
-    await runCode();
-
-    // Add keyboard shortcut (Ctrl/Cmd + Enter to run)
-    document.addEventListener("keydown", (e) => {
+  // Keyboard shortcut (Ctrl/Cmd + Enter to run)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
-        runCode();
+        handleRun();
       }
-    });
-  } catch (e) {
-    showError(`Initialization failed: ${(e as Error).message}`);
-    updateStatus("Failed");
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleRun]);
+
+  // Enable run button when editor is ready
+  useEffect(() => {
+    const runBtn = document.getElementById("run-btn") as HTMLButtonElement;
+    if (runBtn) {
+      runBtn.disabled = !editorReady;
+      runBtn.onclick = handleRun;
+    }
+  }, [editorReady, handleRun]);
+
+  // Update status display
+  useEffect(() => {
+    const statusEl = document.getElementById("status");
+    if (statusEl) {
+      statusEl.textContent = status;
+    }
+  }, [status]);
+
+  // Update error display
+  useEffect(() => {
+    const errorEl = document.getElementById("error");
+    if (errorEl) {
+      if (error) {
+        errorEl.textContent = error;
+        errorEl.style.display = "block";
+      } else {
+        errorEl.style.display = "none";
+      }
+    }
+  }, [error]);
+
+  if (runId === 0) {
+    return <div style={{ padding: "20px", color: "#64748b" }}>Click Run to start...</div>;
   }
+
+  // Wrap the user code with boilerplate
+  const wrappedCode = wrapWithBoilerplate(code);
+
+  return (
+    <TrellisApp
+      key={runId}
+      source={{ type: "code", code: wrappedCode }}
+      onStatusChange={setStatus}
+      errorComponent={(msg) => {
+        setError(msg);
+        return null;
+      }}
+    />
+  );
 }
 
-// Start initialization when DOM is ready
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", init);
-} else {
-  init();
-}
+// Mount the playground
+const previewDiv = document.getElementById("preview")!;
+const root = createRoot(previewDiv);
+root.render(<Playground />);

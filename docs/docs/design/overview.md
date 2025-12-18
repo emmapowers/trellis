@@ -292,7 +292,7 @@ The following design documents cover specific areas in detail:
 
 2. **[State](./state)** — State storage, fine-grained updates, context management, mutable wrappers
 
-3. **[Web Server](./web-server)** — Server component, WebSocket communication, connection vs session, session management
+3. **[Platforms](./platforms)** — Platform architecture, message protocol, server platform (WebSocket), desktop platform (PyTauri), platform selection
 
 4. **[Security](./security)** — XSS prevention, WebSocket security, callback validation, state isolation, session security, CSRF, input validation, deserialization safety, native API exposure (desktop), sandboxing (playground)
 
@@ -306,8 +306,6 @@ The following design documents cover specific areas in detail:
 
 9. **[Router](./router)** — Implementing the router pattern
 
-10. **[Desktop App](./desktop-app)** — Adapting server concepts to desktop, native APIs (window management, menus, system tray, etc.), building desktop apps
+10. **[Playground](./playground)** — How the Trellis playground works, Pyodide integration, JSFiddle-style experience
 
-11. **[Playground](./playground)** — How the Trellis playground works, Pyodide integration, JSFiddle-style experience
-
-12. **[Hot Reload](./hot-reload)** — File watching, rebuild, state preservation
+11. **[Hot Reload](./hot-reload)** — File watching, rebuild, state preservation

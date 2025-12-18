@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trellis App</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body, #root { margin: 0; padding: 0; height: 100%; }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    {% if source_json %}
+    <script>
+        window.__TRELLIS_CONFIG__ = {
+            source: {{ source_json | safe }}
+        };
+    </script>
+    {% endif %}
+    <script type="module" src="bundle.js"></script>
+</body>
+</html>

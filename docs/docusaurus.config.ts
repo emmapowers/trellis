@@ -54,12 +54,43 @@ const config: Config = {
     function trellisClientPlugin() {
       return {
         name: 'trellis-client-webpack',
-        configureWebpack() {
+        configureWebpack(config, isServer) {
+          // Trellis source directories that need to be compiled
+          const trellisSrcDirs = [
+            path.resolve(__dirname, '../src/trellis/platforms/browser/client/src'),
+            path.resolve(__dirname, '../src/trellis/platforms/common/client/src'),
+          ];
+
+          // Find and extend the babel-loader rule to include trellis source
+          if (config.module?.rules) {
+            for (const rule of config.module.rules) {
+              if (typeof rule === 'object' && rule !== null && 'use' in rule) {
+                const use = Array.isArray(rule.use) ? rule.use : [rule.use];
+                const hasBabel = use.some((u: any) =>
+                  typeof u === 'string' ? u.includes('babel-loader') :
+                  typeof u?.loader === 'string' ? u.loader.includes('babel-loader') : false
+                );
+                if (hasBabel && Array.isArray(rule.include)) {
+                  rule.include.push(...trellisSrcDirs);
+                }
+              }
+            }
+          }
+
           return {
             resolve: {
               alias: {
                 '@trellis/client': path.resolve(__dirname, '../src/trellis/client/src'),
               },
+            },
+            module: {
+              rules: [
+                {
+                  // Handle .worker-bundle files as raw text (like esbuild's text loader)
+                  test: /\.worker-bundle$/,
+                  type: 'asset/source',
+                },
+              ],
             },
           };
         },

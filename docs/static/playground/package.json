@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild src/main.tsx --bundle --outfile=dist/playground.js --format=iife --platform=browser --target=es2022 --jsx=automatic --loader:.tsx=tsx --loader:.ts=ts --alias:react=./node_modules/react --alias:react-dom=./node_modules/react-dom --alias:react/jsx-runtime=./node_modules/react/jsx-runtime",
-    "watch": "esbuild src/main.tsx --bundle --outfile=dist/playground.js --format=iife --platform=browser --target=es2022 --jsx=automatic --loader:.tsx=tsx --loader:.ts=ts --alias:react=./node_modules/react --alias:react-dom=./node_modules/react-dom --alias:react/jsx-runtime=./node_modules/react/jsx-runtime --watch"
+    "build": "esbuild src/main.tsx --bundle --outfile=dist/playground.js --format=iife --platform=browser --target=es2022 --jsx=automatic --loader:.tsx=tsx --loader:.ts=ts --loader:.worker-bundle=text --alias:react=./node_modules/react --alias:react-dom=./node_modules/react-dom --alias:react/jsx-runtime=./node_modules/react/jsx-runtime",
+    "watch": "esbuild src/main.tsx --bundle --outfile=dist/playground.js --format=iife --platform=browser --target=es2022 --jsx=automatic --loader:.tsx=tsx --loader:.ts=ts --loader:.worker-bundle=text --alias:react=./node_modules/react --alias:react-dom=./node_modules/react-dom --alias:react/jsx-runtime=./node_modules/react/jsx-runtime --watch"
   },
   "dependencies": {
     "react": "^18.3.1",

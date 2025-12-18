@@ -3,7 +3,7 @@ sidebar_position: 1
 slug: /
 ---
 
-import TrellisPlayground from '@site/src/components/TrellisPlayground';
+import TrellisDemo from '@site/src/components/TrellisDemo';
 
 # Introduction
 
@@ -23,7 +23,7 @@ Trellis aims for both: simple to start, maintainable as applications grow.
 
 ## Try It
 
-<TrellisPlayground
+<TrellisDemo
   title="Counter Example"
   code={`from dataclasses import dataclass
 from trellis import Stateful, component
@@ -59,6 +59,7 @@ App = Counter`}
 - **Declarative UI in Python** — `@component` functions with context-manager syntax. No templates, no separate frontend language.
 - **Reactive state** — Automatic dependency tracking. Components re-render when dependencies change.
 - **Fine-grained updates** — Only affected components re-render.
+- **Three platforms** — Server (web app), Desktop (PyTauri), Browser (Pyodide). Same codebase, each adapts to platform strengths.
 - **Type-safe throughout** — Full type hints. IDE autocompletion works.
 - **Widget toolkit** — Forms, layout, buttons. Full HTML support when you need lower-level control.
 
@@ -88,6 +89,7 @@ App = Counter`}
 | ✅ | Reactive state with dependency tracking |
 | ✅ | Server platform |
 | ✅ | Browser platform (Pyodide) |
+| ✅ | Desktop platform (PyTauri) |
 | ✅ | HTML elements |
 | ✅ | Type safety |
 | 🚧 | Widget toolkit (basics only) |
@@ -95,7 +97,6 @@ App = Counter`}
 | ❌ | Bidirectional binding (`Mutable[T]`) |
 | ❌ | Routing |
 | ❌ | Live reload |
-| ❌ | Desktop platform |
 
 ## Next Steps
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import io
 import tarfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -146,3 +146,81 @@ class TestSafeExtract:
         with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
             with pytest.raises(ValueError, match="path traversal"):
                 _safe_extract(tar, tmp_path)
+
+
+class TestBundleConfig:
+    """Tests for BundleConfig dataclass."""
+
+    def test_static_files_default_is_none(self) -> None:
+        """static_files defaults to None."""
+        from trellis.bundler import BundleConfig
+
+        config = BundleConfig(
+            name="test",
+            src_dir=Path("/src"),
+            dist_dir=Path("/dist"),
+            packages={},
+        )
+        assert config.static_files is None
+
+    def test_static_files_can_be_set(self) -> None:
+        """static_files can be configured as dict."""
+        from trellis.bundler import BundleConfig
+
+        config = BundleConfig(
+            name="test",
+            src_dir=Path("/src"),
+            dist_dir=Path("/dist"),
+            packages={},
+            static_files={"index.html": Path("/src/index.html")},
+        )
+        assert config.static_files == {"index.html": Path("/src/index.html")}
+
+
+class TestBuildBundleStaticFiles:
+    """Tests for static file copying in build_bundle."""
+
+    def test_copies_static_files_to_dist(self, tmp_path: Path) -> None:
+        """Static files are copied to dist directory."""
+        from trellis.bundler import BundleConfig, build_bundle
+
+        # Set up directories
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        dist_dir = tmp_path / "dist"
+        common_dir = tmp_path / "common"
+        common_dir.mkdir()
+
+        # Create source static file
+        static_src = src_dir / "index.html"
+        static_src.write_text("<html>test</html>")
+
+        # Create minimal TypeScript file
+        (src_dir / "main.tsx").write_text("export {}")
+
+        config = BundleConfig(
+            name="test",
+            src_dir=src_dir,
+            dist_dir=dist_dir,
+            packages={},
+            static_files={"index.html": static_src},
+        )
+
+        # Mock esbuild and package fetching to avoid network
+        with patch("trellis.bundler.ensure_esbuild") as mock_esbuild:
+            with patch("trellis.bundler.ensure_packages") as mock_packages:
+                with patch("subprocess.run") as mock_run:
+                    mock_esbuild.return_value = Path("/fake/esbuild")
+                    mock_packages.return_value = Path("/fake/node_modules")
+                    mock_run.return_value = MagicMock(returncode=0)
+
+                    # Create the bundle.js that esbuild would create
+                    dist_dir.mkdir(parents=True, exist_ok=True)
+                    (dist_dir / "bundle.js").write_text("// bundle")
+
+                    build_bundle(config, common_dir, force=True)
+
+        # Verify static file was copied
+        copied_file = dist_dir / "index.html"
+        assert copied_file.exists()
+        assert copied_file.read_text() == "<html>test</html>"

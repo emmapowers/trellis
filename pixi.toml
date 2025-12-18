@@ -6,7 +6,7 @@ channels = ["conda-forge"]
 platforms = ["osx-arm64", "linux-64"]
 
 [dependencies]
-python = "3.14.*"
+python = "3.13.*"
 pip = ">=24,<26"
 black = ">=25.1.0,<26"
 ruff = ">=0.8,<1"
@@ -15,7 +15,7 @@ pytest-cov = ">=6,<7"
 nodejs = ">=22"
 
 [pypi-dependencies]
-trellis = { path = ".", editable = true }
+trellis = { path = ".", editable = true, extras = ["desktop"] }
 mypy = ">=1.15,<2"
 pydoc-markdown = ">=4.8,<5"
 
@@ -43,11 +43,13 @@ clean = { cmd = "rm -rf dist build .mypy_cache .ruff_cache .pytest_cache .covera
 # Run demo
 demo = { cmd = "python examples/demo.py", description = "Run the demo app" }
 
+# Bundle build tasks
+build-browser-bundle = { cmd = "trellis bundle build --platform browser", description = "Build browser client bundle (includes worker)" }
+
 # Playground build tasks (now in docs/static/playground)
 install-playground-deps = { cmd = "npm install", cwd = "docs/static/playground", description = "Install playground dependencies" }
-build-playground = { cmd = "npm run build", cwd = "docs/static/playground", depends-on = ["build-wheel", "install-playground-deps"], description = "Build playground bundle" }
-watch-playground = { cmd = "npm run watch", cwd = "docs/static/playground", depends-on = ["install-playground-deps"], description = "Watch and rebuild playground" }
-playground = { cmd = "python -m http.server 8000", cwd = "docs/static", depends-on = ["build-playground", "copy-wheel-to-docs"], description = "Run playground server (open http://localhost:8000/playground/)" }
+build-playground = { cmd = "npm run build", cwd = "docs/static/playground", depends-on = ["build-browser-bundle", "build-wheel", "install-playground-deps"], description = "Build playground bundle" }
+playground = { cmd = "python -c \"import http.server, socketserver, socket; s=socket.socket(); s.bind(('',0)); port=s.getsockname()[1]; s.close(); print(f'\\n  Playground: http://localhost:{port}/playground/\\n'); http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler, port=port, bind='127.0.0.1')\"", cwd = "docs/static", depends-on = ["build-playground", "copy-wheel-to-docs"], description = "Run playground server (auto-selects available port)" }
 
 # Documentation tasks
 generate-api-docs = { cmd = "pydoc-markdown", description = "Generate API docs from docstrings" }

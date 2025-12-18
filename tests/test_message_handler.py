@@ -11,7 +11,7 @@ from trellis.core.messages import ErrorMessage, EventMessage, Message, RenderMes
 from trellis.core.rendering import IComponent
 from trellis.core.state import Stateful
 from trellis.widgets import Button, Label
-from trellis_playground.runtime import PlaygroundMessageHandler
+from trellis.platforms.browser import BrowserMessageHandler
 
 
 class TestMessageHandler:
@@ -154,8 +154,60 @@ class TestMessageHandler:
         # but the method should not raise)
 
 
-class TestPlaygroundMessageHandler:
-    """Tests for PlaygroundMessageHandler."""
+class TestBrowserMessageHandler:
+    """Tests for BrowserMessageHandler."""
+
+    def test_message_to_dict_converts_render_message(self) -> None:
+        """_message_to_dict converts RenderMessage to dict with type field."""
+        from trellis.platforms.browser.handler import _message_to_dict
+
+        msg = RenderMessage(tree={"root": "data"})
+        result = _message_to_dict(msg)
+
+        assert result == {"type": "render", "tree": {"root": "data"}}
+
+    def test_message_to_dict_converts_error_message(self) -> None:
+        """_message_to_dict converts ErrorMessage to dict with type field."""
+        from trellis.platforms.browser.handler import _message_to_dict
+
+        msg = ErrorMessage(error="test error", context="callback")
+        result = _message_to_dict(msg)
+
+        assert result == {"type": "error", "error": "test error", "context": "callback"}
+
+    def test_dict_to_message_unknown_type_raises(self) -> None:
+        """_dict_to_message raises ValueError for unknown message type."""
+        from trellis.platforms.browser.handler import _dict_to_message
+
+        with pytest.raises(ValueError, match="Unknown message type"):
+            _dict_to_message({"type": "unknown_type"})
+
+    def test_dict_to_message_missing_callback_id_raises(self) -> None:
+        """_dict_to_message raises ValueError when event is missing callback_id."""
+        from trellis.platforms.browser.handler import _dict_to_message
+
+        with pytest.raises(ValueError, match="callback_id"):
+            _dict_to_message({"type": "event", "args": []})
+
+    def test_dict_to_message_converts_hello(self) -> None:
+        """_dict_to_message converts hello message dict to HelloMessage."""
+        from trellis.platforms.browser.handler import _dict_to_message
+        from trellis.core.messages import HelloMessage
+
+        result = _dict_to_message({"type": "hello", "client_id": "test-123"})
+
+        assert isinstance(result, HelloMessage)
+        assert result.client_id == "test-123"
+
+    def test_dict_to_message_converts_event(self) -> None:
+        """_dict_to_message converts event message dict to EventMessage."""
+        from trellis.platforms.browser.handler import _dict_to_message
+
+        result = _dict_to_message({"type": "event", "callback_id": "cb-1", "args": [1, 2]})
+
+        assert isinstance(result, EventMessage)
+        assert result.callback_id == "cb-1"
+        assert result.args == [1, 2]
 
     def test_post_event_adds_to_queue(self) -> None:
         """post_event() adds EventMessage to inbox."""
@@ -164,7 +216,7 @@ class TestPlaygroundMessageHandler:
         def App() -> None:
             Label(text="Hello")
 
-        handler = PlaygroundMessageHandler(App)
+        handler = BrowserMessageHandler(App)
 
         handler.post_event("test:callback", [1, 2, 3])
 
@@ -182,7 +234,7 @@ class TestPlaygroundMessageHandler:
         def App() -> None:
             Label(text="Hello")
 
-        handler = PlaygroundMessageHandler(App)
+        handler = BrowserMessageHandler(App)
 
         # Post an event
         handler.post_event("test:callback", [])
@@ -192,21 +244,23 @@ class TestPlaygroundMessageHandler:
         assert isinstance(msg, EventMessage)
         assert msg.callback_id == "test:callback"
 
-    def test_send_message_calls_render_callback(self) -> None:
-        """send_message() calls registered render callback."""
-        received_trees = []
+    def test_send_message_calls_send_callback(self) -> None:
+        """send_message() calls registered send callback with message dict."""
+        received_messages: list[dict] = []
 
         @component
         def App() -> None:
             Label(text="Hello")
 
-        handler = PlaygroundMessageHandler(App)
-        handler.set_render_callback(lambda tree: received_trees.append(tree))
+        handler = BrowserMessageHandler(App)
+        handler.set_send_callback(lambda msg: received_messages.append(msg))
 
         msg = RenderMessage(tree={"test": "data"})
         asyncio.run(handler.send_message(msg))
 
-        assert received_trees == [{"test": "data"}]
+        assert len(received_messages) == 1
+        assert received_messages[0]["type"] == "render"
+        assert received_messages[0]["tree"] == {"test": "data"}
 
     def test_send_message_without_callback_no_error(self) -> None:
         """send_message() without callback doesn't raise."""
@@ -215,7 +269,7 @@ class TestPlaygroundMessageHandler:
         def App() -> None:
             Label(text="Hello")
 
-        handler = PlaygroundMessageHandler(App)
+        handler = BrowserMessageHandler(App)
         # No callback set
 
         msg = RenderMessage(tree={"test": "data"})
@@ -224,14 +278,14 @@ class TestPlaygroundMessageHandler:
     def test_full_event_flow(self) -> None:
         """Full flow: post_event -> handle_message -> callback to JS."""
         clicked = []
-        rendered_trees = []
+        rendered_messages: list[dict] = []
 
         @component
         def App() -> None:
             Button(text="Click", on_click=lambda: clicked.append(True))
 
-        handler = PlaygroundMessageHandler(App)
-        handler.set_render_callback(lambda tree: rendered_trees.append(tree))
+        handler = BrowserMessageHandler(App)
+        handler.set_send_callback(lambda msg: rendered_messages.append(msg))
 
         # Get initial render
         initial = handler.initial_render()
@@ -251,7 +305,8 @@ class TestPlaygroundMessageHandler:
         asyncio.run(process_one())
 
         assert clicked == [True]
-        assert len(rendered_trees) == 1
+        assert len(rendered_messages) == 1
+        assert rendered_messages[0]["type"] == "render"
 
 
 class TestAsyncCallbackHandling:

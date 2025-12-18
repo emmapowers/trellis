@@ -1,0 +1,227 @@
+/**
+ * TrellisApp - React component for running Trellis apps in the browser.
+ *
+ * Runs Python code in a Web Worker via Pyodide. On re-run, the worker is
+ * terminated and recreated for a clean restart.
+ */
+
+import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { BrowserClient } from "./BrowserClient";
+import { TrellisContext } from "../../../common/client/src/TrellisContext";
+import { Message, SerializedElement } from "../../../common/client/src/types";
+import { TreeRenderer } from "../../../common/client/src/TreeRenderer";
+import { PyodideWorker, type PythonSource } from "./PyodideWorker";
+
+// Re-export PythonSource for external use
+export type { PythonSource };
+
+export interface TrellisAppProps {
+  /** Source of the Python code */
+  source: PythonSource;
+  /** Entry point like "myapp:App" (optional if code has @async_main) */
+  main?: string;
+  /** Custom trellis wheel URL (optional, tries several paths by default) */
+  trellisWheelUrl?: string;
+  /** Callback when loading status changes */
+  onStatusChange?: (status: string) => void;
+  /** Custom loading component */
+  loadingComponent?: React.ReactNode;
+  /** Custom error component */
+  errorComponent?: (error: string) => React.ReactNode;
+}
+
+type AppState =
+  | { status: "loading"; message: string }
+  | { status: "connected"; tree: SerializedElement }
+  | { status: "error"; message: string };
+
+/**
+ * Default loading component
+ */
+function DefaultLoading({ message }: { message: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "40px",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+        color: "#64748b",
+      }}
+    >
+      <div
+        style={{
+          width: "32px",
+          height: "32px",
+          border: "3px solid #e2e8f0",
+          borderTopColor: "#3b82f6",
+          borderRadius: "50%",
+          animation: "spin 1s linear infinite",
+          marginBottom: "16px",
+        }}
+      />
+      <p style={{ margin: 0 }}>{message}</p>
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/**
+ * Default error component
+ */
+function DefaultError({ message }: { message: string }) {
+  return (
+    <div
+      style={{
+        padding: "20px",
+        fontFamily: "ui-monospace, monospace",
+        backgroundColor: "#fef2f2",
+        border: "1px solid #fecaca",
+        borderRadius: "8px",
+        margin: "16px",
+      }}
+    >
+      <h3 style={{ color: "#dc2626", margin: "0 0 12px 0" }}>Error</h3>
+      <pre
+        style={{
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          margin: 0,
+          color: "#7f1d1d",
+          fontSize: "13px",
+          lineHeight: "1.5",
+        }}
+      >
+        {message}
+      </pre>
+    </div>
+  );
+}
+
+
+export function TrellisApp({
+  source,
+  main,
+  trellisWheelUrl,
+  onStatusChange,
+  loadingComponent,
+  errorComponent,
+}: TrellisAppProps): React.ReactElement {
+
+  const [state, setState] = useState<AppState>({
+    status: "loading",
+    message: "Initializing...",
+  });
+  const workerRef = useRef<PyodideWorker | null>(null);
+  const initializedRef = useRef(false);
+
+  // Create client with callbacks
+  const client = useMemo(
+    () =>
+      new BrowserClient({
+        onRender: (tree) => {
+          setState({ status: "connected", tree });
+        },
+        onError: (error) => {
+          setState({ status: "error", message: error });
+        },
+      }),
+    []
+  );
+
+  useEffect(() => {
+    // Prevent double initialization in React StrictMode
+    if (initializedRef.current) {
+      return;
+    }
+    initializedRef.current = true;
+
+    async function initialize() {
+      try {
+        // 1. Create and initialize the Pyodide worker
+        const worker = new PyodideWorker();
+        workerRef.current = worker;
+
+        await worker.create({
+          onStatus: (msg) => {
+            setState({ status: "loading", message: msg });
+            onStatusChange?.(msg);
+          },
+          trellisWheelUrl,
+        });
+
+        // 2. Wire up message passing between client and worker
+        // Worker -> Client: Python sends HELLO_RESPONSE, RENDER, ERROR
+        worker.onMessage((msg) => {
+          client.handleMessage(msg as Message);
+        });
+
+        // Client -> Worker: JS sends HELLO, EVENT
+        client.setSendCallback((msg) => {
+          worker.sendMessage(msg);
+        });
+
+        // 3. Run Python code
+        // The handler.run() loop starts and waits for HelloMessage
+        setState({ status: "loading", message: "Starting application..." });
+        onStatusChange?.("Starting application...");
+        worker.run(source, main);
+
+        // 4. Send HelloMessage to start the handshake
+        // Note: The worker's bridge queues messages until Python's handler is set,
+        // so early messages are not lost. This small delay provides buffer for
+        // Python to initialize the handler before we send. If the message arrives
+        // before handler.run() is called, it will be queued and processed when
+        // Python is ready.
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        client.sendHello();
+      } catch (e) {
+        console.error("[TrellisApp] Error:", e);
+        setState({ status: "error", message: (e as Error).message });
+      }
+    }
+
+    initialize();
+
+    return () => {
+      // Terminate the worker to kill all Python execution
+      workerRef.current?.terminate();
+      workerRef.current = null;
+      client.disconnect();
+      // Reset so remount (e.g., StrictMode) can re-initialize
+      initializedRef.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);  // Empty deps: runs once on mount. Re-run by remounting with new key.
+
+  // Render based on state
+  if (state.status === "loading") {
+    return (
+      loadingComponent ?? <DefaultLoading message={state.message} />
+    ) as React.ReactElement;
+  }
+
+  if (state.status === "error") {
+    const ErrorComponent = errorComponent;
+    return ErrorComponent ? (
+      ErrorComponent(state.message) as React.ReactElement
+    ) : (
+      <DefaultError message={state.message} />
+    );
+  }
+
+  // Connected - render the tree
+  return (
+    <TrellisContext.Provider value={client}>
+      <TreeRenderer node={state.tree} />
+    </TrellisContext.Provider>
+  );
+}
+
+export default TrellisApp;
