@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { SerializedElement, ElementKind, EventHandler, isCallbackRef } from "./types";
+import { SerializedElement, ElementKind, EventHandler, isCallbackRef, isMutableRef, Mutable } from "./types";
 
 /** Widget component type. */
 export type WidgetComponent = React.ComponentType<any>;
@@ -88,7 +88,10 @@ function serializeEventArg(arg: unknown): unknown {
 }
 
 /**
- * Transform props, converting callback refs to actual event handler functions.
+ * Transform props, converting callback refs to handlers and mutable refs to Mutable objects.
+ *
+ * For mutable refs, wraps them in a Mutable<T> object that components can
+ * explicitly handle via `.value` and `.setValue()`.
  */
 export function processProps(
   props: Record<string, unknown>,
@@ -102,6 +105,9 @@ export function processProps(
         const serializedArgs = args.map(serializeEventArg);
         onEvent(value.__callback__, serializedArgs);
       };
+    } else if (isMutableRef(value)) {
+      // Wrap in Mutable object for explicit handling by components
+      result[key] = new Mutable(value, onEvent);
     } else {
       result[key] = value;
     }

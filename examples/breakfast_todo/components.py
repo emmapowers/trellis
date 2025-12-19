@@ -1,6 +1,6 @@
 """UI components for the todo app."""
 
-from trellis import Padding, component
+from trellis import Padding, component, mutable
 from trellis import widgets as w
 
 from .state import FilterType, Todo, TodosState
@@ -13,9 +13,8 @@ def TodoInput() -> None:
 
     with w.Row(gap=8):
         w.TextInput(
-            value=state.input_text,
+            value=mutable(state.input_text),
             placeholder="What needs to be done?",
-            on_change=state.set_input,
             flex=1,
         )
         w.Button(
@@ -30,9 +29,6 @@ def TodoItem(todo: Todo) -> None:
     """Single todo item with toggle and delete actions."""
     state = TodosState.from_context()
 
-    def toggle(checked: bool) -> None:
-        todo.completed = checked
-
     def delete() -> None:
         state.delete_todo(todo.id)
 
@@ -41,10 +37,7 @@ def TodoItem(todo: Todo) -> None:
         align="center",
         padding=Padding(x=12, y=10),
     ):
-        w.Checkbox(
-            checked=todo.completed,
-            on_change=toggle,
-        )
+        w.Checkbox(checked=mutable(todo.completed))
 
         w.Label(
             text=todo.text,

@@ -56,6 +56,7 @@ from types import TracebackType
 if tp.TYPE_CHECKING:
     from trellis.core.rendering import RenderTree
 
+from trellis.core.mutable import record_property_access
 from trellis.core.rendering import get_active_render_tree
 
 
@@ -166,51 +167,66 @@ class Stateful:
         return instance
 
     def __getattribute__(self, name: str) -> tp.Any:
-        """Get an attribute, registering dependencies for public attributes.
+        """Get an attribute, tracking dependencies and recording access for mutable().
 
-        When a public attribute (not starting with '_') is accessed during
-        component execution, the current node is registered as dependent
-        on that attribute. This enables fine-grained reactivity.
+        During component execution, property accesses are tracked for:
+        1. Dependency registration - so state changes trigger re-renders
+        2. Property recording - so mutable() can capture the reference
+
+        Private attributes (starting with '_') and callables are not tracked.
 
         Args:
             name: The attribute name to access
 
         Returns:
-            The attribute value
+            The actual attribute value
         """
         value = object.__getattribute__(self, name)
 
-        # Skip internal attributes - no dependency tracking
+        # Skip internal attributes - no tracking
         if name.startswith("_"):
             return value
 
-        # Register dependency during execution
+        # Skip callables - methods shouldn't be tracked
+        if callable(value):
+            return value
+
+        # Get render context
         context = get_active_render_tree()
-        if context is not None and context._current_node_id is not None:
-            # Lazy init _state_props (needed when @dataclass doesn't call super().__init__)
-            try:
-                deps = object.__getattribute__(self, "_state_props")
-            except AttributeError:
-                deps = {}
-                object.__setattr__(self, "_state_props", deps)
 
-            if name not in deps:
-                deps[name] = StatePropertyInfo(name=name)
-            state_info = deps[name]
+        # Outside render context - return raw value without tracking
+        if context is None or context._current_node_id is None:
+            return value
 
-            # Track by node ID and store weakref to RenderTree for dirty marking
-            node_id = context._current_node_id
-            if node_id is not None:
-                state_info.node_ids.add(node_id)
-                state_info.node_trees[node_id] = weakref.ref(context)
+        # Inside render context - register dependency
 
-                # Register reverse mapping for cleanup on re-render/unmount
-                element_state = context.get_element_state(node_id)
-                stateful_id = id(self)
-                if stateful_id in element_state.watched_deps:
-                    element_state.watched_deps[stateful_id][1].add(name)
-                else:
-                    element_state.watched_deps[stateful_id] = (self, {name})
+        # Lazy init _state_props (needed when @dataclass doesn't call super().__init__)
+        try:
+            deps = object.__getattribute__(self, "_state_props")
+        except AttributeError:
+            deps = {}
+            object.__setattr__(self, "_state_props", deps)
+
+        if name not in deps:
+            deps[name] = StatePropertyInfo(name=name)
+        state_info = deps[name]
+
+        # Track by node ID and store weakref to RenderTree for dirty marking
+        node_id = context._current_node_id
+        if node_id is not None:
+            state_info.node_ids.add(node_id)
+            state_info.node_trees[node_id] = weakref.ref(context)
+
+            # Register reverse mapping for cleanup on re-render/unmount
+            element_state = context.get_element_state(node_id)
+            stateful_id = id(self)
+            if stateful_id in element_state.watched_deps:
+                element_state.watched_deps[stateful_id][1].add(name)
+            else:
+                element_state.watched_deps[stateful_id] = (self, {name})
+
+        # Record access for mutable() to capture
+        record_property_access(self, name, value)
 
         return value
 

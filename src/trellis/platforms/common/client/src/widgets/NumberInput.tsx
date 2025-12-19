@@ -2,13 +2,13 @@ import React, { useRef } from "react";
 import { useNumberField, useLocale, useButton } from "react-aria";
 import { useNumberFieldState } from "react-stately";
 import { colors, radius, typography, spacing, focusRing, inputHeight } from "../theme";
+import { Mutable, unwrapMutable } from "../core/types";
 
 interface NumberInputProps {
-  value?: number;
+  value?: number | Mutable<number>;
   min?: number;
   max?: number;
   step?: number;
-  on_change?: (value: number) => void;
   disabled?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -96,15 +96,17 @@ function StepButton({
 }
 
 export function NumberInput({
-  value,
+  value: valueProp,
   min,
   max,
   step,
-  on_change,
   disabled = false,
   className,
   style,
 }: NumberInputProps): React.ReactElement {
+  // Unwrap mutable binding if present
+  const { value, setValue } = unwrapMutable(valueProp);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const { locale } = useLocale();
   const state = useNumberFieldState({
@@ -112,7 +114,7 @@ export function NumberInput({
     minValue: min,
     maxValue: max,
     step,
-    onChange: on_change,
+    onChange: setValue,
     isDisabled: disabled,
     locale,
   });
@@ -122,7 +124,7 @@ export function NumberInput({
       minValue: min,
       maxValue: max,
       step,
-      onChange: on_change,
+      onChange: setValue,
       isDisabled: disabled,
     },
     state,

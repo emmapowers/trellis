@@ -1,6 +1,6 @@
 """Navigation section of the widget showcase."""
 
-from trellis import component
+from trellis import component, mutable
 from trellis import widgets as w
 from trellis.widgets import IconName
 
@@ -16,8 +16,7 @@ def NavigationSection() -> None:
         # Tabs
         w.Label(text="Tabs", font_size=12, color="#64748b", bold=True)
         with w.Tabs(
-            selected=state.selected_tab,
-            on_change=lambda t: setattr(state, "selected_tab", t),
+            selected=mutable(state.selected_tab),
             style={"marginTop": "8px"},
         ):
             with w.Tab(id="overview", label="Overview", icon=IconName.HOME):

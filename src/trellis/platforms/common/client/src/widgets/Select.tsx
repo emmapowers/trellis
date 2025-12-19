@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { useSelect, useListBox, useOption, useButton, HiddenSelect, DismissButton, useOverlay } from "react-aria";
 import { useSelectState, Item } from "react-stately";
 import { colors, radius, typography, spacing, focusRing, shadows } from "../theme";
+import { Mutable, unwrapMutable } from "../core/types";
 
 interface SelectOption {
   value: string;
@@ -9,9 +10,8 @@ interface SelectOption {
 }
 
 interface SelectProps {
-  value?: string;
+  value?: string | Mutable<string>;
   options?: SelectOption[];
-  on_change?: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -162,14 +162,16 @@ function Option({ item, state }: { item: { key: React.Key; rendered: React.React
 }
 
 export function Select({
-  value,
+  value: valueProp,
   options = [],
-  on_change,
   placeholder,
   disabled = false,
   className,
   style,
 }: SelectProps): React.ReactElement {
+  // Unwrap mutable binding if present
+  const { value, setValue } = unwrapMutable(valueProp);
+
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listBoxRef = useRef<HTMLUListElement>(null);
 
@@ -178,7 +180,7 @@ export function Select({
 
   const state = useSelectState({
     selectedKey: value,
-    onSelectionChange: (key) => on_change?.(key as string),
+    onSelectionChange: (key) => setValue?.(key as string),
     isDisabled: disabled,
     children: items.map((item) => <Item key={item.key}>{item.label}</Item>),
   });
@@ -186,7 +188,7 @@ export function Select({
   const { triggerProps, valueProps, menuProps } = useSelect(
     {
       selectedKey: value,
-      onSelectionChange: (key) => on_change?.(key as string),
+      onSelectionChange: (key) => setValue?.(key as string),
       isDisabled: disabled,
       children: items.map((item) => <Item key={item.key}>{item.label}</Item>),
     },

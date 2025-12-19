@@ -3,13 +3,13 @@ import { useSlider, useSliderThumb, useLocale } from "react-aria";
 import { useSliderState } from "react-stately";
 import { NumberFormatter } from "@internationalized/number";
 import { colors, focusRing } from "../theme";
+import { Mutable, unwrapMutable } from "../core/types";
 
 interface SliderProps {
-  value?: number;
+  value?: number | Mutable<number>;
   min?: number;
   max?: number;
   step?: number;
-  on_change?: (value: number) => void;
   disabled?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -89,15 +89,17 @@ function Thumb({
 }
 
 export function Slider({
-  value = 50,
+  value: valueProp = 50,
   min = 0,
   max = 100,
   step = 1,
-  on_change,
   disabled = false,
   className,
   style,
 }: SliderProps): React.ReactElement {
+  // Unwrap mutable binding if present
+  const { value, setValue } = unwrapMutable(valueProp);
+
   const trackRef = useRef<HTMLDivElement>(null);
   const { locale } = useLocale();
   const state = useSliderState({
@@ -105,7 +107,7 @@ export function Slider({
     minValue: min,
     maxValue: max,
     step,
-    onChange: (values) => on_change?.(values[0]),
+    onChange: (values) => setValue?.(values[0]),
     isDisabled: disabled,
     numberFormatter: new NumberFormatter(locale),
   });
@@ -115,7 +117,7 @@ export function Slider({
       minValue: min,
       maxValue: max,
       step,
-      onChange: (values) => on_change?.(values[0]),
+      onChange: (values) => setValue?.(values[0]),
       isDisabled: disabled,
     },
     state,

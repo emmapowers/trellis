@@ -9,6 +9,52 @@ import TrellisDemo from '@site/src/components/TrellisDemo';
 
 Patterns you'll use frequently when building Trellis applications.
 
+## Two-Way Binding with mutable()
+
+For form inputs, use `mutable()` to create two-way bindings between state and widgets:
+
+<TrellisDemo
+  title="Two-Way Binding"
+  code={`from dataclasses import dataclass
+from trellis import Stateful, component, mutable
+from trellis import widgets as w
+
+@dataclass
+class FormState(Stateful):
+    name: str
+    email: str
+    subscribed: bool
+
+@component
+def Form():
+    state = FormState(name="", email="", subscribed=False)
+
+    with w.Column(gap=12):
+        w.Heading(text="Sign Up", level=2)
+
+        w.TextInput(
+            value=mutable(state.name),
+            placeholder="Name",
+        )
+        w.TextInput(
+            value=mutable(state.email),
+            placeholder="Email",
+        )
+        w.Checkbox(
+            checked=mutable(state.subscribed),
+            label="Subscribe to newsletter",
+        )
+
+        w.Divider()
+        w.Label(text=f"Name: {state.name}")
+        w.Label(text=f"Email: {state.email}")
+        w.Label(text=f"Subscribed: {state.subscribed}")
+
+App = Form`}
+/>
+
+The `mutable()` function captures a reference to the state property. When the widget value changes, the state updates automatically, which triggers a re-render.
+
 ## Passing State via Props
 
 State lives in one component but can be passed to children as props:

@@ -3,10 +3,10 @@ import { useTabList, useTab, useTabPanel } from "react-aria";
 import { useTabListState, Item } from "react-stately";
 import { colors, spacing, typography, radius, focusRing } from "../theme";
 import { Icon } from "./Icon";
+import { Mutable, unwrapMutable } from "../core/types";
 
 interface TabsProps {
-  selected?: string;
-  on_change?: (id: string) => void;
+  selected?: string | Mutable<string>;
   variant?: "line" | "enclosed" | "pills";
   size?: "sm" | "md";
   className?: string;
@@ -166,14 +166,16 @@ function TabPanel({
 }
 
 export function Tabs({
-  selected,
-  on_change,
+  selected: selectedProp,
   variant = "line",
   size = "md",
   className,
   style,
   children,
 }: TabsProps): React.ReactElement {
+  // Unwrap mutable binding if present
+  const { value: selected, setValue } = unwrapMutable(selectedProp);
+
   const ref = useRef<HTMLDivElement>(null);
 
   // Extract tab data from children
@@ -201,7 +203,7 @@ export function Tabs({
 
   const state = useTabListState({
     selectedKey: selected,
-    onSelectionChange: (key) => on_change?.(key as string),
+    onSelectionChange: (key) => setValue?.(key as string),
     disabledKeys: tabData.filter((t) => t.disabled).map((t) => t.id),
     children: tabData.map((tab) => <Item key={tab.id}>{tab.label}</Item>),
   });
@@ -209,7 +211,7 @@ export function Tabs({
   const { tabListProps } = useTabList(
     {
       selectedKey: selected,
-      onSelectionChange: (key) => on_change?.(key as string),
+      onSelectionChange: (key) => setValue?.(key as string),
       disabledKeys: tabData.filter((t) => t.disabled).map((t) => t.id),
       children: tabData.map((tab) => <Item key={tab.id}>{tab.label}</Item>),
     },

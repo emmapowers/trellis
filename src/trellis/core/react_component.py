@@ -30,6 +30,8 @@ from __future__ import annotations
 
 import functools
 import typing as tp
+from collections.abc import Callable
+from typing import ParamSpec
 
 from trellis.core.base import ElementKind
 from trellis.core.base_component import Component
@@ -39,6 +41,9 @@ if tp.TYPE_CHECKING:
     from trellis.core.rendering import ElementNode
 
 __all__ = ["ReactComponentBase", "react_component_base"]
+
+# ParamSpec for preserving function signatures through decorators
+P = ParamSpec("P")
 
 
 def _merge_style_props(props: dict[str, tp.Any]) -> dict[str, tp.Any]:
@@ -97,14 +102,6 @@ def _merge_style_props(props: dict[str, tp.Any]) -> dict[str, tp.Any]:
         result["style"] = style
 
     return result
-
-
-class _DecoratedComponent(tp.Protocol):
-    """Protocol for functions decorated with @react_component_base."""
-
-    _component: ReactComponentBase
-
-    def __call__(self, **props: tp.Any) -> ElementNode: ...
 
 
 class ReactComponentBase(Component):
@@ -182,12 +179,15 @@ def react_component_base(
     element_name: str,
     *,
     has_children: bool = False,
-) -> tp.Callable[[tp.Callable[..., tp.Any]], _DecoratedComponent]:
+) -> Callable[[Callable[P, tp.Any]], Callable[P, ElementNode]]:
     """Decorator to create a ReactComponentBase from a function signature.
 
     This is the simplest way to define React components. The function body is
     ignored; only the signature is used for documentation and type hints.
     Internally, a singleton ReactComponentBase instance is created.
+
+    The decorator preserves the function's type signature using ParamSpec,
+    so mypy will catch invalid prop names passed to widgets.
 
     Args:
         element_name: The React component name on the client
@@ -200,21 +200,26 @@ def react_component_base(
         ```python
         @react_component_base("Button")
         def Button(
+            *,
             text: str = "",
             on_click: Callable[[], None] | None = None,
             disabled: bool = False,
+            key: str | None = None,
         ) -> ElementNode:
             '''Clickable button widget.'''
             ...  # Body ignored
 
         # Use like a regular function
         Button(text="Click me", on_click=handle_click)
+
+        # Type error: unexpected keyword argument
+        Button(invalid_prop=True)  # mypy catches this!
         ```
     """
 
     def decorator(
-        func: tp.Callable[..., tp.Any],
-    ) -> _DecoratedComponent:
+        func: Callable[P, tp.Any],
+    ) -> Callable[P, ElementNode]:
         # Create a generated class with the function's name
         class _Generated(ReactComponentBase):
             _element_name = element_name
@@ -224,12 +229,13 @@ def react_component_base(
         _singleton = _Generated(func.__name__)
 
         @functools.wraps(func)
-        def wrapper(**props: tp.Any) -> ElementNode:
-            return _singleton._place(**_merge_style_props(props))
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> ElementNode:
+            # Widgets only accept keyword arguments, so args should be empty
+            return _singleton._place(**_merge_style_props(dict(kwargs)))
 
         # Expose the underlying component for introspection
         wrapper._component = _singleton  # type: ignore[attr-defined]
 
-        return tp.cast("_DecoratedComponent", wrapper)
+        return wrapper
 
     return decorator

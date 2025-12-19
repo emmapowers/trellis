@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import functools
 import typing as tp
+from collections.abc import Callable
+from typing import ParamSpec
 
 from trellis.core.base import ElementKind
 from trellis.core.base_component import Component
@@ -23,13 +25,8 @@ __all__ = [
 # Type alias for inline styles
 Style = dict[str, str | int | float]
 
-
-class _DecoratedHtmlElement(tp.Protocol):
-    """Protocol for functions decorated with @html_element."""
-
-    _component: HtmlElement
-
-    def __call__(self, **props: tp.Any) -> ElementNode: ...
+# ParamSpec for preserving function signatures through the decorator
+P = ParamSpec("P")
 
 
 class HtmlElement(Component):
@@ -100,7 +97,7 @@ def html_element(
     *,
     is_container: bool = False,
     name: str | None = None,
-) -> tp.Callable[[tp.Callable[..., tp.Any]], _DecoratedHtmlElement]:
+) -> Callable[[Callable[P, tp.Any]], Callable[P, ElementNode]]:
     """Decorator to create an HtmlElement from a function signature.
 
     This is the standard way to define HTML elements. The function body is
@@ -137,8 +134,8 @@ def html_element(
     """
 
     def decorator(
-        func: tp.Callable[..., tp.Any],
-    ) -> _DecoratedHtmlElement:
+        func: Callable[P, tp.Any],
+    ) -> Callable[P, ElementNode]:
         # Use provided name or function name
         element_name = name or func.__name__
 
@@ -151,13 +148,13 @@ def html_element(
         _singleton = _Generated(element_name)
 
         @functools.wraps(func)
-        def wrapper(**props: tp.Any) -> ElementNode:
-            return _singleton._place(**props)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> ElementNode:
+            return _singleton._place(**kwargs)
 
         # Expose the underlying component for introspection
         wrapper._component = _singleton  # type: ignore[attr-defined]
 
-        return tp.cast("_DecoratedHtmlElement", wrapper)
+        return wrapper
 
     return decorator
 

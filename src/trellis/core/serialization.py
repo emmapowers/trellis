@@ -12,6 +12,7 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.composition_component import CompositionComponent
+from trellis.core.mutable import Mutable
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering import ElementNode, RenderTree
@@ -34,6 +35,18 @@ def _serialize_value(
     Returns:
         A JSON-serializable version of the value
     """
+    # Handle Mutable wrappers for two-way binding
+    if isinstance(value, Mutable):
+
+        def setter(new_val: tp.Any) -> None:
+            value.value = new_val  # Mutable.value setter handles on_change
+
+        cb_id = ctx.register_callback(setter, node_id, f"{prop_name}:mutable")
+        return {
+            "__mutable__": cb_id,
+            "value": _serialize_value(value.value, ctx, node_id, f"{prop_name}.value"),
+        }
+
     if callable(value):
         # Register callback with deterministic ID based on node and prop
         cb_id = ctx.register_callback(value, node_id, prop_name)

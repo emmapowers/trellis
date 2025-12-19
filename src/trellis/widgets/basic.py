@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import typing as tp
 
+from trellis.core.mutable import Mutable
 from trellis.core.react_component import react_component_base
 from trellis.core.rendering import ElementNode
+from trellis.core.style_props import Height, Margin, Padding, Width
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -21,6 +23,10 @@ def Label(
     italic: bool = False,
     text_align: tp.Literal["left", "center", "right"] | None = None,
     font_weight: tp.Literal["normal", "medium", "semibold", "bold"] | int | None = None,
+    padding: Padding | int | None = None,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -36,6 +42,10 @@ def Label(
         text_align: Text alignment ("left", "center", "right").
         font_weight: Font weight as name ("normal", "medium", "semibold", "bold")
             or numeric value (100-900).
+        padding: Padding around the text (Padding dataclass or int for all sides).
+        margin: Margin around the label (Margin dataclass).
+        width: Width of the label (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -60,6 +70,8 @@ def Button(
     variant: tp.Literal["primary", "secondary", "outline", "ghost", "danger"] = "primary",
     size: tp.Literal["sm", "md", "lg"] = "md",
     full_width: bool = False,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -78,6 +90,8 @@ def Button(
             - "danger": Red/destructive action
         size: Button size. One of "sm", "md" (default), "lg".
         full_width: Whether button should take full container width.
+        margin: Margin around the button (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -96,12 +110,14 @@ def Button(
 @react_component_base("Slider")
 def Slider(
     *,
-    value: float = 50,
+    value: float | Mutable[float] = 50,
     min: float = 0,
     max: float = 100,
     step: float = 1,
-    on_change: Callable[[float], None] | None = None,
     disabled: bool = False,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -109,12 +125,14 @@ def Slider(
     """Range slider widget.
 
     Args:
-        value: Current slider value.
+        value: Current slider value. Use mutable(state.prop) for two-way binding.
         min: Minimum value.
         max: Maximum value.
         step: Step increment.
-        on_change: Callback invoked with new value when slider changes.
         disabled: Whether the slider is disabled.
+        margin: Margin around the slider (Margin dataclass).
+        width: Width of the slider (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -123,18 +141,20 @@ def Slider(
         An ElementNode for the Slider component.
 
     Example:
-        Slider(value=50, min=0, max=100, on_change=handle_change)
+        Slider(value=mutable(state.slider_value), min=0, max=100)
     """
     ...
 
 
 @react_component_base("TextInput")
 def TextInput(
-    value: str = "",
+    value: str | Mutable[str] = "",
     *,
     placeholder: str | None = None,
-    on_change: Callable[[str], None] | None = None,
     disabled: bool = False,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -142,10 +162,12 @@ def TextInput(
     """Single-line text input widget.
 
     Args:
-        value: Current input value.
+        value: Current input value. Use mutable(state.prop) for two-way binding.
         placeholder: Placeholder text when empty.
-        on_change: Callback invoked with new value when input changes.
         disabled: Whether the input is disabled.
+        margin: Margin around the input (Margin dataclass).
+        width: Width of the input (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -154,7 +176,7 @@ def TextInput(
         An ElementNode for the TextInput component.
 
     Example:
-        TextInput(value="hello", placeholder="Enter text...", on_change=handle_change)
+        TextInput(value=mutable(state.text), placeholder="Enter text...")
     """
     ...
 
@@ -162,12 +184,14 @@ def TextInput(
 @react_component_base("NumberInput")
 def NumberInput(
     *,
-    value: float | None = None,
+    value: float | Mutable[float] | None = None,
     min: float | None = None,
     max: float | None = None,
     step: float | None = None,
-    on_change: Callable[[float], None] | None = None,
     disabled: bool = False,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -175,12 +199,15 @@ def NumberInput(
     """Numeric input widget.
 
     Args:
-        value: Current numeric value.
+        value: Current numeric value. Use mutable(state.prop) for two-way binding,
+            or callback(state.prop, handler) for custom processing.
         min: Minimum allowed value.
         max: Maximum allowed value.
         step: Step increment for value changes.
-        on_change: Callback invoked with new value when input changes.
         disabled: Whether the input is disabled.
+        margin: Margin around the input (Margin dataclass).
+        width: Width of the input (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -189,7 +216,7 @@ def NumberInput(
         An ElementNode for the NumberInput component.
 
     Example:
-        NumberInput(value=42, min=0, max=100, step=1, on_change=handle_change)
+        NumberInput(value=mutable(state.count), min=0, max=100, step=1)
     """
     ...
 
@@ -197,10 +224,11 @@ def NumberInput(
 @react_component_base("Checkbox")
 def Checkbox(
     *,
-    checked: bool = False,
+    checked: bool | Mutable[bool] = False,
     label: str | None = None,
-    on_change: Callable[[bool], None] | None = None,
     disabled: bool = False,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -208,10 +236,11 @@ def Checkbox(
     """Checkbox toggle widget.
 
     Args:
-        checked: Whether the checkbox is checked.
+        checked: Whether the checkbox is checked. Use mutable(state.prop) for two-way binding.
         label: Optional label text displayed next to the checkbox.
-        on_change: Callback invoked with new checked state when toggled.
         disabled: Whether the checkbox is disabled.
+        margin: Margin around the checkbox (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -220,7 +249,7 @@ def Checkbox(
         An ElementNode for the Checkbox component.
 
     Example:
-        Checkbox(checked=True, label="Enable feature", on_change=handle_toggle)
+        Checkbox(checked=mutable(state.enabled), label="Enable feature")
     """
     ...
 
@@ -260,11 +289,13 @@ def Divider(
 @react_component_base("Select")
 def Select(
     *,
-    value: str | None = None,
+    value: str | Mutable[str] | None = None,
     options: list[dict[str, str]] | None = None,
-    on_change: Callable[[str], None] | None = None,
     placeholder: str | None = None,
     disabled: bool = False,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -272,11 +303,13 @@ def Select(
     """Single-selection dropdown widget.
 
     Args:
-        value: Currently selected value.
+        value: Currently selected value. Use mutable(state.prop) for two-way binding.
         options: List of option dicts with "value" and "label" keys.
-        on_change: Callback invoked with selected value when selection changes.
         placeholder: Placeholder text when no value selected.
         disabled: Whether the select is disabled.
+        margin: Margin around the select (Margin dataclass).
+        width: Width of the select (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -286,9 +319,8 @@ def Select(
 
     Example:
         Select(
-            value="opt1",
+            value=mutable(state.selected_option),
             options=[{"value": "opt1", "label": "Option 1"}, {"value": "opt2", "label": "Option 2"}],
-            on_change=handle_select,
         )
     """
     ...
@@ -300,6 +332,8 @@ def Heading(
     *,
     level: tp.Literal[1, 2, 3, 4, 5, 6] = 1,
     color: str | None = None,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -312,6 +346,8 @@ def Heading(
         text: The heading text to display.
         level: Heading level from 1-6, corresponding to <h1>-<h6>. Defaults to 1.
         color: Text color (CSS color string).
+        margin: Margin around the heading (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -336,6 +372,9 @@ def ProgressBar(
     disabled: bool = False,
     color: str | None = None,
     height: int | None = None,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -352,6 +391,9 @@ def ProgressBar(
         disabled: Whether the progress bar is disabled (grayed out). Defaults to False.
         color: Fill color (CSS color string). Defaults to indigo (#6366f1).
         height: Bar height in pixels. Defaults to 8.
+        margin: Margin around the progress bar (Margin dataclass).
+        width: Width of the progress bar (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -373,6 +415,8 @@ def StatusIndicator(
     label: str | None = None,
     show_icon: bool = True,
     size: tp.Literal["sm", "md"] = "md",
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -393,6 +437,8 @@ def StatusIndicator(
         label: Optional text label to display next to the icon.
         show_icon: Whether to show the status icon. Defaults to True.
         size: Icon and text size. One of "sm", "md" (default).
+        margin: Margin around the indicator (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -414,6 +460,8 @@ def Badge(
     *,
     variant: tp.Literal["default", "success", "error", "warning", "info"] = "default",
     size: tp.Literal["sm", "md"] = "sm",
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -432,6 +480,8 @@ def Badge(
             - "warning": Amber
             - "info": Blue
         size: Badge size. One of "sm" (default), "md".
+        margin: Margin around the badge (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -453,6 +503,8 @@ def Tooltip(
     *,
     position: tp.Literal["top", "bottom", "left", "right"] = "top",
     delay: int = 200,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -470,6 +522,8 @@ def Tooltip(
             - "left": To the left of the element
             - "right": To the right of the element
         delay: Delay in milliseconds before showing tooltip. Defaults to 200.
+        margin: Margin around the tooltip wrapper (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply to the wrapper.
         style: Additional inline styles to apply to the wrapper.
         key: Optional key for reconciliation.
@@ -492,6 +546,10 @@ def Table(
     striped: bool = False,
     compact: bool = True,
     bordered: bool = False,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    height: Height | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -511,6 +569,10 @@ def Table(
         striped: Whether to show alternating row colors. Defaults to False.
         compact: Whether to use compact row height. Defaults to True.
         bordered: Whether to show cell borders. Defaults to False.
+        margin: Margin around the table (Margin dataclass).
+        width: Width of the table (Width dataclass, int for pixels, or str for CSS).
+        height: Height of the table (Height dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.

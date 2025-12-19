@@ -1,11 +1,11 @@
 import React, { useRef } from "react";
 import { useTextField } from "react-aria";
 import { colors, radius, typography, spacing, focusRing } from "../theme";
+import { Mutable, unwrapMutable } from "../core/types";
 
 interface TextInputProps {
-  value?: string;
+  value?: string | Mutable<string>;
   placeholder?: string;
-  on_change?: (value: string) => void;
   disabled?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -31,18 +31,20 @@ const disabledStyles: React.CSSProperties = {
 };
 
 export function TextInput({
-  value = "",
+  value: valueProp = "",
   placeholder,
-  on_change,
   disabled = false,
   className,
   style,
 }: TextInputProps): React.ReactElement {
+  // Unwrap mutable binding if present
+  const { value, setValue } = unwrapMutable(valueProp);
+
   const ref = useRef<HTMLInputElement>(null);
   const { inputProps } = useTextField(
     {
       value,
-      onChange: on_change,
+      onChange: setValue,
       placeholder,
       isDisabled: disabled,
     },

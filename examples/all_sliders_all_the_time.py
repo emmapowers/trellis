@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from trellis import Height, Margin, Stateful, Trellis, async_main, component
+from trellis import Height, Margin, Stateful, Trellis, async_main, callback, component, mutable
 from trellis import widgets as w
 
 
@@ -33,10 +33,6 @@ class SliderState(Stateful):
         """Update number of sliders."""
         self.num_sliders = max(1, num)
 
-    def set_value(self, val: float) -> None:
-        """Update slider value."""
-        self.value = val
-
 
 # =============================================================================
 # Components
@@ -51,9 +47,6 @@ def ControlPanel() -> None:
     def handle_num_change(value: float) -> None:
         state.set_num_sliders(int(value))
 
-    def handle_value_change(value: float) -> None:
-        state.set_value(value)
-
     with w.Card(padding=16, width=400, margin=Margin(bottom=16)):
         w.Label(
             text="Slider Performance Test",
@@ -66,18 +59,17 @@ def ControlPanel() -> None:
 
         with w.Row(gap=8, align="center", margin=Margin(bottom=8)):
             w.Label(text="Num Sliders:", color="#64748b", width=100)
+            # Uses callback() for custom processing (clamping via set_num_sliders)
             w.NumberInput(
-                value=float(state.num_sliders),
+                value=callback(state.num_sliders, handle_num_change),
                 min=1,
-                on_change=handle_num_change,
                 width=80,
             )
 
         with w.Row(gap=8, align="center", margin=Margin(bottom=8)):
             w.Label(text="Value:", color="#64748b", width=100)
             w.NumberInput(
-                value=state.value,
-                on_change=handle_value_change,
+                value=mutable(state.value),
                 width=80,
             )
 
@@ -107,11 +99,10 @@ def SliderColumn() -> None:
                         text_align="right",
                     )
                     w.Slider(
-                        value=state.value,
+                        value=mutable(state.value),
                         min=1,
                         max=100,
                         step=1,
-                        on_change=state.set_value,
                         key=f"slider-{i}",
                         style={"flex": "1"},
                     )

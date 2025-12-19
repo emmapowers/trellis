@@ -25,3 +25,4 @@ class ShowcaseState(Stateful):
 
     # Feedback section
     collapsible_expanded: bool = True
+    experimental_features: bool = False

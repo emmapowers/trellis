@@ -8,8 +8,10 @@ from __future__ import annotations
 import typing as tp
 from typing import Literal
 
+from trellis.core.mutable import Mutable
 from trellis.core.react_component import react_component_base
 from trellis.core.rendering import ElementNode
+from trellis.core.style_props import Height, Margin, Padding, Width
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -18,10 +20,12 @@ if tp.TYPE_CHECKING:
 @react_component_base("Tabs", has_children=True)
 def Tabs(
     *,
-    selected: str | None = None,
-    on_change: Callable[[str], None] | None = None,
+    selected: str | Mutable[str] | None = None,
     variant: Literal["line", "enclosed", "pills"] = "line",
     size: Literal["sm", "md"] = "md",
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -29,10 +33,12 @@ def Tabs(
     """Tab container for organizing content.
 
     Args:
-        selected: ID of the currently selected tab
-        on_change: Callback when tab selection changes
+        selected: ID of the currently selected tab. Use mutable(state.prop) for two-way binding.
         variant: Visual style variant
         size: Size variant
+        margin: Margin around the tabs (Margin dataclass).
+        width: Width of the tabs container (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
         key: Unique key for reconciliation
@@ -47,6 +53,7 @@ def Tab(
     label: str,
     icon: str | None = None,
     disabled: bool = False,
+    padding: Padding | int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -58,6 +65,7 @@ def Tab(
         label: Display label
         icon: Optional icon name
         disabled: Whether the tab is disabled
+        padding: Padding inside the tab content (Padding dataclass or int for all sides).
         class_name: Additional CSS classes
         style: Inline styles
         key: Unique key for reconciliation
@@ -74,6 +82,10 @@ def Tree(
     on_select: Callable[[str], None] | None = None,
     on_expand: Callable[[str, bool], None] | None = None,
     show_icons: bool = True,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    height: Height | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -87,6 +99,10 @@ def Tree(
         on_select: Callback when a node is selected
         on_expand: Callback when a node is expanded/collapsed (id, is_expanded)
         show_icons: Whether to show folder/file icons
+        margin: Margin around the tree (Margin dataclass).
+        width: Width of the tree (Width dataclass, int for pixels, or str for CSS).
+        height: Height of the tree (Height dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
         key: Unique key for reconciliation
@@ -100,6 +116,8 @@ def Breadcrumb(
     items: list[dict[str, str]] | None = None,
     separator: str = "/",
     on_click: Callable[[int], None] | None = None,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -110,6 +128,8 @@ def Breadcrumb(
         items: Breadcrumb items as [{label, href?}, ...]
         separator: Separator character between items
         on_click: Callback when item is clicked (receives index)
+        margin: Margin around the breadcrumb (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
         key: Unique key for reconciliation
