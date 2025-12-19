@@ -117,6 +117,11 @@ const config: Config = {
           position: 'left',
         },
         {
+          href: 'pathname:///trellis/examples/widget-showcase/',
+          label: 'Widget Showcase',
+          position: 'left',
+        },
+        {
           href: 'https://github.com/emmapowers/trellis',
           label: 'GitHub',
           position: 'right',

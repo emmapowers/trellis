@@ -6,7 +6,7 @@
 
 Build complex web applications in Python—control panels, internal tools, data-intensive interfaces—without the frontend plumbing.
 
-[Documentation](https://emmapowers.github.io/trellis/) · [Playground](https://emmapowers.github.io/trellis/playground/)
+[Documentation](https://emmapowers.github.io/trellis/) · [Playground](https://emmapowers.github.io/trellis/playground/) · [Widget Showcase](https://emmapowers.github.io/trellis/examples/widget-showcase/)
 
 <p align="center">
   <img src="docs/static/demo-preview.gif" alt="Demo" width="387">
