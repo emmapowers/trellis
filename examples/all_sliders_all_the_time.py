@@ -113,6 +113,7 @@ def SliderColumn() -> None:
                         step=1,
                         on_change=state.set_value,
                         key=f"slider-{i}",
+                        style={"flex": "1"},
                     )
                     w.Label(
                         text=str(int(state.value)),
