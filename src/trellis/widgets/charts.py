@@ -6,6 +6,7 @@ import typing as tp
 
 from trellis.core.react_component import react_component_base
 from trellis.core.rendering import ElementNode
+from trellis.core.style_props import Margin
 
 
 @react_component_base("TimeSeriesChart")
@@ -18,6 +19,8 @@ def TimeSeriesChart(
     title: str | None = None,
     show_legend: bool = True,
     show_tooltip: bool = True,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -40,6 +43,8 @@ def TimeSeriesChart(
         title: Optional chart title.
         show_legend: Whether to show the legend. Defaults to True.
         show_tooltip: Whether to show tooltip on hover. Defaults to True.
+        margin: Margin around the chart (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -77,6 +82,8 @@ def LineChart(
     show_tooltip: bool = True,
     colors: list[str] | None = None,
     curve_type: tp.Literal["linear", "monotone", "step"] = "monotone",
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -98,6 +105,8 @@ def LineChart(
         show_tooltip: Whether to show tooltip on hover. Defaults to True.
         colors: List of colors for each data key. Defaults to theme palette.
         curve_type: Line interpolation type. Defaults to "monotone".
+        margin: Margin around the chart (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -132,6 +141,8 @@ def BarChart(
     colors: list[str] | None = None,
     stacked: bool = False,
     layout: tp.Literal["horizontal", "vertical"] = "horizontal",
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -152,6 +163,8 @@ def BarChart(
         colors: List of colors for each data key. Defaults to theme palette.
         stacked: Whether to stack bars. Defaults to False.
         layout: Bar orientation. Defaults to "horizontal".
+        margin: Margin around the chart (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -186,6 +199,8 @@ def AreaChart(
     colors: list[str] | None = None,
     stacked: bool = False,
     curve_type: tp.Literal["linear", "monotone", "step"] = "monotone",
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -206,6 +221,8 @@ def AreaChart(
         colors: List of colors for each data key. Defaults to theme palette.
         stacked: Whether to stack areas. Defaults to False.
         curve_type: Line interpolation type. Defaults to "monotone".
+        margin: Margin around the chart (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -229,6 +246,8 @@ def PieChart(
     show_tooltip: bool = True,
     show_labels: bool = False,
     colors: list[str] | None = None,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -249,6 +268,8 @@ def PieChart(
         show_tooltip: Whether to show tooltip on hover. Defaults to True.
         show_labels: Whether to show labels on segments. Defaults to False.
         colors: List of colors for segments. Defaults to theme palette.
+        margin: Margin around the chart (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -277,6 +298,8 @@ def Sparkline(
     height: int = 24,
     color: str | None = None,
     show_area: bool = False,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -291,6 +314,8 @@ def Sparkline(
         height: Chart height in pixels. Defaults to 24.
         color: Line/area color. Defaults to theme accent color.
         show_area: Whether to fill area under the line. Defaults to False.
+        margin: Margin around the sparkline (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.

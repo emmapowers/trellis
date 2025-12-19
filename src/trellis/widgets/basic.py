@@ -7,6 +7,7 @@ import typing as tp
 from trellis.core.mutable import Mutable
 from trellis.core.react_component import react_component_base
 from trellis.core.rendering import ElementNode
+from trellis.core.style_props import Height, Margin, Padding, Width
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -22,6 +23,10 @@ def Label(
     italic: bool = False,
     text_align: tp.Literal["left", "center", "right"] | None = None,
     font_weight: tp.Literal["normal", "medium", "semibold", "bold"] | int | None = None,
+    padding: Padding | int | None = None,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -37,6 +42,10 @@ def Label(
         text_align: Text alignment ("left", "center", "right").
         font_weight: Font weight as name ("normal", "medium", "semibold", "bold")
             or numeric value (100-900).
+        padding: Padding around the text (Padding dataclass or int for all sides).
+        margin: Margin around the label (Margin dataclass).
+        width: Width of the label (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -61,6 +70,8 @@ def Button(
     variant: tp.Literal["primary", "secondary", "outline", "ghost", "danger"] = "primary",
     size: tp.Literal["sm", "md", "lg"] = "md",
     full_width: bool = False,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -79,6 +90,8 @@ def Button(
             - "danger": Red/destructive action
         size: Button size. One of "sm", "md" (default), "lg".
         full_width: Whether button should take full container width.
+        margin: Margin around the button (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -102,6 +115,9 @@ def Slider(
     max: float = 100,
     step: float = 1,
     disabled: bool = False,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -114,6 +130,9 @@ def Slider(
         max: Maximum value.
         step: Step increment.
         disabled: Whether the slider is disabled.
+        margin: Margin around the slider (Margin dataclass).
+        width: Width of the slider (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -133,6 +152,9 @@ def TextInput(
     *,
     placeholder: str | None = None,
     disabled: bool = False,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -143,6 +165,9 @@ def TextInput(
         value: Current input value. Use mutable(state.prop) for two-way binding.
         placeholder: Placeholder text when empty.
         disabled: Whether the input is disabled.
+        margin: Margin around the input (Margin dataclass).
+        width: Width of the input (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -164,6 +189,9 @@ def NumberInput(
     max: float | None = None,
     step: float | None = None,
     disabled: bool = False,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -177,6 +205,9 @@ def NumberInput(
         max: Maximum allowed value.
         step: Step increment for value changes.
         disabled: Whether the input is disabled.
+        margin: Margin around the input (Margin dataclass).
+        width: Width of the input (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -196,6 +227,8 @@ def Checkbox(
     checked: bool | Mutable[bool] = False,
     label: str | None = None,
     disabled: bool = False,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -206,6 +239,8 @@ def Checkbox(
         checked: Whether the checkbox is checked. Use mutable(state.prop) for two-way binding.
         label: Optional label text displayed next to the checkbox.
         disabled: Whether the checkbox is disabled.
+        margin: Margin around the checkbox (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -258,6 +293,9 @@ def Select(
     options: list[dict[str, str]] | None = None,
     placeholder: str | None = None,
     disabled: bool = False,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -269,6 +307,9 @@ def Select(
         options: List of option dicts with "value" and "label" keys.
         placeholder: Placeholder text when no value selected.
         disabled: Whether the select is disabled.
+        margin: Margin around the select (Margin dataclass).
+        width: Width of the select (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -291,6 +332,8 @@ def Heading(
     *,
     level: tp.Literal[1, 2, 3, 4, 5, 6] = 1,
     color: str | None = None,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -303,6 +346,8 @@ def Heading(
         text: The heading text to display.
         level: Heading level from 1-6, corresponding to <h1>-<h6>. Defaults to 1.
         color: Text color (CSS color string).
+        margin: Margin around the heading (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -327,6 +372,9 @@ def ProgressBar(
     disabled: bool = False,
     color: str | None = None,
     height: int | None = None,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -343,6 +391,9 @@ def ProgressBar(
         disabled: Whether the progress bar is disabled (grayed out). Defaults to False.
         color: Fill color (CSS color string). Defaults to indigo (#6366f1).
         height: Bar height in pixels. Defaults to 8.
+        margin: Margin around the progress bar (Margin dataclass).
+        width: Width of the progress bar (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -364,6 +415,8 @@ def StatusIndicator(
     label: str | None = None,
     show_icon: bool = True,
     size: tp.Literal["sm", "md"] = "md",
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -384,6 +437,8 @@ def StatusIndicator(
         label: Optional text label to display next to the icon.
         show_icon: Whether to show the status icon. Defaults to True.
         size: Icon and text size. One of "sm", "md" (default).
+        margin: Margin around the indicator (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -405,6 +460,8 @@ def Badge(
     *,
     variant: tp.Literal["default", "success", "error", "warning", "info"] = "default",
     size: tp.Literal["sm", "md"] = "sm",
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -423,6 +480,8 @@ def Badge(
             - "warning": Amber
             - "info": Blue
         size: Badge size. One of "sm" (default), "md".
+        margin: Margin around the badge (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -444,6 +503,8 @@ def Tooltip(
     *,
     position: tp.Literal["top", "bottom", "left", "right"] = "top",
     delay: int = 200,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -461,6 +522,8 @@ def Tooltip(
             - "left": To the left of the element
             - "right": To the right of the element
         delay: Delay in milliseconds before showing tooltip. Defaults to 200.
+        margin: Margin around the tooltip wrapper (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply to the wrapper.
         style: Additional inline styles to apply to the wrapper.
         key: Optional key for reconciliation.
@@ -483,6 +546,10 @@ def Table(
     striped: bool = False,
     compact: bool = True,
     bordered: bool = False,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    height: Height | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -502,6 +569,10 @@ def Table(
         striped: Whether to show alternating row colors. Defaults to False.
         compact: Whether to use compact row height. Defaults to True.
         bordered: Whether to show cell borders. Defaults to False.
+        margin: Margin around the table (Margin dataclass).
+        width: Width of the table (Width dataclass, int for pixels, or str for CSS).
+        height: Height of the table (Height dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.

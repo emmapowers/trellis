@@ -29,9 +29,6 @@ def TodoItem(todo: Todo) -> None:
     """Single todo item with toggle and delete actions."""
     state = TodosState.from_context()
 
-    def toggle(checked: bool) -> None:
-        todo.completed = checked
-
     def delete() -> None:
         state.delete_todo(todo.id)
 
@@ -40,10 +37,7 @@ def TodoItem(todo: Todo) -> None:
         align="center",
         padding=Padding(x=12, y=10),
     ):
-        w.Checkbox(
-            checked=todo.completed,
-            on_change=toggle,
-        )
+        w.Checkbox(checked=mutable(todo.completed))
 
         w.Label(
             text=todo.text,

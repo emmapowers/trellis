@@ -6,6 +6,7 @@ import typing as tp
 
 from trellis.core.react_component import react_component_base
 from trellis.core.rendering import ElementNode
+from trellis.core.style_props import Height, Margin, Padding, Width
 
 
 @react_component_base("Column", has_children=True)
@@ -15,6 +16,11 @@ def Column(
     align: tp.Literal["start", "center", "end", "stretch"] | None = None,
     justify: tp.Literal["start", "center", "end", "between", "around"] | None = None,
     divider: bool = False,
+    padding: Padding | int | None = None,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    height: Height | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -29,6 +35,11 @@ def Column(
         align: Cross-axis alignment of children. Defaults to "stretch".
         justify: Main-axis alignment of children. Defaults to "start".
         divider: Whether to show dividers between children. Defaults to False.
+        padding: Padding inside the container (Padding dataclass or int for all sides).
+        margin: Margin around the container (Margin dataclass).
+        width: Width of the container (Width dataclass, int for pixels, or str for CSS).
+        height: Height of the container (Height dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value for the container.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -55,6 +66,11 @@ def Row(
     align: tp.Literal["start", "center", "end", "stretch"] | None = None,
     justify: tp.Literal["start", "center", "end", "between", "around"] | None = None,
     divider: bool = False,
+    padding: Padding | int | None = None,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    height: Height | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -69,6 +85,11 @@ def Row(
         align: Cross-axis alignment of children. Defaults to "center".
         justify: Main-axis alignment of children. Defaults to "start".
         divider: Whether to show dividers between children. Defaults to False.
+        padding: Padding inside the container (Padding dataclass or int for all sides).
+        margin: Margin around the container (Margin dataclass).
+        width: Width of the container (Width dataclass, int for pixels, or str for CSS).
+        height: Height of the container (Height dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value for the container.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
@@ -87,6 +108,11 @@ def Row(
 @react_component_base("Card", has_children=True)
 def Card(
     *,
+    padding: Padding | int | None = None,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    height: Height | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -97,6 +123,11 @@ def Card(
     and shadow. Use as a context manager to add children.
 
     Args:
+        padding: Padding inside the card (Padding dataclass or int for all sides).
+        margin: Margin around the card (Margin dataclass).
+        width: Width of the card (Width dataclass, int for pixels, or str for CSS).
+        height: Height of the card (Height dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value for the card.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.

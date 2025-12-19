@@ -15,6 +15,7 @@ from enum import StrEnum
 
 from trellis.core.react_component import react_component_base
 from trellis.core.rendering import ElementNode
+from trellis.core.style_props import Margin
 
 
 class IconName(StrEnum):
@@ -380,6 +381,8 @@ def Icon(
     size: int = 16,
     color: str | None = None,
     stroke_width: float = 2,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -391,6 +394,8 @@ def Icon(
         size: Icon size in pixels. Defaults to 16.
         color: Icon color (CSS color string). Defaults to theme text color.
         stroke_width: Stroke width for the icon. Defaults to 2.
+        margin: Margin around the icon (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.

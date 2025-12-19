@@ -10,6 +10,7 @@ from typing import Literal
 
 from trellis.core.react_component import react_component_base
 from trellis.core.rendering import ElementNode
+from trellis.core.style_props import Margin, Padding, Width
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -24,6 +25,10 @@ def Stat(
     delta_type: Literal["increase", "decrease", "neutral"] | None = None,
     icon: str | None = None,
     size: Literal["sm", "md", "lg"] = "md",
+    padding: Padding | int | None = None,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -37,6 +42,10 @@ def Stat(
         delta_type: Visual style for delta ("increase" = green, "decrease" = red)
         icon: Optional icon name to display
         size: Size variant ("sm", "md", "lg")
+        padding: Padding inside the stat (Padding dataclass or int for all sides).
+        margin: Margin around the stat (Margin dataclass).
+        width: Width of the stat (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
         key: Unique key for reconciliation
@@ -51,6 +60,8 @@ def Tag(
     variant: Literal["default", "primary", "success", "warning", "error"] = "default",
     removable: bool = False,
     on_remove: Callable[[], None] | None = None,
+    margin: Margin | None = None,
+    flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
@@ -62,6 +73,8 @@ def Tag(
         variant: Color variant
         removable: Whether to show a remove button
         on_remove: Callback when remove is clicked
+        margin: Margin around the tag (Margin dataclass).
+        flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
         key: Unique key for reconciliation
