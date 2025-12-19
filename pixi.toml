@@ -16,9 +16,18 @@ nodejs = ">=22"
 playwright = ">=1.57.0,<2"
 
 [pypi-dependencies]
-trellis = { path = ".", editable = true, extras = ["desktop"] }
+trellis = { path = ".", editable = true }
 mypy = ">=1.15,<2"
 pydoc-markdown = ">=4.8,<5"
+
+# Feature for desktop extras (pytauri-wheel)
+[feature.desktop.pypi-dependencies]
+trellis = { path = ".", editable = true, extras = ["desktop"] }
+
+# Environments
+[environments]
+default = ["desktop"]
+ci = []
 
 [tasks]
 fmt = { cmd = "black src", description = "Format code with black" }

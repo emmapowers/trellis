@@ -67,7 +67,11 @@ class TestServerPlatformBundle:
 class TestDesktopPlatformBundle:
     def test_builds_bundle_and_copies_html(self) -> None:
         """Builds desktop bundle and copies static index.html."""
-        from trellis.platforms.desktop.platform import DesktopPlatform
+        pytest = __import__("pytest")
+        try:
+            from trellis.platforms.desktop.platform import DesktopPlatform
+        except ImportError:
+            pytest.skip("pytauri not installed")
 
         # Bundle is at platforms/desktop/client/dist/
         platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
