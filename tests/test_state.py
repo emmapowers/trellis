@@ -196,9 +196,7 @@ class TestLocalStatePersistence:
             state = CounterState()
             state_ref.clear()
             state_ref.append(state)
-            # During render, state.count returns a Mutable wrapper
-            # Use int() to capture the current value for snapshot testing
-            observed_counts.append(int(state.count))
+            observed_counts.append(state.count)
 
         ctx = RenderTree(Counter)
         ctx.render()

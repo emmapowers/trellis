@@ -135,6 +135,12 @@ w.Label(text="Status: Ready", font_size=14)
 
 ```python
 w.NumberInput(value=mutable(state.count), min=0, max=100)
+
+# With custom processing using callback():
+def set_count(value: float) -> None:
+    state.count = max(0, min(100, int(value)))
+
+w.NumberInput(value=callback(state.count, set_count))
 ```
 
 **ProgressBar** — Progress indicator:

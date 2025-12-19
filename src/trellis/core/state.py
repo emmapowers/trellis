@@ -56,6 +56,7 @@ from types import TracebackType
 if tp.TYPE_CHECKING:
     from trellis.core.rendering import RenderTree
 
+from trellis.core.mutable import record_property_access
 from trellis.core.rendering import get_active_render_tree
 
 
@@ -225,8 +226,6 @@ class Stateful:
                 element_state.watched_deps[stateful_id] = (self, {name})
 
         # Record access for mutable() to capture
-        from trellis.core.mutable import record_property_access
-
         record_property_access(self, name, value)
 
         return value

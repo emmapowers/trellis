@@ -163,7 +163,6 @@ def NumberInput(
     min: float | None = None,
     max: float | None = None,
     step: float | None = None,
-    on_change: Callable[[float], None] | None = None,
     disabled: bool = False,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
@@ -172,11 +171,11 @@ def NumberInput(
     """Numeric input widget.
 
     Args:
-        value: Current numeric value. Use mutable(state.prop) for two-way binding.
+        value: Current numeric value. Use mutable(state.prop) for two-way binding,
+            or callback(state.prop, handler) for custom processing.
         min: Minimum allowed value.
         max: Maximum allowed value.
         step: Step increment for value changes.
-        on_change: Optional callback for custom processing. Not needed with mutable().
         disabled: Whether the input is disabled.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.

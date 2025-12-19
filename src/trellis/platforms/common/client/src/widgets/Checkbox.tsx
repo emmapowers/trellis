@@ -2,11 +2,11 @@ import React, { useRef } from "react";
 import { useCheckbox } from "react-aria";
 import { useToggleState } from "react-stately";
 import { colors, typography, spacing, focusRing } from "../theme";
+import { Mutable, unwrapMutable } from "../core/types";
 
 interface CheckboxProps {
-  checked?: boolean;
+  checked?: boolean | Mutable<boolean>;
   label?: string;
-  on_change?: (checked: boolean) => void;
   disabled?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -37,23 +37,25 @@ const disabledStyles: React.CSSProperties = {
 };
 
 export function Checkbox({
-  checked = false,
+  checked: checkedProp = false,
   label,
-  on_change,
   disabled = false,
   className,
   style,
 }: CheckboxProps): React.ReactElement {
+  // Unwrap mutable binding if present
+  const { value: checked, setValue } = unwrapMutable(checkedProp);
+
   const ref = useRef<HTMLInputElement>(null);
   const state = useToggleState({
     isSelected: checked,
-    onChange: on_change,
+    onChange: setValue,
   });
   const { inputProps, labelProps } = useCheckbox(
     {
       isDisabled: disabled,
       isSelected: checked,
-      onChange: on_change,
+      onChange: setValue,
       children: label,
     },
     state,

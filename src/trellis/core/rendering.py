@@ -328,6 +328,9 @@ class RenderTree(ClassWithLock):
         self._dirty_ids: set[str] = set()
         self.lock = threading.RLock()
         self._current_node_id: str | None = None
+        # Last property access for mutable()/callback() to capture.
+        # Stores (owner, attr_name, value) when a Stateful property is accessed.
+        self._last_property_access: tuple[tp.Any, str, tp.Any] | None = None
         # Frame stack for collecting children during `with` blocks.
         # Each entry is a Frame that collects nodes created within that scope.
         self._frame_stack: list[Frame] = []

@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { SerializedElement, ElementKind, EventHandler, isCallbackRef, isMutableRef } from "./types";
+import { SerializedElement, ElementKind, EventHandler, isCallbackRef, isMutableRef, Mutable } from "./types";
 
 /** Widget component type. */
 export type WidgetComponent = React.ComponentType<any>;
@@ -88,21 +88,10 @@ function serializeEventArg(arg: unknown): unknown {
 }
 
 /**
- * Get the onChange handler key for a given prop name.
+ * Transform props, converting callback refs to handlers and mutable refs to Mutable objects.
  *
- * Follows the convention: value -> on_change, checked -> on_change, selected -> on_change, etc.
- */
-function getOnChangeKey(propName: string): string {
-  // Common prop names that use the standard on_change handler
-  const standardProps = ["value", "text", "checked", "selected", "expanded"];
-  return standardProps.includes(propName) ? "on_change" : `on_${propName}_change`;
-}
-
-/**
- * Transform props, converting callback refs and mutable refs to actual handlers.
- *
- * For mutable refs, extracts the value and auto-generates an onChange handler
- * that sends updates back to the server.
+ * For mutable refs, wraps them in a Mutable<T> object that components can
+ * explicitly handle via `.value` and `.setValue()`.
  */
 export function processProps(
   props: Record<string, unknown>,
@@ -117,17 +106,8 @@ export function processProps(
         onEvent(value.__callback__, serializedArgs);
       };
     } else if (isMutableRef(value)) {
-      // Mutable binding - extract value and auto-generate onChange
-      result[key] = value.value;
-
-      // Auto-generate onChange handler for the mutable binding
-      const onChangeKey = getOnChangeKey(key);
-      if (!(onChangeKey in props)) {
-        // Only add if not already explicitly provided
-        result[onChangeKey] = (newValue: unknown) => {
-          onEvent(value.__mutable__, [newValue]);
-        };
-      }
+      // Wrap in Mutable object for explicit handling by components
+      result[key] = new Mutable(value, onEvent);
     } else {
       result[key] = value;
     }

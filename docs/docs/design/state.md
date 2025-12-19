@@ -99,10 +99,16 @@ For form inputs, Trellis provides `mutable()` to create two-way bindings between
 Without two-way binding, updating state from form inputs requires explicit callbacks:
 
 ```python
-# Verbose pattern
+# Verbose pattern with widgets
 w.TextInput(
     value=state.name,
     on_change=lambda v: setattr(state, "name", v),
+)
+
+# Same pattern with HTML elements
+h.Input(
+    value=state.name,
+    on_input=lambda e: setattr(state, "name", e["target"]["value"]),
 )
 ```
 
@@ -144,7 +150,7 @@ These widgets support `mutable()` for their primary value props:
 | Tabs | `selected` | `str` |
 | Collapsible | `expanded` | `bool` |
 
-### When to Use mutable() vs Callbacks
+### When to Use mutable() vs callback()
 
 **Use mutable()** for simple bindings where the widget value maps directly to state:
 
@@ -153,16 +159,23 @@ w.TextInput(value=mutable(state.name))
 w.Checkbox(checked=mutable(state.enabled))
 ```
 
-**Use callbacks** when you need custom processing:
+**Use callback()** when you need custom processing:
 
 ```python
-# Need to clamp value, convert type, or run side effects
-def handle_change(value: float) -> None:
-    state.count = max(0, min(100, int(value)))
-    log_change(value)
+# Validation and transformation
+def set_name(value: str) -> None:
+    state.name = value.strip().title()
 
-w.NumberInput(value=state.count, on_change=handle_change)
+w.TextInput(value=callback(state.name, set_name))
+
+# Clamping values
+def set_slider(value: float) -> None:
+    state.percent = max(0.0, min(100.0, value))
+
+w.Slider(value=callback(state.percent, set_slider))
 ```
+
+Both `mutable()` and `callback()` create a `Mutable[T]` wrapper. The difference is that `callback()` stores a custom handler that's used instead of the auto-generated property setter.
 
 ## Implementation Details
 
@@ -170,11 +183,17 @@ w.NumberInput(value=state.count, on_change=handle_change)
 
 ```python
 class Mutable(Generic[T]):
-    __slots__ = ("_attr", "_owner")
+    __slots__ = ("_attr", "_on_change", "_owner")
 
-    def __init__(self, owner: Stateful, attr: str) -> None:
+    def __init__(
+        self,
+        owner: Stateful,
+        attr: str,
+        on_change: Callable[[T], Any] | None = None,
+    ) -> None:
         self._owner = owner
         self._attr = attr
+        self._on_change = on_change  # Custom callback (None = use auto-setter)
 
     @property
     def value(self) -> T:
@@ -183,13 +202,20 @@ class Mutable(Generic[T]):
     @value.setter
     def value(self, new_value: T) -> None:
         setattr(self._owner, self._attr, new_value)
+
+    @property
+    def on_change(self) -> Callable[[T], Any] | None:
+        return self._on_change
 ```
+
+The `mutable()` function creates a `Mutable` without a custom callback (uses auto-setter). The `callback()` function creates a `Mutable` with a custom callback.
 
 ### Property Access Recording
 
 ```python
-# Context variable for tracking property access
-_last_property_access: ContextVar[tuple[Stateful, str, Any] | None]
+# In RenderTree:
+class RenderTree:
+    _last_property_access: tuple[Stateful, str, Any] | None = None
 
 # In Stateful.__getattribute__:
 def __getattribute__(self, name: str) -> Any:
@@ -199,9 +225,10 @@ def __getattribute__(self, name: str) -> Any:
     if name.startswith("_") or callable(value):
         return value
 
-    # During render, record access for mutable()
-    if in_render_context():
-        record_property_access(self, name, value)
+    # During render, record access on the RenderTree for mutable()
+    tree = get_active_render_tree()
+    if tree is not None:
+        tree._last_property_access = (self, name, value)
 
     return value
 ```
@@ -213,10 +240,15 @@ Mutable values serialize to a special format that the client recognizes:
 ```python
 # In serialization.py
 if isinstance(value, Mutable):
-    def setter(new_val):
-        value.value = new_val
+    # Use custom callback if provided, otherwise create a setter
+    if value.on_change is not None:
+        handler = value.on_change
+    else:
+        def setter(new_val):
+            value.value = new_val
+        handler = setter
 
-    cb_id = ctx.register_callback(setter, node_id, f"{prop_name}:mutable")
+    cb_id = ctx.register_callback(handler, node_id, f"{prop_name}:mutable")
     return {
         "__mutable__": cb_id,
         "value": serialize(value.value),
@@ -225,39 +257,17 @@ if isinstance(value, Mutable):
 
 ### Client-Side Handling
 
-The client processes mutable refs by extracting the value and auto-generating change handlers:
+The client wraps mutable refs in a `Mutable<T>` object that components use explicitly:
 
 ```typescript
+// In processProps
 if (isMutableRef(value)) {
-    result[key] = value.value;
-    const onChangeKey = getOnChangeKey(key);
-    if (!(onChangeKey in props)) {
-        result[onChangeKey] = (newValue) => {
-            onEvent(value.__mutable__, [newValue]);
-        };
-    }
+    result[key] = new Mutable(value, onEvent);
 }
+
+// In each widget component
+const { value, setValue } = unwrapMutable(valueProp);
+const handleChange = setValue ?? on_change;
 ```
 
-## Design Decisions
-
-### Why Not Automatic Mutable Wrapping?
-
-An earlier design had `Stateful.__getattribute__` return `Mutable[T]` wrappers automatically. This was rejected because:
-
-1. **Type confusion**: `state.count + 1` would fail without unwrapping
-2. **Existing code breakage**: All code using state values would need updates
-3. **Implicit behavior**: Harder to understand when values are mutable
-
-The current design uses explicit `mutable()` calls, which:
-- Keep types clear (`state.name` is `str`, `mutable(state.name)` is `Mutable[str]`)
-- Require no changes to existing code
-- Make two-way binding intent explicit
-
-### Why Context Variables?
-
-Property access recording uses context variables rather than return-value inspection because:
-
-1. **Identity preservation**: `mutable(state.name)` receives the actual string, not a wrapper
-2. **Thread safety**: Context variables are isolated per async task
-3. **Zero overhead**: No wrapper allocations on every property access
+Each widget explicitly handles mutable bindings using `unwrapMutable()`, which returns the current value and an optional `setValue` function.

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import pytest
 
 from trellis.core.composition_component import component
-from trellis.core.mutable import Mutable, mutable
+from trellis.core.mutable import Mutable, callback, mutable
 from trellis.core.rendering import RenderTree
 from trellis.core.state import Stateful
 
@@ -223,7 +223,6 @@ class TestMutableFunction:
 
     def test_mutable_clears_after_capture(self) -> None:
         """mutable() clears the recorded access so it can't be reused."""
-        from trellis.core.mutable import _last_property_access
 
         @dataclass
         class State(Stateful):
@@ -528,6 +527,135 @@ class TestMutableWidgets:
         assert expanded_prop["value"] is True
 
         # Update via callback
-        callback = ctx.get_callback(expanded_prop["__mutable__"])
-        callback(False)
+        cb = ctx.get_callback(expanded_prop["__mutable__"])
+        cb(False)
         assert state_ref[0].is_open is False
+
+
+class TestCallbackFunction:
+    """Tests for the callback() function."""
+
+    def test_callback_captures_property_access(self) -> None:
+        """callback() captures the reference from a Stateful property access."""
+
+        @dataclass
+        class State(Stateful):
+            name: str = "hello"
+
+        captured: list[Mutable[str]] = []
+        handler_calls: list[str] = []
+
+        def custom_handler(value: str) -> None:
+            handler_calls.append(value)
+
+        @component
+        def TestComponent() -> None:
+            state = State()
+            m = callback(state.name, custom_handler)
+            captured.append(m)
+
+        ctx = RenderTree(TestComponent)
+        ctx.render()
+
+        assert len(captured) == 1
+        assert captured[0].value == "hello"
+        assert captured[0].on_change is custom_handler
+
+    def test_callback_outside_render_raises(self) -> None:
+        """callback() raises TypeError outside render context."""
+
+        @dataclass
+        class State(Stateful):
+            value: int = 0
+
+        state = State()
+        with pytest.raises(TypeError, match="must be called immediately after"):
+            callback(state.value, lambda v: None)
+
+    def test_callback_with_non_property_value_raises(self) -> None:
+        """callback() raises TypeError if value doesn't match last access."""
+
+        @dataclass
+        class State(Stateful):
+            value: int = 10
+
+        @component
+        def TestComponent() -> None:
+            state = State()
+            _ = state.value  # Access property
+            callback(42, lambda v: None)  # But pass different value
+
+        ctx = RenderTree(TestComponent)
+        with pytest.raises(TypeError, match="must be called immediately after"):
+            ctx.render()
+
+    def test_callback_serializes_with_custom_handler(self) -> None:
+        """callback() serializes to __mutable__ format with custom handler."""
+
+        @dataclass
+        class State(Stateful):
+            text: str = "hello"
+
+        handler_calls: list[str] = []
+
+        def custom_handler(value: str) -> None:
+            handler_calls.append(value)
+
+        @component
+        def TestComponent() -> None:
+            from trellis import widgets as w
+
+            state = State()
+            w.TextInput(value=callback(state.text, custom_handler))
+
+        ctx = RenderTree(TestComponent)
+        result = ctx.render()
+
+        # Find the TextInput node
+        text_input = result["children"][0]
+        assert text_input["type"] == "TextInput"
+
+        # Check value prop has __mutable__ format
+        value_prop = text_input["props"]["value"]
+        assert "__mutable__" in value_prop
+        assert "value" in value_prop
+        assert value_prop["value"] == "hello"
+
+        # Invoke the callback - should call custom handler
+        cb = ctx.get_callback(value_prop["__mutable__"])
+        cb("world")
+        assert handler_calls == ["world"]
+
+    def test_callback_with_state_method(self) -> None:
+        """callback() works with state methods for custom processing."""
+
+        @dataclass
+        class State(Stateful):
+            name: str = ""
+
+            def set_name(self, value: str) -> None:
+                # Custom processing: strip and title case
+                self.name = value.strip().title()
+
+        state_ref: list[State] = []
+
+        @component
+        def TestComponent() -> None:
+            from trellis import widgets as w
+
+            state = State()
+            state_ref.append(state)
+            w.TextInput(value=callback(state.name, state.set_name))
+
+        ctx = RenderTree(TestComponent)
+        result = ctx.render()
+
+        text_input = result["children"][0]
+        value_prop = text_input["props"]["value"]
+
+        # Invoke callback with unprocessed input
+        cb = ctx.get_callback(value_prop["__mutable__"])
+        cb("  john doe  ")
+
+        # Should be processed by custom handler
+        assert state_ref[0].name == "John Doe"

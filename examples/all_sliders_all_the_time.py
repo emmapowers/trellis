@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from trellis import Height, Margin, Stateful, Trellis, async_main, component, mutable
+from trellis import Height, Margin, Stateful, Trellis, async_main, callback, component, mutable
 from trellis import widgets as w
 
 
@@ -59,11 +59,10 @@ def ControlPanel() -> None:
 
         with w.Row(gap=8, align="center", margin=Margin(bottom=8)):
             w.Label(text="Num Sliders:", color="#64748b", width=100)
-            # Uses callback for int conversion and clamping
+            # Uses callback() for custom processing (clamping via set_num_sliders)
             w.NumberInput(
-                value=float(state.num_sliders),
+                value=callback(state.num_sliders, handle_num_change),
                 min=1,
-                on_change=handle_num_change,
                 width=80,
             )
 

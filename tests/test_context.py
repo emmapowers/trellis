@@ -259,16 +259,13 @@ class TestContextAPI:
 
         @component
         def Child() -> None:
-            # During render, state properties return Mutable wrappers
-            # Use bool() to get the underlying value for storage
-            captured.append(bool(ConfigState.from_context().debug))
+            captured.append(ConfigState.from_context().debug)
 
         @component
         def Parent() -> None:
             config_state = ConfigState()
             with config_state as config:
-                # Use == instead of 'is' since state properties return Mutable wrappers
-                assert config.debug == True  # noqa: E712
+                assert config.debug is True
                 Child()
 
         ctx = RenderTree(Parent)

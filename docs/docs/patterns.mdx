@@ -55,22 +55,6 @@ App = Form`}
 
 The `mutable()` function captures a reference to the state property. When the widget value changes, the state updates automatically, which triggers a re-render.
 
-**When to use mutable() vs callbacks:**
-
-- Use `mutable()` for simple bindings where the widget value maps directly to state
-- Use callbacks when you need custom processing (validation, transformation, side effects)
-
-```python
-# Simple binding - use mutable()
-w.TextInput(value=mutable(state.name))
-
-# Custom processing - use callback
-def handle_change(value: float) -> None:
-    state.count = max(0, min(100, int(value)))
-
-w.NumberInput(value=state.count, on_change=handle_change)
-```
-
 ## Passing State via Props
 
 State lives in one component but can be passed to children as props:

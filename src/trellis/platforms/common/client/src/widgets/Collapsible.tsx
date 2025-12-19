@@ -2,11 +2,11 @@ import React, { useState, useRef } from "react";
 import { useButton } from "react-aria";
 import { colors, spacing, typography, radius, focusRing } from "../theme";
 import { Icon } from "./Icon";
+import { Mutable, unwrapMutable, isMutable } from "../core/types";
 
 interface CollapsibleProps {
   title?: string;
-  expanded?: boolean;
-  on_toggle?: (expanded: boolean) => void;
+  expanded?: boolean | Mutable<boolean>;
   icon?: string;
   className?: string;
   style?: React.CSSProperties;
@@ -16,22 +16,24 @@ interface CollapsibleProps {
 export function Collapsible({
   title = "",
   expanded: expandedProp = true,
-  on_toggle,
   icon,
   className,
   style,
   children,
 }: CollapsibleProps): React.ReactElement {
-  const [internalExpanded, setInternalExpanded] = useState(expandedProp);
+  // Unwrap mutable binding if present
+  const { value: expandedValue, setValue } = unwrapMutable(expandedProp);
+
+  const [internalExpanded, setInternalExpanded] = useState(expandedValue);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // Use controlled mode if on_toggle is provided
-  const isExpanded = on_toggle ? expandedProp : internalExpanded;
+  // Use controlled mode if mutable is provided
+  const isExpanded = setValue ? expandedValue : internalExpanded;
 
   const handleToggle = () => {
     const newState = !isExpanded;
-    if (on_toggle) {
-      on_toggle(newState);
+    if (setValue) {
+      setValue(newState);
     } else {
       setInternalExpanded(newState);
     }
