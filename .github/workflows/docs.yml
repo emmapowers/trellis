@@ -37,6 +37,9 @@ jobs:
       - name: Generate API docs
         run: pixi run -e ci generate-api-docs
 
+      - name: Generate example pages
+        run: pixi run -e ci generate-example-pages
+
       - name: Copy wheel to docs static
         run: pixi run -e ci copy-wheel-to-docs
 
