@@ -64,3 +64,18 @@ def NavigationSection() -> None:
             on_select=lambda n: setattr(state, "selected_tree_node", n),
             style={"marginTop": "8px"},
         )
+
+        # Collapsible
+        w.Label(text="Collapsible", font_size=12, color="#64748b", bold=True)
+        with w.Collapsible(
+            title="Advanced Settings",
+            expanded=mutable(state.collapsible_expanded),
+            icon=IconName.SETTINGS,
+            style={"marginTop": "8px"},
+        ):
+            with w.Column(gap=8):
+                w.Label(text="This content can be collapsed.")
+                w.Checkbox(
+                    checked=mutable(state.experimental_features),
+                    label="Enable experimental features",
+                )

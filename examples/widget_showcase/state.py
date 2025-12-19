@@ -10,7 +10,7 @@ class ShowcaseState(Stateful):
     """State for interactive widgets in the showcase."""
 
     # Current tab
-    active_tab: str = "buttons"
+    active_tab: str = "layout"
 
     # Form inputs section
     text_value: str = ""

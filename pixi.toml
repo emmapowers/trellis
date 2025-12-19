@@ -54,6 +54,7 @@ clean = { cmd = "rm -rf dist build .mypy_cache .ruff_cache .pytest_cache .covera
 
 # Run demo
 demo = { cmd = "python examples/demo.py", description = "Run the demo app" }
+showcase = { cmd = "python -m examples.widget_showcase", description = "Run the widget showcase" }
 
 # Bundle build tasks
 build-browser-bundle = { cmd = "trellis bundle build --platform browser", description = "Build browser client bundle (includes worker)" }

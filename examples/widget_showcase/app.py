@@ -12,6 +12,7 @@ from .sections import (
     FeedbackSection,
     FormInputsSection,
     IconsSection,
+    LayoutSection,
     NavigationSection,
     ProgressSection,
     StatusSection,
@@ -24,6 +25,7 @@ from .state import ShowcaseState
 
 # Tab definitions: (id, label, icon, component)
 TABS = [
+    ("layout", "Layout", IconName.LAYOUT_GRID, LayoutSection),
     ("buttons", "Buttons", IconName.MOUSE_POINTER, ButtonsSection),
     ("forms", "Forms", IconName.EDIT_2, FormInputsSection),
     ("status", "Status", IconName.CHECK_CIRCLE, StatusSection),
