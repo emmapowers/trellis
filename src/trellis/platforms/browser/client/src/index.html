@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Trellis App</title>
-    <link rel="stylesheet" href="bundle.css">
+    <title>{{ title | default('Trellis App') }}</title>
+    <link rel="stylesheet" href="{{ asset_prefix | default('') }}bundle.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         html, body, #root { margin: 0; padding: 0; height: 100%; min-height: 100vh; }
@@ -24,6 +24,6 @@
         };
     </script>
     {% endif %}
-    <script type="module" src="bundle.js"></script>
+    <script type="module" src="{{ asset_prefix | default('') }}bundle.js"></script>
 </body>
 </html>

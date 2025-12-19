@@ -1,11 +1,18 @@
 """Tests for Trellis unified entry point."""
 
 import sys
+from importlib.util import find_spec
 from unittest.mock import patch
 
 import pytest
 
 from trellis.core.platform import PlatformArgumentError, PlatformType
+
+# Skip marker for tests that require pytauri (desktop platform)
+requires_pytauri = pytest.mark.skipif(
+    find_spec("pytauri") is None,
+    reason="pytauri not installed",
+)
 from trellis.core.trellis import (
     Trellis,
     _TrellisArgs,
@@ -152,6 +159,7 @@ class TestTrellisInit:
             app = Trellis()
             assert app.platform_type == PlatformType.SERVER
 
+    @requires_pytauri
     def test_platform_from_constructor_string(self) -> None:
         """Platform can be set as string in constructor."""
         with patch("sys.argv", ["app"]):
@@ -164,12 +172,14 @@ class TestTrellisInit:
             app = Trellis(platform=PlatformType.BROWSER)
             assert app.platform_type == PlatformType.BROWSER
 
+    @requires_pytauri
     def test_constructor_overrides_cli(self) -> None:
         """Constructor platform takes precedence over CLI."""
         with patch("sys.argv", ["app", "--platform=server"]):
             app = Trellis(platform="desktop")
             assert app.platform_type == PlatformType.DESKTOP
 
+    @requires_pytauri
     def test_cli_overrides_detection(self) -> None:
         """CLI platform takes precedence over auto-detection."""
         with patch("sys.argv", ["app", "--platform=desktop"]):
@@ -188,6 +198,7 @@ class TestTrellisInit:
             app = Trellis(platform="server", host="0.0.0.0", port=8080)
             assert app.platform_type == PlatformType.SERVER
 
+    @requires_pytauri
     def test_server_args_with_desktop_platform_raises(self) -> None:
         """Server args with desktop platform raises error."""
         with patch("sys.argv", ["app"]):

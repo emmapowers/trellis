@@ -16,9 +16,18 @@ nodejs = ">=22"
 playwright = ">=1.57.0,<2"
 
 [pypi-dependencies]
-trellis = { path = ".", editable = true, extras = ["desktop"] }
+trellis = { path = ".", editable = true }
 mypy = ">=1.15,<2"
 pydoc-markdown = ">=4.8,<5"
+
+# Feature for desktop extras (pytauri-wheel)
+[feature.desktop.pypi-dependencies]
+trellis = { path = ".", editable = true, extras = ["desktop"] }
+
+# Environments
+[environments]
+default = ["desktop"]
+ci = []
 
 [tasks]
 fmt = { cmd = "black src", description = "Format code with black" }
@@ -56,9 +65,10 @@ playground = { cmd = "python -c \"import http.server, socketserver, socket; s=so
 
 # Documentation tasks
 generate-api-docs = { cmd = "pydoc-markdown", description = "Generate API docs from docstrings" }
+generate-example-pages = { cmd = "python scripts/generate-example-pages.py", depends-on = ["build-browser-bundle"], description = "Generate example pages for docs" }
 copy-wheel-to-docs = { cmd = "find docs/static -maxdepth 1 -name '*.whl' -delete && cp dist/trellis-*.whl docs/static/", depends-on = ["build-wheel"], description = "Copy wheel to docs static folder" }
-build-docs = { cmd = "npm ci && npm run build", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "copy-wheel-to-docs"], description = "Build documentation site" }
-serve-docs = { cmd = "npm run start", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "copy-wheel-to-docs"], description = "Serve docs locally with hot reload" }
+build-docs = { cmd = "npm ci && npm run build", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "generate-example-pages", "copy-wheel-to-docs"], description = "Build documentation site" }
+serve-docs = { cmd = "npm run start", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "generate-example-pages", "copy-wheel-to-docs"], description = "Serve docs locally with hot reload" }
 watch-api-docs = { cmd = "watchfiles 'pixi run generate-api-docs' src/trellis", description = "Watch Python source and regenerate API docs" }
 
 # For full docs dev workflow, run in two terminals:

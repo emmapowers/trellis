@@ -116,3 +116,12 @@ exclude = ["docs/"]
 [[tool.mypy.overrides]]
 module = ["trellis.html.*", "trellis.widgets.*"]
 disable_error_code = ["empty-body"]
+
+# Desktop platform has optional pytauri dependency
+[[tool.mypy.overrides]]
+module = ["pytauri", "pytauri.*", "pytauri_wheel", "pytauri_wheel.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["trellis.platforms.desktop.*"]
+disable_error_code = ["untyped-decorator"]
