@@ -128,8 +128,8 @@ pip install "trellis[desktop] @ git+https://github.com/emmapowers/trellis.git"
 | ✅ | HTML elements |
 | ✅ | Type safety |
 | 🚧 | Widget toolkit |
+| ✅ | Bidirectional binding (`mutable()`) |
 | ❌ | Partial updates (sends full tree) |
-| ❌ | Bidirectional binding (`Mutable[T]`) |
 | ❌ | Routing |
 | ❌ | Live reload |
 

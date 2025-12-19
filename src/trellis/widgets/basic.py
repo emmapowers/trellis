@@ -159,7 +159,7 @@ def TextInput(
 @react_component_base("NumberInput")
 def NumberInput(
     *,
-    value: float | None = None,
+    value: float | Mutable[float] | None = None,
     min: float | None = None,
     max: float | None = None,
     step: float | None = None,
@@ -172,11 +172,11 @@ def NumberInput(
     """Numeric input widget.
 
     Args:
-        value: Current numeric value.
+        value: Current numeric value. Use mutable(state.prop) for two-way binding.
         min: Minimum allowed value.
         max: Maximum allowed value.
         step: Step increment for value changes.
-        on_change: Callback invoked with new value when input changes.
+        on_change: Optional callback for custom processing. Not needed with mutable().
         disabled: Whether the input is disabled.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -186,7 +186,7 @@ def NumberInput(
         An ElementNode for the NumberInput component.
 
     Example:
-        NumberInput(value=42, min=0, max=100, step=1, on_change=handle_change)
+        NumberInput(value=mutable(state.count), min=0, max=100, step=1)
     """
     ...
 
@@ -194,9 +194,8 @@ def NumberInput(
 @react_component_base("Checkbox")
 def Checkbox(
     *,
-    checked: bool = False,
+    checked: bool | Mutable[bool] = False,
     label: str | None = None,
-    on_change: Callable[[bool], None] | None = None,
     disabled: bool = False,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
@@ -205,9 +204,8 @@ def Checkbox(
     """Checkbox toggle widget.
 
     Args:
-        checked: Whether the checkbox is checked.
+        checked: Whether the checkbox is checked. Use mutable(state.prop) for two-way binding.
         label: Optional label text displayed next to the checkbox.
-        on_change: Callback invoked with new checked state when toggled.
         disabled: Whether the checkbox is disabled.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -217,7 +215,7 @@ def Checkbox(
         An ElementNode for the Checkbox component.
 
     Example:
-        Checkbox(checked=True, label="Enable feature", on_change=handle_toggle)
+        Checkbox(checked=mutable(state.enabled), label="Enable feature")
     """
     ...
 
@@ -257,9 +255,8 @@ def Divider(
 @react_component_base("Select")
 def Select(
     *,
-    value: str | None = None,
+    value: str | Mutable[str] | None = None,
     options: list[dict[str, str]] | None = None,
-    on_change: Callable[[str], None] | None = None,
     placeholder: str | None = None,
     disabled: bool = False,
     class_name: str | None = None,
@@ -269,9 +266,8 @@ def Select(
     """Single-selection dropdown widget.
 
     Args:
-        value: Currently selected value.
+        value: Currently selected value. Use mutable(state.prop) for two-way binding.
         options: List of option dicts with "value" and "label" keys.
-        on_change: Callback invoked with selected value when selection changes.
         placeholder: Placeholder text when no value selected.
         disabled: Whether the select is disabled.
         class_name: CSS class name(s) to apply.
@@ -283,9 +279,8 @@ def Select(
 
     Example:
         Select(
-            value="opt1",
+            value=mutable(state.selected_option),
             options=[{"value": "opt1", "label": "Option 1"}, {"value": "opt2", "label": "Option 2"}],
-            on_change=handle_select,
         )
     """
     ...

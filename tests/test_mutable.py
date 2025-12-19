@@ -329,3 +329,205 @@ class TestMutableSerialization:
 
         # State should be updated
         assert state_ref[0].text == "world"
+
+
+class TestMutableWidgets:
+    """Tests for widgets that support mutable bindings."""
+
+    def test_number_input_with_mutable(self) -> None:
+        """NumberInput accepts mutable value and updates state."""
+
+        @dataclass
+        class State(Stateful):
+            count: float = 42.0
+
+        state_ref: list[State] = []
+
+        @component
+        def TestComponent() -> None:
+            from trellis import widgets as w
+
+            state = State()
+            state_ref.append(state)
+            w.NumberInput(value=mutable(state.count))
+
+        ctx = RenderTree(TestComponent)
+        result = ctx.render()
+
+        number_input = result["children"][0]
+        assert number_input["type"] == "NumberInput"
+
+        value_prop = number_input["props"]["value"]
+        assert "__mutable__" in value_prop
+        assert value_prop["value"] == 42.0
+
+        # Update via callback
+        callback = ctx.get_callback(value_prop["__mutable__"])
+        callback(100.0)
+        assert state_ref[0].count == 100.0
+
+    def test_checkbox_with_mutable(self) -> None:
+        """Checkbox accepts mutable checked and updates state."""
+
+        @dataclass
+        class State(Stateful):
+            enabled: bool = False
+
+        state_ref: list[State] = []
+
+        @component
+        def TestComponent() -> None:
+            from trellis import widgets as w
+
+            state = State()
+            state_ref.append(state)
+            w.Checkbox(checked=mutable(state.enabled), label="Test")
+
+        ctx = RenderTree(TestComponent)
+        result = ctx.render()
+
+        checkbox = result["children"][0]
+        assert checkbox["type"] == "Checkbox"
+
+        checked_prop = checkbox["props"]["checked"]
+        assert "__mutable__" in checked_prop
+        assert checked_prop["value"] is False
+
+        # Update via callback
+        callback = ctx.get_callback(checked_prop["__mutable__"])
+        callback(True)
+        assert state_ref[0].enabled is True
+
+    def test_select_with_mutable(self) -> None:
+        """Select accepts mutable value and updates state."""
+
+        @dataclass
+        class State(Stateful):
+            choice: str = "a"
+
+        state_ref: list[State] = []
+
+        @component
+        def TestComponent() -> None:
+            from trellis import widgets as w
+
+            state = State()
+            state_ref.append(state)
+            w.Select(
+                value=mutable(state.choice),
+                options=[{"value": "a", "label": "A"}, {"value": "b", "label": "B"}],
+            )
+
+        ctx = RenderTree(TestComponent)
+        result = ctx.render()
+
+        select = result["children"][0]
+        assert select["type"] == "Select"
+
+        value_prop = select["props"]["value"]
+        assert "__mutable__" in value_prop
+        assert value_prop["value"] == "a"
+
+        # Update via callback
+        callback = ctx.get_callback(value_prop["__mutable__"])
+        callback("b")
+        assert state_ref[0].choice == "b"
+
+    def test_slider_with_mutable(self) -> None:
+        """Slider accepts mutable value and updates state."""
+
+        @dataclass
+        class State(Stateful):
+            volume: float = 50.0
+
+        state_ref: list[State] = []
+
+        @component
+        def TestComponent() -> None:
+            from trellis import widgets as w
+
+            state = State()
+            state_ref.append(state)
+            w.Slider(value=mutable(state.volume), min=0, max=100)
+
+        ctx = RenderTree(TestComponent)
+        result = ctx.render()
+
+        slider = result["children"][0]
+        assert slider["type"] == "Slider"
+
+        value_prop = slider["props"]["value"]
+        assert "__mutable__" in value_prop
+        assert value_prop["value"] == 50.0
+
+        # Update via callback
+        callback = ctx.get_callback(value_prop["__mutable__"])
+        callback(75.0)
+        assert state_ref[0].volume == 75.0
+
+    def test_tabs_with_mutable(self) -> None:
+        """Tabs accepts mutable selected and updates state."""
+        from trellis import widgets as w
+
+        @dataclass
+        class State(Stateful):
+            tab: str = "first"
+
+        state_ref: list[State] = []
+
+        @component
+        def TestComponent() -> None:
+            state = State()
+            state_ref.append(state)
+            with w.Tabs(selected=mutable(state.tab)):
+                with w.Tab(id="first", label="First"):
+                    w.Label(text="First tab")
+                with w.Tab(id="second", label="Second"):
+                    w.Label(text="Second tab")
+
+        ctx = RenderTree(TestComponent)
+        result = ctx.render()
+
+        tabs = result["children"][0]
+        assert tabs["type"] == "Tabs"
+
+        selected_prop = tabs["props"]["selected"]
+        assert "__mutable__" in selected_prop
+        assert selected_prop["value"] == "first"
+
+        # Update via callback
+        callback = ctx.get_callback(selected_prop["__mutable__"])
+        callback("second")
+        assert state_ref[0].tab == "second"
+
+    def test_collapsible_with_mutable(self) -> None:
+        """Collapsible accepts mutable expanded and updates state."""
+        from trellis import widgets as w
+
+        @dataclass
+        class State(Stateful):
+            is_open: bool = True
+
+        state_ref: list[State] = []
+
+        @component
+        def TestComponent() -> None:
+            state = State()
+            state_ref.append(state)
+            with w.Collapsible(title="Section", expanded=mutable(state.is_open)):
+                w.Label(text="Content")
+
+        ctx = RenderTree(TestComponent)
+        result = ctx.render()
+
+        collapsible = result["children"][0]
+        assert collapsible["type"] == "Collapsible"
+
+        expanded_prop = collapsible["props"]["expanded"]
+        assert "__mutable__" in expanded_prop
+        assert expanded_prop["value"] is True
+
+        # Update via callback
+        callback = ctx.get_callback(expanded_prop["__mutable__"])
+        callback(False)
+        assert state_ref[0].is_open is False

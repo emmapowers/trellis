@@ -96,7 +96,7 @@ with w.Card():
 **Checkbox** — Boolean toggle:
 
 ```python
-w.Checkbox(checked=state.enabled, on_change=state.toggle, label="Enable feature")
+w.Checkbox(checked=mutable(state.enabled), label="Enable feature")
 ```
 
 **Column** — Vertical flex container:
@@ -134,7 +134,7 @@ w.Label(text="Status: Ready", font_size=14)
 **NumberInput** — Numeric input field:
 
 ```python
-w.NumberInput(value=state.count, on_change=state.set_count, min=0, max=100)
+w.NumberInput(value=mutable(state.count), min=0, max=100)
 ```
 
 **ProgressBar** — Progress indicator:
@@ -161,22 +161,21 @@ Props: `gap`, `padding`, `align`, `justify`
 
 ```python
 w.Select(
-    value=state.choice,
-    options=["Option A", "Option B", "Option C"],
-    on_change=state.set_choice,
+    value=mutable(state.choice),
+    options=[{"value": "a", "label": "Option A"}, {"value": "b", "label": "Option B"}],
 )
 ```
 
 **Slider** — Range input:
 
 ```python
-w.Slider(value=state.volume, min=0, max=100, on_change=state.set_volume)
+w.Slider(value=mutable(state.volume), min=0, max=100)
 ```
 
 **TextInput** — Text input field:
 
 ```python
-w.TextInput(value=state.name, on_change=state.set_name, placeholder="Enter name")
+w.TextInput(value=mutable(state.name), placeholder="Enter name")
 ```
 
 ## Styling

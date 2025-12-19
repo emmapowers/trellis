@@ -25,10 +25,9 @@ def FormInputsSection() -> None:
         with w.Row(gap=8, align="center"):
             w.Label(text="Number:", width=80)
             w.NumberInput(
-                value=state.number_value,
+                value=mutable(state.number_value),
                 min=0,
                 max=100,
-                on_change=lambda v: setattr(state, "number_value", v),
                 width=200,
             )
 
@@ -36,13 +35,12 @@ def FormInputsSection() -> None:
         with w.Row(gap=8, align="center"):
             w.Label(text="Select:", width=80)
             w.Select(
-                value=state.select_value,
+                value=mutable(state.select_value),
                 options=[
                     {"value": "option1", "label": "Option 1"},
                     {"value": "option2", "label": "Option 2"},
                     {"value": "option3", "label": "Option 3"},
                 ],
-                on_change=lambda v: setattr(state, "select_value", v),
                 width=200,
             )
 
@@ -50,9 +48,8 @@ def FormInputsSection() -> None:
         with w.Row(gap=8, align="center"):
             w.Label(text="Toggle:", width=80)
             w.Checkbox(
-                checked=state.checkbox_value,
+                checked=mutable(state.checkbox_value),
                 label="Enable feature",
-                on_change=lambda v: setattr(state, "checkbox_value", v),
             )
 
         # Slider

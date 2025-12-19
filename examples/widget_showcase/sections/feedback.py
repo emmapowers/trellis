@@ -1,6 +1,6 @@
 """Feedback section of the widget showcase."""
 
-from trellis import component
+from trellis import component, mutable
 from trellis import widgets as w
 from trellis.widgets import IconName
 
@@ -29,11 +29,13 @@ def FeedbackSection() -> None:
         w.Label(text="Collapsible", font_size=12, color="#64748b", bold=True)
         with w.Collapsible(
             title="Advanced Settings",
-            expanded=state.collapsible_expanded,
-            on_toggle=lambda e: setattr(state, "collapsible_expanded", e),
+            expanded=mutable(state.collapsible_expanded),
             icon=IconName.SETTINGS,
             style={"marginTop": "8px"},
         ):
             with w.Column(gap=8):
                 w.Label(text="This content can be collapsed.")
-                w.Checkbox(checked=False, label="Enable experimental features")
+                w.Checkbox(
+                    checked=mutable(state.experimental_features),
+                    label="Enable experimental features",
+                )

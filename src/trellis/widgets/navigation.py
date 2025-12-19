@@ -8,6 +8,7 @@ from __future__ import annotations
 import typing as tp
 from typing import Literal
 
+from trellis.core.mutable import Mutable
 from trellis.core.react_component import react_component_base
 from trellis.core.rendering import ElementNode
 
@@ -18,8 +19,7 @@ if tp.TYPE_CHECKING:
 @react_component_base("Tabs", has_children=True)
 def Tabs(
     *,
-    selected: str | None = None,
-    on_change: Callable[[str], None] | None = None,
+    selected: str | Mutable[str] | None = None,
     variant: Literal["line", "enclosed", "pills"] = "line",
     size: Literal["sm", "md"] = "md",
     class_name: str | None = None,
@@ -29,8 +29,7 @@ def Tabs(
     """Tab container for organizing content.
 
     Args:
-        selected: ID of the currently selected tab
-        on_change: Callback when tab selection changes
+        selected: ID of the currently selected tab. Use mutable(state.prop) for two-way binding.
         variant: Visual style variant
         size: Size variant
         class_name: Additional CSS classes

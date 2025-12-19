@@ -90,11 +90,11 @@ function serializeEventArg(arg: unknown): unknown {
 /**
  * Get the onChange handler key for a given prop name.
  *
- * Follows the convention: value -> on_change, text -> on_change, etc.
+ * Follows the convention: value -> on_change, checked -> on_change, selected -> on_change, etc.
  */
 function getOnChangeKey(propName: string): string {
   // Common prop names that use the standard on_change handler
-  const standardProps = ["value", "text", "checked"];
+  const standardProps = ["value", "text", "checked", "selected", "expanded"];
   return standardProps.includes(propName) ? "on_change" : `on_${propName}_change`;
 }
 

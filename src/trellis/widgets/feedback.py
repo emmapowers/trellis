@@ -8,6 +8,7 @@ from __future__ import annotations
 import typing as tp
 from typing import Literal
 
+from trellis.core.mutable import Mutable
 from trellis.core.react_component import react_component_base
 from trellis.core.rendering import ElementNode
 
@@ -19,8 +20,7 @@ if tp.TYPE_CHECKING:
 def Collapsible(
     *,
     title: str = "",
-    expanded: bool = True,
-    on_toggle: Callable[[bool], None] | None = None,
+    expanded: bool | Mutable[bool] = True,
     icon: str | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
@@ -30,8 +30,7 @@ def Collapsible(
 
     Args:
         title: Section title
-        expanded: Whether content is visible
-        on_toggle: Callback when expand/collapse state changes
+        expanded: Whether content is visible. Use mutable(state.prop) for two-way binding.
         icon: Optional icon for the header
         class_name: Additional CSS classes
         style: Inline styles

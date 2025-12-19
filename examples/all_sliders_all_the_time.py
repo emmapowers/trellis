@@ -47,9 +47,6 @@ def ControlPanel() -> None:
     def handle_num_change(value: float) -> None:
         state.set_num_sliders(int(value))
 
-    def handle_value_change(value: float) -> None:
-        state.value = value
-
     with w.Card(padding=16, width=400, margin=Margin(bottom=16)):
         w.Label(
             text="Slider Performance Test",
@@ -62,6 +59,7 @@ def ControlPanel() -> None:
 
         with w.Row(gap=8, align="center", margin=Margin(bottom=8)):
             w.Label(text="Num Sliders:", color="#64748b", width=100)
+            # Uses callback for int conversion and clamping
             w.NumberInput(
                 value=float(state.num_sliders),
                 min=1,
@@ -72,8 +70,7 @@ def ControlPanel() -> None:
         with w.Row(gap=8, align="center", margin=Margin(bottom=8)):
             w.Label(text="Value:", color="#64748b", width=100)
             w.NumberInput(
-                value=state.value,
-                on_change=handle_value_change,
+                value=mutable(state.value),
                 width=80,
             )
 
