@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from trellis import Height, Margin, Stateful, Trellis, async_main, component
+from trellis import Height, Margin, Stateful, Trellis, async_main, component, mutable
 from trellis import widgets as w
 
 
@@ -33,10 +33,6 @@ class SliderState(Stateful):
         """Update number of sliders."""
         self.num_sliders = max(1, num)
 
-    def set_value(self, val: float) -> None:
-        """Update slider value."""
-        self.value = val
-
 
 # =============================================================================
 # Components
@@ -52,7 +48,7 @@ def ControlPanel() -> None:
         state.set_num_sliders(int(value))
 
     def handle_value_change(value: float) -> None:
-        state.set_value(value)
+        state.value = value
 
     with w.Card(padding=16, width=400, margin=Margin(bottom=16)):
         w.Label(
@@ -107,11 +103,10 @@ def SliderColumn() -> None:
                         text_align="right",
                     )
                     w.Slider(
-                        value=state.value,
+                        value=mutable(state.value),
                         min=1,
                         max=100,
                         step=1,
-                        on_change=state.set_value,
                         key=f"slider-{i}",
                         style={"flex": "1"},
                     )

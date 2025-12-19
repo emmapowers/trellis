@@ -34,6 +34,20 @@ def _serialize_value(
     Returns:
         A JSON-serializable version of the value
     """
+    from trellis.core.mutable import Mutable
+
+    # Handle Mutable wrappers for two-way binding
+    if isinstance(value, Mutable):
+        # Create setter callback for client to update state
+        def setter(new_val: tp.Any) -> None:
+            value.value = new_val
+
+        cb_id = ctx.register_callback(setter, node_id, f"{prop_name}:mutable")
+        return {
+            "__mutable__": cb_id,
+            "value": _serialize_value(value.value, ctx, node_id, f"{prop_name}.value"),
+        }
+
     if callable(value):
         # Register callback with deterministic ID based on node and prop
         cb_id = ctx.register_callback(value, node_id, prop_name)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typing as tp
 
+from trellis.core.mutable import Mutable
 from trellis.core.react_component import react_component_base
 from trellis.core.rendering import ElementNode
 
@@ -96,11 +97,10 @@ def Button(
 @react_component_base("Slider")
 def Slider(
     *,
-    value: float = 50,
+    value: float | Mutable[float] = 50,
     min: float = 0,
     max: float = 100,
     step: float = 1,
-    on_change: Callable[[float], None] | None = None,
     disabled: bool = False,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
@@ -109,11 +109,10 @@ def Slider(
     """Range slider widget.
 
     Args:
-        value: Current slider value.
+        value: Current slider value. Use mutable(state.prop) for two-way binding.
         min: Minimum value.
         max: Maximum value.
         step: Step increment.
-        on_change: Callback invoked with new value when slider changes.
         disabled: Whether the slider is disabled.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -123,17 +122,16 @@ def Slider(
         An ElementNode for the Slider component.
 
     Example:
-        Slider(value=50, min=0, max=100, on_change=handle_change)
+        Slider(value=mutable(state.slider_value), min=0, max=100)
     """
     ...
 
 
 @react_component_base("TextInput")
 def TextInput(
-    value: str = "",
+    value: str | Mutable[str] = "",
     *,
     placeholder: str | None = None,
-    on_change: Callable[[str], None] | None = None,
     disabled: bool = False,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
@@ -142,9 +140,8 @@ def TextInput(
     """Single-line text input widget.
 
     Args:
-        value: Current input value.
+        value: Current input value. Use mutable(state.prop) for two-way binding.
         placeholder: Placeholder text when empty.
-        on_change: Callback invoked with new value when input changes.
         disabled: Whether the input is disabled.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -154,7 +151,7 @@ def TextInput(
         An ElementNode for the TextInput component.
 
     Example:
-        TextInput(value="hello", placeholder="Enter text...", on_change=handle_change)
+        TextInput(value=mutable(state.text), placeholder="Enter text...")
     """
     ...
 

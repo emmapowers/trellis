@@ -31,5 +31,21 @@ export function isCallbackRef(value: unknown): value is CallbackRef {
   );
 }
 
+/** Mutable binding reference in props - for two-way data binding. */
+export interface MutableRef {
+  __mutable__: string;
+  value: unknown;
+}
+
+export function isMutableRef(value: unknown): value is MutableRef {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "__mutable__" in value &&
+    typeof (value as MutableRef).__mutable__ === "string" &&
+    "value" in value
+  );
+}
+
 /** Event handler function type - called when a callback is triggered. */
 export type EventHandler = (callbackId: string, args?: unknown[]) => void;

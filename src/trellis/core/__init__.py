@@ -43,6 +43,7 @@ See Also:
 from trellis.core.base_component import Component
 from trellis.core.composition_component import CompositionComponent, component
 from trellis.core.message_handler import MessageHandler
+from trellis.core.mutable import Mutable, mutable
 from trellis.core.platform import Platform, PlatformArgumentError, PlatformType
 from trellis.core.react_component import ReactComponentBase, react_component_base
 from trellis.core.rendering import ElementNode, ElementState, RenderTree
@@ -57,6 +58,7 @@ __all__ = [
     "Height",
     "Margin",
     "MessageHandler",
+    "Mutable",
     "Padding",
     "Platform",
     "PlatformArgumentError",
@@ -66,5 +68,6 @@ __all__ = [
     "Stateful",
     "Width",
     "component",
+    "mutable",
     "react_component_base",
 ]

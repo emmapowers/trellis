@@ -1,6 +1,6 @@
 """UI components for the todo app."""
 
-from trellis import Padding, component
+from trellis import Padding, component, mutable
 from trellis import widgets as w
 
 from .state import FilterType, Todo, TodosState
@@ -13,9 +13,8 @@ def TodoInput() -> None:
 
     with w.Row(gap=8):
         w.TextInput(
-            value=state.input_text,
+            value=mutable(state.input_text),
             placeholder="What needs to be done?",
-            on_change=state.set_input,
             flex=1,
         )
         w.Button(
