@@ -20,7 +20,6 @@ interface TableProps {
 
 const tableStyles: React.CSSProperties = {
   width: "100%",
-  borderCollapse: "collapse",
   fontSize: `${typography.fontSize.md}px`,
   color: colors.text.primary,
 };
@@ -52,18 +51,24 @@ export function Table({
   className,
   style,
 }: TableProps): React.ReactElement {
-  const rowHeight = compact ? 28 : 36;
+  const rowHeight = compact ? 24 : 36;
   const cellPadding = compact
-    ? `${spacing.xs}px ${spacing.md}px`
+    ? `${spacing.xs}px ${spacing.sm}px`
     : `${spacing.sm}px ${spacing.lg}px`;
+  const fontSize = compact
+    ? `${typography.fontSize.sm}px`
+    : `${typography.fontSize.md}px`;
 
   return (
     <table
       className={className}
       style={{
         ...tableStyles,
+        fontSize,
+        borderCollapse: bordered ? "separate" : "collapse",
+        borderSpacing: 0,
         border: bordered ? `1px solid ${colors.border.default}` : undefined,
-        borderRadius: bordered ? `${radius.sm}px` : undefined,
+        borderRadius: bordered ? `${radius.md}px` : undefined,
         overflow: bordered ? "hidden" : undefined,
         ...style,
       }}
