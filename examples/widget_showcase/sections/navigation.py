@@ -1,23 +1,26 @@
 """Navigation section of the widget showcase."""
 
-from trellis import component, mutable
+from trellis import Stateful, component, mutable
 from trellis import widgets as w
 from trellis.widgets import IconName
 
-from ..state import ShowcaseState
+from ..components import ExampleCard
+from ..example import example
 
 
-@component
-def NavigationSection() -> None:
-    """Showcase navigation widgets."""
-    state = ShowcaseState.from_context()
+class TabsState(Stateful):
+    """State for tabs example."""
 
-    with w.Column(gap=16):
-        # Tabs
-        w.Label(text="Tabs", font_size=12, color="#64748b", bold=True)
+    selected_tab: str = "overview"
+
+
+@example("Tabs", state=TabsState)
+def TabsExample() -> None:
+    """Tabbed content navigation."""
+    state = TabsState()
+    with state:
         with w.Tabs(
             selected=mutable(state.selected_tab),
-            style={"marginTop": "8px"},
         ):
             with w.Tab(id="overview", label="Overview", icon=IconName.HOME):
                 w.Label(text="Overview tab content goes here.")
@@ -26,20 +29,31 @@ def NavigationSection() -> None:
             with w.Tab(id="settings", label="Settings", icon=IconName.SETTINGS):
                 w.Label(text="Settings tab content goes here.")
 
-        # Breadcrumb
-        w.Label(text="Breadcrumb", font_size=12, color="#64748b", bold=True)
-        w.Breadcrumb(
-            items=[
-                {"label": "Home"},
-                {"label": "Products"},
-                {"label": "Electronics"},
-                {"label": "Phones"},
-            ],
-            style={"marginTop": "8px"},
-        )
 
-        # Tree
-        w.Label(text="Tree", font_size=12, color="#64748b", bold=True)
+@example("Breadcrumb")
+def BreadcrumbExample() -> None:
+    """Hierarchical navigation path."""
+    w.Breadcrumb(
+        items=[
+            {"label": "Home"},
+            {"label": "Products"},
+            {"label": "Electronics"},
+            {"label": "Phones"},
+        ],
+    )
+
+
+class TreeState(Stateful):
+    """State for tree example."""
+
+    selected_node: str | None = None
+
+
+@example("Tree", state=TreeState)
+def TreeExample() -> None:
+    """Hierarchical data navigation."""
+    state = TreeState()
+    with state:
         w.Tree(
             data=[
                 {
@@ -60,18 +74,27 @@ def NavigationSection() -> None:
                 },
                 {"id": "README.md", "label": "README.md"},
             ],
-            selected=state.selected_tree_node,
-            on_select=lambda n: setattr(state, "selected_tree_node", n),
-            style={"marginTop": "8px"},
+            selected=state.selected_node,
+            on_select=lambda n: setattr(state, "selected_node", n),
         )
 
-        # Collapsible
-        w.Label(text="Collapsible", font_size=12, color="#64748b", bold=True)
+
+class CollapsibleState(Stateful):
+    """State for collapsible example."""
+
+    expanded: bool = False
+    experimental_features: bool = False
+
+
+@example("Collapsible", state=CollapsibleState)
+def CollapsibleExample() -> None:
+    """Expandable content section."""
+    state = CollapsibleState()
+    with state:
         with w.Collapsible(
             title="Advanced Settings",
-            expanded=mutable(state.collapsible_expanded),
+            expanded=mutable(state.expanded),
             icon=IconName.SETTINGS,
-            style={"marginTop": "8px"},
         ):
             with w.Column(gap=8):
                 w.Label(text="This content can be collapsed.")
@@ -79,3 +102,13 @@ def NavigationSection() -> None:
                     checked=mutable(state.experimental_features),
                     label="Enable experimental features",
                 )
+
+
+@component
+def NavigationSection() -> None:
+    """Showcase navigation widgets."""
+    with w.Column(gap=16):
+        ExampleCard(example=TabsExample)
+        ExampleCard(example=BreadcrumbExample)
+        ExampleCard(example=TreeExample)
+        ExampleCard(example=CollapsibleExample)
