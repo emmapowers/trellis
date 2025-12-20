@@ -49,7 +49,8 @@ class RenderFunc(tp.Protocol):
 
     __name__: str
 
-    def __call__(self, /, **props: tp.Any) -> None: ...
+    # Use permissive signature to allow functions with specific typed parameters
+    def __call__(self, *args: tp.Any, **props: tp.Any) -> None: ...
 
 
 class CompositionComponent(Component):

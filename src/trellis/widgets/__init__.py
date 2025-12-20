@@ -16,7 +16,6 @@ from trellis.widgets.basic import (
     Select,
     Slider,
     StatusIndicator,
-    Table,
     TextInput,
     Tooltip,
 )
@@ -33,6 +32,7 @@ from trellis.widgets.feedback import Callout, Collapsible
 from trellis.widgets.icons import Icon, IconName
 from trellis.widgets.layout import Card, Column, Row
 from trellis.widgets.navigation import Breadcrumb, Tab, Tabs, Tree
+from trellis.widgets.table import Table, TableColumn
 
 __all__ = [
     "AreaChart",
@@ -65,6 +65,7 @@ __all__ = [
     "StatusIndicator",
     "Tab",
     "Table",
+    "TableColumn",
     "Tabs",
     "Tag",
     "TextInput",

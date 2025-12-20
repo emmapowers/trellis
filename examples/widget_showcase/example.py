@@ -15,7 +15,7 @@ if tp.TYPE_CHECKING:
 
 def example(
     title: str,
-    state: type | None = None,
+    includes: list[tp.Any] | None = None,
 ) -> tp.Callable[[tp.Callable[[], None]], CompositionComponent]:
     """Decorator that creates a component and captures its source code.
 
@@ -24,8 +24,10 @@ def example(
 
     Args:
         title: Display title for the example.
-        state: Optional Stateful class used by this example. Its source
-            will be included in the displayed code and playground.
+        includes: Optional list of items whose source should be included in the
+            displayed code and playground. Items can be:
+            - Functions or classes: source extracted via inspect.getsource()
+            - Strings: treated as variable names, searched in the source file
 
     Example:
         @example("Button Variants")
@@ -36,11 +38,20 @@ def example(
         class CounterState(Stateful):
             count: int = 0
 
-        @example("Counter", state=CounterState)
+        @example("Counter", includes=[CounterState])
         def CounterExample():
             state = CounterState()
             with state:
                 w.Button(text=f"Count: {state.count}")
+
+        STOCKS = [{"ticker": "AAPL", ...}, ...]
+
+        def PriceCell(row: dict) -> None:
+            w.Label(text=f"${row['price']}")
+
+        @example("Stock Table", includes=["STOCKS", PriceCell])
+        def StockTable():
+            w.Table(columns=[...], data=STOCKS)
     """
 
     def decorator(func: tp.Callable[[], None]) -> CompositionComponent:
@@ -54,17 +65,35 @@ def example(
         stripped_source = _strip_decorator(full_source)
         func_source = _add_component_decorator(stripped_source)
 
-        # Capture state class source if provided
-        state_source = ""
-        if state is not None:
-            try:
-                state_source = inspect.getsource(state)
-            except (OSError, TypeError):
-                pass
+        # Get source file for searching variable names
+        all_source_lines: list[str] = []
+        try:
+            source_file = inspect.getsourcefile(func)
+            if source_file:
+                with open(source_file) as f:
+                    all_source_lines = f.read().split("\n")
+        except OSError:
+            pass
 
-        # Combine state + function source for display
-        if state_source:
-            source = f"{state_source}\n\n{func_source}"
+        # Capture source for each included object
+        include_sources: list[str] = []
+        for obj in includes or []:
+            if isinstance(obj, str):
+                # It's a variable name - search for it in the source file
+                var_source = _find_variable_source(obj, all_source_lines)
+                if var_source:
+                    include_sources.append(var_source)
+            else:
+                # Try to get source of the object (works for functions/classes)
+                try:
+                    include_sources.append(inspect.getsource(obj))
+                except (OSError, TypeError):
+                    # Can't get source for this object
+                    pass
+
+        # Combine function source + includes for display (component first)
+        if include_sources:
+            source = func_source + "\n\n\n" + "\n\n".join(include_sources)
         else:
             source = func_source
 
@@ -116,6 +145,42 @@ def _add_component_decorator(source: str) -> str:
             result.append("@component")
         result.append(line)
     return "\n".join(result)
+
+
+def _find_variable_source(var_name: str, source_lines: list[str]) -> str | None:
+    """Find the source for a variable assignment in the source lines.
+
+    Handles multi-line assignments for dicts, lists, etc.
+    """
+    for i, line in enumerate(source_lines):
+        # Match "VAR_NAME = " at the start of a line (allowing for spaces)
+        stripped = line.lstrip()
+        if stripped.startswith(f"{var_name} =") or stripped.startswith(f"{var_name}="):
+            # Found the start, now find the end
+            result_lines = [line]
+            j = i + 1
+
+            # Count brackets to handle multi-line expressions
+            bracket_count = (
+                line.count("[")
+                - line.count("]")
+                + line.count("(")
+                - line.count(")")
+                + line.count("{")
+                - line.count("}")
+            )
+
+            while j < len(source_lines) and bracket_count > 0:
+                next_line = source_lines[j]
+                result_lines.append(next_line)
+                bracket_count += next_line.count("[") - next_line.count("]")
+                bracket_count += next_line.count("(") - next_line.count(")")
+                bracket_count += next_line.count("{") - next_line.count("}")
+                j += 1
+
+            return "\n".join(result_lines)
+
+    return None
 
 
 def make_playground_url(

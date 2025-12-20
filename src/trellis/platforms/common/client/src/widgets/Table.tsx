@@ -1,14 +1,16 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { colors, typography, spacing, radius } from "../theme";
+import { Icon } from "./Icon";
 
 interface TableColumn {
-  key: string;
+  name: string;
   label: string;
+  icon?: string;
   width?: string;
   align?: "left" | "center" | "right";
 }
 
-interface TableProps {
+interface TableInnerProps {
   columns?: TableColumn[];
   data?: Record<string, unknown>[];
   striped?: boolean;
@@ -16,11 +18,11 @@ interface TableProps {
   bordered?: boolean;
   className?: string;
   style?: React.CSSProperties;
+  children?: React.ReactNode;
 }
 
 const tableStyles: React.CSSProperties = {
   width: "100%",
-  fontSize: `${typography.fontSize.md}px`,
   color: colors.text.primary,
 };
 
@@ -38,11 +40,39 @@ const cellStyles: React.CSSProperties = {
   borderBottom: `1px solid ${colors.border.subtle}`,
 };
 
+/**
+ * Extract cell slot content from children.
+ * Children are CellSlot components with a `slot` prop of format "rowKey:columnName".
+ */
+function useCellSlots(children: React.ReactNode): Map<string, React.ReactNode> {
+  return useMemo(() => {
+    const slots = new Map<string, React.ReactNode>();
+    React.Children.forEach(children, (child) => {
+      if (React.isValidElement(child) && child.props.slot) {
+        // The CellSlot's children are the actual content to render
+        slots.set(child.props.slot as string, child.props.children);
+      }
+    });
+    return slots;
+  }, [children]);
+}
+
+/**
+ * Get the row key for a data row.
+ * Uses _key field if present, otherwise falls back to index.
+ */
+function getRowKey(row: Record<string, unknown>, index: number): string {
+  if ("_key" in row && row._key != null) {
+    return String(row._key);
+  }
+  return String(index);
+}
+
 // Note: This table is presentational-only (no selection/interaction).
 // Semantic HTML table elements provide native accessibility.
 // For interactive tables with selection, sorting, or keyboard navigation,
 // use react-aria's useTable hooks with a proper collection.
-export function Table({
+export function TableInner({
   columns = [],
   data = [],
   striped = false,
@@ -50,7 +80,10 @@ export function Table({
   bordered = false,
   className,
   style,
-}: TableProps): React.ReactElement {
+  children,
+}: TableInnerProps): React.ReactElement {
+  const cellSlots = useCellSlots(children);
+
   const rowHeight = compact ? 24 : 36;
   const cellPadding = compact
     ? `${spacing.xs}px ${spacing.sm}px`
@@ -75,9 +108,9 @@ export function Table({
     >
       <thead>
         <tr>
-          {columns.map((col) => (
+          {columns.map((col, colIndex) => (
             <th
-              key={col.key}
+              key={col.name}
               scope="col"
               style={{
                 ...headerCellStyles,
@@ -85,47 +118,89 @@ export function Table({
                 textAlign: col.align || "left",
                 width: col.width,
                 borderRight:
-                  bordered && col !== columns[columns.length - 1]
+                  bordered && colIndex < columns.length - 1
                     ? `1px solid ${colors.border.subtle}`
                     : undefined,
               }}
             >
-              {col.label}
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: `${spacing.xs}px`,
+                }}
+              >
+                {col.icon && (
+                  <Icon name={col.icon} size={12} color={colors.text.secondary} />
+                )}
+                {col.label}
+              </span>
             </th>
           ))}
         </tr>
       </thead>
       <tbody>
-        {data.map((row, rowIndex) => (
-          <tr
-            key={rowIndex}
-            style={{
-              backgroundColor:
-                striped && rowIndex % 2 === 1
-                  ? colors.bg.surfaceRaised
-                  : undefined,
-              height: `${rowHeight}px`,
-            }}
-          >
-            {columns.map((col) => (
-              <td
-                key={col.key}
-                style={{
-                  ...cellStyles,
-                  padding: cellPadding,
-                  textAlign: col.align || "left",
-                  borderRight:
-                    bordered && col !== columns[columns.length - 1]
-                      ? `1px solid ${colors.border.subtle}`
-                      : undefined,
-                }}
-              >
-                {row[col.key] as React.ReactNode}
-              </td>
-            ))}
-          </tr>
-        ))}
+        {data.map((row, rowIndex) => {
+          const rowKey = getRowKey(row, rowIndex);
+          return (
+            <tr
+              key={rowKey}
+              style={{
+                backgroundColor:
+                  striped && rowIndex % 2 === 1
+                    ? colors.bg.surfaceRaised
+                    : undefined,
+                height: `${rowHeight}px`,
+              }}
+            >
+              {columns.map((col, colIndex) => {
+                const slotKey = `${rowKey}:${col.name}`;
+                const slotContent = cellSlots.get(slotKey);
+                const defaultContent = row[col.name];
+
+                return (
+                  <td
+                    key={col.name}
+                    style={{
+                      ...cellStyles,
+                      padding: cellPadding,
+                      textAlign: col.align || "left",
+                      borderRight:
+                        bordered && colIndex < columns.length - 1
+                          ? `1px solid ${colors.border.subtle}`
+                          : undefined,
+                    }}
+                  >
+                    {slotContent !== undefined
+                      ? slotContent
+                      : defaultContent != null
+                        ? String(defaultContent)
+                        : ""}
+                  </td>
+                );
+              })}
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
 }
+
+/**
+ * CellSlot is a marker component for custom cell content.
+ * It carries a slot identifier and renders its children.
+ * The TableInner component extracts these and positions them in the right cells.
+ */
+interface CellSlotProps {
+  slot: string;
+  children?: React.ReactNode;
+}
+
+export function CellSlot({ children }: CellSlotProps): React.ReactElement {
+  return <>{children}</>;
+}
+
+// Keep Table as an alias for backward compatibility during migration
+// TODO: Remove after migration is complete
+export const Table = TableInner;

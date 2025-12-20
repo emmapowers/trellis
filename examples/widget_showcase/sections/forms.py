@@ -17,7 +17,7 @@ class FormState(Stateful):
     slider_value: float = 50
 
 
-@example("Form Inputs", state=FormState)
+@example("Form Inputs", includes=[FormState])
 def FormInputs() -> None:
     """Interactive form controls with two-way data binding."""
     state = FormState()

@@ -7,7 +7,7 @@ import typing as tp
 from trellis.core.mutable import Mutable
 from trellis.core.react_component import react_component_base
 from trellis.core.rendering import ElementNode
-from trellis.core.style_props import Height, Margin, Padding, Width
+from trellis.core.style_props import Margin, Padding, Width
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -534,64 +534,5 @@ def Tooltip(
     Example:
         with w.Tooltip(content="Click to save"):
             w.Button(text="Save")
-    """
-    ...
-
-
-@react_component_base("Table")
-def Table(
-    *,
-    columns: list[dict[str, tp.Any]] | None = None,
-    data: list[dict[str, tp.Any]] | None = None,
-    striped: bool = False,
-    compact: bool = True,
-    bordered: bool = False,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
-    height: Height | int | str | None = None,
-    flex: int | None = None,
-    class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
-) -> ElementNode:
-    """Data table widget.
-
-    Displays tabular data with configurable columns. Supports striped rows,
-    compact mode, and bordered styling for data-dense dashboard displays.
-
-    Args:
-        columns: List of column definitions. Each dict should have:
-            - "key": The data key to display in this column (required)
-            - "label": The column header text (required)
-            - "width": Optional column width (CSS string, e.g., "100px", "20%")
-            - "align": Text alignment ("left", "center", "right")
-        data: List of row data dicts. Keys should match column keys.
-        striped: Whether to show alternating row colors. Defaults to False.
-        compact: Whether to use compact row height. Defaults to True.
-        bordered: Whether to show cell borders. Defaults to False.
-        margin: Margin around the table (Margin dataclass).
-        width: Width of the table (Width dataclass, int for pixels, or str for CSS).
-        height: Height of the table (Height dataclass, int for pixels, or str for CSS).
-        flex: Flex grow/shrink value.
-        class_name: CSS class name(s) to apply.
-        style: Additional inline styles to apply.
-        key: Optional key for reconciliation.
-
-    Returns:
-        An ElementNode for the Table component.
-
-    Example:
-        Table(
-            columns=[
-                {"key": "name", "label": "Name"},
-                {"key": "status", "label": "Status", "align": "center"},
-                {"key": "value", "label": "Value", "align": "right"},
-            ],
-            data=[
-                {"name": "Item 1", "status": "Active", "value": 100},
-                {"name": "Item 2", "status": "Pending", "value": 50},
-            ],
-            striped=True,
-        )
     """
     ...

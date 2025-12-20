@@ -14,7 +14,7 @@ class TabsState(Stateful):
     selected_tab: str = "overview"
 
 
-@example("Tabs", state=TabsState)
+@example("Tabs", includes=[TabsState])
 def TabsExample() -> None:
     """Tabbed content navigation."""
     state = TabsState()
@@ -49,7 +49,7 @@ class TreeState(Stateful):
     selected_node: str | None = None
 
 
-@example("Tree", state=TreeState)
+@example("Tree", includes=[TreeState])
 def TreeExample() -> None:
     """Hierarchical data navigation."""
     state = TreeState()
@@ -86,7 +86,7 @@ class CollapsibleState(Stateful):
     experimental_features: bool = False
 
 
-@example("Collapsible", state=CollapsibleState)
+@example("Collapsible", includes=[CollapsibleState])
 def CollapsibleExample() -> None:
     """Expandable content section."""
     state = CollapsibleState()
