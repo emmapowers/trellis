@@ -38,7 +38,7 @@ if tp.TYPE_CHECKING:
     from trellis.core.rendering import RenderTree
     from trellis.core.state import Stateful
 
-from trellis.core.rendering import get_active_render_tree
+from trellis.core.rendering import get_active_render_tree, is_render_active
 
 T = tp.TypeVar("T")
 KT = tp.TypeVar("KT")
@@ -63,36 +63,30 @@ class _TrackedMixin:
     _attr: str
     _deps: dict[tp.Any, dict[str, weakref.ref[RenderTree]]]
 
-    def _init_tracking(
-        self,
-        owner: Stateful | None = None,
-        attr: str = "",
-    ) -> None:
+    def __init__(self, owner: Stateful | None = None, attr: str = "") -> None:
         """Initialize tracking state.
 
         Args:
             owner: The Stateful instance that owns this collection (optional)
             attr: The attribute name on owner where this is stored
         """
-        object.__setattr__(self, "_owner", weakref.ref(owner) if owner else None)
-        object.__setattr__(self, "_attr", attr)
-        object.__setattr__(self, "_deps", {})
+        self._owner = weakref.ref(owner) if owner else None
+        self._attr = attr
+        self._deps = {}
 
     def _bind(self, owner: Stateful, attr: str) -> None:
         """Bind this collection to an owner Stateful and attribute.
 
         Called by Stateful.__setattr__ when assigning a collection.
         """
-        object.__setattr__(self, "_owner", weakref.ref(owner))
-        object.__setattr__(self, "_attr", attr)
+        self._owner = weakref.ref(owner)
+        self._attr = attr
 
     def _check_no_render_mutation(self) -> None:
         """Raise if trying to mutate during render."""
-        ctx = get_active_render_tree()
-        if ctx is not None and ctx._current_node_id is not None:
-            attr = object.__getattribute__(self, "_attr")
+        if is_render_active():
             raise RuntimeError(
-                f"Cannot modify tracked collection '{attr}' during render. "
+                f"Cannot modify tracked collection '{self._attr}' during render. "
                 f"Mutations must happen outside of component execution "
                 f"(e.g., in callbacks, mount/unmount hooks, or timers)."
             )
@@ -104,11 +98,12 @@ class _TrackedMixin:
         depend on which parts of the collection.
         """
         ctx = get_active_render_tree()
-        if ctx is None or ctx._current_node_id is None:
+        if ctx is None or not ctx.is_active():
             return
 
         node_id = ctx._current_node_id
-        deps = object.__getattribute__(self, "_deps")
+        assert node_id is not None  # Guaranteed by is_active() check above
+        deps = self._deps
 
         if dep_key not in deps:
             deps[dep_key] = {}
@@ -133,7 +128,7 @@ class _TrackedMixin:
 
         Called when the collection is mutated at this key.
         """
-        deps = object.__getattribute__(self, "_deps")
+        deps = self._deps
         if dep_key not in deps:
             return
 
@@ -162,7 +157,7 @@ class _TrackedMixin:
 
         Called by clear_node_dependencies during cleanup.
         """
-        deps = object.__getattribute__(self, "_deps")
+        deps = self._deps
         if dep_key in deps:
             deps[dep_key].pop(node_id, None)
             if not deps[dep_key]:
@@ -174,14 +169,18 @@ class TrackedList(list[T], _TrackedMixin):
 
     Access tracking:
     - `lst[i]` registers dependency on id(item) at position i
-    - `for x in lst` / `len(lst)` registers dependency on ITER_KEY
-    - `item in lst` registers ITER_KEY (must iterate to check)
+    - `lst[start:end]` registers ITER_KEY (slice access)
+    - `for x in lst` / `len(lst)` registers ITER_KEY
+    - `item in lst` / `lst.index(x)` / `lst.count(x)` registers ITER_KEY
 
     Mutation effects:
     - `lst[i] = new` marks id(old_item) and id(new_item) dirty
-    - `lst.append(x)` marks ITER_KEY dirty (length changed)
-    - `lst.remove(x)` marks id(x) and ITER_KEY dirty
-    - `lst.sort()` marks ITER_KEY dirty (order changed)
+    - `lst[start:end] = items` marks ITER_KEY dirty (structural change)
+    - `lst.append(x)` / `lst.extend(items)` / `lst.insert(i, x)` marks ITER_KEY dirty
+    - `lst.pop()` / `lst.remove(x)` / `lst.clear()` marks ITER_KEY dirty
+    - `lst.sort()` / `lst.reverse()` marks ITER_KEY dirty (order changed)
+    - `lst += items` / `lst *= n` marks ITER_KEY dirty
+    - `del lst[i]` marks id(old_item) and ITER_KEY dirty
 
     Nested auto-conversion:
     - When accessing `lst[i]` where `lst[i]` is a plain list/dict/set,
@@ -204,8 +203,8 @@ class TrackedList(list[T], _TrackedMixin):
         owner: Stateful | None = None,
         attr: str = "",
     ) -> None:
-        super().__init__(iterable)
-        self._init_tracking(owner, attr)
+        list.__init__(self, iterable)
+        _TrackedMixin.__init__(self, owner=owner, attr=attr)
 
     @tp.overload
     def __getitem__(self, index: SupportsIndex) -> T: ...
@@ -382,12 +381,15 @@ class TrackedDict(dict[KT, VT], _TrackedMixin):
     Access tracking:
     - `d[key]` / `d.get(key)` / `key in d` registers dependency on key
     - `for k in d` / `len(d)` registers ITER_KEY
+    - `d.keys()` / `d.values()` / `d.items()` registers ITER_KEY
 
     Mutation effects:
-    - `d[key] = value` marks key dirty
+    - `d[key] = value` marks key dirty (and ITER_KEY if new key)
     - `del d[key]` marks key and ITER_KEY dirty
-    - `d.pop(key)` marks key and ITER_KEY dirty
+    - `d.pop(key)` / `d.popitem()` marks key and ITER_KEY dirty
+    - `d.clear()` marks all keys and ITER_KEY dirty
     - `d.update(...)` marks all affected keys and ITER_KEY dirty
+    - `d.setdefault(key, val)` marks key and ITER_KEY dirty if key is new
     """
 
     def __new__(
@@ -408,8 +410,8 @@ class TrackedDict(dict[KT, VT], _TrackedMixin):
         attr: str = "",
         **kwargs: VT,
     ) -> None:
-        super().__init__(mapping, **kwargs)
-        self._init_tracking(owner, attr)
+        dict.__init__(self, mapping, **kwargs)
+        _TrackedMixin.__init__(self, owner=owner, attr=attr)
 
     def __getitem__(self, key: KT) -> VT:
         value = dict.__getitem__(self, key)
@@ -541,11 +543,16 @@ class TrackedSet(set[T], _TrackedMixin):
     Access tracking:
     - `item in s` registers dependency on the item value
     - `for x in s` / `len(s)` registers ITER_KEY
+    - `s.issubset()` / `s.issuperset()` / `s.isdisjoint()` registers ITER_KEY
 
     Mutation effects:
     - `s.add(x)` marks x and ITER_KEY dirty (if new)
-    - `s.remove(x)` marks x and ITER_KEY dirty
-    - `s.discard(x)` marks x and ITER_KEY dirty (if existed)
+    - `s.remove(x)` / `s.discard(x)` marks x and ITER_KEY dirty (if existed)
+    - `s.pop()` marks removed item and ITER_KEY dirty
+    - `s.clear()` marks all items and ITER_KEY dirty
+    - `s.update(items)` marks new items and ITER_KEY dirty
+    - `s.intersection_update()` / `s.difference_update()` marks removed items dirty
+    - `s.symmetric_difference_update()` marks added/removed items dirty
 
     Note: Items must be hashable (as required by set), so we track by
     value rather than identity. This ensures `"foo" in s` followed by
@@ -568,8 +575,8 @@ class TrackedSet(set[T], _TrackedMixin):
         owner: Stateful | None = None,
         attr: str = "",
     ) -> None:
-        super().__init__(iterable)
-        self._init_tracking(owner, attr)
+        set.__init__(self, iterable)
+        _TrackedMixin.__init__(self, owner=owner, attr=attr)
 
     def __iter__(self) -> Iterator[T]:
         self._register_access(ITER_KEY)

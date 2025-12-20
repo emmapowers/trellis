@@ -56,6 +56,7 @@ __all__ = [
     "RenderTree",
     "freeze_props",
     "get_active_render_tree",
+    "is_render_active",
     "set_active_render_tree",
     "unfreeze_props",
 ]
@@ -88,6 +89,20 @@ def set_active_render_tree(tree: RenderTree | None) -> None:
         tree: The RenderTree to make active, or None to clear
     """
     _active_render_tree.set(tree)
+
+
+def is_render_active() -> bool:
+    """Check if currently inside a render context.
+
+    Returns True if there is an active render tree with a node being executed.
+    Used by Stateful and tracked collections to determine if dependency
+    tracking should occur.
+
+    Returns:
+        True if inside render context, False otherwise
+    """
+    ctx = _active_render_tree.get()
+    return ctx is not None and ctx._current_node_id is not None
 
 
 # =============================================================================
@@ -280,14 +295,12 @@ class ElementState:
     state_call_count: int = 0
     context: dict[type, tp.Any] = field(default_factory=dict)
     parent_id: str | None = None
-    watched_deps: dict[int, tuple[tp.Any, set[str | tuple[int, tp.Any]]]] = field(
-        default_factory=dict
-    )
-    """Maps id(obj) -> (obj, {dep_keys}) for cleanup on re-render/unmount.
+    watched_deps: dict[int, tuple[Trackable, set[tuple[int, tp.Any]]]] = field(default_factory=dict)
+    """Maps id(obj) -> (obj, {composite_keys}) for cleanup on re-render/unmount.
 
-    For Stateful objects: dep_keys contains property name strings (str)
-    For TrackedList/Dict/Set: dep_keys contains composite tuples (int, Any)
-        where the int is id(collection) and Any is the actual key
+    All tracked objects (Stateful, TrackedList, TrackedDict, TrackedSet) use
+    the same composite key format: (id(obj), actual_key) where actual_key is
+    the property name for Stateful or the collection key for tracked collections.
 
     Before each render, these are cleared from each tracked object.
     During render, access methods re-register fresh dependencies.
@@ -763,6 +776,14 @@ class RenderTree(ClassWithLock):
         """
         return self._current_node_id
 
+    def is_active(self) -> bool:
+        """Check if currently executing a component.
+
+        Returns:
+            True if a node is currently being executed, False otherwise
+        """
+        return self._current_node_id is not None
+
     @with_lock
     def mark_dirty_id(self, node_id: str) -> None:
         """Mark a node ID as needing re-render.
@@ -1071,24 +1092,9 @@ class RenderTree(ClassWithLock):
 
         watched_deps = state.watched_deps
         for obj, dep_keys in watched_deps.values():
-            if isinstance(obj, Trackable):
-                # Handle tracked collections - dep_keys contains (id(collection), actual_key) tuples
-                for composite_key in dep_keys:
-                    if (
-                        isinstance(composite_key, tuple)
-                        and len(composite_key) == 2  # noqa: PLR2004
-                    ):
-                        _, actual_key = composite_key
-                        obj._clear_dep(node_id, actual_key)
-            else:
-                # Handle Stateful objects (existing logic)
-                try:
-                    deps = object.__getattribute__(obj, "_state_props")
-                    for prop_name in dep_keys:
-                        if prop_name in deps:
-                            state_info = deps[prop_name]
-                            state_info.node_ids.discard(node_id)
-                            state_info.node_trees.pop(node_id, None)
-                except AttributeError:
-                    pass  # Stateful may not have _state_props yet
+            # All tracked objects (Stateful, TrackedList, etc.) implement Trackable
+            # and use composite keys: (id(obj), actual_key)
+            for composite_key in dep_keys:
+                _, actual_key = composite_key
+                obj._clear_dep(node_id, actual_key)
         watched_deps.clear()

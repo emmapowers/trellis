@@ -29,7 +29,9 @@ def convert_to_tracked(
     Converts list -> TrackedList, dict -> TrackedDict, set -> TrackedSet.
     Nested collections are also converted recursively.
 
-    Already-tracked collections are rebound to the new owner/attr.
+    Already-tracked collections with no owner are bound to the new owner.
+    Already-tracked collections that belong to another owner raise ValueError
+    (use copy() to create a new collection instead of sharing).
 
     Args:
         value: The value to potentially convert
@@ -38,6 +40,9 @@ def convert_to_tracked(
 
     Returns:
         The converted value (or original if not a collection)
+
+    Raises:
+        ValueError: If trying to assign a tracked collection to a different owner
     """
     val_type = type(value)
 
@@ -59,9 +64,16 @@ def convert_to_tracked(
         # So we don't recurse into set items
         return TrackedSet(value, owner=owner, attr=attr)
 
-    # Already a tracked collection - rebind to new owner if provided
+    # Already a tracked collection - check ownership
     if isinstance(value, (TrackedList, TrackedDict, TrackedSet)):
         if owner is not None:
+            existing_owner = value._owner() if value._owner else None
+            if existing_owner is not None and existing_owner is not owner:
+                raise ValueError(
+                    f"Cannot assign tracked collection to a different owner. "
+                    f"Use {type(value).__name__}(original.copy()) to create a new "
+                    f"tracked collection."
+                )
             value._bind(owner, attr)
         return value
 

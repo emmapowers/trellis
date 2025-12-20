@@ -76,6 +76,18 @@ class TestTrackedListBasics:
         assert result == [1, 2, 3, 4]
         assert not isinstance(result, TrackedList)
 
+    def test_slice_returns_plain_list(self) -> None:
+        """Slicing a TrackedList returns a plain list."""
+        lst = TrackedList([1, 2, 3, 4, 5])
+        sliced = lst[1:4]
+        assert sliced == [2, 3, 4]
+        assert not isinstance(sliced, TrackedList)
+
+    def test_repr(self) -> None:
+        """TrackedList has a useful repr."""
+        lst = TrackedList([1, 2, 3])
+        assert repr(lst) == "TrackedList([1, 2, 3])"
+
 
 class TestTrackedDictBasics:
     """Basic functionality tests for TrackedDict."""
@@ -134,6 +146,11 @@ class TestTrackedDictBasics:
         copy = d.copy()
         assert copy == {"a": 1}
         assert not isinstance(copy, TrackedDict)
+
+    def test_repr(self) -> None:
+        """TrackedDict has a useful repr."""
+        d = TrackedDict({"a": 1})
+        assert repr(d) == "TrackedDict({'a': 1})"
 
 
 class TestTrackedSetBasics:
@@ -197,6 +214,11 @@ class TestTrackedSetBasics:
         assert (s1 | s2) == {1, 2, 3, 4}
         assert (s1 - s2) == {1}
         assert (s1 ^ s2) == {1, 4}
+
+    def test_repr(self) -> None:
+        """TrackedSet has a useful repr."""
+        s = TrackedSet({1})
+        assert "TrackedSet" in repr(s)
 
 
 class TestAutoConversion:
@@ -373,6 +395,75 @@ class TestDependencyTracking:
         tracked_set = state.tags
         assert "python" in tracked_set._deps
         assert ctx.root_node.id in tracked_set._deps["python"]
+
+    def test_list_sort_marks_iter_dirty(self) -> None:
+        """Sorting a list marks ITER_KEY dirty."""
+
+        @dataclass
+        class MyState(Stateful):
+            items: list[int] = field(default_factory=list)
+
+        state = MyState()
+        state.items = [3, 1, 2]
+
+        iter_renders = [0]
+
+        @component
+        def ListViewer() -> None:
+            iter_renders[0] += 1
+            for _ in state.items:
+                pass
+
+        ctx = RenderTree(ListViewer)
+        ctx.render()
+        assert iter_renders[0] == 1
+
+        # Sort - should mark ITER_KEY dirty
+        state.items.sort()
+        ctx.render()
+        assert iter_renders[0] == 2
+
+    def test_dict_new_key_marks_iter_dirty(self) -> None:
+        """Adding a new key marks ITER_KEY dirty for iterators."""
+
+        @dataclass
+        class MyState(Stateful):
+            data: dict[str, int] = field(default_factory=dict)
+
+        state = MyState()
+        state.data = {"a": 1}
+
+        iter_renders = [0]
+        a_renders = [0]
+
+        @component
+        def Iterator() -> None:
+            iter_renders[0] += 1
+            for _ in state.data:
+                pass
+
+        @component
+        def AViewer() -> None:
+            a_renders[0] += 1
+            _ = state.data["a"]
+
+        @component
+        def App() -> None:
+            Iterator()
+            AViewer()
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        assert iter_renders[0] == 1
+        assert a_renders[0] == 1
+
+        # Add new key - Iterator should re-render
+        state.data["b"] = 2
+        ctx.render()
+
+        assert iter_renders[0] == 2  # Iteration affected by new key
+        assert a_renders[0] == 1  # AViewer not affected
 
 
 class TestFineGrainedReactivity:
@@ -643,82 +734,6 @@ class TestDependencyCleanup:
 class TestEdgeCases:
     """Tests for edge cases and special scenarios."""
 
-    def test_list_slice_returns_plain_list(self) -> None:
-        """Slicing a TrackedList returns a plain list."""
-        lst = TrackedList([1, 2, 3, 4, 5])
-        sliced = lst[1:4]
-        assert sliced == [2, 3, 4]
-        assert not isinstance(sliced, TrackedList)
-
-    def test_list_sort_marks_iter_dirty(self) -> None:
-        """Sorting a list marks ITER_KEY dirty."""
-
-        @dataclass
-        class MyState(Stateful):
-            items: list[int] = field(default_factory=list)
-
-        state = MyState()
-        state.items = [3, 1, 2]
-
-        iter_renders = [0]
-
-        @component
-        def ListViewer() -> None:
-            iter_renders[0] += 1
-            for _ in state.items:
-                pass
-
-        ctx = RenderTree(ListViewer)
-        ctx.render()
-        assert iter_renders[0] == 1
-
-        # Sort - should mark ITER_KEY dirty
-        state.items.sort()
-        ctx.render()
-        assert iter_renders[0] == 2
-
-    def test_dict_new_key_marks_iter_dirty(self) -> None:
-        """Adding a new key marks ITER_KEY dirty for iterators."""
-
-        @dataclass
-        class MyState(Stateful):
-            data: dict[str, int] = field(default_factory=dict)
-
-        state = MyState()
-        state.data = {"a": 1}
-
-        iter_renders = [0]
-        a_renders = [0]
-
-        @component
-        def Iterator() -> None:
-            iter_renders[0] += 1
-            for _ in state.data:
-                pass
-
-        @component
-        def AViewer() -> None:
-            a_renders[0] += 1
-            _ = state.data["a"]
-
-        @component
-        def App() -> None:
-            Iterator()
-            AViewer()
-
-        ctx = RenderTree(App)
-        ctx.render()
-
-        assert iter_renders[0] == 1
-        assert a_renders[0] == 1
-
-        # Add new key - Iterator should re-render
-        state.data["b"] = 2
-        ctx.render()
-
-        assert iter_renders[0] == 2  # Iteration affected by new key
-        assert a_renders[0] == 1  # AViewer not affected
-
     def test_empty_list_operations(self) -> None:
         """Operations on empty TrackedList work correctly."""
         lst: TrackedList[int] = TrackedList()
@@ -730,21 +745,6 @@ class TestEdgeCases:
 
         lst.clear()
         assert list(lst) == []
-
-    def test_tracked_list_repr(self) -> None:
-        """TrackedList has a useful repr."""
-        lst = TrackedList([1, 2, 3])
-        assert repr(lst) == "TrackedList([1, 2, 3])"
-
-    def test_tracked_dict_repr(self) -> None:
-        """TrackedDict has a useful repr."""
-        d = TrackedDict({"a": 1})
-        assert repr(d) == "TrackedDict({'a': 1})"
-
-    def test_tracked_set_repr(self) -> None:
-        """TrackedSet has a useful repr."""
-        s = TrackedSet({1})
-        assert "TrackedSet" in repr(s)
 
 
 class TestTrackedWithStatefulItems:
@@ -1432,8 +1432,8 @@ class TestMultiComponentScenarios:
 class TestRebinding:
     """Tests for re-binding collections."""
 
-    def test_tracked_list_rebind_to_new_owner(self) -> None:
-        """TrackedList can be rebound to a different Stateful."""
+    def test_tracked_list_cannot_rebind_to_different_owner(self) -> None:
+        """TrackedList cannot be assigned to a different Stateful."""
 
         @dataclass
         class State1(Stateful):
@@ -1447,15 +1447,32 @@ class TestRebinding:
         s1.items = [1, 2, 3]
 
         s2 = State2()
-        # Assign s1's list to s2 - should rebind
-        s2.items = s1.items
+        # Trying to assign s1's list to s2 should raise ValueError
+        with pytest.raises(ValueError, match="Cannot assign tracked collection"):
+            s2.items = s1.items
 
-        # Both should reference the same TrackedList
-        assert s1.items is s2.items
+    def test_tracked_list_can_copy_to_new_owner(self) -> None:
+        """TrackedList can be copied to a new owner."""
 
-        # s2's attr should now own it
-        tracked = s2.items
-        assert tracked._attr == "items"
+        @dataclass
+        class State1(Stateful):
+            items: list[int] = field(default_factory=list)
+
+        @dataclass
+        class State2(Stateful):
+            items: list[int] = field(default_factory=list)
+
+        s1 = State1()
+        s1.items = [1, 2, 3]
+
+        s2 = State2()
+        # Copy the list to s2 - this creates a new TrackedList
+        s2.items = list(s1.items)
+
+        # They should be different TrackedList instances
+        assert s1.items is not s2.items
+        # But have the same content
+        assert list(s1.items) == list(s2.items)
 
 
 class TestDeeplyNested:
