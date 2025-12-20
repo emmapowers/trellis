@@ -56,6 +56,7 @@ from types import TracebackType
 if tp.TYPE_CHECKING:
     from trellis.core.rendering import RenderTree
 
+from trellis.core.conversion import convert_to_tracked
 from trellis.core.mutable import record_property_access
 from trellis.core.rendering import get_active_render_tree
 
@@ -236,6 +237,9 @@ class Stateful:
         When a public attribute is modified, all nodes that previously
         read that attribute are marked dirty and will re-render.
 
+        Plain list/dict/set values are auto-converted to TrackedList/Dict/Set
+        for reactive collection tracking.
+
         Args:
             name: The attribute name to set
             value: The new value
@@ -248,6 +252,9 @@ class Stateful:
         if name.startswith("_"):
             object.__setattr__(self, name, value)
             return
+
+        # Auto-convert plain collections to tracked versions (recursively)
+        value = convert_to_tracked(value, owner=self, attr=name)
 
         # Check if this is initialization vs modification
         # Use __dict__ to check instance attributes only (not class defaults from @dataclass)

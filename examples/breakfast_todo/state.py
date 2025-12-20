@@ -67,17 +67,20 @@ class TodosState(Stateful):
         todo = Todo(id=self._next_id, text=text)
         self._next_id += 1
 
-        # Replace the list to trigger reactivity
-        self.todos = [todo, *self.todos]
+        self.todos.insert(0, todo)
         self.input_text = ""
 
     def delete_todo(self, todo_id: int) -> None:
         """Delete a todo by ID."""
-        self.todos = [t for t in self.todos if t.id != todo_id]
+        for todo in self.todos:
+            if todo.id == todo_id:
+                self.todos.remove(todo)
+                break
 
     def clear_completed(self) -> None:
         """Remove all completed todos."""
-        self.todos = [t for t in self.todos if not t.completed]
+        for todo in [t for t in self.todos if t.completed]:
+            self.todos.remove(todo)
 
     def set_input(self, text: str) -> None:
         """Update the input text (for controlled input)."""

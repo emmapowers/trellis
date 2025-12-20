@@ -60,8 +60,8 @@ class TodosState(Stateful):
         """Add a new todo."""
         try:
             todo = await db.add_todo(text=text, due_date=due_date, tag_names=tag_names)
-            self.todos.insert(0, todo)  # ObservableList tracks this
-            self.tags = await db.get_all_tags()  # TODO: use ObservableList
+            self.todos.insert(0, todo)
+            self.tags = await db.get_all_tags()
         except Exception as e:
             self.error = f"Failed to add todo: {e}"
 
@@ -86,7 +86,7 @@ class TodosState(Stateful):
         try:
             await db.delete_todo(todo_id)
             todo = next(t for t in self.todos if t.id == todo_id)
-            self.todos.remove(todo)  # ObservableList tracks this
+            self.todos.remove(todo)
         except Exception as e:
             self.error = f"Failed to delete todo: {e}"
 
@@ -95,6 +95,6 @@ class TodosState(Stateful):
         try:
             await db.clear_completed()
             for todo in [t for t in self.todos if t.completed]:
-                self.todos.remove(todo)  # ObservableList tracks each removal
+                self.todos.remove(todo)
         except Exception as e:
             self.error = f"Failed to clear completed: {e}"

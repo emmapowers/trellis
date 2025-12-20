@@ -215,11 +215,11 @@ class ListState(Stateful):
     counter: int
 
     def add(self):
-        self.items = [*self.items, f"Item {self.counter}"]
+        self.items.append(f"Item {self.counter}")
         self.counter += 1
 
     def remove(self, item: str):
-        self.items = [i for i in self.items if i != item]
+        self.items.remove(item)
 
 @component
 def App():

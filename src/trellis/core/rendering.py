@@ -40,6 +40,7 @@ from trellis.core.base import (
     ElementKind,
     FrozenProps,
     IComponent,
+    Trackable,
     freeze_props,
     unfreeze_props,
 )
@@ -279,12 +280,18 @@ class ElementState:
     state_call_count: int = 0
     context: dict[type, tp.Any] = field(default_factory=dict)
     parent_id: str | None = None
-    watched_deps: dict[int, tuple[tp.Any, set[str]]] = field(default_factory=dict)
-    """Maps id(Stateful) -> (Stateful, {prop_names}) for cleanup on re-render/unmount.
+    watched_deps: dict[int, tuple[tp.Any, set[str | tuple[int, tp.Any]]]] = field(
+        default_factory=dict
+    )
+    """Maps id(obj) -> (obj, {dep_keys}) for cleanup on re-render/unmount.
 
-    Before each render, these are cleared from each Stateful._state_deps.
-    During render, __getattribute__ re-registers fresh dependencies.
-    Uses id() as key since Stateful instances may not be hashable.
+    For Stateful objects: dep_keys contains property name strings (str)
+    For TrackedList/Dict/Set: dep_keys contains composite tuples (int, Any)
+        where the int is id(collection) and Any is the actual key
+
+    Before each render, these are cleared from each tracked object.
+    During render, access methods re-register fresh dependencies.
+    Uses id() as key since objects may not be hashable.
     """
 
 
@@ -1050,7 +1057,7 @@ class RenderTree(ClassWithLock):
                     logging.exception(f"Error in Stateful.on_unmount: {e}")
 
     def clear_node_dependencies(self, node_id: str) -> None:
-        """Clear a node's dependency registrations from all watched Stateful instances.
+        """Clear a node's dependency registrations from all watched Stateful/Tracked instances.
 
         Called before a node re-renders (to allow fresh registration) and on unmount
         (to prevent stale references).
@@ -1063,14 +1070,25 @@ class RenderTree(ClassWithLock):
             return
 
         watched_deps = state.watched_deps
-        for stateful, prop_names in watched_deps.values():
-            try:
-                deps = object.__getattribute__(stateful, "_state_props")
-                for prop_name in prop_names:
-                    if prop_name in deps:
-                        state_info = deps[prop_name]
-                        state_info.node_ids.discard(node_id)
-                        state_info.node_trees.pop(node_id, None)
-            except AttributeError:
-                pass  # Stateful may not have _state_props yet
+        for obj, dep_keys in watched_deps.values():
+            if isinstance(obj, Trackable):
+                # Handle tracked collections - dep_keys contains (id(collection), actual_key) tuples
+                for composite_key in dep_keys:
+                    if (
+                        isinstance(composite_key, tuple)
+                        and len(composite_key) == 2  # noqa: PLR2004
+                    ):
+                        _, actual_key = composite_key
+                        obj._clear_dep(node_id, actual_key)
+            else:
+                # Handle Stateful objects (existing logic)
+                try:
+                    deps = object.__getattribute__(obj, "_state_props")
+                    for prop_name in dep_keys:
+                        if prop_name in deps:
+                            state_info = deps[prop_name]
+                            state_info.node_ids.discard(node_id)
+                            state_info.node_trees.pop(node_id, None)
+                except AttributeError:
+                    pass  # Stateful may not have _state_props yet
         watched_deps.clear()
