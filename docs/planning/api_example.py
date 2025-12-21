@@ -1,134 +1,130 @@
 """
-UI Framework API example
+Trellis UI Framework API Example
 
-It's probably best to read this file from the bottom up.
+This example demonstrates the key concepts of the Trellis framework.
+Read from the bottom up for a top-down view of the app structure.
 
-Notes:
-* This would serve a webapp on some default port
-* On startup, the top() function is called, all children are called and a Component Tree is created
-* State is stored in Stateful classes. When the app does the initial render, it notices which stateful
-  elements were used, and automatically watches those values for changes.
-* When a stete value changes, only the components that use that particular state varible are re-rendered.
-  This is fine grained, so if a component uses FormState.valid, and nothing else, it only re-renders if that
-  value changed, even if the whole FormState object is passed to the component.
-* Once the components that have changed are re-rendered, the Component Tree is updated.
-* Once every so often (20ms perhaps?) the Component Tree is diffed with the version from the last "tick" and the
-  differences sent to the client.
-* Changes to the Component Tree can be made from anywhere at any time. Locking is handled automatically.
-* To avoid lots of onChange callbacks, you can pass state variables (State[Type]) to a component.
-  You'd use them like statefulVar.value, or statefulVar.value = "new value". w.Text.text expects a stateful var, for example.
-* Stateful Vars make it all the way to the Component Tree, so links between component can be auto-detected and
-  javascript side links can be created for the user.
-* It should be able to support hot-reload, I think.
+Key Concepts:
+* Trellis serves a webapp with WebSocket updates for real-time UI changes
+* State is stored in Stateful dataclasses with automatic dependency tracking
+* When state changes, only components that read that specific property re-render
+* The `mutable()` function enables two-way binding for form inputs
+* Context API (`with state:` / `from_context()`) shares state with descendants
+* Components use `with` blocks to define parent-child relationships
 """
-
 
 from dataclasses import dataclass
 
-from trellis import Mutable, Stateful, Trellis, async_main, component, mutable  # Mutable/mutable planned
+from trellis import Stateful, Trellis, async_main, component, mutable
 from trellis import html as h
-from trellis import navigation as nav  # Planned feature
 from trellis import widgets as w
 
-routerState = nav.RouterState()
 
-
+# ---------------------------------------------------------------------------
+# Application State
+# ---------------------------------------------------------------------------
 @dataclass
 class FormState(Stateful):
-    # Form state
-    submitting: bool
-    error: str
+    """Form state with validation and submission logic."""
 
-    # Form Data
-    text: str
-    enabled: str
+    # Form status
+    submitting: bool = False
+    error: str = ""
+
+    # Form fields
+    username: str = ""
+    email: str = ""
 
     @property
-    def valid(self):
-        return self.text != "" and self.enabled
+    def valid(self) -> bool:
+        """Form is valid when both fields are filled."""
+        return bool(self.username) and bool(self.email)
 
-    async def submit(self):
+    async def submit(self) -> None:
+        """Handle form submission."""
+        if not self.valid:
+            self.error = "Please fill in all fields"
+            return
+
+        self.submitting = True
+        self.error = ""
         try:
-            self.error = ""
-            if not self.valid:
-                raise RuntimeError("Form submitted while not valid")
+            # Simulate async operation
+            import asyncio
 
-            result = await doSomethingNetworky(self.text)
-            routerState.navigate("/done")
-        except RuntimeError as e:
-            self.error = e.msg
-        except Exception:
-            raise  # This is safe, by default exception from callbacks are logged, but there's a hook so you can show an error message
+            await asyncio.sleep(1)
+            print(f"Submitted: {self.username} <{self.email}>")
+        except Exception as e:
+            self.error = str(e)
+        finally:
+            self.submitting = False
+
+
+# ---------------------------------------------------------------------------
+# Components
+# ---------------------------------------------------------------------------
+@component
+def TextWithLabel(label: str, value: str | None = None) -> None:
+    """Labeled text input using mutable binding.
+
+    The `value` parameter accepts a Mutable[str] for two-way binding.
+    Use mutable(state.field) when calling this component.
+    """
+    with w.Row(gap=8, align="center"):
+        w.Label(text=label, width=100)
+        w.TextInput(value=value or mutable(FormState.from_context().username))
+
+
+@component
+def ErrorMessage(message: str) -> None:
+    """Display an error message in red."""
+    if message:
+        with h.Div(style={"color": "red", "padding": "8px"}):
+            w.Label(text=message)
 
 
 @component
 def Form() -> None:
-    """Form component - gets FormState from context."""
+    """Form component - accesses FormState from context."""
     state = FormState.from_context()
 
-    with w.Column():
-        if state.error:
-            Notification(message=state.error)
+    with w.Column(gap=16, padding=16):
+        # Error display
+        ErrorMessage(message=state.error)
 
-        TextWithLabel(label="text", text=mutable(state.text))
-        with ButtonBar():
-            Button(label="Cancel")
-            Button(label="Submit", disabled=not state.valid, onClicked=state.submit)
+        # Form fields with two-way binding
+        with w.Row(gap=8, align="center"):
+            w.Label(text="Username:", width=100)
+            w.TextInput(value=mutable(state.username), placeholder="Enter username")
+
+        with w.Row(gap=8, align="center"):
+            w.Label(text="Email:", width=100)
+            w.TextInput(value=mutable(state.email), placeholder="Enter email")
+
+        # Submit button - disabled when invalid or submitting
+        with w.Row(justify="end"):
+            w.Button(
+                text="Submit" if not state.submitting else "Submitting...",
+                on_click=state.submit,
+                disabled=not state.valid or state.submitting,
+            )
 
 
-# Component with local state
-@dataclass
-class NotificationState(Stateful):
-    shownTime: float | None = None
-
-
+# ---------------------------------------------------------------------------
+# App Entry Point
+# ---------------------------------------------------------------------------
 @component
-def Notification(message: str, duration: float) -> None:
-    state = NotificationState(showTime=time.time())
+def App() -> None:
+    """Root component providing FormState context to descendants."""
+    with h.Div(style={"maxWidth": "400px", "margin": "40px auto"}):
+        w.Label(text="User Registration", font_size=24, bold=True)
 
-    if (time.time() - state.shownTime) < duration:
-        with h.Div():
-            ErrorText(message=message)
-    else:
-        w.Empty()
-
-
-# ---------------------------------------------------
-# Stateless Component, state variable used for bi-directional sync to state held outside the component
-# ---------------------------------------------------
-@component
-def TextWithLabel(
-    label: str, text: Mutable[str], placeholderText: str | None = None
-) -> None:
-    with w.Row():
-        w.Label(label=label, width=150)  # pixels assumed
-        w.TextInput(text=text, placeholderText=placeholderText)
-
-
-# ---------------------------------------------------
-# Simple stateless Component, component functions must be sync
-# ---------------------------------------------------
-@component
-def ErrorText(message: str) -> None:
-    w.Label(text=message, textColor="red")
-
-
-# ---------------------------------------------------
-# Top, app has a router for navigation
-# ---------------------------------------------------
-@component
-def top() -> None:
-    with nav.Router(state=routerState):
-        # FormState provided via context - children access it with FormState.from_context()
+        # FormState provided via context - Form accesses it with from_context()
         with FormState():
-            nav.Route(path="/", target=Form())  # No props needed!
-        with nav.Route(path="/done"):
-            with w.Column(hAlign=w.Align.Center):
-                w.Label("Hurray, you submited the form!")
-                w.Button(label="Try Again!", onClick=lambda: routerState.navigate("/"))
+            Form()
 
 
 @async_main
 async def main() -> None:
-    app = Trellis(top=top)
+    app = Trellis(top=App)
     await app.serve()
