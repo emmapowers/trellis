@@ -67,7 +67,7 @@ def convert_to_tracked(
     # Already a tracked collection - check ownership
     if isinstance(value, (TrackedList, TrackedDict, TrackedSet)):
         if owner is not None:
-            existing_owner = value._owner() if value._owner else None
+            existing_owner = value._owner()
             if existing_owner is not None and existing_owner is not owner:
                 raise ValueError(
                     f"Cannot assign tracked collection to a different owner. "
