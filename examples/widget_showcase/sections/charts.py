@@ -11,7 +11,7 @@ from ..example import example
 def LineAndAreaCharts() -> None:
     """Time series data visualization."""
     with w.Row(gap=16):
-        with w.Column(style={"flex": "1"}):
+        with w.Column(flex=1):
             w.LineChart(
                 data=[
                     {"name": "Jan", "value": 100, "value2": 80},
@@ -23,7 +23,7 @@ def LineAndAreaCharts() -> None:
                 data_keys=["value", "value2"],
                 height=150,
             )
-        with w.Column(style={"flex": "1"}):
+        with w.Column(flex=1):
             w.AreaChart(
                 data=[
                     {"name": "Jan", "value": 100},
@@ -41,7 +41,7 @@ def LineAndAreaCharts() -> None:
 def BarAndPieCharts() -> None:
     """Categorical data visualization."""
     with w.Row(gap=16):
-        with w.Column(style={"flex": "1"}):
+        with w.Column(flex=1):
             w.BarChart(
                 data=[
                     {"name": "A", "value": 40},
@@ -52,7 +52,7 @@ def BarAndPieCharts() -> None:
                 data_keys=["value"],
                 height=150,
             )
-        with w.Column(style={"flex": "1"}):
+        with w.Column(flex=1):
             w.PieChart(
                 data=[
                     {"name": "Desktop", "value": 60},

@@ -85,7 +85,7 @@ def PriceCell(*, row: dict[str, tp.Any]) -> None:
             w.Label(
                 text=f"{sign}{change:.2f} ({sign}{change_pct:.2f}%)",
                 color=color,
-                size="sm",
+                font_size=12,
             )
 
 

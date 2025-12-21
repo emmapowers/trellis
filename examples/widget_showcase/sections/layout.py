@@ -12,25 +12,19 @@ def RowLayout() -> None:
     """Horizontal flex container with justify options."""
     with w.Column(gap=8):
         w.Label(text="justify='start' (default)")
-        with w.Row(gap=8, style={"backgroundColor": "#f1f5f9", "padding": "8px"}):
+        with w.Row(gap=8, padding=8, style={"backgroundColor": "#f1f5f9"}):
             w.Button(text="A", size="sm")
             w.Button(text="B", size="sm")
             w.Button(text="C", size="sm")
 
         w.Label(text="justify='center'")
-        with w.Row(
-            gap=8, justify="center", style={"backgroundColor": "#f1f5f9", "padding": "8px"}
-        ):
+        with w.Row(gap=8, justify="center", padding=8, style={"backgroundColor": "#f1f5f9"}):
             w.Button(text="A", size="sm")
             w.Button(text="B", size="sm")
             w.Button(text="C", size="sm")
 
         w.Label(text="justify='between'")
-        with w.Row(
-            gap=8,
-            justify="between",
-            style={"backgroundColor": "#f1f5f9", "padding": "8px"},
-        ):
+        with w.Row(gap=8, justify="between", padding=8, style={"backgroundColor": "#f1f5f9"}):
             w.Button(text="A", size="sm")
             w.Button(text="B", size="sm")
             w.Button(text="C", size="sm")
@@ -45,11 +39,9 @@ def ColumnLayout() -> None:
             with w.Column(
                 gap=4,
                 align="start",
-                style={
-                    "backgroundColor": "#f1f5f9",
-                    "padding": "8px",
-                    "height": "100px",
-                },
+                padding=8,
+                height=100,
+                style={"backgroundColor": "#f1f5f9"},
             ):
                 w.Button(text="A", size="sm")
                 w.Button(text="B", size="sm")
@@ -59,12 +51,10 @@ def ColumnLayout() -> None:
             with w.Column(
                 gap=4,
                 align="center",
-                style={
-                    "backgroundColor": "#f1f5f9",
-                    "padding": "8px",
-                    "height": "100px",
-                    "width": "120px",
-                },
+                padding=8,
+                height=100,
+                width=120,
+                style={"backgroundColor": "#f1f5f9"},
             ):
                 w.Button(text="A", size="sm")
                 w.Button(text="B", size="sm")
@@ -74,12 +64,10 @@ def ColumnLayout() -> None:
             with w.Column(
                 gap=4,
                 align="end",
-                style={
-                    "backgroundColor": "#f1f5f9",
-                    "padding": "8px",
-                    "height": "100px",
-                    "width": "120px",
-                },
+                padding=8,
+                height=100,
+                width=120,
+                style={"backgroundColor": "#f1f5f9"},
             ):
                 w.Button(text="A", size="sm")
                 w.Button(text="B", size="sm")
@@ -94,7 +82,8 @@ def LayoutDividers() -> None:
             with w.Row(
                 gap=12,
                 divider=True,
-                style={"backgroundColor": "#f1f5f9", "padding": "8px"},
+                padding=8,
+                style={"backgroundColor": "#f1f5f9"},
             ):
                 w.Label(text="Item 1")
                 w.Label(text="Item 2")
@@ -105,7 +94,8 @@ def LayoutDividers() -> None:
             with w.Column(
                 gap=8,
                 divider=True,
-                style={"backgroundColor": "#f1f5f9", "padding": "8px"},
+                padding=8,
+                style={"backgroundColor": "#f1f5f9"},
             ):
                 w.Label(text="Item 1")
                 w.Label(text="Item 2")
