@@ -27,9 +27,12 @@ import argparse
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from trellis.core.platform import Platform, PlatformArgumentError, PlatformType
+
+if TYPE_CHECKING:
+    from trellis.core.rendering import ElementNode
 
 # Define which arguments belong to which platform
 _SERVER_ARGS = {"host", "port", "static_dir"}
@@ -242,13 +245,13 @@ class Trellis:
     """
 
     platform_type: PlatformType
-    top: Callable[[], None] | None
+    top: Callable[[], ElementNode] | None
     _platform: Platform
     _args: _TrellisArgs
 
     def __init__(
         self,
-        top: Callable[[], None] | None = None,
+        top: Callable[[], ElementNode] | None = None,
         *,
         platform: PlatformType | str | None = None,
         ignore_cli: bool = False,

@@ -36,8 +36,8 @@ fmt-check = { cmd = "black --check src", description = "Check black formatting" 
 ruff-fix = { cmd = "ruff check --fix src", depends-on = ["fmt"], description = "Run ruff with auto-fix" }
 ruff-check = { cmd = "ruff check src", description = "Check ruff linting" }
 
-mypy = { cmd = "dmypy run src", description = "Run mypy (daemon)" }
-mypy-ci = { cmd = "mypy src", description = "Run mypy (full check)" }
+mypy = { cmd = "dmypy run src examples", description = "Run mypy (daemon)" }
+mypy-ci = { cmd = "mypy src examples", description = "Run mypy (full check)" }
 
 test = { cmd = "pytest", description = "Run unit tests" }
 test-cov = { cmd = "pytest --cov=src/trellis --cov-report=term-missing", description = "Run unit tests with coverage" }

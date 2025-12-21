@@ -7,7 +7,10 @@ For the CLI server that serves browser apps, see serve_platform.py.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from trellis.core.rendering import ElementNode
 
 from trellis.core.platform import Platform
 
@@ -38,7 +41,7 @@ class BrowserPlatform(Platform):
 
     async def run(
         self,
-        root_component: Callable[[], None],
+        root_component: Callable[[], ElementNode],
         **kwargs: Any,
     ) -> None:
         """Run inside Pyodide using the JS bridge.

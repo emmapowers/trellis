@@ -9,7 +9,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from enum import StrEnum, auto
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from trellis.core.rendering import ElementNode
 
 
 class PlatformType(StrEnum):
@@ -60,7 +63,7 @@ class Platform(ABC):
     @abstractmethod
     async def run(
         self,
-        root_component: Callable[[], None],
+        root_component: Callable[[], ElementNode],
         **kwargs: Any,
     ) -> None:
         """Start the platform and run until shutdown.
