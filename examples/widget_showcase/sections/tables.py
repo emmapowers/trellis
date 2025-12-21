@@ -105,7 +105,7 @@ def ActionsCell(*, row: dict[str, tp.Any]) -> None:
         w.Button(text="Watch", size="sm", variant="outline")
 
 
-@example("Stock Watchlist", includes=["STOCKS", TickerCell, PriceCell, HistoryCell, ActionsCell])
+@example("Stocks", includes=["STOCKS", TickerCell, PriceCell, HistoryCell, ActionsCell])
 def StockWatchlist() -> None:
     """Full-featured table with custom cell rendering, icons, and sparklines."""
     w.Table(

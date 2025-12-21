@@ -11,13 +11,13 @@ from urllib.parse import quote
 from trellis import component
 
 if tp.TYPE_CHECKING:
-    from trellis.core.composition_component import CompositionComponent
+    from trellis.core.composition_component import CompositionComponent, RenderFunc
 
 
 def example(
     title: str,
     includes: list[tp.Any] | None = None,
-) -> tp.Callable[[tp.Callable[[], None]], CompositionComponent]:
+) -> tp.Callable[[RenderFunc], CompositionComponent]:
     """Decorator that creates a component and captures its source code.
 
     The decorated function becomes a Trellis component with additional
@@ -55,7 +55,7 @@ def example(
             w.Table(columns=[...], data=STOCKS)
     """
 
-    def decorator(func: tp.Callable[[], None]) -> CompositionComponent:
+    def decorator(func: RenderFunc) -> CompositionComponent:
         # Capture source code of the function
         try:
             full_source = inspect.getsource(func)

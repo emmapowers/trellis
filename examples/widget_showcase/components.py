@@ -60,33 +60,32 @@ def ExampleCard(*, example: CompositionComponent) -> None:
     source: str = getattr(example, "source", "")
     func_name: str = getattr(example, "func_name", "example")
 
-    with state:
-        with w.Column(gap=12):
-            # Header with title and action buttons
-            with w.Row(justify="between", align="center"):
-                w.Label(text=title, font_size=12, color="#64748b", bold=True)
+    with w.Column(gap=12):
+        # Header with title and action buttons
+        with w.Row(justify="between", align="center"):
+            w.Label(text=title, font_size=12, color="#64748b", bold=True)
 
-                with w.Row(gap=4):
+            with w.Row(gap=4):
+                w.Button(
+                    text="Code" if not state.show_code else "Hide",
+                    variant="ghost",
+                    size="sm",
+                    on_click=lambda: setattr(state, "show_code", not state.show_code),
+                )
+                with h.A(
+                    href=make_playground_url(source, func_name),
+                    target="_blank",
+                    style={"textDecoration": "none"},
+                ):
                     w.Button(
-                        text="Code" if not state.show_code else "Hide",
+                        text="Playground",
                         variant="ghost",
                         size="sm",
-                        on_click=lambda: setattr(state, "show_code", not state.show_code),
                     )
-                    with h.A(
-                        href=make_playground_url(source, func_name),
-                        target="_blank",
-                        style={"textDecoration": "none"},
-                    ):
-                        w.Button(
-                            text="Playground",
-                            variant="ghost",
-                            size="sm",
-                        )
 
-            # Render the example
-            example()
+        # Render the example
+        example()
 
-            # Show code block if toggled
-            if state.show_code:
-                CodeBlock(code=source)
+        # Show code block if toggled
+        if state.show_code:
+            CodeBlock(code=source)

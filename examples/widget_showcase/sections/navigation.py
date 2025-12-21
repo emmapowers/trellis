@@ -18,16 +18,15 @@ class TabsState(Stateful):
 def TabsExample() -> None:
     """Tabbed content navigation."""
     state = TabsState()
-    with state:
-        with w.Tabs(
-            selected=mutable(state.selected_tab),
-        ):
-            with w.Tab(id="overview", label="Overview", icon=IconName.HOME):
-                w.Label(text="Overview tab content goes here.")
-            with w.Tab(id="analytics", label="Analytics", icon=IconName.BAR_CHART):
-                w.Label(text="Analytics tab content goes here.")
-            with w.Tab(id="settings", label="Settings", icon=IconName.SETTINGS):
-                w.Label(text="Settings tab content goes here.")
+    with w.Tabs(
+        selected=mutable(state.selected_tab),
+    ):
+        with w.Tab(id="overview", label="Overview", icon=IconName.HOME):
+            w.Label(text="Overview tab content goes here.")
+        with w.Tab(id="analytics", label="Analytics", icon=IconName.BAR_CHART):
+            w.Label(text="Analytics tab content goes here.")
+        with w.Tab(id="settings", label="Settings", icon=IconName.SETTINGS):
+            w.Label(text="Settings tab content goes here.")
 
 
 @example("Breadcrumb")
@@ -53,30 +52,29 @@ class TreeState(Stateful):
 def TreeExample() -> None:
     """Hierarchical data navigation."""
     state = TreeState()
-    with state:
-        w.Tree(
-            data=[
-                {
-                    "id": "src",
-                    "label": "src",
-                    "children": [
-                        {"id": "components", "label": "components"},
-                        {"id": "utils", "label": "utils"},
-                        {"id": "main.py", "label": "main.py"},
-                    ],
-                },
-                {
-                    "id": "tests",
-                    "label": "tests",
-                    "children": [
-                        {"id": "test_main.py", "label": "test_main.py"},
-                    ],
-                },
-                {"id": "README.md", "label": "README.md"},
-            ],
-            selected=state.selected_node,
-            on_select=lambda n: setattr(state, "selected_node", n),
-        )
+    w.Tree(
+        data=[
+            {
+                "id": "src",
+                "label": "src",
+                "children": [
+                    {"id": "components", "label": "components"},
+                    {"id": "utils", "label": "utils"},
+                    {"id": "main.py", "label": "main.py"},
+                ],
+            },
+            {
+                "id": "tests",
+                "label": "tests",
+                "children": [
+                    {"id": "test_main.py", "label": "test_main.py"},
+                ],
+            },
+            {"id": "README.md", "label": "README.md"},
+        ],
+        selected=state.selected_node,
+        on_select=lambda n: setattr(state, "selected_node", n),
+    )
 
 
 class CollapsibleState(Stateful):
@@ -90,18 +88,17 @@ class CollapsibleState(Stateful):
 def CollapsibleExample() -> None:
     """Expandable content section."""
     state = CollapsibleState()
-    with state:
-        with w.Collapsible(
-            title="Advanced Settings",
-            expanded=mutable(state.expanded),
-            icon=IconName.SETTINGS,
-        ):
-            with w.Column(gap=8):
-                w.Label(text="This content can be collapsed.")
-                w.Checkbox(
-                    checked=mutable(state.experimental_features),
-                    label="Enable experimental features",
-                )
+    with w.Collapsible(
+        title="Advanced Settings",
+        expanded=mutable(state.expanded),
+        icon=IconName.SETTINGS,
+    ):
+        with w.Column(gap=8):
+            w.Label(text="This content can be collapsed.")
+            w.Checkbox(
+                checked=mutable(state.experimental_features),
+                label="Enable experimental features",
+            )
 
 
 @component
