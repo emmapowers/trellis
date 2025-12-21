@@ -188,11 +188,11 @@ class TodoState(Stateful):
     next_id: int
 
     def add(self):
-        self.items = [*self.items, f"Task {self.next_id}"]
+        self.items.append(f"Task {self.next_id}")
         self.next_id += 1
 
     def remove(self, item: str):
-        self.items = [i for i in self.items if i != item]
+        self.items.remove(item)
 
 @component
 def TodoList():

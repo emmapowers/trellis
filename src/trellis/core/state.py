@@ -56,8 +56,9 @@ from types import TracebackType
 if tp.TYPE_CHECKING:
     from trellis.core.rendering import RenderTree
 
+from trellis.core.conversion import convert_to_tracked
 from trellis.core.mutable import record_property_access
-from trellis.core.rendering import get_active_render_tree
+from trellis.core.rendering import get_active_render_tree, is_render_active
 
 
 # Sentinel for missing default argument
@@ -147,12 +148,12 @@ class Stateful:
         ctx = get_active_render_tree()
 
         # Outside execution context - create normally
-        # _current_node_id being set indicates we're executing a component
-        if ctx is None or ctx._current_node_id is None:
+        if ctx is None or not ctx.is_active():
             return object.__new__(cls)
 
         # Use _current_node_id and _element_state for caching
         node_id = ctx._current_node_id
+        assert node_id is not None  # Guaranteed by is_active() check above
 
         state = ctx.get_element_state(node_id)
         call_idx = state.state_call_count
@@ -195,7 +196,7 @@ class Stateful:
         context = get_active_render_tree()
 
         # Outside render context - return raw value without tracking
-        if context is None or context._current_node_id is None:
+        if context is None or not context.is_active():
             return value
 
         # Inside render context - register dependency
@@ -218,12 +219,14 @@ class Stateful:
             state_info.node_trees[node_id] = weakref.ref(context)
 
             # Register reverse mapping for cleanup on re-render/unmount
+            # Use composite key (id(self), prop_name) for uniform shape with tracked collections
             element_state = context.get_element_state(node_id)
             stateful_id = id(self)
+            composite_key = (stateful_id, name)
             if stateful_id in element_state.watched_deps:
-                element_state.watched_deps[stateful_id][1].add(name)
+                element_state.watched_deps[stateful_id][1].add(composite_key)
             else:
-                element_state.watched_deps[stateful_id] = (self, {name})
+                element_state.watched_deps[stateful_id] = (self, {composite_key})
 
         # Record access for mutable() to capture
         record_property_access(self, name, value)
@@ -235,6 +238,9 @@ class Stateful:
 
         When a public attribute is modified, all nodes that previously
         read that attribute are marked dirty and will re-render.
+
+        Plain list/dict/set values are auto-converted to TrackedList/Dict/Set
+        for reactive collection tracking.
 
         Args:
             name: The attribute name to set
@@ -249,6 +255,9 @@ class Stateful:
             object.__setattr__(self, name, value)
             return
 
+        # Auto-convert plain collections to tracked versions (recursively)
+        value = convert_to_tracked(value, owner=self, attr=name)
+
         # Check if this is initialization vs modification
         # Use __dict__ to check instance attributes only (not class defaults from @dataclass)
         instance_dict = object.__getattribute__(self, "__dict__")
@@ -262,14 +271,12 @@ class Stateful:
             is_modification = False
 
         # Prevent state modifications during render (but allow initialization)
-        if is_modification:
-            ctx = get_active_render_tree()
-            if ctx is not None and ctx._current_node_id is not None:
-                raise RuntimeError(
-                    f"Cannot modify state '{name}' during render. "
-                    f"State changes must happen outside of component execution "
-                    f"(e.g., in callbacks, mount/unmount hooks, or timers)."
-                )
+        if is_modification and is_render_active():
+            raise RuntimeError(
+                f"Cannot modify state '{name}' during render. "
+                f"State changes must happen outside of component execution "
+                f"(e.g., in callbacks, mount/unmount hooks, or timers)."
+            )
 
         # Set the value
         object.__setattr__(self, name, value)
@@ -307,6 +314,24 @@ class Stateful:
         """Called before owning element unmounts. Override for cleanup."""
         pass
 
+    def _clear_dep(self, node_id: str, dep_key: tp.Any) -> None:
+        """Clear a specific dependency for a node.
+
+        Called by RenderTree.clear_node_dependencies during cleanup.
+
+        Args:
+            node_id: The node ID to remove from dependencies
+            dep_key: The property name to clear
+        """
+        try:
+            deps = object.__getattribute__(self, "_state_props")
+            if dep_key in deps:
+                state_info = deps[dep_key]
+                state_info.node_ids.discard(node_id)
+                state_info.node_trees.pop(node_id, None)
+        except AttributeError:
+            pass  # _state_props may not exist yet
+
     # -------------------------------------------------------------------------
     # Context API - share state with descendant components
     # -------------------------------------------------------------------------
@@ -334,13 +359,14 @@ class Stateful:
             RuntimeError: If called outside of a render context
         """
         ctx = get_active_render_tree()
-        if ctx is None or ctx._current_node_id is None:
+        if ctx is None or not ctx.is_active():
             raise RuntimeError(
                 f"Cannot use 'with {type(self).__name__}()' outside of render context. "
                 f"Context API is only available within component execution."
             )
 
         node_id = ctx._current_node_id
+        assert node_id is not None  # Guaranteed by is_active() check above
         state = ctx.get_element_state(node_id)
         state.context[type(self)] = self
         return self
@@ -406,7 +432,7 @@ class Stateful:
                 and no default was provided
         """
         ctx = get_active_render_tree()
-        if ctx is None or ctx._current_node_id is None:
+        if ctx is None or not ctx.is_active():
             raise RuntimeError(
                 f"Cannot call {cls.__name__}.from_context() outside of render context. "
                 f"Context API is only available within component execution."

@@ -49,6 +49,7 @@ from trellis.core.react_component import ReactComponentBase, react_component_bas
 from trellis.core.rendering import ElementNode, ElementState, RenderTree
 from trellis.core.state import Stateful
 from trellis.core.style_props import Height, Margin, Padding, Width
+from trellis.core.tracked import TrackedDict, TrackedList, TrackedSet
 
 __all__ = [
     "Component",
@@ -66,6 +67,9 @@ __all__ = [
     "ReactComponentBase",
     "RenderTree",
     "Stateful",
+    "TrackedDict",
+    "TrackedList",
+    "TrackedSet",
     "Width",
     "callback",
     "component",
