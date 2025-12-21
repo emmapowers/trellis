@@ -33,6 +33,7 @@ from trellis.widgets import (
     StatusIndicator,
     Tab,
     Table,
+    TableColumn,
     Tabs,
     Tag,
     TextInput,
@@ -964,10 +965,7 @@ class TestTableWidget:
         @component
         def App() -> None:
             Table(
-                columns=[
-                    {"key": "name", "label": "Name"},
-                    {"key": "value", "label": "Value"},
-                ],
+                columns=["name", "value"],
                 data=[
                     {"name": "Item 1", "value": 100},
                     {"name": "Item 2", "value": 200},
@@ -977,10 +975,14 @@ class TestTableWidget:
         ctx = RenderTree(App)
         ctx.render()
 
-        table = ctx.root_node.children[0]
-        assert table.component.name == "Table"
-        assert len(table.properties["columns"]) == 2
-        assert len(table.properties["data"]) == 2
+        # Table is a CompositionComponent that wraps _TableInner
+        table_comp = ctx.root_node.children[0]
+        assert table_comp.component.name == "Table"
+        # The actual TableInner is a child
+        table_inner = table_comp.children[0]
+        assert table_inner.component.element_name == "TableInner"
+        assert len(table_inner.properties["columns"]) == 2
+        assert len(table_inner.properties["data"]) == 2
 
     def test_table_with_styling_options(self) -> None:
         """Table accepts striped, compact, bordered props."""
@@ -996,6 +998,138 @@ class TestTableWidget:
         assert table.properties["striped"] is True
         assert table.properties["compact"] is False
         assert table.properties["bordered"] is True
+
+    def test_table_with_custom_cell_render(self) -> None:
+        """Table with custom cell rendering creates CellSlot children."""
+        render_calls: list[dict] = []
+
+        def CustomCell(*, row: dict) -> None:
+            render_calls.append(row)
+            Label(text=f"Custom: {row['name']}")
+
+        @component
+        def App() -> None:
+            Table(
+                columns=[
+                    TableColumn(name="name", label="Name"),
+                    TableColumn(name="value", label="Value", render=CustomCell),
+                ],
+                data=[
+                    {"_key": "row1", "name": "Item 1", "value": 100},
+                    {"_key": "row2", "name": "Item 2", "value": 200},
+                ],
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        # Verify render function was called for each row
+        assert len(render_calls) == 2
+        assert render_calls[0]["name"] == "Item 1"
+        assert render_calls[1]["name"] == "Item 2"
+
+        # Verify CellSlot children were created
+        table_comp = ctx.root_node.children[0]
+        table_inner = table_comp.children[0]
+        assert table_inner.component.element_name == "TableInner"
+
+        # CellSlots are children of TableInner
+        cell_slots = [c for c in table_inner.children if c.component.element_name == "CellSlot"]
+        assert len(cell_slots) == 2  # One per row (only 'value' column has render)
+
+        # Verify slot IDs follow "rowKey:columnName" format
+        slot_ids = [slot.properties["slot"] for slot in cell_slots]
+        assert "row1:value" in slot_ids
+        assert "row2:value" in slot_ids
+
+    def test_table_row_key_from_column(self) -> None:
+        """Table uses column with row_key=True for slot keys."""
+
+        @component
+        def CustomCell(*, row: dict) -> None:
+            Label(text=row["name"])
+
+        @component
+        def App() -> None:
+            Table(
+                columns=[
+                    TableColumn(name="id", label="ID", row_key=True),
+                    TableColumn(name="name", label="Name", render=CustomCell),
+                ],
+                data=[
+                    {"id": "abc123", "name": "Item 1"},
+                    {"id": "def456", "name": "Item 2"},
+                ],
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        table_inner = ctx.root_node.children[0].children[0]
+        cell_slots = [c for c in table_inner.children if c.component.element_name == "CellSlot"]
+
+        # Slot keys should use the row_key column value
+        slot_ids = [slot.properties["slot"] for slot in cell_slots]
+        assert "abc123:name" in slot_ids
+        assert "def456:name" in slot_ids
+
+    def test_table_row_key_from_key_field(self) -> None:
+        """Table falls back to _key field for slot keys."""
+
+        @component
+        def CustomCell(*, row: dict) -> None:
+            Label(text=row["name"])
+
+        @component
+        def App() -> None:
+            Table(
+                columns=[
+                    TableColumn(name="name", label="Name", render=CustomCell),
+                ],
+                data=[
+                    {"_key": "custom1", "name": "Item 1"},
+                    {"_key": "custom2", "name": "Item 2"},
+                ],
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        table_inner = ctx.root_node.children[0].children[0]
+        cell_slots = [c for c in table_inner.children if c.component.element_name == "CellSlot"]
+
+        slot_ids = [slot.properties["slot"] for slot in cell_slots]
+        assert "custom1:name" in slot_ids
+        assert "custom2:name" in slot_ids
+
+    def test_table_row_key_from_index(self) -> None:
+        """Table falls back to row index for slot keys."""
+
+        @component
+        def CustomCell(*, row: dict) -> None:
+            Label(text=row["name"])
+
+        @component
+        def App() -> None:
+            Table(
+                columns=[
+                    TableColumn(name="name", label="Name", render=CustomCell),
+                ],
+                data=[
+                    {"name": "Item 1"},  # No _key or row_key column
+                    {"name": "Item 2"},
+                ],
+            )
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        table_inner = ctx.root_node.children[0].children[0]
+        cell_slots = [c for c in table_inner.children if c.component.element_name == "CellSlot"]
+
+        slot_ids = [slot.properties["slot"] for slot in cell_slots]
+        assert "0:name" in slot_ids
+        assert "1:name" in slot_ids
 
 
 class TestStatWidget:

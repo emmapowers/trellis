@@ -17,16 +17,14 @@ Usage:
     )
 
     # Full control with TableColumn
+    def PriceCell(*, row: dict) -> None:
+        Label(text=f"${row['price']:.2f}")
+
     Table(
         columns=[
             TableColumn(name="ticker", label="Ticker", row_key=True),
             TableColumn(name="name", label="Company"),
-            TableColumn(
-                name="price",
-                label="Price",
-                align="right",
-                render=lambda row: PriceCell(row["price"], row["change"]),
-            ),
+            TableColumn(name="price", label="Price", align="right", render=PriceCell),
         ],
         data=[
             {"ticker": "AAPL", "name": "Apple Inc.", "price": 150.0, "change": 2.5},
@@ -69,7 +67,7 @@ class TableColumn:
     icon: IconName | None = None
     width: str | None = None
     align: tp.Literal["left", "center", "right"] = "left"
-    render: Callable[[dict[str, tp.Any]], None] | None = None
+    render: Callable[..., None] | None = None  # Signature: (*, row: dict[str, Any]) -> None
     row_key: bool = False
 
 
@@ -78,6 +76,15 @@ def _normalize_column(col: str | TableColumn) -> TableColumn:
     if isinstance(col, str):
         return TableColumn(name=col)
     return col
+
+
+def _escape_slot_key_part(s: str) -> str:
+    """Escape colons in a string for use in slot keys.
+
+    This prevents collision when row keys contain colons.
+    Must match the escaping in Table.tsx.
+    """
+    return s.replace("\\", "\\\\").replace(":", "\\:")
 
 
 def _get_row_key(
@@ -181,7 +188,7 @@ def Table(
         )
 
         # Custom cell rendering
-        def status_cell(row):
+        def status_cell(*, row: dict) -> None:
             color = "green" if row["status"] == "Active" else "orange"
             with Row(gap=4):
                 Icon(name=IconName.CIRCLE, size=8, color=color)
@@ -258,6 +265,7 @@ def Table(
             row_key = _get_row_key(row, row_index, key_column)
             for col in cols:
                 if col.render is not None:
-                    slot_id = f"{row_key}:{col.name}"
+                    # Escape colons in row key to prevent collision
+                    slot_id = f"{_escape_slot_key_part(row_key)}:{col.name}"
                     with CellSlot(slot=slot_id, key=slot_id):
-                        col.render(row)
+                        col.render(row=row)

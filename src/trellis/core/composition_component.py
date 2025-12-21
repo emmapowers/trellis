@@ -45,11 +45,16 @@ class RenderFunc(tp.Protocol):
 
     Render functions take keyword-only props and return None.
     They create child components by calling them during execution.
+
+    Note: The signature uses `*args, **props` to be permissive and allow
+    functions with specific typed parameters. All components should use
+    keyword-only arguments when called.
     """
 
     __name__: str
 
-    # Use permissive signature to allow functions with specific typed parameters
+    # Use permissive signature to allow functions with specific typed parameters.
+    # Actual component functions use keyword-only args (e.g., def Foo(*, text: str)).
     def __call__(self, *args: tp.Any, **props: tp.Any) -> None: ...
 
 

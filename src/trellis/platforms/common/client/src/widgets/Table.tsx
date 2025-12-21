@@ -48,13 +48,24 @@ function useCellSlots(children: React.ReactNode): Map<string, React.ReactNode> {
   return useMemo(() => {
     const slots = new Map<string, React.ReactNode>();
     React.Children.forEach(children, (child) => {
-      if (React.isValidElement(child) && child.props.slot) {
+      if (
+        React.isValidElement(child) &&
+        typeof child.props.slot === "string"
+      ) {
         // The CellSlot's children are the actual content to render
-        slots.set(child.props.slot as string, child.props.children);
+        slots.set(child.props.slot, child.props.children);
       }
     });
     return slots;
   }, [children]);
+}
+
+/**
+ * Escape colons in a string for use in slot keys.
+ * This prevents collision when row keys contain colons.
+ */
+function escapeSlotKeyPart(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/:/g, "\\:");
 }
 
 /**
@@ -154,7 +165,8 @@ export function TableInner({
               }}
             >
               {columns.map((col, colIndex) => {
-                const slotKey = `${rowKey}:${col.name}`;
+                // Escape colons in row key to match Python-side slot key generation
+                const slotKey = `${escapeSlotKeyPart(rowKey)}:${col.name}`;
                 const slotContent = cellSlots.get(slotKey);
                 const defaultContent = row[col.name];
 
@@ -200,7 +212,3 @@ interface CellSlotProps {
 export function CellSlot({ children }: CellSlotProps): React.ReactElement {
   return <>{children}</>;
 }
-
-// Keep Table as an alias for backward compatibility during migration
-// TODO: Remove after migration is complete
-export const Table = TableInner;

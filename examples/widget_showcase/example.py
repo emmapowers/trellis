@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import base64
 import inspect
 import typing as tp
@@ -66,6 +67,9 @@ def example(
         func_source = _add_component_decorator(stripped_source)
 
         # Get source file for searching variable names
+        # Note: Only reads project source files via inspect module.
+        # This is safe for the widget showcase but shouldn't be used
+        # in production code with untrusted functions.
         all_source_lines: list[str] = []
         try:
             source_file = inspect.getsourcefile(func)
@@ -148,37 +152,39 @@ def _add_component_decorator(source: str) -> str:
 
 
 def _find_variable_source(var_name: str, source_lines: list[str]) -> str | None:
-    """Find the source for a variable assignment in the source lines.
+    """Find the source for a variable assignment using AST parsing.
 
-    Handles multi-line assignments for dicts, lists, etc.
+    Uses Python's ast module to correctly handle multi-line assignments,
+    strings with brackets, comments, and other edge cases that simple
+    bracket counting would fail on.
+
+    Args:
+        var_name: Name of the variable to find (must be a valid identifier).
+        source_lines: Source code lines from the file.
+
+    Returns:
+        Source code of the variable assignment, or None if not found.
     """
-    for i, line in enumerate(source_lines):
-        # Match "VAR_NAME = " at the start of a line (allowing for spaces)
-        stripped = line.lstrip()
-        if stripped.startswith(f"{var_name} =") or stripped.startswith(f"{var_name}="):
-            # Found the start, now find the end
-            result_lines = [line]
-            j = i + 1
+    # Validate variable name to prevent injection
+    if not var_name.isidentifier():
+        return None
 
-            # Count brackets to handle multi-line expressions
-            bracket_count = (
-                line.count("[")
-                - line.count("]")
-                + line.count("(")
-                - line.count(")")
-                + line.count("{")
-                - line.count("}")
-            )
+    source = "\n".join(source_lines)
 
-            while j < len(source_lines) and bracket_count > 0:
-                next_line = source_lines[j]
-                result_lines.append(next_line)
-                bracket_count += next_line.count("[") - next_line.count("]")
-                bracket_count += next_line.count("(") - next_line.count(")")
-                bracket_count += next_line.count("{") - next_line.count("}")
-                j += 1
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        # If the file doesn't parse, can't extract source
+        return None
 
-            return "\n".join(result_lines)
+    # Find Assign node targeting var_name
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == var_name:
+                    # Use get_source_segment to extract exact source
+                    segment = ast.get_source_segment(source, node)
+                    return segment if segment else None
 
     return None
 

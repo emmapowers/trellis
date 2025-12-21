@@ -1,11 +1,12 @@
 """Table section of the widget showcase."""
 
+import typing as tp
+
 from trellis import component
 from trellis import widgets as w
 
 from ..components import ExampleCard
 from ..example import example
-
 
 # Stock data for the showcase table (prices as of Dec 2024)
 STOCKS = [
@@ -60,13 +61,14 @@ STOCKS = [
 ]
 
 
-def TickerCell(row: dict) -> None:
+def TickerCell(*, row: dict[str, tp.Any]) -> None:
     """Ticker symbol in bold monospace."""
     w.Label(text=row["ticker"], bold=True, style={"fontFamily": "monospace"})
 
 
-def PriceCell(row: dict) -> None:
+def PriceCell(*, row: dict[str, tp.Any]) -> None:
     """Current price with change indicator."""
+    # Fields always present in STOCKS data
     price = row["price"]
     change = row["change"]
     change_pct = row["change_pct"]
@@ -87,16 +89,17 @@ def PriceCell(row: dict) -> None:
             )
 
 
-def HistoryCell(row: dict) -> None:
+def HistoryCell(*, row: dict[str, tp.Any]) -> None:
     """Sparkline showing price history."""
+    # history is always a non-empty list in STOCKS data
     history = row["history"]
-    # Color based on overall trend
     color = "#16a34a" if history[-1] >= history[0] else "#dc2626"
     w.Sparkline(data=history, width=100, height=28, color=color)
 
 
-def ActionsCell(row: dict) -> None:
+def ActionsCell(*, row: dict[str, tp.Any]) -> None:
     """Action buttons."""
+    del row  # Unused, but required by render function signature
     with w.Row(gap=8, justify="end"):
         w.Button(text="Buy", size="sm", variant="primary")
         w.Button(text="Watch", size="sm", variant="outline")
@@ -215,7 +218,7 @@ def TableWithIcons() -> None:
     )
 
 
-def StatusCell(row: dict) -> None:
+def StatusCell(*, row: dict[str, tp.Any]) -> None:
     """Custom status cell with icon."""
     status = row["status"]
     if status == "Active":
