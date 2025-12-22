@@ -192,7 +192,7 @@ def _find_variable_source(var_name: str, source_lines: list[str]) -> str | None:
 def make_playground_url(
     source: str,
     func_name: str,
-    base_url: str = "/playground/",
+    base_url: str = "/trellis/playground/",
 ) -> str:
     """Generate a playground URL with the example code.
 
@@ -204,11 +204,8 @@ def make_playground_url(
     Returns:
         Full URL with #code=<base64> hash.
     """
-    # Build imports based on what's used in the source
-    imports = ["component"]
-    if "Stateful" in source:
-        imports.append("Stateful")
-    imports_str = ", ".join(imports)
+    # Import core framework features for playground experimentation
+    imports_str = "component, Stateful, mutable, callback, Margin, Padding, Width, Height"
 
     # Build full code with imports and App wrapper
     full_code = f"""\
