@@ -1,64 +1,77 @@
 """Form inputs section of the widget showcase."""
 
-from trellis import component, mutable
+from trellis import Stateful, component, mutable
 from trellis import widgets as w
 
-from ..state import ShowcaseState
+from ..components import ExampleCard
+from ..example import example
+
+
+class FormState(Stateful):
+    """State for form inputs example."""
+
+    text_value: str = ""
+    number_value: int = 50
+    select_value: str = "option1"
+    checkbox_value: bool = False
+    slider_value: float = 50
+
+
+@example("Form Inputs", includes=[FormState])
+def FormInputs() -> None:
+    """Interactive form controls with two-way data binding."""
+    state = FormState()
+    with state:
+        with w.Column(gap=12):
+            with w.Row(gap=8, align="center"):
+                w.Label(text="Text:", width=80)
+                w.TextInput(
+                    value=mutable(state.text_value),
+                    placeholder="Enter text...",
+                    width=200,
+                )
+
+            with w.Row(gap=8, align="center"):
+                w.Label(text="Number:", width=80)
+                w.NumberInput(
+                    value=mutable(state.number_value),
+                    min=0,
+                    max=100,
+                    width=200,
+                )
+
+            with w.Row(gap=8, align="center"):
+                w.Label(text="Select:", width=80)
+                w.Select(
+                    value=mutable(state.select_value),
+                    options=[
+                        {"value": "option1", "label": "Option 1"},
+                        {"value": "option2", "label": "Option 2"},
+                        {"value": "option3", "label": "Option 3"},
+                    ],
+                    width=200,
+                )
+
+            with w.Row(gap=8, align="center"):
+                w.Label(text="Toggle:", width=80)
+                w.Checkbox(
+                    checked=mutable(state.checkbox_value),
+                    label="Enable feature",
+                )
+
+            with w.Row(gap=8, align="center"):
+                w.Label(text="Slider:", width=80)
+                w.Slider(
+                    value=mutable(state.slider_value),
+                    min=0,
+                    max=100,
+                    width=200,
+                )
+                w.Label(text=f"{int(state.slider_value)}", width=40)
 
 
 @component
 def FormInputsSection() -> None:
     """Showcase form input widgets."""
-    state = ShowcaseState.from_context()
-
-    with w.Column(gap=12):
-        # Text input
-        with w.Row(gap=8, align="center"):
-            w.Label(text="Text:", width=80)
-            w.TextInput(
-                value=mutable(state.text_value),
-                placeholder="Enter text...",
-                width=200,
-            )
-
-        # Number input
-        with w.Row(gap=8, align="center"):
-            w.Label(text="Number:", width=80)
-            w.NumberInput(
-                value=mutable(state.number_value),
-                min=0,
-                max=100,
-                width=200,
-            )
-
-        # Select
-        with w.Row(gap=8, align="center"):
-            w.Label(text="Select:", width=80)
-            w.Select(
-                value=mutable(state.select_value),
-                options=[
-                    {"value": "option1", "label": "Option 1"},
-                    {"value": "option2", "label": "Option 2"},
-                    {"value": "option3", "label": "Option 3"},
-                ],
-                width=200,
-            )
-
-        # Checkbox
-        with w.Row(gap=8, align="center"):
-            w.Label(text="Toggle:", width=80)
-            w.Checkbox(
-                checked=mutable(state.checkbox_value),
-                label="Enable feature",
-            )
-
-        # Slider
-        with w.Row(gap=8, align="center"):
-            w.Label(text="Slider:", width=80)
-            w.Slider(
-                value=mutable(state.slider_value),
-                min=0,
-                max=100,
-                width=200,
-            )
-            w.Label(text=f"{int(state.slider_value)}", width=40)
+    with w.Column(gap=16):
+        ExampleCard(example=FormInputs)

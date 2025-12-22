@@ -12,6 +12,7 @@ from .sections import (
     FeedbackSection,
     FormInputsSection,
     IconsSection,
+    LayoutSection,
     NavigationSection,
     ProgressSection,
     StatusSection,
@@ -24,6 +25,7 @@ from .state import ShowcaseState
 
 # Tab definitions: (id, label, icon, component)
 TABS = [
+    ("layout", "Layout", IconName.LAYOUT_GRID, LayoutSection),
     ("buttons", "Buttons", IconName.MOUSE_POINTER, ButtonsSection),
     ("forms", "Forms", IconName.EDIT_2, FormInputsSection),
     ("status", "Status", IconName.CHECK_CIRCLE, StatusSection),
@@ -77,12 +79,16 @@ def App() -> None:
                 ):
                     for tab_id, label, icon, _ in TABS:
                         is_active = state.active_tab == tab_id
+
+                        def set_tab(tid: str=tab_id) -> None:
+                            state.active_tab = tid
+
                         w.Button(
                             text=label,
                             variant="primary" if is_active else "ghost",
                             size="sm",
-                            on_click=lambda t=tab_id: setattr(state, "active_tab", t),
-                            width="100%",
+                            on_click=set_tab,
+                            full_width=True,
                             style={"justifyContent": "flex-start"},
                         )
 

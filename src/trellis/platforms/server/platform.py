@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import uvicorn
+
+if TYPE_CHECKING:
+    from trellis.core.rendering import ElementNode
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
@@ -68,7 +72,7 @@ class ServerPlatform(Platform):
 
     async def run(
         self,
-        root_component: Callable[[], None],
+        root_component: Callable[[], ElementNode],
         *,
         host: str = "127.0.0.1",
         port: int | None = None,

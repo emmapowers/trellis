@@ -13,6 +13,7 @@ from .data import DataDisplaySection
 from .navigation import NavigationSection
 from .feedback import FeedbackSection
 from .actions import ActionsSection
+from .layout import LayoutSection
 
 __all__ = [
     "ButtonsSection",
@@ -28,4 +29,5 @@ __all__ = [
     "NavigationSection",
     "FeedbackSection",
     "ActionsSection",
+    "LayoutSection",
 ]

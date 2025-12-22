@@ -43,13 +43,12 @@ __all__ = ["CompositionComponent", "RenderFunc", "component"]
 class RenderFunc(tp.Protocol):
     """Protocol for render functions used with @component decorator.
 
-    Render functions take keyword-only props and return None.
-    They create child components by calling them during execution.
+    Render functions return None and create child components by calling
+    them during execution.
     """
 
     __name__: str
-
-    def __call__(self, /, **props: tp.Any) -> None: ...
+    __call__: tp.Callable[..., None]
 
 
 class CompositionComponent(Component):

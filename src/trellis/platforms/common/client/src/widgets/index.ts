@@ -31,7 +31,7 @@ import { Row } from "./Row";
 import { Select } from "./Select";
 import { Slider } from "./Slider";
 import { StatusIndicator } from "./StatusIndicator";
-import { Table } from "./Table";
+import { TableInner, CellSlot } from "./Table";
 import { TextInput } from "./TextInput";
 import { Toolbar } from "./Toolbar";
 import { Tooltip } from "./Tooltip";
@@ -67,7 +67,8 @@ const widgetRegistry: Record<string, React.ComponentType<any>> = {
   Stat,
   StatusIndicator,
   Tab,
-  Table,
+  TableInner,
+  CellSlot,
   Tabs,
   Tag,
   TextInput,
@@ -120,7 +121,8 @@ export {
   Stat,
   StatusIndicator,
   Tab,
-  Table,
+  TableInner,
+  CellSlot,
   Tabs,
   Tag,
   TextInput,

@@ -36,8 +36,8 @@ fmt-check = { cmd = "black --check src", description = "Check black formatting" 
 ruff-fix = { cmd = "ruff check --fix src", depends-on = ["fmt"], description = "Run ruff with auto-fix" }
 ruff-check = { cmd = "ruff check src", description = "Check ruff linting" }
 
-mypy = { cmd = "dmypy run src", description = "Run mypy (daemon)" }
-mypy-ci = { cmd = "mypy src", description = "Run mypy (full check)" }
+mypy = { cmd = "dmypy run src examples", description = "Run mypy (daemon)" }
+mypy-ci = { cmd = "mypy src examples", description = "Run mypy (full check)" }
 
 test = { cmd = "pytest", description = "Run unit tests" }
 test-cov = { cmd = "pytest --cov=src/trellis --cov-report=term-missing", description = "Run unit tests with coverage" }
@@ -54,6 +54,7 @@ clean = { cmd = "rm -rf dist build .mypy_cache .ruff_cache .pytest_cache .covera
 
 # Run demo
 demo = { cmd = "python examples/demo.py", description = "Run the demo app" }
+showcase = { cmd = "python -m examples.widget_showcase", description = "Run the widget showcase" }
 
 # Bundle build tasks
 build-browser-bundle = { cmd = "trellis bundle build --platform browser", description = "Build browser client bundle (includes worker)" }

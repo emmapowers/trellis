@@ -3,10 +3,13 @@
 from trellis import component
 from trellis import widgets as w
 
+from ..components import ExampleCard
+from ..example import example
 
-@component
-def TooltipSection() -> None:
-    """Showcase tooltips."""
+
+@example("Tooltip Positions")
+def TooltipPositions() -> None:
+    """Tooltips can appear on any side of an element."""
     with w.Row(gap=16, justify="center"):
         with w.Tooltip(content="Tooltip on top", position="top"):
             w.Button(text="Top", variant="outline")
@@ -19,3 +22,10 @@ def TooltipSection() -> None:
 
         with w.Tooltip(content="Tooltip on right", position="right"):
             w.Button(text="Right", variant="outline")
+
+
+@component
+def TooltipSection() -> None:
+    """Showcase tooltips."""
+    with w.Column(gap=16):
+        ExampleCard(example=TooltipPositions)

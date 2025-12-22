@@ -79,9 +79,6 @@ def TodoFooter() -> None:
     """Footer with count, filters, and clear completed button."""
     state = TodosState.from_context()
 
-    def set_filter(f: FilterType) -> None:
-        state.filter = f
-
     with w.Row(gap=12, align="center", justify="between", padding=Padding(x=12, y=10)):
         # Item count
         count_text = f"{state.active_count} item{'s' if state.active_count != 1 else ''} left"
@@ -90,9 +87,13 @@ def TodoFooter() -> None:
         # Filter buttons
         with w.Row(gap=4):
             for filter_type in FilterType:
+
+                def set_filter(f: FilterType = filter_type) -> None:
+                    state.filter = f
+
                 w.Button(
                     text=filter_type.value.capitalize(),
-                    on_click=lambda f=filter_type: set_filter(f),
+                    on_click=set_filter,
                     variant="primary" if state.filter == filter_type else "ghost",
                     size="sm",
                 )
