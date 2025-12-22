@@ -58,8 +58,9 @@ async def _trellis_main():
 }
 
 const DEFAULT_CODE = `from dataclasses import dataclass
-from trellis import Stateful, component
+from trellis import component, Stateful, mutable, callback, Margin, Padding, Width, Height
 from trellis import widgets as w
+from trellis import html as h
 
 @dataclass
 class CounterState(Stateful):
