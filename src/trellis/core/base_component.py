@@ -4,8 +4,14 @@ This module provides the abstract Component base class that all components
 inherit from. Components are the building blocks of Trellis UIs.
 
 The Component class implements the IComponent protocol and provides:
-- `__call__()`: Creates an ElementNode (placement phase - no rendering)
+- `__call__()`: Creates an ElementNode with eager execution
 - `render()`: Abstract method that subclasses implement for rendering
+
+The eager execution model:
+1. When a component is called, it checks if the old node can be reused
+2. If reusable (same component, same props, not dirty), returns old node
+3. If not reusable, executes immediately (for non-container components)
+4. Container components defer execution to __exit__ after children collected
 
 Example:
     ```python
@@ -91,10 +97,13 @@ class Component(ABC):
         return False
 
     def _place(self, /, **props: tp.Any) -> ElementNode:
-        """Place this component, creating an ElementNode.
+        """Place this component with eager execution.
 
-        This is the placement phase - NO execution occurs here. The node
-        captures the component reference, key, and props for later reconciliation.
+        This implements the eager execution model:
+        1. Check if the old node at this position can be reused
+        2. If reusable (same component, same props, not dirty), return old node
+        3. If not reusable, create new node and execute immediately
+        4. Container components defer execution to __exit__ after children collected
 
         If called inside a `with` block (and this component doesn't accept children),
         the node is automatically added to the parent's pending children.
@@ -108,13 +117,13 @@ class Component(ABC):
 
         Example:
             ```python
-            # Creates node, doesn't render yet
+            # Creates and executes immediately (if not reused)
             node = Button(text="Click me", key="btn-1")
 
             # Inside a with block, auto-collected
             with Column():
-                Button(text="First")   # Added to Column's children
-                Button(text="Second")  # Added to Column's children
+                Button(text="First")   # Executed immediately, added to children
+                Button(text="Second")  # Executed immediately, added to children
             ```
         """
         key: str | None = None
@@ -134,22 +143,66 @@ class Component(ABC):
 
         # Compute position-based ID at creation time, including component identity
         position_id = ctx.next_position_id(self, key)
+        frozen_props = freeze_props(props)
 
+        # REUSE CHECK - the key optimization from Phase 5
+        # We can only reuse if:
+        # 1. Old node exists at this position
+        # 2. Same component type
+        # 3. Same props
+        # 4. Node is mounted (has active ElementState with mounted=True)
+        # 5. Node is not dirty
+        old_node = ctx.get_node(position_id)
+        state = ctx._element_state.get(position_id)
+        is_mounted = state is not None and state.mounted
+        is_dirty = state.dirty if state else False
+
+        if (
+            old_node is not None
+            and old_node.component == self
+            and old_node.props == frozen_props
+            and is_mounted
+            and not is_dirty
+        ):
+            # Reuse old node - skip execution entirely, preserve subtree
+            if ctx.has_active_frame() and not self._has_children_param:
+                ctx.add_to_current_frame(old_node)
+                object.__setattr__(old_node, "_auto_collected", True)
+            return old_node
+
+        # Create new node
         node = ElementNode(
             component=self,
             key=key,
-            props=freeze_props(props),
+            props=frozen_props,
             id=position_id,
         )
 
-        # Auto-collect: add to parent node's pending children (if any)
-        # BUT only if this component doesn't have a children param - those will
-        # be added in __exit__ of the with block instead
-        if ctx.has_active_frame() and not self._has_children_param:
-            ctx.add_to_current_frame(node)
-            # Mark as auto-collected to prevent double-collection if used with `with`
-            object.__setattr__(node, "_auto_collected", True)
+        # Determine parent_id from current frame (or None for root)
+        frame = ctx.current_frame()
+        parent_id = frame.parent_id if frame else None
 
+        # EAGER EXECUTION for non-container components
+        # Container components defer execution to __exit__ after children collected
+        if not self._has_children_param:
+            # Get old child_ids for reconciliation (if re-executing existing node)
+            old_child_ids = list(old_node.child_ids) if old_node else None
+
+            # Execute the component immediately
+            executed_node = ctx.eager_execute_node(node, parent_id, old_child_ids=old_child_ids)
+
+            # Auto-collect: add to parent node's pending children
+            if ctx.has_active_frame():
+                ctx.add_to_current_frame(executed_node)
+                object.__setattr__(executed_node, "_auto_collected", True)
+
+            return executed_node
+
+        # Container component - defer execution to __exit__
+        # Store the node but don't execute yet (needs children from with block)
+        ctx.store_node(node)
+
+        # Don't auto-collect containers - they're added in __exit__
         return node
 
     def __call__(self, /, **props: tp.Any) -> ElementNode:

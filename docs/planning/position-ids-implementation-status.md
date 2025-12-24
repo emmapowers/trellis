@@ -1,8 +1,15 @@
-# Position-Based IDs Implementation Status
+# Rendering Refactor Implementation Status
 
 ## Overview
 
-This document tracks the implementation of Phase 1 (Position-Based IDs) from the [rendering refactor plan](./rendering-refactor-plan.md).
+This document tracks the implementation of the [rendering refactor plan](./rendering-refactor-plan.md).
+
+**Progress:**
+- ✅ Phase 1: Position-Based IDs
+- ✅ Phase 2: Flat Node Storage
+- ✅ Phase 3: Pure Reconciler
+- ✅ Phase 4: Inline Patch Generation
+- ✅ Phase 5: Eager Execution
 
 ## ✅ Phase 1 Complete
 
@@ -193,6 +200,40 @@ The reconciliation logic has been extracted into a pure function:
 - Delegates side effects to `ctx.process_reconcile_result()`
 - Much simpler implementation
 
+## ✅ Phase 4 Complete: Inline Patch Generation
+
+Patches are now generated inline during reconciliation instead of a separate tree walk:
+
+### 1. Patch Accumulation Infrastructure (`rendering.py`)
+- Added `_patches: list[Patch]` to RenderTree for accumulating patches during render
+- Added `_is_incremental_render: bool` flag to control patch emission
+- Added `serialized_props` and `previous_child_ids` fields to ElementState
+
+### 2. Inline Patch Generation (`rendering.py`)
+- New helper methods: `_emit_patch()`, `_serialize_node_for_patch()`, `_serialize_props_for_state()`
+- `_emit_update_patch_if_changed()` compares current vs previous state and emits UpdatePatch
+- `_populate_subtree_state()` initializes previous state for new subtrees
+
+### 3. Updated `process_reconcile_result()` (`rendering.py`)
+- Emits `RemovePatch` for removed nodes
+- Emits `AddPatch` with serialized subtree for added nodes
+- Emits `UpdatePatch` for matched nodes with changed props
+
+### 4. Updated `_render_single_node()` (`rendering.py`)
+- Emits `UpdatePatch` for re-rendered nodes if props or children changed
+
+### 5. Updated `render_and_diff()` (`rendering.py`)
+- Clears and collects patches during render cycle
+- Returns accumulated patches (no longer calls `compute_patches()`)
+
+### 6. Updated `render()` (`rendering.py`)
+- Populates previous state in ElementState via `_populate_subtree_state()`
+
+### 7. Removed Old Infrastructure
+- Removed `_previous_props`, `_previous_children`, `_removed_ids` from RenderTree
+- Removed `compute_patches()`, `_compute_node_patches()`, `_get_stable_id()`, `_populate_subtree_state()` from serialization.py
+- Updated `unmount_node_tree()` to no longer track `_removed_ids`
+
 ## Test Status
 
 - 482 tests passing
@@ -200,25 +241,78 @@ The reconciliation logic has been extracted into a pure function:
 - All type checks pass
 - All linting passes
 
-## Files Modified for Phase 3
+## Files Modified for Phase 4
 
 | File | Changes |
 |------|---------|
-| `src/trellis/core/reconcile.py` | Added `ReconcileResult` dataclass, `reconcile_children()` pure function, simplified `reconcile_node_children()` |
-| `src/trellis/core/rendering.py` | Added `process_reconcile_result()` method, import `ReconcileResult` |
+| `src/trellis/core/rendering.py` | Added `_patches`, `_is_incremental_render`, ElementState fields; added inline patch generation helpers; updated `process_reconcile_result()`, `_render_single_node()`, `render()`, `render_and_diff()`; removed `_previous_props`, `_previous_children`, `_removed_ids` |
+| `src/trellis/core/serialization.py` | Removed `compute_patches()`, `_compute_node_patches()`, `_get_stable_id()`, `_populate_subtree_state()` |
 
-## Next Steps
+## ✅ Phase 5 Complete: Eager Execution
 
-Ready to proceed with:
+Components now execute immediately when created, with reuse optimization:
 
-### Phase 4: Inline Patch Generation
-1. Generate patches in `_process_children`
-2. Remove `compute_patches()` and `_compute_node_patches()`
-3. Remove `_previous_props`, `_previous_children`, `_removed_ids`
-4. Merge `render()` and `render_and_diff()` into single method
+### 1. Reuse Check in `_place()` (`base_component.py`)
+- Before creating a node, check if old node at same position can be reused
+- Reuse conditions: same component, same props, node is mounted, not dirty
+- If reusable, return old node (skipping execution entirely)
+- Subtree is preserved - no re-execution of children
 
-### Phase 5: Eager Execution
-1. Implement reuse check in `ComponentBase.__call__`
-2. Execute children immediately in `with` blocks
-3. Remove "mounted but not executed" state handling
-4. Update frame collection to use IDs instead of nodes
+### 2. Eager Execution for Non-Container Components (`base_component.py`)
+- When a node cannot be reused, execute immediately in `_place()`
+- Call `ctx.eager_execute_node()` which runs `component.render()`
+- Children created during render are also executed eagerly
+- No "mounted but not executed" intermediate state
+
+### 3. Eager Execution for Container Components (`rendering.py`)
+- Container components (those with `children` parameter) defer execution to `__exit__`
+- In `__exit__`, input children are collected from the frame
+- Container's render() is executed with input children as props
+- Output children (what render() produces) replace input children in child_ids
+
+### 4. Simplified `_render_node_tree()` (`rendering.py`)
+- Initial render now just calls `root_component()` which triggers eager execution
+- Entire tree is built during this single call
+- No separate `reconcile_node` or dirty queue processing for initial render
+
+### 5. `eager_execute_node()` Method (`rendering.py`)
+- New method that combines mounting and execution
+- Creates ElementState if needed, marks as mounted
+- Clears dirty flag to prevent double execution
+- Pushes frame, calls render(), reconciles children
+- Used by both `_place()` and `_render_single_node()`
+
+### 6. Updated `process_reconcile_result()` (`rendering.py`)
+- Removed reconcile_node call for matched nodes (already handled in _place())
+- For added nodes, just ensure ElementState exists (node already executed)
+- Simplified to handle removals, additions, and patch emission
+
+### Key Benefits
+- Single-pass rendering - no separate reconciliation phase
+- Subtrees reused completely when props unchanged
+- No intermediate "dirty but not executed" state
+- Simpler mental model - components execute when created
+
+## Test Status
+
+- 482 tests passing
+- 0 tests failing
+- All type checks pass
+- All linting passes
+
+## Files Modified for Phase 5
+
+| File | Changes |
+|------|---------|
+| `src/trellis/core/base_component.py` | Added reuse check and eager execution in `_place()` |
+| `src/trellis/core/rendering.py` | Added `eager_execute_node()`, updated `__exit__` for containers, simplified `_render_node_tree()`, updated `process_reconcile_result()` |
+
+## Rendering Refactor Complete
+
+All 5 phases of the rendering refactor are now complete:
+
+1. **Position-Based IDs**: IDs assigned at creation based on tree position + component identity
+2. **Flat Node Storage**: Nodes stored in flat dict with ID references
+3. **Pure Reconciler**: Reconciliation logic extracted to pure function
+4. **Inline Patch Generation**: Patches generated during reconciliation, not in separate pass
+5. **Eager Execution**: Components execute immediately when created with reuse optimization
