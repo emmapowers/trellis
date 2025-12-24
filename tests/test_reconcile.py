@@ -28,8 +28,7 @@ class TestReconciliation:
         ctx.render()
 
         # Capture original node IDs (string IDs used for state tracking)
-        original_children = list(ctx.root_node.children)
-        original_node_ids = {c.key: c.id for c in original_children}
+        original_node_ids = {ctx.get_node(cid).key: cid for cid in ctx.root_node.child_ids}
 
         # Re-render with reordered items
         render_order.clear()
@@ -38,8 +37,8 @@ class TestReconciliation:
         ctx.render()
 
         # Node IDs should be preserved (for state continuity) despite reordering
-        new_children = list(ctx.root_node.children)
-        for child in new_children:
+        for child_id in ctx.root_node.child_ids:
+            child = ctx.get_node(child_id)
             assert child.id == original_node_ids[child.key]
 
     def test_position_type_matching_without_keys(self) -> None:
@@ -59,14 +58,14 @@ class TestReconciliation:
         ctx = RenderTree(Parent)
         ctx.render()
 
-        original_node_ids = [c.id for c in ctx.root_node.children]
+        original_node_ids = list(ctx.root_node.child_ids)
 
         # Re-render with same count
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
         # Same node IDs should be preserved (for state continuity)
-        new_node_ids = [c.id for c in ctx.root_node.children]
+        new_node_ids = list(ctx.root_node.child_ids)
         assert original_node_ids == new_node_ids
 
     def test_type_change_unmounts_old_mounts_new(self) -> None:
@@ -260,7 +259,7 @@ class TestStatefulLifecycle:
         ctx.render()
 
         # State should be in cache on the child element
-        child_node = ctx.root_node.children[0]
+        child_node = ctx.get_node(ctx.root_node.child_ids[0])
         child_state = ctx._element_state[child_node.id]
         assert len(child_state.local_state) == 1
 
@@ -511,7 +510,7 @@ class TestReconciliationAdditional:
         ctx.render()
 
         # Capture original node ID
-        child = ctx.root_node.children[0]
+        child = ctx.get_node(ctx.root_node.child_ids[0])
         original_node_id = child.id
 
         # Change props - triggers reconciliation but should preserve node ID
@@ -520,7 +519,7 @@ class TestReconciliationAdditional:
         ctx.render()
 
         # Node ID should be preserved for state continuity
-        new_child = ctx.root_node.children[0]
+        new_child = ctx.get_node(ctx.root_node.child_ids[0])
         assert new_child.id == original_node_id
 
         # But props should be updated
@@ -551,7 +550,7 @@ class TestReconciliationAdditional:
         ctx = RenderTree(Parent)
         ctx.render()
 
-        assert len(ctx.root_node.children) == 0
+        assert len(ctx.root_node.child_ids) == 0
         assert len(mount_log) == 0
 
         # Add many children
@@ -559,7 +558,7 @@ class TestReconciliationAdditional:
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        assert len(ctx.root_node.children) == 20
+        assert len(ctx.root_node.child_ids) == 20
         assert len(mount_log) == 20
 
     def test_reconcile_many_to_empty_children(self) -> None:
@@ -586,12 +585,12 @@ class TestReconciliationAdditional:
         ctx = RenderTree(Parent)
         ctx.render()
 
-        assert len(ctx.root_node.children) == 20
+        assert len(ctx.root_node.child_ids) == 20
 
         # Remove all children
         items_ref[0] = []
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        assert len(ctx.root_node.children) == 0
+        assert len(ctx.root_node.child_ids) == 0
         assert len(unmount_log) == 20

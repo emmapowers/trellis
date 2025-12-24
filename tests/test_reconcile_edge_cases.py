@@ -36,7 +36,7 @@ class TestListReversal:
         ctx.render()
 
         # Map key -> element id
-        original_ids = {c.key: c.id for c in ctx.root_node.children}
+        original_ids = {ctx.get_node(cid).key: cid for cid in ctx.root_node.child_ids}
 
         # Reverse the list
         items_ref[0] = list(reversed(items_ref[0]))
@@ -44,11 +44,12 @@ class TestListReversal:
         ctx.render()
 
         # Verify same elements (by identity), just reordered
-        for child in ctx.root_node.children:
+        for child_id in ctx.root_node.child_ids:
+            child = ctx.get_node(child_id)
             assert child.id == original_ids[child.key]
 
         # Verify order is reversed
-        keys = [c.key for c in ctx.root_node.children]
+        keys = [ctx.get_node(cid).key for cid in ctx.root_node.child_ids]
         assert keys == [str(i) for i in range(49, -1, -1)]
 
     def test_reverse_preserves_state(self) -> None:
@@ -109,7 +110,7 @@ class TestRandomShuffles:
         ctx = RenderTree(List)
         ctx.render()
 
-        original_ids = {c.key: c.id for c in ctx.root_node.children}
+        original_ids = {ctx.get_node(cid).key: cid for cid in ctx.root_node.child_ids}
 
         # Shuffle multiple times
         for _ in range(5):
@@ -118,7 +119,8 @@ class TestRandomShuffles:
             ctx.render()
 
             # Verify all elements preserved
-            for child in ctx.root_node.children:
+            for child_id in ctx.root_node.child_ids:
+                child = ctx.get_node(child_id)
                 assert child.id == original_ids[child.key]
 
     def test_shuffle_preserves_state(self) -> None:
@@ -153,7 +155,8 @@ class TestRandomShuffles:
 
         # Record the unique_id for each key
         initial_state_ids: dict[str, int] = {}
-        for child in ctx.root_node.children:
+        for child_id in ctx.root_node.child_ids:
+            child = ctx.get_node(child_id)
             child_state = ctx._element_state[child.id]
             state = list(child_state.local_state.values())[0]
             initial_state_ids[child.key] = state.unique_id
@@ -168,7 +171,8 @@ class TestRandomShuffles:
             ctx.render()
 
             # State instances should be preserved per key
-            for child in ctx.root_node.children:
+            for child_id in ctx.root_node.child_ids:
+                child = ctx.get_node(child_id)
                 child_state = ctx._element_state[child.id]
                 state = list(child_state.local_state.values())[0]
                 # Same state instance (by unique_id) should be associated with same key
@@ -215,7 +219,7 @@ class TestBulkOperations:
         ctx.render()
 
         assert len(unmount_log) == 20
-        assert len(ctx.root_node.children) == 0
+        assert len(ctx.root_node.child_ids) == 0
 
         # Re-add all
         unmount_log.clear()
@@ -225,7 +229,7 @@ class TestBulkOperations:
 
         # New elements should be mounted (new instances)
         assert len(mount_log) == 20
-        assert len(ctx.root_node.children) == 20
+        assert len(ctx.root_node.child_ids) == 20
 
     def test_remove_from_start(self) -> None:
         """Remove items from the start of a list."""
@@ -244,7 +248,7 @@ class TestBulkOperations:
         ctx.render()
 
         # Keep track of remaining element ids
-        remaining_ids = {str(i): c.id for i, c in zip(items_ref[0], ctx.root_node.children)}
+        remaining_ids = {str(i): cid for i, cid in zip(items_ref[0], ctx.root_node.child_ids)}
 
         # Remove first 25 items
         items_ref[0] = list(range(25, 50))
@@ -252,8 +256,9 @@ class TestBulkOperations:
         ctx.render()
 
         # Remaining elements should be preserved
-        assert len(ctx.root_node.children) == 25
-        for child in ctx.root_node.children:
+        assert len(ctx.root_node.child_ids) == 25
+        for child_id in ctx.root_node.child_ids:
+            child = ctx.get_node(child_id)
             assert child.id == remaining_ids[child.key]
 
     def test_remove_from_middle(self) -> None:
@@ -272,15 +277,16 @@ class TestBulkOperations:
         ctx = RenderTree(List)
         ctx.render()
 
-        remaining_ids = {str(i): c.id for i, c in zip(items_ref[0], ctx.root_node.children)}
+        remaining_ids = {str(i): cid for i, cid in zip(items_ref[0], ctx.root_node.child_ids)}
 
         # Remove middle section (10-39)
         items_ref[0] = list(range(10)) + list(range(40, 50))
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        assert len(ctx.root_node.children) == 20
-        for child in ctx.root_node.children:
+        assert len(ctx.root_node.child_ids) == 20
+        for child_id in ctx.root_node.child_ids:
+            child = ctx.get_node(child_id)
             assert child.id == remaining_ids[child.key]
 
     def test_remove_from_end(self) -> None:
@@ -299,15 +305,16 @@ class TestBulkOperations:
         ctx = RenderTree(List)
         ctx.render()
 
-        remaining_ids = {str(i): c.id for i, c in zip(items_ref[0], ctx.root_node.children)}
+        remaining_ids = {str(i): cid for i, cid in zip(items_ref[0], ctx.root_node.child_ids)}
 
         # Remove last 25
         items_ref[0] = list(range(25))
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        assert len(ctx.root_node.children) == 25
-        for child in ctx.root_node.children:
+        assert len(ctx.root_node.child_ids) == 25
+        for child_id in ctx.root_node.child_ids:
+            child = ctx.get_node(child_id)
             assert child.id == remaining_ids[child.key]
 
     def test_insert_at_start(self) -> None:
@@ -326,16 +333,17 @@ class TestBulkOperations:
         ctx = RenderTree(List)
         ctx.render()
 
-        original_ids = {str(i): c.id for i, c in zip(items_ref[0], ctx.root_node.children)}
+        original_ids = {str(i): cid for i, cid in zip(items_ref[0], ctx.root_node.child_ids)}
 
         # Insert 25 items at start
         items_ref[0] = list(range(50))
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        assert len(ctx.root_node.children) == 50
+        assert len(ctx.root_node.child_ids) == 50
         # Original items should be preserved
-        for child in ctx.root_node.children:
+        for child_id in ctx.root_node.child_ids:
+            child = ctx.get_node(child_id)
             if child.key in original_ids:
                 assert child.id == original_ids[child.key]
 
@@ -355,15 +363,16 @@ class TestBulkOperations:
         ctx = RenderTree(List)
         ctx.render()
 
-        original_ids = {str(i): c.id for i, c in zip(items_ref[0], ctx.root_node.children)}
+        original_ids = {str(i): cid for i, cid in zip(items_ref[0], ctx.root_node.child_ids)}
 
         # Insert 25 items at end
         items_ref[0] = list(range(50))
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        assert len(ctx.root_node.children) == 50
-        for child in ctx.root_node.children:
+        assert len(ctx.root_node.child_ids) == 50
+        for child_id in ctx.root_node.child_ids:
+            child = ctx.get_node(child_id)
             if child.key in original_ids:
                 assert child.id == original_ids[child.key]
 
@@ -388,7 +397,7 @@ class TestKeyEdgeCases:
         ctx.render()
 
         # Should have 3 children
-        assert len(ctx.root_node.children) == 3
+        assert len(ctx.root_node.child_ids) == 3
 
     def test_integer_keys(self) -> None:
         """Integer keys converted to strings should work."""
@@ -406,14 +415,15 @@ class TestKeyEdgeCases:
         ctx = RenderTree(List)
         ctx.render()
 
-        original_ids = {c.key: c.id for c in ctx.root_node.children}
+        original_ids = {ctx.get_node(cid).key: cid for cid in ctx.root_node.child_ids}
 
         # Reorder
         items_ref[0] = [5, 3, 1, 9, 7, 0, 2, 4, 6, 8]
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        for child in ctx.root_node.children:
+        for child_id in ctx.root_node.child_ids:
+            child = ctx.get_node(child_id)
             assert child.id == original_ids[child.key]
 
     def test_mixed_keyed_and_unkeyed(self) -> None:
@@ -438,7 +448,7 @@ class TestKeyEdgeCases:
         ctx = RenderTree(List)
         ctx.render()
 
-        assert len(ctx.root_node.children) == 4
+        assert len(ctx.root_node.child_ids) == 4
 
         # Re-render - structure preserved
         render_log.clear()
@@ -475,7 +485,7 @@ class TestKeyEdgeCases:
         ctx.render()
 
         # Record ids for keyed elements
-        original_ids = {c.key: c.id for c in ctx.root_node.children if c.key}
+        original_ids = {ctx.get_node(cid).key: cid for cid in ctx.root_node.child_ids if ctx.get_node(cid).key}
 
         # Reorder middle section while keeping prefix/suffix
         items_ref[0] = ["prefix", "c", "unkeyed2", "b", "unkeyed1", "a", "suffix"]
@@ -483,7 +493,8 @@ class TestKeyEdgeCases:
         ctx.render()
 
         # Keyed elements should preserve identity
-        for child in ctx.root_node.children:
+        for child_id in ctx.root_node.child_ids:
+            child = ctx.get_node(child_id)
             if child.key in original_ids:
                 assert child.id == original_ids[child.key]
 
@@ -507,7 +518,7 @@ class TestKeyEdgeCases:
         ctx = RenderTree(List)
         ctx.render()
 
-        keyed_ids = [c.id for c in ctx.root_node.children]
+        keyed_ids = list(ctx.root_node.child_ids)
 
         # Switch to unkeyed
         use_keys[0] = False
@@ -515,9 +526,9 @@ class TestKeyEdgeCases:
         ctx.render()
 
         # Should still have 5 children (matched by component type)
-        assert len(ctx.root_node.children) == 5
+        assert len(ctx.root_node.child_ids) == 5
         # Unkeyed elements should match by position/type
-        unkeyed_ids = [c.id for c in ctx.root_node.children]
+        unkeyed_ids = list(ctx.root_node.child_ids)
         # Since items are same count/type, they can be reused
         assert len(unkeyed_ids) == 5
 
@@ -542,7 +553,7 @@ class TestKeyEdgeCases:
         ctx.render()
 
         # Start with unkeyed
-        assert all(c.key is None for c in ctx.root_node.children)
+        assert all(ctx.get_node(cid).key is None for cid in ctx.root_node.child_ids)
 
         # Switch to keyed
         use_keys[0] = True
@@ -550,9 +561,9 @@ class TestKeyEdgeCases:
         ctx.render()
 
         # All children should now have keys
-        assert all(c.key is not None for c in ctx.root_node.children)
+        assert all(ctx.get_node(cid).key is not None for cid in ctx.root_node.child_ids)
         # Keys should be the string versions of indices
-        keys = [c.key for c in ctx.root_node.children]
+        keys = [ctx.get_node(cid).key for cid in ctx.root_node.child_ids]
         assert keys == ["0", "1", "2", "3", "4"]
 
 
@@ -787,7 +798,7 @@ class TestComponentTypeChange:
         mount_log.clear()
 
         # Get sibling element ids
-        sibling_ids = [id(c) for c in ctx.root_node.children if c.key is None]
+        sibling_ids = [id(ctx.get_node(cid)) for cid in ctx.root_node.child_ids if ctx.get_node(cid).key is None]
 
         # Switch type
         use_type_a[0] = False
@@ -839,7 +850,7 @@ class TestBuiltinWidgetsReconciliation:
         ctx.render()
 
         # Should have: H1, Row, Row, Row, Row, Button = 6 children
-        assert len(ctx.root_node.children) == 6
+        assert len(ctx.root_node.child_ids) == 6
 
         # Remove "b" from the middle - this triggers type-based matching
         items_ref[0] = ["a", "c", "d"]
@@ -847,7 +858,7 @@ class TestBuiltinWidgetsReconciliation:
         ctx.render()
 
         # Should have: H1, Row, Row, Row, Button = 5 children
-        assert len(ctx.root_node.children) == 5
+        assert len(ctx.root_node.child_ids) == 5
 
     def test_html_elements_in_dynamic_list(self) -> None:
         """HTML elements (via @html_element) should be hashable for reconciliation."""
@@ -864,14 +875,14 @@ class TestBuiltinWidgetsReconciliation:
         ctx = RenderTree(List)
         ctx.render()
 
-        assert len(ctx.root_node.children) == 3
+        assert len(ctx.root_node.child_ids) == 3
 
         # Remove from middle
         items_ref[0] = ["item1", "item3"]
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        assert len(ctx.root_node.children) == 2
+        assert len(ctx.root_node.child_ids) == 2
 
     def test_widgets_in_dynamic_list(self) -> None:
         """Widgets (via @react_component_base) should be hashable for reconciliation."""
@@ -890,16 +901,16 @@ class TestBuiltinWidgetsReconciliation:
         ctx = RenderTree(List)
         ctx.render()
 
-        column = ctx.root_node.children[0]
-        assert len(column.children) == 5
+        column = ctx.get_node(ctx.root_node.child_ids[0])
+        assert len(column.child_ids) == 5
 
         # Remove items 2 and 4 (from middle)
         items_ref[0] = [1, 3, 5]
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        column = ctx.root_node.children[0]
-        assert len(column.children) == 3
+        column = ctx.get_node(ctx.root_node.child_ids[0])
+        assert len(column.child_ids) == 3
 
     def test_mixed_widgets_and_components_in_list(self) -> None:
         """Mix of @component and @react_component_base in dynamic list."""
@@ -919,11 +930,11 @@ class TestBuiltinWidgetsReconciliation:
         ctx = RenderTree(List)
         ctx.render()
 
-        assert len(ctx.root_node.children) == 3
+        assert len(ctx.root_node.child_ids) == 3
 
         # Reorder and remove
         items_ref[0] = ["c", "a"]
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        assert len(ctx.root_node.children) == 2
+        assert len(ctx.root_node.child_ids) == 2

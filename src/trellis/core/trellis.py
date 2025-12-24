@@ -256,6 +256,7 @@ class Trellis:
         platform: PlatformType | str | None = None,
         ignore_cli: bool = False,
         build_bundle: bool = False,
+        batch_delay: float | None = None,
         # Server args
         host: str | None = None,
         port: int | None = None,
@@ -272,6 +273,7 @@ class Trellis:
             platform: Target platform (auto-detect if None)
             ignore_cli: If True, ignore CLI arguments
             build_bundle: Force rebuild client bundle
+            batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
             host: Server bind host (server only)
             port: Server bind port (server only)
             static_dir: Custom static files directory (server only)
@@ -290,6 +292,7 @@ class Trellis:
         # Set defaults for all platforms
         self._args.set_default("platform", _detect_platform())
         self._args.set_default("build_bundle", False)
+        self._args.set_default("batch_delay", 1.0 / 30)
         self._args.set_default("host", "127.0.0.1")
         self._args.set_default("port", None)
         self._args.set_default("static_dir", None)
@@ -300,6 +303,8 @@ class Trellis:
         # Override with constructor args (if provided)
         if build_bundle:
             self._args.set("build_bundle", build_bundle)
+        if batch_delay is not None:
+            self._args.set("batch_delay", batch_delay)
         if host is not None:
             self._args.set("host", host)
         if port is not None:

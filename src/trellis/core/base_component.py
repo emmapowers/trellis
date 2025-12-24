@@ -123,12 +123,6 @@ class Component(ABC):
             if raw_key is not None:
                 key = str(raw_key)
 
-        node = ElementNode(
-            component=self,
-            key=key,
-            props=freeze_props(props),
-        )
-
         # Ensure we're inside a render context - components cannot be created
         # in callbacks or other code outside of rendering
         ctx = get_active_render_tree()
@@ -137,6 +131,16 @@ class Component(ABC):
                 f"Cannot create component '{self.name}' outside of render context. "
                 f"Components must be created during rendering, not in callbacks."
             )
+
+        # Compute position-based ID at creation time, including component identity
+        position_id = ctx.next_position_id(self, key)
+
+        node = ElementNode(
+            component=self,
+            key=key,
+            props=freeze_props(props),
+            id=position_id,
+        )
 
         # Auto-collect: add to parent node's pending children (if any)
         # BUT only if this component doesn't have a children param - those will

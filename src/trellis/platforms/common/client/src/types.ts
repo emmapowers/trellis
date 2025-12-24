@@ -7,9 +7,39 @@ export const MessageType = {
   HELLO: "hello",
   HELLO_RESPONSE: "hello_response",
   RENDER: "render",
+  PATCH: "patch",
   EVENT: "event",
   ERROR: "error",
 } as const;
+
+// ============================================================================
+// Patch types for incremental updates
+// ============================================================================
+
+/** Add a new node to the tree. */
+export interface AddPatch {
+  op: "add";
+  parent_id: string | null;
+  children: string[]; // Parent's new children list (for positioning)
+  node: import("./core").SerializedElement; // Full subtree for the new node
+}
+
+/** Update an existing node's props and/or children order. */
+export interface UpdatePatch {
+  op: "update";
+  id: string;
+  props?: Record<string, unknown>; // Changed props only (omit if unchanged)
+  children?: string[]; // New children order (omit if unchanged)
+}
+
+/** Remove a node from the tree. */
+export interface RemovePatch {
+  op: "remove";
+  id: string;
+}
+
+/** Union of all patch types. */
+export type Patch = AddPatch | UpdatePatch | RemovePatch;
 
 export interface HelloMessage {
   type: typeof MessageType.HELLO;
@@ -39,9 +69,16 @@ export interface ErrorMessage {
   context: "render" | "callback";
 }
 
+/** Incremental update message with patches. */
+export interface PatchMessage {
+  type: typeof MessageType.PATCH;
+  patches: Patch[];
+}
+
 export type Message =
   | HelloMessage
   | HelloResponseMessage
   | RenderMessage
+  | PatchMessage
   | EventMessage
   | ErrorMessage;

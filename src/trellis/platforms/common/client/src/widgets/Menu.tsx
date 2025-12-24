@@ -137,7 +137,29 @@ export function Menu({
 
   Children.forEach(children, (child) => {
     if (isValidElement(child)) {
-      if ((child.type as any) === MenuItem) {
+      // Check for ChildWrapper metadata (from TreeRenderer)
+      const childProps = child.props as {
+        __componentType__?: string;
+        __componentProps__?: MenuItemProps;
+      };
+      const componentType = childProps.__componentType__;
+      const componentProps = childProps.__componentProps__;
+
+      if (componentType === "MenuItem") {
+        items.push({
+          key: `item-${itemIndex}`,
+          type: "item",
+          data: componentProps,
+        });
+        itemIndex++;
+      } else if (componentType === "MenuDivider") {
+        items.push({
+          key: `divider-${itemIndex}`,
+          type: "divider",
+        });
+        itemIndex++;
+      } else if ((child.type as any) === MenuItem) {
+        // Fallback for direct usage (non-Trellis rendering)
         const props = child.props as MenuItemProps;
         items.push({
           key: `item-${itemIndex}`,

@@ -385,7 +385,7 @@ class TestStateDependencyTracking:
         ctx.render()
 
         parent_id = ctx.root_node.id
-        child_id = ctx.root_node.children[0].id
+        child_id = ctx.root_node.child_ids[0]
 
         # Both nodes should be tracked
         deps = state._state_props["value"]
@@ -415,7 +415,7 @@ class TestStateDependencyTracking:
         ctx.render()
 
         parent_id = ctx.root_node.id
-        child_id = ctx.root_node.children[0].id
+        child_id = ctx.root_node.child_ids[0]
 
         # Clear dirty state
         ctx._dirty_ids.clear()
@@ -482,8 +482,8 @@ class TestStateDependencyTracking:
         ctx = RenderTree(App)
         ctx.render()
 
-        name_id = ctx.root_node.children[0].id
-        count_id = ctx.root_node.children[1].id
+        name_id = ctx.root_node.child_ids[0]
+        count_id = ctx.root_node.child_ids[1]
 
         # Check name deps
         name_deps = state._state_props["name"]
@@ -518,7 +518,7 @@ class TestStateDependencyTracking:
         ctx.render()
 
         # Get the Consumer's node id
-        consumer_id = ctx.root_node.children[0].id
+        consumer_id = ctx.root_node.child_ids[0]
 
         # Verify consumer is tracking state
         assert consumer_id in state._state_props["value"].node_ids

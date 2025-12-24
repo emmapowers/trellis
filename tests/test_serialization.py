@@ -24,9 +24,9 @@ class TestSerializeNode:
 
         assert result["type"] == "CompositionComponent"  # React component type
         assert result["name"] == "Simple"  # Python component name
-        # Nodes always have a key (user-provided or server-assigned ID)
+        # Nodes have position-based IDs with component identity: /@{id}
         assert result["key"] is not None
-        assert result["key"].startswith("e")  # Server-assigned IDs start with "e"
+        assert result["key"].startswith("/@")  # Position-based IDs start with "/@"
         assert result["props"] == {}
         assert result["children"] == []
 
@@ -45,7 +45,7 @@ class TestSerializeNode:
         ctx.render()
 
         # Get the WithProps child
-        child = ctx.root_node.children[0]
+        child = ctx.get_node(ctx.root_node.child_ids[0])
         result = serialize_node(child, ctx)
 
         assert result["type"] == "CompositionComponent"
@@ -67,10 +67,12 @@ class TestSerializeNode:
         ctx = RenderTree(App)
         ctx.render()
 
-        child = ctx.root_node.children[0]
+        child = ctx.get_node(ctx.root_node.child_ids[0])
         result = serialize_node(child, ctx)
 
-        assert result["key"] == "my-key"
+        # Position-based IDs include user key with :key@ prefix
+        # Format: /{parent_path}/:my-key@{component_id}
+        assert ":my-key@" in result["key"]
 
     def test_serialize_nested_children(self) -> None:
         """Nested nodes serialize with children inline."""
@@ -121,7 +123,7 @@ class TestSerializeNode:
         ctx = RenderTree(App)
         ctx.render()
 
-        child = ctx.root_node.children[0]
+        child = ctx.get_node(ctx.root_node.child_ids[0])
         result = serialize_node(child, ctx)
 
         # Should have callback reference
@@ -155,7 +157,7 @@ class TestSerializeNode:
         ctx = RenderTree(App)
         ctx.render()
 
-        child = ctx.root_node.children[0]
+        child = ctx.get_node(ctx.root_node.child_ids[0])
         result = serialize_node(child, ctx)
         props = result["props"]
 
@@ -188,7 +190,7 @@ class TestSerializeNode:
         ctx = RenderTree(App)
         ctx.render()
 
-        child = ctx.root_node.children[0]
+        child = ctx.get_node(ctx.root_node.child_ids[0])
         result = serialize_node(child, ctx)
 
         handlers = result["props"]["data_handlers"]
@@ -214,7 +216,7 @@ class TestSerializeNode:
         ctx = RenderTree(App)
         ctx.render()
 
-        child = ctx.root_node.children[0]
+        child = ctx.get_node(ctx.root_node.child_ids[0])
         result = serialize_node(child, ctx)
 
         id_a = result["props"]["onClick"]["__callback__"]

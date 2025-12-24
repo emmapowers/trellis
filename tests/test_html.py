@@ -20,10 +20,10 @@ class TestHtmlElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        div = ctx.root_node.children[0]
+        div = ctx.get_node(ctx.root_node.child_ids[0])
         assert div.component.name == "Div"
-        assert len(div.children) == 1
-        assert div.children[0].component.name == "Span"
+        assert len(div.child_ids) == 1
+        assert ctx.get_node(div.child_ids[0]).component.name == "Span"
 
     def test_nested_divs(self) -> None:
         """Divs can be nested."""
@@ -37,9 +37,9 @@ class TestHtmlElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        outer = ctx.root_node.children[0]
-        inner = outer.children[0]
-        span = inner.children[0]
+        outer = ctx.get_node(ctx.root_node.child_ids[0])
+        inner = ctx.get_node(outer.child_ids[0])
+        span = ctx.get_node(inner.child_ids[0])
 
         assert outer.component.name == "Div"
         assert inner.component.name == "Div"
@@ -57,9 +57,9 @@ class TestHtmlElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        h1 = ctx.root_node.children[0]
-        p = ctx.root_node.children[1]
-        span = ctx.root_node.children[2]
+        h1 = ctx.get_node(ctx.root_node.child_ids[0])
+        p = ctx.get_node(ctx.root_node.child_ids[1])
+        span = ctx.get_node(ctx.root_node.child_ids[2])
 
         assert h1.properties["_text"] == "Page Title"
         assert p.properties["_text"] == "Paragraph text"
@@ -76,7 +76,7 @@ class TestHtmlElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        div = ctx.root_node.children[0]
+        div = ctx.get_node(ctx.root_node.child_ids[0])
         assert div.properties["style"] == {"backgroundColor": "red", "padding": "10px"}
 
     def test_element_with_class_name(self) -> None:
@@ -90,7 +90,7 @@ class TestHtmlElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        div = ctx.root_node.children[0]
+        div = ctx.get_node(ctx.root_node.child_ids[0])
         assert div.properties["className"] == "container"
 
     def test_text_renders_plain_text(self) -> None:
@@ -105,11 +105,11 @@ class TestHtmlElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        div = ctx.root_node.children[0]
-        assert len(div.children) == 2
-        assert div.children[0].component.name == "Span"
-        assert div.children[1].component.name == "Text"
-        assert div.children[1].properties["_text"] == "42"
+        div = ctx.get_node(ctx.root_node.child_ids[0])
+        assert len(div.child_ids) == 2
+        assert ctx.get_node(div.child_ids[0]).component.name == "Span"
+        assert ctx.get_node(div.child_ids[1]).component.name == "Text"
+        assert ctx.get_node(div.child_ids[1]).properties["_text"] == "42"
 
     def test_text_converts_values_to_string(self) -> None:
         """Text converts any value to string."""
@@ -124,10 +124,10 @@ class TestHtmlElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        assert ctx.root_node.children[0].properties["_text"] == "123"
-        assert ctx.root_node.children[1].properties["_text"] == "3.14"
-        assert ctx.root_node.children[2].properties["_text"] == "True"
-        assert ctx.root_node.children[3].properties["_text"] == "None"
+        assert ctx.get_node(ctx.root_node.child_ids[0]).properties["_text"] == "123"
+        assert ctx.get_node(ctx.root_node.child_ids[1]).properties["_text"] == "3.14"
+        assert ctx.get_node(ctx.root_node.child_ids[2]).properties["_text"] == "True"
+        assert ctx.get_node(ctx.root_node.child_ids[3]).properties["_text"] == "None"
 
 
 class TestHtmlSerialization:
@@ -295,10 +295,10 @@ class TestHybridElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        tr = ctx.root_node.children[0]
-        assert len(tr.children) == 2
-        assert tr.children[0].properties["_text"] == "Cell 1"
-        assert tr.children[1].properties["_text"] == "Cell 2"
+        tr = ctx.get_node(ctx.root_node.child_ids[0])
+        assert len(tr.child_ids) == 2
+        assert ctx.get_node(tr.child_ids[0]).properties["_text"] == "Cell 1"
+        assert ctx.get_node(tr.child_ids[1]).properties["_text"] == "Cell 2"
 
     def test_td_as_container(self) -> None:
         """Td without text can be used as container."""
@@ -313,11 +313,11 @@ class TestHybridElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        tr = ctx.root_node.children[0]
-        td = tr.children[0]
-        assert len(td.children) == 2
-        assert td.children[0].component.name == "Strong"
-        assert td.children[1].component.name == "Span"
+        tr = ctx.get_node(ctx.root_node.child_ids[0])
+        td = ctx.get_node(tr.child_ids[0])
+        assert len(td.child_ids) == 2
+        assert ctx.get_node(td.child_ids[0]).component.name == "Strong"
+        assert ctx.get_node(td.child_ids[1]).component.name == "Span"
 
     def test_li_with_text_auto_collects(self) -> None:
         """Li with text is auto-collected."""
@@ -331,8 +331,8 @@ class TestHybridElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        ul = ctx.root_node.children[0]
-        assert len(ul.children) == 2
+        ul = ctx.get_node(ctx.root_node.child_ids[0])
+        assert len(ul.child_ids) == 2
 
     def test_li_as_container(self) -> None:
         """Li without text can be used as container."""
@@ -346,10 +346,10 @@ class TestHybridElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        ul = ctx.root_node.children[0]
-        li = ul.children[0]
-        assert len(li.children) == 1
-        assert li.children[0].component.name == "Strong"
+        ul = ctx.get_node(ctx.root_node.child_ids[0])
+        li = ctx.get_node(ul.child_ids[0])
+        assert len(li.child_ids) == 1
+        assert ctx.get_node(li.child_ids[0]).component.name == "Strong"
 
     def test_a_with_text_auto_collects(self) -> None:
         """A with text is auto-collected."""
@@ -362,10 +362,10 @@ class TestHybridElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        div = ctx.root_node.children[0]
-        assert len(div.children) == 1
-        assert div.children[0].properties["_text"] == "Click here"
-        assert div.children[0].properties["href"] == "/path"
+        div = ctx.get_node(ctx.root_node.child_ids[0])
+        assert len(div.child_ids) == 1
+        assert ctx.get_node(div.child_ids[0]).properties["_text"] == "Click here"
+        assert ctx.get_node(div.child_ids[0]).properties["href"] == "/path"
 
     def test_a_as_container(self) -> None:
         """A without text can be used as container."""
@@ -379,10 +379,10 @@ class TestHybridElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        div = ctx.root_node.children[0]
-        a = div.children[0]
-        assert len(a.children) == 1
-        assert a.children[0].component.name == "Span"
+        div = ctx.get_node(ctx.root_node.child_ids[0])
+        a = ctx.get_node(div.child_ids[0])
+        assert len(a.child_ids) == 1
+        assert ctx.get_node(a.child_ids[0]).component.name == "Span"
 
     def test_hybrid_no_double_collection(self) -> None:
         """Using with on a text hybrid element doesn't double-collect."""
@@ -397,10 +397,10 @@ class TestHybridElements:
         ctx = RenderTree(App)
         ctx.render()
 
-        div = ctx.root_node.children[0]
+        div = ctx.get_node(ctx.root_node.child_ids[0])
         # Should only have one Td child, not two
-        assert len(div.children) == 1
-        assert div.children[0].component.name == "Td"
+        assert len(div.child_ids) == 1
+        assert ctx.get_node(div.child_ids[0]).component.name == "Td"
 
 
 class TestHtmlContainerBehavior:
@@ -418,9 +418,9 @@ class TestHtmlContainerBehavior:
         ctx = RenderTree(App)
         ctx.render()
 
-        section = ctx.root_node.children[0]
+        section = ctx.get_node(ctx.root_node.child_ids[0])
         assert section.component.name == "Section"
-        assert len(section.children) == 2
+        assert len(section.child_ids) == 2
 
     def test_article_is_container(self) -> None:
         """Article element supports children."""
@@ -433,9 +433,9 @@ class TestHtmlContainerBehavior:
         ctx = RenderTree(App)
         ctx.render()
 
-        article = ctx.root_node.children[0]
+        article = ctx.get_node(ctx.root_node.child_ids[0])
         assert article.component.name == "Article"
-        assert len(article.children) == 1
+        assert len(article.child_ids) == 1
 
     def test_ul_with_li_children(self) -> None:
         """List elements work together."""
@@ -450,10 +450,11 @@ class TestHtmlContainerBehavior:
         ctx = RenderTree(App)
         ctx.render()
 
-        ul = ctx.root_node.children[0]
+        ul = ctx.get_node(ctx.root_node.child_ids[0])
         assert ul.component.name == "Ul"
-        assert len(ul.children) == 3
+        assert len(ul.child_ids) == 3
 
-        for i, li in enumerate(ul.children):
+        for i, li_id in enumerate(ul.child_ids):
+            li = ctx.get_node(li_id)
             assert li.component.name == "Li"
             assert li.properties["_text"] == f"Item {i + 1}"

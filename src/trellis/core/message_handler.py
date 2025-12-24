@@ -20,6 +20,7 @@ from trellis.core.messages import (
     HelloMessage,
     HelloResponseMessage,
     Message,
+    PatchMessage,
     RenderMessage,
 )
 from trellis.core.rendering import IComponent, RenderTree
@@ -150,17 +151,26 @@ class MessageHandler:
 
     tree: RenderTree
     session_id: str | None
+    batch_delay: float
     _background_tasks: set[asyncio.Task[tp.Any]]
+    _render_task: asyncio.Task[None] | None
 
-    def __init__(self, root_component: IComponent) -> None:
+    def __init__(
+        self,
+        root_component: IComponent,
+        batch_delay: float = 1.0 / 30,
+    ) -> None:
         """Create a new message handler.
 
         Args:
             root_component: The root Trellis component to render
+            batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
         self.tree = RenderTree(root_component)
         self.session_id = None
+        self.batch_delay = batch_delay
         self._background_tasks = set()
+        self._render_task = None
 
     async def handle_hello(self) -> str:
         """Handle hello handshake with client.
@@ -206,7 +216,8 @@ class MessageHandler:
             msg: The incoming message to process
 
         Returns:
-            Response message (RenderMessage or ErrorMessage), or None if no response
+            ErrorMessage on callback error, or None. Re-rendering is handled
+            by the background render loop, not per-message.
         """
         if isinstance(msg, EventMessage):
             try:
@@ -218,12 +229,9 @@ class MessageHandler:
                 logger.exception(f"Error in callback {msg.callback_id}: {e}")
                 return ErrorMessage(error=_format_exception(e), context="callback")
 
-            # Re-render and return updated tree
-            try:
-                return RenderMessage(tree=self.tree.render())
-            except Exception as e:
-                logger.exception(f"Error during render after callback: {e}")
-                return ErrorMessage(error=_format_exception(e), context="render")
+            # Callback executed successfully. State changes mark nodes dirty.
+            # The render loop will pick them up on the next frame.
+            return None
 
         return None
 
@@ -253,6 +261,33 @@ class MessageHandler:
             callback(*processed_args, **kwargs)
 
     # -------------------------------------------------------------------------
+    # Render loop - batches updates at 30fps
+    # -------------------------------------------------------------------------
+
+    async def _render_loop(self) -> None:
+        """Background loop that renders when dirty nodes exist.
+
+        This loop runs continuously, sleeping for the configured batch_delay,
+        then checking if any nodes need re-rendering. If so, it renders
+        and sends patches to the client.
+        """
+        while True:
+            # Wait for frame period (configured via batch_delay)
+            await asyncio.sleep(self.batch_delay)
+
+            # Check if there are dirty nodes to render
+            if not self.tree.has_dirty_nodes():
+                continue
+
+            try:
+                patches = self.tree.render_and_diff()
+                if patches:
+                    await self.send_message(PatchMessage(patches=patches))
+            except Exception as e:
+                logger.exception(f"Error in render loop: {e}")
+                await self.send_message(ErrorMessage(error=_format_exception(e), context="render"))
+
+    # -------------------------------------------------------------------------
     # Transport methods - subclasses must override
     # -------------------------------------------------------------------------
 
@@ -272,17 +307,30 @@ class MessageHandler:
         """Main message loop - hello, initial render, then event loop.
 
         1. Performs hello handshake with client
-        2. Sends initial render
-        3. Loops receiving messages and sending responses
+        2. Sends initial render (full tree)
+        3. Starts background render loop (30fps batched updates)
+        4. Loops receiving messages and sending responses
         """
         await self.handle_hello()
         await self.send_message(self.initial_render())
 
-        while True:
-            msg = await self.receive_message()
-            response = await self.handle_message(msg)
-            if response:
-                await self.send_message(response)
+        # Start background render loop for batched updates
+        self._render_task = asyncio.create_task(self._render_loop())
+
+        try:
+            while True:
+                msg = await self.receive_message()
+                response = await self.handle_message(msg)
+                if response:
+                    await self.send_message(response)
+        finally:
+            # Cancel render loop on disconnect
+            if self._render_task:
+                self._render_task.cancel()
+                try:
+                    await self._render_task
+                except asyncio.CancelledError:
+                    pass
 
     def cleanup(self) -> None:
         """Clean up callbacks. Call when session ends."""

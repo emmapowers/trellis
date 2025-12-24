@@ -30,11 +30,12 @@ class TestContainerComponent:
 
         assert ctx.root_node is not None
         # Parent has Column as child
-        assert len(ctx.root_node.children) == 1
-        column_node = ctx.root_node.children[0]
+        assert len(ctx.root_node.child_ids) == 1
+        column_node = ctx.get_node(ctx.root_node.child_ids[0])
+        assert column_node is not None
         assert column_node.component == Column
         # Column has two Child elements (mounted via child())
-        assert len(column_node.children) == 2
+        assert len(column_node.child_ids) == 2
 
     def test_nested_containers(self) -> None:
         """Nested with blocks work correctly."""
@@ -62,11 +63,13 @@ class TestContainerComponent:
         ctx = RenderTree(Parent)
         ctx.render()
 
-        column_node = ctx.root_node.children[0]
+        column_node = ctx.get_node(ctx.root_node.child_ids[0])
+        assert column_node is not None
         assert column_node.component.name == "Column"
-        row_node = column_node.children[0]
+        row_node = ctx.get_node(column_node.child_ids[0])
+        assert row_node is not None
         assert row_node.component.name == "Row"
-        assert len(row_node.children) == 1
+        assert len(row_node.child_ids) == 1
 
     def test_container_receives_children_list(self) -> None:
         """Container component receives children as a list of descriptors."""
@@ -172,9 +175,10 @@ class TestContainerComponent:
         ctx = RenderTree(Parent)
         ctx.render()
 
-        wrapper = ctx.root_node.children[0]
+        wrapper = ctx.get_node(ctx.root_node.child_ids[0])
+        assert wrapper is not None
         # Only one child mounted, even though 3 were collected
-        assert len(wrapper.children) == 1
+        assert len(wrapper.child_ids) == 1
 
     def test_container_can_reorder_children(self) -> None:
         """Container can mount children in different order."""
@@ -198,8 +202,12 @@ class TestContainerComponent:
         ctx = RenderTree(Parent)
         ctx.render()
 
-        reverse_node = ctx.root_node.children[0]
+        reverse_node = ctx.get_node(ctx.root_node.child_ids[0])
+        assert reverse_node is not None
         # Children should be in reverse order
-        assert reverse_node.children[0].properties["value"] == 3
-        assert reverse_node.children[1].properties["value"] == 2
-        assert reverse_node.children[2].properties["value"] == 1
+        child0 = ctx.get_node(reverse_node.child_ids[0])
+        child1 = ctx.get_node(reverse_node.child_ids[1])
+        child2 = ctx.get_node(reverse_node.child_ids[2])
+        assert child0 is not None and child0.properties["value"] == 3
+        assert child1 is not None and child1.properties["value"] == 2
+        assert child2 is not None and child2.properties["value"] == 1

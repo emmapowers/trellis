@@ -35,13 +35,18 @@ class BrowserMessageHandler(MessageHandler):
     _send_callback: Callable[[tp.Any], None] | None
     _serializer: Callable[[dict[str, tp.Any]], tp.Any]
 
-    def __init__(self, root_component: IComponent) -> None:
+    def __init__(
+        self,
+        root_component: IComponent,
+        batch_delay: float = 1.0 / 30,
+    ) -> None:
         """Create a browser message handler.
 
         Args:
             root_component: The root Trellis component to render
+            batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        super().__init__(root_component)
+        super().__init__(root_component, batch_delay=batch_delay)
         self._inbox = asyncio.Queue()
         self._send_callback = None
         # Default serializer just returns dict as-is (for tests)

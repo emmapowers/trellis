@@ -8,43 +8,36 @@ is to minimize mutations by reusing existing nodes where possible.
 ## Architecture
 
 The rendering system uses:
-- **ElementNode**: Immutable tree nodes describing the component structure
+- **ElementNode**: Immutable tree nodes with child_ids (references, not nested)
 - **ElementState**: Mutable runtime state keyed by node ID (local_state, dirty flag, etc.)
+- **RenderTree._nodes**: Flat storage of all nodes by ID
 
 During reconciliation:
-1. **Node Creation**: Components produce ElementNode descriptors
-2. **Reconciliation/Execution**: Compare new nodes with existing ones,
-   execute components only when needed
+1. **Node Creation**: Components produce ElementNode descriptors with IDs
+2. **Reconciliation/Execution**: Compare old/new child IDs, reconcile as needed
 
 ## Matching Strategy
 
-Nodes are matched using a multi-phase approach for optimal performance:
+With position-based IDs (which encode position AND component identity), matching
+is now by ID:
+- Same ID = same position and component type
+- Different ID = different position or component type
 
-1. **Two-pointer scan (head)**: Match nodes from the start of both lists
-   while component types match. Catches appends efficiently.
-
-2. **Two-pointer scan (tail)**: Match nodes from the end of both lists
-   while component types match. Catches prepends efficiently.
-
-3. **Key-based matching**: For the remaining "middle" section, use explicit
-   keys for O(1) lookup when both old and new nodes have keys.
-
-4. **Type-based matching**: For non-keyed nodes in the middle section,
-   use O(1) lookup by component type.
+The multi-phase optimization is still used for efficient child list reconciliation:
+1. **Head scan**: Match IDs from the start while they match
+2. **Tail scan**: Match IDs from the end while they match
+3. **Middle**: Use ID-based lookup for remaining nodes
 
 ## Complexity
 
 - Best case (append/prepend): O(n) where n = list length
-- Average/worst case: O(n) with hash lookups for keyed and type-based matching
+- Average/worst case: O(n) with hash lookups
 """
 
 from __future__ import annotations
 
 import typing as tp
 from dataclasses import replace as dataclass_replace
-
-# Import shared types from base (no circular dependency)
-from trellis.core.base import IComponent
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering import ElementNode, RenderTree
@@ -58,184 +51,225 @@ def reconcile_node(
     *,
     call_hooks: bool = True,
 ) -> ElementNode:
-    """Reconcile an old node with a new node (ElementNode architecture).
+    """Reconcile an old node with a new node.
 
-    This is the main entry point for the new reconciliation. It decides whether to:
-    - Create a new node (if old_node is None or component changed)
+    With position-based IDs, the new node already has its ID assigned based on
+    tree position. Matching is now by ID, not by component + key.
+
+    This function decides whether to:
+    - Create a new node (if old_node is None or component changed at same position)
     - Skip execution (if props unchanged and not dirty)
     - Re-execute (if props changed or dirty)
 
     Args:
         old_node: Existing node to reconcile against, or None for new mount
-        new_node: The new node describing what to render
+        new_node: The new node describing what to render (already has position-based ID)
         parent_id: Parent node's ID (for ElementState.parent_id)
         ctx: The render tree
         call_hooks: Whether to call mount hooks. Set False for recursive calls.
 
     Returns:
-        The reconciled node with final ID and children
+        The reconciled node (also stored in ctx._nodes)
     """
+    node_id = new_node.id
 
     # Case 1: No old node - mount new
     if old_node is None:
-        return ctx.mount_new_node(new_node, parent_id, call_hooks=call_hooks)
+        mounted = ctx.mount_new_node(new_node, parent_id, call_hooks=call_hooks)
+        ctx.store_node(mounted)
+        return mounted
 
-    # Case 2: Component changed - unmount old, mount new
+    # With position-based IDs, old and new nodes at same position have same ID
+    # If IDs don't match, that's a bug in caller - they should use ID for lookup
+    assert (
+        old_node.id == new_node.id
+    ), f"reconcile_node called with mismatched IDs: old={old_node.id}, new={new_node.id}"
+
+    # Case 2: Component changed at same position - unmount old, mount new
     if old_node.component != new_node.component:
-        ctx.unmount_node_tree(old_node)
-        return ctx.mount_new_node(new_node, parent_id, call_hooks=call_hooks)
+        ctx.unmount_node_tree(old_node.id)
+        mounted = ctx.mount_new_node(new_node, parent_id, call_hooks=call_hooks)
+        ctx.store_node(mounted)
+        return mounted
 
-    # Transfer ID from old to new
-    node_with_id = dataclass_replace(new_node, id=old_node.id)
-
-    # Get state for this node
-    state = ctx.get_element_state(node_with_id.id)
+    # Check if this node has been mounted before (has ElementState)
+    # With position-based IDs, nodes created in `with` blocks have IDs but
+    # haven't been mounted yet - they need to go through mount_new_node
+    existing_state = ctx._element_state.get(node_id)
+    if existing_state is None:
+        # First time seeing this node - mount it
+        mounted = ctx.mount_new_node(new_node, parent_id, call_hooks=call_hooks)
+        ctx.store_node(mounted)
+        return mounted
 
     # Case 3: Same component - check if we can skip execution
-    if old_node.props == new_node.props and not state.dirty:
+    if old_node.props == new_node.props and not existing_state.dirty:
         # Props unchanged and not dirty - skip execution entirely!
-        # However, we must reconcile with-block children from the parent's execution.
-        # These appear on new_node.children when a parent re-renders and produces
+        # However, we must reconcile with-block child_ids from the parent's execution.
+        # These appear on new_node.child_ids when a parent re-renders and produces
         # nested with-block descriptors (e.g., `with Outer(): with Inner(): Leaf()`).
         # Even though this node's props are unchanged, grandchildren may have new props.
-        if new_node.children:
-            new_children = reconcile_node_children(
-                list(old_node.children), list(new_node.children), node_with_id.id, ctx
+        if new_node.child_ids:
+            new_child_ids = reconcile_node_children(
+                list(old_node.child_ids), list(new_node.child_ids), node_id, ctx
             )
-            node_with_id = dataclass_replace(node_with_id, children=tuple(new_children))
-        elif old_node.children:
-            # new_node has no children (it's a descriptor, not executed)
-            # but old_node has children from previous execution - preserve them
-            node_with_id = dataclass_replace(node_with_id, children=old_node.children)
-        return node_with_id
+            result = dataclass_replace(new_node, child_ids=tuple(new_child_ids))
+            ctx.store_node(result)
+            return result
+        # Preserve old child_ids if new_node has none (it's a descriptor, not executed)
+        result = (
+            dataclass_replace(new_node, child_ids=old_node.child_ids)
+            if old_node.child_ids
+            else new_node
+        )
+        ctx.store_node(result)
+        return result
 
     # Case 4: Props changed or dirty - mark dirty for later rendering
-    # Keep old children - they'll be reconciled when this node is rendered
-    ctx.mark_dirty_id(node_with_id.id)
-    return dataclass_replace(node_with_id, children=old_node.children)
+    # Keep old child_ids - they'll be reconciled when this node is rendered
+    ctx.mark_dirty_id(node_id)
+    result = dataclass_replace(new_node, child_ids=old_node.child_ids)
+    ctx.store_node(result)
+    return result
 
 
 def reconcile_node_children(
-    old_children: list[ElementNode],
-    new_children: list[ElementNode],
+    old_child_ids: list[str],
+    new_child_ids: list[str],
     parent_id: str,
     ctx: RenderTree,
-) -> list[ElementNode]:
-    """Reconcile old child nodes with new child nodes.
+    old_nodes: dict[str, ElementNode] | None = None,
+) -> list[str]:
+    """Reconcile old child IDs with new child IDs.
 
-    Uses same multi-phase algorithm as reconcile_children but for ElementNode.
+    With position-based IDs and flat storage, this function:
+    1. Matches old and new children by ID
+    2. Calls reconcile_node for matches
+    3. Mounts new nodes, unmounts removed nodes
+    4. Returns the final list of child IDs
+
+    Uses a multi-phase algorithm for optimal performance:
+    1. Head scan: Match IDs from start while they match
+    2. Tail scan: Match IDs from end while they match
+    3. Middle: Use ID-based lookup for remaining nodes
+
+    IMPORTANT: Old nodes must be saved BEFORE render() is called, since new node
+    descriptors may overwrite them in ctx._nodes (same position-based ID). The
+    old_nodes dict is passed in by the caller (execute_node) who saved them.
 
     Args:
-        old_children: Current child nodes
-        new_children: New child nodes
+        old_child_ids: Current child IDs
+        new_child_ids: New child IDs
         parent_id: Parent node's ID
         ctx: The render tree
+        old_nodes: Pre-saved old nodes dict (from before render() overwrote them)
 
     Returns:
-        List of reconciled child nodes
+        List of reconciled child IDs
     """
-    # Phase 1: Handle empty edge cases
-    if not old_children:
-        return [ctx.mount_new_node(child, parent_id, call_hooks=False) for child in new_children]
+    result_ids: list[str] = []
 
-    if not new_children:
-        for child in old_children:
-            ctx.unmount_node_tree(child)
+    # Use provided old_nodes, or build from ctx if not provided (for callers
+    # like reconcile_node that call us before render() has a chance to overwrite)
+    if old_nodes is None:
+        old_nodes = {}
+        for old_id in old_child_ids:
+            node = ctx.get_node(old_id)
+            if node:
+                old_nodes[old_id] = node
+
+    # Phase 1: Handle empty edge cases
+    if not old_child_ids:
+        for child_id in new_child_ids:
+            child_node = ctx.get_node(child_id)
+            if child_node:
+                ctx.mount_new_node(child_node, parent_id, call_hooks=False)
+                result_ids.append(child_id)
+        return result_ids
+
+    if not new_child_ids:
+        for child_id in old_child_ids:
+            ctx.unmount_node_tree(child_id)
         return []
 
-    old_len = len(old_children)
-    new_len = len(new_children)
-    result: list[ElementNode] = []
+    old_len = len(old_child_ids)
+    new_len = len(new_child_ids)
     matched_old_ids: set[str] = set()
 
-    # Phase 2: Two-pointer scan from head
+    # Build lookup set for old children
+    old_id_set: set[str] = set(old_child_ids)
+
+    # Phase 2: Two-pointer scan from head (IDs match)
     head = 0
     while head < old_len and head < new_len:
-        old_child = old_children[head]
-        new_child = new_children[head]
+        old_child_id = old_child_ids[head]
+        new_child_id = new_child_ids[head]
 
-        if old_child.key != new_child.key:
-            break
-        if old_child.component != new_child.component:
+        # With position-based IDs, same position = same ID
+        if old_child_id != new_child_id:
             break
 
-        matched_old_ids.add(old_child.id)
-        reconciled = reconcile_node(old_child, new_child, parent_id, ctx, call_hooks=False)
-        result.append(reconciled)
+        matched_old_ids.add(old_child_id)
+        old_node = old_nodes.get(old_child_id)  # Use saved old node
+        new_node = ctx.get_node(new_child_id)
+        if old_node and new_node:
+            reconcile_node(old_node, new_node, parent_id, ctx, call_hooks=False)
+        result_ids.append(new_child_id)
         head += 1
 
     if head == old_len and head == new_len:
-        return result
+        return result_ids
 
-    # Phase 3: Two-pointer scan from tail
-    tail_matches: list[ElementNode] = []
+    # Phase 3: Two-pointer scan from tail (IDs match)
+    tail_match_ids: list[str] = []
     old_tail = old_len - 1
     new_tail = new_len - 1
 
     while old_tail >= head and new_tail >= head:
-        old_child = old_children[old_tail]
-        new_child = new_children[new_tail]
+        old_child_id = old_child_ids[old_tail]
+        new_child_id = new_child_ids[new_tail]
 
-        if old_child.key != new_child.key:
-            break
-        if old_child.component != new_child.component:
+        if old_child_id != new_child_id:
             break
 
-        matched_old_ids.add(old_child.id)
-        reconciled = reconcile_node(old_child, new_child, parent_id, ctx, call_hooks=False)
-        tail_matches.append(reconciled)
+        matched_old_ids.add(old_child_id)
+        old_node = old_nodes.get(old_child_id)  # Use saved old node
+        new_node = ctx.get_node(new_child_id)
+        if old_node and new_node:
+            reconcile_node(old_node, new_node, parent_id, ctx, call_hooks=False)
+        tail_match_ids.append(new_child_id)
         old_tail -= 1
         new_tail -= 1
 
-    tail_matches.reverse()
+    tail_match_ids.reverse()
 
-    # Phase 4: Process middle section with key-based matching
-    middle_old_start = head
-    middle_old_end = old_tail + 1
+    # Phase 4: Process middle section with ID-based matching
     middle_new_start = head
     middle_new_end = new_tail + 1
 
-    # Build lookup structures for O(1) matching
-    keyed_old: dict[str, ElementNode] = {}
-    unkeyed_old_by_type: dict[IComponent, list[ElementNode]] = {}
-    for i in range(middle_old_start, middle_old_end):
-        old_child = old_children[i]
-        if old_child.id not in matched_old_ids:
-            if old_child.key:
-                keyed_old[old_child.key] = old_child
-            else:
-                unkeyed_old_by_type.setdefault(old_child.component, []).append(old_child)
-
     for i in range(middle_new_start, middle_new_end):
-        new_child = new_children[i]
-        matched: ElementNode | None = None
+        new_child_id = new_child_ids[i]
 
-        if new_child.key:
-            old = keyed_old.get(new_child.key)
-            if old and old.component == new_child.component:
-                if old.id not in matched_old_ids:
-                    matched = old
+        if new_child_id in old_id_set and new_child_id not in matched_old_ids:
+            # Found matching old node by ID - reconcile
+            matched_old_ids.add(new_child_id)
+            old_node = old_nodes.get(new_child_id)  # Use saved old node
+            new_node = ctx.get_node(new_child_id)
+            if old_node and new_node:
+                reconcile_node(old_node, new_node, parent_id, ctx, call_hooks=False)
+            result_ids.append(new_child_id)
         else:
-            # O(1) lookup by component type instead of O(k) linear scan
-            candidates = unkeyed_old_by_type.get(new_child.component, [])
-            for old in candidates:
-                if old.id not in matched_old_ids:
-                    matched = old
-                    break
+            # No matching old node - mount new
+            new_node = ctx.get_node(new_child_id)
+            if new_node:
+                ctx.mount_new_node(new_node, parent_id, call_hooks=False)
+            result_ids.append(new_child_id)
 
-        if matched:
-            matched_old_ids.add(matched.id)
-            reconciled = reconcile_node(matched, new_child, parent_id, ctx, call_hooks=False)
-            result.append(reconciled)
-        else:
-            mounted = ctx.mount_new_node(new_child, parent_id, call_hooks=False)
-            result.append(mounted)
-
-    result.extend(tail_matches)
+    result_ids.extend(tail_match_ids)
 
     # Phase 5: Unmount unmatched old nodes
-    for old in old_children:
-        if old.id not in matched_old_ids:
-            ctx.unmount_node_tree(old)
+    for old_id in old_child_ids:
+        if old_id not in matched_old_ids:
+            ctx.unmount_node_tree(old_id)
 
-    return result
+    return result_ids

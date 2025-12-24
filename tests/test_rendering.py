@@ -43,7 +43,7 @@ class TestElementNode:
         assert node.component == comp
         assert node.key is None
         assert node.props == freeze_props({})
-        assert node.children == ()
+        assert node.child_ids == ()
         assert node.id == ""
 
     def test_element_node_with_key(self) -> None:
@@ -428,7 +428,7 @@ class TestElementStateParentId:
         assert root_state.parent_id is None
 
         # Child's parent should be root
-        child_id = ctx.root_node.children[0].id
+        child_id = ctx.get_node(ctx.root_node.child_ids[0]).id
         child_state = ctx._element_state[child_id]
         assert child_state.parent_id == ctx.root_node.id
 
@@ -456,7 +456,7 @@ class TestElementStateParentId:
         ctx = RenderTree(Parent)
         ctx.render()
 
-        child_id = ctx.root_node.children[0].id
+        child_id = ctx.get_node(ctx.root_node.child_ids[0]).id
         original_parent_id = ctx._element_state[child_id].parent_id
 
         # Trigger re-render
