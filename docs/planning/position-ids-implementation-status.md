@@ -163,15 +163,53 @@ Incremental update system for efficient client updates:
 ### Test Changes
 Many test files updated to use `.child_ids` and `ctx.get_node()` pattern.
 
+## ✅ Phase 3 Complete: Pure Reconciler
+
+The reconciliation logic has been extracted into a pure function:
+
+### 1. ReconcileResult Dataclass (`reconcile.py`)
+- New `ReconcileResult` dataclass containing:
+  - `added`: Node IDs that are new (not in old list)
+  - `removed`: Node IDs that were removed (in old, not in new)
+  - `matched`: Node IDs that exist in both lists
+  - `child_order`: Final order of child IDs
+
+### 2. Pure `reconcile_children` Function (`reconcile.py`)
+- Pure function that compares old and new child ID lists
+- Returns `ReconcileResult` with categorized changes
+- No side effects - doesn't access RenderTree or modify any state
+- Preserves the multi-phase optimization (head scan, tail scan, middle lookup)
+
+### 3. `process_reconcile_result` Method (`rendering.py`)
+- New method in RenderTree that interprets ReconcileResult
+- Applies side effects in correct order:
+  1. REMOVE first (unmount removed nodes)
+  2. ADD second (mount new nodes)
+  3. MATCHED last (reconcile to check props and mark dirty)
+- Returns final child order
+
+### 4. Updated `reconcile_node_children` (`reconcile.py`)
+- Now uses pure `reconcile_children()` to compare lists
+- Delegates side effects to `ctx.process_reconcile_result()`
+- Much simpler implementation
+
+## Test Status
+
+- 482 tests passing
+- 0 tests failing
+- All type checks pass
+- All linting passes
+
+## Files Modified for Phase 3
+
+| File | Changes |
+|------|---------|
+| `src/trellis/core/reconcile.py` | Added `ReconcileResult` dataclass, `reconcile_children()` pure function, simplified `reconcile_node_children()` |
+| `src/trellis/core/rendering.py` | Added `process_reconcile_result()` method, import `ReconcileResult` |
+
 ## Next Steps
 
 Ready to proceed with:
-
-### Phase 3: Pure Reconciler
-1. Extract reconciliation logic to pure function
-2. Create `ReconcileResult` dataclass
-3. Move mount/unmount/dirty calls to renderer
-4. Update `_process_children` to interpret ReconcileResult
 
 ### Phase 4: Inline Patch Generation
 1. Generate patches in `_process_children`

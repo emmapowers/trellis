@@ -45,6 +45,7 @@ from trellis.core.base import (
     unfreeze_props,
 )
 from trellis.core.messages import Patch
+from trellis.core.reconcile import ReconcileResult
 from trellis.utils.lock_helper import ClassWithLock, with_lock
 
 __all__ = [
@@ -1213,3 +1214,46 @@ class RenderTree(ClassWithLock):
                 _, actual_key = composite_key
                 obj._clear_dep(node_id, actual_key)
         watched_deps.clear()
+
+    def process_reconcile_result(
+        self,
+        result: ReconcileResult,
+        parent_id: str,
+        old_nodes: dict[str, ElementNode],
+    ) -> list[str]:
+        """Process a ReconcileResult and apply side effects.
+
+        This is the "impure" counterpart to the pure reconcile_children() function.
+        It interprets the ReconcileResult and performs:
+        - Unmounting removed nodes
+        - Mounting added nodes
+        - Reconciling matched nodes (checking props, marking dirty)
+
+        Args:
+            result: The ReconcileResult from reconcile_children()
+            parent_id: The parent node's ID
+            old_nodes: Saved old node data for props comparison
+
+        Returns:
+            Final list of child IDs after reconciliation
+        """
+        from trellis.core.reconcile import reconcile_node
+
+        # 1. REMOVE first (cleanup before new state)
+        for node_id in result.removed:
+            self.unmount_node_tree(node_id)
+
+        # 2. ADD second (mount new nodes)
+        for node_id in result.added:
+            node = self._nodes.get(node_id)
+            if node:
+                self.mount_new_node(node, parent_id, call_hooks=False)
+
+        # 3. MATCHED - reconcile to check props and mark dirty if needed
+        for node_id in result.matched:
+            old_node = old_nodes.get(node_id)
+            new_node = self._nodes.get(node_id)
+            if old_node and new_node:
+                reconcile_node(old_node, new_node, parent_id, self, call_hooks=False)
+
+        return result.child_order

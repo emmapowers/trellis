@@ -32,15 +32,149 @@ The multi-phase optimization is still used for efficient child list reconciliati
 
 - Best case (append/prepend): O(n) where n = list length
 - Average/worst case: O(n) with hash lookups
+
+## Pure Reconciliation
+
+The `reconcile_children` function is a pure function that compares old and new
+child ID lists and returns a `ReconcileResult` categorizing each node:
+- **added**: New nodes not in old list
+- **removed**: Old nodes not in new list
+- **matched**: Nodes present in both (may need props comparison to determine if changed)
+- **child_order**: Final order of child IDs
+
+The renderer interprets this result and performs the actual side effects
+(mount/unmount, mark dirty, generate patches).
 """
 
 from __future__ import annotations
 
 import typing as tp
+from dataclasses import dataclass, field
 from dataclasses import replace as dataclass_replace
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering import ElementNode, RenderTree
+
+
+@dataclass
+class ReconcileResult:
+    """Result of reconciling old and new child ID lists.
+
+    This is a pure data structure containing categorized changes.
+    No side effects are performed during reconciliation - the renderer
+    interprets this result and applies mutations.
+
+    Attributes:
+        added: Node IDs that are new (not in old list)
+        removed: Node IDs that were removed (in old, not in new)
+        matched: Node IDs that exist in both old and new lists
+        child_order: Final order of child IDs after reconciliation
+    """
+
+    added: list[str] = field(default_factory=list)
+    removed: list[str] = field(default_factory=list)
+    matched: list[str] = field(default_factory=list)
+    child_order: list[str] = field(default_factory=list)
+
+
+def reconcile_children(
+    old_child_ids: list[str],
+    new_child_ids: list[str],
+) -> ReconcileResult:
+    """Pure reconciliation of old and new child ID lists.
+
+    This function is PURE - it performs no side effects and doesn't access
+    any mutable state. It only compares the two lists and categorizes each ID.
+
+    Uses a multi-phase algorithm for optimal performance:
+    1. Head scan: Match IDs from start while they match
+    2. Tail scan: Match IDs from end while they match
+    3. Middle: Use set-based lookup for remaining nodes
+
+    Args:
+        old_child_ids: Previous child IDs
+        new_child_ids: New child IDs
+
+    Returns:
+        ReconcileResult with categorized IDs and final order
+    """
+    result = ReconcileResult(child_order=list(new_child_ids))
+
+    # Handle empty edge cases
+    if not old_child_ids:
+        result.added = list(new_child_ids)
+        return result
+
+    if not new_child_ids:
+        result.removed = list(old_child_ids)
+        return result
+
+    old_len = len(old_child_ids)
+    new_len = len(new_child_ids)
+    matched_old_ids: set[str] = set()
+
+    # Build lookup set for old children
+    old_id_set: set[str] = set(old_child_ids)
+
+    # Phase 1: Two-pointer scan from head (IDs match)
+    head = 0
+    while head < old_len and head < new_len:
+        old_child_id = old_child_ids[head]
+        new_child_id = new_child_ids[head]
+
+        if old_child_id != new_child_id:
+            break
+
+        matched_old_ids.add(old_child_id)
+        result.matched.append(old_child_id)
+        head += 1
+
+    if head == old_len and head == new_len:
+        return result
+
+    # Phase 2: Two-pointer scan from tail (IDs match)
+    tail_matches: list[str] = []
+    old_tail = old_len - 1
+    new_tail = new_len - 1
+
+    while old_tail >= head and new_tail >= head:
+        old_child_id = old_child_ids[old_tail]
+        new_child_id = new_child_ids[new_tail]
+
+        if old_child_id != new_child_id:
+            break
+
+        matched_old_ids.add(old_child_id)
+        tail_matches.append(old_child_id)
+        old_tail -= 1
+        new_tail -= 1
+
+    tail_matches.reverse()
+
+    # Phase 3: Process middle section with set-based matching
+    middle_new_start = head
+    middle_new_end = new_tail + 1
+
+    for i in range(middle_new_start, middle_new_end):
+        new_child_id = new_child_ids[i]
+
+        if new_child_id in old_id_set and new_child_id not in matched_old_ids:
+            # Found matching old node by ID
+            matched_old_ids.add(new_child_id)
+            result.matched.append(new_child_id)
+        elif new_child_id not in old_id_set:
+            # No matching old node - it's new
+            result.added.append(new_child_id)
+
+    # Add tail matches to matched list
+    result.matched.extend(tail_matches)
+
+    # Phase 4: Find removed nodes (old nodes not matched)
+    for old_id in old_child_ids:
+        if old_id not in matched_old_ids:
+            result.removed.append(old_id)
+
+    return result
 
 
 def reconcile_node(
@@ -142,16 +276,9 @@ def reconcile_node_children(
 ) -> list[str]:
     """Reconcile old child IDs with new child IDs.
 
-    With position-based IDs and flat storage, this function:
-    1. Matches old and new children by ID
-    2. Calls reconcile_node for matches
-    3. Mounts new nodes, unmounts removed nodes
-    4. Returns the final list of child IDs
-
-    Uses a multi-phase algorithm for optimal performance:
-    1. Head scan: Match IDs from start while they match
-    2. Tail scan: Match IDs from end while they match
-    3. Middle: Use ID-based lookup for remaining nodes
+    This function uses the pure `reconcile_children` function to compare
+    old and new child lists, then delegates to `ctx.process_reconcile_result`
+    to apply side effects (mount, unmount, reconcile matched nodes).
 
     IMPORTANT: Old nodes must be saved BEFORE render() is called, since new node
     descriptors may overwrite them in ctx._nodes (same position-based ID). The
@@ -167,8 +294,6 @@ def reconcile_node_children(
     Returns:
         List of reconciled child IDs
     """
-    result_ids: list[str] = []
-
     # Use provided old_nodes, or build from ctx if not provided (for callers
     # like reconcile_node that call us before render() has a chance to overwrite)
     if old_nodes is None:
@@ -178,98 +303,8 @@ def reconcile_node_children(
             if node:
                 old_nodes[old_id] = node
 
-    # Phase 1: Handle empty edge cases
-    if not old_child_ids:
-        for child_id in new_child_ids:
-            child_node = ctx.get_node(child_id)
-            if child_node:
-                ctx.mount_new_node(child_node, parent_id, call_hooks=False)
-                result_ids.append(child_id)
-        return result_ids
+    # Use pure reconciliation to compare lists
+    result = reconcile_children(old_child_ids, new_child_ids)
 
-    if not new_child_ids:
-        for child_id in old_child_ids:
-            ctx.unmount_node_tree(child_id)
-        return []
-
-    old_len = len(old_child_ids)
-    new_len = len(new_child_ids)
-    matched_old_ids: set[str] = set()
-
-    # Build lookup set for old children
-    old_id_set: set[str] = set(old_child_ids)
-
-    # Phase 2: Two-pointer scan from head (IDs match)
-    head = 0
-    while head < old_len and head < new_len:
-        old_child_id = old_child_ids[head]
-        new_child_id = new_child_ids[head]
-
-        # With position-based IDs, same position = same ID
-        if old_child_id != new_child_id:
-            break
-
-        matched_old_ids.add(old_child_id)
-        old_node = old_nodes.get(old_child_id)  # Use saved old node
-        new_node = ctx.get_node(new_child_id)
-        if old_node and new_node:
-            reconcile_node(old_node, new_node, parent_id, ctx, call_hooks=False)
-        result_ids.append(new_child_id)
-        head += 1
-
-    if head == old_len and head == new_len:
-        return result_ids
-
-    # Phase 3: Two-pointer scan from tail (IDs match)
-    tail_match_ids: list[str] = []
-    old_tail = old_len - 1
-    new_tail = new_len - 1
-
-    while old_tail >= head and new_tail >= head:
-        old_child_id = old_child_ids[old_tail]
-        new_child_id = new_child_ids[new_tail]
-
-        if old_child_id != new_child_id:
-            break
-
-        matched_old_ids.add(old_child_id)
-        old_node = old_nodes.get(old_child_id)  # Use saved old node
-        new_node = ctx.get_node(new_child_id)
-        if old_node and new_node:
-            reconcile_node(old_node, new_node, parent_id, ctx, call_hooks=False)
-        tail_match_ids.append(new_child_id)
-        old_tail -= 1
-        new_tail -= 1
-
-    tail_match_ids.reverse()
-
-    # Phase 4: Process middle section with ID-based matching
-    middle_new_start = head
-    middle_new_end = new_tail + 1
-
-    for i in range(middle_new_start, middle_new_end):
-        new_child_id = new_child_ids[i]
-
-        if new_child_id in old_id_set and new_child_id not in matched_old_ids:
-            # Found matching old node by ID - reconcile
-            matched_old_ids.add(new_child_id)
-            old_node = old_nodes.get(new_child_id)  # Use saved old node
-            new_node = ctx.get_node(new_child_id)
-            if old_node and new_node:
-                reconcile_node(old_node, new_node, parent_id, ctx, call_hooks=False)
-            result_ids.append(new_child_id)
-        else:
-            # No matching old node - mount new
-            new_node = ctx.get_node(new_child_id)
-            if new_node:
-                ctx.mount_new_node(new_node, parent_id, call_hooks=False)
-            result_ids.append(new_child_id)
-
-    result_ids.extend(tail_match_ids)
-
-    # Phase 5: Unmount unmatched old nodes
-    for old_id in old_child_ids:
-        if old_id not in matched_old_ids:
-            ctx.unmount_node_tree(old_id)
-
-    return result_ids
+    # Apply side effects and return final child order
+    return ctx.process_reconcile_result(result, parent_id, old_nodes)
