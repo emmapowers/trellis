@@ -465,3 +465,405 @@ class TestElementStateParentId:
 
         # parent_id should be preserved
         assert ctx._element_state[child_id].parent_id == original_parent_id
+
+
+class TestPropsComparison:
+    """Tests for props comparison in _place() reuse optimization.
+
+    These tests verify that components are not re-rendered when props
+    are unchanged, and are re-rendered when props change.
+    """
+
+    def test_props_with_none_values(self) -> None:
+        """Props with None values should be handled correctly."""
+        render_counts: dict[str, int] = {}
+        value_ref: list[str | None] = [None]
+
+        @component
+        def Child(value: str | None = None) -> None:
+            render_counts["child"] = render_counts.get("child", 0) + 1
+
+        @component
+        def Parent() -> None:
+            Child(value=value_ref[0])
+
+        ctx = RenderTree(Parent)
+        ctx.render()
+
+        assert render_counts["child"] == 1
+
+        # Same None value - should not re-render
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        assert render_counts["child"] == 1
+
+        # Change to non-None
+        value_ref[0] = "hello"
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        assert render_counts["child"] == 2
+
+        # Change back to None
+        value_ref[0] = None
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        assert render_counts["child"] == 3
+
+    def test_props_with_callable(self) -> None:
+        """Props with callable values use identity comparison."""
+        render_counts: dict[str, int] = {}
+
+        def handler1() -> None:
+            pass
+
+        def handler2() -> None:
+            pass
+
+        handler_ref = [handler1]
+
+        @component
+        def Child(on_click=None) -> None:
+            render_counts["child"] = render_counts.get("child", 0) + 1
+
+        @component
+        def Parent() -> None:
+            Child(on_click=handler_ref[0])
+
+        ctx = RenderTree(Parent)
+        ctx.render()
+
+        assert render_counts["child"] == 1
+
+        # Same function - should not re-render
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        assert render_counts["child"] == 1
+
+        # Different function - should re-render
+        handler_ref[0] = handler2
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        assert render_counts["child"] == 2
+
+    def test_empty_props(self) -> None:
+        """Components with no props should work correctly."""
+        render_counts: dict[str, int] = {}
+
+        @component
+        def NoProps() -> None:
+            render_counts["no_props"] = render_counts.get("no_props", 0) + 1
+
+        @component
+        def Parent() -> None:
+            NoProps()
+
+        ctx = RenderTree(Parent)
+        ctx.render()
+
+        assert render_counts["no_props"] == 1
+
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        # Should not re-render (empty props unchanged)
+        assert render_counts["no_props"] == 1
+
+    def test_props_with_tuple(self) -> None:
+        """Props with tuple values should compare correctly."""
+        render_counts: dict[str, int] = {}
+        tuple_ref = [(1, 2, 3)]
+
+        @component
+        def Child(items: tuple = ()) -> None:
+            render_counts["child"] = render_counts.get("child", 0) + 1
+
+        @component
+        def Parent() -> None:
+            Child(items=tuple_ref[0])
+
+        ctx = RenderTree(Parent)
+        ctx.render()
+
+        assert render_counts["child"] == 1
+
+        # Same tuple value - should not re-render
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        assert render_counts["child"] == 1
+
+        # Different tuple - should re-render
+        tuple_ref[0] = (1, 2, 4)
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        assert render_counts["child"] == 2
+
+
+class TestBuiltinWidgetsReconciliation:
+    """Tests for reconciliation with built-in widgets (ReactComponentBase/HtmlElement).
+
+    These tests ensure that components created via @react_component_base and
+    @html_element decorators work correctly in the reconciler. Unlike @component
+    decorated functions, these use different class hierarchies that need to be
+    hashable for type-based matching.
+
+    Regression tests for: TypeError: unhashable type: '_Generated'
+    """
+
+    def test_remove_widget_from_middle_of_list(self) -> None:
+        """Removing a widget from the middle exercises type-based matching."""
+        from trellis.widgets import Row, Button
+        from trellis import html as h
+
+        items_ref = [["a", "b", "c", "d"]]
+
+        @component
+        def TodoList() -> None:
+            h.H1("Tasks")  # Fixed head
+            for item in items_ref[0]:
+                with Row():
+                    h.Span(item)
+                    Button(text="×")
+            Button(text="Add")  # Fixed tail
+
+        ctx = RenderTree(TodoList)
+        ctx.render()
+
+        # Should have: H1, Row, Row, Row, Row, Button = 6 children
+        assert len(ctx.root_node.child_ids) == 6
+
+        # Remove "b" from the middle - this triggers type-based matching
+        items_ref[0] = ["a", "c", "d"]
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        # Should have: H1, Row, Row, Row, Button = 5 children
+        assert len(ctx.root_node.child_ids) == 5
+
+    def test_html_elements_in_dynamic_list(self) -> None:
+        """HTML elements (via @html_element) should be hashable for reconciliation."""
+        from trellis import html as h
+
+        items_ref = [["item1", "item2", "item3"]]
+
+        @component
+        def List() -> None:
+            for item in items_ref[0]:
+                with h.Div():
+                    h.Span(item)
+
+        ctx = RenderTree(List)
+        ctx.render()
+
+        assert len(ctx.root_node.child_ids) == 3
+
+        # Remove from middle
+        items_ref[0] = ["item1", "item3"]
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        assert len(ctx.root_node.child_ids) == 2
+
+    def test_widgets_in_dynamic_list(self) -> None:
+        """Widgets (via @react_component_base) should be hashable for reconciliation."""
+        from trellis.widgets import Column, Row, Label, Button
+
+        items_ref = [[1, 2, 3, 4, 5]]
+
+        @component
+        def List() -> None:
+            with Column():
+                for n in items_ref[0]:
+                    with Row():
+                        Label(text=f"Item {n}")
+                        Button(text="Delete")
+
+        ctx = RenderTree(List)
+        ctx.render()
+
+        column = ctx.get_node(ctx.root_node.child_ids[0])
+        assert len(column.child_ids) == 5
+
+        # Remove items 2 and 4 (from middle)
+        items_ref[0] = [1, 3, 5]
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        column = ctx.get_node(ctx.root_node.child_ids[0])
+        assert len(column.child_ids) == 3
+
+    def test_mixed_widgets_and_components_in_list(self) -> None:
+        """Mix of @component and @react_component_base in dynamic list."""
+        from trellis.widgets import Button
+
+        items_ref = [["a", "b", "c"]]
+
+        @component
+        def CustomItem(name: str = "") -> None:
+            Button(text=name)
+
+        @component
+        def List() -> None:
+            for item in items_ref[0]:
+                CustomItem(name=item)
+
+        ctx = RenderTree(List)
+        ctx.render()
+
+        assert len(ctx.root_node.child_ids) == 3
+
+        # Reorder and remove
+        items_ref[0] = ["c", "a"]
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+
+        assert len(ctx.root_node.child_ids) == 2
+
+
+class TestEscapeKey:
+    """Tests for URL-encoding special characters in keys."""
+
+    def test_no_special_chars(self) -> None:
+        """Keys without special chars pass through unchanged."""
+        from trellis.core.rendering import _escape_key
+
+        assert _escape_key("simple") == "simple"
+        assert _escape_key("with-dash") == "with-dash"
+        assert _escape_key("with_underscore") == "with_underscore"
+        assert _escape_key("CamelCase") == "CamelCase"
+        assert _escape_key("123") == "123"
+
+    def test_escape_colon(self) -> None:
+        """Colon is escaped."""
+        from trellis.core.rendering import _escape_key
+
+        assert _escape_key("my:key") == "my%3Akey"
+        assert _escape_key("a:b:c") == "a%3Ab%3Ac"
+
+    def test_escape_at(self) -> None:
+        """At sign is escaped."""
+        from trellis.core.rendering import _escape_key
+
+        assert _escape_key("item@home") == "item%40home"
+        assert _escape_key("user@domain") == "user%40domain"
+
+    def test_escape_slash(self) -> None:
+        """Slash is escaped."""
+        from trellis.core.rendering import _escape_key
+
+        assert _escape_key("row/5") == "row%2F5"
+        assert _escape_key("path/to/item") == "path%2Fto%2Fitem"
+
+    def test_escape_percent(self) -> None:
+        """Percent must be escaped first to avoid double-encoding."""
+        from trellis.core.rendering import _escape_key
+
+        assert _escape_key("100%") == "100%25"
+        assert _escape_key("%done") == "%25done"
+
+    def test_multiple_special_chars(self) -> None:
+        """All special characters are escaped in a single key."""
+        from trellis.core.rendering import _escape_key
+
+        assert _escape_key("a:b@c/d%e") == "a%3Ab%40c%2Fd%25e"
+        # Percent first, then others
+        assert _escape_key("%:@/") == "%25%3A%40%2F"
+
+
+class TestPositionIdGeneration:
+    """Tests for position-based ID generation."""
+
+    def test_root_id_format(self) -> None:
+        """Root node ID includes component identity."""
+
+        @component
+        def App() -> None:
+            pass
+
+        ctx = RenderTree(App)
+        ctx.render()
+
+        # Format: /@{id(component)}
+        assert ctx.root_node.id.startswith("/@")
+        assert str(id(App)) in ctx.root_node.id
+
+    def test_child_id_includes_position(self) -> None:
+        """Child IDs include position index."""
+
+        @component
+        def Child() -> None:
+            pass
+
+        @component
+        def Parent() -> None:
+            Child()
+            Child()
+            Child()
+
+        ctx = RenderTree(Parent)
+        ctx.render()
+
+        # Children should have /0@, /1@, /2@ in their IDs
+        child_ids = ctx.root_node.child_ids
+        assert len(child_ids) == 3
+        assert "/0@" in child_ids[0]
+        assert "/1@" in child_ids[1]
+        assert "/2@" in child_ids[2]
+
+    def test_keyed_child_id_format(self) -> None:
+        """Keyed children use :key@ format."""
+
+        @component
+        def Child() -> None:
+            pass
+
+        @component
+        def Parent() -> None:
+            Child(key="submit")
+
+        ctx = RenderTree(Parent)
+        ctx.render()
+
+        child_id = ctx.root_node.child_ids[0]
+        assert ":submit@" in child_id
+
+    def test_different_component_types_different_ids(self) -> None:
+        """Same position, different component = different ID."""
+
+        @component
+        def TypeA() -> None:
+            pass
+
+        @component
+        def TypeB() -> None:
+            pass
+
+        show_a = [True]
+
+        @component
+        def Parent() -> None:
+            if show_a[0]:
+                TypeA()
+            else:
+                TypeB()
+
+        ctx = RenderTree(Parent)
+        ctx.render()
+        id_a = ctx.root_node.child_ids[0]
+
+        show_a[0] = False
+        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.render()
+        id_b = ctx.root_node.child_ids[0]
+
+        # Different components at same position get different IDs
+        # (because the component identity is part of the ID)
+        assert id_a != id_b
+        assert str(id(TypeA)) in id_a
+        assert str(id(TypeB)) in id_b

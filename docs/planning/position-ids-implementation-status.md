@@ -316,3 +316,10 @@ All 5 phases of the rendering refactor are now complete:
 3. **Pure Reconciler**: Reconciliation logic extracted to pure function
 4. **Inline Patch Generation**: Patches generated during reconciliation, not in separate pass
 5. **Eager Execution**: Components execute immediately when created with reuse optimization
+
+## Next Steps
+
+See [test-refactor-plan.md](./test-refactor-plan.md) for planned test improvements:
+- Add unit tests for pure `reconcile_children()` function
+- Add tests for `_escape_key()` and position ID generation
+- Refactor existing reconcile tests to remove redundant lifecycle hook testing
