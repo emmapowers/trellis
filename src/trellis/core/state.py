@@ -54,7 +54,7 @@ from dataclasses import dataclass, field
 from types import TracebackType
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering import RenderTree
+    from trellis.core.rendering import ElementNode
 
 from trellis.core.conversion import convert_to_tracked
 from trellis.core.mutable import record_property_access
@@ -79,17 +79,16 @@ class StatePropertyInfo:
     is added to this property's dependency set. When the property changes,
     all dependent nodes are marked dirty.
 
+    Uses WeakSet[ElementNode] so dependencies are automatically cleaned up
+    when nodes are replaced (on re-render) or removed (on unmount).
+
     Attributes:
         name: The property name being tracked
-        node_ids: Set of node IDs that depend on this property
-        node_trees: Dict mapping node_id to RenderTree for dirty marking
+        watchers: WeakSet of ElementNodes that depend on this property
     """
 
     name: str
-    node_ids: set[str] = field(default_factory=set)
-    # Map node_id to weakref of RenderTree so we can mark dirty outside of render
-    # Uses weakref so sessions can be garbage collected when closed
-    node_trees: dict[str, weakref.ref[RenderTree]] = field(default_factory=dict)
+    watchers: weakref.WeakSet[ElementNode] = field(default_factory=weakref.WeakSet)
 
 
 class Stateful:
@@ -199,8 +198,6 @@ class Stateful:
         if context is None or not context.is_active():
             return value
 
-        # Inside render context - register dependency
-
         # Lazy init _state_props (needed when @dataclass doesn't call super().__init__)
         try:
             deps = object.__getattribute__(self, "_state_props")
@@ -212,21 +209,12 @@ class Stateful:
             deps[name] = StatePropertyInfo(name=name)
         state_info = deps[name]
 
-        # Track by node ID and store weakref to RenderTree for dirty marking
+        # Add the current ElementNode to watchers (WeakSet auto-cleans on node death)
         node_id = context._current_node_id
         if node_id is not None:
-            state_info.node_ids.add(node_id)
-            state_info.node_trees[node_id] = weakref.ref(context)
-
-            # Register reverse mapping for cleanup on re-render/unmount
-            # Use composite key (id(self), prop_name) for uniform shape with tracked collections
-            element_state = context.get_element_state(node_id)
-            stateful_id = id(self)
-            composite_key = (stateful_id, name)
-            if stateful_id in element_state.watched_deps:
-                element_state.watched_deps[stateful_id][1].add(composite_key)
-            else:
-                element_state.watched_deps[stateful_id] = (self, {composite_key})
+            node = context.get_node(node_id)
+            if node is not None:
+                state_info.watchers.add(node)
 
         # Record access for mutable() to capture
         record_property_access(self, name, value)
@@ -290,21 +278,11 @@ class Stateful:
         if name in deps:
             state_info = deps[name]
 
-            # Mark node IDs dirty using stored RenderTree weakrefs
-            stale_node_ids: list[str] = []
-            for node_id in state_info.node_ids:
-                tree_ref = state_info.node_trees.get(node_id)
-                if tree_ref is not None:
-                    tree = tree_ref()
-                    if tree is not None:
-                        tree.mark_dirty_id(node_id)
-                    else:
-                        stale_node_ids.append(node_id)
-
-            # Clean up references to garbage-collected RenderTrees
-            for node_id in stale_node_ids:
-                state_info.node_ids.discard(node_id)
-                state_info.node_trees.pop(node_id, None)
+            # Mark watcher nodes dirty (WeakSet auto-skips dead refs)
+            for node in state_info.watchers:
+                tree = node._tree_ref()
+                if tree is not None:
+                    tree.mark_dirty_id(node.id)
 
     def on_mount(self) -> None:
         """Called after owning element mounts. Override for initialization."""
@@ -313,24 +291,6 @@ class Stateful:
     def on_unmount(self) -> None:
         """Called before owning element unmounts. Override for cleanup."""
         pass
-
-    def _clear_dep(self, node_id: str, dep_key: tp.Any) -> None:
-        """Clear a specific dependency for a node.
-
-        Called by RenderTree.clear_node_dependencies during cleanup.
-
-        Args:
-            node_id: The node ID to remove from dependencies
-            dep_key: The property name to clear
-        """
-        try:
-            deps = object.__getattribute__(self, "_state_props")
-            if dep_key in deps:
-                state_info = deps[dep_key]
-                state_info.node_ids.discard(node_id)
-                state_info.node_trees.pop(node_id, None)
-        except AttributeError:
-            pass  # _state_props may not exist yet
 
     # -------------------------------------------------------------------------
     # Context API - share state with descendant components

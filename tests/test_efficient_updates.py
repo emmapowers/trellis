@@ -281,7 +281,7 @@ class TestDirtyMarkingBehavior:
         assert render_counts == {"parent": 1, "child1": 1, "child2": 1}
 
         # Mark only child1 dirty
-        child1_node = ctx.root_node.children[0]
+        child1_node = ctx.get_node(ctx.root_node.child_ids[0])
         ctx.mark_dirty_id(child1_node.id)
         ctx.render()
 
@@ -307,7 +307,7 @@ class TestDirtyMarkingBehavior:
         render_counts["child"] = 0
 
         # Mark both dirty (child first to test that order doesn't matter)
-        child_node = ctx.root_node.children[0]
+        child_node = ctx.get_node(ctx.root_node.child_ids[0])
         ctx.mark_dirty_id(child_node.id)
         ctx.mark_dirty_id(ctx.root_node.id)
 

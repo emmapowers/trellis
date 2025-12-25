@@ -5,6 +5,10 @@ format that can be sent to the client for rendering.
 
 Callbacks are registered on the RenderTree and replaced with IDs that
 the client can use to invoke them via events.
+
+Two modes:
+1. Full serialization via `serialize_node()` - for initial render
+2. Incremental patches are generated inline during reconciliation (see rendering.py)
 """
 
 from __future__ import annotations
@@ -62,14 +66,15 @@ def _serialize_value(
 
 
 def serialize_node(node: ElementNode, ctx: RenderTree) -> dict[str, tp.Any]:
-    """Convert an ElementNode tree to a serializable dict.
+    """Convert an ElementNode to a serializable dict.
 
     The resulting structure can be JSON-encoded and sent to the client.
     Callbacks are replaced with `{"__callback__": "cb_123"}` references.
+    Children are looked up from the flat node storage via child_ids.
 
     Args:
         node: The ElementNode to serialize
-        ctx: The RenderTree for callback registration
+        ctx: The RenderTree for callback registration and child lookup
 
     Returns:
         A dict with structure:
@@ -86,18 +91,47 @@ def serialize_node(node: ElementNode, ctx: RenderTree) -> dict[str, tp.Any]:
     if isinstance(node.component, CompositionComponent):
         props: dict[str, tp.Any] = {}
     else:
-        # Serialize props, excluding children (handled separately)
+        # Serialize props, excluding child_ids (children are serialized separately)
         props = {}
         for key, value in node.properties.items():
-            if key == "children":
+            if key == "child_ids":
                 continue  # Children are serialized separately
             props[key] = _serialize_value(value, ctx, node.id, key)
+
+    # Get children from flat storage and serialize them
+    children = []
+    for child_id in node.child_ids:
+        child_node = ctx.get_node(child_id)
+        if child_node:
+            children.append(serialize_node(child_node, ctx))
 
     return {
         "kind": node.component.element_kind.value,  # Element kind for client handling
         "type": node.component.element_name,  # Component/element type to render
         "name": node.component.name,  # Python component name for debugging
-        "key": node.key or node.id,  # User key or server-assigned ID
+        "key": node.id,  # Position-based ID (encodes position and user key)
         "props": props,
-        "children": [serialize_node(child, ctx) for child in node.children],
+        "children": children,
     }
+
+
+def _serialize_node_props(node: ElementNode, ctx: RenderTree) -> dict[str, tp.Any]:
+    """Serialize just the props of a node (excluding child_ids).
+
+    Used by rendering.py for inline patch generation to compare props.
+
+    Args:
+        node: The ElementNode to serialize props from
+        ctx: The RenderTree for callback registration
+
+    Returns:
+        Serialized props dict
+    """
+    if isinstance(node.component, CompositionComponent):
+        return {}
+    props = {}
+    for key, value in node.properties.items():
+        if key == "child_ids":
+            continue
+        props[key] = _serialize_value(value, ctx, node.id, key)
+    return props

@@ -424,8 +424,7 @@ class TestStateCleanup:
         ctx.render()
 
         # Capture child node and state
-        child_node = ctx.root_node.children[0]
-        child_id = child_node.id
+        child_id = ctx.root_node.child_ids[0]
         child_state = ctx._element_state[child_id]
         assert len(child_state.local_state) == 1
 
@@ -459,8 +458,7 @@ class TestStateCleanup:
         ctx = RenderTree(App)
         ctx.render()
 
-        child_node = ctx.root_node.children[0]
-        child_id = child_node.id
+        child_id = ctx.root_node.child_ids[0]
 
         # Mark child dirty by changing state
         state.value = 1

@@ -8,6 +8,35 @@ import typing as tp
 
 import msgspec
 
+# ============================================================================
+# Patch types for incremental updates
+# ============================================================================
+
+
+class UpdatePatch(msgspec.Struct, tag="update", tag_field="op"):
+    """Update an existing node's props and/or children order."""
+
+    id: str
+    props: dict[str, tp.Any] | None = None  # Changed props only
+    children: list[str] | None = None  # New children order
+
+
+class RemovePatch(msgspec.Struct, tag="remove", tag_field="op"):
+    """Remove a node from the tree."""
+
+    id: str
+
+
+class AddPatch(msgspec.Struct, tag="add", tag_field="op"):
+    """Add a new node to the tree."""
+
+    parent_id: str | None
+    children: list[str]  # Parent's new children list
+    node: dict[str, tp.Any]  # Full subtree for the new node
+
+
+Patch = UpdatePatch | RemovePatch | AddPatch
+
 
 class RenderMessage(msgspec.Struct, tag="render", tag_field="type"):
     """Tree render sent to client.
@@ -36,6 +65,16 @@ class ErrorMessage(msgspec.Struct, tag="error", tag_field="type"):
     context: str  # "render" | "callback"
 
 
+class PatchMessage(msgspec.Struct, tag="patch", tag_field="type"):
+    """Incremental update sent to client.
+
+    Contains a list of patches to apply to the client-side tree.
+    See Patch type for the three patch operations (add, update, remove).
+    """
+
+    patches: list[Patch]
+
+
 class HelloMessage(msgspec.Struct, tag="hello", tag_field="type"):
     """Client hello message sent on connection.
 
@@ -56,4 +95,6 @@ class HelloResponseMessage(msgspec.Struct, tag="hello_response", tag_field="type
 
 
 # Union type for all messages - used by MessageHandler
-Message = HelloMessage | HelloResponseMessage | RenderMessage | EventMessage | ErrorMessage
+Message = (
+    HelloMessage | HelloResponseMessage | RenderMessage | PatchMessage | EventMessage | ErrorMessage
+)

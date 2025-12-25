@@ -17,7 +17,8 @@ def App() -> None:
             Todo(id=3, text="🥞 Pancakes"),
             Todo(id=4, text="☕ Coffee"),
             Todo(id=5, text="🍞 Toast"),
-        ]
+        ],
+        _next_id=6,  # Start after existing IDs
     )
 
     with state:  # Provide state as context for child components

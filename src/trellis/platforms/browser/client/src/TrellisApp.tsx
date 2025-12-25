@@ -3,13 +3,17 @@
  *
  * Runs Python code in a Web Worker via Pyodide. On re-run, the worker is
  * terminated and recreated for a clean restart.
+ *
+ * Unlike server/desktop platforms, this component manages the Pyodide lifecycle
+ * (loading, initialization, Python execution) in addition to rendering.
  */
 
-import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
-import { BrowserClient } from "./BrowserClient";
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import { BrowserClient, ConnectionState } from "./BrowserClient";
 import { TrellisContext } from "../../../common/client/src/TrellisContext";
-import { Message, SerializedElement } from "../../../common/client/src/types";
+import { Message } from "../../../common/client/src/types";
 import { TreeRenderer } from "../../../common/client/src/TreeRenderer";
+import { useRootId } from "../../../common/client/src/core";
 import { PyodideWorker, type PythonSource } from "./PyodideWorker";
 
 // Re-export PythonSource for external use
@@ -32,7 +36,7 @@ export interface TrellisAppProps {
 
 type AppState =
   | { status: "loading"; message: string }
-  | { status: "connected"; tree: SerializedElement }
+  | { status: "connected" }
   | { status: "error"; message: string };
 
 /**
@@ -125,8 +129,8 @@ export function TrellisApp({
   const client = useMemo(
     () =>
       new BrowserClient({
-        onRender: (tree) => {
-          setState({ status: "connected", tree });
+        onConnected: () => {
+          setState({ status: "connected" });
         },
         onError: (error) => {
           setState({ status: "error", message: error });
@@ -216,12 +220,29 @@ export function TrellisApp({
     );
   }
 
-  // Connected - render the tree
+  // Connected - render the tree within context
   return (
     <TrellisContext.Provider value={client}>
-      <TreeRenderer node={state.tree} />
+      <AppContent loadingComponent={loadingComponent} />
     </TrellisContext.Provider>
   );
+}
+
+interface AppContentProps {
+  loadingComponent?: React.ReactNode;
+}
+
+/**
+ * Inner component that uses useRootId to render the tree.
+ */
+function AppContent({ loadingComponent }: AppContentProps): React.ReactElement {
+  const rootId = useRootId();
+
+  if (!rootId) {
+    return (loadingComponent ?? <DefaultLoading message="Waiting for render..." />) as React.ReactElement;
+  }
+
+  return <TreeRenderer />;
 }
 
 export default TrellisApp;

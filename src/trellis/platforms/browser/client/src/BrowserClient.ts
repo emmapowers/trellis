@@ -1,8 +1,12 @@
 /**
  * Client for Pyodide-based browser platform.
  *
- * Communicates with Python (BrowserMessageHandler) via Web Worker.
- * Uses the same message protocol as server/desktop platforms.
+ * Handles Web Worker transport only. Message processing is delegated
+ * to ClientMessageHandler for consistency across platforms.
+ *
+ * Unlike server/desktop clients, this client doesn't manage the connection
+ * lifecycle directly. The PyodideWorker manages the worker, and TrellisApp
+ * coordinates the handshake.
  */
 
 import { TrellisClient } from "../../../common/client/src/TrellisClient";
@@ -10,19 +14,18 @@ import {
   Message,
   MessageType,
   HelloMessage,
-  HelloResponseMessage,
   EventMessage,
-  SerializedElement,
 } from "../../../common/client/src/types";
+import {
+  ClientMessageHandler,
+  ClientMessageHandlerCallbacks,
+  ConnectionState,
+} from "../../../common/client/src/ClientMessageHandler";
+import { TrellisStore } from "../../../common/client/src/core";
 
-export type ConnectionState = "disconnected" | "connecting" | "connected";
+export type { ConnectionState };
 
-export interface BrowserClientCallbacks {
-  onConnectionStateChange?: (state: ConnectionState) => void;
-  onConnected?: (response: HelloResponseMessage) => void;
-  onRender?: (tree: SerializedElement) => void;
-  onError?: (error: string, context: "render" | "callback") => void;
-}
+export interface BrowserClientCallbacks extends ClientMessageHandlerCallbacks {}
 
 type SendCallback = (msg: Record<string, unknown>) => void;
 
@@ -36,27 +39,30 @@ type SendCallback = (msg: Record<string, unknown>) => void;
  */
 export class BrowserClient implements TrellisClient {
   private clientId: string;
-  private sessionId: string | null = null;
-  private connectionState: ConnectionState = "disconnected";
-  private callbacks: BrowserClientCallbacks;
+  private handler: ClientMessageHandler;
   private sendCallback: SendCallback | null = null;
 
-  constructor(callbacks: BrowserClientCallbacks = {}) {
+  /**
+   * Create a new browser client.
+   *
+   * @param callbacks - Optional callbacks for connection events
+   * @param store - Optional store instance (defaults to singleton)
+   */
+  constructor(callbacks: BrowserClientCallbacks = {}, store?: TrellisStore) {
     this.clientId = crypto.randomUUID();
-    this.callbacks = callbacks;
-  }
-
-  private setConnectionState(state: ConnectionState): void {
-    this.connectionState = state;
-    this.callbacks.onConnectionStateChange?.(state);
+    this.handler = new ClientMessageHandler(callbacks, store);
   }
 
   getConnectionState(): ConnectionState {
-    return this.connectionState;
+    return this.handler.getConnectionState();
   }
 
   getSessionId(): string | null {
-    return this.sessionId;
+    return this.handler.getSessionId();
+  }
+
+  getServerVersion(): string | null {
+    return this.handler.getServerVersion();
   }
 
   /**
@@ -72,7 +78,7 @@ export class BrowserClient implements TrellisClient {
    * Handle a message from Python (called by PyodideWorker.onMessage).
    */
   handleMessage(msg: Message): void {
-    this.processMessage(msg);
+    this.handler.handleMessage(msg);
   }
 
   /**
@@ -81,32 +87,12 @@ export class BrowserClient implements TrellisClient {
    * Should be called after Python has started running (handler.run() is waiting).
    */
   sendHello(): void {
-    this.setConnectionState("connecting");
+    this.handler.setConnectionState("connecting");
     const hello: HelloMessage = {
       type: MessageType.HELLO,
       client_id: this.clientId,
     };
     this.sendCallback?.(hello);
-  }
-
-  private processMessage(msg: Message): void {
-    switch (msg.type) {
-      case MessageType.HELLO_RESPONSE:
-        this.sessionId = msg.session_id;
-        this.setConnectionState("connected");
-        console.log(`Connected to Trellis browser v${msg.server_version}`);
-        this.callbacks.onConnected?.(msg);
-        break;
-
-      case MessageType.RENDER:
-        this.callbacks.onRender?.(msg.tree);
-        break;
-
-      case MessageType.ERROR:
-        console.error(`Trellis ${msg.context} error:`, msg.error);
-        this.callbacks.onError?.(msg.error, msg.context);
-        break;
-    }
   }
 
   /** Send an event to invoke a callback in Python. */
@@ -120,8 +106,7 @@ export class BrowserClient implements TrellisClient {
   }
 
   disconnect(): void {
-    this.sessionId = null;
     this.sendCallback = null;
-    this.setConnectionState("disconnected");
+    this.handler.setConnectionState("disconnected");
   }
 }

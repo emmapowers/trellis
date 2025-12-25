@@ -327,7 +327,7 @@ class TestDependencyTracking:
         tracked_list = state.items
         item_b = list.__getitem__(tracked_list, 1)
         assert id(item_b) in tracked_list._deps
-        assert ctx.root_node.id in tracked_list._deps[id(item_b)]
+        assert ctx.root_node in tracked_list._deps[id(item_b)]
 
     def test_list_iteration_tracks_iter_key(self) -> None:
         """Iterating over list registers dependency on ITER_KEY."""
@@ -350,7 +350,7 @@ class TestDependencyTracking:
         # Check ITER_KEY dependency
         tracked_list = state.items
         assert ITER_KEY in tracked_list._deps
-        assert ctx.root_node.id in tracked_list._deps[ITER_KEY]
+        assert ctx.root_node in tracked_list._deps[ITER_KEY]
 
     def test_dict_getitem_tracks_by_key(self) -> None:
         """Accessing dict[key] registers dependency on that key."""
@@ -372,7 +372,7 @@ class TestDependencyTracking:
         # Check dependency on key "x"
         tracked_dict = state.data
         assert "x" in tracked_dict._deps
-        assert ctx.root_node.id in tracked_dict._deps["x"]
+        assert ctx.root_node in tracked_dict._deps["x"]
 
     def test_set_contains_tracks_by_value(self) -> None:
         """item in set registers dependency on the value itself."""
@@ -394,7 +394,7 @@ class TestDependencyTracking:
         # Check dependency on the value "python" (not id)
         tracked_set = state.tags
         assert "python" in tracked_set._deps
-        assert ctx.root_node.id in tracked_set._deps["python"]
+        assert ctx.root_node in tracked_set._deps["python"]
 
     def test_list_sort_marks_iter_dirty(self) -> None:
         """Sorting a list marks ITER_KEY dirty."""
@@ -679,21 +679,24 @@ class TestDependencyCleanup:
         ctx = RenderTree(App)
         ctx.render()
 
-        consumer_id = ctx.root_node.children[0].id
+        consumer_node = ctx.get_node(ctx.root_node.child_ids[0])
+        consumer_id = consumer_node.id
         tracked_list = state.items
         item_a = list.__getitem__(tracked_list, 0)
 
-        # Verify consumer is tracking
-        assert consumer_id in tracked_list._deps[id(item_a)]
+        # Verify consumer is tracking (check by node ID since object identity may differ)
+        dep_node_ids = {n.id for n in tracked_list._deps[id(item_a)]}
+        assert consumer_id in dep_node_ids
 
         # Unmount Consumer
         show_consumer[0] = False
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        # Dependency should be cleaned up
+        # Dependency should be cleaned up (WeakSet auto-removes dead refs)
         if id(item_a) in tracked_list._deps:
-            assert consumer_id not in tracked_list._deps[id(item_a)]
+            dep_node_ids = {n.id for n in tracked_list._deps[id(item_a)]}
+            assert consumer_id not in dep_node_ids
 
     def test_dict_dependency_cleaned_on_rerender_without_read(self) -> None:
         """Dict dependencies are cleaned when component stops reading."""
@@ -715,20 +718,23 @@ class TestDependencyCleanup:
         ctx = RenderTree(Consumer)
         ctx.render()
 
-        node_id = ctx.root_node.id
+        root_node = ctx.root_node
+        root_id = root_node.id
         tracked_dict = state.data
 
-        # Initially tracking
-        assert node_id in tracked_dict._deps["x"]
+        # Initially tracking (check by node ID since object identity may differ)
+        dep_node_ids = {n.id for n in tracked_dict._deps["x"]}
+        assert root_id in dep_node_ids
 
         # Stop reading and re-render
         read_data[0] = False
-        ctx.mark_dirty_id(node_id)
+        ctx.mark_dirty_id(root_id)
         ctx.render()
 
-        # No longer tracking
+        # No longer tracking (WeakSet auto-removes dead refs)
         if "x" in tracked_dict._deps:
-            assert node_id not in tracked_dict._deps["x"]
+            dep_node_ids = {n.id for n in tracked_dict._deps["x"]}
+            assert root_id not in dep_node_ids
 
 
 class TestEdgeCases:
@@ -2028,12 +2034,6 @@ class TestEdgeCasesExtended:
         lst: TrackedList[int] = TrackedList([3, 1, 2])
         lst.sort(reverse=True)
         assert list(lst) == [3, 2, 1]
-
-    def test_clear_dep_nonexistent(self) -> None:
-        """_clear_dep on non-existent dependency doesn't raise."""
-        lst: TrackedList[int] = TrackedList([1, 2, 3])
-        # Should not raise
-        lst._clear_dep("fake_node_id", "fake_key")
 
     def test_list_of_sets_auto_converts(self) -> None:
         """List containing sets auto-converts sets on assignment."""

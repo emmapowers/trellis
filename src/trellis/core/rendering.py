@@ -32,6 +32,7 @@ import contextvars
 import logging
 import threading
 import typing as tp
+import weakref
 from dataclasses import dataclass, field
 from dataclasses import replace as dataclass_replace
 
@@ -40,10 +41,11 @@ from trellis.core.base import (
     ElementKind,
     FrozenProps,
     IComponent,
-    Trackable,
     freeze_props,
     unfreeze_props,
 )
+from trellis.core.messages import AddPatch, Patch, RemovePatch, UpdatePatch
+from trellis.core.reconcile import ReconcileResult
 from trellis.utils.lock_helper import ClassWithLock, with_lock
 
 __all__ = [
@@ -105,6 +107,29 @@ def is_render_active() -> bool:
     return ctx is not None and ctx._current_node_id is not None
 
 
+def _escape_key(key: str) -> str:
+    """URL-encode special characters in user-provided keys.
+
+    Keys may contain characters that have special meaning in position IDs:
+    - ':' separates keyed prefix from key value
+    - '@' separates position from component ID
+    - '/' separates path segments
+
+    These are URL-encoded to avoid ambiguity:
+    - 'my:key' → 'my%3Akey'
+    - 'row/5' → 'row%2F5'
+    - 'item@home' → 'item%40home'
+
+    Args:
+        key: The user-provided key string
+
+    Returns:
+        The key with special characters URL-encoded
+    """
+    # Only escape the three special characters used in position IDs
+    return key.replace("%", "%25").replace(":", "%3A").replace("@", "%40").replace("/", "%2F")
+
+
 # =============================================================================
 # Core Types
 # =============================================================================
@@ -112,14 +137,21 @@ def is_render_active() -> bool:
 
 @dataclass
 class Frame:
-    """Scope that collects child ElementNodes.
+    """Scope that collects child node IDs during rendering.
 
     Used during component execution to collect children created in `with` blocks.
     Each `with` block pushes a new Frame onto the stack, and children created
-    within are added to that frame.
+    within have their IDs added to that frame.
+
+    Attributes:
+        child_ids: IDs of child nodes collected in this frame
+        parent_id: ID of the parent node (for computing child position IDs)
+        position: Counter for the next child's position index
     """
 
-    children: list[ElementNode] = field(default_factory=list)
+    child_ids: list[str] = field(default_factory=list)
+    parent_id: str = ""
+    position: int = 0
 
 
 @dataclass(frozen=True)
@@ -140,33 +172,35 @@ class ElementNode:
     # __exit__ pops Column, stores children, adds to parent
     ```
 
-    When reconciling, nodes are matched by component + key. If matched,
-    the new node's ID is replaced with the old node's ID via dataclass.replace()
-    to preserve state associations.
+    When reconciling, nodes are matched by ID (position + component identity).
+    Different component types at the same position get different IDs.
 
     Attributes:
         component: The component that will be/was executed
+        _tree_ref: Weak reference to the RenderTree that owns this node
         props: Immutable tuple of (key, value) property pairs
         key: Optional stable identifier for reconciliation
-        children: Child nodes (tuple for immutability)
-        id: Stable identifier assigned by RenderTree (empty until reconciled)
+        child_ids: IDs of child nodes (tuple for immutability). Nodes are
+            stored flat in RenderTree._nodes and accessed by ID.
+        id: Position-based ID assigned at creation time
     """
 
     component: IComponent
+    _tree_ref: weakref.ref[RenderTree]
     props: FrozenProps = ()
     key: str | None = None
-    children: tuple[ElementNode, ...] = ()
-    id: str = ""  # Assigned by RenderTree.next_element_id() during reconciliation
+    child_ids: tuple[str, ...] = ()
+    id: str = ""  # Position-based ID assigned at creation
 
     # Internal flag for child collection (set via object.__setattr__)
     _auto_collected: bool = False
 
     @property
     def properties(self) -> dict[str, tp.Any]:
-        """Get props as a mutable dictionary, including children if present."""
+        """Get props as a mutable dictionary, including child_ids if present."""
         props = unfreeze_props(self.props)
-        if self.children:
-            props["children"] = list(self.children)
+        if self.child_ids:
+            props["child_ids"] = list(self.child_ids)
         return props
 
     def __enter__(self) -> ElementNode:
@@ -207,7 +241,8 @@ class ElementNode:
             )
 
         # Push new collection list for children created in this scope
-        ctx.push_descriptor_frame()
+        # parent_id is this node's ID for computing child position IDs
+        ctx.push_frame(parent_id=self.id)
         return self
 
     def __exit__(
@@ -216,11 +251,13 @@ class ElementNode:
         exc_val: BaseException | None,
         exc_tb: tp.Any,
     ) -> None:
-        """Exit the `with` block, collecting children and registering with parent.
+        """Exit the `with` block, executing container and registering with parent.
 
-        Pops the collection list from the stack, stores the collected children
-        on this node, and adds this node to the parent's collection
-        (if there is a parent scope).
+        With eager execution, this:
+        1. Pops the collection list from the stack (input children from with block)
+        2. Stores input children in child_ids (for render() to access via children prop)
+        3. Executes the container's render() method
+        4. Adds the executed node to the parent's collection
 
         Args:
             exc_type: Exception type if an error occurred, else None
@@ -231,19 +268,35 @@ class ElementNode:
         if ctx is None:
             return
 
-        children = ctx.pop_descriptor_frame()
+        child_ids = ctx.pop_frame()
 
         # Don't process children if an exception occurred
         if exc_type is not None:
             return
 
-        # Store collected children (use object.__setattr__ since frozen=True)
-        object.__setattr__(self, "children", tuple(children))
+        # Store collected child IDs as input for render()
+        # (render() will replace these with its output children)
+        object.__setattr__(self, "child_ids", tuple(child_ids))
 
-        # Add self to parent's collection (if inside another with block)
+        # Get parent_id from current frame (the grandparent in tree structure)
+        frame = ctx.current_frame()
+        parent_id = frame.parent_id if frame else None
+
+        # Get old node and state for reconciliation
+        # Note: Container reuse optimization is skipped for now
+        # (input children have already been reuse-checked, and container execution is cheap)
+        old_node = ctx.get_node(self.id)
+
+        # Execute the container with its input children
+        # old_child_ids is the OLD output children (for reconciliation)
+        old_output_child_ids = list(old_node.child_ids) if old_node else None
+
+        executed_node = ctx.eager_execute_node(self, parent_id, old_child_ids=old_output_child_ids)
+
+        # Add to parent's collection (if inside another with block)
         # Skip if already auto-collected to prevent double-collection
         if ctx.has_active_frame() and not self._auto_collected:
-            ctx.add_to_current_frame(self)
+            ctx.add_to_current_frame(executed_node)
 
     def __call__(self) -> None:
         """Mount this node at the current position (the "child() rule").
@@ -295,24 +348,16 @@ class ElementState:
     state_call_count: int = 0
     context: dict[type, tp.Any] = field(default_factory=dict)
     parent_id: str | None = None
-    watched_deps: dict[int, tuple[Trackable, set[tuple[int, tp.Any]]]] = field(default_factory=dict)
-    """Maps id(obj) -> (obj, {composite_keys}) for cleanup on re-render/unmount.
-
-    All tracked objects (Stateful, TrackedList, TrackedDict, TrackedSet) use
-    the same composite key format: (id(obj), actual_key) where actual_key is
-    the property name for Stateful or the collection key for tracked collections.
-
-    Before each render, these are cleared from each tracked object.
-    During render, access methods re-register fresh dependencies.
-    Uses id() as key since objects may not be hashable.
-    """
+    # Keep reference to node registered in WeakSets during render
+    # This prevents GC until the next render when it's replaced
+    _render_node: ElementNode | None = None
 
 
 class RenderTree(ClassWithLock):
     """Manages the rendering lifecycle for a component tree.
 
     RenderTree is the main entry point for rendering. It:
-    - Holds the root component and node tree
+    - Holds the root component and flat node storage
     - Tracks which nodes are dirty and need re-rendering
     - Manages the render/execute phases
     - Provides thread-safe rendering via locking
@@ -328,11 +373,12 @@ class RenderTree(ClassWithLock):
 
     Attributes:
         root_component: The top-level component
-        root_node: The root of the node tree (after first render)
+        root_node_id: ID of the root node (after first render)
     """
 
     root_component: IComponent
-    root_node: ElementNode | None  # Root of ElementNode tree
+    root_node_id: str | None  # ID of root node
+    _nodes: dict[str, ElementNode]  # Flat node storage (current render)
     _dirty_ids: set[str]  # Dirty node IDs
     lock: threading.RLock
     _current_node_id: str | None  # ID of node being executed
@@ -344,15 +390,16 @@ class RenderTree(ClassWithLock):
             root: The root component to render
         """
         self.root_component = root
-        self.root_node = None
+        self.root_node_id = None
+        self._nodes: dict[str, ElementNode] = {}  # Flat node storage
         self._dirty_ids: set[str] = set()
         self.lock = threading.RLock()
         self._current_node_id: str | None = None
         # Last property access for mutable()/callback() to capture.
         # Stores (owner, attr_name, value) when a Stateful property is accessed.
         self._last_property_access: tuple[tp.Any, str, tp.Any] | None = None
-        # Frame stack for collecting children during `with` blocks.
-        # Each entry is a Frame that collects nodes created within that scope.
+        # Frame stack for collecting child IDs during `with` blocks.
+        # Each entry is a Frame that collects IDs created within that scope.
         self._frame_stack: list[Frame] = []
         # Callback registry for this session - maps callback IDs to callables.
         # Scoped to RenderTree to ensure proper cleanup on session end.
@@ -364,31 +411,79 @@ class RenderTree(ClassWithLock):
         self._element_state: dict[str, ElementState] = {}
         # Pending hooks to call after render completes
         self._pending_mounts: list[str] = []
+        # With component identity in IDs, different component types at the same
+        # position get different IDs, so we can safely clean up state on unmount
         self._pending_unmounts: list[str] = []
 
-    def push_frame(self) -> Frame:
+        # Patches accumulated during render (Phase 4: inline patch generation)
+        self._patches: list[Patch] = []
+        # Flag to track if we're in incremental render mode (vs initial render)
+        self._is_incremental_render: bool = False
+
+    @property
+    def root_node(self) -> ElementNode | None:
+        """Get the root node (for backwards compatibility during migration)."""
+        if self.root_node_id is None:
+            return None
+        return self._nodes.get(self.root_node_id)
+
+    def get_node(self, node_id: str) -> ElementNode | None:
+        """Get a node by ID from flat storage.
+
+        Args:
+            node_id: The node's ID
+
+        Returns:
+            The ElementNode, or None if not found
+        """
+        return self._nodes.get(node_id)
+
+    def store_node(self, node: ElementNode) -> None:
+        """Store a node in flat storage.
+
+        Args:
+            node: The node to store (must have id assigned)
+        """
+        self._nodes[node.id] = node
+
+    def get_children(self, node: ElementNode) -> list[ElementNode]:
+        """Get the child nodes for a parent node.
+
+        Args:
+            node: The parent node
+
+        Returns:
+            List of child ElementNodes (looked up from flat storage)
+        """
+        return [self._nodes[cid] for cid in node.child_ids if cid in self._nodes]
+
+    def push_frame(self, parent_id: str = "") -> Frame:
         """Push a new frame for collecting child nodes.
 
         Called when entering a `with` block on a container component.
         Child nodes created in that scope will be added to this frame.
 
+        Args:
+            parent_id: ID of the parent node (for computing child position IDs)
+
         Returns:
             The new Frame
         """
-        frame = Frame()
+        frame = Frame(parent_id=parent_id)
         self._frame_stack.append(frame)
         return frame
 
-    def pop_frame(self) -> Frame:
-        """Pop and return the current frame.
+    def pop_frame(self) -> list[str]:
+        """Pop the current frame and return collected child IDs.
 
-        Called when exiting a `with` block. Returns the Frame containing
-        all child nodes collected in that scope.
+        Called when exiting a `with` block. Returns the child node IDs
+        collected in that scope.
 
         Returns:
-            The completed Frame
+            List of child node IDs collected in the frame
         """
-        return self._frame_stack.pop()
+        frame = self._frame_stack.pop()
+        return frame.child_ids
 
     def current_frame(self) -> Frame | None:
         """Get the current frame if one exists.
@@ -402,12 +497,14 @@ class RenderTree(ClassWithLock):
         """Add a node to the current frame if one exists.
 
         Called when a child component is invoked inside a `with` block.
+        Stores the node in flat storage and adds its ID to the frame.
 
         Args:
-            node: The child node to add
+            node: The child node to add (must have id assigned)
         """
         if self._frame_stack:
-            self._frame_stack[-1].children.append(node)
+            self.store_node(node)
+            self._frame_stack[-1].child_ids.append(node.id)
 
     def has_active_frame(self) -> bool:
         """Check if there's an active frame for collecting children.
@@ -417,15 +514,48 @@ class RenderTree(ClassWithLock):
         """
         return bool(self._frame_stack)
 
-    # Legacy aliases for backwards compatibility during transition
-    def push_descriptor_frame(self) -> None:
-        """Push a new frame. Deprecated: use push_frame() instead."""
-        self.push_frame()
+    def next_position_id(self, component: IComponent, key: str | None = None) -> str:
+        """Get the next position-based ID for a node being created.
 
-    def pop_descriptor_frame(self) -> list[ElementNode]:
-        """Pop the current frame. Deprecated: use pop_frame() instead."""
-        return self.pop_frame().children
+        Position IDs encode tree position AND component identity:
+        - Root: "/@{id(component)}"
+        - First child: "/@{id(root)}/0@{id(child)}"
+        - Keyed child: "/@{id(root)}/:key@{id(child)}"
 
+        Including component identity ensures different component types at the
+        same position get different IDs, preventing state collisions.
+
+        Args:
+            component: The component being placed (for identity in ID)
+            key: Optional user-provided key (replaces position index)
+
+        Returns:
+            Position-based ID string with component identity
+
+        Note:
+            This increments the frame's position counter even for keyed nodes,
+            so keyed nodes consume a position index (matching React semantics).
+        """
+        comp_id = id(component)
+
+        if not self._frame_stack:
+            # No active frame - we're at root
+            return f"/@{comp_id}"
+
+        frame = self._frame_stack[-1]
+        parent_id = frame.parent_id
+        position = frame.position
+        frame.position += 1
+
+        # Escape special characters in user-provided keys
+        escaped_key = _escape_key(key) if key else None
+
+        # Handle root case - parent_id is "/@..." so we append directly
+        if escaped_key:
+            return f"{parent_id}/:{escaped_key}@{comp_id}"
+        return f"{parent_id}/{position}@{comp_id}"
+
+    @with_lock
     def next_element_id(self) -> str:
         """Generate a unique stable ID for a node.
 
@@ -440,162 +570,32 @@ class RenderTree(ClassWithLock):
         return f"e{self._node_counter}"
 
     @with_lock
-    def _render_node_tree(self, from_node_id: str | None = None) -> None:
-        """Render the component tree starting from a specific node or root.
+    def _render_node_tree(self) -> None:
+        """Build the initial component tree via eager execution.
 
-        Sets up the render context, creates or reconciles node descriptors,
-        and executes components whose props changed or are marked dirty.
-
-        Args:
-            from_node_id: Node ID to re-render from, or None for initial render
+        With eager execution, calling the root component triggers a cascade:
+        1. root_component() calls _place() on the root
+        2. _place() calls eager_execute_node() which executes render()
+        3. render() creates children via component calls
+        4. Each child's _place() calls eager_execute_node() recursively
+        5. The entire tree is built before this method returns
 
         Raises:
             RuntimeError: If another render is already in progress
         """
-        from trellis.core.reconcile import reconcile_node
-
         if get_active_render_tree():
             raise RuntimeError("Attempted to start rendering with another context active!")
 
         try:
             set_active_render_tree(self)
 
-            if from_node_id is None:
-                # Initial render - create node tree from root component
-                # root_component() returns an ElementNode via Component.__call__
-                root_node = self.root_component()
-
-                # Reconcile against None to mount the entire tree
-                self.root_node = reconcile_node(None, root_node, None, self)
-            else:
-                # Re-render from a dirty node
-                if self.root_node is None:
-                    return
-
-                # Find the node and its parent
-                node, parent_id = self._find_node_with_parent(self.root_node, from_node_id)
-                if node is None:
-                    return
-
-                # Get node state and reset state call count
-                state = self._element_state.get(from_node_id)
-                if state:
-                    state.state_call_count = 0
-
-                # Create new node for this component with current props
-                # component(**props) returns an ElementNode via Component.__call__
-                # IMPORTANT: Include the key to preserve identity during reconciliation
-                props = dict(node.props)
-                if node.key:
-                    props["key"] = node.key
-                if node.children and node.component._has_children_param:
-                    props["children"] = list(node.children)
-                new_node = node.component(**props)
-
-                # Reconcile and update tree
-                updated_node = reconcile_node(node, new_node, parent_id, self)
-                self.root_node = self._replace_node_in_tree(
-                    self.root_node, from_node_id, updated_node
-                )
+            # Initial render - eager execution builds the entire tree
+            # root_component() → _place() → eager_execute_node() → tree built
+            root_node = self.root_component()
+            self.root_node_id = root_node.id
 
         finally:
             set_active_render_tree(None)
-
-    def _find_node_with_parent(
-        self, root: ElementNode, target_id: str, parent_id: str | None = None
-    ) -> tuple[ElementNode | None, str | None]:
-        """Find a node by ID and return it with its parent's ID."""
-        if root.id == target_id:
-            return root, parent_id
-        for child in root.children:
-            result, found_parent = self._find_node_with_parent(child, target_id, root.id)
-            if result is not None:
-                return result, found_parent
-        return None, None
-
-    def _replace_node_in_tree(
-        self, root: ElementNode, target_id: str, replacement: ElementNode
-    ) -> ElementNode:
-        """Replace a node in the tree by ID, returning the new tree.
-
-        Uses parent_id chain for O(depth) traversal.
-
-        Raises:
-            RuntimeError: If the node cannot be found via parent_id chain
-        """
-        if root.id == target_id:
-            return replacement
-
-        # Build path using parent_id chain
-        path = self._build_path_to_root(target_id)
-        if not path:
-            raise RuntimeError(
-                f"Cannot find node {target_id} via parent_id chain. "
-                f"This indicates a bug in ElementState.parent_id management."
-            )
-
-        return self._replace_along_path(root, path, replacement)
-
-    def _build_path_to_root(self, target_id: str) -> list[str]:
-        """Build path from target node to root using parent_id chain.
-
-        Returns list of node IDs from root to target (inclusive), or
-        empty list if chain is broken.
-        """
-        path: list[str] = []
-        current_id: str | None = target_id
-
-        while current_id is not None:
-            path.append(current_id)
-            state = self._element_state.get(current_id)
-            if state is None:
-                return []  # Chain broken
-            current_id = state.parent_id
-
-        path.reverse()  # Now root-to-target order
-        return path
-
-    def _replace_along_path(
-        self, root: ElementNode, path: list[str], replacement: ElementNode
-    ) -> ElementNode:
-        """Replace node by rebuilding only ancestors along the path.
-
-        O(depth * avg_children) instead of O(nodes).
-
-        Raises:
-            RuntimeError: If path doesn't match tree structure
-        """
-        if not path or root.id != path[0]:
-            raise RuntimeError(
-                f"Path mismatch: expected root ID {root.id} but path starts with "
-                f"{path[0] if path else 'empty path'}"
-            )
-
-        if len(path) == 1:
-            # Target is the root
-            return replacement
-
-        # Find which child is on the path
-        next_id = path[1]
-        new_children = []
-        found = False
-
-        for child in root.children:
-            if child.id == next_id:
-                found = True
-                # Recurse down the path
-                new_child = self._replace_along_path(child, path[1:], replacement)
-                new_children.append(new_child)
-            else:
-                new_children.append(child)
-
-        if not found:
-            raise RuntimeError(
-                f"Path mismatch: node {root.id} has no child with ID {next_id}. "
-                f"This indicates a bug in ElementState.parent_id management."
-            )
-
-        return dataclass_replace(root, children=tuple(new_children))
 
     @with_lock
     def _render_dirty_nodes(self) -> None:
@@ -630,52 +630,150 @@ class RenderTree(ClassWithLock):
             set_active_render_tree(None)
 
     def _render_single_node(self, node_id: str) -> None:
-        """Render a single dirty node by ID.
+        """Re-render a single dirty node by ID.
 
-        Finds the node in the tree, executes it, and updates the tree
-        with the result. Must be called with active render context.
+        Uses eager execution to re-render the node. Emits patches for
+        any changes during incremental render.
         """
-        if self.root_node is None:
+        old_node = self._nodes.get(node_id)
+        if old_node is None:
             return
 
-        # Find the node and its parent
-        node, parent_id = self._find_node_with_parent(self.root_node, node_id)
-        if node is None:
-            return
-
-        # Get state and reset state call count
+        # Get state
         state = self._element_state.get(node_id)
-        if state:
-            state.state_call_count = 0
+        if state is None:
+            return
+        parent_id = state.parent_id
 
-        # Determine old_children for reconciliation
-        # Children with empty IDs are descriptors from the with block (first render)
-        # Children with IDs are previously mounted nodes (re-render)
-        old_children: list[ElementNode] | None = None
-        if node.children:
-            # Check if children are mounted (have IDs) or just descriptors
-            first_has_id = bool(node.children[0].id)
-            if __debug__:
-                # Verify all children have consistent ID state (invariant)
-                all_have_id = all(bool(c.id) for c in node.children)
-                assert first_has_id == all_have_id, (
-                    f"Inconsistent child ID state for node {node.id}: "
-                    f"first_has_id={first_has_id}, all_have_id={all_have_id}"
-                )
-            if first_has_id:
-                old_children = list(node.children)
-            # else: children are descriptors, treat as no old_children
+        # Get old child IDs for reconciliation
+        old_child_ids = list(old_node.child_ids) if old_node.child_ids else None
 
-        rendered_node = self.execute_node(node, parent_id, old_children=old_children)
+        # Re-execute using eager execution
+        # eager_execute_node handles state reset and child reconciliation
+        self.eager_execute_node(old_node, parent_id, old_child_ids=old_child_ids)
 
-        # Update tree with rendered result
-        self.root_node = self._replace_node_in_tree(self.root_node, node_id, rendered_node)
+        # Emit UpdatePatch if props or children changed (for incremental render)
+        # Note: _emit_update_patch_if_changed also updates previous state
+        self._emit_update_patch_if_changed(node_id, old_node)
+
+    def eager_execute_node(
+        self,
+        node: ElementNode,
+        parent_id: str | None,
+        old_child_ids: list[str] | None = None,
+    ) -> ElementNode:
+        """Execute a component immediately during placement (eager execution).
+
+        This is called from Component._place() when a node cannot be reused.
+        It combines mounting and execution in a single operation.
+
+        Args:
+            node: The node to execute (must have id assigned)
+            parent_id: Parent node's ID
+            old_child_ids: Previous child IDs to reconcile against (None for new node)
+
+        Returns:
+            Node with child_ids populated from execution, stored in _nodes
+        """
+        from trellis.core.reconcile import reconcile_node_children
+
+        node_id = node.id
+
+        # Create ElementState if this is a new node
+        state = self._element_state.get(node_id)
+        if state is None:
+            state = ElementState(parent_id=parent_id, mounted=True)
+            self._element_state[node_id] = state
+            # Track mount hook (called after render completes)
+            self.track_mount(node_id)
+        else:
+            # Re-executing existing node
+            state.parent_id = parent_id
+
+        # Clear dirty flag - we're executing now, no need to process again
+        state.dirty = False
+        self._dirty_ids.discard(node_id)
+
+        # Store node early so get_node() works during render for dependency tracking
+        self.store_node(node)
+
+        # Keep node alive for WeakSet references registered during render.
+        # After render, dataclass_replace creates a new result node, but the
+        # WeakSet still references this original node. Without this reference,
+        # the node would be GC'd and removed from the WeakSet.
+        state._render_node = node
+
+        state.state_call_count = 0
+
+        # Get props including children if component accepts them
+        props = unfreeze_props(node.props)
+        if node.component._has_children_param:
+            props["children"] = self.get_children(node)
+
+        # Set up execution context
+        old_node_id = self._current_node_id
+        self._current_node_id = node_id
+
+        # IMPORTANT: Save old child nodes BEFORE render() to avoid overwrites
+        old_nodes: dict[str, ElementNode] = {}
+        if old_child_ids:
+            for old_id in old_child_ids:
+                old_node = self._nodes.get(old_id)
+                if old_node:
+                    old_nodes[old_id] = old_node
+
+        # Push a frame for child IDs created during execution
+        self.push_frame(parent_id=node_id)
+        frame_popped = False
+
+        try:
+            # Render the component (creates child nodes via component calls)
+            node.component.render(**props)
+
+            # Get child IDs created during execution
+            new_child_ids = self.pop_frame()
+            frame_popped = True
+
+            # Reconcile or mount children
+            if new_child_ids:
+                if old_child_ids:
+                    # Reconcile with old children
+                    final_child_ids = reconcile_node_children(
+                        old_child_ids, new_child_ids, node_id, self, old_nodes
+                    )
+                else:
+                    # All new children - already executed during creation
+                    final_child_ids = new_child_ids
+
+                result = dataclass_replace(node, child_ids=tuple(final_child_ids))
+            else:
+                # No children - unmount any old children
+                if old_child_ids:
+                    for child_id in old_child_ids:
+                        self.unmount_node_tree(child_id)
+                result = dataclass_replace(node, child_ids=())
+
+            # Store the executed node
+            self.store_node(result)
+
+            # Don't update previous state here - let the caller handle it
+            # after emitting patches (in _render_single_node)
+
+            return result
+
+        except BaseException:
+            if not frame_popped:
+                self.pop_frame()
+            raise
+
+        finally:
+            self._current_node_id = old_node_id
 
     def execute_node(
         self,
         node: ElementNode,
         parent_id: str | None,
-        old_children: list[ElementNode] | None = None,
+        old_child_ids: list[str] | None = None,
         *,
         call_hooks: bool = True,
     ) -> ElementNode:
@@ -687,12 +785,12 @@ class RenderTree(ClassWithLock):
         Args:
             node: The node to execute (must have id assigned)
             parent_id: Parent node's ID
-            old_children: Previous children to reconcile against (None for initial mount)
+            old_child_ids: Previous child IDs to reconcile against (None for initial mount)
             call_hooks: Whether to call mount hooks for children. Set False when
                        parent will call mount_node_tree to handle all hooks.
 
         Returns:
-            Node with children populated from execution
+            Node with child_ids populated from execution
         """
         from trellis.core.reconcile import reconcile_node_children
 
@@ -703,7 +801,7 @@ class RenderTree(ClassWithLock):
         # Get props including children if component accepts them
         props = unfreeze_props(node.props)
         if node.component._has_children_param:
-            props["children"] = list(node.children)
+            props["children"] = self.get_children(node)
 
         # Set up execution context
         old_node_id = self._current_node_id
@@ -712,54 +810,74 @@ class RenderTree(ClassWithLock):
         # Reset state call count for consistent hook ordering
         state.state_call_count = 0
 
-        # Clear existing dependency tracking before re-execution
-        # Dependencies will be re-registered fresh during execution
-        self.clear_node_dependencies(node.id)
+        # Store node early so get_node() works during render for dependency tracking
+        self.store_node(node)
 
-        # Push a frame for child nodes created during execution
-        self.push_descriptor_frame()
+        # Keep node alive for WeakSet references registered during render.
+        # After render, dataclass_replace creates a new result node, but the
+        # WeakSet still references this original node. Without this reference,
+        # the node would be GC'd and removed from the WeakSet.
+        state._render_node = node
+
+        # IMPORTANT: Save old child nodes BEFORE render() to avoid overwrites
+        # During render(), new child descriptors are stored in _nodes via
+        # add_to_current_frame(), which may overwrite old nodes with the same
+        # position-based ID. We need the old node's child_ids for reconciliation.
+        old_nodes: dict[str, ElementNode] = {}
+        if old_child_ids:
+            for old_id in old_child_ids:
+                old_node = self._nodes.get(old_id)
+                if old_node:
+                    old_nodes[old_id] = old_node
+
+        # Push a frame for child IDs created during execution
+        self.push_frame(parent_id=node.id)
         frame_popped = False
 
         try:
             # Render the component (creates child nodes via component calls)
             node.component.render(**props)
 
-            # Get child nodes created during execution
-            child_nodes = self.pop_descriptor_frame()
+            # Get child IDs created during execution
+            new_child_ids = self.pop_frame()
             frame_popped = True
 
             # Reconcile or mount children
-            if child_nodes:
+            if new_child_ids:
                 # Reconcile with old children if this is a re-execution
-                if old_children:
-                    new_children = reconcile_node_children(old_children, child_nodes, node.id, self)
+                if old_child_ids:
+                    final_child_ids = reconcile_node_children(
+                        old_child_ids, new_child_ids, node.id, self, old_nodes
+                    )
                 else:
                     # Initial mount - mount all new children
                     # Don't call hooks here - parent will call mount_node_tree
-                    new_children = [
-                        self.mount_new_node(child, node.id, call_hooks=False)
-                        for child in child_nodes
-                    ]
+                    final_child_ids = []
+                    for child_id in new_child_ids:
+                        child_node = self._nodes.get(child_id)
+                        if child_node:
+                            self.mount_new_node(child_node, node.id, call_hooks=False)
+                            final_child_ids.append(child_id)
 
                 # Call mount hooks for any newly created children during re-render
-                # For initial mount (old_children is None), parent's mount_node_tree handles this
+                # For initial mount (old_child_ids is None), parent's mount_node_tree handles this
                 # mount_node_tree checks state.mounted and skips already-mounted nodes
-                if call_hooks and old_children is not None:
-                    for child in new_children:
-                        self.mount_node_tree(child)
+                if call_hooks and old_child_ids is not None:
+                    for child_id in final_child_ids:
+                        self.mount_node_tree(child_id)
 
-                return dataclass_replace(node, children=tuple(new_children))
+                return dataclass_replace(node, child_ids=tuple(final_child_ids))
 
             # No new children created
-            if old_children:
+            if old_child_ids:
                 # Had children before but none now - unmount all
-                for child in old_children:
-                    self.unmount_node_tree(child)
-            return dataclass_replace(node, children=())
+                for child_id in old_child_ids:
+                    self.unmount_node_tree(child_id)
+            return dataclass_replace(node, child_ids=())
 
         except BaseException:
             if not frame_popped:
-                self.pop_descriptor_frame()
+                self.pop_frame()
             raise
 
         finally:
@@ -803,6 +921,7 @@ class RenderTree(ClassWithLock):
         if node_id in self._element_state:
             self._element_state[node_id].dirty = True
 
+    @with_lock
     def track_mount(self, node_id: str) -> None:
         """Track a node for mount hook to be called after render.
 
@@ -811,8 +930,12 @@ class RenderTree(ClassWithLock):
         """
         self._pending_mounts.append(node_id)
 
+    @with_lock
     def track_unmount(self, node_id: str) -> None:
         """Track a node for unmount hook to be called after render.
+
+        With component identity in IDs, different component types at the same
+        position get different IDs, so there's no risk of state collision.
 
         Args:
             node_id: The ID of the node being unmounted
@@ -829,9 +952,8 @@ class RenderTree(ClassWithLock):
         # Process unmounts first (cleanup before new mounts)
         for node_id in self._pending_unmounts:
             self.call_unmount_hooks(node_id)
-            # Now clean up state (deferred from unmount_node_tree so hooks could access it)
-            self.clear_node_dependencies(node_id)
             self.clear_callbacks_for_node(node_id)
+            # With component identity in IDs, we can safely remove ElementState
             self._element_state.pop(node_id, None)
         self._pending_unmounts.clear()
 
@@ -898,14 +1020,18 @@ class RenderTree(ClassWithLock):
         """
         self._callback_registry.clear()
 
+    @with_lock
     def render(self) -> dict[str, tp.Any]:
         """Render and return the serialized node tree.
 
         This is the main public API for rendering. It:
-        1. Builds tree structure (initial) or identifies dirty nodes (re-render)
-        2. Renders all dirty nodes until none remain
-        3. Processes any pending mount/unmount hooks
-        4. Serializes the result for transmission
+        1. Builds tree via eager execution (initial) or re-renders dirty nodes
+        2. Processes any pending mount/unmount hooks
+        3. Serializes the result for transmission
+        4. Populates previous state in ElementState for subsequent diffs
+
+        With eager execution, the initial render builds the entire tree
+        during root_component() call - no separate dirty node processing needed.
 
         Callbacks use deterministic IDs (node_id:prop_name) and are
         automatically overwritten on re-render, so no clearing is needed.
@@ -917,11 +1043,11 @@ class RenderTree(ClassWithLock):
         from trellis.core.serialization import serialize_node
 
         if self.root_node is None:
-            # Initial render - build tree structure (marks nodes dirty)
-            self._render_node_tree(from_node_id=None)
-
-        # Render all dirty nodes (loops until no more dirty)
-        self._render_dirty_nodes()
+            # Initial render - eager execution builds entire tree
+            self._render_node_tree()
+        else:
+            # Re-render - process any dirty nodes from state changes
+            self._render_dirty_nodes()
 
         # Process hooks after tree is fully built
         self._process_pending_hooks()
@@ -929,6 +1055,48 @@ class RenderTree(ClassWithLock):
         assert self.root_node is not None
         return serialize_node(self.root_node, self)
 
+    def has_dirty_nodes(self) -> bool:
+        """Check if there are any nodes that need re-rendering.
+
+        Returns:
+            True if there are dirty nodes, False otherwise
+        """
+        return bool(self._dirty_ids)
+
+    @with_lock
+    def render_and_diff(self) -> list[Patch]:
+        """Render dirty nodes and return patches describing changes.
+
+        This is the incremental render API. It:
+        1. Clears accumulated patches
+        2. Renders all dirty nodes (patches emitted inline during reconciliation)
+        3. Processes any pending mount/unmount hooks
+        4. Returns accumulated patches
+
+        Returns:
+            List of Patch objects to send to client. Empty if nothing changed.
+        """
+        if self.root_node is None:
+            # Initial render - should use render() instead
+            return []
+
+        # Clear patches and enable incremental render mode
+        self._patches.clear()
+        self._is_incremental_render = True
+
+        try:
+            # Render all dirty nodes (patches emitted inline)
+            self._render_dirty_nodes()
+
+            # Process hooks after tree is fully built
+            self._process_pending_hooks()
+
+            # Return accumulated patches
+            return list(self._patches)
+        finally:
+            self._is_incremental_render = False
+
+    @with_lock
     def get_element_state(self, node_id: str) -> ElementState:
         """Get or create ElementState for a node ID.
 
@@ -950,6 +1118,7 @@ class RenderTree(ClassWithLock):
         """
         self._element_state.pop(node_id, None)
 
+    @with_lock
     def mount_new_node(
         self,
         node: ElementNode,
@@ -957,60 +1126,65 @@ class RenderTree(ClassWithLock):
         *,
         call_hooks: bool = True,
     ) -> ElementNode:
-        """Create and mount a new node.
+        """Mount a new node.
 
-        Assigns a new ID, creates ElementState, marks dirty for later rendering.
+        Creates ElementState and marks dirty for later rendering.
         The actual component execution happens in _render_dirty_nodes.
 
+        With position-based IDs, the node already has its ID assigned at creation
+        time in _place(). This method just sets up the state.
+
         Args:
-            node: The node to mount (will have empty id)
+            node: The node to mount (already has position-based ID)
             parent_id: Parent node's ID
             call_hooks: Whether to track mount hooks. Set False for internal
                        reconciliation where parent handles hook tracking.
 
         Returns:
-            The mounted node with ID assigned (children empty until rendered)
+            The mounted node (unchanged, ID already assigned)
         """
-        # Assign new ID (keep original children - they're descriptors from with block
-        # that will be passed to render(), then replaced with mounted children)
-        new_id = self.next_element_id()
-        node_with_id = dataclass_replace(node, id=new_id)
+        node_id = node.id
 
         # Create ElementState and mark as mounted
         # (hooks are deferred but node is conceptually mounted now)
         state = ElementState(parent_id=parent_id, mounted=True)
-        self._element_state[new_id] = state
+        self._element_state[node_id] = state
 
         # Mark dirty so _render_dirty_nodes will render this node
-        self.mark_dirty_id(new_id)
+        self.mark_dirty_id(node_id)
 
         # Track for mount hooks (called after render completes)
-        self.track_mount(new_id)
+        self.track_mount(node_id)
 
-        # Return node - children are descriptors from with block, will be replaced when rendered
-        return node_with_id
+        # Return node unchanged - children are descriptors from with block,
+        # will be replaced when rendered
+        return node
 
-    def mount_node_tree(self, node: ElementNode) -> None:
+    def mount_node_tree(self, node_id: str) -> None:
         """Mount a node and all its descendants.
 
         Mounting is performed parent-first. Hooks are tracked for deferred
         execution after the render phase completes.
 
         Args:
-            node: The node to mount
+            node_id: The ID of the node to mount
         """
-        state = self._element_state.get(node.id)
+        state = self._element_state.get(node_id)
         if state is None or state.mounted:
             return
 
         state.mounted = True
         # Track mount hook (called after render completes)
-        self.track_mount(node.id)
+        self.track_mount(node_id)
 
-        for child in node.children:
-            self.mount_node_tree(child)
+        # Mount children
+        node = self._nodes.get(node_id)
+        if node:
+            for child_id in node.child_ids:
+                self.mount_node_tree(child_id)
 
-    def unmount_node_tree(self, node: ElementNode) -> None:
+    @with_lock
+    def unmount_node_tree(self, node_id: str) -> None:
         """Unmount a node and all its descendants.
 
         Unmounting is performed children-first. Hooks are tracked for deferred
@@ -1018,22 +1192,27 @@ class RenderTree(ClassWithLock):
         so hooks can access local_state.
 
         Args:
-            node: The node to unmount
+            node_id: The ID of the node to unmount
         """
-        state = self._element_state.get(node.id)
+        state = self._element_state.get(node_id)
         if state is None or not state.mounted:
             return
 
         # Unmount children first (depth-first)
-        for child in node.children:
-            self.unmount_node_tree(child)
+        node = self._nodes.get(node_id)
+        if node:
+            for child_id in node.child_ids:
+                self.unmount_node_tree(child_id)
 
         # Track unmount hook (called after render completes)
         # State cleanup is deferred to _process_pending_hooks so hooks can access local_state
-        self.track_unmount(node.id)
+        self.track_unmount(node_id)
+
+        # Note: RemovePatch is emitted in process_reconcile_result before calling
+        # unmount_node_tree, so we don't need to track removed IDs here.
 
         state.mounted = False
-        self._dirty_ids.discard(node.id)
+        self._dirty_ids.discard(node_id)
 
     def call_mount_hooks(self, node_id: str) -> None:
         """Call on_mount() for all Stateful instances on a node.
@@ -1066,7 +1245,6 @@ class RenderTree(ClassWithLock):
         state = self._element_state.get(node_id)
         if state is None:
             return
-
         # Get states sorted by call index, reversed
         items = list(state.local_state.items())
         items.sort(key=lambda x: x[0][1], reverse=True)
@@ -1077,24 +1255,153 @@ class RenderTree(ClassWithLock):
                 except Exception as e:
                     logging.exception(f"Error in Stateful.on_unmount: {e}")
 
-    def clear_node_dependencies(self, node_id: str) -> None:
-        """Clear a node's dependency registrations from all watched Stateful/Tracked instances.
+    # -------------------------------------------------------------------------
+    # Inline patch generation helpers (Phase 4)
+    # -------------------------------------------------------------------------
 
-        Called before a node re-renders (to allow fresh registration) and on unmount
-        (to prevent stale references).
+    def _emit_patch(self, patch: Patch) -> None:
+        """Add a patch to the accumulated patches list.
+
+        Only adds patches during incremental render mode.
 
         Args:
-            node_id: The node ID to remove from dependencies
+            patch: The patch to emit
         """
-        state = self._element_state.get(node_id)
-        if state is None:
+        if self._is_incremental_render:
+            self._patches.append(patch)
+
+    def _serialize_node_for_patch(self, node: ElementNode) -> dict[str, tp.Any]:
+        """Serialize a node and its subtree for an AddPatch.
+
+        Args:
+            node: The node to serialize
+
+        Returns:
+            Serialized node dict suitable for AddPatch.node
+        """
+        from trellis.core.serialization import serialize_node
+
+        return serialize_node(node, self)
+
+    def _serialize_props_for_state(self, node: ElementNode) -> dict[str, tp.Any]:
+        """Serialize a node's props for state tracking.
+
+        Args:
+            node: The node whose props to serialize
+
+        Returns:
+            Serialized props dict
+        """
+        from trellis.core.serialization import _serialize_node_props
+
+        return _serialize_node_props(node, self)
+
+    def _emit_update_patch_if_changed(
+        self,
+        node_id: str,
+        old_node: ElementNode | None,
+    ) -> None:
+        """Emit an UpdatePatch if props or children changed.
+
+        Compares current node to old_node and emits UpdatePatch if needed.
+
+        Args:
+            node_id: The node's ID
+            old_node: The old node (for comparison)
+        """
+        node = self._nodes.get(node_id)
+        if not node:
             return
 
-        watched_deps = state.watched_deps
-        for obj, dep_keys in watched_deps.values():
-            # All tracked objects (Stateful, TrackedList, etc.) implement Trackable
-            # and use composite keys: (id(obj), actual_key)
-            for composite_key in dep_keys:
-                _, actual_key = composite_key
-                obj._clear_dep(node_id, actual_key)
-        watched_deps.clear()
+        # Serialize current props
+        current_props = self._serialize_props_for_state(node)
+        current_child_ids = list(node.child_ids)
+
+        # Get previous state from old_node
+        prev_props = self._serialize_props_for_state(old_node) if old_node else {}
+        prev_child_ids = list(old_node.child_ids) if old_node else []
+
+        # Compute prop diff (only changed props)
+        props_diff: dict[str, tp.Any] = {
+            key: value
+            for key, value in current_props.items()
+            if key not in prev_props or prev_props[key] != value
+        }
+        # Add removed props (signal removal with None)
+        props_diff.update({key: None for key in prev_props if key not in current_props})
+
+        # Check if children order changed
+        children_changed = current_child_ids != prev_child_ids
+
+        # Emit update patch if anything changed
+        if props_diff or children_changed:
+            self._emit_patch(
+                UpdatePatch(
+                    id=node_id,
+                    props=props_diff if props_diff else None,
+                    children=current_child_ids if children_changed else None,
+                )
+            )
+
+    def process_reconcile_result(
+        self,
+        result: ReconcileResult,
+        parent_id: str,
+        old_nodes: dict[str, ElementNode],
+    ) -> list[str]:
+        """Process a ReconcileResult and apply side effects.
+
+        This is the "impure" counterpart to the pure reconcile_children() function.
+        It interprets the ReconcileResult and performs:
+        - Unmounting removed nodes (emits RemovePatch)
+        - Mounting added nodes (emits AddPatch)
+        - Emitting UpdatePatch for matched nodes with changes
+
+        With eager execution, matched nodes have already been handled by their
+        _place() calls. We just need to emit patches for any changes.
+
+        Args:
+            result: The ReconcileResult from reconcile_children()
+            parent_id: The parent node's ID
+            old_nodes: Saved old node data for props comparison
+
+        Returns:
+            Final list of child IDs after reconciliation
+        """
+        # 1. REMOVE first (cleanup before new state)
+        # Emit RemovePatch for each removed node
+        for node_id in result.removed:
+            self._emit_patch(RemovePatch(id=node_id))
+            self.unmount_node_tree(node_id)
+
+        # 2. ADD second (mount new nodes)
+        # With eager execution, nodes are already executed in _place()
+        # We just need to ensure ElementState exists and emit patches
+        for node_id in result.added:
+            node = self._nodes.get(node_id)
+            if node:
+                # Node was already executed in _place(), just ensure state exists
+                state = self._element_state.get(node_id)
+                if state is None:
+                    state = ElementState(parent_id=parent_id, mounted=True)
+                    self._element_state[node_id] = state
+                    self.track_mount(node_id)
+
+                # Emit AddPatch with serialized subtree
+                self._emit_patch(
+                    AddPatch(
+                        parent_id=parent_id,
+                        children=result.child_order,
+                        node=self._serialize_node_for_patch(node),
+                    )
+                )
+
+        # 3. MATCHED - with eager execution, nodes already handled in _place()
+        # Just emit patches for any changes detected
+        for node_id in result.matched:
+            old_node = old_nodes.get(node_id)
+            if old_node:
+                # Emit UpdatePatch if props or children changed
+                self._emit_update_patch_if_changed(node_id, old_node)
+
+        return result.child_order

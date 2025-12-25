@@ -64,11 +64,10 @@ class TestElementNameProperty:
         ctx = RenderTree(App)
         ctx.render()
 
-        children = ctx.root_node.children
-        assert children[0].component.element_name == "Label"
-        assert children[1].component.element_name == "Button"
-        assert children[2].component.element_name == "Column"
-        assert children[3].component.element_name == "Row"
+        assert ctx.get_node(ctx.root_node.child_ids[0]).component.element_name == "Label"
+        assert ctx.get_node(ctx.root_node.child_ids[1]).component.element_name == "Button"
+        assert ctx.get_node(ctx.root_node.child_ids[2]).component.element_name == "Column"
+        assert ctx.get_node(ctx.root_node.child_ids[3]).component.element_name == "Row"
 
     def test_react_component_without_element_name_raises(self) -> None:
         """ReactComponentBase without _element_name raises NotImplementedError."""
@@ -153,7 +152,7 @@ class TestReactComponentBaseDecorator:
         ctx = RenderTree(App)
         ctx.render()
 
-        node = ctx.root_node.children[0]
+        node = ctx.get_node(ctx.root_node.child_ids[0])
         assert node.component.element_name == "TestWidget"
         assert dict(node.props).get("value") == 42
 
