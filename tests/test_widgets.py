@@ -1029,12 +1029,12 @@ class TestTableWidget:
         assert render_calls[1]["name"] == "Item 2"
 
         # Verify CellSlot children were created
-        table_comp = ctx.root_node.children[0]
-        table_inner = table_comp.children[0]
+        table_comp = ctx.get_node(ctx.root_node.child_ids[0])
+        table_inner = ctx.get_node(table_comp.child_ids[0])
         assert table_inner.component.element_name == "TableInner"
 
         # CellSlots are children of TableInner
-        cell_slots = [c for c in table_inner.children if c.component.element_name == "CellSlot"]
+        cell_slots = [ctx.get_node(cid) for cid in table_inner.child_ids if ctx.get_node(cid).component.element_name == "CellSlot"]
         assert len(cell_slots) == 2  # One per row (only 'value' column has render)
 
         # Verify slot IDs follow "rowKey:columnName" format
@@ -1065,8 +1065,9 @@ class TestTableWidget:
         ctx = RenderTree(App)
         ctx.render()
 
-        table_inner = ctx.root_node.children[0].children[0]
-        cell_slots = [c for c in table_inner.children if c.component.element_name == "CellSlot"]
+        table_comp = ctx.get_node(ctx.root_node.child_ids[0])
+        table_inner = ctx.get_node(table_comp.child_ids[0])
+        cell_slots = [ctx.get_node(cid) for cid in table_inner.child_ids if ctx.get_node(cid).component.element_name == "CellSlot"]
 
         # Slot keys should use the row_key column value
         slot_ids = [slot.properties["slot"] for slot in cell_slots]
@@ -1095,8 +1096,9 @@ class TestTableWidget:
         ctx = RenderTree(App)
         ctx.render()
 
-        table_inner = ctx.root_node.children[0].children[0]
-        cell_slots = [c for c in table_inner.children if c.component.element_name == "CellSlot"]
+        table_comp = ctx.get_node(ctx.root_node.child_ids[0])
+        table_inner = ctx.get_node(table_comp.child_ids[0])
+        cell_slots = [ctx.get_node(cid) for cid in table_inner.child_ids if ctx.get_node(cid).component.element_name == "CellSlot"]
 
         slot_ids = [slot.properties["slot"] for slot in cell_slots]
         assert "custom1:name" in slot_ids
@@ -1124,8 +1126,9 @@ class TestTableWidget:
         ctx = RenderTree(App)
         ctx.render()
 
-        table_inner = ctx.root_node.children[0].children[0]
-        cell_slots = [c for c in table_inner.children if c.component.element_name == "CellSlot"]
+        table_comp = ctx.get_node(ctx.root_node.child_ids[0])
+        table_inner = ctx.get_node(table_comp.child_ids[0])
+        cell_slots = [ctx.get_node(cid) for cid in table_inner.child_ids if ctx.get_node(cid).component.element_name == "CellSlot"]
 
         slot_ids = [slot.properties["slot"] for slot in cell_slots]
         assert "0:name" in slot_ids

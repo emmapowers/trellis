@@ -31,6 +31,7 @@ See Also:
 from __future__ import annotations
 
 import typing as tp
+import weakref
 from abc import ABC, abstractmethod
 
 from trellis.core.rendering import (
@@ -173,6 +174,7 @@ class Component(ABC):
         # Create new node
         node = ElementNode(
             component=self,
+            _tree_ref=weakref.ref(ctx),
             key=key,
             props=frozen_props,
             id=position_id,

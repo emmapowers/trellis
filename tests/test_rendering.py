@@ -2,6 +2,7 @@
 
 import concurrent.futures
 import threading
+import weakref
 
 import pytest
 
@@ -22,6 +23,18 @@ def make_component(name: str) -> CompositionComponent:
     return CompositionComponent(name=name, render_func=lambda: None)
 
 
+# Dummy tree for testing ElementNode creation
+_dummy_tree: RenderTree | None = None
+
+
+def _get_dummy_tree_ref() -> weakref.ref[RenderTree]:
+    """Get a weakref to a dummy tree for testing."""
+    global _dummy_tree
+    if _dummy_tree is None:
+        _dummy_tree = RenderTree(make_component("DummyRoot"))
+    return weakref.ref(_dummy_tree)
+
+
 def make_descriptor(
     comp: CompositionComponent,
     key: str | None = None,
@@ -30,6 +43,7 @@ def make_descriptor(
     """Helper to create an ElementNode."""
     return ElementNode(
         component=comp,
+        _tree_ref=_get_dummy_tree_ref(),
         key=key,
         props=freeze_props(props or {}),
     )

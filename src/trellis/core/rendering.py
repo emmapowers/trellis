@@ -32,6 +32,7 @@ import contextvars
 import logging
 import threading
 import typing as tp
+import weakref
 from dataclasses import dataclass, field
 from dataclasses import replace as dataclass_replace
 
@@ -40,7 +41,6 @@ from trellis.core.base import (
     ElementKind,
     FrozenProps,
     IComponent,
-    Trackable,
     freeze_props,
     unfreeze_props,
 )
@@ -177,6 +177,7 @@ class ElementNode:
 
     Attributes:
         component: The component that will be/was executed
+        _tree_ref: Weak reference to the RenderTree that owns this node
         props: Immutable tuple of (key, value) property pairs
         key: Optional stable identifier for reconciliation
         child_ids: IDs of child nodes (tuple for immutability). Nodes are
@@ -185,6 +186,7 @@ class ElementNode:
     """
 
     component: IComponent
+    _tree_ref: weakref.ref[RenderTree]
     props: FrozenProps = ()
     key: str | None = None
     child_ids: tuple[str, ...] = ()
@@ -338,8 +340,6 @@ class ElementState:
         state_call_count: Counter for consistent Stateful() instantiation ordering
         context: State context from `with state:` blocks
         parent_id: Parent node's ID (for context walking)
-        serialized_props: Previous serialized props (for inline patch generation)
-        previous_child_ids: Previous child IDs (for inline patch generation)
     """
 
     dirty: bool = False
@@ -348,20 +348,9 @@ class ElementState:
     state_call_count: int = 0
     context: dict[type, tp.Any] = field(default_factory=dict)
     parent_id: str | None = None
-    watched_deps: dict[int, tuple[Trackable, set[tuple[int, tp.Any]]]] = field(default_factory=dict)
-    """Maps id(obj) -> (obj, {composite_keys}) for cleanup on re-render/unmount.
-
-    All tracked objects (Stateful, TrackedList, TrackedDict, TrackedSet) use
-    the same composite key format: (id(obj), actual_key) where actual_key is
-    the property name for Stateful or the collection key for tracked collections.
-
-    Before each render, these are cleared from each tracked object.
-    During render, access methods re-register fresh dependencies.
-    Uses id() as key since objects may not be hashable.
-    """
-    # Previous state for inline patch generation (Phase 4)
-    serialized_props: dict[str, tp.Any] | None = None
-    previous_child_ids: list[str] | None = None
+    # Keep reference to node registered in WeakSets during render
+    # This prevents GC until the next render when it's replaced
+    _render_node: ElementNode | None = None
 
 
 class RenderTree(ClassWithLock):
@@ -698,13 +687,21 @@ class RenderTree(ClassWithLock):
             # Track mount hook (called after render completes)
             self.track_mount(node_id)
         else:
-            # Re-executing existing node - clear dependencies and reset call count
-            self.clear_node_dependencies(node_id)
+            # Re-executing existing node
             state.parent_id = parent_id
 
         # Clear dirty flag - we're executing now, no need to process again
         state.dirty = False
         self._dirty_ids.discard(node_id)
+
+        # Store node early so get_node() works during render for dependency tracking
+        self.store_node(node)
+
+        # Keep node alive for WeakSet references registered during render.
+        # After render, dataclass_replace creates a new result node, but the
+        # WeakSet still references this original node. Without this reference,
+        # the node would be GC'd and removed from the WeakSet.
+        state._render_node = node
 
         state.state_call_count = 0
 
@@ -813,9 +810,14 @@ class RenderTree(ClassWithLock):
         # Reset state call count for consistent hook ordering
         state.state_call_count = 0
 
-        # Clear existing dependency tracking before re-execution
-        # Dependencies will be re-registered fresh during execution
-        self.clear_node_dependencies(node.id)
+        # Store node early so get_node() works during render for dependency tracking
+        self.store_node(node)
+
+        # Keep node alive for WeakSet references registered during render.
+        # After render, dataclass_replace creates a new result node, but the
+        # WeakSet still references this original node. Without this reference,
+        # the node would be GC'd and removed from the WeakSet.
+        state._render_node = node
 
         # IMPORTANT: Save old child nodes BEFORE render() to avoid overwrites
         # During render(), new child descriptors are stored in _nodes via
@@ -950,7 +952,6 @@ class RenderTree(ClassWithLock):
         # Process unmounts first (cleanup before new mounts)
         for node_id in self._pending_unmounts:
             self.call_unmount_hooks(node_id)
-            self.clear_node_dependencies(node_id)
             self.clear_callbacks_for_node(node_id)
             # With component identity in IDs, we can safely remove ElementState
             self._element_state.pop(node_id, None)
@@ -1052,12 +1053,7 @@ class RenderTree(ClassWithLock):
         self._process_pending_hooks()
 
         assert self.root_node is not None
-        result = serialize_node(self.root_node, self)
-
-        # Populate previous state in ElementState for subsequent diffs
-        self._populate_subtree_state(self.root_node_id or "")
-
-        return result
+        return serialize_node(self.root_node, self)
 
     def has_dirty_nodes(self) -> bool:
         """Check if there are any nodes that need re-rendering.
@@ -1259,28 +1255,6 @@ class RenderTree(ClassWithLock):
                 except Exception as e:
                     logging.exception(f"Error in Stateful.on_unmount: {e}")
 
-    def clear_node_dependencies(self, node_id: str) -> None:
-        """Clear a node's dependency registrations from all watched Stateful/Tracked instances.
-
-        Called before a node re-renders (to allow fresh registration) and on unmount
-        (to prevent stale references).
-
-        Args:
-            node_id: The node ID to remove from dependencies
-        """
-        state = self._element_state.get(node_id)
-        if state is None:
-            return
-
-        watched_deps = state.watched_deps
-        for obj, dep_keys in watched_deps.values():
-            # All tracked objects (Stateful, TrackedList, etc.) implement Trackable
-            # and use composite keys: (id(obj), actual_key)
-            for composite_key in dep_keys:
-                _, actual_key = composite_key
-                obj._clear_dep(node_id, actual_key)
-        watched_deps.clear()
-
     # -------------------------------------------------------------------------
     # Inline patch generation helpers (Phase 4)
     # -------------------------------------------------------------------------
@@ -1322,21 +1296,6 @@ class RenderTree(ClassWithLock):
 
         return _serialize_node_props(node, self)
 
-    def _update_node_previous_state(self, node_id: str) -> None:
-        """Update a node's previous state for subsequent diff comparisons.
-
-        Called after a node is rendered to store its serialized props and
-        child_ids in ElementState.
-
-        Args:
-            node_id: The node's ID
-        """
-        node = self._nodes.get(node_id)
-        state = self._element_state.get(node_id)
-        if node and state:
-            state.serialized_props = self._serialize_props_for_state(node)
-            state.previous_child_ids = list(node.child_ids)
-
     def _emit_update_patch_if_changed(
         self,
         node_id: str,
@@ -1344,25 +1303,23 @@ class RenderTree(ClassWithLock):
     ) -> None:
         """Emit an UpdatePatch if props or children changed.
 
-        Compares current node to previous state and emits UpdatePatch if needed.
-        Updates the previous state in ElementState.
+        Compares current node to old_node and emits UpdatePatch if needed.
 
         Args:
             node_id: The node's ID
-            old_node: The old node (for comparison during reconciliation)
+            old_node: The old node (for comparison)
         """
         node = self._nodes.get(node_id)
-        state = self._element_state.get(node_id)
-        if not node or not state:
+        if not node:
             return
 
         # Serialize current props
         current_props = self._serialize_props_for_state(node)
         current_child_ids = list(node.child_ids)
 
-        # Get previous state
-        prev_props = state.serialized_props or {}
-        prev_child_ids = state.previous_child_ids or []
+        # Get previous state from old_node
+        prev_props = self._serialize_props_for_state(old_node) if old_node else {}
+        prev_child_ids = list(old_node.child_ids) if old_node else []
 
         # Compute prop diff (only changed props)
         props_diff: dict[str, tp.Any] = {
@@ -1385,10 +1342,6 @@ class RenderTree(ClassWithLock):
                     children=current_child_ids if children_changed else None,
                 )
             )
-
-        # Update stored state
-        state.serialized_props = current_props
-        state.previous_child_ids = current_child_ids
 
     def process_reconcile_result(
         self,
@@ -1442,8 +1395,6 @@ class RenderTree(ClassWithLock):
                         node=self._serialize_node_for_patch(node),
                     )
                 )
-                # Initialize previous state for the new node and its subtree
-                self._populate_subtree_state(node_id)
 
         # 3. MATCHED - with eager execution, nodes already handled in _place()
         # Just emit patches for any changes detected
@@ -1454,21 +1405,3 @@ class RenderTree(ClassWithLock):
                 self._emit_update_patch_if_changed(node_id, old_node)
 
         return result.child_order
-
-    def _populate_subtree_state(self, node_id: str) -> None:
-        """Initialize previous state for a node and all its descendants.
-
-        Called after a new subtree is added to initialize state tracking
-        for subsequent diff comparisons.
-
-        Args:
-            node_id: The root node ID of the subtree
-        """
-        node = self._nodes.get(node_id)
-        state = self._element_state.get(node_id)
-        if node and state:
-            state.serialized_props = self._serialize_props_for_state(node)
-            state.previous_child_ids = list(node.child_ids)
-            # Recurse into children
-            for child_id in node.child_ids:
-                self._populate_subtree_state(child_id)

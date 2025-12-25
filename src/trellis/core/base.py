@@ -19,13 +19,11 @@ from __future__ import annotations
 
 import typing as tp
 from enum import StrEnum
-from typing import Protocol, runtime_checkable
 
 __all__ = [
     "ElementKind",
     "FrozenProps",
     "IComponent",
-    "Trackable",
     "freeze_props",
     "unfreeze_props",
 ]
@@ -45,26 +43,6 @@ class ElementKind(StrEnum):
     REACT_COMPONENT = "react_component"
     JSX_ELEMENT = "jsx_element"
     TEXT = "text"
-
-
-@runtime_checkable
-class Trackable(Protocol):
-    """Protocol for objects with fine-grained dependency tracking.
-
-    Tracked collections (TrackedList, TrackedDict, TrackedSet) implement this
-    protocol to allow the render tree to clear dependencies during cleanup.
-    """
-
-    def _clear_dep(self, node_id: str, dep_key: tp.Any) -> None:
-        """Clear a specific dependency for a node.
-
-        Called by RenderTree.clear_node_dependencies during cleanup.
-
-        Args:
-            node_id: The node ID to remove from dependencies
-            dep_key: The dependency key to clear
-        """
-        ...
 
 
 # Immutable props type for ElementNode - tuple of (key, value) pairs

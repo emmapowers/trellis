@@ -38,7 +38,7 @@ class TestStateful:
 
         # The component should be registered as dependent on state.text
         state_info = state._state_props["text"]
-        assert len(state_info.node_ids) == 1
+        assert len(state_info.watchers) == 1
 
     def test_stateful_marks_dirty_on_change(self) -> None:
         """Changing state marks dependent elements as dirty."""
@@ -319,8 +319,8 @@ class TestLocalStatePersistence:
 class TestStateDependencyTracking:
     """Tests for state dependency tracking internals."""
 
-    def test_node_ids_set_populated(self) -> None:
-        """Accessing state property populates node_ids set."""
+    def test_watchers_weakset_populated(self) -> None:
+        """Accessing state property populates watchers WeakSet."""
 
         @dataclass(kw_only=True)
         class MyState(Stateful):
@@ -336,13 +336,16 @@ class TestStateDependencyTracking:
         ctx = RenderTree(Consumer)
         ctx.render()
 
-        # Check that node_id was recorded in state deps
+        # Check that node was recorded in state deps
         assert "value" in state._state_props
         deps = state._state_props["value"]
-        assert ctx.root_node.id in deps.node_ids
+        # WeakSet contains the ElementNode
+        watchers_list = list(deps.watchers)
+        assert len(watchers_list) == 1
+        assert watchers_list[0].id == ctx.root_node.id
 
-    def test_node_trees_dict_populated(self) -> None:
-        """Accessing state property records RenderTree in node_trees dict."""
+    def test_tree_ref_set_on_element_node(self) -> None:
+        """ElementNode has _tree_ref pointing to RenderTree."""
 
         @dataclass(kw_only=True)
         class MyState(Stateful):
@@ -357,11 +360,9 @@ class TestStateDependencyTracking:
         ctx = RenderTree(Counter)
         ctx.render()
 
-        # Check that the RenderTree weakref is recorded for this node
-        deps = state._state_props["counter"]
-        assert ctx.root_node.id in deps.node_trees
-        # node_trees stores weakrefs to allow RenderTree garbage collection
-        assert deps.node_trees[ctx.root_node.id]() is ctx
+        # Check that the node's _tree_ref points to the RenderTree
+        node = ctx.root_node
+        assert node._tree_ref() is ctx
 
     def test_child_and_parent_track_same_state(self) -> None:
         """Parent and child accessing same state are tracked independently."""
@@ -389,9 +390,10 @@ class TestStateDependencyTracking:
 
         # Both nodes should be tracked
         deps = state._state_props["value"]
-        assert parent_id in deps.node_ids
-        assert child_id in deps.node_ids
-        assert len(deps.node_ids) == 2
+        watcher_ids = {node.id for node in deps.watchers}
+        assert parent_id in watcher_ids
+        assert child_id in watcher_ids
+        assert len(watcher_ids) == 2
 
     def test_state_change_marks_all_dependents_dirty(self) -> None:
         """State change marks all dependent nodes dirty."""
@@ -447,14 +449,16 @@ class TestStateDependencyTracking:
         node_id = ctx.root_node.id
 
         # Verify dependency exists
-        assert node_id in state._state_props["value"].node_ids
+        watcher_ids = {node.id for node in state._state_props["value"].watchers}
+        assert node_id in watcher_ids
 
         # Re-render
         ctx.mark_dirty_id(node_id)
         ctx.render()
 
-        # Dependency should still exist
-        assert node_id in state._state_props["value"].node_ids
+        # Dependency should still exist (may be a different node object but same id)
+        watcher_ids = {node.id for node in state._state_props["value"].watchers}
+        assert node_id in watcher_ids
 
     def test_multiple_properties_tracked_independently(self) -> None:
         """Different properties track dependencies independently."""
@@ -487,16 +491,19 @@ class TestStateDependencyTracking:
 
         # Check name deps
         name_deps = state._state_props["name"]
-        assert name_id in name_deps.node_ids
-        assert count_id not in name_deps.node_ids
+        name_watcher_ids = {node.id for node in name_deps.watchers}
+        assert name_id in name_watcher_ids
+        assert count_id not in name_watcher_ids
 
         # Check count deps
         count_deps = state._state_props["count"]
-        assert count_id in count_deps.node_ids
-        assert name_id not in count_deps.node_ids
+        count_watcher_ids = {node.id for node in count_deps.watchers}
+        assert count_id in count_watcher_ids
+        assert name_id not in count_watcher_ids
 
     def test_dependency_cleanup_on_unmount(self) -> None:
-        """Dependencies are cleaned up when component is unmounted."""
+        """Dependencies are cleaned up when component is unmounted (via WeakSet GC)."""
+        import gc
 
         @dataclass(kw_only=True)
         class MyState(Stateful):
@@ -521,19 +528,24 @@ class TestStateDependencyTracking:
         consumer_id = ctx.root_node.child_ids[0]
 
         # Verify consumer is tracking state
-        assert consumer_id in state._state_props["value"].node_ids
+        watcher_ids = {node.id for node in state._state_props["value"].watchers}
+        assert consumer_id in watcher_ids
 
         # Unmount Consumer by removing it
         show_consumer[0] = False
         ctx.mark_dirty_id(ctx.root_node.id)
         ctx.render()
 
-        # Consumer's dependency should be cleaned up
-        assert consumer_id not in state._state_props["value"].node_ids
-        assert consumer_id not in state._state_props["value"].node_trees
+        # Force garbage collection to clean up WeakSet
+        gc.collect()
+
+        # Consumer's dependency should be cleaned up (WeakSet auto-removes dead refs)
+        watcher_ids = {node.id for node in state._state_props["value"].watchers}
+        assert consumer_id not in watcher_ids
 
     def test_dependency_cleanup_on_rerender_without_read(self) -> None:
-        """Dependencies are cleaned up when component stops reading state."""
+        """Dependencies are cleaned up when component stops reading state (via WeakSet GC)."""
+        import gc
 
         @dataclass(kw_only=True)
         class MyState(Stateful):
@@ -553,12 +565,19 @@ class TestStateDependencyTracking:
         node_id = ctx.root_node.id
 
         # Initially tracking
-        assert node_id in state._state_props["value"].node_ids
+        watcher_ids = {node.id for node in state._state_props["value"].watchers}
+        assert node_id in watcher_ids
 
         # Stop reading state and re-render
         read_state[0] = False
         ctx.mark_dirty_id(node_id)
         ctx.render()
 
-        # No longer tracking (cleared before render, not re-registered)
-        assert node_id not in state._state_props["value"].node_ids
+        # Force garbage collection
+        gc.collect()
+
+        # The old node is replaced by a new one that doesn't read state
+        # WeakSet should no longer contain the old node (GC'd), and new node
+        # doesn't register because it doesn't read state.value
+        watcher_ids = {node.id for node in state._state_props["value"].watchers}
+        assert node_id not in watcher_ids
