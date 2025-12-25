@@ -373,10 +373,12 @@ def build_bundle(
     """
     bundle_path = config.dist_dir / "bundle.js"
 
+    css_path = config.dist_dir / "bundle.css"
+
     # Check if rebuild needed
     if not force:
-        # All outputs must exist
-        outputs_exist = bundle_path.exists()
+        # All outputs must exist (JS and CSS)
+        outputs_exist = bundle_path.exists() and css_path.exists()
         if config.extra_outputs:
             outputs_exist = outputs_exist and all(p.exists() for p in config.extra_outputs)
 
@@ -386,7 +388,9 @@ def build_bundle(
                 f.stat().st_mtime > bundle_mtime for f in config.src_dir.rglob("*.ts*")
             )
             common_changed = any(
-                f.stat().st_mtime > bundle_mtime for f in common_src_dir.rglob("*.ts*")
+                f.stat().st_mtime > bundle_mtime
+                for pattern in ("*.ts", "*.tsx", "*.css")
+                for f in common_src_dir.rglob(pattern)
             )
             # Check if static source files changed
             static_changed = False
@@ -426,12 +430,13 @@ def build_bundle(
             ]
             subprocess.run(worker_cmd, check=True, env=env)
 
-    # Build main bundle
+    # Build main bundle (outputs bundle.js and bundle.css if CSS is imported)
     cmd = [
         str(esbuild),
         str(config.src_dir / "main.tsx"),
         "--bundle",
-        f"--outfile={bundle_path}",
+        f"--outdir={config.dist_dir}",
+        "--entry-names=bundle",
         "--format=esm",
         "--platform=browser",
         "--target=es2022",

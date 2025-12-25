@@ -69,9 +69,14 @@ export class ServerTrellisClient implements TrellisClient {
 
       this.ws.onopen = () => {
         debugLog("client", "WebSocket opened, sending HELLO");
+        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+          .matches
+          ? "dark"
+          : "light";
         const hello: HelloMessage = {
           type: MessageType.HELLO,
           client_id: this.clientId,
+          system_theme: systemTheme,
         };
         this.send(hello);
       };

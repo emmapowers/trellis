@@ -29,6 +29,48 @@ def get_initial_tree(handler: MessageHandler) -> dict[str, tp.Any]:
     return patch.node
 
 
+# Components that are part of the TrellisApp wrapper infrastructure
+_WRAPPER_COMPONENT_TYPES = frozenset({
+    "CompositionComponent",  # Generic wrapper (TrellisRoot, TrellisApp, etc.)
+    "ThemeProvider",         # Theme provider
+    "ClientState",           # Client state context
+})
+
+
+def find_app_children(tree: dict[str, tp.Any]) -> list[dict[str, tp.Any]]:
+    """Find the user's app children within the TrellisApp wrapper.
+
+    The tree structure is:
+    TrellisRoot -> TrellisApp -> ClientState -> ThemeProvider -> UserApp -> children
+
+    This helper navigates through wrapper components to find user content.
+    Wrapper components are identified by their type being in _WRAPPER_COMPONENT_TYPES.
+    """
+    if not tree:
+        return []
+
+    node = tree
+    # Walk down through wrapper components until we find user content
+    for _ in range(15):  # Safety limit - more than enough for any wrapper depth
+        children = node.get("children", [])
+        if not children:
+            return []
+
+        first = children[0]
+        node_type = first.get("type", "")
+
+        # If this is a wrapper component, continue navigating down
+        if node_type in _WRAPPER_COMPONENT_TYPES:
+            node = first
+            continue
+
+        # Found user content - return all children at this level
+        return children
+
+    # Hit safety limit - return empty to avoid infinite loops
+    return []
+
+
 class TestMessageHandler:
     """Tests for MessageHandler base class."""
 
@@ -47,7 +89,9 @@ class TestMessageHandler:
         assert isinstance(msg.patches[0], AddPatch)
         tree = msg.patches[0].node
         assert "children" in tree
-        assert tree["children"][0]["props"]["text"] == "Hello"
+        # Navigate through TrellisApp wrapper to find user content
+        app_children = find_app_children(tree)
+        assert app_children[0]["props"]["text"] == "Hello"
 
     def test_handle_message_with_event(self) -> None:
         """handle_message() invokes callback (rendering is batched separately)."""
@@ -60,8 +104,9 @@ class TestMessageHandler:
         handler = MessageHandler(App)
         tree = get_initial_tree(handler)
 
-        # Get callback ID from tree
-        button = tree["children"][0]
+        # Get callback ID from tree (navigate through wrapper)
+        app_children = find_app_children(tree)
+        button = app_children[0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Send event message
@@ -111,12 +156,13 @@ class TestMessageHandler:
         handler = MessageHandler(Counter)
         tree = get_initial_tree(handler)
 
-        # Verify initial state
-        label = tree["children"][0]
+        # Verify initial state (navigate through wrapper)
+        app_children = find_app_children(tree)
+        label = app_children[0]
         assert label["props"]["text"] == "0"
 
         # Get callback and invoke
-        button = tree["children"][1]
+        button = app_children[1]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         event_msg = EventMessage(callback_id=cb_id, args=[])
@@ -150,7 +196,8 @@ class TestMessageHandler:
         handler = MessageHandler(App)
         tree = get_initial_tree(handler)
 
-        button = tree["children"][0]
+        app_children = find_app_children(tree)
+        button = app_children[0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Send event with mouse event data
@@ -270,7 +317,8 @@ class TestBrowserMessageHandler:
 
         # Get initial render
         tree = get_initial_tree(handler)
-        button = tree["children"][0]
+        app_children = find_app_children(tree)
+        button = app_children[0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Simulate JS posting event
@@ -309,7 +357,8 @@ class TestAsyncCallbackHandling:
         handler = MessageHandler(App)
         tree = get_initial_tree(handler)
 
-        button = tree["children"][0]
+        app_children = find_app_children(tree)
+        button = app_children[0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         async def test() -> None:
@@ -350,7 +399,8 @@ class TestAsyncCallbackHandling:
         handler = MessageHandler(App)
         tree = get_initial_tree(handler)
 
-        button = tree["children"][0]
+        app_children = find_app_children(tree)
+        button = app_children[0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         async def test() -> None:
@@ -366,5 +416,137 @@ class TestAsyncCallbackHandling:
             # Task should be removed after completion
             assert len(handler._background_tasks) == 0
             assert task_completed == [True]
+
+        asyncio.run(test())
+
+
+class TestHelloHandshake:
+    """Tests for hello handshake and ClientState creation."""
+
+    def test_handle_hello_creates_client_state_with_dark_system_theme(self) -> None:
+        """handle_hello should create ClientState with dark system theme."""
+        from trellis.app.client_state import ThemeMode
+        from trellis.platforms.common.messages import HelloMessage
+
+        @component
+        def App() -> None:
+            Label(text="test")
+
+        handler = BrowserMessageHandler(App)
+
+        async def test() -> None:
+            # Post hello with dark system theme
+            hello_msg = HelloMessage(client_id="test", system_theme="dark")
+            handler._inbox.put_nowait(hello_msg)
+
+            session_id = await handler.handle_hello()
+
+            # ClientState should be created with DARK system theme
+            assert handler._pending_client_state is not None
+            assert handler._pending_client_state.system_theme == ThemeMode.DARK
+            assert session_id is not None
+
+        asyncio.run(test())
+
+    def test_handle_hello_creates_client_state_with_light_system_theme(self) -> None:
+        """handle_hello should create ClientState with light system theme."""
+        from trellis.app.client_state import ThemeMode
+        from trellis.platforms.common.messages import HelloMessage
+
+        @component
+        def App() -> None:
+            Label(text="test")
+
+        handler = BrowserMessageHandler(App)
+
+        async def test() -> None:
+            # Post hello with light system theme
+            hello_msg = HelloMessage(client_id="test", system_theme="light")
+            handler._inbox.put_nowait(hello_msg)
+
+            session_id = await handler.handle_hello()
+
+            # ClientState should be created with LIGHT system theme
+            assert handler._pending_client_state is not None
+            assert handler._pending_client_state.system_theme == ThemeMode.LIGHT
+            assert session_id is not None
+
+        asyncio.run(test())
+
+    def test_hello_message_default_system_theme(self) -> None:
+        """HelloMessage should default to light theme if not provided."""
+        from trellis.platforms.common.messages import HelloMessage
+
+        msg = HelloMessage(client_id="test")
+        assert msg.system_theme == "light"
+
+    def test_handle_hello_with_theme_mode_dark(self) -> None:
+        """handle_hello should set mode from theme_mode in HelloMessage."""
+        from trellis.app.client_state import ThemeMode
+        from trellis.platforms.common.messages import HelloMessage
+
+        @component
+        def App() -> None:
+            Label(text="test")
+
+        handler = BrowserMessageHandler(App)
+
+        async def test() -> None:
+            # Post hello with explicit dark theme mode
+            hello_msg = HelloMessage(client_id="test", system_theme="light", theme_mode="dark")
+            handler._inbox.put_nowait(hello_msg)
+
+            await handler.handle_hello()
+
+            # ClientState should use the theme_mode override
+            assert handler._pending_client_state is not None
+            assert handler._pending_client_state.mode == ThemeMode.DARK
+            # system_theme should still be set from the message
+            assert handler._pending_client_state.system_theme == ThemeMode.LIGHT
+
+        asyncio.run(test())
+
+    def test_handle_hello_with_theme_mode_system(self) -> None:
+        """handle_hello should set mode to SYSTEM when theme_mode is 'system'."""
+        from trellis.app.client_state import ThemeMode
+        from trellis.platforms.common.messages import HelloMessage
+
+        @component
+        def App() -> None:
+            Label(text="test")
+
+        handler = BrowserMessageHandler(App)
+
+        async def test() -> None:
+            hello_msg = HelloMessage(client_id="test", system_theme="dark", theme_mode="system")
+            handler._inbox.put_nowait(hello_msg)
+
+            await handler.handle_hello()
+
+            assert handler._pending_client_state is not None
+            assert handler._pending_client_state.mode == ThemeMode.SYSTEM
+            assert handler._pending_client_state.system_theme == ThemeMode.DARK
+
+        asyncio.run(test())
+
+    def test_handle_hello_without_theme_mode_defaults_to_system(self) -> None:
+        """handle_hello should default mode to SYSTEM when theme_mode is None."""
+        from trellis.app.client_state import ThemeMode
+        from trellis.platforms.common.messages import HelloMessage
+
+        @component
+        def App() -> None:
+            Label(text="test")
+
+        handler = BrowserMessageHandler(App)
+
+        async def test() -> None:
+            hello_msg = HelloMessage(client_id="test", system_theme="dark")
+            handler._inbox.put_nowait(hello_msg)
+
+            await handler.handle_hello()
+
+            assert handler._pending_client_state is not None
+            assert handler._pending_client_state.mode == ThemeMode.SYSTEM
 
         asyncio.run(test())

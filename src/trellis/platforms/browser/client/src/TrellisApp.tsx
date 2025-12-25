@@ -10,7 +10,10 @@
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { BrowserClient, ConnectionState } from "./BrowserClient";
-import { TrellisContext } from "../../../common/client/src/TrellisContext";
+import {
+  TrellisContext,
+  HostThemeModeContext,
+} from "../../../common/client/src/TrellisContext";
 import { Message } from "../../../common/client/src/types";
 import { TreeRenderer } from "../../../common/client/src/TreeRenderer";
 import { useRootId } from "../../../common/client/src/core";
@@ -32,6 +35,18 @@ export interface TrellisAppProps {
   loadingComponent?: React.ReactNode;
   /** Custom error component */
   errorComponent?: (error: string) => React.ReactNode;
+  /**
+   * Host-controlled theme mode.
+   *
+   * When provided, overrides the default "system" theme mode. The host application
+   * can use this to sync Trellis with its own dark mode setting. When this prop
+   * changes, Trellis will update its theme accordingly.
+   *
+   * - "system": Follow OS preference (default)
+   * - "light": Force light mode
+   * - "dark": Force dark mode
+   */
+  themeMode?: "system" | "light" | "dark";
 }
 
 type AppState =
@@ -116,14 +131,16 @@ export function TrellisApp({
   onStatusChange,
   loadingComponent,
   errorComponent,
+  themeMode,
 }: TrellisAppProps): React.ReactElement {
-
   const [state, setState] = useState<AppState>({
     status: "loading",
     message: "Initializing...",
   });
   const workerRef = useRef<PyodideWorker | null>(null);
   const initializedRef = useRef(false);
+  // Track the initial themeMode to include in HELLO message
+  const initialThemeModeRef = useRef(themeMode);
 
   // Create client with callbacks
   const client = useMemo(
@@ -184,7 +201,7 @@ export function TrellisApp({
         // before handler.run() is called, it will be queued and processed when
         // Python is ready.
         await new Promise((resolve) => setTimeout(resolve, 50));
-        client.sendHello();
+        client.sendHello(initialThemeModeRef.current);
       } catch (e) {
         console.error("[TrellisApp] Error:", e);
         setState({ status: "error", message: (e as Error).message });
@@ -223,7 +240,9 @@ export function TrellisApp({
   // Connected - render the tree within context
   return (
     <TrellisContext.Provider value={client}>
-      <AppContent loadingComponent={loadingComponent} />
+      <HostThemeModeContext.Provider value={themeMode}>
+        <AppContent loadingComponent={loadingComponent} />
+      </HostThemeModeContext.Provider>
     </TrellisContext.Provider>
   );
 }

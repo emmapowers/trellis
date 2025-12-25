@@ -2,6 +2,7 @@
 
 from trellis import component
 from trellis import widgets as w
+from trellis.widgets import theme
 
 from ..components import ExampleCard
 from ..example import example
@@ -23,7 +24,7 @@ def Labels() -> None:
     with w.Column(gap=8):
         w.Label(text="Regular label text")
         w.Label(text="Bold label text", bold=True)
-        w.Label(text="Secondary text color", color="#64748b")
+        w.Label(text="Secondary text color", color=theme.text_secondary)
 
 
 @component

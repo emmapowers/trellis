@@ -1,0 +1,166 @@
+/**
+ * Trellis Theme CSS
+ *
+ * CSS custom properties for light/dark mode theming.
+ * All variables are scoped under .trellis-root to avoid conflicts with host pages.
+ */
+
+/* ============================================================================
+   Light Mode (default)
+   ============================================================================ */
+.trellis-root,
+.trellis-root[data-theme="light"] {
+  /* Backgrounds */
+  --trellis-bg-page: #f8fafc;
+  --trellis-bg-surface: #ffffff;
+  --trellis-bg-surface-raised: #f8fafc;
+  --trellis-bg-surface-hover: #f1f5f9;
+  --trellis-bg-input: #ffffff;
+
+  /* Borders */
+  --trellis-border-default: #e2e8f0;
+  --trellis-border-subtle: #f1f5f9;
+  --trellis-border-strong: #cbd5e1;
+  --trellis-border-focus: #6366f1;
+
+  /* Text */
+  --trellis-text-primary: #0f172a;
+  --trellis-text-secondary: #64748b;
+  --trellis-text-muted: #94a3b8;
+  --trellis-text-inverse: #ffffff;
+
+  /* Semantic - Success */
+  --trellis-success: #16a34a;
+  --trellis-success-bg: #f0fdf4;
+  --trellis-success-border: #bbf7d0;
+
+  /* Semantic - Error */
+  --trellis-error: #dc2626;
+  --trellis-error-bg: #fef2f2;
+  --trellis-error-border: #fecaca;
+  --trellis-error-hover: #b91c1c;
+
+  /* Semantic - Warning */
+  --trellis-warning: #d97706;
+  --trellis-warning-bg: #fffbeb;
+  --trellis-warning-border: #fde68a;
+
+  /* Semantic - Info */
+  --trellis-info: #2563eb;
+  --trellis-info-bg: #eff6ff;
+  --trellis-info-border: #bfdbfe;
+
+  /* Accent (indigo) */
+  --trellis-accent-primary: #6366f1;
+  --trellis-accent-primary-hover: #4f46e5;
+  --trellis-accent-primary-active: #4338ca;
+  --trellis-accent-subtle: #eef2ff;
+
+  /* Neutral scale (slate) */
+  --trellis-neutral-50: #f8fafc;
+  --trellis-neutral-100: #f1f5f9;
+  --trellis-neutral-200: #e2e8f0;
+  --trellis-neutral-300: #cbd5e1;
+  --trellis-neutral-400: #94a3b8;
+  --trellis-neutral-500: #64748b;
+  --trellis-neutral-600: #475569;
+  --trellis-neutral-700: #334155;
+  --trellis-neutral-800: #1e293b;
+  --trellis-neutral-900: #0f172a;
+
+  /* Shadows */
+  --trellis-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --trellis-shadow-md: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --trellis-shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+
+  /* Focus ring */
+  --trellis-focus-ring-color: #6366f1;
+}
+
+/* ============================================================================
+   Dark Mode
+   ============================================================================ */
+.trellis-root[data-theme="dark"] {
+  /* Backgrounds - inverted scale */
+  --trellis-bg-page: #0f172a;
+  --trellis-bg-surface: #1e293b;
+  --trellis-bg-surface-raised: #334155;
+  --trellis-bg-surface-hover: #475569;
+  --trellis-bg-input: #1e293b;
+
+  /* Borders */
+  --trellis-border-default: #334155;
+  --trellis-border-subtle: #1e293b;
+  --trellis-border-strong: #475569;
+  --trellis-border-focus: #818cf8;
+
+  /* Text */
+  --trellis-text-primary: #f8fafc;
+  --trellis-text-secondary: #94a3b8;
+  --trellis-text-muted: #64748b;
+  --trellis-text-inverse: #0f172a;
+
+  /* Semantic - Success (brighter for dark mode) */
+  --trellis-success: #22c55e;
+  --trellis-success-bg: #052e16;
+  --trellis-success-border: #166534;
+
+  /* Semantic - Error (brighter for dark mode) */
+  --trellis-error: #ef4444;
+  --trellis-error-bg: #450a0a;
+  --trellis-error-border: #991b1b;
+  --trellis-error-hover: #dc2626;
+
+  /* Semantic - Warning (brighter for dark mode) */
+  --trellis-warning: #f59e0b;
+  --trellis-warning-bg: #451a03;
+  --trellis-warning-border: #92400e;
+
+  /* Semantic - Info (brighter for dark mode) */
+  --trellis-info: #3b82f6;
+  --trellis-info-bg: #172554;
+  --trellis-info-border: #1e40af;
+
+  /* Accent (brighter indigo for dark mode) */
+  --trellis-accent-primary: #818cf8;
+  --trellis-accent-primary-hover: #6366f1;
+  --trellis-accent-primary-active: #4f46e5;
+  --trellis-accent-subtle: #1e1b4b;
+
+  /* Neutral scale - inverted */
+  --trellis-neutral-50: #0f172a;
+  --trellis-neutral-100: #1e293b;
+  --trellis-neutral-200: #334155;
+  --trellis-neutral-300: #475569;
+  --trellis-neutral-400: #64748b;
+  --trellis-neutral-500: #94a3b8;
+  --trellis-neutral-600: #cbd5e1;
+  --trellis-neutral-700: #e2e8f0;
+  --trellis-neutral-800: #f1f5f9;
+  --trellis-neutral-900: #f8fafc;
+
+  /* Shadows - stronger for dark mode */
+  --trellis-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --trellis-shadow-md: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
+  --trellis-shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+
+  /* Focus ring */
+  --trellis-focus-ring-color: #818cf8;
+}
+
+/* ============================================================================
+   Base Styles
+   ============================================================================ */
+.trellis-root {
+  box-sizing: border-box;
+  background: var(--trellis-bg-page);
+  color: var(--trellis-text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+}
+
+.trellis-root *,
+.trellis-root *::before,
+.trellis-root *::after {
+  box-sizing: border-box;
+}

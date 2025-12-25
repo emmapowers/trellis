@@ -99,7 +99,7 @@ const variantStyles: Record<
       boxShadow: shadows.sm,
     },
     hover: {
-      backgroundColor: "#b91c1c",
+      backgroundColor: colors.semantic.errorHover,
     },
   },
 };

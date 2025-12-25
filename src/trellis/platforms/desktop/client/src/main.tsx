@@ -5,6 +5,8 @@
 (Symbol as any).dispose ??= Symbol("Symbol.dispose");
 (Symbol as any).asyncDispose ??= Symbol("Symbol.asyncDispose");
 
+import "../../../common/client/src/theme.css"; // Theme CSS variables
+
 // Set up shared console (filtering, etc.) before other imports
 import { addConsoleHandler } from "../../../common/client/src/console";
 import { pyInvoke } from "tauri-plugin-pytauri-api";

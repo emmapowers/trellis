@@ -2,6 +2,7 @@
 
 from trellis import Padding, component
 from trellis import widgets as w
+from trellis.widgets import theme
 
 from .components import TodoFooter, TodoInput, TodoList
 from .state import Todo, TodosState
@@ -28,17 +29,17 @@ def App() -> None:
                 with w.Column(
                     align="center",
                     padding=20,
-                    style={"borderBottom": "1px solid #e2e8f0"},
+                    style={"borderBottom": f"1px solid {theme.border_default}"},
                 ):
                     w.Label(
                         text="🍳 breakfast todos",
                         font_size=24,
-                        color="#6366f1",
+                        color=theme.accent_primary,
                         font_weight=300,
                     )
 
                 # Input
-                with w.Column(padding=12, style={"borderBottom": "1px solid #e2e8f0"}):
+                with w.Column(padding=12, style={"borderBottom": f"1px solid {theme.border_default}"}):
                     TodoInput()
 
                 # List
@@ -46,5 +47,5 @@ def App() -> None:
 
                 # Footer (only show if there are todos)
                 if state.todos:
-                    with w.Column(style={"borderTop": "1px solid #e2e8f0"}):
+                    with w.Column(style={"borderTop": f"1px solid {theme.border_default}"}):
                         TodoFooter()

@@ -4,6 +4,7 @@ import typing as tp
 
 from trellis import component
 from trellis import widgets as w
+from trellis.widgets import theme
 
 from ..components import ExampleCard
 from ..example import example
@@ -74,7 +75,7 @@ def PriceCell(*, row: dict[str, tp.Any]) -> None:
     change_pct = row["change_pct"]
     is_positive = change >= 0
 
-    color = "#16a34a" if is_positive else "#dc2626"
+    color = theme.success if is_positive else theme.error
     icon = w.IconName.TRENDING_UP if is_positive else w.IconName.TRENDING_DOWN
     sign = "+" if is_positive else ""
 
@@ -93,7 +94,7 @@ def HistoryCell(*, row: dict[str, tp.Any]) -> None:
     """Sparkline showing price history."""
     # history is always a non-empty list in STOCKS data
     history = row["history"]
-    color = "#16a34a" if history[-1] >= history[0] else "#dc2626"
+    color = theme.success if history[-1] >= history[0] else theme.error
     w.Sparkline(data=history, width=100, height=28, color=color)
 
 
@@ -223,10 +224,10 @@ def StatusCell(*, row: dict[str, tp.Any]) -> None:
     status = row["status"]
     if status == "Active":
         icon = w.IconName.CHECK_CIRCLE
-        color = "#16a34a"
+        color = theme.success
     else:
         icon = w.IconName.CLOCK
-        color = "#d97706"
+        color = theme.warning
     with w.Row(gap=4, align="center"):
         w.Icon(name=icon, size=14, color=color)
         w.Label(text=status, color=color)

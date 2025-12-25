@@ -12,9 +12,14 @@ import inspect
 import logging
 import traceback
 import typing as tp
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
+if TYPE_CHECKING:
+    from trellis.core.client_state import ClientState
+
 from trellis.core.components.base import Component
+from trellis.core.components.composition import CompositionComponent
 from trellis.core.rendering.patches import (
     RenderAddPatch,
     RenderPatch,
@@ -217,6 +222,9 @@ class MessageHandler:
     _background_tasks: set[asyncio.Task[tp.Any]]
     _render_task: asyncio.Task[None] | None
 
+    # Client state is stored here temporarily until rendering begins
+    _pending_client_state: ClientState | None
+
     def __init__(
         self,
         root_component: Component,
@@ -228,18 +236,31 @@ class MessageHandler:
             root_component: The root Trellis component to render
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        self.session = RenderSession(root_component)
+        from trellis.core.trellis_app import TrellisApp
+
+        # Store reference for use in wrapped_app closure
+        handler = self
+
+        # Create a wrapper component that wraps the user's app with TrellisApp
+        def wrapped_app() -> None:
+            # Use pending client state if available (set by handle_hello)
+            TrellisApp(app=root_component, client_state=handler._pending_client_state)
+
+        wrapped = CompositionComponent(name="TrellisRoot", render_func=wrapped_app)
+        self.session = RenderSession(wrapped)
         self.session_id = None
         self.batch_delay = batch_delay
         self._background_tasks = set()
         self._render_task = None
+        self._pending_client_state = None
 
     async def handle_hello(self) -> str:
         """Handle hello handshake with client.
 
         Receives HelloMessage from client, generates session ID,
-        and sends HelloResponseMessage. All platforms use this
-        handshake for session initialization.
+        creates ClientState with detected system theme, and sends
+        HelloResponseMessage. All platforms use this handshake for
+        session initialization.
 
         Returns:
             The generated session ID
@@ -247,11 +268,25 @@ class MessageHandler:
         Raises:
             ValueError: If received message is not HelloMessage
         """
+        from trellis.core.client_state import ClientState, ThemeMode
+
         msg = await self.receive_message()
         if not isinstance(msg, HelloMessage):
             raise ValueError(f"Expected HelloMessage, got {type(msg).__name__}")
 
         logger.debug("Hello from client_id=%s", msg.client_id)
+
+        # Create ClientState with detected system theme and optional host-controlled mode
+        # This will be passed to TrellisApp during the first render
+        system_theme = ThemeMode.DARK if msg.system_theme == "dark" else ThemeMode.LIGHT
+
+        # If host provided a theme_mode, use it; otherwise default to SYSTEM
+        if msg.theme_mode is not None:
+            mode = ThemeMode(msg.theme_mode)
+        else:
+            mode = ThemeMode.SYSTEM
+
+        self._pending_client_state = ClientState(mode=mode, system_theme=system_theme)
 
         self.session_id = str(uuid4())
 

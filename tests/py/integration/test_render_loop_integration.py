@@ -34,6 +34,48 @@ def get_initial_tree(handler: MessageHandler) -> dict[str, tp.Any]:
     return patch.node
 
 
+# Components that are part of the TrellisApp wrapper infrastructure
+_WRAPPER_COMPONENT_TYPES = frozenset({
+    "CompositionComponent",  # Generic wrapper (TrellisRoot, TrellisApp, etc.)
+    "ThemeProvider",         # Theme provider
+    "ClientState",           # Client state context
+})
+
+
+def find_app_children(tree: dict[str, tp.Any]) -> list[dict[str, tp.Any]]:
+    """Find the user's app children within the TrellisApp wrapper.
+
+    The tree structure is:
+    TrellisRoot -> TrellisApp -> ClientState -> ThemeProvider -> UserApp -> children
+
+    This helper navigates through wrapper components to find user content.
+    Wrapper components are identified by their type being in _WRAPPER_COMPONENT_TYPES.
+    """
+    if not tree:
+        return []
+
+    node = tree
+    # Walk down through wrapper components until we find user content
+    for _ in range(15):  # Safety limit - more than enough for any wrapper depth
+        children = node.get("children", [])
+        if not children:
+            return []
+
+        first = children[0]
+        node_type = first.get("type", "")
+
+        # If this is a wrapper component, continue navigating down
+        if node_type in _WRAPPER_COMPONENT_TYPES:
+            node = first
+            continue
+
+        # Found user content - return all children at this level
+        return children
+
+    # Hit safety limit - return empty to avoid infinite loops
+    return []
+
+
 class TestRenderLoop:
     """Tests for the render loop behavior."""
 
@@ -89,7 +131,8 @@ class TestRenderLoop:
             # Get the increment callback from initial PatchMessage
             initial = next(m for m in sent_messages if isinstance(m, PatchMessage))
             tree = initial.patches[0].node
-            button = tree["children"][1]
+            app_children = find_app_children(tree)
+            button = app_children[1]
             cb_id = button["props"]["on_click"]["__callback__"]
 
             # Send event to trigger state change
@@ -158,7 +201,8 @@ class TestRenderLoop:
 
             initial = next(m for m in sent_messages if isinstance(m, PatchMessage))
             tree = initial.patches[0].node
-            button = tree["children"][1]
+            app_children = find_app_children(tree)
+            button = app_children[1]
             cb_id = button["props"]["on_click"]["__callback__"]
 
             handler.post(EventMessage(callback_id=cb_id, args=[]))
@@ -245,8 +289,9 @@ class TestPatchComputation:
         tree = get_initial_tree(handler)
 
         # Get the button callback (deeply nested)
-        # Structure: Outer > [Label, Middle > [Label, DeepLeaf > [Label, Button]]]
-        middle = tree["children"][1]
+        # Structure: Wrapper > Outer > [Label, Middle > [Label, DeepLeaf > [Label, Button]]]
+        app_children = find_app_children(tree)
+        middle = app_children[1]
         deep_leaf = middle["children"][1]
         button = deep_leaf["children"][1]
         cb_id = button["props"]["on_click"]["__callback__"]
@@ -286,12 +331,13 @@ class TestPatchComputation:
         handler = MessageHandler(ListApp)
         tree = get_initial_tree(handler)
 
-        # Initial order: a, b, c
-        labels = [c for c in tree["children"] if c["name"] == "Label"]
+        # Initial order: a, b, c (within wrapper)
+        app_children = find_app_children(tree)
+        labels = [c for c in app_children if c["name"] == "Label"]
         assert [label["props"]["text"] for label in labels] == ["a", "b", "c"]
 
         # Get reverse callback
-        button = next(c for c in tree["children"] if c["name"] == "Button")
+        button = next(c for c in app_children if c["name"] == "Button")
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Reverse the list
@@ -324,12 +370,13 @@ class TestPatchComputation:
         handler = MessageHandler(Counter)
         tree = get_initial_tree(handler)
 
-        # Get the static label's key to track it
-        static_label = tree["children"][0]
+        # Get the static label's key to track it (within wrapper)
+        app_children = find_app_children(tree)
+        static_label = app_children[0]
         static_label_id = static_label.get("key")
 
         # Trigger a state change
-        button = tree["children"][2]
+        button = app_children[2]
         cb_id = button["props"]["on_click"]["__callback__"]
         asyncio.run(handler.handle_message(EventMessage(callback_id=cb_id, args=[])))
 
@@ -388,14 +435,15 @@ class TestPatchComputation:
         handler = MessageHandler(TabApp)
         tree = get_initial_tree(handler)
 
-        # Verify initial state - Card contains Tab1Content
-        card = tree["children"][1]
+        # Verify initial state - Card contains Tab1Content (within wrapper)
+        app_children = find_app_children(tree)
+        card = app_children[1]
         assert card["type"] == "Card"
         tab1_content = card["children"][0]
         assert tab1_content["name"] == "Tab1Content"
 
         # Get the switch button callback
-        button = tree["children"][0]
+        button = app_children[0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Switch tabs

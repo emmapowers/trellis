@@ -1,7 +1,9 @@
 import React, { useState, useCallback, lazy, Suspense } from "react";
 import CodeBlock from "@theme/CodeBlock";
 import BrowserOnly from "@docusaurus/BrowserOnly";
+import { useColorMode } from "@docusaurus/theme-common";
 import styles from "./styles.module.css";
+import { ShadowDomWrapper } from "./ShadowDomWrapper";
 
 // Lazy load TrellisApp to avoid SSR issues with Web Workers
 const TrellisApp = lazy(
@@ -43,6 +45,7 @@ export default function TrellisDemo({
   const [runId, setRunId] = useState(0);
   const [status, setStatus] = useState<string>("idle");
   const [error, setError] = useState<string | null>(null);
+  const { colorMode } = useColorMode();
 
   const runCode = useCallback(() => {
     setError(null);
@@ -96,15 +99,18 @@ export default function TrellisDemo({
               <BrowserOnly fallback={<div>Loading...</div>}>
                 {() => (
                   <Suspense fallback={<div>Loading demo...</div>}>
-                    <TrellisApp
-                      key={runId}
-                      source={{ type: "code", code: wrappedCode }}
-                      onStatusChange={setStatus}
-                      errorComponent={(msg) => {
-                        setError(msg);
-                        return null;
-                      }}
-                    />
+                    <ShadowDomWrapper initialTheme={colorMode}>
+                      <TrellisApp
+                        key={runId}
+                        source={{ type: "code", code: wrappedCode }}
+                        onStatusChange={setStatus}
+                        themeMode={colorMode}
+                        errorComponent={(msg) => {
+                          setError(msg);
+                          return null;
+                        }}
+                      />
+                    </ShadowDomWrapper>
                   </Suspense>
                 )}
               </BrowserOnly>

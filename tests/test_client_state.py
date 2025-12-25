@@ -1,0 +1,238 @@
+"""Tests for ClientState and theme functionality."""
+
+import pytest
+
+from trellis.core.client_state import ClientState, ThemeMode
+
+
+class TestClientStateTheme:
+    """Tests for theme-related ClientState functionality."""
+
+    def test_system_mode_follows_os_dark(self) -> None:
+        """When mode is SYSTEM, resolved_theme should follow system_theme."""
+        state = ClientState(mode=ThemeMode.SYSTEM, system_theme=ThemeMode.DARK)
+        assert state.resolved_theme == ThemeMode.DARK
+        assert state.is_dark is True
+        assert state.is_light is False
+
+    def test_system_mode_follows_os_light(self) -> None:
+        """When mode is SYSTEM and OS is light, resolved_theme is LIGHT."""
+        state = ClientState(mode=ThemeMode.SYSTEM, system_theme=ThemeMode.LIGHT)
+        assert state.resolved_theme == ThemeMode.LIGHT
+        assert state.is_dark is False
+        assert state.is_light is True
+
+    def test_explicit_dark_mode_ignores_system(self) -> None:
+        """When mode is DARK, system_theme should be ignored."""
+        state = ClientState(mode=ThemeMode.DARK, system_theme=ThemeMode.LIGHT)
+        assert state.resolved_theme == ThemeMode.DARK
+        assert state.is_dark is True
+
+    def test_explicit_light_mode_ignores_system(self) -> None:
+        """When mode is LIGHT, system_theme should be ignored."""
+        state = ClientState(mode=ThemeMode.LIGHT, system_theme=ThemeMode.DARK)
+        assert state.resolved_theme == ThemeMode.LIGHT
+        assert state.is_light is True
+
+    def test_handle_system_theme_change_to_dark(self) -> None:
+        """handle_system_theme_change should update system_theme to dark."""
+        state = ClientState(mode=ThemeMode.SYSTEM, system_theme=ThemeMode.LIGHT)
+        state.handle_system_theme_change("dark")
+        assert state.system_theme == ThemeMode.DARK
+        assert state.resolved_theme == ThemeMode.DARK
+
+    def test_handle_system_theme_change_to_light(self) -> None:
+        """handle_system_theme_change should update system_theme to light."""
+        state = ClientState(mode=ThemeMode.SYSTEM, system_theme=ThemeMode.DARK)
+        state.handle_system_theme_change("light")
+        assert state.system_theme == ThemeMode.LIGHT
+        assert state.resolved_theme == ThemeMode.LIGHT
+
+    def test_toggle_cycles_system_to_light(self) -> None:
+        """toggle() should cycle SYSTEM → LIGHT."""
+        state = ClientState(mode=ThemeMode.SYSTEM)
+        state.toggle()
+        assert state.mode == ThemeMode.LIGHT
+
+    def test_toggle_cycles_light_to_dark(self) -> None:
+        """toggle() should cycle LIGHT → DARK."""
+        state = ClientState(mode=ThemeMode.LIGHT)
+        state.toggle()
+        assert state.mode == ThemeMode.DARK
+
+    def test_toggle_cycles_dark_to_system(self) -> None:
+        """toggle() should cycle DARK → SYSTEM."""
+        state = ClientState(mode=ThemeMode.DARK)
+        state.toggle()
+        assert state.mode == ThemeMode.SYSTEM
+
+    def test_toggle_full_cycle(self) -> None:
+        """toggle() should complete full cycle: SYSTEM → LIGHT → DARK → SYSTEM."""
+        state = ClientState(mode=ThemeMode.SYSTEM)
+        state.toggle()
+        assert state.mode == ThemeMode.LIGHT
+        state.toggle()
+        assert state.mode == ThemeMode.DARK
+        state.toggle()
+        assert state.mode == ThemeMode.SYSTEM
+
+    def test_set_mode_with_string(self) -> None:
+        """set_mode should accept string values."""
+        state = ClientState()
+        state.set_mode("dark")
+        assert state.mode == ThemeMode.DARK
+        state.set_mode("light")
+        assert state.mode == ThemeMode.LIGHT
+        state.set_mode("system")
+        assert state.mode == ThemeMode.SYSTEM
+
+    def test_set_mode_with_enum(self) -> None:
+        """set_mode should accept ThemeMode enum values."""
+        state = ClientState()
+        state.set_mode(ThemeMode.DARK)
+        assert state.mode == ThemeMode.DARK
+
+    def test_set_mode_invalid_string_raises_value_error(self) -> None:
+        """set_mode should raise ValueError for invalid string values."""
+        state = ClientState()
+        with pytest.raises(ValueError, match="Invalid theme mode.*invalid"):
+            state.set_mode("invalid")  # type: ignore
+
+    def test_set_mode_invalid_string_with_typo(self) -> None:
+        """set_mode should raise ValueError for typos in mode names."""
+        state = ClientState()
+        with pytest.raises(ValueError, match="Invalid theme mode.*Dark"):
+            state.set_mode("Dark")  # type: ignore  # Should be lowercase
+
+
+class TestThemeTokens:
+    """Tests for ThemeTokens dataclass."""
+
+    def test_theme_tokens_are_css_variables(self) -> None:
+        """Theme tokens should be CSS variable references."""
+        from trellis.core.client_state import theme
+
+        assert theme.bg_page == "var(--trellis-bg-page)"
+        assert theme.text_primary == "var(--trellis-text-primary)"
+        assert theme.accent_primary == "var(--trellis-accent-primary)"
+
+    def test_theme_tokens_are_frozen(self) -> None:
+        """Theme tokens should be immutable."""
+        from trellis.core.client_state import theme
+
+        with pytest.raises(Exception):  # FrozenInstanceError
+            theme.bg_page = "something else"  # type: ignore
+
+    def test_theme_tokens_all_have_values(self) -> None:
+        """All theme tokens should have CSS variable values."""
+        from trellis.core.client_state import ThemeTokens
+
+        tokens = ThemeTokens()
+        import dataclasses
+
+        for field in dataclasses.fields(tokens):
+            value = getattr(tokens, field.name)
+            assert value.startswith("var(--trellis-"), f"{field.name} should be a CSS var"
+
+
+class TestClientStateDeviceInfo:
+    """Tests for device info fields on ClientState."""
+
+    def test_default_values(self) -> None:
+        """ClientState should have sensible defaults."""
+        state = ClientState()
+        assert state.mode == ThemeMode.SYSTEM
+        assert state.system_theme == ThemeMode.LIGHT
+        assert state.device_type.value == "unknown"
+        assert state.os.value == "unknown"
+        assert state.browser.value == "unknown"
+        assert state.root_element_id == ""
+
+    def test_device_info_preserved(self) -> None:
+        """Device info fields should be preserved."""
+        from trellis.core.client_state import Browser, DeviceType, OperatingSystem
+
+        state = ClientState(
+            device_type=DeviceType.WEB,
+            os=OperatingSystem.MACOS,
+            browser=Browser.CHROME,
+            root_element_id="my-app",
+        )
+        assert state.device_type == DeviceType.WEB
+        assert state.os == OperatingSystem.MACOS
+        assert state.browser == Browser.CHROME
+        assert state.root_element_id == "my-app"
+
+
+class TestClientStateContext:
+    """Tests for ClientState context provision.
+
+    These tests use the actual rendering infrastructure since context
+    requires an active render context.
+    """
+
+    def test_from_context_outside_render_raises_runtime_error(self) -> None:
+        """from_context() outside render context raises RuntimeError."""
+        with pytest.raises(RuntimeError, match="outside of render context"):
+            ClientState.from_context()
+
+    def test_context_provision_in_component(self) -> None:
+        """ClientState should be accessible via context when provided in component."""
+        from trellis.core.composition_component import component
+        from trellis.core.rendering import RenderTree
+
+        retrieved_state: ClientState | None = None
+
+        @component
+        def ChildComponent() -> None:
+            nonlocal retrieved_state
+            retrieved_state = ClientState.from_context()
+
+        @component
+        def ParentComponent() -> None:
+            state = ClientState(mode=ThemeMode.DARK)
+            with state:
+                ChildComponent()
+
+        tree = RenderTree(ParentComponent)
+        tree.render()
+
+        assert retrieved_state is not None
+        assert retrieved_state.mode == ThemeMode.DARK
+
+    def test_context_not_found_raises_lookup_error(self) -> None:
+        """from_context() without provider raises LookupError."""
+        from trellis.core.composition_component import component
+        from trellis.core.rendering import RenderTree
+
+        error_raised = False
+
+        @component
+        def ComponentWithoutContext() -> None:
+            nonlocal error_raised
+            try:
+                ClientState.from_context()
+            except LookupError:
+                error_raised = True
+
+        tree = RenderTree(ComponentWithoutContext)
+        tree.render()
+
+        assert error_raised is True
+
+    def test_context_default_returns_none(self) -> None:
+        """from_context(default=None) returns None when not found."""
+        from trellis.core.composition_component import component
+        from trellis.core.rendering import RenderTree
+
+        result: ClientState | None = "not_set"  # type: ignore
+
+        @component
+        def ComponentWithDefault() -> None:
+            nonlocal result
+            result = ClientState.from_context(default=None)
+
+        tree = RenderTree(ComponentWithDefault)
+        tree.render()
+
+        assert result is None

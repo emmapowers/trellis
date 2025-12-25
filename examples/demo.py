@@ -9,16 +9,17 @@ from dataclasses import dataclass
 
 from trellis import Margin, Padding, Stateful, Trellis, async_main, component
 from trellis import widgets as w
+from trellis.widgets import theme
 
 # =============================================================================
 # Styles
 # =============================================================================
 
 STYLE_COUNT_DISPLAY = {
-    "backgroundColor": "#ffffff",
+    "backgroundColor": theme.bg_surface,
     "borderRadius": "6px",
     "textAlign": "center",
-    "border": "1px solid #e2e8f0",
+    "border": f"1px solid {theme.border_default}",
 }
 
 
@@ -55,7 +56,7 @@ def Header(title: str, subtitle: str) -> None:
     """Page header with title and subtitle."""
     with w.Column(align="center", gap=4, margin=Margin(bottom=24)):
         w.Label(text=title, font_size=20, bold=True)
-        w.Label(text=subtitle, font_size=13, color="#64748b")
+        w.Label(text=subtitle, font_size=13, color=theme.text_secondary)
 
 
 @component
@@ -99,8 +100,8 @@ def CounterControls(
 def RangeLabels(min_val: int, max_val: int) -> None:
     """Min/max range labels."""
     with w.Row(justify="between", margin=Margin(bottom=24)):
-        w.Label(text=f"Min: {min_val}", font_size=12, color="#64748b")
-        w.Label(text=f"Max: {max_val}", font_size=12, color="#64748b")
+        w.Label(text=f"Min: {min_val}", font_size=12, color=theme.text_secondary)
+        w.Label(text=f"Max: {max_val}", font_size=12, color=theme.text_secondary)
 
 
 @component

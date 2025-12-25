@@ -22,18 +22,20 @@ def get_index_html(static_path: str = "/static") -> str:
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Trellis App</title>
     <link rel="stylesheet" href="{static_path}/bundle.css">
+    <script>
+        // Early theme detection to prevent flash of wrong theme
+        (function() {{
+            var theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            document.documentElement.dataset.theme = theme;
+        }})();
+    </script>
     <style>
         *, *::before, *::after {{ box-sizing: border-box; }}
         html, body, #root {{ margin: 0; padding: 0; height: 100%; min-height: 100vh; }}
-        body {{
-            background-color: #f8fafc;
-            color: #0f172a;
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }}
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root" class="trellis-root"></div>
     <script type="module" src="{static_path}/bundle.js"></script>
 </body>
 </html>
