@@ -27,16 +27,23 @@ describe("TrellisStore", () => {
     };
   }
 
-  describe("setTree", () => {
+  // Helper to set up initial tree via AddPatch (replaces setTree)
+  function initTree(tree: SerializedElement): void {
+    store.applyPatches([
+      { op: "add", parent_id: null, children: [tree.key], node: tree },
+    ]);
+  }
+
+  describe("applyPatches - add (initial tree)", () => {
     it("sets root ID from tree", () => {
       const tree = makeElement("root", "App");
-      store.setTree(tree);
+      initTree(tree);
       expect(store.getRootId()).toBe("root");
     });
 
     it("populates node data for single node", () => {
       const tree = makeElement("e1", "Button", { text: "Click me" });
-      store.setTree(tree);
+      initTree(tree);
 
       const node = store.getNode("e1");
       expect(node).toBeDefined();
@@ -52,7 +59,7 @@ describe("TrellisStore", () => {
           makeElement("e3", "Button", { text: "OK" }),
         ]),
       ]);
-      store.setTree(tree);
+      initTree(tree);
 
       expect(store.getNode("root")).toBeDefined();
       expect(store.getNode("e1")?.props).toEqual({ title: "Hello" });
@@ -61,10 +68,10 @@ describe("TrellisStore", () => {
     });
 
     it("clears previous data on new tree", () => {
-      store.setTree(makeElement("old", "OldApp"));
+      initTree(makeElement("old", "OldApp"));
       expect(store.getNode("old")).toBeDefined();
 
-      store.setTree(makeElement("new", "NewApp"));
+      initTree(makeElement("new", "NewApp"));
       expect(store.getNode("old")).toBeUndefined();
       expect(store.getNode("new")).toBeDefined();
       expect(store.getRootId()).toBe("new");
@@ -73,7 +80,7 @@ describe("TrellisStore", () => {
 
   describe("applyPatches - update", () => {
     beforeEach(() => {
-      store.setTree(
+      initTree(
         makeElement("root", "App", {}, [
           makeElement("e1", "Label", { text: "Hello", color: "red" }),
         ])
@@ -108,7 +115,7 @@ describe("TrellisStore", () => {
 
     it("updates childIds when provided", () => {
       // First add more children
-      store.setTree(
+      initTree(
         makeElement("root", "App", {}, [
           makeElement("e1", "Container", {}, [
             makeElement("e2", "Child1"),
@@ -176,7 +183,7 @@ describe("TrellisStore", () => {
 
   describe("applyPatches - add", () => {
     beforeEach(() => {
-      store.setTree(makeElement("root", "App", {}, []));
+      initTree(makeElement("root", "App", {}, []));
     });
 
     it("adds new node to store", () => {
@@ -204,6 +211,27 @@ describe("TrellisStore", () => {
       expect(store.getNode("root")?.childIds).toEqual(["e1", "e2"]);
     });
 
+    it("creates new parent reference on add (immutability)", () => {
+      // Regression test: applyAdd must create a new parent object, not mutate.
+      // React's useSyncExternalStore uses Object.is for change detection.
+      // Same object reference = no re-render, even if contents changed.
+      const parentBefore = store.getNode("root");
+
+      const patch: AddPatch = {
+        op: "add",
+        parent_id: "root",
+        children: ["e1"],
+        node: makeElement("e1", "Button"),
+      };
+      store.applyPatches([patch]);
+
+      const parentAfter = store.getNode("root");
+
+      // Must be different object reference for React to detect change
+      expect(parentAfter).not.toBe(parentBefore);
+      expect(parentAfter?.childIds).toEqual(["e1"]);
+    });
+
     it("adds nested subtree recursively", () => {
       const patch: AddPatch = {
         op: "add",
@@ -227,7 +255,7 @@ describe("TrellisStore", () => {
 
   describe("applyPatches - remove", () => {
     beforeEach(() => {
-      store.setTree(
+      initTree(
         makeElement("root", "App", {}, [
           makeElement("e1", "Container", {}, [
             makeElement("e2", "Child"),
@@ -262,7 +290,7 @@ describe("TrellisStore", () => {
 
   describe("subscriptions", () => {
     beforeEach(() => {
-      store.setTree(
+      initTree(
         makeElement("root", "App", {}, [makeElement("e1", "Label", { text: "Hello" })])
       );
     });
@@ -298,11 +326,15 @@ describe("TrellisStore", () => {
       expect(listener).not.toHaveBeenCalled();
     });
 
-    it("notifies global listeners on setTree", () => {
+    it("notifies global listeners on initial tree via AddPatch", () => {
+      // Create a fresh store to test initial tree
+      const freshStore = new TrellisStore();
       const listener = vi.fn();
-      store.subscribeGlobal(listener);
+      freshStore.subscribeGlobal(listener);
 
-      store.setTree(makeElement("new", "NewApp"));
+      freshStore.applyPatches([
+        { op: "add", parent_id: null, children: ["new"], node: makeElement("new", "NewApp") },
+      ]);
 
       expect(listener).toHaveBeenCalled();
     });

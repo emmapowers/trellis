@@ -22,7 +22,6 @@ from trellis.core.messages import (
     HelloResponseMessage,
     Message,
     PatchMessage,
-    RenderMessage,
 )
 from trellis.core.rendering import IComponent, RenderTree
 from trellis.html.events import get_event_class
@@ -212,13 +211,13 @@ class MessageHandler:
         """Generate initial render message.
 
         Returns:
-            RenderMessage on success, ErrorMessage on exception
+            PatchMessage on success, ErrorMessage on exception
         """
         try:
-            tree = self.tree.render()
+            patches = self.tree.render()
             node_count = len(self.tree._nodes)
-            logger.debug("Initial render complete, sending RenderMessage (%d nodes)", node_count)
-            return RenderMessage(tree=tree)
+            logger.debug("Initial render complete, sending PatchMessage (%d nodes)", node_count)
+            return PatchMessage(patches=patches)
         except Exception as e:
             logger.exception(f"Error during initial render: {e}")
             return ErrorMessage(error=_format_exception(e), context="render")
@@ -300,7 +299,7 @@ class MessageHandler:
             logger.debug("Render loop: %d dirty nodes", dirty_count)
 
             try:
-                patches = self.tree.render_and_diff()
+                patches = self.tree.render()
                 if patches:
                     logger.debug("Sending PatchMessage with %d patches", len(patches))
                     await self.send_message(PatchMessage(patches=patches))

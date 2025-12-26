@@ -8,16 +8,13 @@ import { store } from "@common/core/store";
 import {
   MessageType,
   HelloResponseMessage,
-  RenderMessage,
   PatchMessage,
   ErrorMessage,
 } from "@common/types";
-import { SerializedElement } from "@common/core/types";
 
 // Mock the store
 vi.mock("@common/core/store", () => ({
   store: {
-    setTree: vi.fn(),
     applyPatches: vi.fn(),
   },
 }));
@@ -41,18 +38,6 @@ describe("ClientMessageHandler", () => {
 
     handler = new ClientMessageHandler(callbacks);
   });
-
-  // Helper to create a minimal serialized element
-  function makeElement(key: string, type: string): SerializedElement {
-    return {
-      kind: "react_component",
-      type,
-      name: type,
-      key,
-      props: {},
-      children: [],
-    };
-  }
 
   describe("initial state", () => {
     it("starts disconnected", () => {
@@ -114,20 +99,6 @@ describe("ClientMessageHandler", () => {
       expect(callbacks.onConnectionStateChange).toHaveBeenCalledWith(
         "connected"
       );
-    });
-  });
-
-  describe("handleMessage - RENDER", () => {
-    it("calls store.setTree with tree", () => {
-      const tree = makeElement("root", "App");
-      const renderMessage: RenderMessage = {
-        type: MessageType.RENDER,
-        tree,
-      };
-
-      handler.handleMessage(renderMessage);
-
-      expect(store.setTree).toHaveBeenCalledWith(tree);
     });
   });
 

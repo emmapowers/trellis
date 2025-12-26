@@ -29,7 +29,6 @@ export interface NodeData {
  * Central store for all node data.
  *
  * Provides:
- * - Full tree initialization via setTree()
  * - Incremental updates via applyPatches()
  * - Per-node subscriptions for efficient React re-renders
  */
@@ -47,18 +46,6 @@ export class TrellisStore {
   /** Get the root node ID. */
   getRootId(): string | null {
     return this.rootId;
-  }
-
-  /**
-   * Set the full tree (initial render or resync).
-   * Clears existing data and populates from the serialized tree.
-   */
-  setTree(root: SerializedElement): void {
-    this.nodes.clear();
-    this.rootId = root.key ?? root.name ?? `unknown-${Math.random().toString(36).slice(2)}`;
-    this.addNodeRecursive(root);
-    debugLog("store", `setTree: root=${this.rootId}, ${this.nodes.size} total nodes`);
-    this.notifyGlobal();
   }
 
   private addNodeRecursive(node: SerializedElement): void {
@@ -124,10 +111,21 @@ export class TrellisStore {
         console.warn(`[TrellisStore] Cannot add node ${nodeId} - parent ${patch.parent_id} not found`);
         return;
       }
-      parent.childIds = patch.children;
+      // Create new object for immutability (React needs reference change to detect updates)
+      const newParent: NodeData = {
+        kind: parent.kind,
+        type: parent.type,
+        name: parent.name,
+        props: parent.props,
+        childIds: patch.children,
+      };
+      this.nodes.set(patch.parent_id, newParent);
       affectedIds.add(patch.parent_id);
     } else {
-      // Adding a new root (shouldn't happen normally, but handle it)
+      // Adding a new root - clear existing tree first
+      this.nodes.clear();
+      this.nodeListeners.clear();
+      this.addNodeRecursive(patch.node);
       this.rootId = nodeId;
     }
   }

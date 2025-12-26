@@ -38,16 +38,6 @@ class AddPatch(msgspec.Struct, tag="add", tag_field="op"):
 Patch = UpdatePatch | RemovePatch | AddPatch
 
 
-class RenderMessage(msgspec.Struct, tag="render", tag_field="type"):
-    """Tree render sent to client.
-
-    Contains the complete serialized Element tree for initial render
-    or re-render after state changes.
-    """
-
-    tree: dict[str, tp.Any]
-
-
 class EventMessage(msgspec.Struct, tag="event", tag_field="type"):
     """Client event triggering a server callback."""
 
@@ -107,6 +97,4 @@ class HelloResponseMessage(msgspec.Struct, tag="hello_response", tag_field="type
 
 
 # Union type for all messages - used by MessageHandler
-Message = (
-    HelloMessage | HelloResponseMessage | RenderMessage | PatchMessage | EventMessage | ErrorMessage
-)
+Message = HelloMessage | HelloResponseMessage | PatchMessage | EventMessage | ErrorMessage

@@ -21,8 +21,9 @@ Example:
         Text(f"Count: {state.count}")
 
     tree = RenderTree(Counter)
-    result = tree.render()  # Render and serialize
-    # After state changes, call render() again for updated tree
+    patches = tree.render()  # Returns list of Patch objects
+    # Initial render returns single AddPatch with full tree
+    # Subsequent renders return patches for changed nodes
     ```
 """
 
@@ -277,22 +278,23 @@ class ElementNode:
         if exc_type is not None:
             return
 
-        # Store collected child IDs as input for render()
-        # (render() will replace these with its output children)
-        object.__setattr__(self, "child_ids", tuple(child_ids))
-
         # Get parent_id from current frame (the grandparent in tree structure)
         frame = ctx.current_frame()
         parent_id = frame.parent_id if frame else None
 
-        # Get old node and state for reconciliation
-        # Note: Container reuse optimization is skipped for now
-        # (input children have already been reuse-checked, and container execution is cheap)
-        old_node = ctx.get_node(self.id)
+        # Get old child IDs BEFORE mutating self.child_ids
+        # (self may be reused, so self could be the same object as in _old_nodes)
+        old_output_child_ids = list(self.child_ids) if self.child_ids else None
 
-        # Execute the container with its input children
-        # old_child_ids is the OLD output children (for reconciliation)
-        old_output_child_ids = list(old_node.child_ids) if old_node else None
+        logger.debug(
+            "Container __exit__ %s: new_input=%s, old_output=%s",
+            self.component.name,
+            [cid.split("/")[-1] for cid in child_ids] if child_ids else None,
+            [cid.split("/")[-1] for cid in old_output_child_ids] if old_output_child_ids else None,
+        )
+
+        # Store collected child IDs as input for render()
+        object.__setattr__(self, "child_ids", tuple(child_ids))
 
         executed_node = ctx.eager_execute_node(self, parent_id, old_child_ids=old_output_child_ids)
 
@@ -420,8 +422,9 @@ class RenderTree(ClassWithLock):
 
         # Patches accumulated during render (Phase 4: inline patch generation)
         self._patches: list[Patch] = []
-        # Flag to track if we're in incremental render mode (vs initial render)
-        self._is_incremental_render: bool = False
+        # Snapshot of nodes from before render, for diff comparison
+        # Empty for initial render, populated for incremental renders
+        self._old_nodes: dict[str, ElementNode] = {}
 
     @property
     def root_node(self) -> ElementNode | None:
@@ -572,83 +575,15 @@ class RenderTree(ClassWithLock):
         self._node_counter += 1
         return f"e{self._node_counter}"
 
-    @with_lock
-    def _render_node_tree(self) -> None:
-        """Build the initial component tree via eager execution.
-
-        With eager execution, calling the root component triggers a cascade:
-        1. root_component() calls _place() on the root
-        2. _place() calls eager_execute_node() which executes render()
-        3. render() creates children via component calls
-        4. Each child's _place() calls eager_execute_node() recursively
-        5. The entire tree is built before this method returns
-
-        Raises:
-            RuntimeError: If another render is already in progress
-        """
-        if get_active_render_tree():
-            raise RuntimeError("Attempted to start rendering with another context active!")
-
-        start_time = time.perf_counter()
-        logger.debug("Initial render starting (root: %s)", self.root_component.name)
-
-        try:
-            set_active_render_tree(self)
-
-            # Initial render - eager execution builds the entire tree
-            # root_component() → _place() → eager_execute_node() → tree built
-            root_node = self.root_component()
-            self.root_node_id = root_node.id
-
-        finally:
-            set_active_render_tree(None)
-
-        elapsed_ms = (time.perf_counter() - start_time) * 1000
-        logger.debug("Initial render complete: %d nodes in %.2fms", len(self._nodes), elapsed_ms)
-
-    @with_lock
-    def _render_dirty_nodes(self) -> None:
-        """Render all nodes marked as dirty.
-
-        Loops until no more dirty nodes exist, since rendering a node may
-        mark new nodes dirty (e.g., newly mounted children).
-
-        Nodes are rendered by calling execute_node directly, which:
-        1. Calls the component's render() method
-        2. Reconciles resulting children against existing children
-        3. May mark new children dirty (which get rendered in next iteration)
-        """
-        if get_active_render_tree() is not None:
-            raise RuntimeError("Attempted to render dirty nodes with another context active!")
-
-        try:
-            set_active_render_tree(self)
-
-            while self._dirty_ids:
-                # Take snapshot of current dirty IDs
-                dirty_ids = list(self._dirty_ids)
-                self._dirty_ids.clear()
-
-                if dirty_ids:
-                    logger.debug("Rendering dirty nodes: %s", dirty_ids)
-
-                for node_id in dirty_ids:
-                    state = self._element_state.get(node_id)
-                    # Check dirty flag - may have been rendered as part of parent
-                    if state and state.dirty:
-                        state.dirty = False
-                        self._render_single_node(node_id)
-        finally:
-            set_active_render_tree(None)
-
     def _render_single_node(self, node_id: str) -> None:
         """Re-render a single dirty node by ID.
 
         Uses eager execution to re-render the node. Emits patches for
         any changes during incremental render.
         """
-        old_node = self._nodes.get(node_id)
-        if old_node is None:
+        # Get current node (will be re-executed)
+        current_node = self._nodes.get(node_id)
+        if current_node is None:
             return
 
         # Get state
@@ -657,18 +592,18 @@ class RenderTree(ClassWithLock):
             return
         parent_id = state.parent_id
 
-        logger.debug("Re-rendering node %s (%s)", node_id, old_node.component.name)
+        logger.debug("Re-rendering node %s (%s)", node_id, current_node.component.name)
 
-        # Get old child IDs for reconciliation
-        old_child_ids = list(old_node.child_ids) if old_node.child_ids else None
+        # Get old child IDs from snapshot for reconciliation
+        old_node = self._old_nodes.get(node_id)
+        old_child_ids = list(old_node.child_ids) if old_node and old_node.child_ids else None
 
         # Re-execute using eager execution
         # eager_execute_node handles state reset and child reconciliation
-        self.eager_execute_node(old_node, parent_id, old_child_ids=old_child_ids)
+        self.eager_execute_node(current_node, parent_id, old_child_ids=old_child_ids)
 
         # Emit UpdatePatch if props or children changed (for incremental render)
-        # Note: _emit_update_patch_if_changed also updates previous state
-        self._emit_update_patch_if_changed(node_id, old_node)
+        self._emit_update_patch_if_changed(node_id)
 
     def eager_execute_node(
         self,
@@ -735,14 +670,6 @@ class RenderTree(ClassWithLock):
         old_node_id = self._current_node_id
         self._current_node_id = node_id
 
-        # IMPORTANT: Save old child nodes BEFORE render() to avoid overwrites
-        old_nodes: dict[str, ElementNode] = {}
-        if old_child_ids:
-            for old_id in old_child_ids:
-                old_node = self._nodes.get(old_id)
-                if old_node:
-                    old_nodes[old_id] = old_node
-
         # Push a frame for child IDs created during execution
         self.push_frame(parent_id=node_id)
         frame_popped = False
@@ -761,13 +688,14 @@ class RenderTree(ClassWithLock):
             if new_child_ids:
                 if old_child_ids:
                     logger.debug(
-                        "Reconciling children: old=%d, new=%d",
-                        len(old_child_ids),
-                        len(new_child_ids),
+                        "Reconciling children for %s: old=%s, new=%s",
+                        node.component.name,
+                        [cid.split("/")[-1] for cid in old_child_ids],
+                        [cid.split("/")[-1] for cid in new_child_ids],
                     )
                     # Reconcile with old children
                     final_child_ids = reconcile_node_children(
-                        old_child_ids, new_child_ids, node_id, self, old_nodes
+                        old_child_ids, new_child_ids, node_id, self
                     )
                 else:
                     # All new children - already executed during creation
@@ -847,17 +775,6 @@ class RenderTree(ClassWithLock):
         # the node would be GC'd and removed from the WeakSet.
         state._render_node = node
 
-        # IMPORTANT: Save old child nodes BEFORE render() to avoid overwrites
-        # During render(), new child descriptors are stored in _nodes via
-        # add_to_current_frame(), which may overwrite old nodes with the same
-        # position-based ID. We need the old node's child_ids for reconciliation.
-        old_nodes: dict[str, ElementNode] = {}
-        if old_child_ids:
-            for old_id in old_child_ids:
-                old_node = self._nodes.get(old_id)
-                if old_node:
-                    old_nodes[old_id] = old_node
-
         # Push a frame for child IDs created during execution
         self.push_frame(parent_id=node.id)
         frame_popped = False
@@ -875,7 +792,7 @@ class RenderTree(ClassWithLock):
                 # Reconcile with old children if this is a re-execution
                 if old_child_ids:
                     final_child_ids = reconcile_node_children(
-                        old_child_ids, new_child_ids, node.id, self, old_nodes
+                        old_child_ids, new_child_ids, node.id, self
                     )
                 else:
                     # Initial mount - mount all new children
@@ -1048,41 +965,6 @@ class RenderTree(ClassWithLock):
         """
         self._callback_registry.clear()
 
-    @with_lock
-    def render(self) -> dict[str, tp.Any]:
-        """Render and return the serialized node tree.
-
-        This is the main public API for rendering. It:
-        1. Builds tree via eager execution (initial) or re-renders dirty nodes
-        2. Processes any pending mount/unmount hooks
-        3. Serializes the result for transmission
-        4. Populates previous state in ElementState for subsequent diffs
-
-        With eager execution, the initial render builds the entire tree
-        during root_component() call - no separate dirty node processing needed.
-
-        Callbacks use deterministic IDs (node_id:prop_name) and are
-        automatically overwritten on re-render, so no clearing is needed.
-
-        Returns:
-            Serialized node tree as a dict, suitable for JSON/msgpack encoding.
-            Callbacks are replaced with {"__callback__": "e5:on_click"} references.
-        """
-        from trellis.core.serialization import serialize_node
-
-        if self.root_node is None:
-            # Initial render - eager execution builds entire tree
-            self._render_node_tree()
-        else:
-            # Re-render - process any dirty nodes from state changes
-            self._render_dirty_nodes()
-
-        # Process hooks after tree is fully built
-        self._process_pending_hooks()
-
-        assert self.root_node is not None
-        return serialize_node(self.root_node, self)
-
     def has_dirty_nodes(self) -> bool:
         """Check if there are any nodes that need re-rendering.
 
@@ -1092,39 +974,85 @@ class RenderTree(ClassWithLock):
         return bool(self._dirty_ids)
 
     @with_lock
-    def render_and_diff(self) -> list[Patch]:
-        """Render dirty nodes and return patches describing changes.
+    def render(self) -> list[Patch]:
+        """Render and return patches describing the tree state.
 
-        This is the incremental render API. It:
-        1. Clears accumulated patches
-        2. Renders all dirty nodes (patches emitted inline during reconciliation)
-        3. Processes any pending mount/unmount hooks
-        4. Returns accumulated patches
+        This is the main public API for rendering. It:
+        1. Builds tree via eager execution (initial) or re-renders dirty nodes
+        2. Processes any pending mount/unmount hooks
+        3. Returns patches for client to apply
+
+        For initial render, returns a single AddPatch containing the full tree.
+        For incremental renders, returns patches for nodes that changed.
 
         Returns:
-            List of Patch objects to send to client. Empty if nothing changed.
+            List of Patch objects to send to client.
         """
-        if self.root_node is None:
-            # Initial render - should use render() instead
-            return []
+        if get_active_render_tree() is not None:
+            raise RuntimeError("Attempted to render with another context active!")
 
-        # Clear patches and enable incremental render mode
         self._patches.clear()
-        self._is_incremental_render = True
+        # Snapshot current nodes for diff comparison
+        # Empty for initial render, populated for incremental
+        self._old_nodes = dict(self._nodes)
+        is_initial = self.root_node is None
 
         try:
-            # Render all dirty nodes (patches emitted inline)
-            self._render_dirty_nodes()
+            set_active_render_tree(self)
+
+            if is_initial:
+                # Initial render - eager execution builds entire tree
+                start_time = time.perf_counter()
+                logger.debug("Initial render starting (root: %s)", self.root_component.name)
+
+                root_node = self.root_component()
+                self.root_node_id = root_node.id
+
+                elapsed_ms = (time.perf_counter() - start_time) * 1000
+                logger.debug(
+                    "Initial render complete: %d nodes in %.2fms",
+                    len(self._nodes),
+                    elapsed_ms,
+                )
+
+            # Process any dirty nodes (handles incremental re-renders,
+            # and any nodes marked dirty during initial render)
+            while self._dirty_ids:
+                dirty_ids = list(self._dirty_ids)
+                self._dirty_ids.clear()
+
+                if dirty_ids:
+                    logger.debug("Rendering dirty nodes: %s", dirty_ids)
+
+                for node_id in dirty_ids:
+                    state = self._element_state.get(node_id)
+                    if state and state.dirty:
+                        state.dirty = False
+                        self._render_single_node(node_id)
 
             # Process hooks after tree is fully built
             self._process_pending_hooks()
 
+            # Build result patches
+            if is_initial and self.root_node is not None:
+                # Initial render: single AddPatch with full tree
+                return [
+                    AddPatch(
+                        parent_id=None,
+                        children=[self.root_node_id] if self.root_node_id else [],
+                        node=self._serialize_node_for_patch(self.root_node),
+                    )
+                ]
+
+            # Incremental render: return accumulated patches
             patches = list(self._patches)
             if patches:
-                logger.debug("render_and_diff complete: %d patches", len(patches))
+                logger.debug("render complete: %d patches", len(patches))
             return patches
+
         finally:
-            self._is_incremental_render = False
+            set_active_render_tree(None)
+            self._old_nodes.clear()
 
     @with_lock
     def get_element_state(self, node_id: str) -> ElementState:
@@ -1310,31 +1238,28 @@ class RenderTree(ClassWithLock):
     def _emit_patch(self, patch: Patch) -> None:
         """Add a patch to the accumulated patches list.
 
-        Only adds patches during incremental render mode.
-
         Args:
             patch: The patch to emit
         """
-        if self._is_incremental_render:
-            # Log patch details (uses 'patches' category which maps to same logger)
-            if isinstance(patch, AddPatch):
-                logger.debug(
-                    "Patch: AddPatch(parent=%s, node=%s)",
-                    patch.parent_id,
-                    patch.node.get("key", "?"),
-                )
-            elif isinstance(patch, UpdatePatch):
-                changed_props = list(patch.props.keys()) if patch.props else []
-                logger.debug(
-                    "Patch: UpdatePatch(id=%s, props=%s, children=%s)",
-                    patch.id,
-                    changed_props,
-                    patch.children is not None,
-                )
-            elif isinstance(patch, RemovePatch):
-                logger.debug("Patch: RemovePatch(id=%s)", patch.id)
+        # Log patch details
+        if isinstance(patch, AddPatch):
+            logger.debug(
+                "Patch: AddPatch(parent=%s, node=%s)",
+                patch.parent_id,
+                patch.node.get("key", "?"),
+            )
+        elif isinstance(patch, UpdatePatch):
+            changed_props = list(patch.props.keys()) if patch.props else []
+            logger.debug(
+                "Patch: UpdatePatch(id=%s, props=%s, children=%s)",
+                patch.id,
+                changed_props,
+                patch.children is not None,
+            )
+        elif isinstance(patch, RemovePatch):
+            logger.debug("Patch: RemovePatch(id=%s)", patch.id)
 
-            self._patches.append(patch)
+        self._patches.append(patch)
 
     def _serialize_node_for_patch(self, node: ElementNode) -> dict[str, tp.Any]:
         """Serialize a node and its subtree for an AddPatch.
@@ -1362,28 +1287,31 @@ class RenderTree(ClassWithLock):
 
         return _serialize_node_props(node, self)
 
-    def _emit_update_patch_if_changed(
-        self,
-        node_id: str,
-        old_node: ElementNode | None,
-    ) -> None:
+    def _emit_update_patch_if_changed(self, node_id: str) -> None:
         """Emit an UpdatePatch if props or children changed.
 
-        Compares current node to old_node and emits UpdatePatch if needed.
+        Compares current node (in _nodes) to old node (in _old_nodes snapshot)
+        and emits UpdatePatch if there are differences.
 
         Args:
             node_id: The node's ID
-            old_node: The old node (for comparison)
         """
         node = self._nodes.get(node_id)
         if not node:
+            return
+
+        # Look up old node from the snapshot taken at start of render
+        old_node = self._old_nodes.get(node_id)
+
+        # New nodes should get AddPatch (via reconciliation), not UpdatePatch
+        if not old_node:
             return
 
         # Serialize current props
         current_props = self._serialize_props_for_state(node)
         current_child_ids = list(node.child_ids)
 
-        # Get previous state from old_node
+        # Get previous state from old_node snapshot
         prev_props = self._serialize_props_for_state(old_node) if old_node else {}
         prev_child_ids = list(old_node.child_ids) if old_node else []
 
@@ -1413,54 +1341,49 @@ class RenderTree(ClassWithLock):
         self,
         result: ReconcileResult,
         parent_id: str,
-        old_nodes: dict[str, ElementNode],
     ) -> list[str]:
         """Process a ReconcileResult and apply side effects.
 
-        This is the "impure" counterpart to the pure reconcile_children() function.
-        It interprets the ReconcileResult and performs:
+        Interprets the ReconcileResult from the pure reconciler and performs:
         - Unmounting removed nodes (emits RemovePatch)
         - Mounting added nodes (emits AddPatch)
-        - Emitting UpdatePatch for matched nodes with changes
-
-        With eager execution, matched nodes have already been handled by their
-        _place() calls. We just need to emit patches for any changes.
+        - Emitting UpdatePatch for matched nodes with changed props
 
         Args:
             result: The ReconcileResult from reconcile_children()
             parent_id: The parent node's ID
-            old_nodes: Saved old node data for props comparison
 
         Returns:
             Final list of child IDs after reconciliation
         """
         logger.debug(
-            "Processing reconcile: %d added, %d removed, %d matched",
-            len(result.added),
-            len(result.removed),
-            len(result.matched),
+            "Processing reconcile: added=%s, removed=%s, matched=%s",
+            [cid.split("/")[-1] for cid in result.added] if result.added else [],
+            [cid.split("/")[-1] for cid in result.removed] if result.removed else [],
+            [cid.split("/")[-1] for cid in result.matched] if result.matched else [],
         )
 
         # 1. REMOVE first (cleanup before new state)
-        # Emit RemovePatch for each removed node
         for node_id in result.removed:
+            logger.debug("Emitting RemovePatch for %s", node_id.split("/")[-1])
             self._emit_patch(RemovePatch(id=node_id))
             self.unmount_node_tree(node_id)
 
-        # 2. ADD second (mount new nodes)
-        # With eager execution, nodes are already executed in _place()
-        # We just need to ensure ElementState exists and emit patches
+        # 2. ADD new nodes (already executed, just emit patches)
         for node_id in result.added:
             node = self._nodes.get(node_id)
             if node:
-                # Node was already executed in _place(), just ensure state exists
+                logger.debug(
+                    "Emitting AddPatch for %s (parent=%s)",
+                    node_id.split("/")[-1],
+                    parent_id.split("/")[-1] if parent_id else None,
+                )
                 state = self._element_state.get(node_id)
                 if state is None:
                     state = ElementState(parent_id=parent_id, mounted=True)
                     self._element_state[node_id] = state
                     self.track_mount(node_id)
 
-                # Emit AddPatch with serialized subtree
                 self._emit_patch(
                     AddPatch(
                         parent_id=parent_id,
@@ -1469,12 +1392,8 @@ class RenderTree(ClassWithLock):
                     )
                 )
 
-        # 3. MATCHED - with eager execution, nodes already handled in _place()
-        # Just emit patches for any changes detected
+        # 3. MATCHED - emit patches for any prop/children changes
         for node_id in result.matched:
-            old_node = old_nodes.get(node_id)
-            if old_node:
-                # Emit UpdatePatch if props or children changed
-                self._emit_update_patch_if_changed(node_id, old_node)
+            self._emit_update_patch_if_changed(node_id)
 
         return result.child_order

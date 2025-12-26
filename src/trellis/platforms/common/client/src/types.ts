@@ -6,7 +6,6 @@ export { SerializedElement, CallbackRef, isCallbackRef } from "./core";
 export const MessageType = {
   HELLO: "hello",
   HELLO_RESPONSE: "hello_response",
-  RENDER: "render",
   PATCH: "patch",
   EVENT: "event",
   ERROR: "error",
@@ -58,11 +57,6 @@ export interface HelloResponseMessage {
   debug?: DebugConfig;
 }
 
-export interface RenderMessage {
-  type: typeof MessageType.RENDER;
-  tree: import("./core").SerializedElement;
-}
-
 export interface EventMessage {
   type: typeof MessageType.EVENT;
   callback_id: string;
@@ -84,7 +78,6 @@ export interface PatchMessage {
 export type Message =
   | HelloMessage
   | HelloResponseMessage
-  | RenderMessage
   | PatchMessage
   | EventMessage
   | ErrorMessage;

@@ -304,39 +304,21 @@ def reconcile_node_children(
     new_child_ids: list[str],
     parent_id: str,
     ctx: RenderTree,
-    old_nodes: dict[str, ElementNode] | None = None,
 ) -> list[str]:
     """Reconcile old child IDs with new child IDs.
 
-    This function uses the pure `reconcile_children` function to compare
-    old and new child lists, then delegates to `ctx.process_reconcile_result`
-    to apply side effects (mount, unmount, reconcile matched nodes).
-
-    IMPORTANT: Old nodes must be saved BEFORE render() is called, since new node
-    descriptors may overwrite them in ctx._nodes (same position-based ID). The
-    old_nodes dict is passed in by the caller (execute_node) who saved them.
+    Uses the pure `reconcile_children` function to compare old and new child
+    lists, then delegates to `ctx.process_reconcile_result` to apply side
+    effects (mount, unmount, emit patches).
 
     Args:
-        old_child_ids: Current child IDs
-        new_child_ids: New child IDs
+        old_child_ids: Previous child IDs
+        new_child_ids: New child IDs from this render
         parent_id: Parent node's ID
         ctx: The render tree
-        old_nodes: Pre-saved old nodes dict (from before render() overwrote them)
 
     Returns:
-        List of reconciled child IDs
+        Final list of child IDs after reconciliation
     """
-    # Use provided old_nodes, or build from ctx if not provided (for callers
-    # like reconcile_node that call us before render() has a chance to overwrite)
-    if old_nodes is None:
-        old_nodes = {}
-        for old_id in old_child_ids:
-            node = ctx.get_node(old_id)
-            if node:
-                old_nodes[old_id] = node
-
-    # Use pure reconciliation to compare lists
     result = reconcile_children(old_child_ids, new_child_ids)
-
-    # Apply side effects and return final child order
-    return ctx.process_reconcile_result(result, parent_id, old_nodes)
+    return ctx.process_reconcile_result(result, parent_id)

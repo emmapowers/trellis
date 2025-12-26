@@ -1,7 +1,7 @@
 /**
  * Common message handler for all Trellis platform clients.
  *
- * Handles the message protocol (HELLO_RESPONSE, RENDER, PATCH, ERROR)
+ * Handles the message protocol (HELLO_RESPONSE, PATCH, ERROR)
  * and updates the shared store. Platform-specific clients delegate
  * message processing to this handler, keeping transport logic separate.
  */
@@ -57,10 +57,6 @@ export class ClientMessageHandler {
         debugLog("messages", `Connected: session=${msg.session_id}, version=${msg.server_version}`);
         this.setConnectionState("connected");
         this.callbacks.onConnected?.(msg);
-        break;
-
-      case MessageType.RENDER:
-        this.store.setTree(msg.tree);
         break;
 
       case MessageType.PATCH: {

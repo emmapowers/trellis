@@ -40,6 +40,7 @@ from trellis.core.rendering import (
     freeze_props,
     get_active_render_tree,
 )
+from trellis.utils.logger import logger
 
 __all__ = ["Component"]
 
@@ -166,6 +167,11 @@ class Component(ABC):
             and not is_dirty
         ):
             # Reuse old node - skip execution entirely, preserve subtree
+            logger.debug(
+                "Reusing node %s (container=%s)",
+                self.name,
+                self._has_children_param,
+            )
             if ctx.has_active_frame() and not self._has_children_param:
                 ctx.add_to_current_frame(old_node)
                 object.__setattr__(old_node, "_auto_collected", True)
