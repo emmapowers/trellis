@@ -14,6 +14,7 @@ import {
   UpdatePatch,
   RemovePatch,
 } from "../types";
+import { debugLog } from "../debug";
 
 /** Node data stored by ID. */
 export interface NodeData {
@@ -56,6 +57,7 @@ export class TrellisStore {
     this.nodes.clear();
     this.rootId = root.key ?? root.name ?? `unknown-${Math.random().toString(36).slice(2)}`;
     this.addNodeRecursive(root);
+    debugLog("store", `setTree: root=${this.rootId}, ${this.nodes.size} total nodes`);
     this.notifyGlobal();
   }
 
@@ -79,6 +81,7 @@ export class TrellisStore {
    * Updates only affected nodes and notifies their listeners.
    */
   applyPatches(patches: Patch[]): void {
+    debugLog("store", `Applying ${patches.length} patches`);
     const affectedIds = new Set<string>();
 
     for (const patch of patches) {
@@ -108,6 +111,7 @@ export class TrellisStore {
 
   private applyAdd(patch: AddPatch, affectedIds: Set<string>): void {
     const nodeId = patch.node.key ?? patch.node.name ?? `unknown-${Math.random().toString(36).slice(2)}`;
+    debugLog("store", `ADD: ${nodeId} under parent ${patch.parent_id}`);
 
     // Add the new node and all descendants
     this.addNodeRecursive(patch.node);
@@ -134,6 +138,10 @@ export class TrellisStore {
       console.warn(`[TrellisStore] Update for unknown node: ${patch.id}`);
       return;
     }
+
+    const propsChanged = patch.props ? Object.keys(patch.props) : [];
+    const childrenChanged = patch.children !== undefined;
+    debugLog("store", `UPDATE: ${patch.id} props=[${propsChanged.join(",")}] children=${childrenChanged}`);
 
     // Create new props object with updates applied
     let newProps = node.props;
@@ -165,6 +173,7 @@ export class TrellisStore {
   }
 
   private applyRemove(patch: RemovePatch, affectedIds: Set<string>): void {
+    debugLog("store", `REMOVE: ${patch.id}`);
     // Remove node and all descendants
     this.removeNodeRecursive(patch.id);
     affectedIds.add(patch.id);
@@ -205,7 +214,8 @@ export class TrellisStore {
 
   private notifyNode(id: string): void {
     const listeners = this.nodeListeners.get(id);
-    if (listeners) {
+    if (listeners && listeners.size > 0) {
+      debugLog("store", `Notifying ${listeners.size} listeners for node ${id}`);
       for (const listener of listeners) {
         listener();
       }
@@ -213,6 +223,9 @@ export class TrellisStore {
   }
 
   private notifyGlobal(): void {
+    if (this.globalListeners.size > 0) {
+      debugLog("store", `Notifying ${this.globalListeners.size} global listeners`);
+    }
     for (const listener of this.globalListeners) {
       listener();
     }

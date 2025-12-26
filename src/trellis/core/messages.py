@@ -84,14 +84,26 @@ class HelloMessage(msgspec.Struct, tag="hello", tag_field="type"):
     client_id: str
 
 
+class DebugConfig(msgspec.Struct):
+    """Debug configuration sent to client.
+
+    Contains the list of enabled debug categories so the client
+    can mirror the server's debug logging configuration.
+    """
+
+    categories: list[str]
+
+
 class HelloResponseMessage(msgspec.Struct, tag="hello_response", tag_field="type"):
     """Server response to client hello.
 
     Contains session ID for tracking and server version for compatibility.
+    Optionally includes debug configuration for client-side logging.
     """
 
     session_id: str
     server_version: str
+    debug: DebugConfig | None = None
 
 
 # Union type for all messages - used by MessageHandler

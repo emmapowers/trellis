@@ -46,10 +46,16 @@ export interface HelloMessage {
   client_id: string;
 }
 
+/** Debug configuration from the server. */
+export interface DebugConfig {
+  categories: string[];
+}
+
 export interface HelloResponseMessage {
   type: typeof MessageType.HELLO_RESPONSE;
   session_id: string;
   server_version: string;
+  debug?: DebugConfig;
 }
 
 export interface RenderMessage {

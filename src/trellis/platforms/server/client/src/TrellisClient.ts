@@ -20,6 +20,7 @@ import {
 } from "../../../common/client/src/ClientMessageHandler";
 import { TrellisClient } from "../../../common/client/src/TrellisClient";
 import { TrellisStore } from "../../../common/client/src/core";
+import { debugLog } from "../../../common/client/src/debug";
 
 export type { ConnectionState };
 
@@ -61,10 +62,13 @@ export class ServerTrellisClient implements TrellisClient {
       this.handler.setConnectionState("connecting");
 
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      this.ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      debugLog("client", `Connecting to ${wsUrl}`);
+      this.ws = new WebSocket(wsUrl);
       this.ws.binaryType = "arraybuffer";
 
       this.ws.onopen = () => {
+        debugLog("client", "WebSocket opened, sending HELLO");
         const hello: HelloMessage = {
           type: MessageType.HELLO,
           client_id: this.clientId,
@@ -84,11 +88,13 @@ export class ServerTrellisClient implements TrellisClient {
       };
 
       this.ws.onerror = () => {
+        debugLog("client", "WebSocket error");
         this.handler.setConnectionState("disconnected");
         reject(new Error("WebSocket connection failed"));
       };
 
       this.ws.onclose = () => {
+        debugLog("client", "WebSocket closed");
         this.handler.setConnectionState("disconnected");
       };
     });
@@ -102,6 +108,7 @@ export class ServerTrellisClient implements TrellisClient {
 
   /** Send an event to the server to invoke a callback. */
   sendEvent(callbackId: string, args: unknown[] = []): void {
+    debugLog("client", `sendEvent: ${callbackId} args=${JSON.stringify(args)}`);
     const msg: EventMessage = {
       type: MessageType.EVENT,
       callback_id: callbackId,
@@ -111,6 +118,7 @@ export class ServerTrellisClient implements TrellisClient {
   }
 
   disconnect(): void {
+    debugLog("client", "Disconnecting");
     if (this.ws) {
       this.ws.close();
       this.ws = null;

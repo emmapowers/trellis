@@ -48,6 +48,7 @@ Context API example:
 
 from __future__ import annotations
 
+import logging
 import typing as tp
 import weakref
 from dataclasses import dataclass, field
@@ -59,6 +60,8 @@ if tp.TYPE_CHECKING:
 from trellis.core.conversion import convert_to_tracked
 from trellis.core.mutable import record_property_access
 from trellis.core.rendering import get_active_render_tree, is_render_active
+
+logger = logging.getLogger(__name__)
 
 
 # Sentinel for missing default argument
@@ -160,8 +163,18 @@ class Stateful:
         key = (cls, call_idx)
 
         if key in state.local_state:
+            logger.debug(
+                "State %s retrieved from cache (call_idx=%d)",
+                cls.__name__,
+                call_idx,
+            )
             return tp.cast("Stateful", state.local_state[key])
 
+        logger.debug(
+            "State %s created (new instance, call_idx=%d)",
+            cls.__name__,
+            call_idx,
+        )
         instance = object.__new__(cls)
         state.local_state[key] = instance
         return instance
@@ -215,6 +228,12 @@ class Stateful:
             node = context.get_node(node_id)
             if node is not None:
                 state_info.watchers.add(node)
+                logger.debug(
+                    "Dependency: %s reads %s.%s",
+                    node_id,
+                    type(self).__name__,
+                    name,
+                )
 
         # Record access for mutable() to capture
         record_property_access(self, name, value)
@@ -254,8 +273,14 @@ class Stateful:
             is_modification = True
             # Check if value actually changed
             if old_value == value:
+                logger.debug(
+                    "%s.%s unchanged, skipping",
+                    type(self).__name__,
+                    name,
+                )
                 return  # Value unchanged, skip dirty marking
         else:
+            old_value = None
             is_modification = False
 
         # Prevent state modifications during render (but allow initialization)
@@ -269,6 +294,15 @@ class Stateful:
         # Set the value
         object.__setattr__(self, name, value)
 
+        if is_modification:
+            logger.debug(
+                "%s.%s = %r (was %r)",
+                type(self).__name__,
+                name,
+                value,
+                old_value,
+            )
+
         # Mark dependent nodes as dirty (if we have deps tracking initialized)
         try:
             deps = object.__getattribute__(self, "_state_props")
@@ -279,10 +313,15 @@ class Stateful:
             state_info = deps[name]
 
             # Mark watcher nodes dirty (WeakSet auto-skips dead refs)
+            dirty_nodes = []
             for node in state_info.watchers:
                 tree = node._tree_ref()
                 if tree is not None:
                     tree.mark_dirty_id(node.id)
+                    dirty_nodes.append(node.id)
+
+            if dirty_nodes:
+                logger.debug("Marking dirty: %s", dirty_nodes)
 
     def on_mount(self) -> None:
         """Called after owning element mounts. Override for initialization."""
@@ -329,6 +368,7 @@ class Stateful:
         assert node_id is not None  # Guaranteed by is_active() check above
         state = ctx.get_element_state(node_id)
         state.context[type(self)] = self
+        logger.debug("Providing %s context at %s", type(self).__name__, node_id)
         return self
 
     def __exit__(
@@ -398,6 +438,8 @@ class Stateful:
                 f"Context API is only available within component execution."
             )
 
+        logger.debug("Looking up %s context", cls.__name__)
+
         # Walk up the parent_id chain with cycle detection
         node_id: str | None = ctx._current_node_id
         visited: set[str] = set()
@@ -407,10 +449,12 @@ class Stateful:
             visited.add(node_id)
             state = ctx._element_state.get(node_id)
             if state is not None and cls in state.context:
+                logger.debug("Found %s at ancestor %s", cls.__name__, node_id)
                 return tp.cast("tp.Self", state.context[cls])
             node_id = state.parent_id if state else None
 
         # No context found - return default or raise
+        logger.debug("No %s found in context", cls.__name__)
         if not isinstance(default, _Missing):
             return default
 

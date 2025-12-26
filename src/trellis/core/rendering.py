@@ -31,6 +31,7 @@ from __future__ import annotations
 import contextvars
 import logging
 import threading
+import time
 import typing as tp
 import weakref
 from dataclasses import dataclass, field
@@ -47,6 +48,8 @@ from trellis.core.base import (
 from trellis.core.messages import AddPatch, Patch, RemovePatch, UpdatePatch
 from trellis.core.reconcile import ReconcileResult
 from trellis.utils.lock_helper import ClassWithLock, with_lock
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     "ElementKind",
@@ -586,6 +589,9 @@ class RenderTree(ClassWithLock):
         if get_active_render_tree():
             raise RuntimeError("Attempted to start rendering with another context active!")
 
+        start_time = time.perf_counter()
+        logger.debug("Initial render starting (root: %s)", self.root_component.name)
+
         try:
             set_active_render_tree(self)
 
@@ -596,6 +602,9 @@ class RenderTree(ClassWithLock):
 
         finally:
             set_active_render_tree(None)
+
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        logger.debug("Initial render complete: %d nodes in %.2fms", len(self._nodes), elapsed_ms)
 
     @with_lock
     def _render_dirty_nodes(self) -> None:
@@ -619,6 +628,9 @@ class RenderTree(ClassWithLock):
                 # Take snapshot of current dirty IDs
                 dirty_ids = list(self._dirty_ids)
                 self._dirty_ids.clear()
+
+                if dirty_ids:
+                    logger.debug("Rendering dirty nodes: %s", dirty_ids)
 
                 for node_id in dirty_ids:
                     state = self._element_state.get(node_id)
@@ -644,6 +656,8 @@ class RenderTree(ClassWithLock):
         if state is None:
             return
         parent_id = state.parent_id
+
+        logger.debug("Re-rendering node %s (%s)", node_id, old_node.component.name)
 
         # Get old child IDs for reconciliation
         old_child_ids = list(old_node.child_ids) if old_node.child_ids else None
@@ -678,6 +692,13 @@ class RenderTree(ClassWithLock):
         from trellis.core.reconcile import reconcile_node_children
 
         node_id = node.id
+
+        logger.debug(
+            "Executing %s (%s), parent=%s",
+            node_id,
+            node.component.name,
+            parent_id,
+        )
 
         # Create ElementState if this is a new node
         state = self._element_state.get(node_id)
@@ -734,9 +755,16 @@ class RenderTree(ClassWithLock):
             new_child_ids = self.pop_frame()
             frame_popped = True
 
+            logger.debug("Execution produced %d children", len(new_child_ids))
+
             # Reconcile or mount children
             if new_child_ids:
                 if old_child_ids:
+                    logger.debug(
+                        "Reconciling children: old=%d, new=%d",
+                        len(old_child_ids),
+                        len(new_child_ids),
+                    )
                     # Reconcile with old children
                     final_child_ids = reconcile_node_children(
                         old_child_ids, new_child_ids, node_id, self, old_nodes
@@ -1091,8 +1119,10 @@ class RenderTree(ClassWithLock):
             # Process hooks after tree is fully built
             self._process_pending_hooks()
 
-            # Return accumulated patches
-            return list(self._patches)
+            patches = list(self._patches)
+            if patches:
+                logger.debug("render_and_diff complete: %d patches", len(patches))
+            return patches
         finally:
             self._is_incremental_render = False
 
@@ -1144,6 +1174,8 @@ class RenderTree(ClassWithLock):
             The mounted node (unchanged, ID already assigned)
         """
         node_id = node.id
+
+        logger.debug("Mounting new node %s (%s)", node_id, node.component.name)
 
         # Create ElementState and mark as mounted
         # (hooks are deferred but node is conceptually mounted now)
@@ -1200,6 +1232,14 @@ class RenderTree(ClassWithLock):
 
         # Unmount children first (depth-first)
         node = self._nodes.get(node_id)
+        child_count = len(node.child_ids) if node else 0
+
+        logger.debug(
+            "Unmounting subtree at %s (%d descendants)",
+            node_id,
+            child_count,
+        )
+
         if node:
             for child_id in node.child_ids:
                 self.unmount_node_tree(child_id)
@@ -1229,6 +1269,10 @@ class RenderTree(ClassWithLock):
         # Get states sorted by call index
         items = list(state.local_state.items())
         items.sort(key=lambda x: x[0][1])
+
+        if items:
+            logger.debug("Calling on_mount for %s (%d states)", node_id, len(items))
+
         for _, stateful in items:
             if hasattr(stateful, "on_mount"):
                 try:
@@ -1248,6 +1292,10 @@ class RenderTree(ClassWithLock):
         # Get states sorted by call index, reversed
         items = list(state.local_state.items())
         items.sort(key=lambda x: x[0][1], reverse=True)
+
+        if items:
+            logger.debug("Calling on_unmount for %s", node_id)
+
         for _, stateful in items:
             if hasattr(stateful, "on_unmount"):
                 try:
@@ -1268,6 +1316,24 @@ class RenderTree(ClassWithLock):
             patch: The patch to emit
         """
         if self._is_incremental_render:
+            # Log patch details (uses 'patches' category which maps to same logger)
+            if isinstance(patch, AddPatch):
+                logger.debug(
+                    "Patch: AddPatch(parent=%s, node=%s)",
+                    patch.parent_id,
+                    patch.node.get("key", "?"),
+                )
+            elif isinstance(patch, UpdatePatch):
+                changed_props = list(patch.props.keys()) if patch.props else []
+                logger.debug(
+                    "Patch: UpdatePatch(id=%s, props=%s, children=%s)",
+                    patch.id,
+                    changed_props,
+                    patch.children is not None,
+                )
+            elif isinstance(patch, RemovePatch):
+                logger.debug("Patch: RemovePatch(id=%s)", patch.id)
+
             self._patches.append(patch)
 
     def _serialize_node_for_patch(self, node: ElementNode) -> dict[str, tp.Any]:
@@ -1368,6 +1434,13 @@ class RenderTree(ClassWithLock):
         Returns:
             Final list of child IDs after reconciliation
         """
+        logger.debug(
+            "Processing reconcile: %d added, %d removed, %d matched",
+            len(result.added),
+            len(result.removed),
+            len(result.matched),
+        )
+
         # 1. REMOVE first (cleanup before new state)
         # Emit RemovePatch for each removed node
         for node_id in result.removed:

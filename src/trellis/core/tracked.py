@@ -29,6 +29,7 @@ Example:
 
 from __future__ import annotations
 
+import logging
 import typing as tp
 import weakref
 from collections.abc import Iterable, Iterator
@@ -39,6 +40,8 @@ if tp.TYPE_CHECKING:
     from trellis.core.state import Stateful
 
 from trellis.core.rendering import get_active_render_tree, is_render_active
+
+logger = logging.getLogger(__name__)
 
 T = tp.TypeVar("T")
 KT = tp.TypeVar("KT")
@@ -116,6 +119,13 @@ class _TrackedMixin:
             deps[dep_key] = weakref.WeakSet()
         deps[dep_key].add(node)
 
+        logger.debug(
+            "Tracked[%s] access: key=%r by %s",
+            self._attr,
+            dep_key,
+            node_id,
+        )
+
     def _mark_dirty(self, dep_key: tp.Any) -> None:
         """Mark all nodes that depend on this key as dirty.
 
@@ -127,10 +137,20 @@ class _TrackedMixin:
             return
 
         # WeakSet automatically handles cleanup of dead references
+        dirty_nodes = []
         for node in deps[dep_key]:
             tree = node._tree_ref()
             if tree is not None:
                 tree.mark_dirty_id(node.id)
+                dirty_nodes.append(node.id)
+
+        if dirty_nodes:
+            logger.debug(
+                "Tracked[%s] mutation at key=%r → dirty: %s",
+                self._attr,
+                dep_key,
+                dirty_nodes,
+            )
 
         # Remove empty dep_key entries
         if not deps.get(dep_key):

@@ -19,6 +19,7 @@ CLI arguments:
     --host=HOST                        Server bind host (server only)
     --port=PORT                        Server bind port (server only)
     --build-bundle                     Force rebuild client bundle
+    -d/--debug CATEGORIES              Enable debug logging (comma-separated)
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from trellis.core.platform import Platform, PlatformArgumentError, PlatformType
+from trellis.utils.log_setup import setup_logging
 
 if TYPE_CHECKING:
     from trellis.core.rendering import ElementNode
@@ -106,6 +108,9 @@ def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
     Raises:
         PlatformArgumentError: If both --desktop and --platform are provided
     """
+    # Set up logging early so all apps get Rich-formatted output
+    setup_logging()  # Default level=INFO
+
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument(
         "--platform",
@@ -137,6 +142,14 @@ def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
         action="store_true",
         help="Force rebuild client bundle",
     )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        nargs="?",
+        const="",  # When -d is passed without value
+        default=None,  # When -d is not passed at all
+        help="Enable debug logging (comma-separated categories, or 'all')",
+    )
 
     # Ignore unknown args (app may have its own args)
     args, _ = parser.parse_known_args()
@@ -160,6 +173,24 @@ def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
         platform = PlatformType.BROWSER
     elif args.platform:
         platform = PlatformType(args.platform)
+
+    # Handle debug argument
+    if args.debug is not None:
+        from trellis.utils.debug import configure_debug, list_categories, parse_categories
+
+        if args.debug == "":
+            # -d with no value: list categories and exit
+            print(list_categories())
+            sys.exit(0)
+        else:
+            # -d with categories: configure debug logging
+            try:
+                categories = parse_categories(args.debug)
+                configure_debug(categories)
+            except ValueError as e:
+                print(f"Error: {e}", file=sys.stderr)
+                print(list_categories(), file=sys.stderr)
+                sys.exit(1)
 
     # Collect other args
     other_args: dict[str, Any] = {}

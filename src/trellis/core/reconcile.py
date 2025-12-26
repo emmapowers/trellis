@@ -48,12 +48,15 @@ The renderer interprets this result and performs the actual side effects
 
 from __future__ import annotations
 
+import logging
 import typing as tp
 from dataclasses import dataclass, field
 from dataclasses import replace as dataclass_replace
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering import ElementNode, RenderTree
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -98,15 +101,19 @@ def reconcile_children(
     Returns:
         ReconcileResult with categorized IDs and final order
     """
+    logger.debug("Reconcile: old=%d → new=%d", len(old_child_ids), len(new_child_ids))
+
     result = ReconcileResult(child_order=list(new_child_ids))
 
     # Handle empty edge cases
     if not old_child_ids:
         result.added = list(new_child_ids)
+        logger.debug("Result: %d added, 0 removed, 0 matched", len(result.added))
         return result
 
     if not new_child_ids:
         result.removed = list(old_child_ids)
+        logger.debug("Result: 0 added, %d removed, 0 matched", len(result.removed))
         return result
 
     old_len = len(old_child_ids)
@@ -130,7 +137,11 @@ def reconcile_children(
         head += 1
 
     if head == old_len and head == new_len:
+        logger.debug("Result: 0 added, 0 removed, %d matched", len(result.matched))
         return result
+
+    if head > 0:
+        logger.debug("Head scan matched %d nodes", head)
 
     # Phase 2: Two-pointer scan from tail (IDs match)
     tail_matches: list[str] = []
@@ -150,6 +161,9 @@ def reconcile_children(
         new_tail -= 1
 
     tail_matches.reverse()
+
+    if tail_matches:
+        logger.debug("Tail scan matched %d nodes", len(tail_matches))
 
     # Phase 3: Process middle section with set-based matching
     middle_new_start = head
@@ -173,6 +187,13 @@ def reconcile_children(
     for old_id in old_child_ids:
         if old_id not in matched_old_ids:
             result.removed.append(old_id)
+
+    logger.debug(
+        "Result: %d added, %d removed, %d matched",
+        len(result.added),
+        len(result.removed),
+        len(result.matched),
+    )
 
     return result
 
@@ -221,6 +242,12 @@ def reconcile_node(
 
     # Case 2: Component changed at same position - unmount old, mount new
     if old_node.component != new_node.component:
+        logger.debug(
+            "reconcile_node %s: component changed %s → %s, remounting",
+            node_id,
+            old_node.component.name,
+            new_node.component.name,
+        )
         ctx.unmount_node_tree(old_node.id)
         mounted = ctx.mount_new_node(new_node, parent_id, call_hooks=call_hooks)
         ctx.store_node(mounted)
@@ -238,6 +265,7 @@ def reconcile_node(
 
     # Case 3: Same component - check if we can skip execution
     if old_node.props == new_node.props and not existing_state.dirty:
+        logger.debug("reconcile_node %s: skipping (props unchanged, not dirty)", node_id)
         # Props unchanged and not dirty - skip execution entirely!
         # However, we must reconcile with-block child_ids from the parent's execution.
         # These appear on new_node.child_ids when a parent re-renders and produces
@@ -261,6 +289,10 @@ def reconcile_node(
 
     # Case 4: Props changed or dirty - mark dirty for later rendering
     # Keep old child_ids - they'll be reconciled when this node is rendered
+    logger.debug(
+        "reconcile_node %s: marking dirty (props changed or dirty flag)",
+        node_id,
+    )
     ctx.mark_dirty_id(node_id)
     result = dataclass_replace(new_node, child_ids=old_node.child_ids)
     ctx.store_node(result)

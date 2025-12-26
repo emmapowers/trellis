@@ -15,6 +15,7 @@ import typing as tp
 from uuid import uuid4
 
 from trellis.core.messages import (
+    DebugConfig,
     ErrorMessage,
     EventMessage,
     HelloMessage,
@@ -25,6 +26,7 @@ from trellis.core.messages import (
 )
 from trellis.core.rendering import IComponent, RenderTree
 from trellis.html.events import get_event_class
+from trellis.utils.debug import get_enabled_categories
 
 logger = logging.getLogger(__name__)
 
@@ -189,12 +191,21 @@ class MessageHandler:
         if not isinstance(msg, HelloMessage):
             raise ValueError(f"Expected HelloMessage, got {type(msg).__name__}")
 
+        logger.debug("Hello from client_id=%s", msg.client_id)
+
         self.session_id = str(uuid4())
+
+        # Include debug config if debug logging is enabled
+        debug_categories = get_enabled_categories()
+        debug_config = DebugConfig(categories=debug_categories) if debug_categories else None
+
         response = HelloResponseMessage(
             session_id=self.session_id,
             server_version=_get_version(),
+            debug=debug_config,
         )
         await self.send_message(response)
+        logger.debug("Session initialized: session_id=%s", self.session_id)
         return self.session_id
 
     def initial_render(self) -> Message:
@@ -204,7 +215,10 @@ class MessageHandler:
             RenderMessage on success, ErrorMessage on exception
         """
         try:
-            return RenderMessage(tree=self.tree.render())
+            tree = self.tree.render()
+            node_count = len(self.tree._nodes)
+            logger.debug("Initial render complete, sending RenderMessage (%d nodes)", node_count)
+            return RenderMessage(tree=tree)
         except Exception as e:
             logger.exception(f"Error during initial render: {e}")
             return ErrorMessage(error=_format_exception(e), context="render")
@@ -220,6 +234,7 @@ class MessageHandler:
             by the background render loop, not per-message.
         """
         if isinstance(msg, EventMessage):
+            logger.debug("Received EventMessage: callback_id=%s", msg.callback_id)
             try:
                 await self._invoke_callback(msg.callback_id, msg.args)
             except KeyError as e:
@@ -250,9 +265,11 @@ class MessageHandler:
             raise KeyError(f"Callback not found: {callback_id}")
 
         processed_args, kwargs = _process_callback_args(args)
+        logger.debug("Invoking callback %s with %d args", callback_id, len(processed_args))
 
         if inspect.iscoroutinefunction(callback):
             # Async: fire-and-forget
+            logger.debug("Callback %s is async, scheduled as task", callback_id)
             task = asyncio.create_task(callback(*processed_args, **kwargs))
             self._background_tasks.add(task)
             task.add_done_callback(self._background_tasks.discard)
@@ -279,9 +296,13 @@ class MessageHandler:
             if not self.tree.has_dirty_nodes():
                 continue
 
+            dirty_count = len(self.tree._dirty_ids)
+            logger.debug("Render loop: %d dirty nodes", dirty_count)
+
             try:
                 patches = self.tree.render_and_diff()
                 if patches:
+                    logger.debug("Sending PatchMessage with %d patches", len(patches))
                     await self.send_message(PatchMessage(patches=patches))
             except Exception as e:
                 logger.exception(f"Error in render loop: {e}")
