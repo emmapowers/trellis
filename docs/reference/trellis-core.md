@@ -6,17 +6,16 @@ Dense reference for `src/trellis/core/`. Read source for implementation details.
 
 ## Data Structures
 
-### ElementNode (`rendering.py`)
-- Immutable (frozen dataclass) tree node representing a component invocation
-- Fields: `component`, `props` (frozen tuples), `key`, `child_ids` (tuple of IDs), `id`, `_session_ref` (weakref)
+### ElementNode (`element_node.py`)
+- Tree node representing a component invocation
+- Fields: `component`, `props` (dict), `key`, `child_ids` (list), `id`, `_session_ref` (weakref)
 - Children stored flat by ID reference, not nested
 - Position-based IDs encode path + component: `/@{parent}/0@{component_id}`
 - Keys override position index: `/@{parent}/:my_key@{component_id}`
 
-### ElementState (`rendering.py`)
-- Mutable runtime state per node, keyed by `node.id` in `RenderSession._element_state`
+### ElementState (`element_state.py`)
+- Per-node runtime state, keyed by `node.id` in `RenderSession.state`
 - Fields: `dirty`, `mounted`, `local_state` (cached Stateful instances), `state_call_count`, `context`, `parent_id`
-- Separates mutable state from immutable node description
 
 ### RenderSession (`rendering.py`)
 - Orchestrates render lifecycle, owns all nodes and state

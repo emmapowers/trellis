@@ -102,6 +102,9 @@ class RenderSession:
     # Thread safety
     lock: threading.RLock = field(default_factory=threading.RLock)
 
+    # Render count - incremented at the start of each render pass
+    render_count: int = 0
+
     def is_rendering(self) -> bool:
         """Check if currently inside a render pass.
 
@@ -146,9 +149,8 @@ class RenderSession:
         if node is None:
             return None
 
-        # node.props is a tuple of (key, value) pairs
-        props_dict = dict(node.props)
-        value = props_dict.get(prop_name)
+        # node.props is a dict
+        value = node.props.get(prop_name)
 
         if value is not None and callable(value):
             return tp.cast("tp.Callable[..., tp.Any]", value)

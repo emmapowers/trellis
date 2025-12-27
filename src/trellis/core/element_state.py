@@ -8,9 +8,6 @@ from __future__ import annotations
 import typing as tp
 from dataclasses import dataclass, field
 
-if tp.TYPE_CHECKING:
-    from trellis.core.element_node import ElementNode
-
 __all__ = ["StateStore"]
 
 
@@ -36,9 +33,6 @@ class ElementState:
     state_call_count: int = 0
     context: dict[type, tp.Any] = field(default_factory=dict)
     parent_id: str | None = None
-    # Keep reference to node registered in WeakSets during render
-    # This prevents GC until the next render when it's replaced
-    _render_node: ElementNode | None = None
 
 
 class StateStore:

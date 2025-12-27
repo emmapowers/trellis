@@ -35,7 +35,7 @@ import weakref
 from abc import ABC, abstractmethod
 from enum import StrEnum
 
-from trellis.core.element_node import ElementNode, freeze_props
+from trellis.core.element_node import ElementNode
 from trellis.core.session import get_active_session
 from trellis.utils.logger import logger
 
@@ -162,7 +162,6 @@ class Component(ABC):
             position_id = session.active.frames.next_child_id(self, key)
         else:
             position_id = session.active.frames.root_id(self)
-        frozen_props = freeze_props(props)
 
         # REUSE CHECK - the key optimization from Phase 5
         # We can only reuse if:
@@ -179,7 +178,7 @@ class Component(ABC):
         if (
             old_node is not None
             and old_node.component == self
-            and old_node.props == frozen_props
+            and old_node.props == props
             and is_mounted
             and not is_dirty
         ):
@@ -191,15 +190,15 @@ class Component(ABC):
             )
             if session.active.frames.has_active() and not self._has_children_param:
                 session.active.frames.add_child(old_node.id)
-                object.__setattr__(old_node, "_auto_collected", True)
             return old_node
 
         # Create new node
         node = ElementNode(
             component=self,
             _session_ref=weakref.ref(session),
+            render_count=session.render_count,
+            props=props,
             key=key,
-            props=frozen_props,
             id=position_id,
         )
 
@@ -210,7 +209,6 @@ class Component(ABC):
         # Containers are also auto-collected now (execution deferred to _execute_tree)
         if session.active.frames.has_active():
             session.active.frames.add_child(node.id)
-            object.__setattr__(node, "_auto_collected", True)
 
         return node
 

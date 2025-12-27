@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import typing as tp
 import weakref
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-from trellis.core.component import Component
 from trellis.core.mutable import Mutable
 from trellis.core.session import (
     RenderSession,
@@ -17,20 +16,17 @@ if tp.TYPE_CHECKING:
 
 __all__ = [
     "ElementNode",
-    "freeze_props",
     "props_equal",
-    "unfreeze_props",
 ]
 
 
-@dataclass(frozen=True)
+@dataclass
 class ElementNode:
-    """Immutable tree node representing a component invocation.
+    """Mutable tree node representing a component invocation.
 
-    ElementNode is the immutable type for component nodes in the tree.
-    It is frozen for safe comparison and serialization, while mutable runtime
-    state is stored separately in ElementState (keyed by node.id in
-    RenderSession._element_state).
+    ElementNode represents component nodes in the render tree. It is mutable
+    to allow in-place updates during rendering. Runtime state is stored
+    separately in ElementState (keyed by node.id in RenderSession.state).
 
     Nodes can be used as context managers for container components:
 
@@ -47,27 +43,36 @@ class ElementNode:
     Attributes:
         component: The component that will be/was executed
         _session_ref: Weak reference to the RenderSession that owns this node
-        props: Immutable tuple of (key, value) property pairs
+        render_count: The render pass when this node was created (for hash stability)
+        props: Component properties as a dictionary
         key: Optional stable identifier for reconciliation
-        child_ids: IDs of child nodes (tuple for immutability). Nodes are
-            stored flat in RenderSession._nodes and accessed by ID.
+        child_ids: IDs of child nodes. Nodes are stored flat in
+            RenderSession.nodes and accessed by ID.
         id: Position-based ID assigned at creation time
     """
 
     component: Component
     _session_ref: weakref.ref[RenderSession]
-    props: FrozenProps = ()
+    render_count: int  # Required, no default - must be set from session.render_count
+    props: dict[str, tp.Any] = field(default_factory=dict)
     key: str | None = None
-    child_ids: tuple[str, ...] = ()
+    child_ids: list[str] = field(default_factory=list)
     id: str = ""  # Position-based ID assigned at creation
 
-    # Internal flag for child collection (set via object.__setattr__)
-    _auto_collected: bool = False
+    def __hash__(self) -> int:
+        """Hash based on id, session, and render_count for stable identity.
+
+        This allows nodes to be used in WeakSets for dependency tracking,
+        where identity matters more than content equality.
+        """
+        return hash(
+            (self.id, id(self._session_ref()) if self._session_ref() else None, self.render_count)
+        )
 
     @property
     def properties(self) -> dict[str, tp.Any]:
         """Get props as a mutable dictionary, including child_ids if present."""
-        props = unfreeze_props(self.props)
+        props = self.props.copy()
         if self.child_ids:
             props["child_ids"] = list(self.child_ids)
         return props
@@ -103,7 +108,7 @@ class ElementNode:
             )
 
         # Validate: can't provide children as both prop and via with block
-        if "children" in dict(self.props):
+        if "children" in self.props:
             raise RuntimeError(
                 f"Cannot provide 'children' prop and use 'with' block. "
                 f"Component: {self.component.name}"
@@ -152,7 +157,7 @@ class ElementNode:
         )
 
         # Store collected child IDs as input for render()
-        object.__setattr__(self, "child_ids", tuple(child_ids))
+        self.child_ids = list(child_ids)
 
         # Re-store node with child_ids set (execution happens later in _execute_tree)
         session.nodes.store(self)
@@ -189,38 +194,7 @@ class ElementNode:
             raise RuntimeError("Cannot mount node outside of render context")
 
 
-# Immutable props type for ElementNode - tuple of (key, value) pairs
-type FrozenProps = tuple[tuple[str, tp.Any], ...]
-
-
-def freeze_props(props: dict[str, tp.Any]) -> FrozenProps:
-    """Convert a props dictionary to an immutable tuple for comparison.
-
-    Props are frozen so that ElementNode can be immutable and props
-    can be compared for equality to determine if re-execution is needed.
-
-    Args:
-        props: Dictionary of component properties
-
-    Returns:
-        Sorted tuple of (key, value) pairs
-    """
-    return tuple(sorted(props.items()))
-
-
-def unfreeze_props(frozen: FrozenProps) -> dict[str, tp.Any]:
-    """Convert frozen props back to a mutable dictionary.
-
-    Args:
-        frozen: Immutable tuple of (key, value) pairs
-
-    Returns:
-        Mutable dictionary of props
-    """
-    return dict(frozen)
-
-
-def props_equal(old_props: FrozenProps, new_props: FrozenProps) -> bool:
+def props_equal(old_props: dict[str, tp.Any], new_props: dict[str, tp.Any]) -> bool:
     """Compare props without serialization.
 
     Maintains the same semantics as serialized comparison:
@@ -229,20 +203,18 @@ def props_equal(old_props: FrozenProps, new_props: FrozenProps) -> bool:
     - Other values compare normally
 
     Args:
-        old_props: Previous props tuple
-        new_props: New props tuple
+        old_props: Previous props dict
+        new_props: New props dict
 
     Returns:
         True if props are semantically equal for rendering purposes
     """
     if len(old_props) != len(new_props):
         return False
-    old_dict = dict(old_props)
-    new_dict = dict(new_props)
-    if old_dict.keys() != new_dict.keys():
+    if old_props.keys() != new_props.keys():
         return False
-    for key, old_val in old_dict.items():
-        if not _values_equal(old_val, new_dict[key]):
+    for key, old_val in old_props.items():
+        if not _values_equal(old_val, new_props[key]):
             return False
     return True
 

@@ -30,10 +30,9 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import replace as dataclass_replace
 
 from trellis.core.active_render import ActiveRender
-from trellis.core.element_node import ElementNode, props_equal, unfreeze_props
+from trellis.core.element_node import ElementNode, props_equal
 
 # Import shared types from base module to avoid circular imports
 from trellis.core.element_state import ElementState
@@ -87,6 +86,9 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
     if get_active_session() is not None:
         raise RuntimeError("Attempted to render with another context active!")
 
+    # Increment render count at the start of every render pass
+    session.render_count += 1
+
     # Create render-scoped state
     session.active = ActiveRender(old_nodes=session.nodes.clone())
     is_initial = session.root_node_id is None
@@ -124,6 +126,20 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
                 state = session.state.get(node_id)
                 if state and state.dirty:
                     state.dirty = False
+                    old_node = session.nodes.get(node_id)
+                    if old_node:
+                        # Create NEW node for re-render. This ensures the old node
+                        # can be GC'd and removed from any WeakSets (dependency tracking).
+                        new_node = ElementNode(
+                            component=old_node.component,
+                            _session_ref=old_node._session_ref,
+                            render_count=session.render_count,
+                            props=old_node.props,
+                            key=old_node.key,
+                            child_ids=[],
+                            id=old_node.id,
+                        )
+                        session.nodes.store(new_node)
                     _execute_tree(session, node_id, state.parent_id)
 
         # Process hooks after tree is fully built
@@ -198,12 +214,10 @@ def _execute_single_node(
     # Store node early so get_node() works during render for dependency tracking
     session.nodes.store(node)
 
-    # Keep node alive for WeakSet references registered during render.
-    state._render_node = node
     state.state_call_count = 0
 
     # Get props including children if component accepts them
-    props = unfreeze_props(node.props)
+    props = node.props.copy()
     if node.component._has_children_param:
         props["children"] = session.nodes.get_children(node)
 
@@ -224,10 +238,10 @@ def _execute_single_node(
 
         logger.debug("Execution (single) produced %d children", len(new_child_ids))
 
-        # Return node with child_ids (execution of children happens in _execute_tree)
-        result = dataclass_replace(node, child_ids=tuple(new_child_ids))
-        session.nodes.store(result)
-        return result
+        # Update node in-place with child_ids (execution of children happens in _execute_tree)
+        node.child_ids = new_child_ids
+        session.nodes.store(node)
+        return node
 
     finally:
         session.active.frames.pop()
@@ -372,6 +386,10 @@ def _unmount_node_tree(session: RenderSession, node_id: str) -> None:
     # Note: RemovePatch is emitted in _execute_tree before calling
     # _unmount_node_tree, so we don't need to track removed IDs here.
 
+    # Remove node from storage so it can be garbage collected.
+    # This allows WeakSet-based dependency tracking to clean up references.
+    session.nodes.remove(node_id)
+
     state.mounted = False
     session.dirty.discard(node_id)
 
@@ -485,6 +503,6 @@ def _emit_update_patch_if_changed(session: RenderSession, node_id: str) -> None:
             RenderUpdatePatch(
                 node_id=node_id,
                 props_changed=props_changed,
-                children=node.child_ids if children_changed else None,
+                children=tuple(node.child_ids) if children_changed else None,
             )
         )

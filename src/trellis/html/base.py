@@ -177,5 +177,4 @@ def auto_collect_hybrid(descriptor: ElementNode) -> ElementNode:
     session = get_active_session()
     if session is not None and session.active is not None and session.active.frames.has_active():
         session.active.frames.add_child(descriptor.id)
-        object.__setattr__(descriptor, "_auto_collected", True)
     return descriptor

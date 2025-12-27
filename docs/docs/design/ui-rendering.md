@@ -646,27 +646,27 @@ Both `@react_component` and `@react_component_from_files` register components in
 
 ## Element Tree Architecture
 
-The element tree is represented by two separate concerns: structure (ElementNode) and runtime state (ElementState). This separation keeps the tree immutable while allowing mutable state to live alongside it.
+The element tree is represented by two separate concerns: structure (ElementNode) and runtime state (ElementState).
 
 ### ElementNode
 
-ElementNode is a frozen dataclass representing a node in the component tree. It's immutable and contains only structural information.
+ElementNode represents a node in the component tree - what component to render, with what props, and what children.
 
 ```python
-@dataclass(frozen=True)
+@dataclass
 class ElementNode:
-    component: IComponent         # The component definition
-    props: FrozenProps           # Immutable props dictionary
-    key: str | None = None       # Optional key for reconciliation
-    children: tuple[ElementNode, ...] = ()  # Child nodes
-    id: str = ""                 # Unique ID assigned by RenderTree
+    component: Component          # The component definition
+    props: dict[str, Any]         # Component properties
+    key: str | None = None        # Optional key for reconciliation
+    child_ids: list[str] = []     # Child node IDs (flat storage)
+    id: str = ""                  # Position-based ID
 ```
 
 **Characteristics:**
-- **Immutable:** `frozen=True` prevents modification
 - **Structural:** Describes what to render, not runtime state
 - **Serializable:** Can be converted to JSON for transmission
 - **ID-based:** Each node has a unique ID for state lookup
+- **Flat storage:** Children referenced by ID, not nested
 
 **Usage:**
 ```python
@@ -674,14 +674,13 @@ class ElementNode:
 node = ElementNode(
     component=Button,
     props={"text": "Click", "on_click": handler},
-    children=(),
-    id="e42"
+    id="/@root/0@Button"
 )
 ```
 
 ### ElementState
 
-ElementState is a mutable dataclass holding per-element runtime state. It's stored separately from the tree, keyed by ElementNode.id.
+ElementState holds per-node runtime state - dirty flags, lifecycle status, and cached Stateful instances. Stored separately from the tree, keyed by ElementNode.id.
 
 ```python
 @dataclass
@@ -1786,13 +1785,6 @@ def Button(text: str) -> ElementNode:
     ...  # Clear: implementation is in .tsx file
 ```
 
-**Frozen dataclasses:**
-ElementNode is frozen, preventing accidental mutation:
-```python
-node = Button(text="Click")
-node.props["text"] = "New"  # Error: can't modify frozen dataclass
-```
-
 ### Type Checking
 
 **Static analysis catches errors before runtime:**
@@ -2015,9 +2007,9 @@ This section tracks which features from this design are implemented versus plann
 
 **Core Rendering:**
 
-- ElementNode (immutable tree nodes with frozen props)
-- ElementState (mutable runtime state per node)
-- RenderTree (orchestrates rendering, reconciliation, lifecycle)
+- ElementNode (tree nodes with props and child references)
+- ElementState (runtime state per node)
+- RenderSession (orchestrates rendering, reconciliation, lifecycle)
 - Frame-based child collection during `with` blocks
 
 **Component Types:**
