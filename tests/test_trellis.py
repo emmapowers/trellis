@@ -13,7 +13,7 @@ requires_pytauri = pytest.mark.skipif(
     find_spec("pytauri") is None,
     reason="pytauri not installed",
 )
-from trellis.core.trellis import (
+from trellis.app.entry import (
     Trellis,
     _TrellisArgs,
     _detect_platform,

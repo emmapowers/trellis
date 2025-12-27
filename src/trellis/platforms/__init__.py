@@ -9,7 +9,7 @@ Each platform provides a transport layer for Trellis applications:
 Platforms are selected via the Trellis class or CLI arguments.
 """
 
-# Platform modules are imported on demand in trellis.core.trellis._get_platform()
+# Platform modules are imported on demand in trellis.app.entry._get_platform()
 # to avoid loading unnecessary dependencies
 
 __all__: list[str] = []

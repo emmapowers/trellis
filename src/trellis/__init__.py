@@ -13,8 +13,8 @@ respective submodules. Icons are available via ``trellis.widgets.IconName``.
 """
 
 from trellis import core
+from trellis.app import Trellis
 from trellis.core import *
-from trellis.core.trellis import Trellis
 from trellis.utils import async_main
 
 __version__ = "0.1.0"
