@@ -7,7 +7,7 @@ matched/child_order for any input, the renderer behavior follows.
 
 import random
 
-from trellis.core.reconcile import ReconcileResult, reconcile_children
+from trellis.core.rendering.reconcile import ReconcileResult, reconcile_children
 
 
 class TestReconcileChildrenBasic:

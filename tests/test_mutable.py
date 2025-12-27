@@ -5,11 +5,11 @@ from dataclasses import dataclass
 import pytest
 
 from tests.helpers import render_to_tree
-from trellis.core.composition_component import component
-from trellis.core.mutable import Mutable, callback, mutable
-from trellis.core.rendering import render
-from trellis.core.session import RenderSession
-from trellis.core.stateful import Stateful
+from trellis.core.components.composition import component
+from trellis.core.state.mutable import Mutable, callback, mutable
+from trellis.core.rendering.render import render
+from trellis.core.rendering.session import RenderSession
+from trellis.core.state.stateful import Stateful
 
 
 class TestMutableClass:

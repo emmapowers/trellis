@@ -1,25 +1,74 @@
-"""Patch collection during rendering.
+"""Render-layer patch types and collection.
 
-PatchCollector accumulates render patches generated during a render pass.
-These are internal patches referencing ElementNode objects, not serialized
-wire-format patches.
+This module provides patch types that describe changes to the element tree
+during rendering, as well as a collector to accumulate them.
+
+Patches reference ElementNode objects directly. Serialization to wire format
+happens at the protocol boundary in MessageHandler.
 """
 
 from __future__ import annotations
 
 import logging
 import typing as tp
+from dataclasses import dataclass
 
-from trellis.core.render_patches import (
-    RenderAddPatch,
-    RenderPatch,
-    RenderRemovePatch,
-    RenderUpdatePatch,
-)
+if tp.TYPE_CHECKING:
+    from trellis.core.rendering.element import ElementNode
 
-__all__ = ["PatchCollector"]
+__all__ = [
+    "PatchCollector",
+    "RenderAddPatch",
+    "RenderPatch",
+    "RenderRemovePatch",
+    "RenderUpdatePatch",
+]
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class RenderAddPatch:
+    """A new node was added to the tree.
+
+    Attributes:
+        parent_id: ID of the parent node (None for root)
+        children: Parent's new child order after this addition
+        node: The ElementNode that was added (not serialized)
+    """
+
+    parent_id: str | None
+    children: tuple[str, ...]
+    node: ElementNode
+
+
+@dataclass(frozen=True)
+class RenderUpdatePatch:
+    """A node's props or children changed.
+
+    Attributes:
+        node_id: ID of the node that changed
+        props_changed: True if props changed (serialization needed)
+        children: New child order if changed, None otherwise
+    """
+
+    node_id: str
+    props_changed: bool
+    children: tuple[str, ...] | None
+
+
+@dataclass(frozen=True)
+class RenderRemovePatch:
+    """A node was removed from the tree.
+
+    Attributes:
+        node_id: ID of the node that was removed
+    """
+
+    node_id: str
+
+
+RenderPatch = RenderAddPatch | RenderUpdatePatch | RenderRemovePatch
 
 
 class PatchCollector:

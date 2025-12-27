@@ -11,7 +11,7 @@ from urllib.parse import quote
 from trellis import component
 
 if tp.TYPE_CHECKING:
-    from trellis.core.composition_component import CompositionComponent, RenderFunc
+    from trellis.core.components.composition import CompositionComponent, RenderFunc
 
 
 def example(

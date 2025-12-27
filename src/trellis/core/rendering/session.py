@@ -11,13 +11,13 @@ import threading
 import typing as tp
 from dataclasses import dataclass, field
 
-from trellis.core.dirty_tracker import DirtyTracker
-from trellis.core.element_state import StateStore
-from trellis.core.node_store import NodeStore
+from trellis.core.rendering.dirty_tracker import DirtyTracker
+from trellis.core.rendering.element_state import StateStore
+from trellis.core.rendering.elements import NodeStore
 
 if tp.TYPE_CHECKING:
-    from trellis.core.active_render import ActiveRender
-    from trellis.core.component import Component
+    from trellis.core.components.base import Component
+    from trellis.core.rendering.active import ActiveRender
 
 __all__ = [
     "RenderSession",

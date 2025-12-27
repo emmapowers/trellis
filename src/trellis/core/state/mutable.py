@@ -27,10 +27,10 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.session import get_active_session
+from trellis.core.rendering.session import get_active_session
 
 if tp.TYPE_CHECKING:
-    from trellis.core.stateful import Stateful
+    from trellis.core.state.stateful import Stateful
 
 T = tp.TypeVar("T")
 

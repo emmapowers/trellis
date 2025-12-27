@@ -5,12 +5,12 @@ from dataclasses import dataclass
 
 import pytest
 
-from trellis.core.composition_component import component
+from trellis.core.components.composition import component
 from trellis.core.message_handler import MessageHandler
 from trellis.core.messages import AddPatch, ErrorMessage, EventMessage, Message, PatchMessage
-from trellis.core.component import Component
-from trellis.core.rendering import render
-from trellis.core.stateful import Stateful
+from trellis.core.components.base import Component
+from trellis.core.rendering.render import render
+from trellis.core.state.stateful import Stateful
 from trellis.widgets import Button, Label
 from trellis.platforms.browser import BrowserMessageHandler
 import typing as tp

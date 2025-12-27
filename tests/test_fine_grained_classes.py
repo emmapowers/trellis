@@ -6,16 +6,16 @@ PatchCollector, LifecycleTracker, ActiveRender, and RenderSession.
 
 import pytest
 
-from trellis.core.active_render import ActiveRender
-from trellis.core.dirty_tracker import DirtyTracker
-from trellis.core.frame_stack import Frame, FrameStack
-from trellis.core.lifecycle_tracker import LifecycleTracker
+from trellis.core.rendering.active import ActiveRender
+from trellis.core.rendering.dirty_tracker import DirtyTracker
+from trellis.core.rendering.frames import Frame, FrameStack
+from trellis.core.rendering.lifecycle import LifecycleTracker
 from trellis.core.messages import AddPatch, RemovePatch, UpdatePatch
-from trellis.core.node_store import NodeStore
-from trellis.core.patch_collector import PatchCollector
-from trellis.core.element_node import ElementNode
-from trellis.core.element_state import ElementState, StateStore
-from trellis.core.session import RenderSession
+from trellis.core.rendering.elements import NodeStore
+from trellis.core.rendering.patches import PatchCollector
+from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element_state import ElementState, StateStore
+from trellis.core.rendering.session import RenderSession
 
 
 # =============================================================================

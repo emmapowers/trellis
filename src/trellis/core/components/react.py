@@ -33,11 +33,11 @@ import typing as tp
 from collections.abc import Callable
 from typing import ParamSpec
 
-from trellis.core.component import Component, ElementKind
-from trellis.core.style_props import Height, Margin, Padding, Width
+from trellis.core.components.base import Component, ElementKind
+from trellis.core.components.style_props import Height, Margin, Padding, Width
 
 if tp.TYPE_CHECKING:
-    from trellis.core.element_node import ElementNode
+    from trellis.core.rendering.element import ElementNode
 
 __all__ = ["ReactComponentBase", "react_component_base"]
 

@@ -16,12 +16,12 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.composition_component import CompositionComponent
-from trellis.core.mutable import Mutable
+from trellis.core.components.composition import CompositionComponent
+from trellis.core.state.mutable import Mutable
 
 if tp.TYPE_CHECKING:
-    from trellis.core.element_node import ElementNode
-    from trellis.core.session import RenderSession
+    from trellis.core.rendering.element import ElementNode
+    from trellis.core.rendering.session import RenderSession
 
 
 def _make_callback_id(node_id: str, prop_name: str) -> str:

@@ -34,7 +34,7 @@ from trellis.core.platform import Platform, PlatformArgumentError, PlatformType
 from trellis.utils.log_setup import setup_logging
 
 if TYPE_CHECKING:
-    from trellis.core.element_node import ElementNode
+    from trellis.core.rendering.element import ElementNode
 
 # Define which arguments belong to which platform
 _SERVER_ARGS = {"host", "port", "static_dir"}

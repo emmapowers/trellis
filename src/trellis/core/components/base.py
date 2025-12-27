@@ -35,8 +35,8 @@ import weakref
 from abc import ABC, abstractmethod
 from enum import StrEnum
 
-from trellis.core.element_node import ElementNode
-from trellis.core.session import get_active_session
+from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.session import get_active_session
 from trellis.utils.logger import logger
 
 __all__ = ["Component"]

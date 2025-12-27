@@ -4,12 +4,12 @@ from dataclasses import dataclass
 
 import pytest
 
-from trellis.core.composition_component import component
-from trellis.core.element_node import ElementNode
-from trellis.core.react_component import ReactComponentBase, react_component_base
-from trellis.core.rendering import render
+from trellis.core.components.composition import component
+from trellis.core.rendering.element import ElementNode
+from trellis.core.components.react import ReactComponentBase, react_component_base
+from trellis.core.rendering.render import render
 from trellis.core.serialization import serialize_node
-from trellis.core.session import RenderSession
+from trellis.core.rendering.session import RenderSession
 from trellis.widgets import Button, Column, Label, Row
 
 

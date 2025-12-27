@@ -8,7 +8,7 @@ from __future__ import annotations
 import typing as tp
 
 if tp.TYPE_CHECKING:
-    from trellis.core.element_node import ElementNode
+    from trellis.core.rendering.element import ElementNode
 
 __all__ = ["NodeStore"]
 

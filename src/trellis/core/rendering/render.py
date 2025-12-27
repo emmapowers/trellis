@@ -31,19 +31,17 @@ from __future__ import annotations
 import logging
 import time
 
-from trellis.core.active_render import ActiveRender
-from trellis.core.element_node import ElementNode, props_equal
-
-# Import shared types from base module to avoid circular imports
-from trellis.core.element_state import ElementState
-from trellis.core.reconcile import reconcile_children
-from trellis.core.render_patches import (
+from trellis.core.rendering.active import ActiveRender
+from trellis.core.rendering.element import ElementNode, props_equal
+from trellis.core.rendering.element_state import ElementState
+from trellis.core.rendering.patches import (
     RenderAddPatch,
     RenderPatch,
     RenderRemovePatch,
     RenderUpdatePatch,
 )
-from trellis.core.session import (
+from trellis.core.rendering.reconcile import reconcile_children
+from trellis.core.rendering.session import (
     RenderSession,
     get_active_session,
     set_active_session,

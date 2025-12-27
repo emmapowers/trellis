@@ -55,11 +55,11 @@ from dataclasses import dataclass, field
 from types import TracebackType
 
 if tp.TYPE_CHECKING:
-    from trellis.core.element_node import ElementNode
+    from trellis.core.rendering.element import ElementNode
 
-from trellis.core.conversion import convert_to_tracked
-from trellis.core.mutable import record_property_access
-from trellis.core.session import get_active_session, is_render_active
+from trellis.core.rendering.session import get_active_session, is_render_active
+from trellis.core.state.conversion import convert_to_tracked
+from trellis.core.state.mutable import record_property_access
 
 logger = logging.getLogger(__name__)
 

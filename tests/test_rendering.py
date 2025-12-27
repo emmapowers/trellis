@@ -6,11 +6,11 @@ import weakref
 
 import pytest
 
-from trellis.core.composition_component import CompositionComponent, component
-from trellis.core.element_node import ElementNode, freeze_props
-from trellis.core.rendering import render
-from trellis.core.session import RenderSession, get_active_session, set_active_session
-from trellis.core.stateful import Stateful
+from trellis.core.components.composition import CompositionComponent, component
+from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.render import render
+from trellis.core.rendering.session import RenderSession, get_active_session, set_active_session
+from trellis.core.state.stateful import Stateful
 from dataclasses import dataclass
 
 
@@ -41,7 +41,7 @@ def make_descriptor(
         component=comp,
         _session_ref=_get_dummy_session_ref(),
         key=key,
-        props=freeze_props(props or {}),
+        props=props or {},
     )
 
 
@@ -52,7 +52,7 @@ class TestElementNode:
 
         assert node.component == comp
         assert node.key is None
-        assert node.props == freeze_props({})
+        assert node.props == {}
         assert node.child_ids == ()
         assert node.id == ""
 
@@ -68,16 +68,16 @@ class TestElementNode:
 
         assert node.properties == {"foo": "bar", "count": 42}
 
-    def test_element_node_is_immutable(self) -> None:
+    def test_element_node_is_mutable(self) -> None:
         comp = make_component("Test")
         node = make_descriptor(comp, props={"a": 1})
 
-        # ElementNode is a frozen dataclass, should be hashable
+        # ElementNode is mutable and uses render_count-based hashing
         hash(node)  # Should not raise
 
-        # Can't modify attributes
-        with pytest.raises(AttributeError):
-            node.key = "new-key"  # type: ignore[misc]
+        # Can modify attributes
+        node.id = "new-id"
+        assert node.id == "new-id"
 
 
 class TestActiveSession:
@@ -445,7 +445,7 @@ class TestElementStateParentId:
     def test_parent_id_preserved_on_rerender(self) -> None:
         """parent_id is preserved when component re-renders."""
         from dataclasses import dataclass
-        from trellis.core.stateful import Stateful
+        from trellis.core.state.stateful import Stateful
 
         @dataclass
         class Counter(Stateful):
@@ -741,7 +741,7 @@ class TestEscapeKey:
 
     def test_no_special_chars(self) -> None:
         """Keys without special chars pass through unchanged."""
-        from trellis.core.frame_stack import _escape_key
+        from trellis.core.rendering.frames import _escape_key
 
         assert _escape_key("simple") == "simple"
         assert _escape_key("with-dash") == "with-dash"
@@ -751,35 +751,35 @@ class TestEscapeKey:
 
     def test_escape_colon(self) -> None:
         """Colon is escaped."""
-        from trellis.core.frame_stack import _escape_key
+        from trellis.core.rendering.frames import _escape_key
 
         assert _escape_key("my:key") == "my%3Akey"
         assert _escape_key("a:b:c") == "a%3Ab%3Ac"
 
     def test_escape_at(self) -> None:
         """At sign is escaped."""
-        from trellis.core.frame_stack import _escape_key
+        from trellis.core.rendering.frames import _escape_key
 
         assert _escape_key("item@home") == "item%40home"
         assert _escape_key("user@domain") == "user%40domain"
 
     def test_escape_slash(self) -> None:
         """Slash is escaped."""
-        from trellis.core.frame_stack import _escape_key
+        from trellis.core.rendering.frames import _escape_key
 
         assert _escape_key("row/5") == "row%2F5"
         assert _escape_key("path/to/item") == "path%2Fto%2Fitem"
 
     def test_escape_percent(self) -> None:
         """Percent must be escaped first to avoid double-encoding."""
-        from trellis.core.frame_stack import _escape_key
+        from trellis.core.rendering.frames import _escape_key
 
         assert _escape_key("100%") == "100%25"
         assert _escape_key("%done") == "%25done"
 
     def test_multiple_special_chars(self) -> None:
         """All special characters are escaped in a single key."""
-        from trellis.core.frame_stack import _escape_key
+        from trellis.core.rendering.frames import _escape_key
 
         assert _escape_key("a:b@c/d%e") == "a%3Ab%40c%2Fd%25e"
         # Percent first, then others

@@ -10,7 +10,7 @@ import typing as tp
 from dataclasses import dataclass, field
 
 if tp.TYPE_CHECKING:
-    from trellis.core.component import Component
+    from trellis.core.components.base import Component
 
 __all__ = ["Frame", "FrameStack"]
 

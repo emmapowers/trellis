@@ -13,9 +13,9 @@ from __future__ import annotations
 import typing as tp
 from enum import StrEnum
 
-from trellis.core.element_node import ElementNode
-from trellis.core.react_component import react_component_base
-from trellis.core.style_props import Margin
+from trellis.core.components.react import react_component_base
+from trellis.core.components.style_props import Margin
+from trellis.core.rendering.element import ElementNode
 
 
 class IconName(StrEnum):

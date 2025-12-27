@@ -1,10 +1,10 @@
 """Tests for ergonomic style props."""
 
-from trellis.core.composition_component import component
-from trellis.core.react_component import _merge_style_props
-from trellis.core.rendering import render
-from trellis.core.session import RenderSession
-from trellis.core.style_props import Height, Margin, Padding, Width
+from trellis.core.components.composition import component
+from trellis.core.components.react import _merge_style_props
+from trellis.core.rendering.render import render
+from trellis.core.rendering.session import RenderSession
+from trellis.core.components.style_props import Height, Margin, Padding, Width
 from trellis.widgets import Button, Card, Column, Label, Row
 
 

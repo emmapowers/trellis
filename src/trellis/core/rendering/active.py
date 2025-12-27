@@ -9,10 +9,10 @@ from __future__ import annotations
 import typing as tp
 from dataclasses import dataclass, field
 
-from trellis.core.frame_stack import FrameStack
-from trellis.core.lifecycle_tracker import LifecycleTracker
-from trellis.core.node_store import NodeStore
-from trellis.core.patch_collector import PatchCollector
+from trellis.core.rendering.elements import NodeStore
+from trellis.core.rendering.frames import FrameStack
+from trellis.core.rendering.lifecycle import LifecycleTracker
+from trellis.core.rendering.patches import PatchCollector
 
 __all__ = ["ActiveRender"]
 

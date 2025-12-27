@@ -2,10 +2,10 @@
 
 from dataclasses import dataclass
 
-from trellis.core.composition_component import component
-from trellis.core.rendering import render
-from trellis.core.session import RenderSession
-from trellis.core.stateful import Stateful
+from trellis.core.components.composition import component
+from trellis.core.rendering.render import render
+from trellis.core.rendering.session import RenderSession
+from trellis.core.state.stateful import Stateful
 
 
 class TestStateful:

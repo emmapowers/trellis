@@ -18,7 +18,7 @@ from trellis.core.messages import Message
 if TYPE_CHECKING:
     from pytauri.ipc import Channel
 
-    from trellis.core.component import Component
+    from trellis.core.components.base import Component
 
 
 class PyTauriMessageHandler(MessageHandler):

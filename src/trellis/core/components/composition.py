@@ -34,7 +34,7 @@ from __future__ import annotations
 import inspect
 import typing as tp
 
-from trellis.core.component import Component, ElementKind
+from trellis.core.components.base import Component, ElementKind
 
 __all__ = ["CompositionComponent", "RenderFunc", "component"]
 

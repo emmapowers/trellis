@@ -20,8 +20,8 @@ from trellis.core.platform import Platform
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
 
 if TYPE_CHECKING:
-    from trellis.core.component import Component
-    from trellis.core.element_node import ElementNode
+    from trellis.core.components.base import Component
+    from trellis.core.rendering.element import ElementNode
 
 _console = Console()
 

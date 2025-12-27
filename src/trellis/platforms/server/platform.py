@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import uvicorn
 
 if TYPE_CHECKING:
-    from trellis.core.element_node import ElementNode
+    from trellis.core.rendering.element import ElementNode
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles

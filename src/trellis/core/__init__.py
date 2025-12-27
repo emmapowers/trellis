@@ -34,25 +34,45 @@ Example:
 
 See Also:
     - `trellis.core.rendering`: Core rendering types and tree
-    - `trellis.core.base_component`: Abstract component base class
-    - `trellis.core.composition_component`: @component decorator
+    - `trellis.core.components`: Component base classes and decorators
     - `trellis.core.state`: Reactive state management
-    - `trellis.core.reconcile`: Tree reconciliation algorithm
 """
 
-from trellis.core.component import Component
-from trellis.core.composition_component import CompositionComponent, component
-from trellis.core.element_node import ElementNode
-from trellis.core.element_state import ElementState
+# Components
+from trellis.core.components import (
+    Component,
+    CompositionComponent,
+    Height,
+    Margin,
+    Padding,
+    ReactComponentBase,
+    Width,
+    component,
+    react_component_base,
+)
+
+# Platform (still in core/)
 from trellis.core.message_handler import MessageHandler
-from trellis.core.mutable import Mutable, callback, mutable
 from trellis.core.platform import Platform, PlatformArgumentError, PlatformType
-from trellis.core.react_component import ReactComponentBase, react_component_base
-from trellis.core.rendering import render
-from trellis.core.session import RenderSession
-from trellis.core.stateful import Stateful
-from trellis.core.style_props import Height, Margin, Padding, Width
-from trellis.core.tracked import TrackedDict, TrackedList, TrackedSet
+
+# Rendering
+from trellis.core.rendering import (
+    ElementNode,
+    ElementState,
+    RenderSession,
+    render,
+)
+
+# State
+from trellis.core.state import (
+    Mutable,
+    Stateful,
+    TrackedDict,
+    TrackedList,
+    TrackedSet,
+    callback,
+    mutable,
+)
 
 __all__ = [
     "Component",

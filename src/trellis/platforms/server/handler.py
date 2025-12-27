@@ -5,7 +5,7 @@ from __future__ import annotations
 import msgspec
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from trellis.core.component import Component
+from trellis.core.components.base import Component
 from trellis.core.message_handler import MessageHandler
 from trellis.core.messages import Message
 

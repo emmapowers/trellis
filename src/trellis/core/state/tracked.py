@@ -36,10 +36,10 @@ from collections.abc import Iterable, Iterator
 from typing import SupportsIndex
 
 if tp.TYPE_CHECKING:
-    from trellis.core.element_node import ElementNode
-    from trellis.core.stateful import Stateful
+    from trellis.core.rendering.element import ElementNode
+    from trellis.core.state.stateful import Stateful
 
-from trellis.core.session import get_active_session, is_render_active
+from trellis.core.rendering.session import get_active_session, is_render_active
 
 logger = logging.getLogger(__name__)
 

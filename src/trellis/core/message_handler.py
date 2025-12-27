@@ -14,7 +14,7 @@ import traceback
 import typing as tp
 from uuid import uuid4
 
-from trellis.core.component import Component
+from trellis.core.components.base import Component
 from trellis.core.messages import (
     AddPatch,
     DebugConfig,
@@ -28,15 +28,15 @@ from trellis.core.messages import (
     RemovePatch,
     UpdatePatch,
 )
-from trellis.core.render_patches import (
+from trellis.core.rendering.patches import (
     RenderAddPatch,
     RenderPatch,
     RenderRemovePatch,
     RenderUpdatePatch,
 )
-from trellis.core.rendering import render
+from trellis.core.rendering.render import render
+from trellis.core.rendering.session import RenderSession
 from trellis.core.serialization import _serialize_node_props, serialize_node
-from trellis.core.session import RenderSession
 from trellis.html.events import get_event_class
 from trellis.utils.debug import get_enabled_categories
 

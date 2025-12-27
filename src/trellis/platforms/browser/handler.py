@@ -10,7 +10,7 @@ import asyncio
 import typing as tp
 from collections.abc import Callable
 
-from trellis.core.component import Component
+from trellis.core.components.base import Component
 from trellis.core.message_handler import MessageHandler
 from trellis.core.messages import (
     EventMessage,

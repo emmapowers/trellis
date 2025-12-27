@@ -4,15 +4,15 @@ import typing as tp
 import weakref
 from dataclasses import dataclass, field
 
-from trellis.core.mutable import Mutable
-from trellis.core.session import (
+from trellis.core.rendering.session import (
     RenderSession,
     get_active_session,
 )
+from trellis.core.state.mutable import Mutable
 from trellis.utils.logger import logger
 
 if tp.TYPE_CHECKING:
-    from trellis.core.component import Component
+    from trellis.core.components.base import Component
 
 __all__ = [
     "ElementNode",
