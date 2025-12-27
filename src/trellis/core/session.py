@@ -151,5 +151,5 @@ class RenderSession:
         value = props_dict.get(prop_name)
 
         if value is not None and callable(value):
-            return value
+            return tp.cast("tp.Callable[..., tp.Any]", value)
         return None

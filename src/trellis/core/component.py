@@ -203,10 +203,6 @@ class Component(ABC):
             id=position_id,
         )
 
-        # Determine parent_id from current frame (or None for root)
-        frame = session.active.frames.current()
-        parent_id = frame.parent_id if frame else None
-
         # Store node (execution happens later via _execute_tree)
         session.nodes.store(node)
 

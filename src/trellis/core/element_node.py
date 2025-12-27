@@ -241,8 +241,8 @@ def props_equal(old_props: FrozenProps, new_props: FrozenProps) -> bool:
     new_dict = dict(new_props)
     if old_dict.keys() != new_dict.keys():
         return False
-    for key in old_dict:
-        if not _values_equal(old_dict[key], new_dict[key]):
+    for key, old_val in old_dict.items():
+        if not _values_equal(old_val, new_dict[key]):
             return False
     return True
 
