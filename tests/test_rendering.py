@@ -40,6 +40,7 @@ def make_descriptor(
     return ElementNode(
         component=comp,
         _session_ref=_get_dummy_session_ref(),
+        render_count=0,
         key=key,
         props=props or {},
     )
@@ -53,7 +54,7 @@ class TestElementNode:
         assert node.component == comp
         assert node.key is None
         assert node.props == {}
-        assert node.child_ids == ()
+        assert node.child_ids == []
         assert node.id == ""
 
     def test_element_node_with_key(self) -> None:
@@ -100,9 +101,9 @@ class TestRenderSession:
         comp = make_component("Root")
         ctx = RenderSession(comp)
 
-        assert ctx._root_component == comp
-        assert ctx.root_node is None
-        assert not ctx._dirty.has_dirty()
+        assert ctx.root_component == comp
+        assert ctx.root_element is None
+        assert not ctx.dirty.has_dirty()
 
     def test_mark_dirty_id(self) -> None:
         @component
@@ -113,18 +114,16 @@ class TestRenderSession:
         render(ctx)
 
         # The root node should have an ID now
-        assert ctx.root_node is not None
-        node_id = ctx.root_node.id
+        assert ctx.root_element is not None
+        node_id = ctx.root_element.id
 
         # Clear dirty state
-        ctx._dirty.pop_all()
-        ctx._element_state.get(node_id).dirty = False
+        ctx.dirty.pop_all()
 
         # Mark dirty by ID
-        ctx.mark_dirty_id(node_id)
+        ctx.dirty.mark(node_id)
 
-        assert node_id in ctx._dirty
-        assert ctx._element_state.get(node_id).dirty is True
+        assert node_id in ctx.dirty
 
 
 class TestConcurrentRenderSessionIsolation:
@@ -168,8 +167,8 @@ class TestConcurrentRenderSessionIsolation:
         assert results["a"] is not None
         assert results["b"] is not None
         assert results["a"] != results["b"]
-        assert results["a"]._root_component.name == "AppA"
-        assert results["b"]._root_component.name == "AppB"
+        assert results["a"].root_component.name == "AppA"
+        assert results["b"].root_component.name == "AppB"
 
     def test_concurrent_renders_dont_interfere(self) -> None:
         """Concurrent renders in different threads don't corrupt each other."""
@@ -260,8 +259,8 @@ class TestDescriptorStackCleanupOnException:
         with pytest.raises(ValueError, match="intentional failure"):
             render(ctx)
 
-        # Stack should be clean after exception
-        assert not ctx._frames.has_active()
+        # Stack should be clean after exception (active is set to None in finally)
+        assert ctx.active is None
 
     def test_exception_in_nested_with_block_cleans_up(self) -> None:
         """Exception in nested with block doesn't corrupt stack."""
@@ -285,7 +284,7 @@ class TestDescriptorStackCleanupOnException:
         with pytest.raises(RuntimeError, match="nested failure"):
             render(ctx)
 
-        assert not ctx._frames.has_active()
+        assert ctx.active is None
 
 
 class TestThreadSafeStateUpdates:
@@ -325,37 +324,36 @@ class TestThreadSafeStateUpdates:
         assert results["ctx_300"] == 300
         assert results["ctx_400"] == 400
 
-    def test_callback_registry_isolated_per_session(self) -> None:
-        """Callback registries are isolated per RenderSession."""
+    def test_callback_lookup_from_node_props(self) -> None:
+        """Callbacks can be looked up from node props via get_callback."""
 
         @component
         def App() -> None:
             pass
 
-        ctx1 = RenderSession(App)
-        ctx2 = RenderSession(App)
+        ctx = RenderSession(App)
+        render(ctx)
 
-        cb1 = lambda: "callback1"
-        cb2 = lambda: "callback2"
+        # Store a callback in a node's props
+        node = ctx.root_element
+        cb = lambda: "test_callback"
+        node.props["on_click"] = cb
 
-        # Register with deterministic IDs (node_id:prop_name)
-        id1 = ctx1.register_callback(cb1, "e1", "on_click")
-        id2 = ctx2.register_callback(cb2, "e1", "on_click")
+        # get_callback should find it
+        result = ctx.get_callback(node.id, "on_click")
+        assert result is not None
+        assert result() == "test_callback"
 
-        # Same ID format (deterministic) but different registries
-        assert id1 == id2 == "e1:on_click"
+        # Non-existent prop returns None
+        assert ctx.get_callback(node.id, "on_missing") is None
 
-        # But they resolve to different callbacks
-        assert ctx1.get_callback(id1)() == "callback1"
-        assert ctx2.get_callback(id2)() == "callback2"
-
-        # Cross-lookup returns None
-        assert ctx1.get_callback("e999:on_click") is None
+        # Non-existent node returns None
+        assert ctx.get_callback("nonexistent", "on_click") is None
 
     def test_state_update_blocks_during_render(self) -> None:
         """State updates on another thread block while render holds the lock.
 
-        This tests that mark_dirty_id() blocks when called from another thread
+        This tests that dirty.mark() blocks when called from another thread
         while a render is in progress on the same RenderSession.
         """
         import time
@@ -395,24 +393,24 @@ class TestThreadSafeStateUpdates:
             time.sleep(0.05)
             state = state_holder[0]
             events.append("update_start")
-            # This triggers mark_dirty_id which needs the lock
+            # This triggers dirty.mark() which acquires the lock
             state.value = 42
             events.append("update_done")
 
         updater = threading.Thread(target=background_update)
         updater.start()
 
-        # Start render (holds lock via @with_lock on render_tree)
+        # Start render (holds lock via with session.lock in render())
         render(ctx)
 
         updater.join()
 
         # Verify ordering: update_start happens during render (before first_render_done)
-        # but update_done happens after first_render_done because mark_dirty_id blocks
+        # but update_done happens after first_render_done because dirty.mark() blocks
         assert "update_start" in events
         assert "first_render_done" in events
         assert "update_done" in events
-        # The key assertion: mark_dirty_id blocks, so update_done must come after render releases lock
+        # The key assertion: dirty.mark() blocks, so update_done must come after render releases lock
         assert events.index("first_render_done") < events.index("update_done")
 
 
@@ -434,13 +432,13 @@ class TestElementStateParentId:
         render(ctx)
 
         # Root has no parent
-        root_state = ctx._element_state.get(ctx.root_node.id)
+        root_state = ctx.states.get(ctx.root_element.id)
         assert root_state.parent_id is None
 
         # Child's parent should be root
-        child_id = ctx.get_node(ctx.root_node.child_ids[0]).id
-        child_state = ctx._element_state.get(child_id)
-        assert child_state.parent_id == ctx.root_node.id
+        child_id = ctx.elements.get(ctx.root_element.child_ids[0]).id
+        child_state = ctx.states.get(child_id)
+        assert child_state.parent_id == ctx.root_element.id
 
     def test_parent_id_preserved_on_rerender(self) -> None:
         """parent_id is preserved when component re-renders."""
@@ -466,15 +464,15 @@ class TestElementStateParentId:
         ctx = RenderSession(Parent)
         render(ctx)
 
-        child_id = ctx.get_node(ctx.root_node.child_ids[0]).id
-        original_parent_id = ctx._element_state.get(child_id).parent_id
+        child_id = ctx.elements.get(ctx.root_element.child_ids[0]).id
+        original_parent_id = ctx.states.get(child_id).parent_id
 
         # Trigger re-render
         state_holder[0].value += 1
         render(ctx)
 
         # parent_id should be preserved
-        assert ctx._element_state.get(child_id).parent_id == original_parent_id
+        assert ctx.states.get(child_id).parent_id == original_parent_id
 
 
 class TestPropsComparison:
@@ -503,21 +501,21 @@ class TestPropsComparison:
         assert render_counts["child"] == 1
 
         # Same None value - should not re-render
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert render_counts["child"] == 1
 
         # Change to non-None
         value_ref[0] = "hello"
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert render_counts["child"] == 2
 
         # Change back to None
         value_ref[0] = None
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert render_counts["child"] == 3
@@ -548,14 +546,14 @@ class TestPropsComparison:
         assert render_counts["child"] == 1
 
         # Same function - should not re-render
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert render_counts["child"] == 1
 
         # Different function - should re-render
         handler_ref[0] = handler2
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert render_counts["child"] == 2
@@ -577,7 +575,7 @@ class TestPropsComparison:
 
         assert render_counts["no_props"] == 1
 
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # Should not re-render (empty props unchanged)
@@ -602,14 +600,14 @@ class TestPropsComparison:
         assert render_counts["child"] == 1
 
         # Same tuple value - should not re-render
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert render_counts["child"] == 1
 
         # Different tuple - should re-render
         tuple_ref[0] = (1, 2, 4)
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert render_counts["child"] == 2
@@ -646,15 +644,15 @@ class TestBuiltinWidgetsReconciliation:
         render(ctx)
 
         # Should have: H1, Row, Row, Row, Row, Button = 6 children
-        assert len(ctx.root_node.child_ids) == 6
+        assert len(ctx.root_element.child_ids) == 6
 
         # Remove "b" from the middle - this triggers type-based matching
         items_ref[0] = ["a", "c", "d"]
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # Should have: H1, Row, Row, Row, Button = 5 children
-        assert len(ctx.root_node.child_ids) == 5
+        assert len(ctx.root_element.child_ids) == 5
 
     def test_html_elements_in_dynamic_list(self) -> None:
         """HTML elements (via @html_element) should be hashable for reconciliation."""
@@ -671,14 +669,14 @@ class TestBuiltinWidgetsReconciliation:
         ctx = RenderSession(List)
         render(ctx)
 
-        assert len(ctx.root_node.child_ids) == 3
+        assert len(ctx.root_element.child_ids) == 3
 
         # Remove from middle
         items_ref[0] = ["item1", "item3"]
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
-        assert len(ctx.root_node.child_ids) == 2
+        assert len(ctx.root_element.child_ids) == 2
 
     def test_widgets_in_dynamic_list(self) -> None:
         """Widgets (via @react_component_base) should be hashable for reconciliation."""
@@ -697,15 +695,15 @@ class TestBuiltinWidgetsReconciliation:
         ctx = RenderSession(List)
         render(ctx)
 
-        column = ctx.get_node(ctx.root_node.child_ids[0])
+        column = ctx.elements.get(ctx.root_element.child_ids[0])
         assert len(column.child_ids) == 5
 
         # Remove items 2 and 4 (from middle)
         items_ref[0] = [1, 3, 5]
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
-        column = ctx.get_node(ctx.root_node.child_ids[0])
+        column = ctx.elements.get(ctx.root_element.child_ids[0])
         assert len(column.child_ids) == 3
 
     def test_mixed_widgets_and_components_in_list(self) -> None:
@@ -726,14 +724,14 @@ class TestBuiltinWidgetsReconciliation:
         ctx = RenderSession(List)
         render(ctx)
 
-        assert len(ctx.root_node.child_ids) == 3
+        assert len(ctx.root_element.child_ids) == 3
 
         # Reorder and remove
         items_ref[0] = ["c", "a"]
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
-        assert len(ctx.root_node.child_ids) == 2
+        assert len(ctx.root_element.child_ids) == 2
 
 
 class TestEscapeKey:
@@ -800,8 +798,8 @@ class TestPositionIdGeneration:
         render(ctx)
 
         # Format: /@{id(component)}
-        assert ctx.root_node.id.startswith("/@")
-        assert str(id(App)) in ctx.root_node.id
+        assert ctx.root_element.id.startswith("/@")
+        assert str(id(App)) in ctx.root_element.id
 
     def test_child_id_includes_position(self) -> None:
         """Child IDs include position index."""
@@ -820,7 +818,7 @@ class TestPositionIdGeneration:
         render(ctx)
 
         # Children should have /0@, /1@, /2@ in their IDs
-        child_ids = ctx.root_node.child_ids
+        child_ids = ctx.root_element.child_ids
         assert len(child_ids) == 3
         assert "/0@" in child_ids[0]
         assert "/1@" in child_ids[1]
@@ -840,7 +838,7 @@ class TestPositionIdGeneration:
         ctx = RenderSession(Parent)
         render(ctx)
 
-        child_id = ctx.root_node.child_ids[0]
+        child_id = ctx.root_element.child_ids[0]
         assert ":submit@" in child_id
 
     def test_different_component_types_different_ids(self) -> None:
@@ -865,12 +863,12 @@ class TestPositionIdGeneration:
 
         ctx = RenderSession(Parent)
         render(ctx)
-        id_a = ctx.root_node.child_ids[0]
+        id_a = ctx.root_element.child_ids[0]
 
         show_a[0] = False
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
-        id_b = ctx.root_node.child_ids[0]
+        id_b = ctx.root_element.child_ids[0]
 
         # Different components at same position get different IDs
         # (because the component identity is part of the ID)

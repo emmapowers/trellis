@@ -66,7 +66,7 @@ class TestDeepTrees:
         render(ctx)
 
         def verify_relationships(node: ElementNode, expected_parent_id: str | None) -> None:
-            state = ctx._element_state.get(node.id)
+            state = ctx.states.get(node.id)
             if state is None:
                 relationship_errors.append(f"No state for node {node.id}")
                 return
@@ -110,7 +110,7 @@ class TestDeepTrees:
         collect_ids(ctx.root_element, node_ids_before)
 
         # Re-render
-        ctx.mark_dirty_id(ctx.root_element.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         collect_ids(ctx.root_element, node_ids_after)
@@ -151,7 +151,7 @@ class TestDeepTrees:
         assert mount_count[0] == DEPTH
 
         # Re-render should not create new states
-        ctx.mark_dirty_id(ctx.root_element.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
         assert mount_count[0] == DEPTH  # Still same
 
@@ -195,7 +195,7 @@ class TestWideTrees:
 
         original_ids = list(ctx.root_element.child_ids)
 
-        ctx.mark_dirty_id(ctx.root_element.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         new_ids = list(ctx.root_element.child_ids)
@@ -221,7 +221,7 @@ class TestWideTrees:
 
         # Add more siblings
         count_ref[0] = 50
-        ctx.mark_dirty_id(ctx.root_element.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert len(ctx.root_element.child_ids) == 50
@@ -254,7 +254,7 @@ class TestWideTrees:
 
         # Remove siblings
         count_ref[0] = 10
-        ctx.mark_dirty_id(ctx.root_element.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert len(ctx.root_element.child_ids) == 10
@@ -402,7 +402,7 @@ class TestMountingOrder:
 
         # Remove container
         show_ref[0] = False
-        ctx.mark_dirty_id(ctx.root_element.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # All children should have unmounted

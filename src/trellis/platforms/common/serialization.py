@@ -143,6 +143,27 @@ def serialize_node(node: ElementNode, session: RenderSession) -> dict[str, tp.An
     }
 
 
+def _serialize_props(
+    props: dict[str, tp.Any], session: RenderSession, node_id: str
+) -> dict[str, tp.Any]:
+    """Serialize a props dict for wire transmission.
+
+    Args:
+        props: Raw props dict to serialize
+        session: The RenderSession (unused, kept for API compatibility)
+        node_id: The node ID for callback IDs
+
+    Returns:
+        Serialized props dict
+    """
+    result = {}
+    for key, value in props.items():
+        if key == "child_ids":
+            continue
+        result[key] = _serialize_value(value, session, node_id, key)
+    return result
+
+
 def _serialize_node_props(node: ElementNode, session: RenderSession) -> dict[str, tp.Any]:
     """Serialize just the props of a node (excluding child_ids).
 
@@ -157,9 +178,4 @@ def _serialize_node_props(node: ElementNode, session: RenderSession) -> dict[str
     """
     if isinstance(node.component, CompositionComponent):
         return {}
-    props = {}
-    for key, value in node.properties.items():
-        if key == "child_ids":
-            continue
-        props[key] = _serialize_value(value, session, node.id, key)
-    return props
+    return _serialize_props(node.properties, session, node.id)

@@ -46,6 +46,7 @@ def make_node(node_id: str, tree_ref=None) -> ElementNode:
     node = ElementNode(
         component=MockComponent(),
         _session_ref=tree_ref,
+        render_count=0,
         id=node_id,
     )
     return node
@@ -189,7 +190,7 @@ class TestElementStateStore:
 
     def test_set_and_get(self):
         store = ElementStateStore()
-        state = ElementState(dirty=True)
+        state = ElementState(mounted=True)
 
         store.set("e1", state)
         assert store.get("e1") is state
@@ -204,7 +205,7 @@ class TestElementStateStore:
 
     def test_get_or_create_existing(self):
         store = ElementStateStore()
-        existing = ElementState(dirty=True)
+        existing = ElementState(mounted=True)
         store.set("e1", existing)
 
         state = store.get_or_create("e1")
@@ -636,7 +637,6 @@ class TestRenderSession:
         assert isinstance(session.elements, ElementStore)
         assert isinstance(session.states, ElementStateStore)
         assert isinstance(session.dirty, DirtyTracker)
-        assert session.callbacks == {}
         assert session.active is None
 
     def test_is_rendering(self):
@@ -673,52 +673,29 @@ class TestRenderSession:
         session.active.current_node_id = "e1"
         assert session.current_node_id == "e1"
 
-    def test_register_callback(self):
+    def test_get_callback_from_node_props(self):
+        """get_callback looks up callbacks from node props."""
         comp = MockComponent()
         session = RenderSession(root_component=comp)
 
         def my_callback():
-            pass
+            return "called"
 
-        cb_id = session.register_callback(my_callback, "/@123/0@456", "on_click")
-        assert cb_id == "/@123/0@456:on_click"
-        assert session.callbacks[cb_id] is my_callback
+        # Create a node and store it
+        node = make_node("e1")
+        node.props["on_click"] = my_callback
+        session.elements.store(node)
 
-    def test_get_callback(self):
-        comp = MockComponent()
-        session = RenderSession(root_component=comp)
+        # get_callback should find it
+        result = session.get_callback("e1", "on_click")
+        assert result is not None
+        assert result() == "called"
 
-        def my_callback():
-            pass
+        # Non-existent prop returns None
+        assert session.get_callback("e1", "on_missing") is None
 
-        session.register_callback(my_callback, "e1", "on_click")
-
-        assert session.get_callback("e1:on_click") is my_callback
-        assert session.get_callback("nonexistent") is None
-
-    def test_clear_callbacks_for_node(self):
-        comp = MockComponent()
-        session = RenderSession(root_component=comp)
-
-        session.register_callback(lambda: None, "e1", "on_click")
-        session.register_callback(lambda: None, "e1", "on_hover")
-        session.register_callback(lambda: None, "e2", "on_click")
-
-        session.clear_callbacks_for_node("e1")
-
-        assert "e1:on_click" not in session.callbacks
-        assert "e1:on_hover" not in session.callbacks
-        assert "e2:on_click" in session.callbacks
-
-    def test_clear_callbacks(self):
-        comp = MockComponent()
-        session = RenderSession(root_component=comp)
-
-        session.register_callback(lambda: None, "e1", "on_click")
-        session.register_callback(lambda: None, "e2", "on_click")
-
-        session.clear_callbacks()
-        assert session.callbacks == {}
+        # Non-existent node returns None
+        assert session.get_callback("nonexistent", "on_click") is None
 
     def test_stores_integration(self):
         """Test that stores work correctly within RenderSession."""
@@ -749,37 +726,3 @@ class TestRenderSession:
                 pass
 
 
-# =============================================================================
-# ElementState callbacks field Tests
-# =============================================================================
-
-
-class TestElementStateCallbacks:
-    def test_callbacks_default_empty(self):
-        state = ElementState()
-        assert state.callbacks == {}
-
-    def test_callbacks_can_store_callables(self):
-        state = ElementState()
-
-        def my_callback():
-            pass
-
-        state.callbacks["on_click"] = my_callback
-        assert state.callbacks["on_click"] is my_callback
-
-    def test_callbacks_multiple(self):
-        state = ElementState()
-
-        def cb1():
-            pass
-
-        def cb2():
-            pass
-
-        state.callbacks["on_click"] = cb1
-        state.callbacks["on_hover"] = cb2
-
-        assert len(state.callbacks) == 2
-        assert state.callbacks["on_click"] is cb1
-        assert state.callbacks["on_hover"] is cb2

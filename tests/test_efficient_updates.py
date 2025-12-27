@@ -179,7 +179,7 @@ class TestPropsUnchangedOptimization:
         assert render_counts == {"parent": 1, "child": 1}
 
         # Re-render parent - child should NOT re-execute since props unchanged
-        ctx.mark_dirty_id(ctx.root_element.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert render_counts == {"parent": 2, "child": 1}  # Child still 1!
@@ -205,7 +205,7 @@ class TestPropsUnchangedOptimization:
 
         # Change props
         value_ref[0] = 1
-        ctx.mark_dirty_id(ctx.root_element.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert render_counts == {"parent": 2, "child": 2}  # Child re-executed
@@ -246,7 +246,7 @@ class TestPropsUnchangedOptimization:
         }
 
         # Re-render only root - nothing else should change
-        ctx.mark_dirty_id(ctx.root_element.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # Only root re-executes since all children have unchanged props
@@ -283,7 +283,7 @@ class TestDirtyMarkingBehavior:
 
         # Mark only child1 dirty
         child1_node = ctx.elements.get(ctx.root_element.child_ids[0])
-        ctx.mark_dirty_id(child1_node.id)
+        ctx.dirty.mark(child1_node.id)
         render(ctx)
 
         # Only child1 should re-render
@@ -309,8 +309,8 @@ class TestDirtyMarkingBehavior:
 
         # Mark both dirty (child first to test that order doesn't matter)
         child_node = ctx.elements.get(ctx.root_element.child_ids[0])
-        ctx.mark_dirty_id(child_node.id)
-        ctx.mark_dirty_id(ctx.root_element.id)
+        ctx.dirty.mark(child_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
 
         render(ctx)
 
@@ -346,7 +346,7 @@ class TestDirtyMarkingBehavior:
 
         # Mark parent dirty - child will be re-rendered as part of parent
         # But child's props unchanged so it should be skipped
-        ctx.mark_dirty_id(ctx.root_element.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert render_counts == {"parent": 2, "child": 1}

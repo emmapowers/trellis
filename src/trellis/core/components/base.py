@@ -182,13 +182,30 @@ class Component(ABC):
             and is_mounted
             and not is_dirty
         ):
-            # Reuse old node - skip execution entirely, preserve subtree
-            logger.debug(
-                "Reusing node %s (container=%s)",
-                self.name,
-                self._has_children_param,
-            )
-            if session.active.frames.has_active() and not self._has_children_param:
+            # For containers with `with` blocks, we must create a new node object.
+            # The old_elements snapshot shares node references, so modifying
+            # old_node.child_ids in __exit__ would corrupt the snapshot and break
+            # reconciliation (old vs new child_ids would be identical).
+            if self._has_children_param:
+                logger.debug("Creating new node for container %s (preserving snapshot)", self.name)
+                node = ElementNode(
+                    component=self,
+                    _session_ref=weakref.ref(session),
+                    render_count=session.render_count,
+                    props=props,
+                    key=key,
+                    id=position_id,
+                    child_ids=[],  # Will be populated by __exit__
+                )
+                session.elements.store(node)
+                # Add container to parent's frame (same as non-container path below)
+                if session.active.frames.has_active():
+                    session.active.frames.add_child(node.id)
+                return node
+
+            # Non-container: reuse old node - skip execution entirely, preserve subtree
+            logger.debug("Reusing node %s", self.name)
+            if session.active.frames.has_active():
                 session.active.frames.add_child(old_node.id)
             return old_node
 

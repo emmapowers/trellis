@@ -498,7 +498,7 @@ def _emit_update_patch_if_changed(session: RenderSession, node_id: str) -> None:
         session.active.patches.emit(
             RenderUpdatePatch(
                 node_id=node_id,
-                props_changed=props_changed,
+                props=dict(node.props) if props_changed else None,
                 children=tuple(node.child_ids) if children_changed else None,
             )
         )

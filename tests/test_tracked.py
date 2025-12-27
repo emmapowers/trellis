@@ -328,7 +328,7 @@ class TestDependencyTracking:
         tracked_list = state.items
         item_b = list.__getitem__(tracked_list, 1)
         assert id(item_b) in tracked_list._deps
-        assert ctx.root_node in tracked_list._deps[id(item_b)]
+        assert ctx.root_element in tracked_list._deps[id(item_b)]
 
     def test_list_iteration_tracks_iter_key(self) -> None:
         """Iterating over list registers dependency on ITER_KEY."""
@@ -351,7 +351,7 @@ class TestDependencyTracking:
         # Check ITER_KEY dependency
         tracked_list = state.items
         assert ITER_KEY in tracked_list._deps
-        assert ctx.root_node in tracked_list._deps[ITER_KEY]
+        assert ctx.root_element in tracked_list._deps[ITER_KEY]
 
     def test_dict_getitem_tracks_by_key(self) -> None:
         """Accessing dict[key] registers dependency on that key."""
@@ -373,7 +373,7 @@ class TestDependencyTracking:
         # Check dependency on key "x"
         tracked_dict = state.data
         assert "x" in tracked_dict._deps
-        assert ctx.root_node in tracked_dict._deps["x"]
+        assert ctx.root_element in tracked_dict._deps["x"]
 
     def test_set_contains_tracks_by_value(self) -> None:
         """item in set registers dependency on the value itself."""
@@ -395,7 +395,7 @@ class TestDependencyTracking:
         # Check dependency on the value "python" (not id)
         tracked_set = state.tags
         assert "python" in tracked_set._deps
-        assert ctx.root_node in tracked_set._deps["python"]
+        assert ctx.root_element in tracked_set._deps["python"]
 
     def test_list_sort_marks_iter_dirty(self) -> None:
         """Sorting a list marks ITER_KEY dirty."""
@@ -680,7 +680,7 @@ class TestDependencyCleanup:
         ctx = RenderSession(App)
         render(ctx)
 
-        consumer_node = ctx.get_node(ctx.root_node.child_ids[0])
+        consumer_node = ctx.elements.get(ctx.root_element.child_ids[0])
         consumer_id = consumer_node.id
         tracked_list = state.items
         item_a = list.__getitem__(tracked_list, 0)
@@ -691,7 +691,7 @@ class TestDependencyCleanup:
 
         # Unmount Consumer
         show_consumer[0] = False
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # Dependency should be cleaned up (WeakSet auto-removes dead refs)
@@ -719,7 +719,7 @@ class TestDependencyCleanup:
         ctx = RenderSession(Consumer)
         render(ctx)
 
-        root_node = ctx.root_node
+        root_node = ctx.root_element
         root_id = root_node.id
         tracked_dict = state.data
 
@@ -729,7 +729,7 @@ class TestDependencyCleanup:
 
         # Stop reading and re-render
         read_data[0] = False
-        ctx.mark_dirty_id(root_id)
+        ctx.dirty.mark(root_id)
         render(ctx)
 
         # No longer tracking (WeakSet auto-removes dead refs)

@@ -204,7 +204,7 @@ class TestWidgetIntegration:
         ctx = RenderSession(App)
         render(ctx)
 
-        label = ctx.get_node(ctx.root_node.child_ids[0])
+        label = ctx.elements.get(ctx.root_element.child_ids[0])
         assert label.properties["style"] == {"marginBottom": "16px"}
 
     def test_label_with_width(self) -> None:
@@ -217,7 +217,7 @@ class TestWidgetIntegration:
         ctx = RenderSession(App)
         render(ctx)
 
-        label = ctx.get_node(ctx.root_node.child_ids[0])
+        label = ctx.elements.get(ctx.root_element.child_ids[0])
         assert label.properties["style"] == {"width": "100px"}
 
     def test_label_with_flex(self) -> None:
@@ -230,7 +230,7 @@ class TestWidgetIntegration:
         ctx = RenderSession(App)
         render(ctx)
 
-        label = ctx.get_node(ctx.root_node.child_ids[0])
+        label = ctx.elements.get(ctx.root_element.child_ids[0])
         assert label.properties["style"] == {"flex": 1}
 
     def test_column_with_padding_dataclass(self) -> None:
@@ -244,7 +244,7 @@ class TestWidgetIntegration:
         ctx = RenderSession(App)
         render(ctx)
 
-        column = ctx.get_node(ctx.root_node.child_ids[0])
+        column = ctx.elements.get(ctx.root_element.child_ids[0])
         assert column.properties["style"] == {
             "paddingLeft": "24px",
             "paddingRight": "24px",
@@ -263,7 +263,7 @@ class TestWidgetIntegration:
         ctx = RenderSession(App)
         render(ctx)
 
-        column = ctx.get_node(ctx.root_node.child_ids[0])
+        column = ctx.elements.get(ctx.root_element.child_ids[0])
         assert column.properties["padding"] == 24
 
     def test_card_with_width(self) -> None:
@@ -277,7 +277,7 @@ class TestWidgetIntegration:
         ctx = RenderSession(App)
         render(ctx)
 
-        card = ctx.get_node(ctx.root_node.child_ids[0])
+        card = ctx.elements.get(ctx.root_element.child_ids[0])
         assert card.properties["style"] == {"width": "320px"}
 
     def test_button_with_width_string(self) -> None:
@@ -290,7 +290,7 @@ class TestWidgetIntegration:
         ctx = RenderSession(App)
         render(ctx)
 
-        button = ctx.get_node(ctx.root_node.child_ids[0])
+        button = ctx.elements.get(ctx.root_element.child_ids[0])
         assert button.properties["style"] == {"width": "100%"}
 
     def test_style_props_merge_with_existing_style(self) -> None:
@@ -308,7 +308,7 @@ class TestWidgetIntegration:
         ctx = RenderSession(App)
         render(ctx)
 
-        label = ctx.get_node(ctx.root_node.child_ids[0])
+        label = ctx.elements.get(ctx.root_element.child_ids[0])
         assert label.properties["style"] == {
             "color": "blue",
             "fontWeight": "bold",

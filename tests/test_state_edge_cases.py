@@ -145,7 +145,7 @@ class TestStateLifecycle:
 
         # Re-render multiple times
         for _ in range(5):
-            ctx.mark_dirty_id(ctx.root_node.id)
+            ctx.dirty.mark(ctx.root_element.id)
             render(ctx)
 
         # Still only 1 mount
@@ -179,7 +179,7 @@ class TestStateLifecycle:
 
         # Remove child
         show_ref[0] = False
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert "child_state" in unmount_log
@@ -201,10 +201,10 @@ class TestStateLifecycle:
         render(ctx)
 
         # Re-render
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # All should be the same instance
@@ -240,7 +240,7 @@ class TestHookOrdering:
         render(ctx)
 
         # Check local_state keys
-        root_state = ctx._element_state.get(ctx.root_node.id)
+        root_state = ctx.states.get(ctx.root_element.id)
         keys = list(root_state.local_state.keys())
         # Keys are (class, call_index)
         indices = [k[1] for k in keys]
@@ -268,11 +268,11 @@ class TestHookOrdering:
         render(ctx)
 
         # Re-render - instances should be same
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # Third render
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # All renders should use the same instances in the same order
@@ -302,7 +302,7 @@ class TestHookOrdering:
         render(ctx)
 
         # Should have 3 state instances
-        root_state = ctx._element_state.get(ctx.root_node.id)
+        root_state = ctx.states.get(ctx.root_element.id)
         assert len(root_state.local_state) == 3
 
         # Each should have a different index
@@ -310,7 +310,7 @@ class TestHookOrdering:
         assert sorted(indices) == [0, 1, 2]
 
         # Re-render with same count - states preserved
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert len(root_state.local_state) == 3
@@ -425,17 +425,17 @@ class TestStateCleanup:
         render(ctx)
 
         # Capture child node and state
-        child_id = ctx.root_node.child_ids[0]
-        child_state = ctx._element_state.get(child_id)
+        child_id = ctx.root_element.child_ids[0]
+        child_state = ctx.states.get(child_id)
         assert len(child_state.local_state) == 1
 
         # Unmount
         show_ref[0] = False
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # State should be cleaned up - element state removed entirely
-        assert child_id not in ctx._element_state
+        assert child_id not in ctx.states
 
     def test_dirty_elements_cleaned_on_unmount(self) -> None:
         """Element removed from dirty set when unmounted."""
@@ -459,19 +459,19 @@ class TestStateCleanup:
         ctx = RenderSession(App)
         render(ctx)
 
-        child_id = ctx.root_node.child_ids[0]
+        child_id = ctx.root_element.child_ids[0]
 
         # Mark child dirty by changing state
         state.value = 1
-        assert child_id in ctx._dirty
+        assert child_id in ctx.dirty
 
         # Unmount child (without render_dirty first)
         show_ref[0] = False
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # Child should be removed from dirty set
-        assert child_id not in ctx._dirty
+        assert child_id not in ctx.dirty
 
 
 class TestMultipleStateTypes:
@@ -533,7 +533,7 @@ class TestMultipleStateTypes:
         render(ctx)
 
         # Both should be cached
-        root_state = ctx._element_state.get(ctx.root_node.id)
+        root_state = ctx.states.get(ctx.root_element.id)
         assert len(root_state.local_state) == 2
 
         # Verify values

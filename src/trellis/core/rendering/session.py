@@ -7,6 +7,7 @@ This is the target for the contextvar that tracks the active rendering context.
 from __future__ import annotations
 
 import contextvars
+import re
 import threading
 import typing as tp
 from dataclasses import dataclass, field
@@ -71,6 +72,10 @@ def is_render_active() -> bool:
     return session is not None and session.is_executing()
 
 
+# Pattern to parse prop paths: matches "name", "[0]", or ".name" segments
+_PATH_SEGMENT_RE = re.compile(r"^([a-zA-Z_][a-zA-Z0-9_]*)|^\[(\d+)\]|^\.([a-zA-Z_][a-zA-Z0-9_]*)")
+
+
 @dataclass
 class RenderSession:
     """Session-scoped state container.
@@ -105,6 +110,10 @@ class RenderSession:
 
     # Render count - incremented at the start of each render pass
     render_count: int = 0
+
+    def __post_init__(self) -> None:
+        """Link the dirty tracker to the session lock for thread-safe marking."""
+        self.dirty.set_lock(self.lock)
 
     @property
     def root_element(self) -> tp.Optional[ElementNode]:
@@ -150,9 +159,15 @@ class RenderSession:
         Looks up the node by ID and finds the property. Returns the value
         if it's callable (including Mutable objects which have __call__).
 
+        Supports nested paths from serialization:
+        - "on_click" -> props["on_click"]
+        - "handlers[0]" -> props["handlers"][0]
+        - "config.on_change" -> props["config"]["on_change"]
+        - "handlers[0].callback" -> props["handlers"][0]["callback"]
+
         Args:
             node_id: The node's ID
-            prop_name: The property name containing the callback
+            prop_name: The property name or path containing the callback
 
         Returns:
             The callable if found, None otherwise
@@ -161,9 +176,56 @@ class RenderSession:
         if node is None:
             return None
 
-        # node.props is a dict
-        value = node.props.get(prop_name)
+        value = _resolve_prop_path(node.props, prop_name)
 
         if value is not None and callable(value):
             return tp.cast("tp.Callable[..., tp.Any]", value)
         return None
+
+
+def _resolve_prop_path(props: dict[str, tp.Any], path: str) -> tp.Any:
+    """Resolve a nested property path to its value.
+
+    Parses paths like:
+    - "on_click" -> props["on_click"]
+    - "handlers[0]" -> props["handlers"][0]
+    - "config.on_change" -> props["config"]["on_change"]
+    - "handlers[0].callback" -> props["handlers"][0]["callback"]
+
+    Args:
+        props: The props dict to traverse
+        path: The property path to resolve
+
+    Returns:
+        The value at the path, or None if not found
+    """
+    value: tp.Any = props
+    pos = 0
+
+    while pos < len(path):
+        match = _PATH_SEGMENT_RE.match(path[pos:])
+        if not match:
+            return None
+
+        if match.group(1) is not None:
+            # Initial identifier: props["name"]
+            key = match.group(1)
+            if not isinstance(value, dict) or key not in value:
+                return None
+            value = value[key]
+        elif match.group(2) is not None:
+            # Array index: [0]
+            idx = int(match.group(2))
+            if not isinstance(value, (list, tuple)) or idx >= len(value):
+                return None
+            value = value[idx]
+        elif match.group(3) is not None:
+            # Dot accessor: .name
+            key = match.group(3)
+            if not isinstance(value, dict) or key not in value:
+                return None
+            value = value[key]
+
+        pos += match.end()
+
+    return value

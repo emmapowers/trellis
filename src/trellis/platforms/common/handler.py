@@ -37,7 +37,7 @@ from trellis.platforms.common.messages import (
     RemovePatch,
     UpdatePatch,
 )
-from trellis.platforms.common.serialization import _serialize_node_props, serialize_node
+from trellis.platforms.common.serialization import _serialize_node_props, _serialize_props, serialize_node
 from trellis.utils.debug import get_enabled_categories
 
 logger = logging.getLogger(__name__)
@@ -170,12 +170,10 @@ def _serialize_patches(patches: list[RenderPatch], session: RenderSession) -> li
                 )
             )
         elif isinstance(patch, RenderUpdatePatch):
-            # Only serialize props if they changed
+            # Serialize props if present
             props = None
-            if patch.props_changed:
-                node = session.elements.get(patch.node_id)
-                if node:
-                    props = _serialize_node_props(node, session)
+            if patch.props is not None:
+                props = _serialize_props(patch.props, session, patch.node_id)
             result.append(
                 UpdatePatch(
                     id=patch.node_id,

@@ -59,15 +59,13 @@ class TestStateful:
         render(ctx)
 
         # Clear dirty state
-        ctx._dirty.pop_all()
-        ctx._element_state.get(ctx.root_node.id).dirty = False
+        ctx.dirty.pop_all()
 
         # Change state
         state.text = "world"
 
         # Element should be marked dirty
-        assert ctx.root_node.id in ctx._dirty
-        assert ctx._element_state.get(ctx.root_node.id).dirty is True
+        assert ctx.root_element.id in ctx.dirty
 
     def test_stateful_render_dirty_updates(self) -> None:
         """render_dirty() re-renders components affected by state changes."""
@@ -171,11 +169,11 @@ class TestLocalStatePersistence:
         render(ctx)
 
         # Re-render by marking dirty - should reuse same instance
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # Third render
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # All renders should return the same state instance
@@ -203,11 +201,11 @@ class TestLocalStatePersistence:
         render(ctx)
         # Increment outside render
         state_ref[0].count = 1
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
         # Increment again outside render
         state_ref[0].count = 2
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # Should see 0, 1, 2 as count persists across re-renders
@@ -237,7 +235,7 @@ class TestLocalStatePersistence:
         assert captured[0] is not captured[1]
 
         # Re-render - each should get its own cached instance
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # Should return same instances on re-render
@@ -246,7 +244,7 @@ class TestLocalStatePersistence:
         assert captured[1] is captured[3]  # second instance reused
 
         # Check that we have 2 distinct state entries in the root element's cache
-        root_state = ctx._element_state.get(ctx.root_node.id)
+        root_state = ctx.states.get(ctx.root_element.id)
         state_keys = [k for k in root_state.local_state.keys() if k[0].__name__ == "ToggleState"]
         assert len(state_keys) == 2
 
@@ -279,7 +277,7 @@ class TestLocalStatePersistence:
         render(ctx)
 
         # Both should be cached separately by their actual types on the element
-        root_state = ctx._element_state.get(ctx.root_node.id)
+        root_state = ctx.states.get(ctx.root_element.id)
         local_state = root_state.local_state
         base_keys = [k for k in local_state.keys() if k[0].__name__ == "BaseState"]
         ext_keys = [k for k in local_state.keys() if k[0].__name__ == "ExtendedState"]
@@ -295,7 +293,7 @@ class TestLocalStatePersistence:
         ext_instance.extra = "hello"
 
         # Values should be preserved on re-render
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         assert base_instance.value == 10
@@ -343,7 +341,7 @@ class TestStateDependencyTracking:
         # WeakSet contains the ElementNode
         watchers_list = list(deps.watchers)
         assert len(watchers_list) == 1
-        assert watchers_list[0].id == ctx.root_node.id
+        assert watchers_list[0].id == ctx.root_element.id
 
     def test_session_ref_set_on_element_node(self) -> None:
         """ElementNode has _session_ref pointing to RenderSession."""
@@ -362,7 +360,7 @@ class TestStateDependencyTracking:
         render(ctx)
 
         # Check that the node's _session_ref points to the RenderSession
-        node = ctx.root_node
+        node = ctx.root_element
         assert node._session_ref() is ctx
 
     def test_child_and_parent_track_same_state(self) -> None:
@@ -386,8 +384,8 @@ class TestStateDependencyTracking:
         ctx = RenderSession(Parent)
         render(ctx)
 
-        parent_id = ctx.root_node.id
-        child_id = ctx.root_node.child_ids[0]
+        parent_id = ctx.root_element.id
+        child_id = ctx.root_element.child_ids[0]
 
         # Both nodes should be tracked
         deps = state._state_props["value"]
@@ -417,19 +415,17 @@ class TestStateDependencyTracking:
         ctx = RenderSession(Parent)
         render(ctx)
 
-        parent_id = ctx.root_node.id
-        child_id = ctx.root_node.child_ids[0]
+        parent_id = ctx.root_element.id
+        child_id = ctx.root_element.child_ids[0]
 
         # Clear dirty state
-        ctx._dirty.pop_all()
-        ctx._element_state.get(parent_id).dirty = False
-        ctx._element_state.get(child_id).dirty = False
+        ctx.dirty.pop_all()
 
         # Change state - both should be marked dirty
         state.value = 42
 
-        assert parent_id in ctx._dirty
-        assert child_id in ctx._dirty
+        assert parent_id in ctx.dirty
+        assert child_id in ctx.dirty
 
     def test_dependency_persists_across_rerenders(self) -> None:
         """Dependencies persist when component re-renders."""
@@ -447,14 +443,14 @@ class TestStateDependencyTracking:
         ctx = RenderSession(Consumer)
         render(ctx)
 
-        node_id = ctx.root_node.id
+        node_id = ctx.root_element.id
 
         # Verify dependency exists
         watcher_ids = {node.id for node in state._state_props["value"].watchers}
         assert node_id in watcher_ids
 
         # Re-render
-        ctx.mark_dirty_id(node_id)
+        ctx.dirty.mark(node_id)
         render(ctx)
 
         # Dependency should still exist (may be a different node object but same id)
@@ -487,8 +483,8 @@ class TestStateDependencyTracking:
         ctx = RenderSession(App)
         render(ctx)
 
-        name_id = ctx.root_node.child_ids[0]
-        count_id = ctx.root_node.child_ids[1]
+        name_id = ctx.root_element.child_ids[0]
+        count_id = ctx.root_element.child_ids[1]
 
         # Check name deps
         name_deps = state._state_props["name"]
@@ -526,7 +522,7 @@ class TestStateDependencyTracking:
         render(ctx)
 
         # Get the Consumer's node id
-        consumer_id = ctx.root_node.child_ids[0]
+        consumer_id = ctx.root_element.child_ids[0]
 
         # Verify consumer is tracking state
         watcher_ids = {node.id for node in state._state_props["value"].watchers}
@@ -534,7 +530,7 @@ class TestStateDependencyTracking:
 
         # Unmount Consumer by removing it
         show_consumer[0] = False
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # Force garbage collection to clean up WeakSet
@@ -563,7 +559,7 @@ class TestStateDependencyTracking:
         ctx = RenderSession(Consumer)
         render(ctx)
 
-        node_id = ctx.root_node.id
+        node_id = ctx.root_element.id
 
         # Initially tracking
         watcher_ids = {node.id for node in state._state_props["value"].watchers}
@@ -571,7 +567,7 @@ class TestStateDependencyTracking:
 
         # Stop reading state and re-render
         read_state[0] = False
-        ctx.mark_dirty_id(node_id)
+        ctx.dirty.mark(node_id)
         render(ctx)
 
         # Force garbage collection

@@ -48,12 +48,12 @@ class RenderUpdatePatch:
 
     Attributes:
         node_id: ID of the node that changed
-        props_changed: True if props changed (serialization needed)
+        props: Serialized props dict if props changed, None otherwise
         children: New child order if changed, None otherwise
     """
 
     node_id: str
-    props_changed: bool
+    props: dict[str, tp.Any] | None
     children: tuple[str, ...] | None
 
 
@@ -99,9 +99,9 @@ class PatchCollector:
             )
         elif isinstance(patch, RenderUpdatePatch):
             logger.debug(
-                "Patch: RenderUpdatePatch(id=%s, props_changed=%s, children=%s)",
+                "Patch: RenderUpdatePatch(id=%s, has_props=%s, children=%s)",
                 patch.node_id,
-                patch.props_changed,
+                patch.props is not None,
                 patch.children is not None,
             )
         elif isinstance(patch, RenderRemovePatch):
