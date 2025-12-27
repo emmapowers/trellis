@@ -173,7 +173,7 @@ class Component(ABC):
         old_node = session.elements.get(position_id)
         state = session.states.get(position_id)
         is_mounted = state is not None and state.mounted
-        is_dirty = state.dirty if state else False
+        is_dirty = position_id in session.dirty
 
         if (
             old_node is not None

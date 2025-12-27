@@ -19,7 +19,6 @@ class ElementState:
     keyed by node.id in RenderSession.state.
 
     Attributes:
-        dirty: Whether this node needs re-rendering
         mounted: Whether on_mount() has been called
         local_state: Cached Stateful instances, keyed by (class, call_index)
         state_call_count: Counter for consistent Stateful() instantiation ordering
@@ -27,7 +26,6 @@ class ElementState:
         parent_id: Parent node's ID (for context walking)
     """
 
-    dirty: bool = False
     mounted: bool = False
     local_state: dict[tuple[type, int], tp.Any] = field(default_factory=dict)
     state_call_count: int = 0

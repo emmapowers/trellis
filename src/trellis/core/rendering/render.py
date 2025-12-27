@@ -122,8 +122,7 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
 
             for node_id in dirty_ids:
                 state = session.states.get(node_id)
-                if state and state.dirty:
-                    state.dirty = False
+                if state:
                     old_node = session.elements.get(node_id)
                     if old_node:
                         # Create NEW node for re-render. This ensures the old node
@@ -205,8 +204,7 @@ def _execute_single_node(
         # Re-executing existing node
         state.parent_id = parent_id
 
-    # Clear dirty flag - we're executing now
-    state.dirty = False
+    # Clear from dirty tracker - we're executing now
     session.dirty.discard(node_id)
 
     # Store node early so get_node() works during render for dependency tracking
@@ -271,7 +269,7 @@ def _execute_tree(
 
     # REUSE CHECK: If same node object (from _place() reuse), skip execution
     # Just recurse to children in case any were marked dirty independently
-    if node is old_node and state and state.mounted and not state.dirty:
+    if node is old_node and state and state.mounted and node.id not in session.dirty:
         logger.debug("_execute_tree: reusing %s, recursing to children", node_id)
         for child_id in node.child_ids:
             _execute_tree(session, child_id, node_id)
