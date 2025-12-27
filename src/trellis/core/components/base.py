@@ -170,8 +170,8 @@ class Component(ABC):
         # 3. Same props
         # 4. Node is mounted (has active ElementState with mounted=True)
         # 5. Node is not dirty
-        old_node = session.nodes.get(position_id)
-        state = session.state.get(position_id)
+        old_node = session.elements.get(position_id)
+        state = session.states.get(position_id)
         is_mounted = state is not None and state.mounted
         is_dirty = state.dirty if state else False
 
@@ -203,7 +203,7 @@ class Component(ABC):
         )
 
         # Store node (execution happens later via _execute_tree)
-        session.nodes.store(node)
+        session.elements.store(node)
 
         # Auto-collect: add to parent node's pending children
         # Containers are also auto-collected now (execution deferred to _execute_tree)

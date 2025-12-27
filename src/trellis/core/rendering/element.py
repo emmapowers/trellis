@@ -26,7 +26,7 @@ class ElementNode:
 
     ElementNode represents component nodes in the render tree. It is mutable
     to allow in-place updates during rendering. Runtime state is stored
-    separately in ElementState (keyed by node.id in RenderSession.state).
+    separately in ElementState (keyed by node.id in RenderSession.states).
 
     Nodes can be used as context managers for container components:
 
@@ -47,7 +47,7 @@ class ElementNode:
         props: Component properties as a dictionary
         key: Optional stable identifier for reconciliation
         child_ids: IDs of child nodes. Nodes are stored flat in
-            RenderSession.nodes and accessed by ID.
+            RenderSession.elements and accessed by ID.
         id: Position-based ID assigned at creation time
     """
 
@@ -160,7 +160,7 @@ class ElementNode:
         self.child_ids = list(child_ids)
 
         # Re-store node with child_ids set (execution happens later in _execute_tree)
-        session.nodes.store(self)
+        session.elements.store(self)
 
     def __call__(self) -> None:
         """Mount this node at the current position (the "child() rule").

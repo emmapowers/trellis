@@ -30,10 +30,11 @@ class TestContainerComponent:
         ctx = RenderSession(Parent)
         render(ctx)
 
-        assert ctx.root_node is not None
+        root_node = ctx.elements.get(ctx.root_node_id)
+        assert root_node is not None
         # Parent has Column as child
-        assert len(ctx.root_node.child_ids) == 1
-        column_node = ctx.nodes.get(ctx.root_node.child_ids[0])
+        assert len(root_node.child_ids) == 1
+        column_node = ctx.elements.get(root_node.child_ids[0])
         assert column_node is not None
         assert column_node.component == Column
         # Column has two Child elements (mounted via child())
@@ -65,10 +66,12 @@ class TestContainerComponent:
         ctx = RenderSession(Parent)
         render(ctx)
 
-        column_node = ctx.nodes.get(ctx.root_node.child_ids[0])
+        root_node = ctx.elements.get(ctx.root_node_id)
+        assert root_node is not None
+        column_node = ctx.elements.get(root_node.child_ids[0])
         assert column_node is not None
         assert column_node.component.name == "Column"
-        row_node = ctx.nodes.get(column_node.child_ids[0])
+        row_node = ctx.elements.get(column_node.child_ids[0])
         assert row_node is not None
         assert row_node.component.name == "Row"
         assert len(row_node.child_ids) == 1
@@ -177,7 +180,9 @@ class TestContainerComponent:
         ctx = RenderSession(Parent)
         render(ctx)
 
-        wrapper = ctx.nodes.get(ctx.root_node.child_ids[0])
+        root_node = ctx.elements.get(ctx.root_node_id)
+        assert root_node is not None
+        wrapper = ctx.elements.get(root_node.child_ids[0])
         assert wrapper is not None
         # Only one child mounted, even though 3 were collected
         assert len(wrapper.child_ids) == 1
@@ -204,12 +209,14 @@ class TestContainerComponent:
         ctx = RenderSession(Parent)
         render(ctx)
 
-        reverse_node = ctx.nodes.get(ctx.root_node.child_ids[0])
+        root_node = ctx.elements.get(ctx.root_node_id)
+        assert root_node is not None
+        reverse_node = ctx.elements.get(root_node.child_ids[0])
         assert reverse_node is not None
         # Children should be in reverse order
-        child0 = ctx.nodes.get(reverse_node.child_ids[0])
-        child1 = ctx.nodes.get(reverse_node.child_ids[1])
-        child2 = ctx.nodes.get(reverse_node.child_ids[2])
+        child0 = ctx.elements.get(reverse_node.child_ids[0])
+        child1 = ctx.elements.get(reverse_node.child_ids[1])
+        child2 = ctx.elements.get(reverse_node.child_ids[2])
         assert child0 is not None and child0.properties["value"] == 3
         assert child1 is not None and child1.properties["value"] == 2
         assert child2 is not None and child2.properties["value"] == 1

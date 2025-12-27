@@ -10,8 +10,8 @@ This package provides the core rendering infrastructure:
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.dirty_tracker import DirtyTracker
 from trellis.core.rendering.element import ElementNode, props_equal
-from trellis.core.rendering.element_state import ElementState, StateStore
-from trellis.core.rendering.elements import NodeStore
+from trellis.core.rendering.element_state import ElementState, ElementStateStore
+from trellis.core.rendering.elements import ElementStore
 from trellis.core.rendering.frames import Frame, FrameStack
 from trellis.core.rendering.lifecycle import LifecycleTracker
 from trellis.core.rendering.patches import (
@@ -35,17 +35,17 @@ __all__ = [
     "DirtyTracker",
     "ElementNode",
     "ElementState",
+    "ElementStateStore",
+    "ElementStore",
     "Frame",
     "FrameStack",
     "LifecycleTracker",
-    "NodeStore",
     "PatchCollector",
     "RenderAddPatch",
     "RenderPatch",
     "RenderRemovePatch",
     "RenderSession",
     "RenderUpdatePatch",
-    "StateStore",
     "get_active_session",
     "is_render_active",
     "props_equal",

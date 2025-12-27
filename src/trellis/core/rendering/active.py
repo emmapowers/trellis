@@ -9,7 +9,7 @@ from __future__ import annotations
 import typing as tp
 from dataclasses import dataclass, field
 
-from trellis.core.rendering.elements import NodeStore
+from trellis.core.rendering.elements import ElementStore
 from trellis.core.rendering.frames import FrameStack
 from trellis.core.rendering.lifecycle import LifecycleTracker
 from trellis.core.rendering.patches import PatchCollector
@@ -25,18 +25,18 @@ class ActiveRender:
     Holds state that is only relevant during the render pass.
 
     Attributes:
-        frames: Stack of Frames for collecting child node IDs
+        frames: Stack of Frames for collecting child element IDs
         patches: Collector for patches generated during this render
         lifecycle: Tracker for pending mount/unmount hooks
-        old_nodes: Snapshot of nodes from before render (for diffing)
-        current_node_id: ID of the node currently being executed
+        old_elements: Snapshot of elements from before render (for diffing)
+        current_node_id: ID of the element currently being executed
         last_property_access: Last Stateful property access (for mutable/callback capture)
     """
 
     frames: FrameStack = field(default_factory=FrameStack)
     patches: PatchCollector = field(default_factory=PatchCollector)
     lifecycle: LifecycleTracker = field(default_factory=LifecycleTracker)
-    old_nodes: NodeStore = field(default_factory=NodeStore)
+    old_elements: ElementStore = field(default_factory=ElementStore)
 
     # Execution context
     current_node_id: str | None = None

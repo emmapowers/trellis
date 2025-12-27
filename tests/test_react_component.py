@@ -66,10 +66,10 @@ class TestElementNameProperty:
         ctx = RenderSession(App)
         render(ctx)
 
-        assert ctx.get_node(ctx.root_node.child_ids[0]).component.element_name == "Label"
-        assert ctx.get_node(ctx.root_node.child_ids[1]).component.element_name == "Button"
-        assert ctx.get_node(ctx.root_node.child_ids[2]).component.element_name == "Column"
-        assert ctx.get_node(ctx.root_node.child_ids[3]).component.element_name == "Row"
+        assert ctx.elements.get(ctx.root_element.child_ids[0]).component.element_name == "Label"
+        assert ctx.elements.get(ctx.root_element.child_ids[1]).component.element_name == "Button"
+        assert ctx.elements.get(ctx.root_element.child_ids[2]).component.element_name == "Column"
+        assert ctx.elements.get(ctx.root_element.child_ids[3]).component.element_name == "Row"
 
     def test_react_component_without_element_name_raises(self) -> None:
         """ReactComponentBase without _element_name raises NotImplementedError."""
@@ -154,7 +154,7 @@ class TestReactComponentBaseDecorator:
         ctx = RenderSession(App)
         render(ctx)
 
-        node = ctx.get_node(ctx.root_node.child_ids[0])
+        node = ctx.elements.get(ctx.root_element.child_ids[0])
         assert node.component.element_name == "TestWidget"
         assert dict(node.props).get("value") == 42
 
@@ -213,7 +213,7 @@ class TestReactComponentBaseSerialization:
         ctx = RenderSession(App)
         render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
         label_data = result["children"][0]
 
         # ReactComponent: type is the React component, name is Python name
@@ -230,7 +230,7 @@ class TestReactComponentBaseSerialization:
         ctx = RenderSession(MyCustomComponent)
         render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
 
         # CompositionComponent: type is generic, name is Python function name
         assert result["type"] == "CompositionComponent"
@@ -252,7 +252,7 @@ class TestReactComponentBaseSerialization:
         ctx = RenderSession(App)
         render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
 
         # Root is CompositionComponent
         assert result["type"] == "CompositionComponent"

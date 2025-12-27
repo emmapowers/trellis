@@ -173,7 +173,7 @@ def _serialize_patches(patches: list[RenderPatch], session: RenderSession) -> li
             # Only serialize props if they changed
             props = None
             if patch.props_changed:
-                node = session.nodes.get(patch.node_id)
+                node = session.elements.get(patch.node_id)
                 if node:
                     props = _serialize_node_props(node, session)
             result.append(
@@ -276,7 +276,7 @@ class MessageHandler:
         try:
             render_patches = render(self.session)
             wire_patches = _serialize_patches(render_patches, self.session)
-            node_count = len(self.session.nodes)
+            node_count = len(self.session.elements)
             logger.debug("Initial render complete, sending PatchMessage (%d nodes)", node_count)
             return PatchMessage(patches=wire_patches)
         except Exception as e:

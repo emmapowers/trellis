@@ -1,6 +1,6 @@
 """Tests for fine-grained decomposition classes.
 
-Tests for NodeStore, StateStore, DirtyTracker, FrameStack,
+Tests for ElementStore, ElementStateStore, DirtyTracker, FrameStack,
 PatchCollector, LifecycleTracker, ActiveRender, and RenderSession.
 """
 
@@ -11,10 +11,10 @@ from trellis.core.rendering.dirty_tracker import DirtyTracker
 from trellis.core.rendering.frames import Frame, FrameStack
 from trellis.core.rendering.lifecycle import LifecycleTracker
 from trellis.platforms.common.messages import AddPatch, RemovePatch, UpdatePatch
-from trellis.core.rendering.elements import NodeStore
+from trellis.core.rendering.elements import ElementStore
 from trellis.core.rendering.patches import PatchCollector
 from trellis.core.rendering.element import ElementNode
-from trellis.core.rendering.element_state import ElementState, StateStore
+from trellis.core.rendering.element_state import ElementState, ElementStateStore
 from trellis.core.rendering.session import RenderSession
 
 
@@ -52,24 +52,24 @@ def make_node(node_id: str, tree_ref=None) -> ElementNode:
 
 
 # =============================================================================
-# NodeStore Tests
+# ElementStore Tests
 # =============================================================================
 
 
-class TestNodeStore:
+class TestElementStore:
     def test_store_and_get(self):
-        store = NodeStore()
+        store = ElementStore()
         node = make_node("e1")
 
         store.store(node)
         assert store.get("e1") is node
 
     def test_get_nonexistent_returns_none(self):
-        store = NodeStore()
+        store = ElementStore()
         assert store.get("nonexistent") is None
 
     def test_remove(self):
-        store = NodeStore()
+        store = ElementStore()
         node = make_node("e1")
         store.store(node)
 
@@ -77,11 +77,11 @@ class TestNodeStore:
         assert store.get("e1") is None
 
     def test_remove_nonexistent_no_error(self):
-        store = NodeStore()
+        store = ElementStore()
         store.remove("nonexistent")  # Should not raise
 
     def test_contains(self):
-        store = NodeStore()
+        store = ElementStore()
         node = make_node("e1")
         store.store(node)
 
@@ -89,7 +89,7 @@ class TestNodeStore:
         assert "e2" not in store
 
     def test_len(self):
-        store = NodeStore()
+        store = ElementStore()
         assert len(store) == 0
 
         store.store(make_node("e1"))
@@ -99,7 +99,7 @@ class TestNodeStore:
         assert len(store) == 2
 
     def test_clear(self):
-        store = NodeStore()
+        store = ElementStore()
         store.store(make_node("e1"))
         store.store(make_node("e2"))
 
@@ -107,7 +107,7 @@ class TestNodeStore:
         assert len(store) == 0
 
     def test_clone(self):
-        store = NodeStore()
+        store = ElementStore()
         node1 = make_node("e1")
         node2 = make_node("e2")
         store.store(node1)
@@ -125,7 +125,7 @@ class TestNodeStore:
         assert cloned.get("e1") is node1
 
     def test_get_children(self):
-        store = NodeStore()
+        store = ElementStore()
         child1 = make_node("c1")
         child2 = make_node("c2")
         store.store(child1)
@@ -144,7 +144,7 @@ class TestNodeStore:
 
     def test_get_children_missing_child(self):
         """get_children skips missing children."""
-        store = NodeStore()
+        store = ElementStore()
         child1 = make_node("c1")
         store.store(child1)
 
@@ -158,7 +158,7 @@ class TestNodeStore:
         assert children[0] is child1
 
     def test_iter(self):
-        store = NodeStore()
+        store = ElementStore()
         store.store(make_node("e1"))
         store.store(make_node("e2"))
 
@@ -166,7 +166,7 @@ class TestNodeStore:
         assert set(ids) == {"e1", "e2"}
 
     def test_items(self):
-        store = NodeStore()
+        store = ElementStore()
         node1 = make_node("e1")
         node2 = make_node("e2")
         store.store(node1)
@@ -178,24 +178,24 @@ class TestNodeStore:
 
 
 # =============================================================================
-# StateStore Tests
+# ElementStateStore Tests
 # =============================================================================
 
 
-class TestStateStore:
+class TestElementStateStore:
     def test_get_nonexistent_returns_none(self):
-        store = StateStore()
+        store = ElementStateStore()
         assert store.get("e1") is None
 
     def test_set_and_get(self):
-        store = StateStore()
+        store = ElementStateStore()
         state = ElementState(dirty=True)
 
         store.set("e1", state)
         assert store.get("e1") is state
 
     def test_get_or_create_new(self):
-        store = StateStore()
+        store = ElementStateStore()
 
         state = store.get_or_create("e1")
         assert state is not None
@@ -203,7 +203,7 @@ class TestStateStore:
         assert store.get("e1") is state
 
     def test_get_or_create_existing(self):
-        store = StateStore()
+        store = ElementStateStore()
         existing = ElementState(dirty=True)
         store.set("e1", existing)
 
@@ -211,32 +211,32 @@ class TestStateStore:
         assert state is existing
 
     def test_remove(self):
-        store = StateStore()
+        store = ElementStateStore()
         store.set("e1", ElementState())
 
         store.remove("e1")
         assert store.get("e1") is None
 
     def test_remove_nonexistent_no_error(self):
-        store = StateStore()
+        store = ElementStateStore()
         store.remove("nonexistent")  # Should not raise
 
     def test_contains(self):
-        store = StateStore()
+        store = ElementStateStore()
         store.set("e1", ElementState())
 
         assert "e1" in store
         assert "e2" not in store
 
     def test_len(self):
-        store = StateStore()
+        store = ElementStateStore()
         assert len(store) == 0
 
         store.set("e1", ElementState())
         assert len(store) == 1
 
     def test_iter(self):
-        store = StateStore()
+        store = ElementStateStore()
         store.set("e1", ElementState())
         store.set("e2", ElementState())
 
@@ -572,7 +572,7 @@ class TestActiveRender:
         assert isinstance(active.frames, FrameStack)
         assert isinstance(active.patches, PatchCollector)
         assert isinstance(active.lifecycle, LifecycleTracker)
-        assert isinstance(active.old_nodes, NodeStore)
+        assert isinstance(active.old_elements, ElementStore)
         assert active.current_node_id is None
         assert active.last_property_access is None
 
@@ -633,8 +633,8 @@ class TestRenderSession:
 
         assert session.root_component is comp
         assert session.root_node_id is None
-        assert isinstance(session.nodes, NodeStore)
-        assert isinstance(session.state, StateStore)
+        assert isinstance(session.elements, ElementStore)
+        assert isinstance(session.states, ElementStateStore)
         assert isinstance(session.dirty, DirtyTracker)
         assert session.callbacks == {}
         assert session.active is None
@@ -727,11 +727,11 @@ class TestRenderSession:
 
         # Nodes
         node = make_node("e1")
-        session.nodes.store(node)
-        assert session.nodes.get("e1") is node
+        session.elements.store(node)
+        assert session.elements.get("e1") is node
 
         # State
-        state = session.state.get_or_create("e1")
+        state = session.states.get_or_create("e1")
         assert state is not None
 
         # Dirty

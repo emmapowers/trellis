@@ -1,6 +1,6 @@
-"""Node storage for the render tree.
+"""Element storage for the render tree.
 
-NodeStore provides flat storage for ElementNode objects, keyed by ID.
+ElementStore provides flat storage for ElementNode objects, keyed by ID.
 """
 
 from __future__ import annotations
@@ -10,14 +10,14 @@ import typing as tp
 if tp.TYPE_CHECKING:
     from trellis.core.rendering.element import ElementNode
 
-__all__ = ["NodeStore"]
+__all__ = ["ElementStore"]
 
 
-class NodeStore:
+class ElementStore:
     """Flat storage for ElementNode objects, keyed by ID.
 
-    Nodes are stored in a dictionary and accessed by their position-based ID.
-    This class provides a clean interface for node CRUD operations and
+    Elements are stored in a dictionary and accessed by their position-based ID.
+    This class provides a clean interface for element CRUD operations and
     supports cloning for snapshot comparisons during reconciliation.
     """
 
@@ -64,15 +64,15 @@ class NodeStore:
         """
         return [self._nodes[cid] for cid in node.child_ids if cid in self._nodes]
 
-    def clone(self) -> NodeStore:
+    def clone(self) -> ElementStore:
         """Create a shallow copy of this store.
 
-        Used to snapshot nodes before render for diff comparison.
+        Used to snapshot elements before render for diff comparison.
 
         Returns:
-            New NodeStore with same node references
+            New ElementStore with same element references
         """
-        new_store = NodeStore()
+        new_store = ElementStore()
         new_store._nodes = dict(self._nodes)
         return new_store
 

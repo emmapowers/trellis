@@ -88,7 +88,7 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
     session.render_count += 1
 
     # Create render-scoped state
-    session.active = ActiveRender(old_nodes=session.nodes.clone())
+    session.active = ActiveRender(old_elements=session.elements.clone())
     is_initial = session.root_node_id is None
     root_node: ElementNode | None = None
 
@@ -109,7 +109,7 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
             elapsed_ms = (time.perf_counter() - start_time) * 1000
             logger.debug(
                 "Initial render complete: %d nodes in %.2fms",
-                len(session.nodes),
+                len(session.elements),
                 elapsed_ms,
             )
 
@@ -121,10 +121,10 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
                 logger.debug("Rendering dirty nodes: %s", dirty_ids)
 
             for node_id in dirty_ids:
-                state = session.state.get(node_id)
+                state = session.states.get(node_id)
                 if state and state.dirty:
                     state.dirty = False
-                    old_node = session.nodes.get(node_id)
+                    old_node = session.elements.get(node_id)
                     if old_node:
                         # Create NEW node for re-render. This ensures the old node
                         # can be GC'd and removed from any WeakSets (dependency tracking).
@@ -137,14 +137,14 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
                             child_ids=[],
                             id=old_node.id,
                         )
-                        session.nodes.store(new_node)
+                        session.elements.store(new_node)
                     _execute_tree(session, node_id, state.parent_id)
 
         # Process hooks after tree is fully built
         _process_pending_hooks(session)
 
         # Build result patches
-        root_node = session.nodes.get(session.root_node_id) if session.root_node_id else None
+        root_node = session.elements.get(session.root_node_id) if session.root_node_id else None
         if is_initial and root_node is not None:
             # Initial render: single RenderAddPatch with root node
             return [
@@ -195,10 +195,10 @@ def _execute_single_node(
     )
 
     # Create ElementState if this is a new node
-    state = session.state.get(node_id)
+    state = session.states.get(node_id)
     if state is None:
         state = ElementState(parent_id=parent_id, mounted=True)
-        session.state.set(node_id, state)
+        session.states.set(node_id, state)
         # Track mount hook (called after render completes)
         session.active.lifecycle.track_mount(node_id)
     else:
@@ -210,14 +210,14 @@ def _execute_single_node(
     session.dirty.discard(node_id)
 
     # Store node early so get_node() works during render for dependency tracking
-    session.nodes.store(node)
+    session.elements.store(node)
 
     state.state_call_count = 0
 
     # Get props including children if component accepts them
     props = node.props.copy()
     if node.component._has_children_param:
-        props["children"] = session.nodes.get_children(node)
+        props["children"] = session.elements.get_children(node)
 
     # Set up execution context
     old_node_id = session.active.current_node_id
@@ -238,7 +238,7 @@ def _execute_single_node(
 
         # Update node in-place with child_ids (execution of children happens in _execute_tree)
         node.child_ids = new_child_ids
-        session.nodes.store(node)
+        session.elements.store(node)
         return node
 
     finally:
@@ -262,12 +262,12 @@ def _execute_tree(
         parent_id: Parent node's ID (for ElementState.parent_id)
     """
     assert session.active is not None
-    node = session.nodes.get(node_id)
+    node = session.elements.get(node_id)
     if node is None:
         return
 
-    old_node = session.active.old_nodes.get(node_id)
-    state = session.state.get(node_id)
+    old_node = session.active.old_elements.get(node_id)
+    state = session.states.get(node_id)
 
     # REUSE CHECK: If same node object (from _place() reuse), skip execution
     # Just recurse to children in case any were marked dirty independently
@@ -310,7 +310,7 @@ def _execute_tree(
 
         # Emit patches for added nodes
         for added_id in result.added:
-            child_node = session.nodes.get(added_id)
+            child_node = session.elements.get(added_id)
             if child_node:
                 session.active.patches.emit(
                     RenderAddPatch(
@@ -332,7 +332,7 @@ def _mount_node_tree(session: RenderSession, node_id: str) -> None:
         node_id: The ID of the node to mount
     """
     assert session.active is not None
-    state = session.state.get(node_id)
+    state = session.states.get(node_id)
     if state is None or state.mounted:
         return
 
@@ -341,7 +341,7 @@ def _mount_node_tree(session: RenderSession, node_id: str) -> None:
     session.active.lifecycle.track_mount(node_id)
 
     # Mount children
-    node = session.nodes.get(node_id)
+    node = session.elements.get(node_id)
     if node:
         for child_id in node.child_ids:
             _mount_node_tree(session, child_id)
@@ -359,12 +359,12 @@ def _unmount_node_tree(session: RenderSession, node_id: str) -> None:
         node_id: The ID of the node to unmount
     """
     assert session.active is not None
-    state = session.state.get(node_id)
+    state = session.states.get(node_id)
     if state is None or not state.mounted:
         return
 
     # Unmount children first (depth-first)
-    node = session.nodes.get(node_id)
+    node = session.elements.get(node_id)
     child_count = len(node.child_ids) if node else 0
 
     logger.debug(
@@ -386,7 +386,7 @@ def _unmount_node_tree(session: RenderSession, node_id: str) -> None:
 
     # Remove node from storage so it can be garbage collected.
     # This allows WeakSet-based dependency tracking to clean up references.
-    session.nodes.remove(node_id)
+    session.elements.remove(node_id)
 
     state.mounted = False
     session.dirty.discard(node_id)
@@ -401,7 +401,7 @@ def _call_mount_hooks(session: RenderSession, node_id: str) -> None:
         session: The RenderSession
         node_id: The node's ID
     """
-    state = session.state.get(node_id)
+    state = session.states.get(node_id)
     if state is None:
         return
 
@@ -427,7 +427,7 @@ def _call_unmount_hooks(session: RenderSession, node_id: str) -> None:
         session: The RenderSession
         node_id: The node's ID
     """
-    state = session.state.get(node_id)
+    state = session.states.get(node_id)
     if state is None:
         return
     # Get states sorted by call index, reversed
@@ -460,7 +460,7 @@ def _process_pending_hooks(session: RenderSession) -> None:
     for node_id in session.active.lifecycle.pop_unmounts():
         _call_unmount_hooks(session, node_id)
         # With component identity in IDs, we can safely remove ElementState
-        session.state.remove(node_id)
+        session.states.remove(node_id)
 
     # Process mounts
     for node_id in session.active.lifecycle.pop_mounts():
@@ -470,7 +470,7 @@ def _process_pending_hooks(session: RenderSession) -> None:
 def _emit_update_patch_if_changed(session: RenderSession, node_id: str) -> None:
     """Emit a RenderUpdatePatch if props or children changed.
 
-    Compares current node (in nodes) to old node (in old_nodes snapshot)
+    Compares current node (in nodes) to old node (in old_elements snapshot)
     and emits RenderUpdatePatch if there are differences.
 
     Args:
@@ -478,12 +478,12 @@ def _emit_update_patch_if_changed(session: RenderSession, node_id: str) -> None:
         node_id: The node's ID
     """
     assert session.active is not None
-    node = session.nodes.get(node_id)
+    node = session.elements.get(node_id)
     if not node:
         return
 
     # Look up old node from the snapshot taken at start of render
-    old_node = session.active.old_nodes.get(node_id)
+    old_node = session.active.old_elements.get(node_id)
 
     # New nodes should get AddPatch (via reconciliation), not UpdatePatch
     if not old_node:

@@ -157,7 +157,7 @@ class Stateful:
         node_id = session.current_node_id
         assert node_id is not None  # Guaranteed by is_executing() check above
 
-        state = session.state.get_or_create(node_id)
+        state = session.states.get_or_create(node_id)
         call_idx = state.state_call_count
         state.state_call_count += 1
         key = (cls, call_idx)
@@ -225,7 +225,7 @@ class Stateful:
         # Add the current ElementNode to watchers (WeakSet auto-cleans on node death)
         node_id = session.current_node_id
         if node_id is not None:
-            node = session.nodes.get(node_id)
+            node = session.elements.get(node_id)
             if node is not None:
                 state_info.watchers.add(node)
                 logger.debug(
@@ -366,7 +366,7 @@ class Stateful:
 
         node_id = session.current_node_id
         assert node_id is not None  # Guaranteed by is_executing() check above
-        state = session.state.get_or_create(node_id)
+        state = session.states.get_or_create(node_id)
         state.context[type(self)] = self
         logger.debug("Providing %s context at %s", type(self).__name__, node_id)
         return self
@@ -447,7 +447,7 @@ class Stateful:
             if node_id in visited:
                 break  # Cycle detected
             visited.add(node_id)
-            state = session.state.get(node_id)
+            state = session.states.get(node_id)
             if state is not None and cls in state.context:
                 logger.debug("Found %s at ancestor %s", cls.__name__, node_id)
                 return tp.cast("tp.Self", state.context[cls])

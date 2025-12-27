@@ -12,12 +12,13 @@ import typing as tp
 from dataclasses import dataclass, field
 
 from trellis.core.rendering.dirty_tracker import DirtyTracker
-from trellis.core.rendering.element_state import StateStore
-from trellis.core.rendering.elements import NodeStore
+from trellis.core.rendering.element_state import ElementStateStore
+from trellis.core.rendering.elements import ElementStore
 
 if tp.TYPE_CHECKING:
     from trellis.core.components.base import Component
     from trellis.core.rendering.active import ActiveRender
+    from trellis.core.rendering.element import ElementNode
 
 __all__ = [
     "RenderSession",
@@ -80,10 +81,10 @@ class RenderSession:
 
     Attributes:
         root_component: The top-level component for this session
-        root_node_id: ID of the root node (after first render)
-        nodes: Flat storage for all ElementNodes
-        state: Storage for ElementState per node
-        dirty: Tracker for dirty node IDs
+        root_node_id: ID of the root element (after first render)
+        elements: Flat storage for all ElementNodes
+        states: Storage for ElementState per element
+        dirty: Tracker for dirty element IDs
         active: Render-scoped state (None when not rendering)
         lock: RLock for thread-safe operations
     """
@@ -92,8 +93,8 @@ class RenderSession:
     root_node_id: str | None = None
 
     # Fine-grained stores
-    nodes: NodeStore = field(default_factory=NodeStore)
-    state: StateStore = field(default_factory=StateStore)
+    elements: ElementStore = field(default_factory=ElementStore)
+    states: ElementStateStore = field(default_factory=ElementStateStore)
     dirty: DirtyTracker = field(default_factory=DirtyTracker)
 
     # Render-scoped state (None when not rendering)
@@ -104,6 +105,17 @@ class RenderSession:
 
     # Render count - incremented at the start of each render pass
     render_count: int = 0
+
+    @property
+    def root_element(self) -> tp.Optional[ElementNode]:
+        """Get the root element node for this session.
+
+        Returns:
+            The root ElementNode, or None if not yet rendered
+        """
+        if self.root_node_id is None:
+            return None
+        return self.elements.get(self.root_node_id)
 
     def is_rendering(self) -> bool:
         """Check if currently inside a render pass.
@@ -145,7 +157,7 @@ class RenderSession:
         Returns:
             The callable if found, None otherwise
         """
-        node = self.nodes.get(node_id)
+        node = self.elements.get(node_id)
         if node is None:
             return None
 

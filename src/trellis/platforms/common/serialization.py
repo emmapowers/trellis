@@ -129,7 +129,7 @@ def serialize_node(node: ElementNode, session: RenderSession) -> dict[str, tp.An
     # Get children from flat storage and serialize them
     children = []
     for child_id in node.child_ids:
-        child_node = session.nodes.get(child_id)
+        child_node = session.elements.get(child_id)
         if child_node:
             children.append(serialize_node(child_node, session))
 

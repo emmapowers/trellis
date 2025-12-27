@@ -110,7 +110,7 @@ class _TrackedMixin:
         node_id = session.active.current_node_id
         assert node_id is not None  # Guaranteed by is_active() check above
 
-        node = session.nodes.get(node_id)
+        node = session.elements.get(node_id)
         if node is None:
             return
 

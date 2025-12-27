@@ -40,8 +40,8 @@ class TestCallbackInvocation:
         render(ctx)
 
         # Get callback ID from serialized tree
-        assert ctx.root_node is not None
-        tree = serialize_node(ctx.root_node, ctx)
+        assert ctx.root_element is not None
+        tree = serialize_node(ctx.root_element, ctx)
         button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
@@ -66,8 +66,8 @@ class TestCallbackInvocation:
         ctx = RenderSession(App)
         render(ctx)
 
-        assert ctx.root_node is not None
-        tree = serialize_node(ctx.root_node, ctx)
+        assert ctx.root_element is not None
+        tree = serialize_node(ctx.root_element, ctx)
         button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
@@ -108,8 +108,8 @@ class TestStateUpdateOnEvent:
         render(ctx)
 
         # Get initial state
-        assert ctx.root_node is not None
-        tree = serialize_node(ctx.root_node, ctx)
+        assert ctx.root_element is not None
+        tree = serialize_node(ctx.root_element, ctx)
         label = tree["children"][0]
         assert label["props"]["text"] == "0"
 
@@ -125,7 +125,7 @@ class TestStateUpdateOnEvent:
         render(ctx)
 
         # Verify state updated
-        tree = serialize_node(ctx.root_node, ctx)
+        tree = serialize_node(ctx.root_element, ctx)
         label = tree["children"][0]
         assert label["props"]["text"] == "1"
 
@@ -153,11 +153,11 @@ class TestStateUpdateOnEvent:
         ctx = RenderSession(Counter)
         render(ctx)
 
-        assert ctx.root_node is not None
+        assert ctx.root_element is not None
 
         # Increment twice
         for _ in range(2):
-            tree = serialize_node(ctx.root_node, ctx)
+            tree = serialize_node(ctx.root_element, ctx)
             inc_button = tree["children"][2]
             cb_id = inc_button["props"]["on_click"]["__callback__"]
             callback = ctx.get_callback(cb_id)
@@ -166,12 +166,12 @@ class TestStateUpdateOnEvent:
             ctx.clear_callbacks()
             render(ctx)
 
-        tree = serialize_node(ctx.root_node, ctx)
+        tree = serialize_node(ctx.root_element, ctx)
         label = tree["children"][1]
         assert label["props"]["text"] == "7"
 
         # Decrement once
-        tree = serialize_node(ctx.root_node, ctx)
+        tree = serialize_node(ctx.root_element, ctx)
         dec_button = tree["children"][0]
         cb_id = dec_button["props"]["on_click"]["__callback__"]
         callback = ctx.get_callback(cb_id)
@@ -180,7 +180,7 @@ class TestStateUpdateOnEvent:
         ctx.clear_callbacks()
         render(ctx)
 
-        tree = serialize_node(ctx.root_node, ctx)
+        tree = serialize_node(ctx.root_element, ctx)
         label = tree["children"][1]
         assert label["props"]["text"] == "6"
 
@@ -208,8 +208,8 @@ class TestDisabledStateOnBoundary:
         ctx = RenderSession(Counter)
         render(ctx)
 
-        assert ctx.root_node is not None
-        tree = serialize_node(ctx.root_node, ctx)
+        assert ctx.root_element is not None
+        tree = serialize_node(ctx.root_element, ctx)
         dec_button = tree["children"][0]
 
         # Button should be disabled at count=1
@@ -235,8 +235,8 @@ class TestDisabledStateOnBoundary:
         ctx = RenderSession(Counter)
         render(ctx)
 
-        assert ctx.root_node is not None
-        tree = serialize_node(ctx.root_node, ctx)
+        assert ctx.root_element is not None
+        tree = serialize_node(ctx.root_element, ctx)
         inc_button = tree["children"][1]
 
         # Button should be disabled at count=10
@@ -266,8 +266,8 @@ class TestDisabledStateOnBoundary:
         ctx = RenderSession(Counter)
         render(ctx)
 
-        assert ctx.root_node is not None
-        tree = serialize_node(ctx.root_node, ctx)
+        assert ctx.root_element is not None
+        tree = serialize_node(ctx.root_element, ctx)
         dec_button = tree["children"][0]
         inc_button = tree["children"][2]
 
@@ -295,10 +295,10 @@ class TestDisabledStateOnBoundary:
         ctx = RenderSession(Counter)
         render(ctx)
 
-        assert ctx.root_node is not None
+        assert ctx.root_element is not None
 
         # Initially enabled at count=2
-        tree = serialize_node(ctx.root_node, ctx)
+        tree = serialize_node(ctx.root_element, ctx)
         dec_button = tree["children"][0]
         assert dec_button["props"]["disabled"] is False
 
@@ -311,7 +311,7 @@ class TestDisabledStateOnBoundary:
         render(ctx)
 
         # Now should be disabled at count=1
-        tree = serialize_node(ctx.root_node, ctx)
+        tree = serialize_node(ctx.root_element, ctx)
         dec_button = tree["children"][0]
         assert dec_button["props"]["disabled"] is True
         label = tree["children"][1]
@@ -548,8 +548,8 @@ class TestAsyncCallbackExecution:
         ctx = RenderSession(App)
         render(ctx)
 
-        assert ctx.root_node is not None
-        tree = serialize_node(ctx.root_node, ctx)
+        assert ctx.root_element is not None
+        tree = serialize_node(ctx.root_element, ctx)
         button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
@@ -578,8 +578,8 @@ class TestCallbackErrorHandling:
         ctx = RenderSession(App)
         render(ctx)
 
-        assert ctx.root_node is not None
-        tree = serialize_node(ctx.root_node, ctx)
+        assert ctx.root_element is not None
+        tree = serialize_node(ctx.root_element, ctx)
         button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
@@ -610,8 +610,8 @@ class TestCallbackErrorHandling:
         ctx = RenderSession(App)
         render(ctx)
 
-        assert ctx.root_node is not None
-        tree = serialize_node(ctx.root_node, ctx)
+        assert ctx.root_element is not None
+        tree = serialize_node(ctx.root_element, ctx)
         btn_a = tree["children"][0]
         btn_b = tree["children"][1]
         cb_id_a = btn_a["props"]["on_click"]["__callback__"]

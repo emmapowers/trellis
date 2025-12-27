@@ -1,6 +1,6 @@
 """State storage for element nodes.
 
-StateStore provides storage for ElementState objects, keyed by node ID.
+ElementStateStore provides storage for ElementState objects, keyed by element ID.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 import typing as tp
 from dataclasses import dataclass, field
 
-__all__ = ["StateStore"]
+__all__ = ["ElementStateStore"]
 
 
 @dataclass
@@ -35,10 +35,10 @@ class ElementState:
     parent_id: str | None = None
 
 
-class StateStore:
-    """Storage for ElementState objects, keyed by node ID.
+class ElementStateStore:
+    """Storage for ElementState objects, keyed by element ID.
 
-    ElementState holds mutable runtime state for each node (dirty flag,
+    ElementState holds mutable runtime state for each element (dirty flag,
     local_state, context, etc.). This class provides a clean interface
     for state CRUD operations.
     """

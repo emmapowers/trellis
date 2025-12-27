@@ -23,9 +23,9 @@ class TestCompositionComponent:
         ctx = RenderSession(Parent)
         render(ctx)
 
-        assert ctx.root_node is not None
-        assert isinstance(ctx.root_node, ElementNode)
-        assert ctx.root_node.component == Parent
+        assert ctx.root_element is not None
+        assert isinstance(ctx.root_element, ElementNode)
+        assert ctx.root_element.component == Parent
 
     def test_nested_components(self) -> None:
         @component
@@ -39,9 +39,9 @@ class TestCompositionComponent:
         ctx = RenderSession(Parent)
         render(ctx)
 
-        assert ctx.root_node is not None
-        assert len(ctx.root_node.child_ids) == 1
-        child = ctx.get_node(ctx.root_node.child_ids[0])
+        assert ctx.root_element is not None
+        assert len(ctx.root_element.child_ids) == 1
+        child = ctx.elements.get(ctx.root_element.child_ids[0])
         assert child is not None
         assert child.component == Child
 
@@ -76,7 +76,7 @@ class TestCompositionComponent:
         ctx = RenderSession(Parent)
         render(ctx)
 
-        assert len(ctx.root_node.child_ids) == 3
+        assert len(ctx.root_element.child_ids) == 3
 
     def test_implicit_child_collection(self) -> None:
         """Elements created in component body are auto-collected as children."""
@@ -94,10 +94,10 @@ class TestCompositionComponent:
         ctx = RenderSession(List)
         render(ctx)
 
-        assert len(ctx.root_node.child_ids) == 3
-        child0 = ctx.get_node(ctx.root_node.child_ids[0])
-        child1 = ctx.get_node(ctx.root_node.child_ids[1])
-        child2 = ctx.get_node(ctx.root_node.child_ids[2])
+        assert len(ctx.root_element.child_ids) == 3
+        child0 = ctx.elements.get(ctx.root_element.child_ids[0])
+        child1 = ctx.elements.get(ctx.root_element.child_ids[1])
+        child2 = ctx.elements.get(ctx.root_element.child_ids[2])
         assert child0 is not None and child0.properties["label"] == "a"
         assert child1 is not None and child1.properties["label"] == "b"
         assert child2 is not None and child2.properties["label"] == "c"
@@ -119,11 +119,11 @@ class TestCompositionComponent:
 
         ctx = RenderSession(ConditionalTrue)
         render(ctx)
-        assert len(ctx.root_node.child_ids) == 1
+        assert len(ctx.root_element.child_ids) == 1
 
         ctx2 = RenderSession(ConditionalFalse)
         render(ctx2)
-        assert len(ctx2.root_node.child_ids) == 0
+        assert len(ctx2.root_element.child_ids) == 0
 
     def test_loop_children(self) -> None:
         """Elements created in loops are collected."""
@@ -140,9 +140,9 @@ class TestCompositionComponent:
         ctx = RenderSession(List)
         render(ctx)
 
-        assert len(ctx.root_node.child_ids) == 5
-        for i, child_id in enumerate(ctx.root_node.child_ids):
-            child = ctx.get_node(child_id)
+        assert len(ctx.root_element.child_ids) == 5
+        for i, child_id in enumerate(ctx.root_element.child_ids):
+            child = ctx.elements.get(child_id)
             assert child is not None
             assert child.properties["value"] == i
 
@@ -163,9 +163,9 @@ class TestCompositionComponent:
         render(ctx)
 
         # First two should have None key
-        child0 = ctx.get_node(ctx.root_node.child_ids[0])
-        child1 = ctx.get_node(ctx.root_node.child_ids[1])
-        child2 = ctx.get_node(ctx.root_node.child_ids[2])
+        child0 = ctx.elements.get(ctx.root_element.child_ids[0])
+        child1 = ctx.elements.get(ctx.root_element.child_ids[1])
+        child2 = ctx.elements.get(ctx.root_element.child_ids[2])
         assert child0 is not None and child0.key is None
         assert child1 is not None and child1.key is None
         # Third should have explicit key

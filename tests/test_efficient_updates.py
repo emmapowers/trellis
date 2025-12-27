@@ -179,7 +179,7 @@ class TestPropsUnchangedOptimization:
         assert render_counts == {"parent": 1, "child": 1}
 
         # Re-render parent - child should NOT re-execute since props unchanged
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.mark_dirty_id(ctx.root_element.id)
         render(ctx)
 
         assert render_counts == {"parent": 2, "child": 1}  # Child still 1!
@@ -205,7 +205,7 @@ class TestPropsUnchangedOptimization:
 
         # Change props
         value_ref[0] = 1
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.mark_dirty_id(ctx.root_element.id)
         render(ctx)
 
         assert render_counts == {"parent": 2, "child": 2}  # Child re-executed
@@ -246,7 +246,7 @@ class TestPropsUnchangedOptimization:
         }
 
         # Re-render only root - nothing else should change
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.mark_dirty_id(ctx.root_element.id)
         render(ctx)
 
         # Only root re-executes since all children have unchanged props
@@ -282,7 +282,7 @@ class TestDirtyMarkingBehavior:
         assert render_counts == {"parent": 1, "child1": 1, "child2": 1}
 
         # Mark only child1 dirty
-        child1_node = ctx.get_node(ctx.root_node.child_ids[0])
+        child1_node = ctx.elements.get(ctx.root_element.child_ids[0])
         ctx.mark_dirty_id(child1_node.id)
         render(ctx)
 
@@ -308,9 +308,9 @@ class TestDirtyMarkingBehavior:
         render_counts["child"] = 0
 
         # Mark both dirty (child first to test that order doesn't matter)
-        child_node = ctx.get_node(ctx.root_node.child_ids[0])
+        child_node = ctx.elements.get(ctx.root_element.child_ids[0])
         ctx.mark_dirty_id(child_node.id)
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.mark_dirty_id(ctx.root_element.id)
 
         render(ctx)
 
@@ -346,7 +346,7 @@ class TestDirtyMarkingBehavior:
 
         # Mark parent dirty - child will be re-rendered as part of parent
         # But child's props unchanged so it should be skipped
-        ctx.mark_dirty_id(ctx.root_node.id)
+        ctx.mark_dirty_id(ctx.root_element.id)
         render(ctx)
 
         assert render_counts == {"parent": 2, "child": 1}
