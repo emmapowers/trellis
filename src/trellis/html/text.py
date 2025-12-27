@@ -52,7 +52,7 @@ class TextNode(Component):
         """Special marker for text nodes."""
         return "__text__"
 
-    def render(self, /, **props: tp.Any) -> None:
+    def execute(self, /, **props: tp.Any) -> None:
         """Text nodes are leaf nodes - no rendering needed."""
         pass
 

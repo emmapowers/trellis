@@ -33,11 +33,11 @@ import time
 from dataclasses import replace as dataclass_replace
 
 from trellis.core.active_render import ActiveRender
-from trellis.core.element_node import ElementNode, props_equal
+from trellis.core.element_node import ElementNode, props_equal, unfreeze_props
 
 # Import shared types from base module to avoid circular imports
 from trellis.core.element_state import ElementState
-from trellis.core.reconcile import ReconcileResult, reconcile_children
+from trellis.core.reconcile import reconcile_children
 from trellis.core.render_patches import (
     RenderAddPatch,
     RenderPatch,
@@ -52,7 +52,6 @@ from trellis.core.session import (
 from trellis.utils.logger import logger
 
 __all__ = [
-    "execute_node",
     "render",
 ]
 
@@ -97,12 +96,15 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
         set_active_session(session)
 
         if is_initial:
-            # Initial render - eager execution builds entire tree
+            # Initial render - create root node (no execution yet)
             start_time = time.perf_counter()
             logger.debug("Initial render starting (root: %s)", session.root_component.name)
 
             root_node = session.root_component()
             session.root_node_id = root_node.id
+
+            # Execute the entire tree depth-first
+            _execute_tree(session, root_node.id, None)
 
             elapsed_ms = (time.perf_counter() - start_time) * 1000
             logger.debug(
@@ -111,8 +113,7 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
                 elapsed_ms,
             )
 
-        # Process any dirty nodes (handles incremental re-renders,
-        # and any nodes marked dirty during initial render)
+        # Process any dirty nodes using _execute_tree
         while session.dirty.has_dirty():
             dirty_ids = session.dirty.pop_all()
 
@@ -123,7 +124,7 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
                 state = session.state.get(node_id)
                 if state and state.dirty:
                     state.dirty = False
-                    _render_single_node(session, node_id)
+                    _execute_tree(session, node_id, state.parent_id)
 
         # Process hooks after tree is fully built
         _process_pending_hooks(session)
@@ -151,58 +152,20 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
         session.active = None
 
 
-def _render_single_node(session: RenderSession, node_id: str) -> None:
-    """Re-render a single dirty node by ID.
-
-    Uses eager execution to re-render the node. Emits patches for
-    any changes during incremental render.
-
-    Args:
-        session: The RenderSession
-        node_id: The node ID to re-render
-    """
-    # Get current node (will be re-executed)
-    current_node = session.nodes.get(node_id)
-    if current_node is None:
-        return
-
-    # Get state
-    state = session.state.get(node_id)
-    if state is None:
-        return
-    parent_id = state.parent_id
-
-    logger.debug("Re-rendering node %s (%s)", node_id, current_node.component.name)
-
-    # Get old child IDs from snapshot for reconciliation
-    assert session.active is not None
-    old_node = session.active.old_nodes.get(node_id)
-    old_child_ids = list(old_node.child_ids) if old_node and old_node.child_ids else None
-
-    # Re-execute using eager execution
-    # _eagerexecute_node handles state reset and child reconciliation
-    execute_node(session, current_node, parent_id, old_child_ids=old_child_ids)
-
-    # Emit UpdatePatch if props or children changed (for incremental render)
-    _emit_update_patch_if_changed(session, node_id)
-
-
-def execute_node(
+def _execute_single_node(
     session: RenderSession,
     node: ElementNode,
     parent_id: str | None,
-    old_child_ids: list[str] | None = None,
 ) -> ElementNode:
-    """Execute a component immediately during placement (eager execution).
+    """Execute a single node's execute() and collect its children.
 
-    This is called from Component._place() when a node cannot be reused.
-    It combines mounting and execution in a single operation.
+    This is the new execution model where execution is separated from tree traversal.
+    Called by _execute_tree() for each node that needs execution.
 
     Args:
         session: The RenderSession
         node: The node to execute (must have id assigned)
         parent_id: Parent node's ID
-        old_child_ids: Previous child IDs to reconcile against (None for new node)
 
     Returns:
         Node with child_ids populated from execution, stored in nodes
@@ -211,7 +174,7 @@ def execute_node(
     node_id = node.id
 
     logger.debug(
-        "Executing %s (%s), parent=%s",
+        "Executing (single) %s (%s), parent=%s",
         node_id,
         node.component.name,
         parent_id,
@@ -228,7 +191,7 @@ def execute_node(
         # Re-executing existing node
         state.parent_id = parent_id
 
-    # Clear dirty flag - we're executing now, no need to process again
+    # Clear dirty flag - we're executing now
     state.dirty = False
     session.dirty.discard(node_id)
 
@@ -236,11 +199,7 @@ def execute_node(
     session.nodes.store(node)
 
     # Keep node alive for WeakSet references registered during render.
-    # After render, dataclass_replace creates a new result node, but the
-    # WeakSet still references this original node. Without this reference,
-    # the node would be GC'd and removed from the WeakSet.
     state._render_node = node
-
     state.state_call_count = 0
 
     # Get props including children if component accepts them
@@ -254,57 +213,100 @@ def execute_node(
 
     # Push a frame for child IDs created during execution
     session.active.frames.push(parent_id=node_id)
-    frame_popped = False
 
     try:
-        # Render the component (creates child nodes via component calls)
-        node.component.render(**props)
+        # Execute the component - children are created via _place() but NOT executed yet
+        node.component.execute(**props)
 
-        # Get child IDs created during execution
-        new_child_ids = session.active.frames.pop()
-        frame_popped = True
+        # Get child IDs from current frame before popping
+        frame = session.active.frames.current()
+        new_child_ids = list(frame.child_ids) if frame else []
 
-        logger.debug("Execution produced %d children", len(new_child_ids))
+        logger.debug("Execution (single) produced %d children", len(new_child_ids))
 
-        # Reconcile or mount children
-        if new_child_ids:
-            if old_child_ids:
-                logger.debug(
-                    "Reconciling children for %s: old=%s, new=%s",
-                    node.component.name,
-                    [cid.split("/")[-1] for cid in old_child_ids],
-                    [cid.split("/")[-1] for cid in new_child_ids],
-                )
-                # Reconcile with old children
-                reconcile_result = reconcile_children(old_child_ids, new_child_ids)
-                final_child_ids = process_reconcile_result(session, reconcile_result, node_id)
-            else:
-                # All new children - already executed during creation
-                final_child_ids = new_child_ids
-
-            result = dataclass_replace(node, child_ids=tuple(final_child_ids))
-        else:
-            # No children - unmount any old children
-            if old_child_ids:
-                for child_id in old_child_ids:
-                    _unmount_node_tree(session, child_id)
-            result = dataclass_replace(node, child_ids=())
-
-        # Store the executed node
+        # Return node with child_ids (execution of children happens in _execute_tree)
+        result = dataclass_replace(node, child_ids=tuple(new_child_ids))
         session.nodes.store(result)
-
-        # Don't update previous state here - let the caller handle it
-        # after emitting patches (in _render_single_node)
-
         return result
 
-    except BaseException:
-        if not frame_popped:
-            session.active.frames.pop()
-        raise
-
     finally:
+        session.active.frames.pop()
         session.active.current_node_id = old_node_id
+
+
+def _execute_tree(
+    session: RenderSession,
+    node_id: str,
+    parent_id: str | None,
+) -> None:
+    """Execute a node and recursively execute its children.
+
+    This drives all execution after nodes are created by _place()/__exit__().
+    Handles reconciliation at the tree level rather than per-node.
+
+    Args:
+        session: The RenderSession
+        node_id: The ID of the node to execute
+        parent_id: Parent node's ID (for ElementState.parent_id)
+    """
+    assert session.active is not None
+    node = session.nodes.get(node_id)
+    if node is None:
+        return
+
+    old_node = session.active.old_nodes.get(node_id)
+    state = session.state.get(node_id)
+
+    # REUSE CHECK: If same node object (from _place() reuse), skip execution
+    # Just recurse to children in case any were marked dirty independently
+    if node is old_node and state and state.mounted and not state.dirty:
+        logger.debug("_execute_tree: reusing %s, recursing to children", node_id)
+        for child_id in node.child_ids:
+            _execute_tree(session, child_id, node_id)
+        return
+
+    # Get old children for reconciliation
+    old_child_ids = list(old_node.child_ids) if old_node else []
+
+    # Execute this node
+    executed_node = _execute_single_node(session, node, parent_id)
+    new_child_ids = list(executed_node.child_ids)
+
+    # Emit UpdatePatch if props or children changed (for incremental re-renders)
+    _emit_update_patch_if_changed(session, node_id)
+
+    # Reconcile children
+    if new_child_ids or old_child_ids:
+        result = reconcile_children(old_child_ids, new_child_ids)
+
+        logger.debug(
+            "_execute_tree reconcile for %s: added=%s, removed=%s, matched=%s",
+            node_id,
+            [cid.split("/")[-1] for cid in result.added] if result.added else [],
+            [cid.split("/")[-1] for cid in result.removed] if result.removed else [],
+            [cid.split("/")[-1] for cid in result.matched] if result.matched else [],
+        )
+
+        # Process removals first
+        for removed_id in result.removed:
+            session.active.patches.emit(RenderRemovePatch(node_id=removed_id))
+            _unmount_node_tree(session, removed_id)
+
+        # Execute children (added and matched)
+        for child_id in result.child_order:
+            _execute_tree(session, child_id, node_id)
+
+        # Emit patches for added nodes
+        for added_id in result.added:
+            child_node = session.nodes.get(added_id)
+            if child_node:
+                session.active.patches.emit(
+                    RenderAddPatch(
+                        parent_id=node_id,
+                        children=tuple(result.child_order),
+                        node=child_node,
+                    )
+                )
 
 
 def _mount_node_tree(session: RenderSession, node_id: str) -> None:
@@ -367,8 +369,8 @@ def _unmount_node_tree(session: RenderSession, node_id: str) -> None:
     # State cleanup is deferred to _process_pending_hooks so hooks can access local_state
     session.active.lifecycle.track_unmount(node_id)
 
-    # Note: RemovePatch is emitted in process_reconcile_result before calling
-    # unmount_node_tree, so we don't need to track removed IDs here.
+    # Note: RemovePatch is emitted in _execute_tree before calling
+    # _unmount_node_tree, so we don't need to track removed IDs here.
 
     state.mounted = False
     session.dirty.discard(node_id)
@@ -486,163 +488,3 @@ def _emit_update_patch_if_changed(session: RenderSession, node_id: str) -> None:
                 children=node.child_ids if children_changed else None,
             )
         )
-
-
-def process_reconcile_result(
-    session: RenderSession,
-    result: ReconcileResult,
-    parent_id: str,
-) -> list[str]:
-    """Process a ReconcileResult and apply side effects.
-
-    Interprets the ReconcileResult from the pure reconciler and performs:
-    - Unmounting removed nodes (emits RenderRemovePatch)
-    - Mounting added nodes (emits RenderAddPatch)
-    - Emitting RenderUpdatePatch for matched nodes with changed props
-
-    Args:
-        session: The RenderSession
-        result: The ReconcileResult from reconcile_children()
-        parent_id: The parent node's ID
-
-    Returns:
-        Final list of child IDs after reconciliation
-    """
-    assert session.active is not None
-    logger.debug(
-        "Processing reconcile: added=%s, removed=%s, matched=%s",
-        [cid.split("/")[-1] for cid in result.added] if result.added else [],
-        [cid.split("/")[-1] for cid in result.removed] if result.removed else [],
-        [cid.split("/")[-1] for cid in result.matched] if result.matched else [],
-    )
-
-    # 1. REMOVE first (cleanup before new state)
-    for node_id in result.removed:
-        logger.debug("Emitting RenderRemovePatch for %s", node_id.split("/")[-1])
-        session.active.patches.emit(RenderRemovePatch(node_id=node_id))
-        _unmount_node_tree(session, node_id)
-
-    # 2. ADD new nodes (already executed, just emit patches)
-    for node_id in result.added:
-        node = session.nodes.get(node_id)
-        if node:
-            logger.debug(
-                "Emitting RenderAddPatch for %s (parent=%s)",
-                node_id.split("/")[-1],
-                parent_id.split("/")[-1] if parent_id else None,
-            )
-            state = session.state.get(node_id)
-            if state is None:
-                state = ElementState(parent_id=parent_id, mounted=True)
-                session.state.set(node_id, state)
-                session.active.lifecycle.track_mount(node_id)
-
-            session.active.patches.emit(
-                RenderAddPatch(
-                    parent_id=parent_id,
-                    children=tuple(result.child_order),
-                    node=node,
-                )
-            )
-
-    # 3. MATCHED - emit patches for any prop/children changes
-    for node_id in result.matched:
-        _emit_update_patch_if_changed(session, node_id)
-
-    return result.child_order
-
-
-def reconcile_node(
-    old_node: ElementNode | None,
-    new_node: ElementNode,
-    parent_id: str | None,
-    session: RenderSession,
-    *,
-    call_hooks: bool = True,
-) -> ElementNode:
-    """Reconcile an old node with a new node.
-
-    With position-based IDs, the new node already has its ID assigned based on
-    tree position. Matching is now by ID, not by component + key.
-
-    This function decides whether to:
-    - Create a new node (if old_node is None or component changed at same position)
-    - Skip execution (if props unchanged and not dirty)
-    - Re-execute (if props changed or dirty)
-
-    Args:
-        old_node: Existing node to reconcile against, or None for new mount
-        new_node: The new node describing what to render (already has position-based ID)
-        parent_id: Parent node's ID (for ElementState.parent_id)
-        session: The render session
-        call_hooks: Whether to call mount hooks. Set False for recursive calls.
-
-    Returns:
-        The reconciled node (also stored in session._nodes)
-    """
-    node_id = new_node.id
-
-    # Case 1: No old node - mount new
-    if old_node is None:
-        return execute_node(session, new_node, parent_id)
-
-    # With position-based IDs, old and new nodes at same position have same ID
-    # If IDs don't match, that's a bug in caller - they should use ID for lookup
-    assert (
-        old_node.id == new_node.id
-    ), f"reconcile_node called with mismatched IDs: old={old_node.id}, new={new_node.id}"
-
-    # Case 2: Component changed at same position - unmount old, mount new
-    if old_node.component != new_node.component:
-        logger.debug(
-            "reconcile_node %s: component changed %s → %s, remounting",
-            node_id,
-            old_node.component.name,
-            new_node.component.name,
-        )
-        _unmount_node_tree(session, old_node.id)
-        return execute_node(session, new_node, parent_id)
-
-    # Check if this node has been mounted before (has ElementState)
-    # With position-based IDs, nodes created in `with` blocks have IDs but
-    # haven't been mounted yet - they need to go through execute_node
-    existing_state = session.state.get(node_id)
-    if existing_state is None:
-        # First time seeing this node - mount it
-        return execute_node(session, new_node, parent_id)
-
-    # Case 3: Same component - check if we can skip execution
-    if old_node.props == new_node.props and not existing_state.dirty:
-        logger.debug("reconcile_node %s: skipping (props unchanged, not dirty)", node_id)
-        # Props unchanged and not dirty - skip execution entirely!
-        # However, we must reconcile with-block child_ids from the parent's execution.
-        # These appear on new_node.child_ids when a parent re-renders and produces
-        # nested with-block descriptors (e.g., `with Outer(): with Inner(): Leaf()`).
-        # Even though this node's props are unchanged, grandchildren may have new props.
-        if new_node.child_ids:
-            reconcile_result = reconcile_children(
-                list(old_node.child_ids), list(new_node.child_ids)
-            )
-            new_child_ids = process_reconcile_result(session, reconcile_result, node_id)
-            result = dataclass_replace(new_node, child_ids=tuple(new_child_ids))
-            session.nodes.store(result)
-            return result
-        # Preserve old child_ids if new_node has none (it's a descriptor, not executed)
-        result = (
-            dataclass_replace(new_node, child_ids=old_node.child_ids)
-            if old_node.child_ids
-            else new_node
-        )
-        session.nodes.store(result)
-        return result
-
-    # Case 4: Props changed or dirty - mark dirty for later rendering
-    # Keep old child_ids - they'll be reconciled when this node is rendered
-    logger.debug(
-        "reconcile_node %s: marking dirty (props changed or dirty flag)",
-        node_id,
-    )
-    session.dirty.mark(node_id)
-    result = dataclass_replace(new_node, child_ids=old_node.child_ids)
-    session.nodes.store(result)
-    return result

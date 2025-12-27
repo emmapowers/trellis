@@ -76,7 +76,7 @@ class HtmlElement(Component):
             raise NotImplementedError(f"{self.__class__.__name__} must set _tag class attribute")
         return self.__class__._tag
 
-    def render(self, /, **props: tp.Any) -> None:
+    def execute(self, /, **props: tp.Any) -> None:
         """Render this element.
 
         For leaf elements (no children), this is a no-op.

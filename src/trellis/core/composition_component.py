@@ -104,7 +104,7 @@ class CompositionComponent(Component):
         """All CompositionComponents use the same wrapper component."""
         return "CompositionComponent"
 
-    def render(self, /, **props: tp.Any) -> None:
+    def execute(self, /, **props: tp.Any) -> None:
         """Render this component by calling the render function.
 
         For container components, `props['children']` contains a list of

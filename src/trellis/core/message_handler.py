@@ -34,6 +34,7 @@ from trellis.core.render_patches import (
     RenderRemovePatch,
     RenderUpdatePatch,
 )
+from trellis.core.rendering import render
 from trellis.core.serialization import _serialize_node_props, serialize_node
 from trellis.core.session import RenderSession
 from trellis.html.events import get_event_class

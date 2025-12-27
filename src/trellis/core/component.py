@@ -36,9 +36,6 @@ from abc import ABC, abstractmethod
 from enum import StrEnum
 
 from trellis.core.element_node import ElementNode, freeze_props
-from trellis.core.rendering import (
-    execute_node,
-)
 from trellis.core.session import get_active_session
 from trellis.utils.logger import logger
 
@@ -210,27 +207,15 @@ class Component(ABC):
         frame = session.active.frames.current()
         parent_id = frame.parent_id if frame else None
 
-        # EAGER EXECUTION for non-container components
-        # Container components defer execution to __exit__ after children collected
-        if not self._has_children_param:
-            # Get old child_ids for reconciliation (if re-executing existing node)
-            old_child_ids = list(old_node.child_ids) if old_node else None
-
-            # Execute the component immediately
-            executed_node = execute_node(session, node, parent_id, old_child_ids=old_child_ids)
-
-            # Auto-collect: add to parent node's pending children
-            if session.active.frames.has_active():
-                session.active.frames.add_child(executed_node.id)
-                object.__setattr__(executed_node, "_auto_collected", True)
-
-            return executed_node
-
-        # Container component - defer execution to __exit__
-        # Store the node but don't execute yet (needs children from with block)
+        # Store node (execution happens later via _execute_tree)
         session.nodes.store(node)
 
-        # Don't auto-collect containers - they're added in __exit__
+        # Auto-collect: add to parent node's pending children
+        # Containers are also auto-collected now (execution deferred to _execute_tree)
+        if session.active.frames.has_active():
+            session.active.frames.add_child(node.id)
+            object.__setattr__(node, "_auto_collected", True)
+
         return node
 
     def __call__(self, /, **props: tp.Any) -> ElementNode:
@@ -247,35 +232,5 @@ class Component(ABC):
         return self._place(**props)
 
     @abstractmethod
-    def render(self, /, **props: tp.Any) -> None:
-        """Render this component to produce child nodes.
-
-        Called by RenderSession when the component needs to render
-        (new mount, props changed, or marked dirty).
-
-        During rendering, the component should create child components by
-        calling them (e.g., `Text("Hello")`), which creates nodes that
-        are collected and reconciled after this method returns.
-
-        For container components (those with a `children` parameter), the
-        `children` prop contains a list of ElementNodes. The component
-        should call `child()` on each to mount them at the desired location.
-
-        Args:
-            **props: The properties passed to this component invocation.
-                     For containers, includes `children: list[ElementNode]`.
-
-        Example:
-            ```python
-            def render(self, **props) -> None:
-                # Simple component - just create children
-                Text(f"Count: {props['count']}")
-                Button(text="Increment", on_click=props['on_increment'])
-
-            # Container component
-            def render(self, children: list, **props) -> None:
-                for child_node in children:
-                    child_node()  # Mount each child
-            ```
-        """
+    def execute(self, /, **props: tp.Any) -> None:
         pass

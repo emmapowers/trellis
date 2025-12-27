@@ -14,7 +14,6 @@ from trellis.utils.logger import logger
 
 if tp.TYPE_CHECKING:
     from trellis.core.component import Component
-    from trellis.core.rendering import execute_node
 
 __all__ = [
     "ElementNode",
@@ -121,13 +120,15 @@ class ElementNode:
         exc_val: BaseException | None,
         exc_tb: tp.Any,
     ) -> None:
-        """Exit the `with` block, executing container and registering with parent.
+        """Exit the `with` block, storing child_ids for later execution.
 
-        With eager execution, this:
+        This:
         1. Pops the collection list from the stack (input children from with block)
         2. Stores input children in child_ids (for render() to access via children prop)
-        3. Executes the container's render() method
-        4. Adds the executed node to the parent's collection
+        3. Re-stores the node with updated child_ids
+
+        Execution happens later via _execute_tree in rendering.py.
+        The node was already auto-collected in _place().
 
         Args:
             exc_type: Exception type if an error occurred, else None
@@ -144,30 +145,17 @@ class ElementNode:
         if exc_type is not None:
             return
 
-        # Get parent_id from current frame (the grandparent in tree structure)
-        frame = session.active.frames.current()
-        parent_id = frame.parent_id if frame else None
-
-        # Get old child IDs BEFORE mutating self.child_ids
-        # (self may be reused, so self could be the same object as in old_nodes)
-        old_output_child_ids = list(self.child_ids) if self.child_ids else None
-
         logger.debug(
-            "Container __exit__ %s: new_input=%s, old_output=%s",
+            "Container __exit__ %s: collected %d children",
             self.component.name,
-            [cid.split("/")[-1] for cid in child_ids] if child_ids else None,
-            [cid.split("/")[-1] for cid in old_output_child_ids] if old_output_child_ids else None,
+            len(child_ids),
         )
 
         # Store collected child IDs as input for render()
         object.__setattr__(self, "child_ids", tuple(child_ids))
 
-        executed_node = execute_node(session, self, parent_id, old_child_ids=old_output_child_ids)
-
-        # Add to parent's collection (if inside another with block)
-        # Skip if already auto-collected to prevent double-collection
-        if session.active.frames.has_active() and not self._auto_collected:
-            session.active.frames.add_child(executed_node.id)
+        # Re-store node with child_ids set (execution happens later in _execute_tree)
+        session.nodes.store(self)
 
     def __call__(self) -> None:
         """Mount this node at the current position (the "child() rule").

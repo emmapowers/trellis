@@ -158,7 +158,7 @@ class ReactComponentBase(Component):
             )
         return self.__class__._element_name
 
-    def render(self, /, **props: tp.Any) -> None:
+    def execute(self, /, **props: tp.Any) -> None:
         """Render this component.
 
         For leaf ReactComponentBase (no children), this is a no-op.
