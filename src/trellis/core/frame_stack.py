@@ -10,7 +10,7 @@ import typing as tp
 from dataclasses import dataclass, field
 
 if tp.TYPE_CHECKING:
-    from trellis.core.base import IComponent
+    from trellis.core.component import Component
 
 __all__ = ["Frame", "FrameStack"]
 
@@ -118,7 +118,7 @@ class FrameStack:
         """
         return bool(self._frames)
 
-    def next_child_id(self, component: IComponent, key: str | None) -> str:
+    def next_child_id(self, component: Component, key: str | None) -> str:
         """Get the next position-based ID for a child node.
 
         Position IDs encode tree position AND component identity:
@@ -147,7 +147,7 @@ class FrameStack:
             return f"{parent_id}/:{escaped_key}@{comp_id}"
         return f"{parent_id}/{position}@{comp_id}"
 
-    def root_id(self, component: IComponent) -> str:
+    def root_id(self, component: Component) -> str:
         """Get the root node ID (for no-frame case).
 
         Args:

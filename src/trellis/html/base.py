@@ -11,9 +11,9 @@ import typing as tp
 from collections.abc import Callable
 from typing import ParamSpec
 
-from trellis.core.base import ElementKind
-from trellis.core.base_component import Component
-from trellis.core.rendering import ElementNode, get_active_session
+from trellis.core.component import Component, ElementKind
+from trellis.core.element_node import ElementNode
+from trellis.core.session import get_active_session
 
 __all__ = [
     "HtmlElement",

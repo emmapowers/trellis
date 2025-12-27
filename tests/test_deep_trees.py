@@ -9,9 +9,11 @@ These tests verify that the framework correctly handles:
 
 from dataclasses import dataclass
 
-from trellis.core.rendering import RenderSession, ElementNode, render
 from trellis.core.composition_component import component
-from trellis.core.state import Stateful
+from trellis.core.element_node import ElementNode
+from trellis.core.rendering import render
+from trellis.core.session import RenderSession
+from trellis.core.stateful import Stateful
 
 
 class TestDeepTrees:

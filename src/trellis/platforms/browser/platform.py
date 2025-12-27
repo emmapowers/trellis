@@ -10,7 +10,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode
+    from trellis.core.element_node import ElementNode
 
 from trellis.core.platform import Platform
 
@@ -66,7 +66,7 @@ class BrowserPlatform(Platform):
             return to_js(msg_dict, dict_converter=js.Object.fromEntries)
 
         # Create handler and connect to bridge
-        # root_component is typed as Callable but is actually IComponent at runtime
+        # root_component is typed as Callable but is actually Component at runtime
         handler = BrowserMessageHandler(root_component, batch_delay=batch_delay)  # type: ignore[arg-type]
         handler.set_send_callback(bridge.send_message, serializer=pyodide_serializer)
 

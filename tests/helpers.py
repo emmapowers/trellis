@@ -5,7 +5,8 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.messages import AddPatch
-from trellis.core.rendering import RenderSession, render
+from trellis.core.rendering import render
+from trellis.core.session import RenderSession
 
 
 def render_to_tree(session: RenderSession) -> dict[str, tp.Any]:

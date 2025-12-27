@@ -8,9 +8,10 @@ These tests ensure that the fine-grained reactivity system actually works:
 
 from dataclasses import dataclass
 
-from trellis.core.rendering import RenderSession, render
 from trellis.core.composition_component import component
-from trellis.core.state import Stateful
+from trellis.core.rendering import render
+from trellis.core.session import RenderSession
+from trellis.core.stateful import Stateful
 
 
 class TestMinimalRerenders:

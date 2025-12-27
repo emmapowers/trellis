@@ -12,6 +12,8 @@ import inspect
 import logging
 import typing as tp
 
+logger: logging.Logger
+
 
 def __getattr__(name: str) -> tp.Any:
     """Return a logger for the calling module when 'logger' is accessed."""

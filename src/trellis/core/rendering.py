@@ -30,22 +30,13 @@ from __future__ import annotations
 
 import logging
 import time
-import typing as tp
-import weakref
-from dataclasses import dataclass, field
 from dataclasses import replace as dataclass_replace
 
+from trellis.core.active_render import ActiveRender
+from trellis.core.element_node import ElementNode, props_equal
+
 # Import shared types from base module to avoid circular imports
-from trellis.core.base import (
-    ElementKind,
-    FrozenProps,
-    IComponent,
-    freeze_props,
-    unfreeze_props,
-)
 from trellis.core.element_state import ElementState
-from trellis.core.frame_stack import Frame
-from trellis.core.mutable import Mutable
 from trellis.core.reconcile import ReconcileResult, reconcile_children
 from trellis.core.render_patches import (
     RenderAddPatch,
@@ -53,90 +44,17 @@ from trellis.core.render_patches import (
     RenderRemovePatch,
     RenderUpdatePatch,
 )
-from trellis.core.active_render import ActiveRender
 from trellis.core.session import (
     RenderSession,
     get_active_session,
-    is_render_active,
     set_active_session,
 )
-
-logger = logging.getLogger(__name__)
+from trellis.utils.logger import logger
 
 __all__ = [
-    "ElementKind",
-    "ElementNode",
-    "ElementState",
-    "Frame",
-    "FrozenProps",
-    "IComponent",
-    "RenderSession",
     "execute_node",
-    "freeze_props",
-    "get_active_session",
-    "is_render_active",
     "render",
-    "set_active_session",
-    "unfreeze_props",
 ]
-
-
-# =============================================================================
-# Props Comparison
-# =============================================================================
-
-
-def _props_equal(old_props: FrozenProps, new_props: FrozenProps) -> bool:
-    """Compare props without serialization.
-
-    Maintains the same semantics as serialized comparison:
-    - All callables are considered equal (they serialize to {"__callback__": ...})
-    - Mutables compare by owner identity and attr name (their __eq__)
-    - Other values compare normally
-
-    Args:
-        old_props: Previous props tuple
-        new_props: New props tuple
-
-    Returns:
-        True if props are semantically equal for rendering purposes
-    """
-    if len(old_props) != len(new_props):
-        return False
-    old_dict = dict(old_props)
-    new_dict = dict(new_props)
-    if old_dict.keys() != new_dict.keys():
-        return False
-    for key in old_dict:
-        if not _values_equal(old_dict[key], new_dict[key]):
-            return False
-    return True
-
-
-def _values_equal(old: tp.Any, new: tp.Any) -> bool:
-    """Compare values with callback-equivalence semantics.
-
-    All callables are considered equal since they serialize identically
-    (to {"__callback__": "cb_xxx"}). Mutables use their __eq__ which
-    compares owner identity and attr name.
-
-    Args:
-        old: Previous value
-        new: New value
-
-    Returns:
-        True if values are semantically equal for rendering purposes
-    """
-    # Callables: all callbacks are equal (we don't care about identity)
-    if callable(old) and callable(new):
-        return True
-
-    # Mutables: use their __eq__ (compares owner+attr)
-    if isinstance(old, Mutable) and isinstance(new, Mutable):
-        return old == new
-
-    # Everything else: standard equality
-    return bool(old == new)
 
 
 # =============================================================================
@@ -554,7 +472,7 @@ def _emit_update_patch_if_changed(session: RenderSession, node_id: str) -> None:
         return
 
     # Compare props without serialization
-    props_changed = not _props_equal(old_node.props, node.props)
+    props_changed = not props_equal(old_node.props, node.props)
 
     # Check if children order changed
     children_changed = old_node.child_ids != node.child_ids
@@ -568,6 +486,7 @@ def _emit_update_patch_if_changed(session: RenderSession, node_id: str) -> None:
                 children=node.child_ids if children_changed else None,
             )
         )
+
 
 def process_reconcile_result(
     session: RenderSession,

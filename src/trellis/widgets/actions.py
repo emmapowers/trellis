@@ -8,8 +8,8 @@ from __future__ import annotations
 import typing as tp
 from typing import Literal
 
+from trellis.core.element_node import ElementNode
 from trellis.core.react_component import react_component_base
-from trellis.core.rendering import ElementNode
 from trellis.core.style_props import Margin, Padding, Width
 
 if tp.TYPE_CHECKING:

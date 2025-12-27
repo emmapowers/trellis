@@ -18,7 +18,7 @@ from trellis.core.messages import Message
 if TYPE_CHECKING:
     from pytauri.ipc import Channel
 
-    from trellis.core.rendering import IComponent
+    from trellis.core.component import Component
 
 
 class PyTauriMessageHandler(MessageHandler):
@@ -36,7 +36,7 @@ class PyTauriMessageHandler(MessageHandler):
 
     def __init__(
         self,
-        root_component: IComponent,
+        root_component: Component,
         channel: Channel,
         batch_delay: float = 1.0 / 30,
     ) -> None:

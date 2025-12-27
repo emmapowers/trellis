@@ -39,8 +39,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from trellis.core.composition_component import component
+from trellis.core.element_node import ElementNode
 from trellis.core.react_component import react_component_base
-from trellis.core.rendering import ElementNode
 from trellis.core.style_props import Height, Margin, Width
 from trellis.widgets.icons import IconName
 

@@ -5,13 +5,14 @@ StateStore provides storage for ElementState objects, keyed by node ID.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import typing as tp
+from dataclasses import dataclass, field
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode
+    from trellis.core.element_node import ElementNode
 
 __all__ = ["StateStore"]
+
 
 @dataclass
 class ElementState:
@@ -38,7 +39,7 @@ class ElementState:
     # Keep reference to node registered in WeakSets during render
     # This prevents GC until the next render when it's replaced
     _render_node: ElementNode | None = None
-    
+
 
 class StateStore:
     """Storage for ElementState objects, keyed by node ID.

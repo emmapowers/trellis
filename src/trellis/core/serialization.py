@@ -20,7 +20,8 @@ from trellis.core.composition_component import CompositionComponent
 from trellis.core.mutable import Mutable
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode, RenderSession
+    from trellis.core.element_node import ElementNode
+    from trellis.core.session import RenderSession
 
 
 def _make_callback_id(node_id: str, prop_name: str) -> str:

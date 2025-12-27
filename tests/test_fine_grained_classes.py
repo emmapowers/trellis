@@ -13,9 +13,9 @@ from trellis.core.lifecycle_tracker import LifecycleTracker
 from trellis.core.messages import AddPatch, RemovePatch, UpdatePatch
 from trellis.core.node_store import NodeStore
 from trellis.core.patch_collector import PatchCollector
-from trellis.core.rendering import ElementNode, ElementState
+from trellis.core.element_node import ElementNode
+from trellis.core.element_state import ElementState, StateStore
 from trellis.core.session import RenderSession
-from trellis.core.element_state import StateStore
 
 
 # =============================================================================

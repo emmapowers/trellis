@@ -25,7 +25,7 @@ from starlette.staticfiles import StaticFiles
 if TYPE_CHECKING:
     from starlette.requests import Request
 
-    from trellis.core.rendering import ElementNode
+    from trellis.core.element_node import ElementNode
 
 from trellis.bundler import CORE_PACKAGES, BundleConfig, build_bundle
 from trellis.core.platform import Platform

@@ -7,9 +7,8 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.base import ElementKind
-from trellis.core.base_component import Component
-from trellis.core.rendering import ElementNode
+from trellis.core.component import Component, ElementKind
+from trellis.core.element_node import ElementNode
 from trellis.html.base import Style, html_element
 
 __all__ = [

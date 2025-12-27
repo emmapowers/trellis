@@ -12,7 +12,7 @@ from __future__ import annotations
 import typing as tp
 
 if tp.TYPE_CHECKING:
-    from trellis.core.state import Stateful
+    from trellis.core.stateful import Stateful
 
 from trellis.core.tracked import TrackedDict, TrackedList, TrackedSet
 

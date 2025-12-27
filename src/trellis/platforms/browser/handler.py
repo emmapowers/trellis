@@ -10,13 +10,13 @@ import asyncio
 import typing as tp
 from collections.abc import Callable
 
+from trellis.core.component import Component
 from trellis.core.message_handler import MessageHandler
 from trellis.core.messages import (
     EventMessage,
     HelloMessage,
     Message,
 )
-from trellis.core.rendering import IComponent
 
 __all__ = ["BrowserMessageHandler"]
 
@@ -37,7 +37,7 @@ class BrowserMessageHandler(MessageHandler):
 
     def __init__(
         self,
-        root_component: IComponent,
+        root_component: Component,
         batch_delay: float = 1.0 / 30,
     ) -> None:
         """Create a browser message handler.

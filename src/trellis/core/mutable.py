@@ -30,7 +30,7 @@ import typing as tp
 from trellis.core.session import get_active_session
 
 if tp.TYPE_CHECKING:
-    from trellis.core.state import Stateful
+    from trellis.core.stateful import Stateful
 
 T = tp.TypeVar("T")
 

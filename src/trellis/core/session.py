@@ -17,7 +17,7 @@ from trellis.core.node_store import NodeStore
 
 if tp.TYPE_CHECKING:
     from trellis.core.active_render import ActiveRender
-    from trellis.core.base import IComponent
+    from trellis.core.component import Component
 
 __all__ = [
     "RenderSession",
@@ -88,7 +88,7 @@ class RenderSession:
         lock: RLock for thread-safe operations
     """
 
-    root_component: IComponent
+    root_component: Component
     root_node_id: str | None = None
 
     # Fine-grained stores

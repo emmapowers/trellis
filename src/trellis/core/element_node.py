@@ -1,37 +1,28 @@
 from __future__ import annotations
 
-import logging
-import time
 import typing as tp
 import weakref
-from dataclasses import dataclass, field
-from dataclasses import replace as dataclass_replace
+from dataclasses import dataclass
 
-# Import shared types from base module to avoid circular imports
-from trellis.core.base import (
-    ElementKind,
-    FrozenProps,
-    IComponent,
-    freeze_props,
-    unfreeze_props,
-)
-from trellis.core.element_state import ElementState
-from trellis.core.frame_stack import Frame
+from trellis.core.component import Component
 from trellis.core.mutable import Mutable
-from trellis.core.reconcile import ReconcileResult, reconcile_children
-from trellis.core.render_patches import (
-    RenderAddPatch,
-    RenderPatch,
-    RenderRemovePatch,
-    RenderUpdatePatch,
-)
-from trellis.core.active_render import ActiveRender
 from trellis.core.session import (
     RenderSession,
     get_active_session,
-    is_render_active,
-    set_active_session,
 )
+from trellis.utils.logger import logger
+
+if tp.TYPE_CHECKING:
+    from trellis.core.component import Component
+    from trellis.core.rendering import execute_node
+
+__all__ = [
+    "ElementNode",
+    "freeze_props",
+    "props_equal",
+    "unfreeze_props",
+]
+
 
 @dataclass(frozen=True)
 class ElementNode:
@@ -64,7 +55,7 @@ class ElementNode:
         id: Position-based ID assigned at creation time
     """
 
-    component: IComponent
+    component: Component
     _session_ref: weakref.ref[RenderSession]
     props: FrozenProps = ()
     key: str | None = None
@@ -171,9 +162,7 @@ class ElementNode:
         # Store collected child IDs as input for render()
         object.__setattr__(self, "child_ids", tuple(child_ids))
 
-        executed_node = execute_node(
-            session, self, parent_id, old_child_ids=old_output_child_ids
-        )
+        executed_node = execute_node(session, self, parent_id, old_child_ids=old_output_child_ids)
 
         # Add to parent's collection (if inside another with block)
         # Skip if already auto-collected to prevent double-collection
@@ -195,7 +184,11 @@ class ElementNode:
             RuntimeError: If called outside both `with` block and render context
         """
         session = get_active_session()
-        if session is not None and session.active is not None and session.active.frames.has_active():
+        if (
+            session is not None
+            and session.active is not None
+            and session.active.frames.has_active()
+        ):
             # Inside a `with` block - just add to pending children
             session.active.frames.add_child(self.id)
         elif session is not None:
@@ -206,3 +199,87 @@ class ElementNode:
             )
         else:
             raise RuntimeError("Cannot mount node outside of render context")
+
+
+# Immutable props type for ElementNode - tuple of (key, value) pairs
+type FrozenProps = tuple[tuple[str, tp.Any], ...]
+
+
+def freeze_props(props: dict[str, tp.Any]) -> FrozenProps:
+    """Convert a props dictionary to an immutable tuple for comparison.
+
+    Props are frozen so that ElementNode can be immutable and props
+    can be compared for equality to determine if re-execution is needed.
+
+    Args:
+        props: Dictionary of component properties
+
+    Returns:
+        Sorted tuple of (key, value) pairs
+    """
+    return tuple(sorted(props.items()))
+
+
+def unfreeze_props(frozen: FrozenProps) -> dict[str, tp.Any]:
+    """Convert frozen props back to a mutable dictionary.
+
+    Args:
+        frozen: Immutable tuple of (key, value) pairs
+
+    Returns:
+        Mutable dictionary of props
+    """
+    return dict(frozen)
+
+
+def props_equal(old_props: FrozenProps, new_props: FrozenProps) -> bool:
+    """Compare props without serialization.
+
+    Maintains the same semantics as serialized comparison:
+    - All callables are considered equal (they serialize to {"__callback__": ...})
+    - Mutables compare by owner identity and attr name (their __eq__)
+    - Other values compare normally
+
+    Args:
+        old_props: Previous props tuple
+        new_props: New props tuple
+
+    Returns:
+        True if props are semantically equal for rendering purposes
+    """
+    if len(old_props) != len(new_props):
+        return False
+    old_dict = dict(old_props)
+    new_dict = dict(new_props)
+    if old_dict.keys() != new_dict.keys():
+        return False
+    for key in old_dict:
+        if not _values_equal(old_dict[key], new_dict[key]):
+            return False
+    return True
+
+
+def _values_equal(old: tp.Any, new: tp.Any) -> bool:
+    """Compare values with callback-equivalence semantics.
+
+    All callables are considered equal since they serialize identically
+    (to {"__callback__": "cb_xxx"}). Mutables use their __eq__ which
+    compares owner identity and attr name.
+
+    Args:
+        old: Previous value
+        new: New value
+
+    Returns:
+        True if values are semantically equal for rendering purposes
+    """
+    # Callables: all callbacks are equal (we don't care about identity)
+    if callable(old) and callable(new):
+        return True
+
+    # Mutables: use their __eq__ (compares owner+attr)
+    if isinstance(old, Mutable) and isinstance(new, Mutable):
+        return old == new
+
+    # Everything else: standard equality
+    return bool(old == new)

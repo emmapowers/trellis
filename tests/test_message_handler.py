@@ -8,8 +8,9 @@ import pytest
 from trellis.core.composition_component import component
 from trellis.core.message_handler import MessageHandler
 from trellis.core.messages import AddPatch, ErrorMessage, EventMessage, Message, PatchMessage
-from trellis.core.rendering import IComponent, render
-from trellis.core.state import Stateful
+from trellis.core.component import Component
+from trellis.core.rendering import render
+from trellis.core.stateful import Stateful
 from trellis.widgets import Button, Label
 from trellis.platforms.browser import BrowserMessageHandler
 import typing as tp
@@ -441,7 +442,7 @@ class TestRenderLoop:
         class TestableHandler(MessageHandler):
             """Handler that captures sent messages."""
 
-            def __init__(self, root: IComponent) -> None:
+            def __init__(self, root: Component) -> None:
                 # Use very short batch delay for testing
                 super().__init__(root, batch_delay=0.01)
                 self._hello_sent = False
@@ -516,7 +517,7 @@ class TestRenderLoop:
         sent_messages: list[Message] = []
 
         class TestableHandler(MessageHandler):
-            def __init__(self, root: IComponent) -> None:
+            def __init__(self, root: Component) -> None:
                 super().__init__(root, batch_delay=0.01)
                 self._hello_sent = False
                 self._inbox: asyncio.Queue[Message] = asyncio.Queue()
@@ -569,7 +570,7 @@ class TestRenderLoop:
             Label(text="Hello")
 
         class TestableHandler(MessageHandler):
-            def __init__(self, root: IComponent) -> None:
+            def __init__(self, root: Component) -> None:
                 super().__init__(root, batch_delay=0.01)
                 self._hello_sent = False
 

@@ -20,7 +20,8 @@ from trellis.core.platform import Platform
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
 
 if TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode, IComponent
+    from trellis.core.component import Component
+    from trellis.core.element_node import ElementNode
 
 _console = Console()
 
@@ -66,7 +67,7 @@ class DesktopPlatform(Platform):
     as the WebSocket server platform.
     """
 
-    _root_component: IComponent | None
+    _root_component: Component | None
     _handler: PyTauriMessageHandler | None
     _handler_task: asyncio.Task[None] | None
     _batch_delay: float

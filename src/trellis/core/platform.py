@@ -12,7 +12,7 @@ from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode
+    from trellis.core.element_node import ElementNode
 
 
 class PlatformType(StrEnum):

@@ -2,8 +2,9 @@
 
 from trellis import html as h
 from trellis.core.composition_component import component
-from trellis.core.rendering import RenderSession, render
+from trellis.core.rendering import render
 from trellis.core.serialization import serialize_node
+from trellis.core.session import RenderSession
 
 
 class TestHtmlElements:

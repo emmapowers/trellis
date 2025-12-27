@@ -14,6 +14,7 @@ import traceback
 import typing as tp
 from uuid import uuid4
 
+from trellis.core.component import Component
 from trellis.core.messages import (
     AddPatch,
     DebugConfig,
@@ -33,8 +34,8 @@ from trellis.core.render_patches import (
     RenderRemovePatch,
     RenderUpdatePatch,
 )
-from trellis.core.rendering import IComponent, RenderSession, render
 from trellis.core.serialization import _serialize_node_props, serialize_node
+from trellis.core.session import RenderSession
 from trellis.html.events import get_event_class
 from trellis.utils.debug import get_enabled_categories
 
@@ -216,7 +217,7 @@ class MessageHandler:
 
     def __init__(
         self,
-        root_component: IComponent,
+        root_component: Component,
         batch_delay: float = 1.0 / 30,
     ) -> None:
         """Create a new message handler.

@@ -5,9 +5,9 @@ from __future__ import annotations
 import msgspec
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from trellis.core.component import Component
 from trellis.core.message_handler import MessageHandler
 from trellis.core.messages import Message
-from trellis.core.rendering import IComponent
 
 router = APIRouter()
 
@@ -24,7 +24,7 @@ class WebSocketMessageHandler(MessageHandler):
 
     def __init__(
         self,
-        root_component: IComponent,
+        root_component: Component,
         websocket: WebSocket,
         batch_delay: float = 1.0 / 30,
     ) -> None:

@@ -55,7 +55,7 @@ from dataclasses import dataclass, field
 from types import TracebackType
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode
+    from trellis.core.element_node import ElementNode
 
 from trellis.core.conversion import convert_to_tracked
 from trellis.core.mutable import record_property_access

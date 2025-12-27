@@ -2,7 +2,8 @@
 
 from trellis.core.composition_component import component
 from trellis.core.react_component import _merge_style_props
-from trellis.core.rendering import RenderSession, render
+from trellis.core.rendering import render
+from trellis.core.session import RenderSession
 from trellis.core.style_props import Height, Margin, Padding, Width
 from trellis.widgets import Button, Card, Column, Label, Row
 

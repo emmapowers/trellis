@@ -36,8 +36,8 @@ from collections.abc import Iterable, Iterator
 from typing import SupportsIndex
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode
-    from trellis.core.state import Stateful
+    from trellis.core.element_node import ElementNode
+    from trellis.core.stateful import Stateful
 
 from trellis.core.session import get_active_session, is_render_active
 

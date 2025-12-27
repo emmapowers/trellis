@@ -7,8 +7,9 @@ import pytest
 from tests.helpers import render_to_tree
 from trellis.core.composition_component import component
 from trellis.core.mutable import Mutable, callback, mutable
-from trellis.core.rendering import RenderSession, render
-from trellis.core.state import Stateful
+from trellis.core.rendering import render
+from trellis.core.session import RenderSession
+from trellis.core.stateful import Stateful
 
 
 class TestMutableClass:

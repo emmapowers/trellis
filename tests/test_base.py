@@ -1,16 +1,16 @@
-"""Tests for trellis.core.base module."""
+"""Tests for core component types and props functions."""
 
 import pytest
 
-from trellis.core.base import (
-    ElementKind,
+from trellis.core.component import ElementKind
+from trellis.core.composition_component import CompositionComponent, component
+from trellis.core.element_node import (
+    ElementNode,
     FrozenProps,
     freeze_props,
     unfreeze_props,
 )
-from trellis.core.composition_component import CompositionComponent, component
 from trellis.core.react_component import ReactComponentBase
-from trellis.core.rendering import ElementNode
 from trellis.html.base import HtmlElement, html_element
 from trellis.html.text import TextNode
 

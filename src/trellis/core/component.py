@@ -33,17 +33,32 @@ from __future__ import annotations
 import typing as tp
 import weakref
 from abc import ABC, abstractmethod
+from enum import StrEnum
 
+from trellis.core.element_node import ElementNode, freeze_props
 from trellis.core.rendering import (
-    ElementKind,
-    ElementNode,
     execute_node,
-    freeze_props,
-    get_active_session,
 )
+from trellis.core.session import get_active_session
 from trellis.utils.logger import logger
 
 __all__ = ["Component"]
+
+
+class ElementKind(StrEnum):
+    """Kind of element in the render tree.
+
+    Used by the client to determine how to render each node:
+    - REACT_COMPONENT: Custom React component (Button, Slider, etc.)
+    - JSX_ELEMENT: Intrinsic HTML element (div, span, p)
+    - TEXT: Raw text node
+
+    Values are explicit strings for stable wire format (serialized to client).
+    """
+
+    REACT_COMPONENT = "react_component"
+    JSX_ELEMENT = "jsx_element"
+    TEXT = "text"
 
 
 class Component(ABC):

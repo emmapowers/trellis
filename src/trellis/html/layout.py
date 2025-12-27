@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering import ElementNode
+from trellis.core.element_node import ElementNode
 from trellis.html.base import Style, html_element
 from trellis.html.events import MouseHandler
 

@@ -14,7 +14,7 @@ import typing as tp
 from dataclasses import dataclass
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode
+    from trellis.core.element_node import ElementNode
 
 __all__ = [
     "RenderAddPatch",

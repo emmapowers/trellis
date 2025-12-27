@@ -1,8 +1,9 @@
 """Tests for ElementNode tree serialization."""
 
 from trellis.core.composition_component import component
-from trellis.core.rendering import RenderSession, render
+from trellis.core.rendering import render
 from trellis.core.serialization import serialize_node
+from trellis.core.session import RenderSession
 from trellis.widgets.basic import Button
 import trellis.html as h
 
