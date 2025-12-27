@@ -2,7 +2,7 @@
 
 from trellis.core.composition_component import component
 from trellis.core.react_component import _merge_style_props
-from trellis.core.rendering import RenderTree
+from trellis.core.rendering import RenderSession, render
 from trellis.core.style_props import Height, Margin, Padding, Width
 from trellis.widgets import Button, Card, Column, Label, Row
 
@@ -200,8 +200,8 @@ class TestWidgetIntegration:
         def App() -> None:
             Label(text="Test", margin=Margin(bottom=16))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         label = ctx.get_node(ctx.root_node.child_ids[0])
         assert label.properties["style"] == {"marginBottom": "16px"}
@@ -213,8 +213,8 @@ class TestWidgetIntegration:
         def App() -> None:
             Label(text="Test", width=100)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         label = ctx.get_node(ctx.root_node.child_ids[0])
         assert label.properties["style"] == {"width": "100px"}
@@ -226,8 +226,8 @@ class TestWidgetIntegration:
         def App() -> None:
             Label(text="Test", flex=1)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         label = ctx.get_node(ctx.root_node.child_ids[0])
         assert label.properties["style"] == {"flex": 1}
@@ -240,8 +240,8 @@ class TestWidgetIntegration:
             with Column(padding=Padding(x=24, y=16)):
                 Label(text="Test")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         column = ctx.get_node(ctx.root_node.child_ids[0])
         assert column.properties["style"] == {
@@ -259,8 +259,8 @@ class TestWidgetIntegration:
             with Column(padding=24):
                 Label(text="Test")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         column = ctx.get_node(ctx.root_node.child_ids[0])
         assert column.properties["padding"] == 24
@@ -273,8 +273,8 @@ class TestWidgetIntegration:
             with Card(width=320):
                 Label(text="Test")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         card = ctx.get_node(ctx.root_node.child_ids[0])
         assert card.properties["style"] == {"width": "320px"}
@@ -286,8 +286,8 @@ class TestWidgetIntegration:
         def App() -> None:
             Button(text="Test", width="100%")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         button = ctx.get_node(ctx.root_node.child_ids[0])
         assert button.properties["style"] == {"width": "100%"}
@@ -304,8 +304,8 @@ class TestWidgetIntegration:
                 style={"color": "blue", "fontWeight": "bold"},
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         label = ctx.get_node(ctx.root_node.child_ids[0])
         assert label.properties["style"] == {

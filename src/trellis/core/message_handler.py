@@ -15,15 +15,26 @@ import typing as tp
 from uuid import uuid4
 
 from trellis.core.messages import (
+    AddPatch,
     DebugConfig,
     ErrorMessage,
     EventMessage,
     HelloMessage,
     HelloResponseMessage,
     Message,
+    Patch,
     PatchMessage,
+    RemovePatch,
+    UpdatePatch,
 )
-from trellis.core.rendering import IComponent, RenderTree
+from trellis.core.render_patches import (
+    RenderAddPatch,
+    RenderPatch,
+    RenderRemovePatch,
+    RenderUpdatePatch,
+)
+from trellis.core.rendering import IComponent, RenderSession, render
+from trellis.core.serialization import _serialize_node_props, serialize_node
 from trellis.html.events import get_event_class
 from trellis.utils.debug import get_enabled_categories
 
@@ -129,6 +140,53 @@ def _process_callback_args(
 
 
 # =============================================================================
+# Patch serialization
+# =============================================================================
+
+
+def _serialize_patches(patches: list[RenderPatch], session: RenderSession) -> list[Patch]:
+    """Convert render patches to wire-format patches.
+
+    This is where serialization happens - at the protocol boundary,
+    not during rendering.
+
+    Args:
+        patches: List of RenderPatch objects from render()
+        session: The RenderSession for callback registration and node lookup
+
+    Returns:
+        List of wire-format Patch objects ready for transmission
+    """
+    result: list[Patch] = []
+    for patch in patches:
+        if isinstance(patch, RenderAddPatch):
+            result.append(
+                AddPatch(
+                    parent_id=patch.parent_id,
+                    children=list(patch.children),
+                    node=serialize_node(patch.node, session),
+                )
+            )
+        elif isinstance(patch, RenderUpdatePatch):
+            # Only serialize props if they changed
+            props = None
+            if patch.props_changed:
+                node = session.nodes.get(patch.node_id)
+                if node:
+                    props = _serialize_node_props(node, session)
+            result.append(
+                UpdatePatch(
+                    id=patch.node_id,
+                    props=props,
+                    children=list(patch.children) if patch.children else None,
+                )
+            )
+        elif isinstance(patch, RenderRemovePatch):
+            result.append(RemovePatch(id=patch.node_id))
+    return result
+
+
+# =============================================================================
 # MessageHandler base class
 # =============================================================================
 
@@ -150,7 +208,7 @@ class MessageHandler:
         await handler.run()
     """
 
-    tree: RenderTree
+    session: RenderSession
     session_id: str | None
     batch_delay: float
     _background_tasks: set[asyncio.Task[tp.Any]]
@@ -167,7 +225,7 @@ class MessageHandler:
             root_component: The root Trellis component to render
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        self.tree = RenderTree(root_component)
+        self.session = RenderSession(root_component)
         self.session_id = None
         self.batch_delay = batch_delay
         self._background_tasks = set()
@@ -214,10 +272,11 @@ class MessageHandler:
             PatchMessage on success, ErrorMessage on exception
         """
         try:
-            patches = self.tree.render()
-            node_count = len(self.tree._nodes)
+            render_patches = render(self.session)
+            wire_patches = _serialize_patches(render_patches, self.session)
+            node_count = len(self.session.nodes)
             logger.debug("Initial render complete, sending PatchMessage (%d nodes)", node_count)
-            return PatchMessage(patches=patches)
+            return PatchMessage(patches=wire_patches)
         except Exception as e:
             logger.exception(f"Error during initial render: {e}")
             return ErrorMessage(error=_format_exception(e), context="render")
@@ -253,13 +312,16 @@ class MessageHandler:
         """Invoke callback with event conversion.
 
         Args:
-            callback_id: The callback ID to invoke
+            callback_id: The callback ID to invoke (format: node_id|prop_name)
             args: Raw arguments from the client
 
         Raises:
             KeyError: If callback not found
         """
-        callback = self.tree.get_callback(callback_id)
+        from trellis.core.serialization import parse_callback_id
+
+        node_id, prop_name = parse_callback_id(callback_id)
+        callback = self.session.get_callback(node_id, prop_name)
         if callback is None:
             raise KeyError(f"Callback not found: {callback_id}")
 
@@ -292,17 +354,18 @@ class MessageHandler:
             await asyncio.sleep(self.batch_delay)
 
             # Check if there are dirty nodes to render
-            if not self.tree.has_dirty_nodes():
+            if not self.session.dirty.has_dirty():
                 continue
 
-            dirty_count = len(self.tree._dirty_ids)
+            dirty_count = len(self.session.dirty)
             logger.debug("Render loop: %d dirty nodes", dirty_count)
 
             try:
-                patches = self.tree.render()
-                if patches:
-                    logger.debug("Sending PatchMessage with %d patches", len(patches))
-                    await self.send_message(PatchMessage(patches=patches))
+                render_patches = render(self.session)
+                if render_patches:
+                    wire_patches = _serialize_patches(render_patches, self.session)
+                    logger.debug("Sending PatchMessage with %d patches", len(wire_patches))
+                    await self.send_message(PatchMessage(patches=wire_patches))
             except Exception as e:
                 logger.exception(f"Error in render loop: {e}")
                 await self.send_message(ErrorMessage(error=_format_exception(e), context="render"))
@@ -353,5 +416,7 @@ class MessageHandler:
                     pass
 
     def cleanup(self) -> None:
-        """Clean up callbacks. Call when session ends."""
-        self.tree.clear_callbacks()
+        """Clean up resources. Call when session ends."""
+        # No explicit cleanup needed - callbacks are stored in node props
+        # and cleaned up when nodes are unmounted
+        pass

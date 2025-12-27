@@ -8,7 +8,7 @@ import pytest
 from trellis.core.composition_component import component
 from trellis.core.message_handler import MessageHandler
 from trellis.core.messages import AddPatch, ErrorMessage, EventMessage, Message, PatchMessage
-from trellis.core.rendering import IComponent
+from trellis.core.rendering import IComponent, render
 from trellis.core.state import Stateful
 from trellis.widgets import Button, Label
 from trellis.platforms.browser import BrowserMessageHandler
@@ -122,10 +122,10 @@ class TestMessageHandler:
         assert response is None
 
         # Nodes should be dirty now
-        assert handler.tree.has_dirty_nodes()
+        assert handler.session.has_dirty_nodes()
 
         # Render should produce patches
-        patches = handler.tree.render()
+        patches = render(handler.session)
         assert len(patches) > 0
 
         # Find the update patch for the label
@@ -176,7 +176,7 @@ class TestMessageHandler:
         handler.initial_render()
 
         # Callback should exist
-        assert handler.tree.get_callback is not None
+        assert handler.session.get_callback is not None
 
         handler.cleanup()
 
@@ -640,7 +640,7 @@ class TestPatchComputation:
         asyncio.run(handler.handle_message(event_msg))
 
         # Get patches
-        patches = handler.tree.render()
+        patches = render(handler.session)
 
         # Should have patches, but Outer and Middle labels shouldn't be in them
         from trellis.core.messages import UpdatePatch
@@ -695,7 +695,7 @@ class TestPatchComputation:
 
         # Reverse the list
         asyncio.run(handler.handle_message(EventMessage(callback_id=cb_id, args=[])))
-        patches = handler.tree.render()
+        patches = render(handler.session)
 
         # Should have update patches for children reordering
         from trellis.core.messages import UpdatePatch
@@ -735,7 +735,7 @@ class TestPatchComputation:
         asyncio.run(handler.handle_message(EventMessage(callback_id=cb_id, args=[])))
 
         # Get patches
-        patches = handler.tree.render()
+        patches = render(handler.session)
 
         # The static label should NOT be in any patch
         from trellis.core.messages import UpdatePatch
@@ -804,7 +804,7 @@ class TestPatchComputation:
 
         # Switch tabs
         asyncio.run(handler.handle_message(EventMessage(callback_id=cb_id, args=[])))
-        patches = handler.tree.render()
+        patches = render(handler.session)
 
         # Should have RemovePatch for Tab1Content and AddPatch for Tab2Content
         remove_patches = [p for p in patches if isinstance(p, RemovePatch)]

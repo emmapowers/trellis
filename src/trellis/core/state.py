@@ -59,7 +59,7 @@ if tp.TYPE_CHECKING:
 
 from trellis.core.conversion import convert_to_tracked
 from trellis.core.mutable import record_property_access
-from trellis.core.rendering import get_active_render_tree, is_render_active
+from trellis.core.session import get_active_session, is_render_active
 
 logger = logging.getLogger(__name__)
 
@@ -147,17 +147,17 @@ class Stateful:
             cls.__init__ = wrapped_init  # type: ignore[assignment]
             cls._init_wrapped = True
 
-        ctx = get_active_render_tree()
+        session = get_active_session()
 
         # Outside execution context - create normally
-        if ctx is None or not ctx.is_active():
+        if session is None or not session.is_executing():
             return object.__new__(cls)
 
-        # Use _current_node_id and _element_state for caching
-        node_id = ctx._current_node_id
-        assert node_id is not None  # Guaranteed by is_active() check above
+        # Use current_node_id and state store for caching
+        node_id = session.current_node_id
+        assert node_id is not None  # Guaranteed by is_executing() check above
 
-        state = ctx.get_element_state(node_id)
+        state = session.state.get_or_create(node_id)
         call_idx = state.state_call_count
         state.state_call_count += 1
         key = (cls, call_idx)
@@ -204,11 +204,11 @@ class Stateful:
         if callable(value):
             return value
 
-        # Get render context
-        context = get_active_render_tree()
+        # Get render session
+        session = get_active_session()
 
         # Outside render context - return raw value without tracking
-        if context is None or not context.is_active():
+        if session is None or not session.is_executing():
             return value
 
         # Lazy init _state_props (needed when @dataclass doesn't call super().__init__)
@@ -223,9 +223,9 @@ class Stateful:
         state_info = deps[name]
 
         # Add the current ElementNode to watchers (WeakSet auto-cleans on node death)
-        node_id = context._current_node_id
+        node_id = session.current_node_id
         if node_id is not None:
-            node = context.get_node(node_id)
+            node = session.nodes.get(node_id)
             if node is not None:
                 state_info.watchers.add(node)
                 logger.debug(
@@ -315,9 +315,9 @@ class Stateful:
             # Mark watcher nodes dirty (WeakSet auto-skips dead refs)
             dirty_nodes = []
             for node in state_info.watchers:
-                tree = node._tree_ref()
-                if tree is not None:
-                    tree.mark_dirty_id(node.id)
+                node_session = node._session_ref()
+                if node_session is not None:
+                    node_session.dirty.mark(node.id)
                     dirty_nodes.append(node.id)
 
             if dirty_nodes:
@@ -357,16 +357,16 @@ class Stateful:
         Raises:
             RuntimeError: If called outside of a render context
         """
-        ctx = get_active_render_tree()
-        if ctx is None or not ctx.is_active():
+        session = get_active_session()
+        if session is None or not session.is_executing():
             raise RuntimeError(
                 f"Cannot use 'with {type(self).__name__}()' outside of render context. "
                 f"Context API is only available within component execution."
             )
 
-        node_id = ctx._current_node_id
-        assert node_id is not None  # Guaranteed by is_active() check above
-        state = ctx.get_element_state(node_id)
+        node_id = session.current_node_id
+        assert node_id is not None  # Guaranteed by is_executing() check above
+        state = session.state.get_or_create(node_id)
         state.context[type(self)] = self
         logger.debug("Providing %s context at %s", type(self).__name__, node_id)
         return self
@@ -431,8 +431,8 @@ class Stateful:
             LookupError: If no instance of this type is in the context stack
                 and no default was provided
         """
-        ctx = get_active_render_tree()
-        if ctx is None or not ctx.is_active():
+        session = get_active_session()
+        if session is None or not session.is_executing():
             raise RuntimeError(
                 f"Cannot call {cls.__name__}.from_context() outside of render context. "
                 f"Context API is only available within component execution."
@@ -441,13 +441,13 @@ class Stateful:
         logger.debug("Looking up %s context", cls.__name__)
 
         # Walk up the parent_id chain with cycle detection
-        node_id: str | None = ctx._current_node_id
+        node_id: str | None = session.current_node_id
         visited: set[str] = set()
         while node_id is not None:
             if node_id in visited:
                 break  # Cycle detected
             visited.add(node_id)
-            state = ctx._element_state.get(node_id)
+            state = session.state.get(node_id)
             if state is not None and cls in state.context:
                 logger.debug("Found %s at ancestor %s", cls.__name__, node_id)
                 return tp.cast("tp.Self", state.context[cls])

@@ -39,7 +39,7 @@ if tp.TYPE_CHECKING:
     from trellis.core.rendering import ElementNode
     from trellis.core.state import Stateful
 
-from trellis.core.rendering import get_active_render_tree, is_render_active
+from trellis.core.session import get_active_session, is_render_active
 
 logger = logging.getLogger(__name__)
 
@@ -103,14 +103,14 @@ class _TrackedMixin:
         Uses WeakSet[ElementNode] so dependencies are automatically cleaned up
         when nodes are replaced (on re-render) or removed (on unmount).
         """
-        ctx = get_active_render_tree()
-        if ctx is None or not ctx.is_active():
+        session = get_active_session()
+        if session is None or session.active is None:
             return
 
-        node_id = ctx._current_node_id
+        node_id = session.active.current_node_id
         assert node_id is not None  # Guaranteed by is_active() check above
 
-        node = ctx.get_node(node_id)
+        node = session.nodes.get(node_id)
         if node is None:
             return
 
@@ -130,7 +130,7 @@ class _TrackedMixin:
         """Mark all nodes that depend on this key as dirty.
 
         Called when the collection is mutated at this key.
-        Uses node's _tree_ref to get the RenderTree for marking dirty.
+        Uses node's _session_ref to get the RenderSession for marking dirty.
         """
         deps = self._deps
         if dep_key not in deps:
@@ -139,9 +139,9 @@ class _TrackedMixin:
         # WeakSet automatically handles cleanup of dead references
         dirty_nodes = []
         for node in deps[dep_key]:
-            tree = node._tree_ref()
-            if tree is not None:
-                tree.mark_dirty_id(node.id)
+            session = node._session_ref()
+            if session is not None:
+                session.dirty.mark(node.id)
                 dirty_nodes.append(node.id)
 
         if dirty_nodes:

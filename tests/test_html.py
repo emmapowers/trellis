@@ -2,7 +2,7 @@
 
 from trellis import html as h
 from trellis.core.composition_component import component
-from trellis.core.rendering import RenderTree
+from trellis.core.rendering import RenderSession, render
 from trellis.core.serialization import serialize_node
 
 
@@ -17,8 +17,8 @@ class TestHtmlElements:
             with h.Div():
                 h.Span("Hello")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         div = ctx.get_node(ctx.root_node.child_ids[0])
         assert div.component.name == "Div"
@@ -34,8 +34,8 @@ class TestHtmlElements:
                 with h.Div():
                     h.Span("Nested")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         outer = ctx.get_node(ctx.root_node.child_ids[0])
         inner = ctx.get_node(outer.child_ids[0])
@@ -54,8 +54,8 @@ class TestHtmlElements:
             h.P("Paragraph text")
             h.Span("Inline text")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         h1 = ctx.get_node(ctx.root_node.child_ids[0])
         p = ctx.get_node(ctx.root_node.child_ids[1])
@@ -73,8 +73,8 @@ class TestHtmlElements:
             with h.Div(style={"backgroundColor": "red", "padding": "10px"}):
                 pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         div = ctx.get_node(ctx.root_node.child_ids[0])
         assert div.properties["style"] == {"backgroundColor": "red", "padding": "10px"}
@@ -87,8 +87,8 @@ class TestHtmlElements:
             with h.Div(className="container"):
                 pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         div = ctx.get_node(ctx.root_node.child_ids[0])
         assert div.properties["className"] == "container"
@@ -102,8 +102,8 @@ class TestHtmlElements:
                 h.Span("Count: ")
                 h.Text(42)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         div = ctx.get_node(ctx.root_node.child_ids[0])
         assert len(div.child_ids) == 2
@@ -121,8 +121,8 @@ class TestHtmlElements:
             h.Text(True)
             h.Text(None)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         assert ctx.get_node(ctx.root_node.child_ids[0]).properties["_text"] == "123"
         assert ctx.get_node(ctx.root_node.child_ids[1]).properties["_text"] == "3.14"
@@ -141,8 +141,8 @@ class TestHtmlSerialization:
             with h.Div():
                 pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
         div_data = result["children"][0]
@@ -160,8 +160,8 @@ class TestHtmlSerialization:
             h.P("paragraph")
             h.A("link", href="https://example.com")  # A is hybrid, needs text or with
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
 
@@ -177,8 +177,8 @@ class TestHtmlSerialization:
         def App() -> None:
             h.H1("Hello World")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
         h1_data = result["children"][0]
@@ -196,8 +196,8 @@ class TestHtmlSerialization:
                 with h.Div():
                     h.P("Content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
         outer = result["children"][0]
@@ -223,8 +223,8 @@ class TestHtmlSerialization:
             with h.Div(onClick=lambda: clicked.append(True)):
                 pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
         div_data = result["children"][0]
@@ -243,8 +243,8 @@ class TestHtmlSerialization:
         def App() -> None:
             h.A("Click here", href="https://example.com", target="_blank")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
         a_data = result["children"][0]
@@ -263,8 +263,8 @@ class TestHtmlSerialization:
                 h.Span("Label: ")
                 h.Text("value")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
         div_data = result["children"][0]
@@ -292,8 +292,8 @@ class TestHybridElements:
                 h.Td("Cell 1")
                 h.Td("Cell 2")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         tr = ctx.get_node(ctx.root_node.child_ids[0])
         assert len(tr.child_ids) == 2
@@ -310,8 +310,8 @@ class TestHybridElements:
                     h.Strong("Bold")
                     h.Span(" text")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         tr = ctx.get_node(ctx.root_node.child_ids[0])
         td = ctx.get_node(tr.child_ids[0])
@@ -328,8 +328,8 @@ class TestHybridElements:
                 h.Li("Item 1")
                 h.Li("Item 2")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         ul = ctx.get_node(ctx.root_node.child_ids[0])
         assert len(ul.child_ids) == 2
@@ -343,8 +343,8 @@ class TestHybridElements:
                 with h.Li():
                     h.Strong("Bold item")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         ul = ctx.get_node(ctx.root_node.child_ids[0])
         li = ctx.get_node(ul.child_ids[0])
@@ -359,8 +359,8 @@ class TestHybridElements:
             with h.Div():
                 h.A("Click here", href="/path")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         div = ctx.get_node(ctx.root_node.child_ids[0])
         assert len(div.child_ids) == 1
@@ -376,8 +376,8 @@ class TestHybridElements:
                 with h.A(href="/path"):
                     h.Span("Link text")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         div = ctx.get_node(ctx.root_node.child_ids[0])
         a = ctx.get_node(div.child_ids[0])
@@ -394,8 +394,8 @@ class TestHybridElements:
                 with h.Td("text"):
                     pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         div = ctx.get_node(ctx.root_node.child_ids[0])
         # Should only have one Td child, not two
@@ -415,8 +415,8 @@ class TestHtmlContainerBehavior:
                 h.H1("Section Title")
                 h.P("Section content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         section = ctx.get_node(ctx.root_node.child_ids[0])
         assert section.component.name == "Section"
@@ -430,8 +430,8 @@ class TestHtmlContainerBehavior:
             with h.Article():
                 h.H2("Article Title")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         article = ctx.get_node(ctx.root_node.child_ids[0])
         assert article.component.name == "Article"
@@ -447,8 +447,8 @@ class TestHtmlContainerBehavior:
                 h.Li("Item 2")
                 h.Li("Item 3")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         ul = ctx.get_node(ctx.root_node.child_ids[0])
         assert ul.component.name == "Ul"

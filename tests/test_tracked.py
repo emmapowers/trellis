@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 import pytest
 
 from trellis.core.composition_component import component
-from trellis.core.rendering import RenderTree
+from trellis.core.rendering import RenderSession, render
 from trellis.core.state import Stateful
 from trellis.core.tracked import ITER_KEY, TrackedDict, TrackedList, TrackedSet
 
@@ -320,8 +320,8 @@ class TestDependencyTracking:
         def ItemViewer() -> None:
             _ = state.items[1]  # Access item at index 1
 
-        ctx = RenderTree(ItemViewer)
-        ctx.render()
+        ctx = RenderSession(ItemViewer)
+        render(ctx)
 
         # Check that dependency was registered for id("b")
         tracked_list = state.items
@@ -344,8 +344,8 @@ class TestDependencyTracking:
             for item in state.items:
                 _ = item
 
-        ctx = RenderTree(ListViewer)
-        ctx.render()
+        ctx = RenderSession(ListViewer)
+        render(ctx)
 
         # Check ITER_KEY dependency
         tracked_list = state.items
@@ -366,8 +366,8 @@ class TestDependencyTracking:
         def DataViewer() -> None:
             _ = state.data["x"]
 
-        ctx = RenderTree(DataViewer)
-        ctx.render()
+        ctx = RenderSession(DataViewer)
+        render(ctx)
 
         # Check dependency on key "x"
         tracked_dict = state.data
@@ -388,8 +388,8 @@ class TestDependencyTracking:
         def TagChecker() -> None:
             _ = "python" in state.tags
 
-        ctx = RenderTree(TagChecker)
-        ctx.render()
+        ctx = RenderSession(TagChecker)
+        render(ctx)
 
         # Check dependency on the value "python" (not id)
         tracked_set = state.tags
@@ -414,13 +414,13 @@ class TestDependencyTracking:
             for _ in state.items:
                 pass
 
-        ctx = RenderTree(ListViewer)
-        ctx.render()
+        ctx = RenderSession(ListViewer)
+        render(ctx)
         assert iter_renders[0] == 1
 
         # Sort - should mark ITER_KEY dirty
         state.items.sort()
-        ctx.render()
+        render(ctx)
         assert iter_renders[0] == 2
 
     def test_dict_new_key_marks_iter_dirty(self) -> None:
@@ -452,15 +452,15 @@ class TestDependencyTracking:
             Iterator()
             AViewer()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         assert iter_renders[0] == 1
         assert a_renders[0] == 1
 
         # Add new key - Iterator should re-render
         state.data["b"] = 2
-        ctx.render()
+        render(ctx)
 
         assert iter_renders[0] == 2  # Iteration affected by new key
         assert a_renders[0] == 1  # AViewer not affected
@@ -497,15 +497,15 @@ class TestFineGrainedReactivity:
             Item0()
             Item1()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         assert item0_renders[0] == 1
         assert item1_renders[0] == 1
 
         # Modify item at index 0 - only Item0 should re-render
         state.items[0] = "updated"
-        ctx.render()
+        render(ctx)
 
         assert item0_renders[0] == 2
         assert item1_renders[0] == 1  # Should NOT have re-rendered
@@ -538,15 +538,15 @@ class TestFineGrainedReactivity:
             XViewer()
             YViewer()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         assert x_renders[0] == 1
         assert y_renders[0] == 1
 
         # Modify key "x" - only XViewer should re-render
         state.data["x"] = 100
-        ctx.render()
+        render(ctx)
 
         assert x_renders[0] == 2
         assert y_renders[0] == 1  # Should NOT have re-rendered
@@ -580,15 +580,15 @@ class TestFineGrainedReactivity:
             ListViewer()
             Item0Viewer()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         assert list_renders[0] == 1
         assert item0_renders[0] == 1
 
         # Append - ListViewer should re-render (iterates), Item0Viewer should not
         state.items.append("c")
-        ctx.render()
+        render(ctx)
 
         assert list_renders[0] == 2  # Iterating = ITER_KEY dependency
         assert item0_renders[0] == 1  # Should NOT re-render
@@ -611,9 +611,9 @@ class TestRenderTimeMutationGuard:
         def BadComponent() -> None:
             state.items.append(4)  # Mutation during render!
 
-        ctx = RenderTree(BadComponent)
+        ctx = RenderSession(BadComponent)
         with pytest.raises(RuntimeError, match="Cannot modify tracked collection"):
-            ctx.render()
+            render(ctx)
 
     def test_dict_mutation_during_render_raises(self) -> None:
         """Mutating TrackedDict during render raises RuntimeError."""
@@ -629,9 +629,9 @@ class TestRenderTimeMutationGuard:
         def BadComponent() -> None:
             state.data["b"] = 2  # Mutation during render!
 
-        ctx = RenderTree(BadComponent)
+        ctx = RenderSession(BadComponent)
         with pytest.raises(RuntimeError, match="Cannot modify tracked collection"):
-            ctx.render()
+            render(ctx)
 
     def test_set_mutation_during_render_raises(self) -> None:
         """Mutating TrackedSet during render raises RuntimeError."""
@@ -647,9 +647,9 @@ class TestRenderTimeMutationGuard:
         def BadComponent() -> None:
             state.tags.add("b")  # Mutation during render!
 
-        ctx = RenderTree(BadComponent)
+        ctx = RenderSession(BadComponent)
         with pytest.raises(RuntimeError, match="Cannot modify tracked collection"):
-            ctx.render()
+            render(ctx)
 
 
 class TestDependencyCleanup:
@@ -676,8 +676,8 @@ class TestDependencyCleanup:
             if show_consumer[0]:
                 Consumer()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         consumer_node = ctx.get_node(ctx.root_node.child_ids[0])
         consumer_id = consumer_node.id
@@ -691,7 +691,7 @@ class TestDependencyCleanup:
         # Unmount Consumer
         show_consumer[0] = False
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         # Dependency should be cleaned up (WeakSet auto-removes dead refs)
         if id(item_a) in tracked_list._deps:
@@ -715,8 +715,8 @@ class TestDependencyCleanup:
             if read_data[0]:
                 _ = state.data["x"]
 
-        ctx = RenderTree(Consumer)
-        ctx.render()
+        ctx = RenderSession(Consumer)
+        render(ctx)
 
         root_node = ctx.root_node
         root_id = root_node.id
@@ -729,7 +729,7 @@ class TestDependencyCleanup:
         # Stop reading and re-render
         read_data[0] = False
         ctx.mark_dirty_id(root_id)
-        ctx.render()
+        render(ctx)
 
         # No longer tracking (WeakSet auto-removes dead refs)
         if "x" in tracked_dict._deps:
@@ -791,15 +791,15 @@ class TestTrackedWithStatefulItems:
             Todo1Viewer()
             Todo2Viewer()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         assert todo1_renders[0] == 1
         assert todo2_renders[0] == 1
 
         # Modify todo1.completed - only Todo1Viewer should re-render
         todo1.completed = True
-        ctx.render()
+        render(ctx)
 
         assert todo1_renders[0] == 2
         assert todo2_renders[0] == 1  # Should NOT have re-rendered
@@ -826,14 +826,14 @@ class TestTrackedWithStatefulItems:
             item_renders[0] += 1
             _ = state.todos[0]  # Just read the item
 
-        ctx = RenderTree(ItemViewer)
-        ctx.render()
+        ctx = RenderSession(ItemViewer)
+        render(ctx)
         assert item_renders[0] == 1
 
         # Replace the item - should trigger re-render
         new_todo = Todo(text="New")
         state.todos[0] = new_todo
-        ctx.render()
+        render(ctx)
 
         assert item_renders[0] == 2
 
@@ -858,13 +858,13 @@ class TestNewTrackingMethods:
             renders[0] += 1
             _ = state.items.index("b")
 
-        ctx = RenderTree(IndexChecker)
-        ctx.render()
+        ctx = RenderSession(IndexChecker)
+        render(ctx)
         assert renders[0] == 1
 
         # Append should trigger re-render (ITER_KEY)
         state.items.append("d")
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
 
     def test_list_count_tracks_iter_key(self) -> None:
@@ -884,13 +884,13 @@ class TestNewTrackingMethods:
             renders[0] += 1
             _ = state.items.count("a")
 
-        ctx = RenderTree(CountChecker)
-        ctx.render()
+        ctx = RenderSession(CountChecker)
+        render(ctx)
         assert renders[0] == 1
 
         # Append should trigger re-render (ITER_KEY)
         state.items.append("a")
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
 
     def test_dict_contains_tracks_by_key(self) -> None:
@@ -910,18 +910,18 @@ class TestNewTrackingMethods:
             renders[0] += 1
             _ = "y" in state.data  # Check for missing key
 
-        ctx = RenderTree(KeyChecker)
-        ctx.render()
+        ctx = RenderSession(KeyChecker)
+        render(ctx)
         assert renders[0] == 1
 
         # Adding "y" should trigger re-render (key dependency)
         state.data["y"] = 2
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
 
         # Adding "z" should NOT trigger re-render
         state.data["z"] = 3
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2  # No change
 
     def test_set_issubset_tracks_iter_key(self) -> None:
@@ -941,13 +941,13 @@ class TestNewTrackingMethods:
             renders[0] += 1
             _ = state.tags.issubset({"a", "b", "c"})
 
-        ctx = RenderTree(SubsetChecker)
-        ctx.render()
+        ctx = RenderSession(SubsetChecker)
+        render(ctx)
         assert renders[0] == 1
 
         # Adding item should trigger re-render (ITER_KEY)
         state.tags.add("c")
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
 
     def test_set_issuperset_tracks_iter_key(self) -> None:
@@ -967,13 +967,13 @@ class TestNewTrackingMethods:
             renders[0] += 1
             _ = state.tags.issuperset({"a", "b"})
 
-        ctx = RenderTree(SupersetChecker)
-        ctx.render()
+        ctx = RenderSession(SupersetChecker)
+        render(ctx)
         assert renders[0] == 1
 
         # Removing item should trigger re-render (ITER_KEY)
         state.tags.remove("c")
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
 
     def test_set_isdisjoint_tracks_iter_key(self) -> None:
@@ -993,13 +993,13 @@ class TestNewTrackingMethods:
             renders[0] += 1
             _ = state.tags.isdisjoint({"x", "y"})
 
-        ctx = RenderTree(DisjointChecker)
-        ctx.render()
+        ctx = RenderSession(DisjointChecker)
+        render(ctx)
         assert renders[0] == 1
 
         # Adding item should trigger re-render (ITER_KEY)
         state.tags.add("x")
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
 
 
@@ -1035,14 +1035,14 @@ class TestSliceOperations:
             IterViewer()
             ItemAViewer()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
         assert iter_renders[0] == 1
         assert item_a_renders[0] == 1
 
         # Slice assignment in middle - should trigger iter, not item_a
         state.items[1:3] = ["x", "y", "z"]
-        ctx.render()
+        render(ctx)
         assert iter_renders[0] == 2
         assert item_a_renders[0] == 1  # Not affected
 
@@ -1064,12 +1064,12 @@ class TestSliceOperations:
             for _ in state.items:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert iter_renders[0] == 1
 
         del state.items[1:3]
-        ctx.render()
+        render(ctx)
         assert iter_renders[0] == 2
         assert list(state.items) == ["a", "d"]
 
@@ -1095,12 +1095,12 @@ class TestReverseAndSort:
             for _ in state.items:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         state.items.reverse()
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
         assert list(state.items) == [3, 2, 1]
 
@@ -1137,15 +1137,15 @@ class TestPopWithIndex:
             ItemBViewer()
             IterViewer()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
         assert item_b_renders[0] == 1
         assert iter_renders[0] == 1
 
         # Pop item at index 1 ("b")
         popped = state.items.pop(1)
         assert popped == "b"
-        ctx.render()
+        render(ctx)
         assert item_b_renders[0] == 2  # Was watching "b"
         assert iter_renders[0] == 2  # Length changed
 
@@ -1171,12 +1171,12 @@ class TestInPlaceOperators:
             for _ in state.items:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         state.items += [3, 4]
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
         assert list(state.items) == [1, 2, 3, 4]
 
@@ -1198,12 +1198,12 @@ class TestInPlaceOperators:
             for _ in state.items:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         state.items *= 2
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
         assert list(state.items) == [1, 2, 1, 2]
 
@@ -1225,12 +1225,12 @@ class TestInPlaceOperators:
             for _ in state.tags:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         state.tags |= {"c", "d"}
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
 
     def test_set_iand(self) -> None:
@@ -1251,12 +1251,12 @@ class TestInPlaceOperators:
             for _ in state.tags:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         state.tags &= {"a", "b"}
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
         assert state.tags == {"a", "b"}
 
@@ -1281,13 +1281,13 @@ class TestNegativeIndices:
             renders[0] += 1
             _ = state.items[-1]  # Read last item
 
-        ctx = RenderTree(LastItemViewer)
-        ctx.render()
+        ctx = RenderSession(LastItemViewer)
+        render(ctx)
         assert renders[0] == 1
 
         # Modify last item
         state.items[-1] = "z"
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
 
     def test_list_negative_index_setitem(self) -> None:
@@ -1352,12 +1352,12 @@ class TestPopitem:
             for _ in state.data:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         state.data.popitem()
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
 
 
@@ -1382,12 +1382,12 @@ class TestSetUpdate:
             for _ in state.tags:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         state.tags.update({"b", "c", "d"})
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
         assert state.tags == {"a", "b", "c", "d"}
 
@@ -1423,14 +1423,14 @@ class TestMultiComponentScenarios:
             Component1()
             Component2()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
         assert comp1_renders[0] == 1
         assert comp2_renders[0] == 1
 
         # Both should re-render when the shared item changes
         state.items[0] = "updated"
-        ctx.render()
+        render(ctx)
         assert comp1_renders[0] == 2
         assert comp2_renders[0] == 2
 
@@ -1501,8 +1501,8 @@ class TestDeeplyNested:
             renders[0] += 1
             _ = state.data[0]["x"][1]  # Access 20
 
-        ctx = RenderTree(DeepViewer)
-        ctx.render()
+        ctx = RenderSession(DeepViewer)
+        render(ctx)
         assert renders[0] == 1
 
         # All levels should be tracked
@@ -1512,7 +1512,7 @@ class TestDeeplyNested:
 
         # Modify the deeply nested value
         state.data[0]["x"][1] = 999
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
 
 
@@ -1593,15 +1593,15 @@ class TestSetValueTracking:
             renders[0] += 1
             _ = check_value in state.tags
 
-        ctx = RenderTree(TagChecker)
-        ctx.render()
+        ctx = RenderSession(TagChecker)
+        render(ctx)
         assert renders[0] == 1
 
         # Add a different string object with same value
         # (In practice, Python often interns strings, but the point is
         # we track by value, not id)
         state.tags.add("python")
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2  # Should re-render!
 
 
@@ -1637,14 +1637,14 @@ class TestDictSetdefault:
             IterViewer()
             KeyBViewer()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
         assert iter_renders[0] == 1
         assert key_b_renders[0] == 1
 
         # setdefault with new key - both should re-render
         state.data.setdefault("b", 2)
-        ctx.render()
+        render(ctx)
         assert iter_renders[0] == 2  # New key = ITER_KEY dirty
         assert key_b_renders[0] == 2  # Key "b" now exists
 
@@ -1666,14 +1666,14 @@ class TestDictSetdefault:
             for _ in state.data:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         # setdefault with existing key - should NOT re-render
         result = state.data.setdefault("a", 999)
         assert result == 1  # Returns existing value
-        ctx.render()
+        render(ctx)
         assert renders[0] == 1  # No change
 
 
@@ -1698,13 +1698,13 @@ class TestDictUpdateVariants:
             for _ in state.data:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         # Update with kwargs
         state.data.update(b=2, c=3)
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
         assert state.data == {"a": 1, "b": 2, "c": 3}
 
@@ -1726,13 +1726,13 @@ class TestDictUpdateVariants:
             for _ in state.data:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         # Update with iterable of tuples
         state.data.update([("b", 2), ("c", 3)])
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
         assert state.data == {"a": 1, "b": 2, "c": 3}
 
@@ -1765,14 +1765,14 @@ class TestDictUpdateVariants:
             IterViewer()
             AViewer()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
         assert iter_renders[0] == 1
         assert a_renders[0] == 1
 
         # Update existing key only
         state.data.update({"a": 100})
-        ctx.render()
+        render(ctx)
         assert iter_renders[0] == 1  # No new keys = no ITER_KEY dirty
         assert a_renders[0] == 2  # Key "a" was updated
 
@@ -1809,14 +1809,14 @@ class TestSetBulkOperations:
             IterViewer()
             CChecker()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
         assert iter_renders[0] == 1
         assert c_renders[0] == 1
 
         # Keep only "a" and "b" - removes "c" and "d"
         state.tags.intersection_update({"a", "b"})
-        ctx.render()
+        render(ctx)
         assert iter_renders[0] == 2  # Items removed
         assert c_renders[0] == 2  # "c" was removed
         assert state.tags == {"a", "b"}
@@ -1838,13 +1838,13 @@ class TestSetBulkOperations:
             renders[0] += 1
             _ = "b" in state.tags
 
-        ctx = RenderTree(BChecker)
-        ctx.render()
+        ctx = RenderSession(BChecker)
+        render(ctx)
         assert renders[0] == 1
 
         # Remove "b" via difference_update
         state.tags.difference_update({"b", "x"})  # "x" not in set
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2  # "b" was removed
         assert state.tags == {"a", "c"}
 
@@ -1876,14 +1876,14 @@ class TestSetBulkOperations:
             BChecker()
             CChecker()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
         assert b_renders[0] == 1
         assert c_renders[0] == 1
 
         # Symmetric difference: remove "b", add "c"
         state.tags.symmetric_difference_update({"b", "c"})
-        ctx.render()
+        render(ctx)
         assert b_renders[0] == 2  # "b" was removed
         assert c_renders[0] == 2  # "c" was added
         assert state.tags == {"a", "c"}
@@ -1916,12 +1916,12 @@ class TestEdgeCasesExtended:
             for _ in state.items:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         state.items *= 0
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2  # ITER_KEY dirty
         assert list(state.items) == []
 
@@ -1956,14 +1956,14 @@ class TestEdgeCasesExtended:
             for _ in state.data:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         # Pop missing key with default - should NOT trigger re-render
         result = state.data.pop("missing", 99)
         assert result == 99
-        ctx.render()
+        render(ctx)
         assert renders[0] == 1  # No change
 
     def test_set_discard_nonexistent_no_dirty(self) -> None:
@@ -1984,13 +1984,13 @@ class TestEdgeCasesExtended:
             for _ in state.tags:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         # Discard non-existent item - should NOT trigger re-render
         state.tags.discard("nonexistent")
-        ctx.render()
+        render(ctx)
         assert renders[0] == 1  # No change
         assert state.tags == {"a", "b"}
 
@@ -2019,13 +2019,13 @@ class TestEdgeCasesExtended:
             for _ in state.items:
                 pass
 
-        ctx = RenderTree(IterViewer)
-        ctx.render()
+        ctx = RenderSession(IterViewer)
+        render(ctx)
         assert renders[0] == 1
 
         # Sort by length
         state.items.sort(key=len)
-        ctx.render()
+        render(ctx)
         assert renders[0] == 2
         assert list(state.items) == ["pie", "zoo", "apple"]
 

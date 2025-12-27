@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering import get_active_render_tree
+from trellis.core.session import get_active_session
 
 if tp.TYPE_CHECKING:
     from trellis.core.state import Stateful
@@ -43,24 +43,24 @@ def record_property_access(owner: Stateful, attr: str, value: tp.Any) -> None:
     Called by Stateful.__getattribute__ during render to track the most
     recent property access. This enables mutable() to capture the reference.
     """
-    tree = get_active_render_tree()
-    if tree is not None:
-        tree._last_property_access = (owner, attr, value)
+    session = get_active_session()
+    if session is not None and session.active is not None:
+        session.active.last_property_access = (owner, attr, value)
 
 
 def clear_property_access() -> None:
     """Clear the last recorded property access."""
-    tree = get_active_render_tree()
-    if tree is not None:
-        tree._last_property_access = None
+    session = get_active_session()
+    if session is not None and session.active is not None:
+        session.active.last_property_access = None
 
 
 def _get_last_property_access() -> tuple[tp.Any, str, tp.Any] | None:
-    """Get the last recorded property access from the active render tree."""
-    tree = get_active_render_tree()
-    if tree is None:
-        return None
-    return tree._last_property_access
+    """Get the last recorded property access from the active render session."""
+    session = get_active_session()
+    if session is not None and session.active is not None:
+        return session.active.last_property_access
+    return None
 
 
 class Mutable(tp.Generic[T]):
@@ -106,6 +106,10 @@ class Mutable(tp.Generic[T]):
     def on_change(self) -> tp.Callable[[T], tp.Any] | None:
         """Get the custom callback, if any."""
         return self._on_change
+
+    def __call__(self, value: T) -> None:
+        """Set the value via call syntax (e.g., mutable_instance(new_value))."""
+        self.value = value
 
     def __hash__(self) -> int:
         """Hash based on owner identity and attribute name."""

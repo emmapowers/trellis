@@ -37,8 +37,9 @@ from abc import ABC, abstractmethod
 from trellis.core.rendering import (
     ElementKind,
     ElementNode,
+    execute_node,
     freeze_props,
-    get_active_render_tree,
+    get_active_session,
 )
 from trellis.utils.logger import logger
 
@@ -136,15 +137,19 @@ class Component(ABC):
 
         # Ensure we're inside a render context - components cannot be created
         # in callbacks or other code outside of rendering
-        ctx = get_active_render_tree()
-        if ctx is None:
+        session = get_active_session()
+        if session is None:
             raise RuntimeError(
                 f"Cannot create component '{self.name}' outside of render context. "
                 f"Components must be created during rendering, not in callbacks."
             )
 
         # Compute position-based ID at creation time, including component identity
-        position_id = ctx.next_position_id(self, key)
+        assert session.active is not None
+        if session.active.frames.has_active():
+            position_id = session.active.frames.next_child_id(self, key)
+        else:
+            position_id = session.active.frames.root_id(self)
         frozen_props = freeze_props(props)
 
         # REUSE CHECK - the key optimization from Phase 5
@@ -154,8 +159,8 @@ class Component(ABC):
         # 3. Same props
         # 4. Node is mounted (has active ElementState with mounted=True)
         # 5. Node is not dirty
-        old_node = ctx.get_node(position_id)
-        state = ctx._element_state.get(position_id)
+        old_node = session.nodes.get(position_id)
+        state = session.state.get(position_id)
         is_mounted = state is not None and state.mounted
         is_dirty = state.dirty if state else False
 
@@ -172,22 +177,22 @@ class Component(ABC):
                 self.name,
                 self._has_children_param,
             )
-            if ctx.has_active_frame() and not self._has_children_param:
-                ctx.add_to_current_frame(old_node)
+            if session.active.frames.has_active() and not self._has_children_param:
+                session.active.frames.add_child(old_node.id)
                 object.__setattr__(old_node, "_auto_collected", True)
             return old_node
 
         # Create new node
         node = ElementNode(
             component=self,
-            _tree_ref=weakref.ref(ctx),
+            _session_ref=weakref.ref(session),
             key=key,
             props=frozen_props,
             id=position_id,
         )
 
         # Determine parent_id from current frame (or None for root)
-        frame = ctx.current_frame()
+        frame = session.active.frames.current()
         parent_id = frame.parent_id if frame else None
 
         # EAGER EXECUTION for non-container components
@@ -197,18 +202,18 @@ class Component(ABC):
             old_child_ids = list(old_node.child_ids) if old_node else None
 
             # Execute the component immediately
-            executed_node = ctx.eager_execute_node(node, parent_id, old_child_ids=old_child_ids)
+            executed_node = execute_node(session, node, parent_id, old_child_ids=old_child_ids)
 
             # Auto-collect: add to parent node's pending children
-            if ctx.has_active_frame():
-                ctx.add_to_current_frame(executed_node)
+            if session.active.frames.has_active():
+                session.active.frames.add_child(executed_node.id)
                 object.__setattr__(executed_node, "_auto_collected", True)
 
             return executed_node
 
         # Container component - defer execution to __exit__
         # Store the node but don't execute yet (needs children from with block)
-        ctx.store_node(node)
+        session.nodes.store(node)
 
         # Don't auto-collect containers - they're added in __exit__
         return node
@@ -230,7 +235,7 @@ class Component(ABC):
     def render(self, /, **props: tp.Any) -> None:
         """Render this component to produce child nodes.
 
-        Called by RenderTree when the component needs to render
+        Called by RenderSession when the component needs to render
         (new mount, props changed, or marked dirty).
 
         During rendering, the component should create child components by

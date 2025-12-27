@@ -6,7 +6,7 @@ import pytest
 
 from trellis.core.composition_component import component
 from trellis.core.react_component import ReactComponentBase, react_component_base
-from trellis.core.rendering import ElementNode, RenderTree
+from trellis.core.rendering import ElementNode, RenderSession, render
 from trellis.core.serialization import serialize_node
 from trellis.widgets import Button, Column, Label, Row
 
@@ -61,8 +61,8 @@ class TestElementNameProperty:
             with Row():
                 pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         assert ctx.get_node(ctx.root_node.child_ids[0]).component.element_name == "Label"
         assert ctx.get_node(ctx.root_node.child_ids[1]).component.element_name == "Button"
@@ -149,8 +149,8 @@ class TestReactComponentBaseDecorator:
         def App() -> None:
             TestWidget(value=42)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         node = ctx.get_node(ctx.root_node.child_ids[0])
         assert node.component.element_name == "TestWidget"
@@ -208,8 +208,8 @@ class TestReactComponentBaseSerialization:
         def App() -> None:
             Label(text="test")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
         label_data = result["children"][0]
@@ -225,8 +225,8 @@ class TestReactComponentBaseSerialization:
         def MyCustomComponent() -> None:
             pass
 
-        ctx = RenderTree(MyCustomComponent)
-        ctx.render()
+        ctx = RenderSession(MyCustomComponent)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
 
@@ -247,8 +247,8 @@ class TestReactComponentBaseSerialization:
                 Header()
                 Button(text="Click")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
 

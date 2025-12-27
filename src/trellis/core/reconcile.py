@@ -10,7 +10,7 @@ is to minimize mutations by reusing existing nodes where possible.
 The rendering system uses:
 - **ElementNode**: Immutable tree nodes with child_ids (references, not nested)
 - **ElementState**: Mutable runtime state keyed by node ID (local_state, dirty flag, etc.)
-- **RenderTree._nodes**: Flat storage of all nodes by ID
+- **RenderSession._nodes**: Flat storage of all nodes by ID
 
 During reconciliation:
 1. **Node Creation**: Components produce ElementNode descriptors with IDs
@@ -49,12 +49,7 @@ The renderer interprets this result and performs the actual side effects
 from __future__ import annotations
 
 import logging
-import typing as tp
 from dataclasses import dataclass, field
-from dataclasses import replace as dataclass_replace
-
-if tp.TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode, RenderTree
 
 logger = logging.getLogger(__name__)
 
@@ -196,129 +191,3 @@ def reconcile_children(
     )
 
     return result
-
-
-def reconcile_node(
-    old_node: ElementNode | None,
-    new_node: ElementNode,
-    parent_id: str | None,
-    ctx: RenderTree,
-    *,
-    call_hooks: bool = True,
-) -> ElementNode:
-    """Reconcile an old node with a new node.
-
-    With position-based IDs, the new node already has its ID assigned based on
-    tree position. Matching is now by ID, not by component + key.
-
-    This function decides whether to:
-    - Create a new node (if old_node is None or component changed at same position)
-    - Skip execution (if props unchanged and not dirty)
-    - Re-execute (if props changed or dirty)
-
-    Args:
-        old_node: Existing node to reconcile against, or None for new mount
-        new_node: The new node describing what to render (already has position-based ID)
-        parent_id: Parent node's ID (for ElementState.parent_id)
-        ctx: The render tree
-        call_hooks: Whether to call mount hooks. Set False for recursive calls.
-
-    Returns:
-        The reconciled node (also stored in ctx._nodes)
-    """
-    node_id = new_node.id
-
-    # Case 1: No old node - mount new
-    if old_node is None:
-        mounted = ctx.mount_new_node(new_node, parent_id, call_hooks=call_hooks)
-        ctx.store_node(mounted)
-        return mounted
-
-    # With position-based IDs, old and new nodes at same position have same ID
-    # If IDs don't match, that's a bug in caller - they should use ID for lookup
-    assert (
-        old_node.id == new_node.id
-    ), f"reconcile_node called with mismatched IDs: old={old_node.id}, new={new_node.id}"
-
-    # Case 2: Component changed at same position - unmount old, mount new
-    if old_node.component != new_node.component:
-        logger.debug(
-            "reconcile_node %s: component changed %s → %s, remounting",
-            node_id,
-            old_node.component.name,
-            new_node.component.name,
-        )
-        ctx.unmount_node_tree(old_node.id)
-        mounted = ctx.mount_new_node(new_node, parent_id, call_hooks=call_hooks)
-        ctx.store_node(mounted)
-        return mounted
-
-    # Check if this node has been mounted before (has ElementState)
-    # With position-based IDs, nodes created in `with` blocks have IDs but
-    # haven't been mounted yet - they need to go through mount_new_node
-    existing_state = ctx._element_state.get(node_id)
-    if existing_state is None:
-        # First time seeing this node - mount it
-        mounted = ctx.mount_new_node(new_node, parent_id, call_hooks=call_hooks)
-        ctx.store_node(mounted)
-        return mounted
-
-    # Case 3: Same component - check if we can skip execution
-    if old_node.props == new_node.props and not existing_state.dirty:
-        logger.debug("reconcile_node %s: skipping (props unchanged, not dirty)", node_id)
-        # Props unchanged and not dirty - skip execution entirely!
-        # However, we must reconcile with-block child_ids from the parent's execution.
-        # These appear on new_node.child_ids when a parent re-renders and produces
-        # nested with-block descriptors (e.g., `with Outer(): with Inner(): Leaf()`).
-        # Even though this node's props are unchanged, grandchildren may have new props.
-        if new_node.child_ids:
-            new_child_ids = reconcile_node_children(
-                list(old_node.child_ids), list(new_node.child_ids), node_id, ctx
-            )
-            result = dataclass_replace(new_node, child_ids=tuple(new_child_ids))
-            ctx.store_node(result)
-            return result
-        # Preserve old child_ids if new_node has none (it's a descriptor, not executed)
-        result = (
-            dataclass_replace(new_node, child_ids=old_node.child_ids)
-            if old_node.child_ids
-            else new_node
-        )
-        ctx.store_node(result)
-        return result
-
-    # Case 4: Props changed or dirty - mark dirty for later rendering
-    # Keep old child_ids - they'll be reconciled when this node is rendered
-    logger.debug(
-        "reconcile_node %s: marking dirty (props changed or dirty flag)",
-        node_id,
-    )
-    ctx.mark_dirty_id(node_id)
-    result = dataclass_replace(new_node, child_ids=old_node.child_ids)
-    ctx.store_node(result)
-    return result
-
-
-def reconcile_node_children(
-    old_child_ids: list[str],
-    new_child_ids: list[str],
-    parent_id: str,
-    ctx: RenderTree,
-) -> list[str]:
-    """Reconcile old child IDs with new child IDs.
-
-    Uses the pure `reconcile_children` function to compare old and new child
-    lists, then delegates to `ctx.process_reconcile_result` to apply side
-    effects (mount, unmount, emit patches).
-
-    Args:
-        old_child_ids: Previous child IDs
-        new_child_ids: New child IDs from this render
-        parent_id: Parent node's ID
-        ctx: The render tree
-
-    Returns:
-        Final list of child IDs after reconciliation
-    """
-    result = reconcile_children(old_child_ids, new_child_ids)
-    return ctx.process_reconcile_result(result, parent_id)

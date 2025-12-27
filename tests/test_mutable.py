@@ -7,7 +7,7 @@ import pytest
 from tests.helpers import render_to_tree
 from trellis.core.composition_component import component
 from trellis.core.mutable import Mutable, callback, mutable
-from trellis.core.rendering import RenderTree
+from trellis.core.rendering import RenderSession, render
 from trellis.core.state import Stateful
 
 
@@ -176,8 +176,8 @@ class TestMutableFunction:
             m = mutable(state.name)
             captured.append(m)
 
-        ctx = RenderTree(TestComponent)
-        ctx.render()
+        ctx = RenderSession(TestComponent)
+        render(ctx)
 
         assert len(captured) == 1
         assert captured[0].value == "hello"
@@ -206,9 +206,9 @@ class TestMutableFunction:
             _ = state.value  # Access property
             mutable(42)  # But pass different value
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         with pytest.raises(TypeError, match="must be called immediately after"):
-            ctx.render()
+            render(ctx)
 
     def test_mutable_with_plain_variable_raises(self) -> None:
         """mutable() raises TypeError with plain variable (no property access)."""
@@ -218,9 +218,9 @@ class TestMutableFunction:
             x = 42
             mutable(x)
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         with pytest.raises(TypeError, match="must be called immediately after"):
-            ctx.render()
+            render(ctx)
 
     def test_mutable_clears_after_capture(self) -> None:
         """mutable() clears the recorded access so it can't be reused."""
@@ -240,9 +240,9 @@ class TestMutableFunction:
             # Now _last_property_access should be None
             mutable(val)  # Should fail - no recorded access
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         with pytest.raises(TypeError, match="must be called immediately after"):
-            ctx.render()
+            render(ctx)
 
     def test_mutable_works_with_new_access(self) -> None:
         """mutable() works if you access the property again."""
@@ -259,8 +259,8 @@ class TestMutableFunction:
             captured.append(mutable(state.value))  # First capture
             captured.append(mutable(state.value))  # New access, new capture
 
-        ctx = RenderTree(TestComponent)
-        ctx.render()
+        ctx = RenderSession(TestComponent)
+        render(ctx)
 
         assert len(captured) == 2
         assert captured[0] == captured[1]  # Same reference
@@ -284,7 +284,7 @@ class TestMutableSerialization:
             state = State()
             w.TextInput(value=mutable(state.text))
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         result = render_to_tree(ctx)
 
         # Find the TextInput node
@@ -315,7 +315,7 @@ class TestMutableSerialization:
             state_ref.append(state)
             w.TextInput(value=mutable(state.text))
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         result = render_to_tree(ctx)
 
         # Get the callback ID
@@ -351,7 +351,7 @@ class TestMutableWidgets:
             state_ref.append(state)
             w.NumberInput(value=mutable(state.count))
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         result = render_to_tree(ctx)
 
         number_input = result["children"][0]
@@ -383,7 +383,7 @@ class TestMutableWidgets:
             state_ref.append(state)
             w.Checkbox(checked=mutable(state.enabled), label="Test")
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         result = render_to_tree(ctx)
 
         checkbox = result["children"][0]
@@ -418,7 +418,7 @@ class TestMutableWidgets:
                 options=[{"value": "a", "label": "A"}, {"value": "b", "label": "B"}],
             )
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         result = render_to_tree(ctx)
 
         select = result["children"][0]
@@ -450,7 +450,7 @@ class TestMutableWidgets:
             state_ref.append(state)
             w.Slider(value=mutable(state.volume), min=0, max=100)
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         result = render_to_tree(ctx)
 
         slider = result["children"][0]
@@ -485,7 +485,7 @@ class TestMutableWidgets:
                 with w.Tab(id="second", label="Second"):
                     w.Label(text="Second tab")
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         result = render_to_tree(ctx)
 
         tabs = result["children"][0]
@@ -517,7 +517,7 @@ class TestMutableWidgets:
             with w.Collapsible(title="Section", expanded=mutable(state.is_open)):
                 w.Label(text="Content")
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         result = render_to_tree(ctx)
 
         collapsible = result["children"][0]
@@ -555,8 +555,8 @@ class TestCallbackFunction:
             m = callback(state.name, custom_handler)
             captured.append(m)
 
-        ctx = RenderTree(TestComponent)
-        ctx.render()
+        ctx = RenderSession(TestComponent)
+        render(ctx)
 
         assert len(captured) == 1
         assert captured[0].value == "hello"
@@ -586,9 +586,9 @@ class TestCallbackFunction:
             _ = state.value  # Access property
             callback(42, lambda v: None)  # But pass different value
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         with pytest.raises(TypeError, match="must be called immediately after"):
-            ctx.render()
+            render(ctx)
 
     def test_callback_serializes_with_custom_handler(self) -> None:
         """callback() serializes to __mutable__ format with custom handler."""
@@ -609,7 +609,7 @@ class TestCallbackFunction:
             state = State()
             w.TextInput(value=callback(state.text, custom_handler))
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         result = render_to_tree(ctx)
 
         # Find the TextInput node
@@ -648,7 +648,7 @@ class TestCallbackFunction:
             state_ref.append(state)
             w.TextInput(value=callback(state.name, state.set_name))
 
-        ctx = RenderTree(TestComponent)
+        ctx = RenderSession(TestComponent)
         result = render_to_tree(ctx)
 
         text_input = result["children"][0]

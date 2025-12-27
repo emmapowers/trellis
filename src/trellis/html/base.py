@@ -13,7 +13,7 @@ from typing import ParamSpec
 
 from trellis.core.base import ElementKind
 from trellis.core.base_component import Component
-from trellis.core.rendering import ElementNode, get_active_render_tree
+from trellis.core.rendering import ElementNode, get_active_session
 
 __all__ = [
     "HtmlElement",
@@ -174,8 +174,8 @@ def auto_collect_hybrid(descriptor: ElementNode) -> ElementNode:
     Returns:
         The same descriptor, for chaining
     """
-    ctx = get_active_render_tree()
-    if ctx is not None and ctx.has_active_frame():
-        ctx.add_to_current_frame(descriptor)
+    session = get_active_session()
+    if session is not None and session.active is not None and session.active.frames.has_active():
+        session.active.frames.add_child(descriptor.id)
         object.__setattr__(descriptor, "_auto_collected", True)
     return descriptor

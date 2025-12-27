@@ -128,7 +128,7 @@ class IComponent(tp.Protocol):
     def render(self, /, **props: tp.Any) -> None:
         """Render the component to produce child nodes.
 
-        Called by RenderTree when this component needs to render.
+        Called by RenderSession when this component needs to render.
         The component should create child nodes by calling other
         components or using `with` blocks for containers.
 

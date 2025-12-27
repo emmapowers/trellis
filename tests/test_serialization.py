@@ -1,7 +1,7 @@
 """Tests for ElementNode tree serialization."""
 
 from trellis.core.composition_component import component
-from trellis.core.rendering import RenderTree
+from trellis.core.rendering import RenderSession, render
 from trellis.core.serialization import serialize_node
 from trellis.widgets.basic import Button
 import trellis.html as h
@@ -17,8 +17,8 @@ class TestSerializeNode:
         def Simple() -> None:
             pass
 
-        ctx = RenderTree(Simple)
-        ctx.render()
+        ctx = RenderSession(Simple)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
 
@@ -41,8 +41,8 @@ class TestSerializeNode:
         def App() -> None:
             WithProps(text="hello", count=42)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         # Get the WithProps child
         child = ctx.get_node(ctx.root_node.child_ids[0])
@@ -64,8 +64,8 @@ class TestSerializeNode:
         def App() -> None:
             Keyed(key="my-key")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         child = ctx.get_node(ctx.root_node.child_ids[0])
         result = serialize_node(child, ctx)
@@ -92,8 +92,8 @@ class TestSerializeNode:
                 Child()
                 Child()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
 
@@ -120,8 +120,8 @@ class TestSerializeNode:
             # Use Button (a ReactComponent) to test callback serialization
             Button(text="Click me", on_click=on_click)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         child = ctx.get_node(ctx.root_node.child_ids[0])
         result = serialize_node(child, ctx)
@@ -154,8 +154,8 @@ class TestSerializeNode:
             ):
                 pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         child = ctx.get_node(ctx.root_node.child_ids[0])
         result = serialize_node(child, ctx)
@@ -187,8 +187,8 @@ class TestSerializeNode:
             with h.Div(data_handlers=[handler1, handler2]):
                 pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         child = ctx.get_node(ctx.root_node.child_ids[0])
         result = serialize_node(child, ctx)
@@ -213,8 +213,8 @@ class TestSerializeNode:
             with h.Div(onClick=lambda: None, onMouseEnter=lambda: None):
                 pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         child = ctx.get_node(ctx.root_node.child_ids[0])
         result = serialize_node(child, ctx)

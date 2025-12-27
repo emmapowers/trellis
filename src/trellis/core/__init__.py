@@ -10,14 +10,14 @@ Components:
 Rendering:
     - `ElementNode`: Immutable tree node representing a component invocation
     - `ElementState`: Mutable runtime state for a node (keyed by node.id)
-    - `RenderTree`: Manages the render lifecycle and node tree
+    - `RenderSession`: Manages the render lifecycle and node tree
 
 State:
     - `Stateful`: Base class for reactive state with automatic dependency tracking
 
 Example:
     ```python
-    from trellis.core import component, RenderTree, Stateful
+    from trellis.core import component, RenderSession, Stateful
 
     @dataclass(kw_only=True)
     class AppState(Stateful):
@@ -28,8 +28,8 @@ Example:
         state = AppState()
         Text(state.message)
 
-    tree = RenderTree(App)
-    tree.render()  # Returns serialized tree
+    session = RenderSession(App)
+    render(session)  # Returns patches
     ```
 
 See Also:
@@ -46,7 +46,7 @@ from trellis.core.message_handler import MessageHandler
 from trellis.core.mutable import Mutable, callback, mutable
 from trellis.core.platform import Platform, PlatformArgumentError, PlatformType
 from trellis.core.react_component import ReactComponentBase, react_component_base
-from trellis.core.rendering import ElementNode, ElementState, RenderTree
+from trellis.core.rendering import ElementNode, ElementState, RenderSession, render
 from trellis.core.state import Stateful
 from trellis.core.style_props import Height, Margin, Padding, Width
 from trellis.core.tracked import TrackedDict, TrackedList, TrackedSet
@@ -65,7 +65,7 @@ __all__ = [
     "PlatformArgumentError",
     "PlatformType",
     "ReactComponentBase",
-    "RenderTree",
+    "RenderSession",
     "Stateful",
     "TrackedDict",
     "TrackedList",
@@ -75,4 +75,5 @@ __all__ = [
     "component",
     "mutable",
     "react_component_base",
+    "render",
 ]

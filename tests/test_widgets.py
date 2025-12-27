@@ -1,7 +1,7 @@
 """Tests for built-in widgets."""
 
 from trellis.core.composition_component import component
-from trellis.core.rendering import RenderTree
+from trellis.core.rendering import RenderSession, render
 from trellis.core.serialization import serialize_node
 from trellis.widgets import (
     AreaChart,
@@ -56,8 +56,8 @@ class TestLayoutWidgets:
                 Label(text="A")
                 Label(text="B")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         # App has Column as child
         column = ctx.get_node(ctx.root_node.child_ids[0])
@@ -75,8 +75,8 @@ class TestLayoutWidgets:
                 Button(text="Left")
                 Button(text="Right")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         row = ctx.get_node(ctx.root_node.child_ids[0])
         assert row.component.name == "Row"
@@ -90,8 +90,8 @@ class TestLayoutWidgets:
             with Column(gap=16, padding=8):
                 Label(text="Test")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         column = ctx.get_node(ctx.root_node.child_ids[0])
         assert column.properties["gap"] == 16
@@ -110,8 +110,8 @@ class TestLayoutWidgets:
                     Label(text="C")
                     Label(text="D")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         column = ctx.get_node(ctx.root_node.child_ids[0])
         assert len(column.child_ids) == 2
@@ -135,8 +135,8 @@ class TestBasicWidgets:
         def App() -> None:
             Label(text="Hello World")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         label = ctx.get_node(ctx.root_node.child_ids[0])
         assert label.component.name == "Label"
@@ -149,8 +149,8 @@ class TestBasicWidgets:
         def App() -> None:
             Label(text="Styled", font_size=24, color="red")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         label = ctx.get_node(ctx.root_node.child_ids[0])
         assert label.properties["font_size"] == 24
@@ -163,8 +163,8 @@ class TestBasicWidgets:
         def App() -> None:
             Button(text="Click Me")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         button = ctx.get_node(ctx.root_node.child_ids[0])
         assert button.component.name == "Button"
@@ -178,8 +178,8 @@ class TestBasicWidgets:
         def App() -> None:
             Button(text="Click", on_click=lambda: clicked.append(True))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         button = ctx.get_node(ctx.root_node.child_ids[0])
         assert callable(button.properties["on_click"])
@@ -195,8 +195,8 @@ class TestBasicWidgets:
         def App() -> None:
             Button(text="Disabled", disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         button = ctx.get_node(ctx.root_node.child_ids[0])
         assert button.properties["disabled"] is True
@@ -208,8 +208,8 @@ class TestBasicWidgets:
         def App() -> None:
             Slider(value=50, min=0, max=100, step=1)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         slider = ctx.get_node(ctx.root_node.child_ids[0])
         assert slider.component.name == "Slider"
@@ -226,8 +226,8 @@ class TestBasicWidgets:
         def App() -> None:
             Slider(value=25, on_change=lambda v: values.append(v))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         slider = ctx.get_node(ctx.root_node.child_ids[0])
         assert callable(slider.properties["on_change"])
@@ -248,8 +248,8 @@ class TestBasicWidgets:
         def App() -> None:
             Slider()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         slider = ctx.get_node(ctx.root_node.child_ids[0])
         # No explicit props passed, so properties should be empty
@@ -266,8 +266,8 @@ class TestBasicWidgets:
         def App() -> None:
             Slider(disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         slider = ctx.get_node(ctx.root_node.child_ids[0])
         assert slider.properties["disabled"] is True
@@ -279,8 +279,8 @@ class TestBasicWidgets:
         def App() -> None:
             Slider(value=5.5, min=-10, max=10, step=0.5)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         slider = ctx.get_node(ctx.root_node.child_ids[0])
         assert slider.properties["value"] == 5.5
@@ -299,8 +299,8 @@ class TestWidgetSerialization:
         def App() -> None:
             Label(text="Test")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
 
@@ -315,8 +315,8 @@ class TestWidgetSerialization:
         def App() -> None:
             Button(text="Click", on_click=lambda: None)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
 
@@ -335,8 +335,8 @@ class TestWidgetSerialization:
                     Button(text="OK")
                     Button(text="Cancel")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         result = serialize_node(ctx.root_node, ctx)
 
@@ -363,8 +363,8 @@ class TestInputWidgets:
         def App() -> None:
             TextInput(value="hello", placeholder="Enter text...")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         text_input = ctx.get_node(ctx.root_node.child_ids[0])
         assert text_input.component.name == "TextInput"
@@ -379,8 +379,8 @@ class TestInputWidgets:
         def App() -> None:
             TextInput(value="test", on_change=lambda v: values.append(v))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         text_input = ctx.get_node(ctx.root_node.child_ids[0])
         assert callable(text_input.properties["on_change"])
@@ -395,8 +395,8 @@ class TestInputWidgets:
         def App() -> None:
             TextInput(disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         text_input = ctx.get_node(ctx.root_node.child_ids[0])
         assert text_input.properties["disabled"] is True
@@ -408,8 +408,8 @@ class TestInputWidgets:
         def App() -> None:
             NumberInput(value=42, min=0, max=100, step=1)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         number_input = ctx.get_node(ctx.root_node.child_ids[0])
         assert number_input.component.name == "NumberInput"
@@ -426,8 +426,8 @@ class TestInputWidgets:
         def App() -> None:
             NumberInput(value=10, on_change=lambda v: values.append(v))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         number_input = ctx.get_node(ctx.root_node.child_ids[0])
         assert callable(number_input.properties["on_change"])
@@ -442,8 +442,8 @@ class TestInputWidgets:
         def App() -> None:
             NumberInput(disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         number_input = ctx.get_node(ctx.root_node.child_ids[0])
         assert number_input.properties["disabled"] is True
@@ -455,8 +455,8 @@ class TestInputWidgets:
         def App() -> None:
             Checkbox(checked=True, label="Enable feature")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         checkbox = ctx.get_node(ctx.root_node.child_ids[0])
         assert checkbox.component.name == "Checkbox"
@@ -471,8 +471,8 @@ class TestInputWidgets:
         def App() -> None:
             Checkbox(checked=False, on_change=lambda v: states.append(v))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         checkbox = ctx.get_node(ctx.root_node.child_ids[0])
         assert callable(checkbox.properties["on_change"])
@@ -487,8 +487,8 @@ class TestInputWidgets:
         def App() -> None:
             Checkbox(disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         checkbox = ctx.get_node(ctx.root_node.child_ids[0])
         assert checkbox.properties["disabled"] is True
@@ -507,8 +507,8 @@ class TestInputWidgets:
                 placeholder="Choose...",
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         select = ctx.get_node(ctx.root_node.child_ids[0])
         assert select.component.name == "Select"
@@ -528,8 +528,8 @@ class TestInputWidgets:
                 on_change=lambda v: selections.append(v),
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         select = ctx.get_node(ctx.root_node.child_ids[0])
         assert callable(select.properties["on_change"])
@@ -544,8 +544,8 @@ class TestInputWidgets:
         def App() -> None:
             Select(disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         select = ctx.get_node(ctx.root_node.child_ids[0])
         assert select.properties["disabled"] is True
@@ -562,8 +562,8 @@ class TestCardAndDivider:
             with Card():
                 Label(text="Inside card")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         card = ctx.get_node(ctx.root_node.child_ids[0])
         assert card.component.name == "Card"
@@ -578,8 +578,8 @@ class TestCardAndDivider:
             with Card(padding=32):
                 Label(text="Content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         card = ctx.get_node(ctx.root_node.child_ids[0])
         assert card.properties["padding"] == 32
@@ -595,8 +595,8 @@ class TestCardAndDivider:
                 with Card():
                     Label(text="Card 2")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         column = ctx.get_node(ctx.root_node.child_ids[0])
         assert len(column.child_ids) == 2
@@ -610,8 +610,8 @@ class TestCardAndDivider:
         def App() -> None:
             Divider()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         divider = ctx.get_node(ctx.root_node.child_ids[0])
         assert divider.component.name == "Divider"
@@ -623,8 +623,8 @@ class TestCardAndDivider:
         def App() -> None:
             Divider(margin=24, color="#6366f1")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         divider = ctx.get_node(ctx.root_node.child_ids[0])
         assert divider.properties["margin"] == 24
@@ -637,8 +637,8 @@ class TestCardAndDivider:
         def App() -> None:
             Divider(orientation="vertical")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         divider = ctx.get_node(ctx.root_node.child_ids[0])
         assert divider.properties["orientation"] == "vertical"
@@ -653,8 +653,8 @@ class TestCardAndDivider:
                 Divider()
                 Label(text="Below")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         column = ctx.get_node(ctx.root_node.child_ids[0])
         assert len(column.child_ids) == 3
@@ -673,8 +673,8 @@ class TestHeadingWidget:
         def App() -> None:
             Heading(text="Welcome")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         heading = ctx.get_node(ctx.root_node.child_ids[0])
         assert heading.component.name == "Heading"
@@ -687,8 +687,8 @@ class TestHeadingWidget:
         def App() -> None:
             Heading(text="Section", level=2)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         heading = ctx.get_node(ctx.root_node.child_ids[0])
         assert heading.properties["level"] == 2
@@ -700,8 +700,8 @@ class TestHeadingWidget:
         def App() -> None:
             Heading(text="Colored", color="#333")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         heading = ctx.get_node(ctx.root_node.child_ids[0])
         assert heading.properties["color"] == "#333"
@@ -713,8 +713,8 @@ class TestHeadingWidget:
         def App() -> None:
             Heading(text="Styled", style={"marginBottom": "16px"})
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         heading = ctx.get_node(ctx.root_node.child_ids[0])
         assert heading.properties["style"] == {"marginBottom": "16px"}
@@ -726,8 +726,8 @@ class TestHeadingWidget:
         def App() -> None:
             Heading(text="Default")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         heading = ctx.get_node(ctx.root_node.child_ids[0])
         # Default values are applied by React client, not stored in properties
@@ -744,8 +744,8 @@ class TestProgressBarWidget:
         def App() -> None:
             ProgressBar(value=50, min=0, max=100)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         progress = ctx.get_node(ctx.root_node.child_ids[0])
         assert progress.component.name == "ProgressBar"
@@ -760,8 +760,8 @@ class TestProgressBarWidget:
         def App() -> None:
             ProgressBar(loading=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         progress = ctx.get_node(ctx.root_node.child_ids[0])
         assert progress.properties["loading"] is True
@@ -773,8 +773,8 @@ class TestProgressBarWidget:
         def App() -> None:
             ProgressBar(disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         progress = ctx.get_node(ctx.root_node.child_ids[0])
         assert progress.properties["disabled"] is True
@@ -786,8 +786,8 @@ class TestProgressBarWidget:
         def App() -> None:
             ProgressBar(value=75, color="#22c55e")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         progress = ctx.get_node(ctx.root_node.child_ids[0])
         assert progress.properties["color"] == "#22c55e"
@@ -799,8 +799,8 @@ class TestProgressBarWidget:
         def App() -> None:
             ProgressBar(value=25, height=12)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         progress = ctx.get_node(ctx.root_node.child_ids[0])
         assert progress.properties["height"] == 12
@@ -812,8 +812,8 @@ class TestProgressBarWidget:
         def App() -> None:
             ProgressBar(value=50, style={"marginBottom": "24px"})
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         progress = ctx.get_node(ctx.root_node.child_ids[0])
         assert progress.properties["style"] == {"marginBottom": "24px"}
@@ -829,8 +829,8 @@ class TestStatusIndicatorWidget:
         def App() -> None:
             StatusIndicator(status="success")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         indicator = ctx.get_node(ctx.root_node.child_ids[0])
         assert indicator.component.name == "StatusIndicator"
@@ -843,8 +843,8 @@ class TestStatusIndicatorWidget:
         def App() -> None:
             StatusIndicator(status="error", label="Failed")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         indicator = ctx.get_node(ctx.root_node.child_ids[0])
         assert indicator.properties["status"] == "error"
@@ -857,8 +857,8 @@ class TestStatusIndicatorWidget:
         def App() -> None:
             StatusIndicator(status="warning", show_icon=False)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         indicator = ctx.get_node(ctx.root_node.child_ids[0])
         assert indicator.properties["show_icon"] is False
@@ -874,8 +874,8 @@ class TestBadgeWidget:
         def App() -> None:
             Badge(text="New")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         badge = ctx.get_node(ctx.root_node.child_ids[0])
         assert badge.component.name == "Badge"
@@ -888,8 +888,8 @@ class TestBadgeWidget:
         def App() -> None:
             Badge(text="Error", variant="error")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         badge = ctx.get_node(ctx.root_node.child_ids[0])
         assert badge.properties["variant"] == "error"
@@ -901,8 +901,8 @@ class TestBadgeWidget:
         def App() -> None:
             Badge(text="Large", size="md")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         badge = ctx.get_node(ctx.root_node.child_ids[0])
         assert badge.properties["size"] == "md"
@@ -919,8 +919,8 @@ class TestTooltipWidget:
             with Tooltip(content="Helpful hint"):
                 Label(text="Hover me")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         tooltip = ctx.get_node(ctx.root_node.child_ids[0])
         assert tooltip.component.name == "Tooltip"
@@ -935,8 +935,8 @@ class TestTooltipWidget:
             with Tooltip(content="Below", position="bottom"):
                 Button(text="Click")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         tooltip = ctx.get_node(ctx.root_node.child_ids[0])
         assert tooltip.properties["position"] == "bottom"
@@ -949,8 +949,8 @@ class TestTooltipWidget:
             with Tooltip(content="Slow", delay=500):
                 Label(text="Wait")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         tooltip = ctx.get_node(ctx.root_node.child_ids[0])
         assert tooltip.properties["delay"] == 500
@@ -972,8 +972,8 @@ class TestTableWidget:
                 ],
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         # Table is a CompositionComponent that wraps _TableInner
         table_comp = ctx.get_node(ctx.root_node.child_ids[0])
@@ -991,8 +991,8 @@ class TestTableWidget:
         def App() -> None:
             Table(striped=True, compact=False, bordered=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         table = ctx.get_node(ctx.root_node.child_ids[0])
         assert table.properties["striped"] is True
@@ -1020,8 +1020,8 @@ class TestTableWidget:
                 ],
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         # Verify render function was called for each row
         assert len(render_calls) == 2
@@ -1062,8 +1062,8 @@ class TestTableWidget:
                 ],
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         table_comp = ctx.get_node(ctx.root_node.child_ids[0])
         table_inner = ctx.get_node(table_comp.child_ids[0])
@@ -1093,8 +1093,8 @@ class TestTableWidget:
                 ],
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         table_comp = ctx.get_node(ctx.root_node.child_ids[0])
         table_inner = ctx.get_node(table_comp.child_ids[0])
@@ -1123,8 +1123,8 @@ class TestTableWidget:
                 ],
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         table_comp = ctx.get_node(ctx.root_node.child_ids[0])
         table_inner = ctx.get_node(table_comp.child_ids[0])
@@ -1145,8 +1145,8 @@ class TestStatWidget:
         def App() -> None:
             Stat(label="Revenue", value="$12,345")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         stat = ctx.get_node(ctx.root_node.child_ids[0])
         assert stat.component.name == "Stat"
@@ -1160,8 +1160,8 @@ class TestStatWidget:
         def App() -> None:
             Stat(label="Users", value="1,234", delta="+12%", delta_type="increase")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         stat = ctx.get_node(ctx.root_node.child_ids[0])
         assert stat.properties["delta"] == "+12%"
@@ -1174,8 +1174,8 @@ class TestStatWidget:
         def App() -> None:
             Stat(label="Big", value="999", size="lg")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         stat = ctx.get_node(ctx.root_node.child_ids[0])
         assert stat.properties["size"] == "lg"
@@ -1191,8 +1191,8 @@ class TestTagWidget:
         def App() -> None:
             Tag(text="Python")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         tag = ctx.get_node(ctx.root_node.child_ids[0])
         assert tag.component.name == "Tag"
@@ -1205,8 +1205,8 @@ class TestTagWidget:
         def App() -> None:
             Tag(text="Success", variant="success")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         tag = ctx.get_node(ctx.root_node.child_ids[0])
         assert tag.properties["variant"] == "success"
@@ -1219,8 +1219,8 @@ class TestTagWidget:
         def App() -> None:
             Tag(text="Remove me", removable=True, on_remove=lambda: removed.append(True))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         tag = ctx.get_node(ctx.root_node.child_ids[0])
         assert tag.properties["removable"] is True
@@ -1247,8 +1247,8 @@ class TestChartWidgets:
                 height=300,
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         chart = ctx.get_node(ctx.root_node.child_ids[0])
         assert chart.component.name == "TimeSeriesChart"
@@ -1266,8 +1266,8 @@ class TestChartWidgets:
                 x_key="month",
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         chart = ctx.get_node(ctx.root_node.child_ids[0])
         assert chart.component.name == "LineChart"
@@ -1284,8 +1284,8 @@ class TestChartWidgets:
                 stacked=True,
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         chart = ctx.get_node(ctx.root_node.child_ids[0])
         assert chart.component.name == "BarChart"
@@ -1301,8 +1301,8 @@ class TestChartWidgets:
                 curve_type="step",
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         chart = ctx.get_node(ctx.root_node.child_ids[0])
         assert chart.component.name == "AreaChart"
@@ -1318,8 +1318,8 @@ class TestChartWidgets:
                 inner_radius=50,
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         chart = ctx.get_node(ctx.root_node.child_ids[0])
         assert chart.component.name == "PieChart"
@@ -1332,8 +1332,8 @@ class TestChartWidgets:
         def App() -> None:
             Sparkline(data=[10, 20, 15, 25], height=30, color="#22c55e")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         chart = ctx.get_node(ctx.root_node.child_ids[0])
         assert chart.component.name == "Sparkline"
@@ -1352,8 +1352,8 @@ class TestIconWidget:
         def App() -> None:
             Icon(name="check")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         icon = ctx.get_node(ctx.root_node.child_ids[0])
         assert icon.component.name == "Icon"
@@ -1366,8 +1366,8 @@ class TestIconWidget:
         def App() -> None:
             Icon(name="alert-triangle", size=24, color="#d97706")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         icon = ctx.get_node(ctx.root_node.child_ids[0])
         assert icon.properties["size"] == 24
@@ -1380,8 +1380,8 @@ class TestIconWidget:
         def App() -> None:
             Icon(name="circle", stroke_width=3)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         icon = ctx.get_node(ctx.root_node.child_ids[0])
         assert icon.properties["stroke_width"] == 3
@@ -1401,8 +1401,8 @@ class TestNavigationWidgets:
                 with Tab(id="tab2", label="Second"):
                     Label(text="Content 2")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         tabs = ctx.get_node(ctx.root_node.child_ids[0])
         assert tabs.component.name == "Tabs"
@@ -1420,8 +1420,8 @@ class TestNavigationWidgets:
                 with Tab(id="t1", label="Tab 1"):
                     Label(text="Content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         tabs = ctx.get_node(ctx.root_node.child_ids[0])
         assert callable(tabs.properties["on_change"])
@@ -1438,8 +1438,8 @@ class TestNavigationWidgets:
                 with Tab(id="disabled-tab", label="Disabled", disabled=True, icon="lock"):
                     Label(text="Content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         tabs = ctx.get_node(ctx.root_node.child_ids[0])
         tab = ctx.get_node(tabs.child_ids[0])
@@ -1462,8 +1462,8 @@ class TestNavigationWidgets:
                 expanded=["1"],
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         tree = ctx.get_node(ctx.root_node.child_ids[0])
         assert tree.component.name == "Tree"
@@ -1483,8 +1483,8 @@ class TestNavigationWidgets:
                 on_expand=lambda id, exp: expansions.append((id, exp)),
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         tree = ctx.get_node(ctx.root_node.child_ids[0])
         tree.properties["on_select"]("1")
@@ -1503,8 +1503,8 @@ class TestNavigationWidgets:
                 separator=">",
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         breadcrumb = ctx.get_node(ctx.root_node.child_ids[0])
         assert breadcrumb.component.name == "Breadcrumb"
@@ -1522,8 +1522,8 @@ class TestNavigationWidgets:
                 on_click=lambda idx: clicks.append(idx),
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         breadcrumb = ctx.get_node(ctx.root_node.child_ids[0])
         breadcrumb.properties["on_click"](0)
@@ -1541,8 +1541,8 @@ class TestFeedbackWidgets:
             with Callout(title="Warning", intent="warning"):
                 Label(text="Be careful!")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         callout = ctx.get_node(ctx.root_node.child_ids[0])
         assert callout.component.name == "Callout"
@@ -1559,8 +1559,8 @@ class TestFeedbackWidgets:
             with Callout(dismissible=True, on_dismiss=lambda: dismissed.append(True)):
                 Label(text="Dismissable")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         callout = ctx.get_node(ctx.root_node.child_ids[0])
         assert callout.properties["dismissible"] is True
@@ -1575,8 +1575,8 @@ class TestFeedbackWidgets:
             with Collapsible(title="Details", expanded=False):
                 Label(text="Hidden content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         collapsible = ctx.get_node(ctx.root_node.child_ids[0])
         assert collapsible.component.name == "Collapsible"
@@ -1592,8 +1592,8 @@ class TestFeedbackWidgets:
             with Collapsible(title="Toggle", on_toggle=lambda v: toggles.append(v)):
                 Label(text="Content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         collapsible = ctx.get_node(ctx.root_node.child_ids[0])
         collapsible.properties["on_toggle"](True)
@@ -1614,8 +1614,8 @@ class TestActionWidgets:
                 MenuDivider()
                 MenuItem(text="Exit")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         menu = ctx.get_node(ctx.root_node.child_ids[0])
         assert menu.component.name == "Menu"
@@ -1629,8 +1629,8 @@ class TestActionWidgets:
             with Menu():
                 MenuItem(text="Delete", icon="trash", disabled=True, shortcut="Ctrl+D")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         menu = ctx.get_node(ctx.root_node.child_ids[0])
         item = ctx.get_node(menu.child_ids[0])
@@ -1649,8 +1649,8 @@ class TestActionWidgets:
             with Menu():
                 MenuItem(text="Click me", on_click=lambda: clicks.append(True))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         menu = ctx.get_node(ctx.root_node.child_ids[0])
         item = ctx.get_node(menu.child_ids[0])
@@ -1665,8 +1665,8 @@ class TestActionWidgets:
             with Menu():
                 MenuDivider()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         menu = ctx.get_node(ctx.root_node.child_ids[0])
         divider = ctx.get_node(menu.child_ids[0])
@@ -1681,8 +1681,8 @@ class TestActionWidgets:
                 Button(text="Bold")
                 Button(text="Italic")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         toolbar = ctx.get_node(ctx.root_node.child_ids[0])
         assert toolbar.component.name == "Toolbar"

@@ -8,10 +8,11 @@ import pytest
 
 from trellis.core.rendering import (
     ElementNode,
-    RenderTree,
+    RenderSession,
     freeze_props,
-    get_active_render_tree,
-    set_active_render_tree,
+    get_active_session,
+    set_active_session,
+    render,
 )
 from trellis.core.composition_component import CompositionComponent, component
 from trellis.core.state import Stateful
@@ -23,16 +24,16 @@ def make_component(name: str) -> CompositionComponent:
     return CompositionComponent(name=name, render_func=lambda: None)
 
 
-# Dummy tree for testing ElementNode creation
-_dummy_tree: RenderTree | None = None
+# Dummy session for testing ElementNode creation
+_dummy_session: RenderSession | None = None
 
 
-def _get_dummy_tree_ref() -> weakref.ref[RenderTree]:
-    """Get a weakref to a dummy tree for testing."""
-    global _dummy_tree
-    if _dummy_tree is None:
-        _dummy_tree = RenderTree(make_component("DummyRoot"))
-    return weakref.ref(_dummy_tree)
+def _get_dummy_session_ref() -> weakref.ref[RenderSession]:
+    """Get a weakref to a dummy session for testing."""
+    global _dummy_session
+    if _dummy_session is None:
+        _dummy_session = RenderSession(make_component("DummyRoot"))
+    return weakref.ref(_dummy_session)
 
 
 def make_descriptor(
@@ -43,7 +44,7 @@ def make_descriptor(
     """Helper to create an ElementNode."""
     return ElementNode(
         component=comp,
-        _tree_ref=_get_dummy_tree_ref(),
+        _session_ref=_get_dummy_session_ref(),
         key=key,
         props=freeze_props(props or {}),
     )
@@ -84,59 +85,59 @@ class TestElementNode:
             node.key = "new-key"  # type: ignore[misc]
 
 
-class TestActiveRenderTree:
+class TestActiveSession:
     def test_default_is_none(self) -> None:
-        assert get_active_render_tree() is None
+        assert get_active_session() is None
 
     def test_set_and_get(self) -> None:
         comp = make_component("Root")
-        ctx = RenderTree(comp)
+        ctx = RenderSession(comp)
 
-        set_active_render_tree(ctx)
-        assert get_active_render_tree() is ctx
+        set_active_session(ctx)
+        assert get_active_session() is ctx
 
-        set_active_render_tree(None)
-        assert get_active_render_tree() is None
+        set_active_session(None)
+        assert get_active_session() is None
 
 
-class TestRenderTree:
+class TestRenderSession:
     def test_creation(self) -> None:
         comp = make_component("Root")
-        ctx = RenderTree(comp)
+        ctx = RenderSession(comp)
 
-        assert ctx.root_component == comp
+        assert ctx._root_component == comp
         assert ctx.root_node is None
-        assert ctx._dirty_ids == set()
+        assert not ctx._dirty.has_dirty()
 
     def test_mark_dirty_id(self) -> None:
         @component
         def Root() -> None:
             pass
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # The root node should have an ID now
         assert ctx.root_node is not None
         node_id = ctx.root_node.id
 
         # Clear dirty state
-        ctx._dirty_ids.clear()
-        ctx._element_state[node_id].dirty = False
+        ctx._dirty.pop_all()
+        ctx._element_state.get(node_id).dirty = False
 
         # Mark dirty by ID
         ctx.mark_dirty_id(node_id)
 
-        assert node_id in ctx._dirty_ids
-        assert ctx._element_state[node_id].dirty is True
+        assert node_id in ctx._dirty
+        assert ctx._element_state.get(node_id).dirty is True
 
 
-class TestConcurrentRenderTreeIsolation:
-    """Tests for thread/task isolation of render trees using contextvars."""
+class TestConcurrentRenderSessionIsolation:
+    """Tests for thread/task isolation of render sessions using contextvars."""
 
-    def test_concurrent_threads_have_isolated_trees(self) -> None:
-        """Each thread has its own active render tree."""
-        results: dict[str, RenderTree | None] = {}
+    def test_concurrent_threads_have_isolated_sessions(self) -> None:
+        """Each thread has its own active render session."""
+        results: dict[str, RenderSession | None] = {}
         barrier = threading.Barrier(2)
 
         @component
@@ -148,18 +149,18 @@ class TestConcurrentRenderTreeIsolation:
             pass
 
         def thread_a() -> None:
-            ctx = RenderTree(AppA)
-            set_active_render_tree(ctx)
+            ctx = RenderSession(AppA)
+            set_active_session(ctx)
             barrier.wait()  # Sync with thread B
-            results["a"] = get_active_render_tree()
-            set_active_render_tree(None)
+            results["a"] = get_active_session()
+            set_active_session(None)
 
         def thread_b() -> None:
-            ctx = RenderTree(AppB)
-            set_active_render_tree(ctx)
+            ctx = RenderSession(AppB)
+            set_active_session(ctx)
             barrier.wait()  # Sync with thread A
-            results["b"] = get_active_render_tree()
-            set_active_render_tree(None)
+            results["b"] = get_active_session()
+            set_active_session(None)
 
         t1 = threading.Thread(target=thread_a)
         t2 = threading.Thread(target=thread_b)
@@ -172,8 +173,8 @@ class TestConcurrentRenderTreeIsolation:
         assert results["a"] is not None
         assert results["b"] is not None
         assert results["a"] != results["b"]
-        assert results["a"].root_component.name == "AppA"
-        assert results["b"].root_component.name == "AppB"
+        assert results["a"]._root_component.name == "AppA"
+        assert results["b"]._root_component.name == "AppB"
 
     def test_concurrent_renders_dont_interfere(self) -> None:
         """Concurrent renders in different threads don't corrupt each other."""
@@ -198,12 +199,12 @@ class TestConcurrentRenderTreeIsolation:
                 ChildB(name=f"b_{i}")
 
         def render_app_a() -> None:
-            ctx = RenderTree(AppA)
-            ctx.render()
+            ctx = RenderSession(AppA)
+            render(ctx)
 
         def render_app_b() -> None:
-            ctx = RenderTree(AppB)
-            ctx.render()
+            ctx = RenderSession(AppB)
+            render(ctx)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             futures = [executor.submit(render_app_a), executor.submit(render_app_b)]
@@ -214,8 +215,8 @@ class TestConcurrentRenderTreeIsolation:
         assert sorted(render_results["b"]) == [f"b_{i}" for i in range(5)]
 
 
-class TestComponentOutsideRenderTree:
-    """Tests for RuntimeError when creating components outside render tree."""
+class TestComponentOutsideRenderSession:
+    """Tests for RuntimeError when creating components outside render session."""
 
     def test_component_outside_render_raises(self) -> None:
         """Creating a component outside render context raises RuntimeError."""
@@ -225,7 +226,7 @@ class TestComponentOutsideRenderTree:
             pass
 
         # Ensure no active context
-        set_active_render_tree(None)
+        set_active_session(None)
 
         with pytest.raises(RuntimeError, match="outside of render context"):
             MyComponent()
@@ -238,7 +239,7 @@ class TestComponentOutsideRenderTree:
             for c in children:
                 c()
 
-        set_active_render_tree(None)
+        set_active_session(None)
 
         with pytest.raises(RuntimeError, match="outside of render context"):
             with Container():
@@ -259,13 +260,13 @@ class TestDescriptorStackCleanupOnException:
         def Parent() -> None:
             FailingChild()
 
-        ctx = RenderTree(Parent)
+        ctx = RenderSession(Parent)
 
         with pytest.raises(ValueError, match="intentional failure"):
-            ctx.render()
+            render(ctx)
 
         # Stack should be clean after exception
-        assert ctx._frame_stack == []
+        assert not ctx._frames.has_active()
 
     def test_exception_in_nested_with_block_cleans_up(self) -> None:
         """Exception in nested with block doesn't corrupt stack."""
@@ -284,12 +285,12 @@ class TestDescriptorStackCleanupOnException:
             with Container():
                 FailingComponent()
 
-        ctx = RenderTree(App)
+        ctx = RenderSession(App)
 
         with pytest.raises(RuntimeError, match="nested failure"):
-            ctx.render()
+            render(ctx)
 
-        assert ctx._frame_stack == []
+        assert not ctx._frames.has_active()
 
 
 class TestThreadSafeStateUpdates:
@@ -311,8 +312,8 @@ class TestThreadSafeStateUpdates:
                 state = Counter(value=initial)
                 results[name] = state.value
 
-            ctx = RenderTree(LocalApp)
-            ctx.render()
+            ctx = RenderSession(LocalApp)
+            render(ctx)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
             futures = [
@@ -329,15 +330,15 @@ class TestThreadSafeStateUpdates:
         assert results["ctx_300"] == 300
         assert results["ctx_400"] == 400
 
-    def test_callback_registry_isolated_per_tree(self) -> None:
-        """Callback registries are isolated per RenderTree."""
+    def test_callback_registry_isolated_per_session(self) -> None:
+        """Callback registries are isolated per RenderSession."""
 
         @component
         def App() -> None:
             pass
 
-        ctx1 = RenderTree(App)
-        ctx2 = RenderTree(App)
+        ctx1 = RenderSession(App)
+        ctx2 = RenderSession(App)
 
         cb1 = lambda: "callback1"
         cb2 = lambda: "callback2"
@@ -360,7 +361,7 @@ class TestThreadSafeStateUpdates:
         """State updates on another thread block while render holds the lock.
 
         This tests that mark_dirty_id() blocks when called from another thread
-        while a render is in progress on the same RenderTree.
+        while a render is in progress on the same RenderSession.
         """
         import time
 
@@ -389,7 +390,7 @@ class TestThreadSafeStateUpdates:
                 # Re-render triggered by state change
                 events.append("rerender_started")
 
-        ctx = RenderTree(SlowApp)
+        ctx = RenderSession(SlowApp)
 
         def background_update() -> None:
             # Wait for render to start and state to be created
@@ -407,7 +408,7 @@ class TestThreadSafeStateUpdates:
         updater.start()
 
         # Start render (holds lock via @with_lock on render_tree)
-        ctx.render()
+        render(ctx)
 
         updater.join()
 
@@ -434,16 +435,16 @@ class TestElementStateParentId:
         def Parent() -> None:
             Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         # Root has no parent
-        root_state = ctx._element_state[ctx.root_node.id]
+        root_state = ctx._element_state.get(ctx.root_node.id)
         assert root_state.parent_id is None
 
         # Child's parent should be root
         child_id = ctx.get_node(ctx.root_node.child_ids[0]).id
-        child_state = ctx._element_state[child_id]
+        child_state = ctx._element_state.get(child_id)
         assert child_state.parent_id == ctx.root_node.id
 
     def test_parent_id_preserved_on_rerender(self) -> None:
@@ -467,18 +468,18 @@ class TestElementStateParentId:
             state_holder.append(state)
             Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         child_id = ctx.get_node(ctx.root_node.child_ids[0]).id
-        original_parent_id = ctx._element_state[child_id].parent_id
+        original_parent_id = ctx._element_state.get(child_id).parent_id
 
         # Trigger re-render
         state_holder[0].value += 1
-        ctx.render()
+        render(ctx)
 
         # parent_id should be preserved
-        assert ctx._element_state[child_id].parent_id == original_parent_id
+        assert ctx._element_state.get(child_id).parent_id == original_parent_id
 
 
 class TestPropsComparison:
@@ -501,28 +502,28 @@ class TestPropsComparison:
         def Parent() -> None:
             Child(value=value_ref[0])
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert render_counts["child"] == 1
 
         # Same None value - should not re-render
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         assert render_counts["child"] == 1
 
         # Change to non-None
         value_ref[0] = "hello"
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         assert render_counts["child"] == 2
 
         # Change back to None
         value_ref[0] = None
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         assert render_counts["child"] == 3
 
@@ -546,21 +547,21 @@ class TestPropsComparison:
         def Parent() -> None:
             Child(on_click=handler_ref[0])
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert render_counts["child"] == 1
 
         # Same function - should not re-render
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         assert render_counts["child"] == 1
 
         # Different function - should re-render
         handler_ref[0] = handler2
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         assert render_counts["child"] == 2
 
@@ -576,13 +577,13 @@ class TestPropsComparison:
         def Parent() -> None:
             NoProps()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert render_counts["no_props"] == 1
 
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         # Should not re-render (empty props unchanged)
         assert render_counts["no_props"] == 1
@@ -600,21 +601,21 @@ class TestPropsComparison:
         def Parent() -> None:
             Child(items=tuple_ref[0])
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert render_counts["child"] == 1
 
         # Same tuple value - should not re-render
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         assert render_counts["child"] == 1
 
         # Different tuple - should re-render
         tuple_ref[0] = (1, 2, 4)
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         assert render_counts["child"] == 2
 
@@ -646,8 +647,8 @@ class TestBuiltinWidgetsReconciliation:
                     Button(text="×")
             Button(text="Add")  # Fixed tail
 
-        ctx = RenderTree(TodoList)
-        ctx.render()
+        ctx = RenderSession(TodoList)
+        render(ctx)
 
         # Should have: H1, Row, Row, Row, Row, Button = 6 children
         assert len(ctx.root_node.child_ids) == 6
@@ -655,7 +656,7 @@ class TestBuiltinWidgetsReconciliation:
         # Remove "b" from the middle - this triggers type-based matching
         items_ref[0] = ["a", "c", "d"]
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         # Should have: H1, Row, Row, Row, Button = 5 children
         assert len(ctx.root_node.child_ids) == 5
@@ -672,15 +673,15 @@ class TestBuiltinWidgetsReconciliation:
                 with h.Div():
                     h.Span(item)
 
-        ctx = RenderTree(List)
-        ctx.render()
+        ctx = RenderSession(List)
+        render(ctx)
 
         assert len(ctx.root_node.child_ids) == 3
 
         # Remove from middle
         items_ref[0] = ["item1", "item3"]
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         assert len(ctx.root_node.child_ids) == 2
 
@@ -698,8 +699,8 @@ class TestBuiltinWidgetsReconciliation:
                         Label(text=f"Item {n}")
                         Button(text="Delete")
 
-        ctx = RenderTree(List)
-        ctx.render()
+        ctx = RenderSession(List)
+        render(ctx)
 
         column = ctx.get_node(ctx.root_node.child_ids[0])
         assert len(column.child_ids) == 5
@@ -707,7 +708,7 @@ class TestBuiltinWidgetsReconciliation:
         # Remove items 2 and 4 (from middle)
         items_ref[0] = [1, 3, 5]
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         column = ctx.get_node(ctx.root_node.child_ids[0])
         assert len(column.child_ids) == 3
@@ -727,15 +728,15 @@ class TestBuiltinWidgetsReconciliation:
             for item in items_ref[0]:
                 CustomItem(name=item)
 
-        ctx = RenderTree(List)
-        ctx.render()
+        ctx = RenderSession(List)
+        render(ctx)
 
         assert len(ctx.root_node.child_ids) == 3
 
         # Reorder and remove
         items_ref[0] = ["c", "a"]
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         assert len(ctx.root_node.child_ids) == 2
 
@@ -800,8 +801,8 @@ class TestPositionIdGeneration:
         def App() -> None:
             pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         # Format: /@{id(component)}
         assert ctx.root_node.id.startswith("/@")
@@ -820,8 +821,8 @@ class TestPositionIdGeneration:
             Child()
             Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         # Children should have /0@, /1@, /2@ in their IDs
         child_ids = ctx.root_node.child_ids
@@ -841,8 +842,8 @@ class TestPositionIdGeneration:
         def Parent() -> None:
             Child(key="submit")
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         child_id = ctx.root_node.child_ids[0]
         assert ":submit@" in child_id
@@ -867,13 +868,13 @@ class TestPositionIdGeneration:
             else:
                 TypeB()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
         id_a = ctx.root_node.child_ids[0]
 
         show_a[0] = False
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
         id_b = ctx.root_node.child_ids[0]
 
         # Different components at same position get different IDs

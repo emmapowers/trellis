@@ -2,7 +2,7 @@
 
 import pytest
 
-from trellis.core.rendering import ElementNode, RenderTree
+from trellis.core.rendering import ElementNode, RenderSession, render
 from trellis.core.composition_component import component
 
 
@@ -25,8 +25,8 @@ class TestContainerComponent:
                 Child()
                 Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert ctx.root_node is not None
         # Parent has Column as child
@@ -60,8 +60,8 @@ class TestContainerComponent:
                 with Row():
                     Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         column_node = ctx.get_node(ctx.root_node.child_ids[0])
         assert column_node is not None
@@ -91,8 +91,8 @@ class TestContainerComponent:
                 Child()
                 Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert len(received_children) == 2
         for child in received_children:
@@ -110,9 +110,9 @@ class TestContainerComponent:
             with NoChildren():  # Should raise
                 pass
 
-        ctx = RenderTree(Parent)
+        ctx = RenderSession(Parent)
         with pytest.raises(TypeError, match="does not accept children"):
-            ctx.render()
+            render(ctx)
 
     def test_cannot_provide_children_prop_and_use_with(self) -> None:
         """Can't pass children as prop AND use with block."""
@@ -127,9 +127,9 @@ class TestContainerComponent:
             with Column(children=[]):  # Should raise
                 pass
 
-        ctx = RenderTree(Parent)
+        ctx = RenderSession(Parent)
         with pytest.raises(RuntimeError, match="Cannot provide 'children'.*and use 'with' block"):
-            ctx.render()
+            render(ctx)
 
     def test_empty_with_block(self) -> None:
         """Empty with block results in empty children list."""
@@ -147,8 +147,8 @@ class TestContainerComponent:
             with Column():
                 pass
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert received_children == []
 
@@ -172,8 +172,8 @@ class TestContainerComponent:
                 Child()
                 Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         wrapper = ctx.get_node(ctx.root_node.child_ids[0])
         assert wrapper is not None
@@ -199,8 +199,8 @@ class TestContainerComponent:
                 Item(value=2)
                 Item(value=3)
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         reverse_node = ctx.get_node(ctx.root_node.child_ids[0])
         assert reverse_node is not None

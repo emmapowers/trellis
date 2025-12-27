@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import pytest
 
 from trellis.core.composition_component import component
-from trellis.core.rendering import RenderTree
+from trellis.core.rendering import RenderSession, render
 from trellis.core.state import Stateful
 
 
@@ -51,8 +51,8 @@ class TestContextAPI:
             with state:
                 Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert captured == ["alice"]
 
@@ -92,8 +92,8 @@ class TestContextAPI:
                 MiddleWithInner()
                 OuterOnlyChild()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         # Verify all components found the correct context values
         # (execution order between siblings is non-deterministic due to set iteration)
@@ -125,8 +125,8 @@ class TestContextAPI:
                 with theme:
                     Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert captured == [("bob", True)]
 
@@ -144,9 +144,9 @@ class TestContextAPI:
         def Parent() -> None:
             Child()
 
-        ctx = RenderTree(Parent)
+        ctx = RenderSession(Parent)
         with pytest.raises(LookupError, match="No MissingState found in context"):
-            ctx.render()
+            render(ctx)
 
     def test_context_with_default_returns_none(self) -> None:
         """from_context(default=None) returns None when no context provided."""
@@ -164,8 +164,8 @@ class TestContextAPI:
         def Parent() -> None:
             Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert captured == [None]
 
@@ -187,8 +187,8 @@ class TestContextAPI:
             with state:
                 Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert len(captured) == 1
         assert captured[0] is not None
@@ -213,8 +213,8 @@ class TestContextAPI:
             with shared:
                 Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert captured == ["hello from parent"]
 
@@ -245,8 +245,8 @@ class TestContextAPI:
             with app_state:
                 Wrapper()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         assert captured == ["deep"]
 
@@ -268,8 +268,8 @@ class TestContextAPI:
                 assert config.debug is True
                 Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert captured == [True]
 
@@ -287,8 +287,8 @@ class TestContextAPI:
                 captured.append(TestState.from_context() is state)
                 # Context persists on node, not a stack, so no cleanup needed
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert captured == [True]
 
@@ -317,8 +317,8 @@ class TestContextAPI:
                 with derived:
                     Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert captured == [(1, 2, "hello")]
 
@@ -342,8 +342,8 @@ class TestContextAPI:
             with state:
                 Child()  # Second child - same instance
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         # Both children see the same state instance
         assert captured == [10, 10]
@@ -360,6 +360,6 @@ class TestContextAPI:
             state = ModState()  # value=1 is now in instance __dict__
             state.value = 2  # Try to modify existing value - should raise
 
-        ctx = RenderTree(Parent)
+        ctx = RenderSession(Parent)
         with pytest.raises(RuntimeError, match="Cannot modify state"):
-            ctx.render()
+            render(ctx)

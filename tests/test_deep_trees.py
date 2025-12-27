@@ -9,7 +9,7 @@ These tests verify that the framework correctly handles:
 
 from dataclasses import dataclass
 
-from trellis.core.rendering import RenderTree, ElementNode
+from trellis.core.rendering import RenderSession, ElementNode, render
 from trellis.core.composition_component import component
 from trellis.core.state import Stateful
 
@@ -32,8 +32,8 @@ class TestDeepTrees:
         def Root() -> None:
             make_level(1)()
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Verify tree structure by counting levels
         def count_depth(node: ElementNode) -> int:
@@ -60,8 +60,8 @@ class TestDeepTrees:
         def Root() -> None:
             make_level(1)()
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         def verify_relationships(node: ElementNode, expected_parent_id: str | None) -> None:
             state = ctx._element_state.get(node.id)
@@ -95,8 +95,8 @@ class TestDeepTrees:
         def Root() -> None:
             Level(n=1)
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         def collect_ids(node: ElementNode, ids: list[str]) -> None:
             ids.append(node.id)
@@ -109,7 +109,7 @@ class TestDeepTrees:
 
         # Re-render
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         collect_ids(ctx.root_node, node_ids_after)
 
@@ -142,15 +142,15 @@ class TestDeepTrees:
         def Root() -> None:
             Level(n=1)
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # One state per level (not including root)
         assert mount_count[0] == DEPTH
 
         # Re-render should not create new states
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
         assert mount_count[0] == DEPTH  # Still same
 
 
@@ -170,8 +170,8 @@ class TestWideTrees:
             for i in range(WIDTH):
                 Child(n=i)
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert len(ctx.root_node.child_ids) == WIDTH
 
@@ -188,13 +188,13 @@ class TestWideTrees:
             for i in range(WIDTH):
                 Child(n=i)
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         original_ids = list(ctx.root_node.child_ids)
 
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         new_ids = list(ctx.root_node.child_ids)
         assert original_ids == new_ids
@@ -212,15 +212,15 @@ class TestWideTrees:
             for i in range(count_ref[0]):
                 Child(n=i)
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert len(ctx.root_node.child_ids) == 3
 
         # Add more siblings
         count_ref[0] = 50
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         assert len(ctx.root_node.child_ids) == 50
 
@@ -245,15 +245,15 @@ class TestWideTrees:
             for i in range(count_ref[0]):
                 Child(key=str(i), n=i)
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert len(ctx.root_node.child_ids) == 50
 
         # Remove siblings
         count_ref[0] = 10
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         assert len(ctx.root_node.child_ids) == 10
         # 40 elements should have been unmounted (indices 10-49)
@@ -279,8 +279,8 @@ class TestCombinedDeepAndWide:
         def Root() -> None:
             Level(depth=1)
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Count total nodes
         def count_nodes(node: ElementNode) -> int:
@@ -324,8 +324,8 @@ class TestCombinedDeepAndWide:
         def Root() -> None:
             make_level(1)()
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Navigate to leaf level and check
         node = ctx.root_node
@@ -363,8 +363,8 @@ class TestMountingOrder:
             TrackedState(level=0)
             make_level(1)()
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Should be in order 0, 1, 2, ..., DEPTH
         assert mount_order == list(range(DEPTH + 1))
@@ -395,13 +395,13 @@ class TestMountingOrder:
             if show_ref[0]:
                 Container()
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Remove container
         show_ref[0] = False
         ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        render(ctx)
 
         # All children should have unmounted
         assert len(unmount_order) == 10
@@ -416,8 +416,8 @@ class TestTreeTraversal:
         def Empty() -> None:
             pass
 
-        ctx = RenderTree(Empty)
-        ctx.render()
+        ctx = RenderSession(Empty)
+        render(ctx)
 
         assert ctx.root_node is not None
         assert len(ctx.root_node.child_ids) == 0
@@ -437,8 +437,8 @@ class TestTreeTraversal:
         def Root() -> None:
             make_level(1)()
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Traverse and verify single-child chain
         node = ctx.root_node
@@ -474,8 +474,8 @@ class TestTreeTraversal:
             DeepBranch(depth=10)  # Deep left branch
             ShallowBranch()       # Shallow right branch
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Root has 2 children
         assert len(ctx.root_node.child_ids) == 2

@@ -1,6 +1,6 @@
 """Tests for trellis.core.composition_component module."""
 
-from trellis.core.rendering import ElementNode, RenderTree
+from trellis.core.rendering import ElementNode, RenderSession, render
 from trellis.core.composition_component import CompositionComponent, component
 
 
@@ -18,8 +18,8 @@ class TestCompositionComponent:
         def Parent() -> None:
             pass
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert ctx.root_node is not None
         assert isinstance(ctx.root_node, ElementNode)
@@ -34,8 +34,8 @@ class TestCompositionComponent:
         def Parent() -> None:
             Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert ctx.root_node is not None
         assert len(ctx.root_node.child_ids) == 1
@@ -44,7 +44,7 @@ class TestCompositionComponent:
         assert child.component == Child
 
     def test_component_with_props_via_parent(self) -> None:
-        """Props are passed when component is called from parent, not from RenderTree."""
+        """Props are passed when component is called from parent, not from RenderSession."""
         received_text: list[str] = []
 
         @component
@@ -55,8 +55,8 @@ class TestCompositionComponent:
         def Parent() -> None:
             Child(text="hello")
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert received_text == ["hello"]
 
@@ -71,8 +71,8 @@ class TestCompositionComponent:
             Child()
             Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert len(ctx.root_node.child_ids) == 3
 
@@ -89,8 +89,8 @@ class TestCompositionComponent:
             Item(label="b")
             Item(label="c")
 
-        ctx = RenderTree(List)
-        ctx.render()
+        ctx = RenderSession(List)
+        render(ctx)
 
         assert len(ctx.root_node.child_ids) == 3
         child0 = ctx.get_node(ctx.root_node.child_ids[0])
@@ -115,12 +115,12 @@ class TestCompositionComponent:
         def ConditionalFalse() -> None:
             pass  # No Item created
 
-        ctx = RenderTree(ConditionalTrue)
-        ctx.render()
+        ctx = RenderSession(ConditionalTrue)
+        render(ctx)
         assert len(ctx.root_node.child_ids) == 1
 
-        ctx2 = RenderTree(ConditionalFalse)
-        ctx2.render()
+        ctx2 = RenderSession(ConditionalFalse)
+        render(ctx2)
         assert len(ctx2.root_node.child_ids) == 0
 
     def test_loop_children(self) -> None:
@@ -135,8 +135,8 @@ class TestCompositionComponent:
             for i in range(5):
                 Item(value=i)
 
-        ctx = RenderTree(List)
-        ctx.render()
+        ctx = RenderSession(List)
+        render(ctx)
 
         assert len(ctx.root_node.child_ids) == 5
         for i, child_id in enumerate(ctx.root_node.child_ids):
@@ -157,8 +157,8 @@ class TestCompositionComponent:
             Item()  # No key parameter
             Item(key="explicit")  # Explicit string key
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         # First two should have None key
         child0 = ctx.get_node(ctx.root_node.child_ids[0])
