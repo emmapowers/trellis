@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from trellis.core.platform import PlatformArgumentError, PlatformType
+from trellis.platforms.common.base import PlatformArgumentError, PlatformType
 
 # Skip marker for tests that require pytauri (desktop platform)
 requires_pytauri = pytest.mark.skipif(

@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING
 
 import msgspec
 
-from trellis.core.message_handler import MessageHandler
-from trellis.core.messages import Message
+from trellis.platforms.common.handler import MessageHandler
+from trellis.platforms.common.messages import Message
 
 if TYPE_CHECKING:
     from pytauri.ipc import Channel

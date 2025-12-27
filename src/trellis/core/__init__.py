@@ -51,10 +51,6 @@ from trellis.core.components import (
     react_component_base,
 )
 
-# Platform (still in core/)
-from trellis.core.message_handler import MessageHandler
-from trellis.core.platform import Platform, PlatformArgumentError, PlatformType
-
 # Rendering
 from trellis.core.rendering import (
     ElementNode,
@@ -73,6 +69,10 @@ from trellis.core.state import (
     callback,
     mutable,
 )
+
+# Platform (moved to platforms/common/)
+from trellis.platforms.common.base import Platform, PlatformArgumentError, PlatformType
+from trellis.platforms.common.handler import MessageHandler
 
 __all__ = [
     "Component",

@@ -6,8 +6,8 @@ import msgspec
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from trellis.core.components.base import Component
-from trellis.core.message_handler import MessageHandler
-from trellis.core.messages import Message
+from trellis.platforms.common.handler import MessageHandler
+from trellis.platforms.common.messages import Message
 
 router = APIRouter()
 

@@ -28,8 +28,8 @@ if TYPE_CHECKING:
     from trellis.core.rendering.element import ElementNode
 
 from trellis.bundler import CORE_PACKAGES, BundleConfig, build_bundle
-from trellis.core.platform import Platform
 from trellis.platforms.common import find_available_port
+from trellis.platforms.common.base import Platform
 
 # Jinja2 environment for HTML templates
 _TEMPLATE_DIR = Path(__file__).parent / "client" / "src"

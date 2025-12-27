@@ -2,7 +2,7 @@
 
 import msgspec
 
-from trellis.core.messages import (
+from trellis.platforms.common.messages import (
     EventMessage,
     HelloMessage,
     HelloResponseMessage,

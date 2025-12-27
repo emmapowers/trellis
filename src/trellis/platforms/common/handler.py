@@ -15,7 +15,16 @@ import typing as tp
 from uuid import uuid4
 
 from trellis.core.components.base import Component
-from trellis.core.messages import (
+from trellis.core.rendering.patches import (
+    RenderAddPatch,
+    RenderPatch,
+    RenderRemovePatch,
+    RenderUpdatePatch,
+)
+from trellis.core.rendering.render import render
+from trellis.core.rendering.session import RenderSession
+from trellis.html.events import get_event_class
+from trellis.platforms.common.messages import (
     AddPatch,
     DebugConfig,
     ErrorMessage,
@@ -28,16 +37,7 @@ from trellis.core.messages import (
     RemovePatch,
     UpdatePatch,
 )
-from trellis.core.rendering.patches import (
-    RenderAddPatch,
-    RenderPatch,
-    RenderRemovePatch,
-    RenderUpdatePatch,
-)
-from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
-from trellis.core.serialization import _serialize_node_props, serialize_node
-from trellis.html.events import get_event_class
+from trellis.platforms.common.serialization import _serialize_node_props, serialize_node
 from trellis.utils.debug import get_enabled_categories
 
 logger = logging.getLogger(__name__)
@@ -320,7 +320,7 @@ class MessageHandler:
         Raises:
             KeyError: If callback not found
         """
-        from trellis.core.serialization import parse_callback_id
+        from trellis.platforms.common.serialization import parse_callback_id
 
         node_id, prop_name = parse_callback_id(callback_id)
         callback = self.session.get_callback(node_id, prop_name)

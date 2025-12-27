@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from trellis.core.components.composition import component
 from trellis.core.rendering.render import render
-from trellis.core.serialization import serialize_node
+from trellis.platforms.common.serialization import serialize_node
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
 from trellis.html.events import (
@@ -14,7 +14,7 @@ from trellis.html.events import (
     KeyboardEvent,
     MouseEvent,
 )
-from trellis.core.message_handler import (
+from trellis.platforms.common.handler import (
     _convert_event_arg,
     _extract_args_kwargs,
     _process_callback_args,

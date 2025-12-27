@@ -16,7 +16,7 @@ from pytauri_wheel.lib import builder_factory, context_factory
 from rich.console import Console
 
 from trellis.bundler import CORE_PACKAGES, DESKTOP_PACKAGES, BundleConfig, build_bundle
-from trellis.core.platform import Platform
+from trellis.platforms.common.base import Platform
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
 
 if TYPE_CHECKING:

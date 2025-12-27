@@ -272,7 +272,7 @@ class TestMutableSerialization:
 
     def test_mutable_serializes_with_callback(self) -> None:
         """Mutable props serialize to __mutable__ format with callback."""
-        from trellis.core.serialization import serialize_node
+        from trellis.platforms.common.serialization import serialize_node
 
         @dataclass
         class State(Stateful):
@@ -300,7 +300,7 @@ class TestMutableSerialization:
 
     def test_mutable_callback_updates_state(self) -> None:
         """The mutable callback updates the underlying state."""
-        from trellis.core.serialization import serialize_node
+        from trellis.platforms.common.serialization import serialize_node
 
         @dataclass
         class State(Stateful):

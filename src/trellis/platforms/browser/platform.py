@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from trellis.core.rendering.element import ElementNode
 
-from trellis.core.platform import Platform
+from trellis.platforms.common.base import Platform
 
 __all__ = ["BrowserPlatform"]
 

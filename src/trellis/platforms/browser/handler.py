@@ -11,8 +11,8 @@ import typing as tp
 from collections.abc import Callable
 
 from trellis.core.components.base import Component
-from trellis.core.message_handler import MessageHandler
-from trellis.core.messages import (
+from trellis.platforms.common.handler import MessageHandler
+from trellis.platforms.common.messages import (
     EventMessage,
     HelloMessage,
     Message,

@@ -16,8 +16,8 @@ from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 
 from trellis.bundler import CORE_PACKAGES, BundleConfig, build_bundle
-from trellis.core.platform import Platform
 from trellis.platforms.common import find_available_port
+from trellis.platforms.common.base import Platform
 from trellis.platforms.server.handler import router as ws_router
 from trellis.platforms.server.middleware import RequestLoggingMiddleware
 from trellis.platforms.server.routes import create_static_dir

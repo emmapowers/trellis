@@ -30,7 +30,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from trellis.core.platform import Platform, PlatformArgumentError, PlatformType
+from trellis.platforms.common.base import Platform, PlatformArgumentError, PlatformType
 from trellis.utils.log_setup import setup_logging
 
 if TYPE_CHECKING:

@@ -10,7 +10,7 @@ from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.dirty_tracker import DirtyTracker
 from trellis.core.rendering.frames import Frame, FrameStack
 from trellis.core.rendering.lifecycle import LifecycleTracker
-from trellis.core.messages import AddPatch, RemovePatch, UpdatePatch
+from trellis.platforms.common.messages import AddPatch, RemovePatch, UpdatePatch
 from trellis.core.rendering.elements import NodeStore
 from trellis.core.rendering.patches import PatchCollector
 from trellis.core.rendering.element import ElementNode

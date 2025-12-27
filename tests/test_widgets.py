@@ -2,7 +2,7 @@
 
 from trellis.core.components.composition import component
 from trellis.core.rendering.render import render
-from trellis.core.serialization import serialize_node
+from trellis.platforms.common.serialization import serialize_node
 from trellis.core.rendering.session import RenderSession
 from trellis.widgets import (
     AreaChart,

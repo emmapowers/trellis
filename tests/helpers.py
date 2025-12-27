@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.messages import AddPatch
+from trellis.platforms.common.messages import AddPatch
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
 

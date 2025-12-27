@@ -6,8 +6,8 @@ from dataclasses import dataclass
 import pytest
 
 from trellis.core.components.composition import component
-from trellis.core.message_handler import MessageHandler
-from trellis.core.messages import AddPatch, ErrorMessage, EventMessage, Message, PatchMessage
+from trellis.platforms.common.handler import MessageHandler
+from trellis.platforms.common.messages import AddPatch, ErrorMessage, EventMessage, Message, PatchMessage
 from trellis.core.components.base import Component
 from trellis.core.rendering.render import render
 from trellis.core.state.stateful import Stateful
@@ -130,7 +130,7 @@ class TestMessageHandler:
         assert len(patches) > 0
 
         # Find the update patch for the label
-        from trellis.core.messages import UpdatePatch
+        from trellis.platforms.common.messages import UpdatePatch
 
         update_patches = [p for p in patches if isinstance(p, UpdatePatch)]
         assert len(update_patches) > 0
@@ -224,7 +224,7 @@ class TestBrowserMessageHandler:
     def test_dict_to_message_converts_hello(self) -> None:
         """_dict_to_message converts hello message dict to HelloMessage."""
         from trellis.platforms.browser.handler import _dict_to_message
-        from trellis.core.messages import HelloMessage
+        from trellis.platforms.common.messages import HelloMessage
 
         result = _dict_to_message({"type": "hello", "client_id": "test-123"})
 
@@ -421,7 +421,7 @@ class TestRenderLoop:
 
     def test_render_loop_sends_patches_when_dirty(self) -> None:
         """Render loop sends PatchMessage when dirty nodes exist."""
-        from trellis.core.messages import HelloMessage, PatchMessage
+        from trellis.platforms.common.messages import HelloMessage, PatchMessage
 
         @dataclass(kw_only=True)
         class CounterState(Stateful):
@@ -496,7 +496,7 @@ class TestRenderLoop:
 
     def test_render_loop_sends_error_on_render_failure(self) -> None:
         """Render loop sends ErrorMessage on render exception."""
-        from trellis.core.messages import HelloMessage
+        from trellis.platforms.common.messages import HelloMessage
 
         @dataclass(kw_only=True)
         class FailState(Stateful):
@@ -563,7 +563,7 @@ class TestRenderLoop:
 
     def test_render_loop_cancels_cleanly(self) -> None:
         """Render loop cancels without error on disconnect."""
-        from trellis.core.messages import HelloMessage
+        from trellis.platforms.common.messages import HelloMessage
 
         @component
         def App() -> None:
@@ -644,7 +644,7 @@ class TestPatchComputation:
         patches = render(handler.session)
 
         # Should have patches, but Outer and Middle labels shouldn't be in them
-        from trellis.core.messages import UpdatePatch
+        from trellis.platforms.common.messages import UpdatePatch
 
         update_patches = [p for p in patches if isinstance(p, UpdatePatch)]
 
@@ -699,7 +699,7 @@ class TestPatchComputation:
         patches = render(handler.session)
 
         # Should have update patches for children reordering
-        from trellis.core.messages import UpdatePatch
+        from trellis.platforms.common.messages import UpdatePatch
 
         update_patches = [p for p in patches if isinstance(p, UpdatePatch)]
         # At least one update should contain children info
@@ -739,7 +739,7 @@ class TestPatchComputation:
         patches = render(handler.session)
 
         # The static label should NOT be in any patch
-        from trellis.core.messages import UpdatePatch
+        from trellis.platforms.common.messages import UpdatePatch
 
         update_patches = [p for p in patches if isinstance(p, UpdatePatch)]
         for patch in update_patches:
@@ -761,7 +761,7 @@ class TestPatchComputation:
         """
         from dataclasses import field
 
-        from trellis.core.messages import AddPatch, RemovePatch
+        from trellis.platforms.common.messages import AddPatch, RemovePatch
         from trellis.widgets import Card
 
         @dataclass(kw_only=True)
