@@ -113,31 +113,33 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
                 elapsed_ms,
             )
 
-        # Process any dirty nodes using _execute_tree
+        # Process dirty nodes one at a time. We pop individually because
+        # re-rendering a parent may also render its dirty children inline,
+        # clearing their dirty state before we get to them in the loop.
         while session.dirty.has_dirty():
-            dirty_ids = session.dirty.pop_all()
+            node_id = session.dirty.pop()
+            if node_id is None:
+                break
 
-            if dirty_ids:
-                logger.debug("Rendering dirty nodes: %s", dirty_ids)
+            logger.debug("Rendering dirty node: %s", node_id)
 
-            for node_id in dirty_ids:
-                state = session.states.get(node_id)
-                if state:
-                    old_node = session.elements.get(node_id)
-                    if old_node:
-                        # Create NEW node for re-render. This ensures the old node
-                        # can be GC'd and removed from any WeakSets (dependency tracking).
-                        new_node = ElementNode(
-                            component=old_node.component,
-                            _session_ref=old_node._session_ref,
-                            render_count=session.render_count,
-                            props=old_node.props,
-                            key=old_node.key,
-                            child_ids=[],
-                            id=old_node.id,
-                        )
-                        session.elements.store(new_node)
-                    _execute_tree(session, node_id, state.parent_id)
+            state = session.states.get(node_id)
+            if state:
+                old_node = session.elements.get(node_id)
+                if old_node:
+                    # Create NEW node for re-render. This ensures the old node
+                    # can be GC'd and removed from any WeakSets (dependency tracking).
+                    new_node = ElementNode(
+                        component=old_node.component,
+                        _session_ref=old_node._session_ref,
+                        render_count=session.render_count,
+                        props=old_node.props,
+                        key=old_node.key,
+                        child_ids=list(old_node.child_ids),
+                        id=old_node.id,
+                    )
+                    session.elements.store(new_node)
+                _execute_tree(session, node_id, state.parent_id)
 
         # Process hooks after tree is fully built
         _process_pending_hooks(session)
@@ -282,8 +284,16 @@ def _execute_tree(
     executed_node = _execute_single_node(session, node, parent_id)
     new_child_ids = list(executed_node.child_ids)
 
+    # Clear dirty flag since we just rendered this node
+    session.dirty.discard(node_id)
+
     # Emit UpdatePatch if props or children changed (for incremental re-renders)
     _emit_update_patch_if_changed(session, node_id)
+
+    # Mark this node as processed by updating old_elements snapshot.
+    # This prevents double-execution when parent re-renders a child that was
+    # already processed in this render pass (node is old_node check will pass).
+    session.active.old_elements.store(executed_node)
 
     # Reconcile children
     if new_child_ids or old_child_ids:

@@ -116,7 +116,7 @@ class RenderSession:
         self.dirty.set_lock(self.lock)
 
     @property
-    def root_element(self) -> tp.Optional[ElementNode]:
+    def root_element(self) -> ElementNode | None:
         """Get the root element node for this session.
 
         Returns:

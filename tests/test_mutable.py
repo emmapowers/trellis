@@ -10,6 +10,13 @@ from trellis.core.state.mutable import Mutable, callback, mutable
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
+from trellis.platforms.common.serialization import parse_callback_id
+
+
+def get_callback_from_id(ctx: RenderSession, cb_id: str):
+    """Helper to get callback using the new two-arg API."""
+    node_id, prop_name = parse_callback_id(cb_id)
+    return ctx.get_callback(node_id, prop_name)
 
 
 class TestMutableClass:
@@ -324,7 +331,7 @@ class TestMutableSerialization:
         cb_id = text_input["props"]["value"]["__mutable__"]
 
         # Invoke the callback
-        callback = ctx.get_callback(cb_id)
+        callback = get_callback_from_id(ctx,cb_id)
         assert callback is not None
         callback("world")
 
@@ -363,7 +370,7 @@ class TestMutableWidgets:
         assert value_prop["value"] == 42.0
 
         # Update via callback
-        callback = ctx.get_callback(value_prop["__mutable__"])
+        callback = get_callback_from_id(ctx,value_prop["__mutable__"])
         callback(100.0)
         assert state_ref[0].count == 100.0
 
@@ -395,7 +402,7 @@ class TestMutableWidgets:
         assert checked_prop["value"] is False
 
         # Update via callback
-        callback = ctx.get_callback(checked_prop["__mutable__"])
+        callback = get_callback_from_id(ctx,checked_prop["__mutable__"])
         callback(True)
         assert state_ref[0].enabled is True
 
@@ -430,7 +437,7 @@ class TestMutableWidgets:
         assert value_prop["value"] == "a"
 
         # Update via callback
-        callback = ctx.get_callback(value_prop["__mutable__"])
+        callback = get_callback_from_id(ctx,value_prop["__mutable__"])
         callback("b")
         assert state_ref[0].choice == "b"
 
@@ -462,7 +469,7 @@ class TestMutableWidgets:
         assert value_prop["value"] == 50.0
 
         # Update via callback
-        callback = ctx.get_callback(value_prop["__mutable__"])
+        callback = get_callback_from_id(ctx,value_prop["__mutable__"])
         callback(75.0)
         assert state_ref[0].volume == 75.0
 
@@ -497,7 +504,7 @@ class TestMutableWidgets:
         assert selected_prop["value"] == "first"
 
         # Update via callback
-        callback = ctx.get_callback(selected_prop["__mutable__"])
+        callback = get_callback_from_id(ctx,selected_prop["__mutable__"])
         callback("second")
         assert state_ref[0].tab == "second"
 
@@ -529,7 +536,7 @@ class TestMutableWidgets:
         assert expanded_prop["value"] is True
 
         # Update via callback
-        cb = ctx.get_callback(expanded_prop["__mutable__"])
+        cb = get_callback_from_id(ctx,expanded_prop["__mutable__"])
         cb(False)
         assert state_ref[0].is_open is False
 
@@ -624,7 +631,7 @@ class TestCallbackFunction:
         assert value_prop["value"] == "hello"
 
         # Invoke the callback - should call custom handler
-        cb = ctx.get_callback(value_prop["__mutable__"])
+        cb = get_callback_from_id(ctx,value_prop["__mutable__"])
         cb("world")
         assert handler_calls == ["world"]
 
@@ -656,7 +663,7 @@ class TestCallbackFunction:
         value_prop = text_input["props"]["value"]
 
         # Invoke callback with unprocessed input
-        cb = ctx.get_callback(value_prop["__mutable__"])
+        cb = get_callback_from_id(ctx,value_prop["__mutable__"])
         cb("  john doe  ")
 
         # Should be processed by custom handler

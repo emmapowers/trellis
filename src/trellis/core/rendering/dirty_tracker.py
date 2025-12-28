@@ -85,6 +85,16 @@ class DirtyTracker:
         self._dirty_ids.clear()
         return ids
 
+    def pop(self) -> str | None:
+        """Pop and return one dirty ID, or None if empty.
+
+        Returns:
+            A dirty node ID, or None if no dirty nodes
+        """
+        if self._dirty_ids:
+            return self._dirty_ids.pop()
+        return None
+
     def __contains__(self, node_id: str) -> bool:
         """Check if a node ID is dirty."""
         return node_id in self._dirty_ids

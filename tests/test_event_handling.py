@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from trellis.core.components.composition import component
 from trellis.core.rendering.render import render
-from trellis.platforms.common.serialization import serialize_node
+from trellis.platforms.common.serialization import parse_callback_id, serialize_node
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
 from trellis.html.events import (
@@ -20,6 +20,12 @@ from trellis.platforms.common.handler import (
     _process_callback_args,
 )
 from trellis.widgets import Button, Label
+
+
+def get_callback_from_id(ctx: RenderSession, cb_id: str):
+    """Helper to get callback using the new two-arg API."""
+    node_id, prop_name = parse_callback_id(cb_id)
+    return ctx.get_callback(node_id, prop_name)
 
 
 class TestCallbackInvocation:
@@ -46,7 +52,7 @@ class TestCallbackInvocation:
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Simulate event handling
-        callback = ctx.get_callback(cb_id)
+        callback = get_callback_from_id(ctx, cb_id)
         assert callback is not None
         callback()
 
@@ -71,7 +77,7 @@ class TestCallbackInvocation:
         button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
-        callback = ctx.get_callback(cb_id)
+        callback = get_callback_from_id(ctx, cb_id)
         assert callback is not None
         callback("arg1", 42, True)
 
@@ -80,7 +86,7 @@ class TestCallbackInvocation:
     def test_unknown_callback_returns_none(self) -> None:
         """get_callback returns None for unknown IDs."""
         ctx = RenderSession(lambda: None)
-        result = ctx.get_callback("nonexistent_cb_999")
+        result = ctx.get_callback("nonexistent_node", "nonexistent_prop")
         assert result is None
 
 
@@ -116,12 +122,11 @@ class TestStateUpdateOnEvent:
         # Get callback and invoke it
         button = tree["children"][1]
         cb_id = button["props"]["on_click"]["__callback__"]
-        callback = ctx.get_callback(cb_id)
+        callback = get_callback_from_id(ctx, cb_id)
         assert callback is not None
         callback()
 
         # Re-render dirty elements
-        ctx.clear_callbacks()
         render(ctx)
 
         # Verify state updated
@@ -160,10 +165,9 @@ class TestStateUpdateOnEvent:
             tree = serialize_node(ctx.root_element, ctx)
             inc_button = tree["children"][2]
             cb_id = inc_button["props"]["on_click"]["__callback__"]
-            callback = ctx.get_callback(cb_id)
+            callback = get_callback_from_id(ctx, cb_id)
             assert callback is not None
             callback()
-            ctx.clear_callbacks()
             render(ctx)
 
         tree = serialize_node(ctx.root_element, ctx)
@@ -174,10 +178,9 @@ class TestStateUpdateOnEvent:
         tree = serialize_node(ctx.root_element, ctx)
         dec_button = tree["children"][0]
         cb_id = dec_button["props"]["on_click"]["__callback__"]
-        callback = ctx.get_callback(cb_id)
+        callback = get_callback_from_id(ctx, cb_id)
         assert callback is not None
         callback()
-        ctx.clear_callbacks()
         render(ctx)
 
         tree = serialize_node(ctx.root_element, ctx)
@@ -304,10 +307,9 @@ class TestDisabledStateOnBoundary:
 
         # Decrement to 1
         cb_id = dec_button["props"]["on_click"]["__callback__"]
-        callback = ctx.get_callback(cb_id)
+        callback = get_callback_from_id(ctx, cb_id)
         assert callback is not None
         callback()
-        ctx.clear_callbacks()
         render(ctx)
 
         # Now should be disabled at count=1
@@ -553,7 +555,7 @@ class TestAsyncCallbackExecution:
         button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
-        callback = ctx.get_callback(cb_id)
+        callback = get_callback_from_id(ctx, cb_id)
         assert callback is not None
         assert inspect.iscoroutinefunction(callback)
 
@@ -583,7 +585,7 @@ class TestCallbackErrorHandling:
         button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
-        callback = ctx.get_callback(cb_id)
+        callback = get_callback_from_id(ctx, cb_id)
         assert callback is not None
 
         try:
@@ -617,8 +619,8 @@ class TestCallbackErrorHandling:
         cb_id_a = btn_a["props"]["on_click"]["__callback__"]
         cb_id_b = btn_b["props"]["on_click"]["__callback__"]
 
-        ctx.get_callback(cb_id_a)()
-        ctx.get_callback(cb_id_b)()
-        ctx.get_callback(cb_id_a)()
+        get_callback_from_id(ctx, cb_id_a)()
+        get_callback_from_id(ctx, cb_id_b)()
+        get_callback_from_id(ctx, cb_id_a)()
 
         assert results == ["a", "b", "a"]

@@ -8,7 +8,7 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.rendering.element import ElementNode
-from trellis.html.base import Style, auto_collect_hybrid, html_element
+from trellis.html.base import Style, html_element
 
 __all__ = [
     "Table",
@@ -120,7 +120,7 @@ def Th(
             h.Span("Name")
             h.Span("*", style={"color": "red"})
     """
-    desc = _Th(
+    return _Th(
         _text=text if text else None,
         scope=scope,
         colSpan=colSpan,
@@ -130,9 +130,6 @@ def Th(
         key=key,
         **props,
     )
-    if text:
-        auto_collect_hybrid(desc)
-    return desc
 
 
 def Td(
@@ -153,7 +150,7 @@ def Td(
             h.Strong("Bold")
             h.Span(" and normal")
     """
-    desc = _Td(
+    return _Td(
         _text=text if text else None,
         colSpan=colSpan,
         rowSpan=rowSpan,
@@ -162,6 +159,3 @@ def Td(
         key=key,
         **props,
     )
-    if text:
-        auto_collect_hybrid(desc)
-    return desc

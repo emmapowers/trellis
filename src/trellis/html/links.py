@@ -8,7 +8,7 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.rendering.element import ElementNode
-from trellis.html.base import Style, auto_collect_hybrid, html_element
+from trellis.html.base import Style, html_element
 from trellis.html.events import MouseHandler
 
 __all__ = [
@@ -72,7 +72,7 @@ def A(
             h.Img(src="icon.png")
             h.Span("Link text")
     """
-    desc = _A(
+    return _A(
         _text=text if text else None,
         href=href,
         target=target,
@@ -83,6 +83,3 @@ def A(
         key=key,
         **props,
     )
-    if text:
-        auto_collect_hybrid(desc)
-    return desc

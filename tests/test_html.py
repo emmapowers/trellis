@@ -3,7 +3,7 @@
 from trellis import html as h
 from trellis.core.components.composition import component
 from trellis.core.rendering.render import render
-from trellis.platforms.common.serialization import serialize_node
+from trellis.platforms.common.serialization import parse_callback_id, serialize_node
 from trellis.core.rendering.session import RenderSession
 
 
@@ -234,7 +234,8 @@ class TestHtmlSerialization:
 
         # Verify callback works
         cb_id = div_data["props"]["onClick"]["__callback__"]
-        ctx.get_callback(cb_id)()
+        node_id, prop_name = parse_callback_id(cb_id)
+        ctx.get_callback(node_id, prop_name)()
         assert clicked == [True]
 
     def test_serialize_link_props(self) -> None:

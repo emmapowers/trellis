@@ -8,7 +8,7 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.rendering.element import ElementNode
-from trellis.html.base import Style, auto_collect_hybrid, html_element
+from trellis.html.base import Style, html_element
 
 __all__ = [
     "Li",
@@ -73,13 +73,10 @@ def Li(
         with h.Li():         # Container with children
             h.Strong("Bold")
     """
-    desc = _Li(
+    return _Li(
         _text=text if text else None,
         className=className,
         style=style,
         key=key,
         **props,
     )
-    if text:
-        auto_collect_hybrid(desc)
-    return desc

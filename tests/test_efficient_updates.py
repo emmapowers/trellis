@@ -351,6 +351,42 @@ class TestDirtyMarkingBehavior:
 
         assert render_counts == {"parent": 2, "child": 1}
 
+    def test_dirty_container_preserves_children(self) -> None:
+        """Container marked dirty should keep its children."""
+        render_counts: dict[str, int] = {"container": 0, "child": 0}
+        children_received: list[int] = []
+
+        @component
+        def Child() -> None:
+            render_counts["child"] += 1
+
+        @component
+        def Container(children: list | None = None) -> None:
+            render_counts["container"] += 1
+            children_received.append(len(children) if children else 0)
+            for child in children or []:
+                child()
+
+        @component
+        def App() -> None:
+            with Container():
+                Child()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        assert render_counts == {"container": 1, "child": 1}
+        assert children_received == [1]
+
+        # Mark container dirty directly (not parent)
+        container_id = ctx.root_element.child_ids[0]
+        ctx.dirty.mark(container_id)
+        render(ctx)
+
+        # Container should still receive its child
+        assert render_counts == {"container": 2, "child": 1}
+        assert children_received == [1, 1]
+
 
 class TestDeeplyNestedStateUpdates:
     """Tests for state updates in deeply nested trees."""

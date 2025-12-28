@@ -13,12 +13,10 @@ from typing import ParamSpec
 
 from trellis.core.components.base import Component, ElementKind
 from trellis.core.rendering.element import ElementNode
-from trellis.core.rendering.session import get_active_session
 
 __all__ = [
     "HtmlElement",
     "Style",
-    "auto_collect_hybrid",
     "html_element",
 ]
 
@@ -157,24 +155,3 @@ def html_element(
         return wrapper
 
     return decorator
-
-
-def auto_collect_hybrid(descriptor: ElementNode) -> ElementNode:
-    """Auto-collect a hybrid element descriptor when text is provided.
-
-    Hybrid elements (like Td, Li, A) can work either as:
-    - Text-only: h.Td("text") - auto-collected
-    - Container: with h.Td(): ... - collected via with block
-
-    This helper enables auto-collection for containers when text is provided.
-
-    Args:
-        descriptor: The element descriptor to auto-collect
-
-    Returns:
-        The same descriptor, for chaining
-    """
-    session = get_active_session()
-    if session is not None and session.active is not None and session.active.frames.has_active():
-        session.active.frames.add_child(descriptor.id)
-    return descriptor

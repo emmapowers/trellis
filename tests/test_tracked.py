@@ -1,5 +1,6 @@
 """Tests for trellis.core.tracked module - reactive tracked collections."""
 
+import gc
 from dataclasses import dataclass, field
 
 import pytest
@@ -680,8 +681,8 @@ class TestDependencyCleanup:
         ctx = RenderSession(App)
         render(ctx)
 
-        consumer_node = ctx.elements.get(ctx.root_element.child_ids[0])
-        consumer_id = consumer_node.id
+        # Get consumer ID without keeping strong reference to node
+        consumer_id = ctx.elements.get(ctx.root_element.child_ids[0]).id
         tracked_list = state.items
         item_a = list.__getitem__(tracked_list, 0)
 
@@ -694,7 +695,10 @@ class TestDependencyCleanup:
         ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
-        # Dependency should be cleaned up (WeakSet auto-removes dead refs)
+        # Force GC so WeakSet can remove dead references
+        gc.collect()
+
+        # Dependency should be cleaned up (WeakSet auto-removes dead refs after GC)
         if id(item_a) in tracked_list._deps:
             dep_node_ids = {n.id for n in tracked_list._deps[id(item_a)]}
             assert consumer_id not in dep_node_ids
@@ -719,8 +723,8 @@ class TestDependencyCleanup:
         ctx = RenderSession(Consumer)
         render(ctx)
 
-        root_node = ctx.root_element
-        root_id = root_node.id
+        # Get root ID without keeping strong reference to old node
+        root_id = ctx.root_element.id
         tracked_dict = state.data
 
         # Initially tracking (check by node ID since object identity may differ)
@@ -732,7 +736,10 @@ class TestDependencyCleanup:
         ctx.dirty.mark(root_id)
         render(ctx)
 
-        # No longer tracking (WeakSet auto-removes dead refs)
+        # Force GC so WeakSet can remove dead references (old node from previous render)
+        gc.collect()
+
+        # No longer tracking (WeakSet auto-removes dead refs after GC)
         if "x" in tracked_dict._deps:
             dep_node_ids = {n.id for n in tracked_dict._deps["x"]}
             assert root_id not in dep_node_ids

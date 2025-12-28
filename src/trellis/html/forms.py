@@ -8,7 +8,7 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.rendering.element import ElementNode
-from trellis.html.base import Style, auto_collect_hybrid, html_element
+from trellis.html.base import Style, html_element
 from trellis.html.events import (
     ChangeHandler,
     FocusHandler,
@@ -186,7 +186,7 @@ def HtmlButton(
             h.Span("Icon")
             h.Span("Text")
     """
-    desc = _HtmlButton(
+    return _HtmlButton(
         _text=text if text else None,
         type=type,
         disabled=disabled,
@@ -197,9 +197,6 @@ def HtmlButton(
         key=key,
         **props,
     )
-    if text:
-        auto_collect_hybrid(desc)
-    return desc
 
 
 def Option(
@@ -241,7 +238,7 @@ def HtmlLabel(
             h.Span("Name")
             h.Input(id="name-input")
     """
-    desc = _HtmlLabel(
+    return _HtmlLabel(
         _text=text if text else None,
         htmlFor=htmlFor,
         className=className,
@@ -249,6 +246,3 @@ def HtmlLabel(
         key=key,
         **props,
     )
-    if text:
-        auto_collect_hybrid(desc)
-    return desc

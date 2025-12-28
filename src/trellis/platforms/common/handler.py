@@ -37,7 +37,10 @@ from trellis.platforms.common.messages import (
     RemovePatch,
     UpdatePatch,
 )
-from trellis.platforms.common.serialization import _serialize_node_props, _serialize_props, serialize_node
+from trellis.platforms.common.serialization import (
+    _serialize_props,
+    serialize_node,
+)
 from trellis.utils.debug import get_enabled_categories
 
 logger = logging.getLogger(__name__)

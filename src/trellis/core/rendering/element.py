@@ -72,6 +72,8 @@ class ElementNode:
     @property
     def properties(self) -> dict[str, tp.Any]:
         """Get props as a mutable dictionary, including child_ids if present."""
+        # TODO: we need to re-evaluate this design; having child_ids sometimes in props
+        # sometimes separate is confusing. See the serializer for an example of why.
         props = self.props.copy()
         if self.child_ids:
             props["child_ids"] = list(self.child_ids)
