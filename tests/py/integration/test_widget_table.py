@@ -85,7 +85,11 @@ class TestTableWidget:
         assert table_inner.component.element_name == "TableInner"
 
         # CellSlots are children of TableInner
-        cell_slots = [ctx.elements.get(cid) for cid in table_inner.child_ids if ctx.elements.get(cid).component.element_name == "CellSlot"]
+        cell_slots = [
+            ctx.elements.get(cid)
+            for cid in table_inner.child_ids
+            if ctx.elements.get(cid).component.element_name == "CellSlot"
+        ]
         assert len(cell_slots) == 2  # One per row (only 'value' column has render)
 
         # Verify slot IDs follow "rowKey:columnName" format
@@ -118,7 +122,11 @@ class TestTableWidget:
 
         table_comp = ctx.elements.get(ctx.root_element.child_ids[0])
         table_inner = ctx.elements.get(table_comp.child_ids[0])
-        cell_slots = [ctx.elements.get(cid) for cid in table_inner.child_ids if ctx.elements.get(cid).component.element_name == "CellSlot"]
+        cell_slots = [
+            ctx.elements.get(cid)
+            for cid in table_inner.child_ids
+            if ctx.elements.get(cid).component.element_name == "CellSlot"
+        ]
 
         # Slot keys should use the row_key column value
         slot_ids = [slot.properties["slot"] for slot in cell_slots]
@@ -149,7 +157,11 @@ class TestTableWidget:
 
         table_comp = ctx.elements.get(ctx.root_element.child_ids[0])
         table_inner = ctx.elements.get(table_comp.child_ids[0])
-        cell_slots = [ctx.elements.get(cid) for cid in table_inner.child_ids if ctx.elements.get(cid).component.element_name == "CellSlot"]
+        cell_slots = [
+            ctx.elements.get(cid)
+            for cid in table_inner.child_ids
+            if ctx.elements.get(cid).component.element_name == "CellSlot"
+        ]
 
         slot_ids = [slot.properties["slot"] for slot in cell_slots]
         assert "custom1:name" in slot_ids
@@ -179,7 +191,11 @@ class TestTableWidget:
 
         table_comp = ctx.elements.get(ctx.root_element.child_ids[0])
         table_inner = ctx.elements.get(table_comp.child_ids[0])
-        cell_slots = [ctx.elements.get(cid) for cid in table_inner.child_ids if ctx.elements.get(cid).component.element_name == "CellSlot"]
+        cell_slots = [
+            ctx.elements.get(cid)
+            for cid in table_inner.child_ids
+            if ctx.elements.get(cid).component.element_name == "CellSlot"
+        ]
 
         slot_ids = [slot.properties["slot"] for slot in cell_slots]
         assert "0:name" in slot_ids

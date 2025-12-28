@@ -5,11 +5,11 @@ from dataclasses import dataclass
 import pytest
 
 from trellis.core.components.composition import component
-from trellis.core.rendering.element import Element
 from trellis.core.components.react import ReactComponentBase, react_component_base
+from trellis.core.rendering.element import Element
 from trellis.core.rendering.render import render
-from trellis.platforms.common.serialization import serialize_node
 from trellis.core.rendering.session import RenderSession
+from trellis.platforms.common.serialization import serialize_node
 from trellis.widgets import Button, Column, Label, Row
 
 
@@ -53,6 +53,7 @@ class TestElementNameProperty:
 
     def test_widget_element_names(self) -> None:
         """Built-in widgets have correct element_name values."""
+
         # Get the underlying component from factory function result
         @component
         def App() -> None:
@@ -173,8 +174,7 @@ class TestReactComponentBaseDecorator:
         """Decorator creates components with _has_children False by default."""
 
         @react_component_base("LeafWidget")
-        def LeafWidget() -> Element:
-            ...
+        def LeafWidget() -> Element: ...
 
         # Access the underlying component
         assert LeafWidget._component._has_children_param is False
@@ -183,8 +183,7 @@ class TestReactComponentBaseDecorator:
         """Decorator can create container components."""
 
         @react_component_base("ContainerWidget", has_children=True)
-        def ContainerWidget() -> Element:
-            ...
+        def ContainerWidget() -> Element: ...
 
         assert ContainerWidget._component._has_children_param is True
 
@@ -192,8 +191,7 @@ class TestReactComponentBaseDecorator:
         """Decorated function exposes _component for introspection."""
 
         @react_component_base("Widget")
-        def Widget() -> Element:
-            ...
+        def Widget() -> Element: ...
 
         assert hasattr(Widget, "_component")
         assert isinstance(Widget._component, ReactComponentBase)

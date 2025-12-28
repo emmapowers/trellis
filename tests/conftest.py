@@ -8,14 +8,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from trellis.core.components.composition import CompositionComponent, component
+from trellis.core.components.composition import CompositionComponent
 from trellis.core.rendering.element import Element
 from trellis.core.rendering.patches import RenderPatch
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.common.serialization import serialize_node
-
 
 # =============================================================================
 # Marker Configuration

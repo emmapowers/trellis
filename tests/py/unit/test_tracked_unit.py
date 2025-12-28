@@ -323,7 +323,7 @@ class TestErrorCases:
     def test_list_remove_missing_raises(self) -> None:
         """Removing non-existent item raises ValueError."""
         lst: TrackedList[int] = TrackedList([1, 2, 3])
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="not in list"):
             lst.remove(999)
 
     def test_list_pop_empty_raises(self) -> None:
@@ -335,7 +335,7 @@ class TestErrorCases:
     def test_list_index_missing_raises(self) -> None:
         """index() on missing item raises ValueError."""
         lst: TrackedList[int] = TrackedList([1, 2, 3])
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="not in list"):
             lst.index(999)
 
     def test_dict_getitem_missing_raises(self) -> None:

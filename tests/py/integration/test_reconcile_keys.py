@@ -40,7 +40,7 @@ class TestExplicitKeyReconciliation:
                 App()
 
         ctx = RenderSession(Root)
-        patches = render(ctx)
+        render(ctx)
 
         # Capture initial child IDs
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -131,8 +131,6 @@ class TestDuplicateKeyIntegration:
 
         ctx = RenderSession(Root)
         render(ctx)
-
-        initial_count = len(ctx.root_element.child_ids[0])
 
         # Trigger re-render
         state.count = 1
@@ -276,18 +274,14 @@ class TestKeyReorderingPatterns:
         render(ctx)
 
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
-        initial_ids = {
-            ctx.elements.get(id).key: id for id in app_element.child_ids
-        }
+        initial_ids = {ctx.elements.get(id).key: id for id in app_element.child_ids}
 
         # Remove middle item
         state.items = ["a", "c"]
         rerender(ctx)
 
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
-        final_ids = {
-            ctx.elements.get(id).key: id for id in app_element.child_ids
-        }
+        final_ids = {ctx.elements.get(id).key: id for id in app_element.child_ids}
 
         # "a" and "c" should have same IDs
         assert initial_ids["a"] == final_ids["a"]
@@ -317,18 +311,14 @@ class TestKeyReorderingPatterns:
         render(ctx)
 
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
-        initial_ids = {
-            ctx.elements.get(id).key: id for id in app_element.child_ids
-        }
+        initial_ids = {ctx.elements.get(id).key: id for id in app_element.child_ids}
 
         # Insert in middle
         state.items = ["a", "b", "c"]
         rerender(ctx)
 
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
-        final_ids = {
-            ctx.elements.get(id).key: id for id in app_element.child_ids
-        }
+        final_ids = {ctx.elements.get(id).key: id for id in app_element.child_ids}
 
         # "a" and "c" should have same IDs
         assert initial_ids["a"] == final_ids["a"]

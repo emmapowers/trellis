@@ -119,9 +119,7 @@ class TestNavigationWidgets:
         @component
         def App() -> None:
             Tree(
-                data=[
-                    {"id": "1", "label": "Root", "children": [{"id": "1.1", "label": "Child"}]}
-                ],
+                data=[{"id": "1", "label": "Root", "children": [{"id": "1.1", "label": "Child"}]}],
                 selected="1",
                 expanded=["1"],
             )

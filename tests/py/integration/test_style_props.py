@@ -2,10 +2,10 @@
 
 from trellis.core.components.composition import component
 from trellis.core.components.react import _merge_style_props
+from trellis.core.components.style_props import Height, Margin, Padding, Width
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
-from trellis.core.components.style_props import Height, Margin, Padding, Width
-from trellis.widgets import Button, Card, Column, Label, Row
+from trellis.widgets import Button, Card, Column, Label
 
 
 class TestMargin:

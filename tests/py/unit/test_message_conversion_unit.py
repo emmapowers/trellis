@@ -32,11 +32,15 @@ class TestMessageToDict:
         """
         from trellis.platforms.browser.handler import _message_to_dict
 
-        msg = PatchMessage(patches=[
-            AddPatch(parent_id="root", children=["child1"], node={"id": "child1", "name": "Label"}),
-            UpdatePatch(id="node1", props={"text": "hello"}, children=None),
-            RemovePatch(id="node2"),
-        ])
+        msg = PatchMessage(
+            patches=[
+                AddPatch(
+                    parent_id="root", children=["child1"], node={"id": "child1", "name": "Label"}
+                ),
+                UpdatePatch(id="node1", props={"text": "hello"}, children=None),
+                RemovePatch(id="node2"),
+            ]
+        )
         result = _message_to_dict(msg)
 
         # All patches should be plain dicts, not msgspec Struct instances

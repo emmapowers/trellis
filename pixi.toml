@@ -31,10 +31,10 @@ ci = []
 
 [tasks]
 # Formatting
-fmt = { cmd = "black src", description = "Format code with black" }
-fmt-check = { cmd = "black --check src", description = "Check black formatting" }
-ruff-fix = { cmd = "ruff check --fix src", depends-on = ["fmt"], description = "Run ruff with auto-fix" }
-ruff-check = { cmd = "ruff check src", description = "Check ruff linting" }
+fmt = { cmd = "black src tests", description = "Format code with black" }
+fmt-check = { cmd = "black --check src tests", description = "Check black formatting" }
+ruff-fix = { cmd = "ruff check --fix src tests", depends-on = ["fmt"], description = "Run ruff with auto-fix" }
+ruff-check = { cmd = "ruff check src tests", description = "Check ruff linting" }
 
 # Type checking
 mypy = { cmd = "dmypy run src examples", description = "Run mypy (daemon)" }

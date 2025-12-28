@@ -3,13 +3,11 @@
 import concurrent.futures
 import logging
 import threading
-import weakref
 from dataclasses import dataclass
 
 import pytest
 
 from trellis.core.components.composition import CompositionComponent, component
-from trellis.core.rendering.element import Element
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession, get_active_session, set_active_session
 from trellis.core.state.stateful import Stateful
@@ -275,8 +273,11 @@ class TestThreadSafeStateUpdates:
 
         # Store a callback in a node's props
         node = ctx.root_element
-        cb = lambda: "test_callback"
-        node.props["on_click"] = cb
+
+        def test_cb() -> str:
+            return "test_callback"
+
+        node.props["on_click"] = test_cb
 
         # get_callback should find it
         result = ctx.get_callback(node.id, "on_click")
@@ -563,8 +564,8 @@ class TestBuiltinWidgetsReconciliation:
 
     def test_remove_widget_from_middle_of_list(self) -> None:
         """Removing a widget from the middle exercises type-based matching."""
-        from trellis.widgets import Row, Button
         from trellis import html as h
+        from trellis.widgets import Button, Row
 
         items_ref = [["a", "b", "c", "d"]]
 
@@ -617,7 +618,7 @@ class TestBuiltinWidgetsReconciliation:
 
     def test_widgets_in_dynamic_list(self) -> None:
         """Widgets (via @react_component_base) should be hashable for reconciliation."""
-        from trellis.widgets import Column, Row, Label, Button
+        from trellis.widgets import Button, Column, Label, Row
 
         items_ref = [[1, 2, 3, 4, 5]]
 
@@ -811,6 +812,7 @@ class TestLifecycleHooksCanModifyState:
         that other components depend on - the real scenario that could deadlock
         or raise RuntimeError if hooks run during render.
         """
+
         # Shared state that will be modified by on_mount
         @dataclass
         class SharedState(Stateful):
@@ -851,6 +853,7 @@ class TestLifecycleHooksCanModifyState:
 
     def test_on_unmount_can_modify_shared_state(self) -> None:
         """on_unmount hook should be able to modify shared state without error."""
+
         @dataclass
         class SharedState(Stateful):
             value: int = 0
@@ -892,7 +895,9 @@ class TestHookErrorHandling:
     Ensures that exceptions in hooks don't prevent state cleanup.
     """
 
-    def test_unmount_hook_exception_logs_and_removes_state(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_unmount_hook_exception_logs_and_removes_state(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
         """When on_unmount raises, the exception is logged and state is still removed."""
 
         @dataclass
@@ -928,7 +933,9 @@ class TestHookErrorHandling:
         # Exception should be logged
         assert "unmount hook error" in caplog.text
 
-    def test_mount_hook_exception_logs_and_continues(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_mount_hook_exception_logs_and_continues(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
         """When on_mount raises, the exception is logged and render continues."""
         mount_order: list[str] = []
 

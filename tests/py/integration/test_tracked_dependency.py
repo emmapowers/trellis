@@ -7,7 +7,7 @@ from trellis.core.components.composition import component
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
-from trellis.core.state.tracked import ITER_KEY, TrackedDict, TrackedList, TrackedSet
+from trellis.core.state.tracked import ITER_KEY, TrackedDict, TrackedList
 
 
 class TestDependencyTracking:

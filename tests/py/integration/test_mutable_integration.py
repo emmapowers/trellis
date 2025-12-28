@@ -6,9 +6,9 @@ import pytest
 
 from tests.helpers import render_to_tree
 from trellis.core.components.composition import component
-from trellis.core.state.mutable import Mutable, callback, mutable
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
+from trellis.core.state.mutable import Mutable, callback, mutable
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.common.serialization import parse_callback_id
 
@@ -132,7 +132,6 @@ class TestMutableSerialization:
 
     def test_mutable_serializes_with_callback(self) -> None:
         """Mutable props serialize to __mutable__ format with callback."""
-        from trellis.platforms.common.serialization import serialize_node
 
         @dataclass
         class State(Stateful):
@@ -160,7 +159,6 @@ class TestMutableSerialization:
 
     def test_mutable_callback_updates_state(self) -> None:
         """The mutable callback updates the underlying state."""
-        from trellis.platforms.common.serialization import serialize_node
 
         @dataclass
         class State(Stateful):
@@ -646,9 +644,9 @@ class TestMutableRerender:
                 input_update = patch
                 break
 
-        assert input_update is not None, (
-            "Expected RenderUpdatePatch for TextInput after mutable callback"
-        )
+        assert (
+            input_update is not None
+        ), "Expected RenderUpdatePatch for TextInput after mutable callback"
         assert input_update.props is not None
         # Patch props contain raw Mutable objects, not serialized dicts
         value_mutable = input_update.props["value"]
@@ -702,9 +700,9 @@ class TestMutableRerender:
                 slider_update = patch
                 break
 
-        assert slider_update is not None, (
-            "Expected RenderUpdatePatch for Slider after mutable callback"
-        )
+        assert (
+            slider_update is not None
+        ), "Expected RenderUpdatePatch for Slider after mutable callback"
         assert slider_update.props is not None
         # Patch props contain raw Mutable objects, not serialized dicts
         value_mutable = slider_update.props["value"]

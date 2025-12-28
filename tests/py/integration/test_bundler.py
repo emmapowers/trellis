@@ -20,7 +20,9 @@ class TestEnsureEsbuild:
 
         plat = _get_platform()
         binary_name = "esbuild.exe" if plat.startswith("win32") else "esbuild"
-        expected_path = BIN_DIR / f"esbuild-{ESBUILD_VERSION}-{plat}" / "package" / "bin" / binary_name
+        expected_path = (
+            BIN_DIR / f"esbuild-{ESBUILD_VERSION}-{plat}" / "package" / "bin" / binary_name
+        )
 
         result = ensure_esbuild()
 
@@ -88,5 +90,5 @@ class TestDesktopPlatformBundle:
         assert index_path.exists()
         # Verify HTML contains expected content
         html_content = index_path.read_text()
-        assert "<div id=\"root\"></div>" in html_content
+        assert '<div id="root"></div>' in html_content
         assert "bundle.js" in html_content

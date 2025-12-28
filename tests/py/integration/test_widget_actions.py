@@ -3,7 +3,16 @@
 from trellis.core.components.composition import component
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
-from trellis.widgets import Button, Callout, Collapsible, Label, Menu, MenuDivider, MenuItem, Toolbar
+from trellis.widgets import (
+    Button,
+    Callout,
+    Collapsible,
+    Label,
+    Menu,
+    MenuDivider,
+    MenuItem,
+    Toolbar,
+)
 
 
 class TestFeedbackWidgets:

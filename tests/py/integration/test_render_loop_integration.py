@@ -1,8 +1,8 @@
 """Integration tests for render loop behavior and patch computation."""
 
 import asyncio
-from dataclasses import dataclass, field
 import typing as tp
+from dataclasses import dataclass, field
 
 import pytest
 
@@ -288,7 +288,7 @@ class TestPatchComputation:
 
         # Initial order: a, b, c
         labels = [c for c in tree["children"] if c["name"] == "Label"]
-        assert [l["props"]["text"] for l in labels] == ["a", "b", "c"]
+        assert [label["props"]["text"] for label in labels] == ["a", "b", "c"]
 
         # Get reverse callback
         button = next(c for c in tree["children"] if c["name"] == "Button")
@@ -343,7 +343,10 @@ class TestPatchComputation:
                 # If it is in the patches, it shouldn't have any actual changes
                 # (or it shouldn't be there at all)
                 if patch.props:
-                    assert "text" not in patch.props or patch.props["text"] != "Static label that never changes"
+                    assert (
+                        "text" not in patch.props
+                        or patch.props["text"] != "Static label that never changes"
+                    )
 
     def test_container_child_replacement_emits_add_remove_patches(self) -> None:
         """Replacing container children emits RemovePatch and AddPatch.

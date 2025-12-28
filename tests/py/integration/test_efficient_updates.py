@@ -241,18 +241,14 @@ class TestPropsUnchangedOptimization:
         ctx = RenderSession(Root)
         render(ctx)
 
-        assert render_counts == {
-            "root": 1, "level1": 1, "level2": 1, "level3": 1, "leaf": 1
-        }
+        assert render_counts == {"root": 1, "level1": 1, "level2": 1, "level3": 1, "leaf": 1}
 
         # Re-render only root - nothing else should change
         ctx.dirty.mark(ctx.root_element.id)
         render(ctx)
 
         # Only root re-executes since all children have unchanged props
-        assert render_counts == {
-            "root": 2, "level1": 1, "level2": 1, "level3": 1, "leaf": 1
-        }
+        assert render_counts == {"root": 2, "level1": 1, "level2": 1, "level3": 1, "leaf": 1}
 
 
 class TestDirtyMarkingBehavior:
@@ -415,6 +411,7 @@ class TestDeeplyNestedStateUpdates:
                     Leaf()
                 else:
                     make_level(n + 1)()
+
             return Level
 
         @component
