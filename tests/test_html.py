@@ -1,9 +1,10 @@
 """Tests for native HTML elements."""
 
 from trellis import html as h
-from trellis.core.composition_component import component
-from trellis.core.rendering import RenderTree
-from trellis.core.serialization import serialize_node
+from trellis.core.components.composition import component
+from trellis.core.rendering.render import render
+from trellis.platforms.common.serialization import parse_callback_id, serialize_node
+from trellis.core.rendering.session import RenderSession
 
 
 class TestHtmlElements:
@@ -17,13 +18,13 @@ class TestHtmlElements:
             with h.Div():
                 h.Span("Hello")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        div = ctx.root_node.children[0]
+        div = ctx.elements.get(ctx.root_element.child_ids[0])
         assert div.component.name == "Div"
-        assert len(div.children) == 1
-        assert div.children[0].component.name == "Span"
+        assert len(div.child_ids) == 1
+        assert ctx.elements.get(div.child_ids[0]).component.name == "Span"
 
     def test_nested_divs(self) -> None:
         """Divs can be nested."""
@@ -34,12 +35,12 @@ class TestHtmlElements:
                 with h.Div():
                     h.Span("Nested")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        outer = ctx.root_node.children[0]
-        inner = outer.children[0]
-        span = inner.children[0]
+        outer = ctx.elements.get(ctx.root_element.child_ids[0])
+        inner = ctx.elements.get(outer.child_ids[0])
+        span = ctx.elements.get(inner.child_ids[0])
 
         assert outer.component.name == "Div"
         assert inner.component.name == "Div"
@@ -54,12 +55,12 @@ class TestHtmlElements:
             h.P("Paragraph text")
             h.Span("Inline text")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        h1 = ctx.root_node.children[0]
-        p = ctx.root_node.children[1]
-        span = ctx.root_node.children[2]
+        h1 = ctx.elements.get(ctx.root_element.child_ids[0])
+        p = ctx.elements.get(ctx.root_element.child_ids[1])
+        span = ctx.elements.get(ctx.root_element.child_ids[2])
 
         assert h1.properties["_text"] == "Page Title"
         assert p.properties["_text"] == "Paragraph text"
@@ -73,10 +74,10 @@ class TestHtmlElements:
             with h.Div(style={"backgroundColor": "red", "padding": "10px"}):
                 pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        div = ctx.root_node.children[0]
+        div = ctx.elements.get(ctx.root_element.child_ids[0])
         assert div.properties["style"] == {"backgroundColor": "red", "padding": "10px"}
 
     def test_element_with_class_name(self) -> None:
@@ -87,10 +88,10 @@ class TestHtmlElements:
             with h.Div(className="container"):
                 pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        div = ctx.root_node.children[0]
+        div = ctx.elements.get(ctx.root_element.child_ids[0])
         assert div.properties["className"] == "container"
 
     def test_text_renders_plain_text(self) -> None:
@@ -102,14 +103,14 @@ class TestHtmlElements:
                 h.Span("Count: ")
                 h.Text(42)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        div = ctx.root_node.children[0]
-        assert len(div.children) == 2
-        assert div.children[0].component.name == "Span"
-        assert div.children[1].component.name == "Text"
-        assert div.children[1].properties["_text"] == "42"
+        div = ctx.elements.get(ctx.root_element.child_ids[0])
+        assert len(div.child_ids) == 2
+        assert ctx.elements.get(div.child_ids[0]).component.name == "Span"
+        assert ctx.elements.get(div.child_ids[1]).component.name == "Text"
+        assert ctx.elements.get(div.child_ids[1]).properties["_text"] == "42"
 
     def test_text_converts_values_to_string(self) -> None:
         """Text converts any value to string."""
@@ -121,13 +122,13 @@ class TestHtmlElements:
             h.Text(True)
             h.Text(None)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        assert ctx.root_node.children[0].properties["_text"] == "123"
-        assert ctx.root_node.children[1].properties["_text"] == "3.14"
-        assert ctx.root_node.children[2].properties["_text"] == "True"
-        assert ctx.root_node.children[3].properties["_text"] == "None"
+        assert ctx.elements.get(ctx.root_element.child_ids[0]).properties["_text"] == "123"
+        assert ctx.elements.get(ctx.root_element.child_ids[1]).properties["_text"] == "3.14"
+        assert ctx.elements.get(ctx.root_element.child_ids[2]).properties["_text"] == "True"
+        assert ctx.elements.get(ctx.root_element.child_ids[3]).properties["_text"] == "None"
 
 
 class TestHtmlSerialization:
@@ -141,10 +142,10 @@ class TestHtmlSerialization:
             with h.Div():
                 pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
         div_data = result["children"][0]
 
         assert div_data["type"] == "div"
@@ -160,10 +161,10 @@ class TestHtmlSerialization:
             h.P("paragraph")
             h.A("link", href="https://example.com")  # A is hybrid, needs text or with
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
 
         assert result["children"][0]["type"] == "span"
         assert result["children"][1]["type"] == "h1"
@@ -177,10 +178,10 @@ class TestHtmlSerialization:
         def App() -> None:
             h.H1("Hello World")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
         h1_data = result["children"][0]
 
         assert h1_data["type"] == "h1"
@@ -196,10 +197,10 @@ class TestHtmlSerialization:
                 with h.Div():
                     h.P("Content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
         outer = result["children"][0]
 
         assert outer["type"] == "div"
@@ -223,17 +224,18 @@ class TestHtmlSerialization:
             with h.Div(onClick=lambda: clicked.append(True)):
                 pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
         div_data = result["children"][0]
 
         assert "__callback__" in div_data["props"]["onClick"]
 
         # Verify callback works
         cb_id = div_data["props"]["onClick"]["__callback__"]
-        ctx.get_callback(cb_id)()
+        node_id, prop_name = parse_callback_id(cb_id)
+        ctx.get_callback(node_id, prop_name)()
         assert clicked == [True]
 
     def test_serialize_link_props(self) -> None:
@@ -243,10 +245,10 @@ class TestHtmlSerialization:
         def App() -> None:
             h.A("Click here", href="https://example.com", target="_blank")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
         a_data = result["children"][0]
 
         assert a_data["type"] == "a"
@@ -263,10 +265,10 @@ class TestHtmlSerialization:
                 h.Span("Label: ")
                 h.Text("value")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
         div_data = result["children"][0]
 
         assert len(div_data["children"]) == 2
@@ -292,13 +294,13 @@ class TestHybridElements:
                 h.Td("Cell 1")
                 h.Td("Cell 2")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        tr = ctx.root_node.children[0]
-        assert len(tr.children) == 2
-        assert tr.children[0].properties["_text"] == "Cell 1"
-        assert tr.children[1].properties["_text"] == "Cell 2"
+        tr = ctx.elements.get(ctx.root_element.child_ids[0])
+        assert len(tr.child_ids) == 2
+        assert ctx.elements.get(tr.child_ids[0]).properties["_text"] == "Cell 1"
+        assert ctx.elements.get(tr.child_ids[1]).properties["_text"] == "Cell 2"
 
     def test_td_as_container(self) -> None:
         """Td without text can be used as container."""
@@ -310,14 +312,14 @@ class TestHybridElements:
                     h.Strong("Bold")
                     h.Span(" text")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        tr = ctx.root_node.children[0]
-        td = tr.children[0]
-        assert len(td.children) == 2
-        assert td.children[0].component.name == "Strong"
-        assert td.children[1].component.name == "Span"
+        tr = ctx.elements.get(ctx.root_element.child_ids[0])
+        td = ctx.elements.get(tr.child_ids[0])
+        assert len(td.child_ids) == 2
+        assert ctx.elements.get(td.child_ids[0]).component.name == "Strong"
+        assert ctx.elements.get(td.child_ids[1]).component.name == "Span"
 
     def test_li_with_text_auto_collects(self) -> None:
         """Li with text is auto-collected."""
@@ -328,11 +330,11 @@ class TestHybridElements:
                 h.Li("Item 1")
                 h.Li("Item 2")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        ul = ctx.root_node.children[0]
-        assert len(ul.children) == 2
+        ul = ctx.elements.get(ctx.root_element.child_ids[0])
+        assert len(ul.child_ids) == 2
 
     def test_li_as_container(self) -> None:
         """Li without text can be used as container."""
@@ -343,13 +345,13 @@ class TestHybridElements:
                 with h.Li():
                     h.Strong("Bold item")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        ul = ctx.root_node.children[0]
-        li = ul.children[0]
-        assert len(li.children) == 1
-        assert li.children[0].component.name == "Strong"
+        ul = ctx.elements.get(ctx.root_element.child_ids[0])
+        li = ctx.elements.get(ul.child_ids[0])
+        assert len(li.child_ids) == 1
+        assert ctx.elements.get(li.child_ids[0]).component.name == "Strong"
 
     def test_a_with_text_auto_collects(self) -> None:
         """A with text is auto-collected."""
@@ -359,13 +361,13 @@ class TestHybridElements:
             with h.Div():
                 h.A("Click here", href="/path")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        div = ctx.root_node.children[0]
-        assert len(div.children) == 1
-        assert div.children[0].properties["_text"] == "Click here"
-        assert div.children[0].properties["href"] == "/path"
+        div = ctx.elements.get(ctx.root_element.child_ids[0])
+        assert len(div.child_ids) == 1
+        assert ctx.elements.get(div.child_ids[0]).properties["_text"] == "Click here"
+        assert ctx.elements.get(div.child_ids[0]).properties["href"] == "/path"
 
     def test_a_as_container(self) -> None:
         """A without text can be used as container."""
@@ -376,13 +378,13 @@ class TestHybridElements:
                 with h.A(href="/path"):
                     h.Span("Link text")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        div = ctx.root_node.children[0]
-        a = div.children[0]
-        assert len(a.children) == 1
-        assert a.children[0].component.name == "Span"
+        div = ctx.elements.get(ctx.root_element.child_ids[0])
+        a = ctx.elements.get(div.child_ids[0])
+        assert len(a.child_ids) == 1
+        assert ctx.elements.get(a.child_ids[0]).component.name == "Span"
 
     def test_hybrid_no_double_collection(self) -> None:
         """Using with on a text hybrid element doesn't double-collect."""
@@ -394,13 +396,13 @@ class TestHybridElements:
                 with h.Td("text"):
                     pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        div = ctx.root_node.children[0]
+        div = ctx.elements.get(ctx.root_element.child_ids[0])
         # Should only have one Td child, not two
-        assert len(div.children) == 1
-        assert div.children[0].component.name == "Td"
+        assert len(div.child_ids) == 1
+        assert ctx.elements.get(div.child_ids[0]).component.name == "Td"
 
 
 class TestHtmlContainerBehavior:
@@ -415,12 +417,12 @@ class TestHtmlContainerBehavior:
                 h.H1("Section Title")
                 h.P("Section content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        section = ctx.root_node.children[0]
+        section = ctx.elements.get(ctx.root_element.child_ids[0])
         assert section.component.name == "Section"
-        assert len(section.children) == 2
+        assert len(section.child_ids) == 2
 
     def test_article_is_container(self) -> None:
         """Article element supports children."""
@@ -430,12 +432,12 @@ class TestHtmlContainerBehavior:
             with h.Article():
                 h.H2("Article Title")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        article = ctx.root_node.children[0]
+        article = ctx.elements.get(ctx.root_element.child_ids[0])
         assert article.component.name == "Article"
-        assert len(article.children) == 1
+        assert len(article.child_ids) == 1
 
     def test_ul_with_li_children(self) -> None:
         """List elements work together."""
@@ -447,13 +449,14 @@ class TestHtmlContainerBehavior:
                 h.Li("Item 2")
                 h.Li("Item 3")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        ul = ctx.root_node.children[0]
+        ul = ctx.elements.get(ctx.root_element.child_ids[0])
         assert ul.component.name == "Ul"
-        assert len(ul.children) == 3
+        assert len(ul.child_ids) == 3
 
-        for i, li in enumerate(ul.children):
+        for i, li_id in enumerate(ul.child_ids):
+            li = ctx.elements.get(li_id)
             assert li.component.name == "Li"
             assert li.properties["_text"] == f"Item {i + 1}"

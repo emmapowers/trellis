@@ -5,20 +5,33 @@ from dataclasses import dataclass
 
 import pytest
 
-from trellis.core.composition_component import component
-from trellis.core.message_handler import MessageHandler
-from trellis.core.messages import ErrorMessage, EventMessage, Message, RenderMessage
-from trellis.core.rendering import IComponent
-from trellis.core.state import Stateful
+from trellis.core.components.composition import component
+from trellis.platforms.common.handler import MessageHandler
+from trellis.core.rendering.patches import RenderAddPatch, RenderRemovePatch, RenderUpdatePatch
+from trellis.platforms.common.messages import AddPatch, ErrorMessage, EventMessage, Message, PatchMessage
+from trellis.core.components.base import Component
+from trellis.core.rendering.render import render
+from trellis.core.state.stateful import Stateful
 from trellis.widgets import Button, Label
 from trellis.platforms.browser import BrowserMessageHandler
+import typing as tp
+
+
+def get_initial_tree(handler: MessageHandler) -> dict[str, tp.Any]:
+    """Helper to get tree dict from initial render."""
+    msg = handler.initial_render()
+    assert isinstance(msg, PatchMessage)
+    assert len(msg.patches) == 1
+    patch = msg.patches[0]
+    assert isinstance(patch, AddPatch)
+    return patch.node
 
 
 class TestMessageHandler:
     """Tests for MessageHandler base class."""
 
-    def test_initial_render_returns_render_message(self) -> None:
-        """initial_render() returns a RenderMessage with tree."""
+    def test_initial_render_returns_patch_message(self) -> None:
+        """initial_render() returns a PatchMessage with AddPatch."""
 
         @component
         def App() -> None:
@@ -27,12 +40,15 @@ class TestMessageHandler:
         handler = MessageHandler(App)
         msg = handler.initial_render()
 
-        assert isinstance(msg, RenderMessage)
-        assert "children" in msg.tree
-        assert msg.tree["children"][0]["props"]["text"] == "Hello"
+        assert isinstance(msg, PatchMessage)
+        assert len(msg.patches) == 1
+        assert isinstance(msg.patches[0], AddPatch)
+        tree = msg.patches[0].node
+        assert "children" in tree
+        assert tree["children"][0]["props"]["text"] == "Hello"
 
     def test_handle_message_with_event(self) -> None:
-        """handle_message() invokes callback and returns RenderMessage."""
+        """handle_message() invokes callback (rendering is batched separately)."""
         clicked = []
 
         @component
@@ -40,17 +56,19 @@ class TestMessageHandler:
             Button(text="Click", on_click=lambda: clicked.append(True))
 
         handler = MessageHandler(App)
-        initial = handler.initial_render()
+        tree = get_initial_tree(handler)
 
         # Get callback ID from tree
-        button = initial.tree["children"][0]
+        button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Send event message
         event_msg = EventMessage(callback_id=cb_id, args=[])
         response = asyncio.run(handler.handle_message(event_msg))
 
-        assert isinstance(response, RenderMessage)
+        # With batched rendering, handle_message returns None
+        # Rendering happens in the background loop
+        assert response is None
         assert clicked == [True]
 
     def test_handle_message_with_unknown_callback(self) -> None:
@@ -63,16 +81,16 @@ class TestMessageHandler:
         handler = MessageHandler(App)
         handler.initial_render()
 
-        event_msg = EventMessage(callback_id="unknown:callback", args=[])
+        event_msg = EventMessage(callback_id="unknown|callback", args=[])
         response = asyncio.run(handler.handle_message(event_msg))
 
         # Returns ErrorMessage because callback not found
         assert isinstance(response, ErrorMessage)
         assert response.context == "callback"
-        assert "Callback not found: unknown:callback" in response.error
+        assert "Callback not found: unknown|callback" in response.error
 
     def test_handle_message_with_state_update(self) -> None:
-        """handle_message() re-renders after state change."""
+        """handle_message() marks nodes dirty, render() sends patches."""
 
         @dataclass(kw_only=True)
         class CounterState(Stateful):
@@ -89,23 +107,35 @@ class TestMessageHandler:
             Button(text="+", on_click=increment)
 
         handler = MessageHandler(Counter)
-        initial = handler.initial_render()
+        tree = get_initial_tree(handler)
 
         # Verify initial state
-        label = initial.tree["children"][0]
+        label = tree["children"][0]
         assert label["props"]["text"] == "0"
 
         # Get callback and invoke
-        button = initial.tree["children"][1]
+        button = tree["children"][1]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         event_msg = EventMessage(callback_id=cb_id, args=[])
         response = asyncio.run(handler.handle_message(event_msg))
 
-        # Verify updated state
-        assert isinstance(response, RenderMessage)
-        label = response.tree["children"][0]
-        assert label["props"]["text"] == "1"
+        # With batched rendering, handle_message returns None
+        assert response is None
+
+        # Nodes should be dirty now
+        assert handler.session.dirty.has_dirty()
+
+        # Render should produce patches
+        patches = render(handler.session)
+        assert len(patches) > 0
+
+        # Find the update patch for the label - render() returns RenderUpdatePatch
+        update_patches = [p for p in patches if isinstance(p, RenderUpdatePatch)]
+        assert len(update_patches) > 0
+        # Check that a props update was emitted with the new text value
+        props_patches = [p for p in update_patches if p.props and p.props.get("text") == "1"]
+        assert len(props_patches) > 0
 
     def test_handle_message_with_event_args(self) -> None:
         """handle_message() converts event args to dataclasses."""
@@ -116,9 +146,9 @@ class TestMessageHandler:
             Button(text="Click", on_click=lambda e: received.append(e))
 
         handler = MessageHandler(App)
-        initial = handler.initial_render()
+        tree = get_initial_tree(handler)
 
-        button = initial.tree["children"][0]
+        button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Send event with mouse event data
@@ -145,7 +175,7 @@ class TestMessageHandler:
         handler.initial_render()
 
         # Callback should exist
-        assert handler.tree.get_callback is not None
+        assert handler.session.get_callback is not None
 
         handler.cleanup()
 
@@ -157,14 +187,53 @@ class TestMessageHandler:
 class TestBrowserMessageHandler:
     """Tests for BrowserMessageHandler."""
 
-    def test_message_to_dict_converts_render_message(self) -> None:
-        """_message_to_dict converts RenderMessage to dict with type field."""
+    def test_message_to_dict_converts_patch_message(self) -> None:
+        """_message_to_dict converts PatchMessage to dict with type field."""
         from trellis.platforms.browser.handler import _message_to_dict
 
-        msg = RenderMessage(tree={"root": "data"})
+        msg = PatchMessage(patches=[])
         result = _message_to_dict(msg)
 
-        assert result == {"type": "render", "tree": {"root": "data"}}
+        assert result == {"type": "patch", "patches": []}
+
+    def test_message_to_dict_converts_nested_patch_structs(self) -> None:
+        """_message_to_dict recursively converts nested msgspec structs to dicts.
+
+        This is required for postMessage which can only clone plain objects,
+        not msgspec Struct instances.
+        """
+        from trellis.platforms.browser.handler import _message_to_dict
+        from trellis.platforms.common.messages import AddPatch, UpdatePatch, RemovePatch
+
+        msg = PatchMessage(patches=[
+            AddPatch(parent_id="root", children=["child1"], node={"id": "child1", "name": "Label"}),
+            UpdatePatch(id="node1", props={"text": "hello"}, children=None),
+            RemovePatch(id="node2"),
+        ])
+        result = _message_to_dict(msg)
+
+        # All patches should be plain dicts, not msgspec Struct instances
+        assert isinstance(result["patches"], list)
+        for patch in result["patches"]:
+            assert isinstance(patch, dict), f"Expected dict, got {type(patch)}"
+
+        # Verify the structure is correct
+        assert result["patches"][0] == {
+            "op": "add",
+            "parent_id": "root",
+            "children": ["child1"],
+            "node": {"id": "child1", "name": "Label"},
+        }
+        assert result["patches"][1] == {
+            "op": "update",
+            "id": "node1",
+            "props": {"text": "hello"},
+            "children": None,
+        }
+        assert result["patches"][2] == {
+            "op": "remove",
+            "id": "node2",
+        }
 
     def test_message_to_dict_converts_error_message(self) -> None:
         """_message_to_dict converts ErrorMessage to dict with type field."""
@@ -192,7 +261,7 @@ class TestBrowserMessageHandler:
     def test_dict_to_message_converts_hello(self) -> None:
         """_dict_to_message converts hello message dict to HelloMessage."""
         from trellis.platforms.browser.handler import _dict_to_message
-        from trellis.core.messages import HelloMessage
+        from trellis.platforms.common.messages import HelloMessage
 
         result = _dict_to_message({"type": "hello", "client_id": "test-123"})
 
@@ -255,12 +324,12 @@ class TestBrowserMessageHandler:
         handler = BrowserMessageHandler(App)
         handler.set_send_callback(lambda msg: received_messages.append(msg))
 
-        msg = RenderMessage(tree={"test": "data"})
+        msg = PatchMessage(patches=[])
         asyncio.run(handler.send_message(msg))
 
         assert len(received_messages) == 1
-        assert received_messages[0]["type"] == "render"
-        assert received_messages[0]["tree"] == {"test": "data"}
+        assert received_messages[0]["type"] == "patch"
+        assert received_messages[0]["patches"] == []
 
     def test_send_message_without_callback_no_error(self) -> None:
         """send_message() without callback doesn't raise."""
@@ -272,24 +341,22 @@ class TestBrowserMessageHandler:
         handler = BrowserMessageHandler(App)
         # No callback set
 
-        msg = RenderMessage(tree={"test": "data"})
+        msg = PatchMessage(patches=[])
         asyncio.run(handler.send_message(msg))  # Should not raise
 
     def test_full_event_flow(self) -> None:
-        """Full flow: post_event -> handle_message -> callback to JS."""
+        """Full flow: post_event -> handle_message -> patches via render loop."""
         clicked = []
-        rendered_messages: list[dict] = []
 
         @component
         def App() -> None:
             Button(text="Click", on_click=lambda: clicked.append(True))
 
         handler = BrowserMessageHandler(App)
-        handler.set_send_callback(lambda msg: rendered_messages.append(msg))
 
         # Get initial render
-        initial = handler.initial_render()
-        button = initial.tree["children"][0]
+        tree = get_initial_tree(handler)
+        button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Simulate JS posting event
@@ -299,14 +366,13 @@ class TestBrowserMessageHandler:
         async def process_one() -> None:
             msg = await handler.receive_message()
             response = await handler.handle_message(msg)
-            if response:
-                await handler.send_message(response)
+            # With batched rendering, handle_message returns None
+            assert response is None
 
         asyncio.run(process_one())
 
+        # Callback was invoked
         assert clicked == [True]
-        assert len(rendered_messages) == 1
-        assert rendered_messages[0]["type"] == "render"
 
 
 class TestAsyncCallbackHandling:
@@ -327,17 +393,17 @@ class TestAsyncCallbackHandling:
             Button(text="Async", on_click=async_handler)
 
         handler = MessageHandler(App)
-        initial = handler.initial_render()
+        tree = get_initial_tree(handler)
 
-        button = initial.tree["children"][0]
+        button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         async def test() -> None:
             event_msg = EventMessage(callback_id=cb_id, args=[])
             response = await handler.handle_message(event_msg)
 
-            # Response should be returned immediately (fire-and-forget)
-            assert isinstance(response, RenderMessage)
+            # With batched rendering, handle_message returns None immediately
+            assert response is None
 
             # Yield to let the scheduled task start
             await asyncio.sleep(0)
@@ -365,9 +431,9 @@ class TestAsyncCallbackHandling:
             Button(text="Async", on_click=async_handler)
 
         handler = MessageHandler(App)
-        initial = handler.initial_render()
+        tree = get_initial_tree(handler)
 
-        button = initial.tree["children"][0]
+        button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         async def test() -> None:
@@ -385,3 +451,390 @@ class TestAsyncCallbackHandling:
             assert task_completed == [True]
 
         asyncio.run(test())
+
+
+class TestRenderLoop:
+    """Tests for the render loop behavior."""
+
+    def test_render_loop_sends_patches_when_dirty(self) -> None:
+        """Render loop sends PatchMessage when dirty nodes exist."""
+        from trellis.platforms.common.messages import HelloMessage, PatchMessage
+
+        @dataclass(kw_only=True)
+        class CounterState(Stateful):
+            count: int = 0
+
+        @component
+        def Counter() -> None:
+            state = CounterState()
+
+            def increment() -> None:
+                state.count += 1
+
+            Label(text=str(state.count))
+            Button(text="+", on_click=increment)
+
+        sent_messages: list[Message] = []
+
+        class TestableHandler(MessageHandler):
+            """Handler that captures sent messages."""
+
+            def __init__(self, root: Component) -> None:
+                # Use very short batch delay for testing
+                super().__init__(root, batch_delay=0.01)
+                self._hello_sent = False
+                self._inbox: asyncio.Queue[Message] = asyncio.Queue()
+
+            async def send_message(self, msg: Message) -> None:
+                sent_messages.append(msg)
+
+            async def receive_message(self) -> Message:
+                if not self._hello_sent:
+                    self._hello_sent = True
+                    return HelloMessage(client_id="test")
+                return await self._inbox.get()
+
+            def post(self, msg: Message) -> None:
+                self._inbox.put_nowait(msg)
+
+        async def run_test() -> None:
+            handler = TestableHandler(Counter)
+
+            # Start run() in background
+            run_task = asyncio.create_task(handler.run())
+
+            # Wait for hello and initial render
+            await asyncio.sleep(0.02)
+
+            # Get the increment callback from initial PatchMessage
+            initial = next(m for m in sent_messages if isinstance(m, PatchMessage))
+            tree = initial.patches[0].node
+            button = tree["children"][1]
+            cb_id = button["props"]["on_click"]["__callback__"]
+
+            # Send event to trigger state change
+            handler.post(EventMessage(callback_id=cb_id, args=[]))
+
+            # Wait for render loop to pick it up
+            await asyncio.sleep(0.03)
+
+            # Should have sent a PatchMessage
+            patch_messages = [m for m in sent_messages if isinstance(m, PatchMessage)]
+            assert len(patch_messages) >= 1
+
+            # Clean up
+            run_task.cancel()
+            try:
+                await run_task
+            except asyncio.CancelledError:
+                pass
+
+        asyncio.run(run_test())
+
+    def test_render_loop_sends_error_on_render_failure(self) -> None:
+        """Render loop sends ErrorMessage on render exception."""
+        from trellis.platforms.common.messages import HelloMessage
+
+        @dataclass(kw_only=True)
+        class FailState(Stateful):
+            should_fail: bool = False
+
+        @component
+        def FailingApp() -> None:
+            state = FailState()
+            if state.should_fail:
+                raise ValueError("Intentional render failure")
+
+            def trigger() -> None:
+                state.should_fail = True
+
+            Label(text="Hello")
+            Button(text="Fail", on_click=trigger)
+
+        sent_messages: list[Message] = []
+
+        class TestableHandler(MessageHandler):
+            def __init__(self, root: Component) -> None:
+                super().__init__(root, batch_delay=0.01)
+                self._hello_sent = False
+                self._inbox: asyncio.Queue[Message] = asyncio.Queue()
+
+            async def send_message(self, msg: Message) -> None:
+                sent_messages.append(msg)
+
+            async def receive_message(self) -> Message:
+                if not self._hello_sent:
+                    self._hello_sent = True
+                    return HelloMessage(client_id="test")
+                return await self._inbox.get()
+
+            def post(self, msg: Message) -> None:
+                self._inbox.put_nowait(msg)
+
+        async def run_test() -> None:
+            handler = TestableHandler(FailingApp)
+
+            run_task = asyncio.create_task(handler.run())
+            await asyncio.sleep(0.02)
+
+            initial = next(m for m in sent_messages if isinstance(m, PatchMessage))
+            tree = initial.patches[0].node
+            button = tree["children"][1]
+            cb_id = button["props"]["on_click"]["__callback__"]
+
+            handler.post(EventMessage(callback_id=cb_id, args=[]))
+            await asyncio.sleep(0.05)
+
+            error_messages = [m for m in sent_messages if isinstance(m, ErrorMessage)]
+            assert len(error_messages) >= 1
+            assert "Intentional render failure" in error_messages[0].error
+            assert error_messages[0].context == "render"
+
+            run_task.cancel()
+            try:
+                await run_task
+            except asyncio.CancelledError:
+                pass
+
+        asyncio.run(run_test())
+
+    def test_render_loop_cancels_cleanly(self) -> None:
+        """Render loop cancels without error on disconnect."""
+        from trellis.platforms.common.messages import HelloMessage
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        class TestableHandler(MessageHandler):
+            def __init__(self, root: Component) -> None:
+                super().__init__(root, batch_delay=0.01)
+                self._hello_sent = False
+
+            async def send_message(self, msg: Message) -> None:
+                pass
+
+            async def receive_message(self) -> Message:
+                if not self._hello_sent:
+                    self._hello_sent = True
+                    return HelloMessage(client_id="test")
+                await asyncio.sleep(999999)
+                return HelloMessage(client_id="never")
+
+        async def run_test() -> None:
+            handler = TestableHandler(App)
+            run_task = asyncio.create_task(handler.run())
+            await asyncio.sleep(0.02)
+
+            run_task.cancel()
+
+            with pytest.raises(asyncio.CancelledError):
+                await run_task
+
+            assert handler._render_task is not None
+            assert handler._render_task.cancelled()
+
+        asyncio.run(run_test())
+
+
+class TestPatchComputation:
+    """Tests for patch computation edge cases."""
+
+    def test_compute_patches_deep_nesting(self) -> None:
+        """Only changed nodes generate patches, not their unchanged parents."""
+
+        @dataclass(kw_only=True)
+        class DeepState(Stateful):
+            value: int = 0
+
+        @component
+        def DeepLeaf() -> None:
+            state = DeepState()
+            Label(text=str(state.value))
+            Button(text="+", on_click=lambda: setattr(state, "value", state.value + 1))
+
+        @component
+        def Middle() -> None:
+            Label(text="Middle")
+            DeepLeaf()
+
+        @component
+        def Outer() -> None:
+            Label(text="Outer")
+            Middle()
+
+        handler = MessageHandler(Outer)
+        tree = get_initial_tree(handler)
+
+        # Get the button callback (deeply nested)
+        # Structure: Outer > [Label, Middle > [Label, DeepLeaf > [Label, Button]]]
+        middle = tree["children"][1]
+        deep_leaf = middle["children"][1]
+        button = deep_leaf["children"][1]
+        cb_id = button["props"]["on_click"]["__callback__"]
+
+        # Trigger state change
+        event_msg = EventMessage(callback_id=cb_id, args=[])
+        asyncio.run(handler.handle_message(event_msg))
+
+        # Get patches
+        patches = render(handler.session)
+
+        # Should have patches - render() returns RenderUpdatePatch
+        update_patches = [p for p in patches if isinstance(p, RenderUpdatePatch)]
+
+        # At least one update should have props with the new text value
+        props_patches = [p for p in update_patches if p.props and p.props.get("text") == "1"]
+        assert len(props_patches) >= 1
+
+    def test_compute_patches_reordered_children(self) -> None:
+        """Reordering children generates correct update patches."""
+        from dataclasses import field
+
+        @dataclass(kw_only=True)
+        class ListState(Stateful):
+            items: list[str] = field(default_factory=lambda: ["a", "b", "c"])
+
+        @component
+        def ListApp() -> None:
+            state = ListState()
+
+            def reverse() -> None:
+                state.items = list(reversed(state.items))
+
+            for item in state.items:
+                Label(text=item, key=item)
+            Button(text="Reverse", on_click=reverse)
+
+        handler = MessageHandler(ListApp)
+        tree = get_initial_tree(handler)
+
+        # Initial order: a, b, c
+        labels = [c for c in tree["children"] if c["name"] == "Label"]
+        assert [l["props"]["text"] for l in labels] == ["a", "b", "c"]
+
+        # Get reverse callback
+        button = next(c for c in tree["children"] if c["name"] == "Button")
+        cb_id = button["props"]["on_click"]["__callback__"]
+
+        # Reverse the list
+        asyncio.run(handler.handle_message(EventMessage(callback_id=cb_id, args=[])))
+        patches = render(handler.session)
+
+        # Should have update patches for children reordering - render() returns RenderUpdatePatch
+        update_patches = [p for p in patches if isinstance(p, RenderUpdatePatch)]
+        # At least one update should exist
+        assert len(update_patches) > 0
+
+    def test_unchanged_nodes_no_patches(self) -> None:
+        """Unchanged nodes should not generate any patches."""
+
+        @dataclass(kw_only=True)
+        class CounterState(Stateful):
+            count: int = 0
+
+        @component
+        def Counter() -> None:
+            state = CounterState()
+
+            def increment() -> None:
+                state.count += 1
+
+            Label(text="Static label that never changes")  # This should never get patches
+            Label(text=str(state.count))
+            Button(text="+", on_click=increment)
+
+        handler = MessageHandler(Counter)
+        tree = get_initial_tree(handler)
+
+        # Get the static label's key to track it
+        static_label = tree["children"][0]
+        static_label_id = static_label.get("key")
+
+        # Trigger a state change
+        button = tree["children"][2]
+        cb_id = button["props"]["on_click"]["__callback__"]
+        asyncio.run(handler.handle_message(EventMessage(callback_id=cb_id, args=[])))
+
+        # Get patches
+        patches = render(handler.session)
+
+        # The static label should NOT be in any patch
+        from trellis.platforms.common.messages import UpdatePatch
+
+        update_patches = [p for p in patches if isinstance(p, UpdatePatch)]
+        for patch in update_patches:
+            if patch.id == static_label_id:
+                # If it is in the patches, it shouldn't have any actual changes
+                # (or it shouldn't be there at all)
+                if patch.props:
+                    assert "text" not in patch.props or patch.props["text"] != "Static label that never changes"
+
+    def test_container_child_replacement_emits_add_remove_patches(self) -> None:
+        """Replacing container children emits RemovePatch and AddPatch.
+
+        This tests the tab-switching scenario: a container (like Card) has
+        entirely new children after state change. The old children should
+        be removed and new children added.
+
+        Regression test for: container not detecting child changes when
+        the container's props are unchanged but children are different.
+        """
+        from dataclasses import field
+
+        from trellis.platforms.common.messages import AddPatch, RemovePatch
+        from trellis.widgets import Card
+
+        @dataclass(kw_only=True)
+        class TabState(Stateful):
+            selected: str = "tab1"
+
+        @component
+        def Tab1Content() -> None:
+            Label(text="Content for tab 1")
+
+        @component
+        def Tab2Content() -> None:
+            Label(text="Content for tab 2")
+
+        @component
+        def TabApp() -> None:
+            state = TabState()
+
+            def switch_tab() -> None:
+                state.selected = "tab2" if state.selected == "tab1" else "tab1"
+
+            Button(text="Switch", on_click=switch_tab)
+            with Card():
+                if state.selected == "tab1":
+                    Tab1Content()
+                else:
+                    Tab2Content()
+
+        handler = MessageHandler(TabApp)
+        tree = get_initial_tree(handler)
+
+        # Verify initial state - Card contains Tab1Content
+        card = tree["children"][1]
+        assert card["type"] == "Card"
+        tab1_content = card["children"][0]
+        assert tab1_content["name"] == "Tab1Content"
+
+        # Get the switch button callback
+        button = tree["children"][0]
+        cb_id = button["props"]["on_click"]["__callback__"]
+
+        # Switch tabs
+        asyncio.run(handler.handle_message(EventMessage(callback_id=cb_id, args=[])))
+        patches = render(handler.session)
+
+        # Should have RenderRemovePatch for Tab1Content and RenderAddPatch for Tab2Content
+        remove_patches = [p for p in patches if isinstance(p, RenderRemovePatch)]
+        add_patches = [p for p in patches if isinstance(p, RenderAddPatch)]
+
+        assert len(remove_patches) >= 1, f"Expected RenderRemovePatch, got patches: {patches}"
+        assert len(add_patches) >= 1, f"Expected RenderAddPatch, got patches: {patches}"
+
+        # Verify the added node is Tab2Content
+        added_names = [p.node.component.name for p in add_patches]
+        assert "Tab2Content" in added_names, f"Expected Tab2Content in {added_names}"

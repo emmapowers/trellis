@@ -8,10 +8,10 @@ from __future__ import annotations
 import typing as tp
 from typing import Literal
 
-from trellis.core.mutable import Mutable
-from trellis.core.react_component import react_component_base
-from trellis.core.rendering import ElementNode
-from trellis.core.style_props import Height, Margin, Padding, Width
+from trellis.core.components.react import react_component_base
+from trellis.core.components.style_props import Height, Margin, Padding, Width
+from trellis.core.rendering.element import Element
+from trellis.core.state.mutable import Mutable
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -29,7 +29,7 @@ def Tabs(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Tab container for organizing content.
 
     Args:
@@ -57,7 +57,7 @@ def Tab(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Individual tab within a Tabs container.
 
     Args:
@@ -89,7 +89,7 @@ def Tree(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Hierarchical tree view.
 
     Args:
@@ -121,7 +121,7 @@ def Breadcrumb(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Navigation breadcrumb trail.
 
     Args:

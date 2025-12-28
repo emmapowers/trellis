@@ -1,19 +1,17 @@
 """Tests for trellis.core.rendering module."""
 
 import concurrent.futures
+import logging
 import threading
+import weakref
 
 import pytest
 
-from trellis.core.rendering import (
-    ElementNode,
-    RenderTree,
-    freeze_props,
-    get_active_render_tree,
-    set_active_render_tree,
-)
-from trellis.core.composition_component import CompositionComponent, component
-from trellis.core.state import Stateful
+from trellis.core.components.composition import CompositionComponent, component
+from trellis.core.rendering.element import Element
+from trellis.core.rendering.render import render
+from trellis.core.rendering.session import RenderSession, get_active_session, set_active_session
+from trellis.core.state.stateful import Stateful
 from dataclasses import dataclass
 
 
@@ -22,28 +20,42 @@ def make_component(name: str) -> CompositionComponent:
     return CompositionComponent(name=name, render_func=lambda: None)
 
 
+# Dummy session for testing Element creation
+_dummy_session: RenderSession | None = None
+
+
+def _get_dummy_session_ref() -> weakref.ref[RenderSession]:
+    """Get a weakref to a dummy session for testing."""
+    global _dummy_session
+    if _dummy_session is None:
+        _dummy_session = RenderSession(make_component("DummyRoot"))
+    return weakref.ref(_dummy_session)
+
+
 def make_descriptor(
     comp: CompositionComponent,
     key: str | None = None,
     props: dict | None = None,
-) -> ElementNode:
-    """Helper to create an ElementNode."""
-    return ElementNode(
+) -> Element:
+    """Helper to create an Element."""
+    return Element(
         component=comp,
+        _session_ref=_get_dummy_session_ref(),
+        render_count=0,
         key=key,
-        props=freeze_props(props or {}),
+        props=props or {},
     )
 
 
-class TestElementNode:
+class TestElement:
     def test_element_node_creation(self) -> None:
         comp = make_component("Test")
         node = make_descriptor(comp)
 
         assert node.component == comp
         assert node.key is None
-        assert node.props == freeze_props({})
-        assert node.children == ()
+        assert node.props == {}
+        assert node.child_ids == []
         assert node.id == ""
 
     def test_element_node_with_key(self) -> None:
@@ -58,71 +70,69 @@ class TestElementNode:
 
         assert node.properties == {"foo": "bar", "count": 42}
 
-    def test_element_node_is_immutable(self) -> None:
+    def test_element_node_is_mutable(self) -> None:
         comp = make_component("Test")
         node = make_descriptor(comp, props={"a": 1})
 
-        # ElementNode is a frozen dataclass, should be hashable
+        # Element is mutable and uses render_count-based hashing
         hash(node)  # Should not raise
 
-        # Can't modify attributes
-        with pytest.raises(AttributeError):
-            node.key = "new-key"  # type: ignore[misc]
+        # Can modify attributes
+        node.id = "new-id"
+        assert node.id == "new-id"
 
 
-class TestActiveRenderTree:
+class TestActiveSession:
     def test_default_is_none(self) -> None:
-        assert get_active_render_tree() is None
+        assert get_active_session() is None
 
     def test_set_and_get(self) -> None:
         comp = make_component("Root")
-        ctx = RenderTree(comp)
+        ctx = RenderSession(comp)
 
-        set_active_render_tree(ctx)
-        assert get_active_render_tree() is ctx
+        set_active_session(ctx)
+        assert get_active_session() is ctx
 
-        set_active_render_tree(None)
-        assert get_active_render_tree() is None
+        set_active_session(None)
+        assert get_active_session() is None
 
 
-class TestRenderTree:
+class TestRenderSession:
     def test_creation(self) -> None:
         comp = make_component("Root")
-        ctx = RenderTree(comp)
+        ctx = RenderSession(comp)
 
         assert ctx.root_component == comp
-        assert ctx.root_node is None
-        assert ctx._dirty_ids == set()
+        assert ctx.root_element is None
+        assert not ctx.dirty.has_dirty()
 
     def test_mark_dirty_id(self) -> None:
         @component
         def Root() -> None:
             pass
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # The root node should have an ID now
-        assert ctx.root_node is not None
-        node_id = ctx.root_node.id
+        assert ctx.root_element is not None
+        node_id = ctx.root_element.id
 
         # Clear dirty state
-        ctx._dirty_ids.clear()
-        ctx._element_state[node_id].dirty = False
+        ctx.dirty.pop_all()
 
         # Mark dirty by ID
-        ctx.mark_dirty_id(node_id)
+        ctx.dirty.mark(node_id)
 
-        assert node_id in ctx._dirty_ids
-        assert ctx._element_state[node_id].dirty is True
+        assert node_id in ctx.dirty
 
 
-class TestConcurrentRenderTreeIsolation:
-    """Tests for thread/task isolation of render trees using contextvars."""
+class TestConcurrentRenderSessionIsolation:
+    """Tests for thread/task isolation of render sessions using contextvars."""
 
-    def test_concurrent_threads_have_isolated_trees(self) -> None:
-        """Each thread has its own active render tree."""
-        results: dict[str, RenderTree | None] = {}
+    def test_concurrent_threads_have_isolated_sessions(self) -> None:
+        """Each thread has its own active render session."""
+        results: dict[str, RenderSession | None] = {}
         barrier = threading.Barrier(2)
 
         @component
@@ -134,18 +144,18 @@ class TestConcurrentRenderTreeIsolation:
             pass
 
         def thread_a() -> None:
-            ctx = RenderTree(AppA)
-            set_active_render_tree(ctx)
+            ctx = RenderSession(AppA)
+            set_active_session(ctx)
             barrier.wait()  # Sync with thread B
-            results["a"] = get_active_render_tree()
-            set_active_render_tree(None)
+            results["a"] = get_active_session()
+            set_active_session(None)
 
         def thread_b() -> None:
-            ctx = RenderTree(AppB)
-            set_active_render_tree(ctx)
+            ctx = RenderSession(AppB)
+            set_active_session(ctx)
             barrier.wait()  # Sync with thread A
-            results["b"] = get_active_render_tree()
-            set_active_render_tree(None)
+            results["b"] = get_active_session()
+            set_active_session(None)
 
         t1 = threading.Thread(target=thread_a)
         t2 = threading.Thread(target=thread_b)
@@ -184,12 +194,12 @@ class TestConcurrentRenderTreeIsolation:
                 ChildB(name=f"b_{i}")
 
         def render_app_a() -> None:
-            ctx = RenderTree(AppA)
-            ctx.render()
+            ctx = RenderSession(AppA)
+            render(ctx)
 
         def render_app_b() -> None:
-            ctx = RenderTree(AppB)
-            ctx.render()
+            ctx = RenderSession(AppB)
+            render(ctx)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             futures = [executor.submit(render_app_a), executor.submit(render_app_b)]
@@ -200,8 +210,8 @@ class TestConcurrentRenderTreeIsolation:
         assert sorted(render_results["b"]) == [f"b_{i}" for i in range(5)]
 
 
-class TestComponentOutsideRenderTree:
-    """Tests for RuntimeError when creating components outside render tree."""
+class TestComponentOutsideRenderSession:
+    """Tests for RuntimeError when creating components outside render session."""
 
     def test_component_outside_render_raises(self) -> None:
         """Creating a component outside render context raises RuntimeError."""
@@ -211,7 +221,7 @@ class TestComponentOutsideRenderTree:
             pass
 
         # Ensure no active context
-        set_active_render_tree(None)
+        set_active_session(None)
 
         with pytest.raises(RuntimeError, match="outside of render context"):
             MyComponent()
@@ -224,7 +234,7 @@ class TestComponentOutsideRenderTree:
             for c in children:
                 c()
 
-        set_active_render_tree(None)
+        set_active_session(None)
 
         with pytest.raises(RuntimeError, match="outside of render context"):
             with Container():
@@ -245,13 +255,13 @@ class TestDescriptorStackCleanupOnException:
         def Parent() -> None:
             FailingChild()
 
-        ctx = RenderTree(Parent)
+        ctx = RenderSession(Parent)
 
         with pytest.raises(ValueError, match="intentional failure"):
-            ctx.render()
+            render(ctx)
 
-        # Stack should be clean after exception
-        assert ctx._frame_stack == []
+        # Stack should be clean after exception (active is set to None in finally)
+        assert ctx.active is None
 
     def test_exception_in_nested_with_block_cleans_up(self) -> None:
         """Exception in nested with block doesn't corrupt stack."""
@@ -270,12 +280,12 @@ class TestDescriptorStackCleanupOnException:
             with Container():
                 FailingComponent()
 
-        ctx = RenderTree(App)
+        ctx = RenderSession(App)
 
         with pytest.raises(RuntimeError, match="nested failure"):
-            ctx.render()
+            render(ctx)
 
-        assert ctx._frame_stack == []
+        assert ctx.active is None
 
 
 class TestThreadSafeStateUpdates:
@@ -297,8 +307,8 @@ class TestThreadSafeStateUpdates:
                 state = Counter(value=initial)
                 results[name] = state.value
 
-            ctx = RenderTree(LocalApp)
-            ctx.render()
+            ctx = RenderSession(LocalApp)
+            render(ctx)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
             futures = [
@@ -315,38 +325,37 @@ class TestThreadSafeStateUpdates:
         assert results["ctx_300"] == 300
         assert results["ctx_400"] == 400
 
-    def test_callback_registry_isolated_per_tree(self) -> None:
-        """Callback registries are isolated per RenderTree."""
+    def test_callback_lookup_from_node_props(self) -> None:
+        """Callbacks can be looked up from node props via get_callback."""
 
         @component
         def App() -> None:
             pass
 
-        ctx1 = RenderTree(App)
-        ctx2 = RenderTree(App)
+        ctx = RenderSession(App)
+        render(ctx)
 
-        cb1 = lambda: "callback1"
-        cb2 = lambda: "callback2"
+        # Store a callback in a node's props
+        node = ctx.root_element
+        cb = lambda: "test_callback"
+        node.props["on_click"] = cb
 
-        # Register with deterministic IDs (node_id:prop_name)
-        id1 = ctx1.register_callback(cb1, "e1", "on_click")
-        id2 = ctx2.register_callback(cb2, "e1", "on_click")
+        # get_callback should find it
+        result = ctx.get_callback(node.id, "on_click")
+        assert result is not None
+        assert result() == "test_callback"
 
-        # Same ID format (deterministic) but different registries
-        assert id1 == id2 == "e1:on_click"
+        # Non-existent prop returns None
+        assert ctx.get_callback(node.id, "on_missing") is None
 
-        # But they resolve to different callbacks
-        assert ctx1.get_callback(id1)() == "callback1"
-        assert ctx2.get_callback(id2)() == "callback2"
-
-        # Cross-lookup returns None
-        assert ctx1.get_callback("e999:on_click") is None
+        # Non-existent node returns None
+        assert ctx.get_callback("nonexistent", "on_click") is None
 
     def test_state_update_blocks_during_render(self) -> None:
         """State updates on another thread block while render holds the lock.
 
-        This tests that mark_dirty_id() blocks when called from another thread
-        while a render is in progress on the same RenderTree.
+        This tests that dirty.mark() blocks when called from another thread
+        while a render is in progress on the same RenderSession.
         """
         import time
 
@@ -375,7 +384,7 @@ class TestThreadSafeStateUpdates:
                 # Re-render triggered by state change
                 events.append("rerender_started")
 
-        ctx = RenderTree(SlowApp)
+        ctx = RenderSession(SlowApp)
 
         def background_update() -> None:
             # Wait for render to start and state to be created
@@ -385,24 +394,24 @@ class TestThreadSafeStateUpdates:
             time.sleep(0.05)
             state = state_holder[0]
             events.append("update_start")
-            # This triggers mark_dirty_id which needs the lock
+            # This triggers dirty.mark() which acquires the lock
             state.value = 42
             events.append("update_done")
 
         updater = threading.Thread(target=background_update)
         updater.start()
 
-        # Start render (holds lock via @with_lock on render_tree)
-        ctx.render()
+        # Start render (holds lock via with session.lock in render())
+        render(ctx)
 
         updater.join()
 
         # Verify ordering: update_start happens during render (before first_render_done)
-        # but update_done happens after first_render_done because mark_dirty_id blocks
+        # but update_done happens after first_render_done because dirty.mark() blocks
         assert "update_start" in events
         assert "first_render_done" in events
         assert "update_done" in events
-        # The key assertion: mark_dirty_id blocks, so update_done must come after render releases lock
+        # The key assertion: dirty.mark() blocks, so update_done must come after render releases lock
         assert events.index("first_render_done") < events.index("update_done")
 
 
@@ -420,22 +429,22 @@ class TestElementStateParentId:
         def Parent() -> None:
             Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         # Root has no parent
-        root_state = ctx._element_state[ctx.root_node.id]
+        root_state = ctx.states.get(ctx.root_element.id)
         assert root_state.parent_id is None
 
         # Child's parent should be root
-        child_id = ctx.root_node.children[0].id
-        child_state = ctx._element_state[child_id]
-        assert child_state.parent_id == ctx.root_node.id
+        child_id = ctx.elements.get(ctx.root_element.child_ids[0]).id
+        child_state = ctx.states.get(child_id)
+        assert child_state.parent_id == ctx.root_element.id
 
     def test_parent_id_preserved_on_rerender(self) -> None:
         """parent_id is preserved when component re-renders."""
         from dataclasses import dataclass
-        from trellis.core.state import Stateful
+        from trellis.core.state.stateful import Stateful
 
         @dataclass
         class Counter(Stateful):
@@ -453,15 +462,659 @@ class TestElementStateParentId:
             state_holder.append(state)
             Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
-        child_id = ctx.root_node.children[0].id
-        original_parent_id = ctx._element_state[child_id].parent_id
+        child_id = ctx.elements.get(ctx.root_element.child_ids[0]).id
+        original_parent_id = ctx.states.get(child_id).parent_id
 
         # Trigger re-render
         state_holder[0].value += 1
-        ctx.render()
+        render(ctx)
 
         # parent_id should be preserved
-        assert ctx._element_state[child_id].parent_id == original_parent_id
+        assert ctx.states.get(child_id).parent_id == original_parent_id
+
+
+class TestPropsComparison:
+    """Tests for props comparison in _place() reuse optimization.
+
+    These tests verify that components are not re-rendered when props
+    are unchanged, and are re-rendered when props change.
+    """
+
+    def test_props_with_none_values(self) -> None:
+        """Props with None values should be handled correctly."""
+        render_counts: dict[str, int] = {}
+        value_ref: list[str | None] = [None]
+
+        @component
+        def Child(value: str | None = None) -> None:
+            render_counts["child"] = render_counts.get("child", 0) + 1
+
+        @component
+        def Parent() -> None:
+            Child(value=value_ref[0])
+
+        ctx = RenderSession(Parent)
+        render(ctx)
+
+        assert render_counts["child"] == 1
+
+        # Same None value - should not re-render
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        assert render_counts["child"] == 1
+
+        # Change to non-None
+        value_ref[0] = "hello"
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        assert render_counts["child"] == 2
+
+        # Change back to None
+        value_ref[0] = None
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        assert render_counts["child"] == 3
+
+    def test_props_with_callable(self) -> None:
+        """Props with callable values use identity comparison."""
+        render_counts: dict[str, int] = {}
+
+        def handler1() -> None:
+            pass
+
+        def handler2() -> None:
+            pass
+
+        handler_ref = [handler1]
+
+        @component
+        def Child(on_click=None) -> None:
+            render_counts["child"] = render_counts.get("child", 0) + 1
+
+        @component
+        def Parent() -> None:
+            Child(on_click=handler_ref[0])
+
+        ctx = RenderSession(Parent)
+        render(ctx)
+
+        assert render_counts["child"] == 1
+
+        # Same function - should not re-render
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        assert render_counts["child"] == 1
+
+        # Different function - should re-render
+        handler_ref[0] = handler2
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        assert render_counts["child"] == 2
+
+    def test_empty_props(self) -> None:
+        """Components with no props should work correctly."""
+        render_counts: dict[str, int] = {}
+
+        @component
+        def NoProps() -> None:
+            render_counts["no_props"] = render_counts.get("no_props", 0) + 1
+
+        @component
+        def Parent() -> None:
+            NoProps()
+
+        ctx = RenderSession(Parent)
+        render(ctx)
+
+        assert render_counts["no_props"] == 1
+
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        # Should not re-render (empty props unchanged)
+        assert render_counts["no_props"] == 1
+
+    def test_props_with_tuple(self) -> None:
+        """Props with tuple values should compare correctly."""
+        render_counts: dict[str, int] = {}
+        tuple_ref = [(1, 2, 3)]
+
+        @component
+        def Child(items: tuple = ()) -> None:
+            render_counts["child"] = render_counts.get("child", 0) + 1
+
+        @component
+        def Parent() -> None:
+            Child(items=tuple_ref[0])
+
+        ctx = RenderSession(Parent)
+        render(ctx)
+
+        assert render_counts["child"] == 1
+
+        # Same tuple value - should not re-render
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        assert render_counts["child"] == 1
+
+        # Different tuple - should re-render
+        tuple_ref[0] = (1, 2, 4)
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        assert render_counts["child"] == 2
+
+
+class TestBuiltinWidgetsReconciliation:
+    """Tests for reconciliation with built-in widgets (ReactComponentBase/HtmlElement).
+
+    These tests ensure that components created via @react_component_base and
+    @html_element decorators work correctly in the reconciler. Unlike @component
+    decorated functions, these use different class hierarchies that need to be
+    hashable for type-based matching.
+
+    Regression tests for: TypeError: unhashable type: '_Generated'
+    """
+
+    def test_remove_widget_from_middle_of_list(self) -> None:
+        """Removing a widget from the middle exercises type-based matching."""
+        from trellis.widgets import Row, Button
+        from trellis import html as h
+
+        items_ref = [["a", "b", "c", "d"]]
+
+        @component
+        def TodoList() -> None:
+            h.H1("Tasks")  # Fixed head
+            for item in items_ref[0]:
+                with Row():
+                    h.Span(item)
+                    Button(text="×")
+            Button(text="Add")  # Fixed tail
+
+        ctx = RenderSession(TodoList)
+        render(ctx)
+
+        # Should have: H1, Row, Row, Row, Row, Button = 6 children
+        assert len(ctx.root_element.child_ids) == 6
+
+        # Remove "b" from the middle - this triggers type-based matching
+        items_ref[0] = ["a", "c", "d"]
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        # Should have: H1, Row, Row, Row, Button = 5 children
+        assert len(ctx.root_element.child_ids) == 5
+
+    def test_html_elements_in_dynamic_list(self) -> None:
+        """HTML elements (via @html_element) should be hashable for reconciliation."""
+        from trellis import html as h
+
+        items_ref = [["item1", "item2", "item3"]]
+
+        @component
+        def List() -> None:
+            for item in items_ref[0]:
+                with h.Div():
+                    h.Span(item)
+
+        ctx = RenderSession(List)
+        render(ctx)
+
+        assert len(ctx.root_element.child_ids) == 3
+
+        # Remove from middle
+        items_ref[0] = ["item1", "item3"]
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        assert len(ctx.root_element.child_ids) == 2
+
+    def test_widgets_in_dynamic_list(self) -> None:
+        """Widgets (via @react_component_base) should be hashable for reconciliation."""
+        from trellis.widgets import Column, Row, Label, Button
+
+        items_ref = [[1, 2, 3, 4, 5]]
+
+        @component
+        def List() -> None:
+            with Column():
+                for n in items_ref[0]:
+                    with Row():
+                        Label(text=f"Item {n}")
+                        Button(text="Delete")
+
+        ctx = RenderSession(List)
+        render(ctx)
+
+        column = ctx.elements.get(ctx.root_element.child_ids[0])
+        assert len(column.child_ids) == 5
+
+        # Remove items 2 and 4 (from middle)
+        items_ref[0] = [1, 3, 5]
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        column = ctx.elements.get(ctx.root_element.child_ids[0])
+        assert len(column.child_ids) == 3
+
+    def test_mixed_widgets_and_components_in_list(self) -> None:
+        """Mix of @component and @react_component_base in dynamic list."""
+        from trellis.widgets import Button
+
+        items_ref = [["a", "b", "c"]]
+
+        @component
+        def CustomItem(name: str = "") -> None:
+            Button(text=name)
+
+        @component
+        def List() -> None:
+            for item in items_ref[0]:
+                CustomItem(name=item)
+
+        ctx = RenderSession(List)
+        render(ctx)
+
+        assert len(ctx.root_element.child_ids) == 3
+
+        # Reorder and remove
+        items_ref[0] = ["c", "a"]
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        assert len(ctx.root_element.child_ids) == 2
+
+
+class TestEscapeKey:
+    """Tests for URL-encoding special characters in keys."""
+
+    def test_no_special_chars(self) -> None:
+        """Keys without special chars pass through unchanged."""
+        from trellis.core.rendering.frames import _escape_key
+
+        assert _escape_key("simple") == "simple"
+        assert _escape_key("with-dash") == "with-dash"
+        assert _escape_key("with_underscore") == "with_underscore"
+        assert _escape_key("CamelCase") == "CamelCase"
+        assert _escape_key("123") == "123"
+
+    def test_escape_colon(self) -> None:
+        """Colon is escaped."""
+        from trellis.core.rendering.frames import _escape_key
+
+        assert _escape_key("my:key") == "my%3Akey"
+        assert _escape_key("a:b:c") == "a%3Ab%3Ac"
+
+    def test_escape_at(self) -> None:
+        """At sign is escaped."""
+        from trellis.core.rendering.frames import _escape_key
+
+        assert _escape_key("item@home") == "item%40home"
+        assert _escape_key("user@domain") == "user%40domain"
+
+    def test_escape_slash(self) -> None:
+        """Slash is escaped."""
+        from trellis.core.rendering.frames import _escape_key
+
+        assert _escape_key("row/5") == "row%2F5"
+        assert _escape_key("path/to/item") == "path%2Fto%2Fitem"
+
+    def test_escape_percent(self) -> None:
+        """Percent must be escaped first to avoid double-encoding."""
+        from trellis.core.rendering.frames import _escape_key
+
+        assert _escape_key("100%") == "100%25"
+        assert _escape_key("%done") == "%25done"
+
+    def test_multiple_special_chars(self) -> None:
+        """All special characters are escaped in a single key."""
+        from trellis.core.rendering.frames import _escape_key
+
+        assert _escape_key("a:b@c/d%e") == "a%3Ab%40c%2Fd%25e"
+        # Percent first, then others
+        assert _escape_key("%:@/") == "%25%3A%40%2F"
+
+
+class TestIsRenderActiveSemantics:
+    """Tests for is_render_active() semantics.
+
+    is_render_active() returns True when session.active is not None,
+    i.e., when we're inside a render pass.
+
+    - True during component execution
+    - False during hooks (hooks run after session.active is cleared)
+    - False outside render
+    """
+
+    def test_is_render_active_true_during_component_execution(self) -> None:
+        """is_render_active() returns True during component execution."""
+        from trellis.core.rendering.session import is_render_active
+
+        values_during_execution: list[bool] = []
+
+        @component
+        def App() -> None:
+            values_during_execution.append(is_render_active())
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        assert len(values_during_execution) == 1
+        assert values_during_execution[0] is True
+
+    def test_is_render_active_false_during_hooks(self) -> None:
+        """is_render_active() returns False during lifecycle hooks."""
+        from trellis.core.rendering.session import is_render_active
+
+        values_during_mount: list[bool] = []
+
+        @dataclass
+        class CheckDuringMount(Stateful):
+            def on_mount(self) -> None:
+                values_during_mount.append(is_render_active())
+
+        @component
+        def App() -> None:
+            CheckDuringMount()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        assert len(values_during_mount) == 1
+        assert values_during_mount[0] is False
+
+    def test_session_active_none_during_hooks(self) -> None:
+        """session.active should be None during lifecycle hooks.
+
+        This is the implementation requirement: hooks must run after
+        session.active is cleared, not just after current_node_id is None.
+        """
+        from trellis.core.rendering.session import get_active_session
+
+        active_values: list[bool] = []
+
+        @dataclass
+        class CheckSessionActive(Stateful):
+            def on_mount(self) -> None:
+                session = get_active_session()
+                # session.active should be None during hooks
+                active_values.append(session.active is None if session else True)
+
+        @component
+        def App() -> None:
+            CheckSessionActive()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        assert len(active_values) == 1
+        assert active_values[0] is True, "session.active should be None during hooks"
+
+
+class TestLifecycleHooksCanModifyState:
+    """Tests that lifecycle hooks can safely modify state.
+
+    Hooks run AFTER session.active is cleared, so is_render_active()=False.
+    This allows state modification during hooks.
+    """
+
+    def test_on_mount_can_modify_shared_state(self) -> None:
+        """on_mount hook should be able to modify shared state without error.
+
+        This tests the case where an on_mount hook modifies a Stateful instance
+        that other components depend on - the real scenario that could deadlock
+        or raise RuntimeError if hooks run during render.
+        """
+        # Shared state that will be modified by on_mount
+        @dataclass
+        class SharedState(Stateful):
+            value: int = 0
+
+        shared: SharedState | None = None
+
+        @dataclass
+        class StateWithMount(Stateful):
+            def on_mount(self) -> None:
+                # Modify shared state - this triggers dirty marking
+                if shared is not None:
+                    shared.value = 42
+
+        @component
+        def Consumer() -> None:
+            # Read shared state to register dependency
+            if shared is not None:
+                _ = shared.value
+
+        @component
+        def Producer() -> None:
+            StateWithMount()
+
+        @component
+        def App() -> None:
+            Consumer()
+            Producer()
+
+        # Create shared state outside render
+        shared = SharedState()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        # Hook should have modified shared state
+        assert shared.value == 42
+
+    def test_on_unmount_can_modify_shared_state(self) -> None:
+        """on_unmount hook should be able to modify shared state without error."""
+        @dataclass
+        class SharedState(Stateful):
+            value: int = 0
+
+        shared: SharedState | None = None
+
+        @dataclass
+        class StateWithUnmount(Stateful):
+            def on_unmount(self) -> None:
+                if shared is not None:
+                    shared.value = 99
+
+        show_child = [True]
+
+        @component
+        def Child() -> None:
+            StateWithUnmount()
+
+        @component
+        def App() -> None:
+            if show_child[0]:
+                Child()
+
+        shared = SharedState()
+        ctx = RenderSession(App)
+        render(ctx)
+
+        # Remove child to trigger unmount
+        show_child[0] = False
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        assert shared.value == 99
+
+
+class TestHookErrorHandling:
+    """Tests for error handling in lifecycle hooks.
+
+    Ensures that exceptions in hooks don't prevent state cleanup.
+    """
+
+    def test_unmount_hook_exception_logs_and_removes_state(self, caplog: pytest.LogCaptureFixture) -> None:
+        """When on_unmount raises, the exception is logged and state is still removed."""
+
+        @dataclass
+        class ThrowingStateful(Stateful):
+            def on_unmount(self) -> None:
+                raise ValueError("unmount hook error")
+
+        show_child = [True]
+
+        @component
+        def Child() -> None:
+            ThrowingStateful()
+
+        @component
+        def App() -> None:
+            if show_child[0]:
+                Child()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        child_id = ctx.root_element.child_ids[0]
+        assert ctx.states.get(child_id) is not None
+
+        show_child[0] = False
+        ctx.dirty.mark(ctx.root_element.id)
+
+        with caplog.at_level(logging.ERROR):
+            render(ctx)  # Should not raise
+
+        # State should still be removed
+        assert ctx.states.get(child_id) is None
+        # Exception should be logged
+        assert "unmount hook error" in caplog.text
+
+    def test_mount_hook_exception_logs_and_continues(self, caplog: pytest.LogCaptureFixture) -> None:
+        """When on_mount raises, the exception is logged and render continues."""
+        mount_order: list[str] = []
+
+        @dataclass
+        class ThrowingMountStateful(Stateful):
+            name: str = ""
+
+            def on_mount(self) -> None:
+                mount_order.append(f"before_{self.name}")
+                if self.name == "child1":
+                    raise ValueError("mount hook error")
+                mount_order.append(f"after_{self.name}")
+
+        @component
+        def Child(name: str = "") -> None:
+            ThrowingMountStateful(name=name)
+
+        @component
+        def App() -> None:
+            Child(name="child1")
+            Child(name="child2")
+
+        ctx = RenderSession(App)
+
+        with caplog.at_level(logging.ERROR):
+            render(ctx)  # Should not raise
+
+        # Exception should be logged
+        assert "mount hook error" in caplog.text
+        # child2's mount should still have been called
+        assert "before_child2" in mount_order
+        assert "after_child2" in mount_order
+
+
+class TestPositionIdGeneration:
+    """Tests for position-based ID generation."""
+
+    def test_root_id_format(self) -> None:
+        """Root node ID includes component identity."""
+
+        @component
+        def App() -> None:
+            pass
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        # Format: /@{id(component)}
+        assert ctx.root_element.id.startswith("/@")
+        assert str(id(App)) in ctx.root_element.id
+
+    def test_child_id_includes_position(self) -> None:
+        """Child IDs include position index."""
+
+        @component
+        def Child() -> None:
+            pass
+
+        @component
+        def Parent() -> None:
+            Child()
+            Child()
+            Child()
+
+        ctx = RenderSession(Parent)
+        render(ctx)
+
+        # Children should have /0@, /1@, /2@ in their IDs
+        child_ids = ctx.root_element.child_ids
+        assert len(child_ids) == 3
+        assert "/0@" in child_ids[0]
+        assert "/1@" in child_ids[1]
+        assert "/2@" in child_ids[2]
+
+    def test_keyed_child_id_format(self) -> None:
+        """Keyed children use :key@ format."""
+
+        @component
+        def Child() -> None:
+            pass
+
+        @component
+        def Parent() -> None:
+            Child(key="submit")
+
+        ctx = RenderSession(Parent)
+        render(ctx)
+
+        child_id = ctx.root_element.child_ids[0]
+        assert ":submit@" in child_id
+
+    def test_different_component_types_different_ids(self) -> None:
+        """Same position, different component = different ID."""
+
+        @component
+        def TypeA() -> None:
+            pass
+
+        @component
+        def TypeB() -> None:
+            pass
+
+        show_a = [True]
+
+        @component
+        def Parent() -> None:
+            if show_a[0]:
+                TypeA()
+            else:
+                TypeB()
+
+        ctx = RenderSession(Parent)
+        render(ctx)
+        id_a = ctx.root_element.child_ids[0]
+
+        show_a[0] = False
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+        id_b = ctx.root_element.child_ids[0]
+
+        # Different components at same position get different IDs
+        # (because the component identity is part of the ID)
+        assert id_a != id_b
+        assert str(id(TypeA)) in id_a
+        assert str(id(TypeB)) in id_b

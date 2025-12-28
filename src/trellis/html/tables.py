@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering import ElementNode
-from trellis.html.base import Style, auto_collect_hybrid, html_element
+from trellis.core.rendering.element import Element
+from trellis.html.base import Style, html_element
 
 __all__ = [
     "Table",
@@ -28,7 +28,7 @@ def Table(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A table element."""
     ...
 
@@ -40,7 +40,7 @@ def Thead(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A table header section element."""
     ...
 
@@ -52,7 +52,7 @@ def Tbody(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A table body section element."""
     ...
 
@@ -64,7 +64,7 @@ def Tr(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A table row element."""
     ...
 
@@ -81,7 +81,7 @@ def _Th(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A table header cell element."""
     ...
 
@@ -96,7 +96,7 @@ def _Td(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A table data cell element."""
     ...
 
@@ -111,7 +111,7 @@ def Th(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A table header cell element.
 
     Can be used as text-only or as a container:
@@ -120,7 +120,7 @@ def Th(
             h.Span("Name")
             h.Span("*", style={"color": "red"})
     """
-    desc = _Th(
+    return _Th(
         _text=text if text else None,
         scope=scope,
         colSpan=colSpan,
@@ -130,9 +130,6 @@ def Th(
         key=key,
         **props,
     )
-    if text:
-        auto_collect_hybrid(desc)
-    return desc
 
 
 def Td(
@@ -144,7 +141,7 @@ def Td(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A table data cell element.
 
     Can be used as text-only or as a container:
@@ -153,7 +150,7 @@ def Td(
             h.Strong("Bold")
             h.Span(" and normal")
     """
-    desc = _Td(
+    return _Td(
         _text=text if text else None,
         colSpan=colSpan,
         rowSpan=rowSpan,
@@ -162,6 +159,3 @@ def Td(
         key=key,
         **props,
     )
-    if text:
-        auto_collect_hybrid(desc)
-    return desc

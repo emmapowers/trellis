@@ -9,9 +9,11 @@ These tests verify that the framework correctly handles:
 
 from dataclasses import dataclass
 
-from trellis.core.rendering import RenderTree, ElementNode
-from trellis.core.composition_component import component
-from trellis.core.state import Stateful
+from trellis.core.components.composition import component
+from trellis.core.rendering.element import Element
+from trellis.core.rendering.render import render
+from trellis.core.rendering.session import RenderSession
+from trellis.core.state.stateful import Stateful
 
 
 class TestDeepTrees:
@@ -32,16 +34,16 @@ class TestDeepTrees:
         def Root() -> None:
             make_level(1)()
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Verify tree structure by counting levels
-        def count_depth(node: ElementNode) -> int:
-            if not node.children:
+        def count_depth(node: Element) -> int:
+            if not node.child_ids:
                 return 1
-            return 1 + max(count_depth(c) for c in node.children)
+            return 1 + max(count_depth(ctx.elements.get(cid)) for cid in node.child_ids if ctx.elements.get(cid))
 
-        max_depth = count_depth(ctx.root_node)
+        max_depth = count_depth(ctx.root_element)
         assert max_depth == DEPTH + 1  # +1 for Root
 
     def test_parent_child_relationships_deep_tree(self) -> None:
@@ -60,11 +62,11 @@ class TestDeepTrees:
         def Root() -> None:
             make_level(1)()
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
-        def verify_relationships(node: ElementNode, expected_parent_id: str | None) -> None:
-            state = ctx._element_state.get(node.id)
+        def verify_relationships(node: Element, expected_parent_id: str | None) -> None:
+            state = ctx.states.get(node.id)
             if state is None:
                 relationship_errors.append(f"No state for node {node.id}")
                 return
@@ -72,10 +74,12 @@ class TestDeepTrees:
                 relationship_errors.append(
                     f"Node {node.id} has parent_id {state.parent_id}, expected {expected_parent_id}"
                 )
-            for child in node.children:
-                verify_relationships(child, node.id)
+            for child_id in node.child_ids:
+                child = ctx.elements.get(child_id)
+                if child:
+                    verify_relationships(child, node.id)
 
-        verify_relationships(ctx.root_node, None)
+        verify_relationships(ctx.root_element, None)
         assert len(relationship_errors) == 0, f"Relationship errors: {relationship_errors}"
 
     def test_deep_tree_rerender_preserves_structure(self) -> None:
@@ -93,21 +97,23 @@ class TestDeepTrees:
         def Root() -> None:
             Level(n=1)
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
-        def collect_ids(node: ElementNode, ids: list[str]) -> None:
+        def collect_ids(node: Element, ids: list[str]) -> None:
             ids.append(node.id)
-            for child in node.children:
-                collect_ids(child, ids)
+            for child_id in node.child_ids:
+                child = ctx.elements.get(child_id)
+                if child:
+                    collect_ids(child, ids)
 
-        collect_ids(ctx.root_node, node_ids_before)
+        collect_ids(ctx.root_element, node_ids_before)
 
         # Re-render
-        ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
 
-        collect_ids(ctx.root_node, node_ids_after)
+        collect_ids(ctx.root_element, node_ids_after)
 
         # Node IDs should be preserved
         assert node_ids_before == node_ids_after
@@ -138,15 +144,15 @@ class TestDeepTrees:
         def Root() -> None:
             Level(n=1)
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # One state per level (not including root)
         assert mount_count[0] == DEPTH
 
         # Re-render should not create new states
-        ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
         assert mount_count[0] == DEPTH  # Still same
 
 
@@ -166,10 +172,10 @@ class TestWideTrees:
             for i in range(WIDTH):
                 Child(n=i)
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
-        assert len(ctx.root_node.children) == WIDTH
+        assert len(ctx.root_element.child_ids) == WIDTH
 
     def test_wide_tree_rerender(self) -> None:
         """Re-rendering wide tree should preserve children."""
@@ -184,15 +190,15 @@ class TestWideTrees:
             for i in range(WIDTH):
                 Child(n=i)
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
-        original_ids = [c.id for c in ctx.root_node.children]
+        original_ids = list(ctx.root_element.child_ids)
 
-        ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
 
-        new_ids = [c.id for c in ctx.root_node.children]
+        new_ids = list(ctx.root_element.child_ids)
         assert original_ids == new_ids
 
     def test_add_siblings(self) -> None:
@@ -208,17 +214,17 @@ class TestWideTrees:
             for i in range(count_ref[0]):
                 Child(n=i)
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
-        assert len(ctx.root_node.children) == 3
+        assert len(ctx.root_element.child_ids) == 3
 
         # Add more siblings
         count_ref[0] = 50
-        ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
 
-        assert len(ctx.root_node.children) == 50
+        assert len(ctx.root_element.child_ids) == 50
 
     def test_remove_siblings(self) -> None:
         """Removing siblings should unmount old elements."""
@@ -241,17 +247,17 @@ class TestWideTrees:
             for i in range(count_ref[0]):
                 Child(key=str(i), n=i)
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
-        assert len(ctx.root_node.children) == 50
+        assert len(ctx.root_element.child_ids) == 50
 
         # Remove siblings
         count_ref[0] = 10
-        ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
 
-        assert len(ctx.root_node.children) == 10
+        assert len(ctx.root_element.child_ids) == 10
         # 40 elements should have been unmounted (indices 10-49)
         assert len(unmount_log) == 40
         assert all(n >= 10 for n in unmount_log)
@@ -275,14 +281,14 @@ class TestCombinedDeepAndWide:
         def Root() -> None:
             Level(depth=1)
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Count total nodes
-        def count_nodes(node: ElementNode) -> int:
-            return 1 + sum(count_nodes(c) for c in node.children)
+        def count_nodes(node: Element) -> int:
+            return 1 + sum(count_nodes(ctx.elements.get(cid)) for cid in node.child_ids if ctx.elements.get(cid))
 
-        total = count_nodes(ctx.root_node)
+        total = count_nodes(ctx.root_element)
 
         # Expected: Root + Level(1) + 3*Level(2) + 9*Level(3) + 27*Level(4) + 81*Level(5)
         # Level(depth) creates no children when depth >= DEPTH, so:
@@ -320,15 +326,15 @@ class TestCombinedDeepAndWide:
         def Root() -> None:
             make_level(1)()
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Navigate to leaf level and check
-        node = ctx.root_node
+        node = ctx.root_element
         for _ in range(DEPTH):
-            node = node.children[0]
+            node = ctx.elements.get(node.child_ids[0])
 
-        assert len(node.children) == LEAF_COUNT
+        assert len(node.child_ids) == LEAF_COUNT
 
 
 class TestMountingOrder:
@@ -359,8 +365,8 @@ class TestMountingOrder:
             TrackedState(level=0)
             make_level(1)()
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Should be in order 0, 1, 2, ..., DEPTH
         assert mount_order == list(range(DEPTH + 1))
@@ -391,13 +397,13 @@ class TestMountingOrder:
             if show_ref[0]:
                 Container()
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Remove container
         show_ref[0] = False
-        ctx.mark_dirty_id(ctx.root_node.id)
-        ctx.render()
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
 
         # All children should have unmounted
         assert len(unmount_order) == 10
@@ -412,11 +418,11 @@ class TestTreeTraversal:
         def Empty() -> None:
             pass
 
-        ctx = RenderTree(Empty)
-        ctx.render()
+        ctx = RenderSession(Empty)
+        render(ctx)
 
-        assert ctx.root_node is not None
-        assert len(ctx.root_node.children) == 0
+        assert ctx.root_element is not None
+        assert len(ctx.root_element.child_ids) == 0
 
     def test_single_child_chain(self) -> None:
         """Tree where each node has exactly one child."""
@@ -433,15 +439,15 @@ class TestTreeTraversal:
         def Root() -> None:
             make_level(1)()
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Traverse and verify single-child chain
-        node = ctx.root_node
+        node = ctx.root_element
         count = 0
-        while node.children:
-            assert len(node.children) == 1
-            node = node.children[0]
+        while node.child_ids:
+            assert len(node.child_ids) == 1
+            node = ctx.elements.get(node.child_ids[0])
             count += 1
 
         # Should have traversed DEPTH levels (from Root's child to deepest)
@@ -470,20 +476,20 @@ class TestTreeTraversal:
             DeepBranch(depth=10)  # Deep left branch
             ShallowBranch()       # Shallow right branch
 
-        ctx = RenderTree(Root)
-        ctx.render()
+        ctx = RenderSession(Root)
+        render(ctx)
 
         # Root has 2 children
-        assert len(ctx.root_node.children) == 2
+        assert len(ctx.root_element.child_ids) == 2
 
         # Count depth of deep branch
-        def count_depth(node: ElementNode) -> int:
-            if not node.children:
+        def count_depth(node: Element) -> int:
+            if not node.child_ids:
                 return 1
-            return 1 + max(count_depth(c) for c in node.children)
+            return 1 + max(count_depth(ctx.elements.get(cid)) for cid in node.child_ids if ctx.elements.get(cid))
 
-        deep_branch = ctx.root_node.children[0]
-        shallow_branch = ctx.root_node.children[1]
+        deep_branch = ctx.elements.get(ctx.root_element.child_ids[0])
+        shallow_branch = ctx.elements.get(ctx.root_element.child_ids[1])
 
         deep_depth = count_depth(deep_branch)
         shallow_depth = count_depth(shallow_branch)

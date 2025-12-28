@@ -5,9 +5,9 @@ from __future__ import annotations
 import msgspec
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from trellis.core.message_handler import MessageHandler
-from trellis.core.messages import Message
-from trellis.core.rendering import IComponent
+from trellis.core.components.base import Component
+from trellis.platforms.common.handler import MessageHandler
+from trellis.platforms.common.messages import Message
 
 router = APIRouter()
 
@@ -22,14 +22,20 @@ class WebSocketMessageHandler(MessageHandler):
     _encoder: msgspec.msgpack.Encoder
     _decoder: msgspec.msgpack.Decoder[Message]
 
-    def __init__(self, root_component: IComponent, websocket: WebSocket) -> None:
+    def __init__(
+        self,
+        root_component: Component,
+        websocket: WebSocket,
+        batch_delay: float = 1.0 / 30,
+    ) -> None:
         """Create a WebSocket message handler.
 
         Args:
             root_component: The root Trellis component to render
             websocket: The FastAPI WebSocket connection
+            batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        super().__init__(root_component)
+        super().__init__(root_component, batch_delay=batch_delay)
         self.websocket = websocket
         self._encoder = msgspec.msgpack.Encoder()
         # Single decoder for all message types (including HelloMessage)
@@ -62,7 +68,10 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
         await websocket.close(code=4000, reason="No top component configured")
         return
 
-    handler = WebSocketMessageHandler(top_component, websocket)
+    # Get batch_delay from app state (defaults to 30fps if not set)
+    batch_delay = getattr(websocket.app.state, "trellis_batch_delay", 1.0 / 30)
+
+    handler = WebSocketMessageHandler(top_component, websocket, batch_delay=batch_delay)
 
     try:
         await handler.run()

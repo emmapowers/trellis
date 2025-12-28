@@ -19,6 +19,9 @@ htmlcov/
 # Linting
 .ruff_cache/
 
+# Make sentinel files
+.build/
+
 # Pixi
 .pixi/
 

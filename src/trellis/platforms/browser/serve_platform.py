@@ -25,11 +25,11 @@ from starlette.staticfiles import StaticFiles
 if TYPE_CHECKING:
     from starlette.requests import Request
 
-    from trellis.core.rendering import ElementNode
+    from trellis.core.rendering.element import Element
 
 from trellis.bundler import CORE_PACKAGES, BundleConfig, build_bundle
-from trellis.core.platform import Platform
 from trellis.platforms.common import find_available_port
+from trellis.platforms.common.base import Platform
 
 # Jinja2 environment for HTML templates
 _TEMPLATE_DIR = Path(__file__).parent / "client" / "src"
@@ -207,7 +207,7 @@ class BrowserServePlatform(Platform):
 
     async def run(
         self,
-        root_component: Callable[[], ElementNode],
+        root_component: Callable[[], Element],
         **kwargs: Any,
     ) -> None:
         """Build and serve static files for browser testing.

@@ -12,9 +12,9 @@ from __future__ import annotations
 import typing as tp
 
 if tp.TYPE_CHECKING:
-    from trellis.core.state import Stateful
+    from trellis.core.state.stateful import Stateful
 
-from trellis.core.tracked import TrackedDict, TrackedList, TrackedSet
+from trellis.core.state.tracked import TrackedDict, TrackedList, TrackedSet
 
 __all__ = ["convert_to_tracked"]
 

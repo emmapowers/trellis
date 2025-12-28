@@ -1,4 +1,9 @@
-/** WebSocket client for Trellis server communication. */
+/**
+ * WebSocket client for Trellis server communication.
+ *
+ * Handles WebSocket transport only. Message processing is delegated
+ * to ClientMessageHandler for consistency across platforms.
+ */
 
 import { encode, decode } from "@msgpack/msgpack";
 import {
@@ -7,55 +12,63 @@ import {
   HelloMessage,
   HelloResponseMessage,
   EventMessage,
-  SerializedElement,
 } from "../../../common/client/src/types";
+import {
+  ClientMessageHandler,
+  ClientMessageHandlerCallbacks,
+  ConnectionState,
+} from "../../../common/client/src/ClientMessageHandler";
+import { TrellisClient } from "../../../common/client/src/TrellisClient";
+import { TrellisStore } from "../../../common/client/src/core";
+import { debugLog } from "../../../common/client/src/debug";
 
-export type ConnectionState = "disconnected" | "connecting" | "connected";
+export type { ConnectionState };
 
-export interface TrellisClientCallbacks {
-  onConnectionStateChange?: (state: ConnectionState) => void;
-  onConnected?: (response: HelloResponseMessage) => void;
-  onRender?: (tree: SerializedElement) => void;
-  onError?: (error: string, context: "render" | "callback") => void;
-}
+export interface TrellisClientCallbacks extends ClientMessageHandlerCallbacks {}
 
-export class TrellisClient {
+export class ServerTrellisClient implements TrellisClient {
   private ws: WebSocket | null = null;
   private clientId: string;
-  private sessionId: string | null = null;
-  private connectionState: ConnectionState = "disconnected";
-  private callbacks: TrellisClientCallbacks;
+  private handler: ClientMessageHandler;
   private connectResolver: ((response: HelloResponseMessage) => void) | null =
     null;
 
-  constructor(callbacks: TrellisClientCallbacks = {}) {
+  /**
+   * Create a new server client.
+   *
+   * @param callbacks - Optional callbacks for connection events
+   * @param store - Optional store instance (defaults to singleton)
+   */
+  constructor(callbacks: TrellisClientCallbacks = {}, store?: TrellisStore) {
     this.clientId = crypto.randomUUID();
-    this.callbacks = callbacks;
-  }
-
-  private setConnectionState(state: ConnectionState): void {
-    this.connectionState = state;
-    this.callbacks.onConnectionStateChange?.(state);
+    this.handler = new ClientMessageHandler(callbacks, store);
   }
 
   getConnectionState(): ConnectionState {
-    return this.connectionState;
+    return this.handler.getConnectionState();
   }
 
   getSessionId(): string | null {
-    return this.sessionId;
+    return this.handler.getSessionId();
+  }
+
+  getServerVersion(): string | null {
+    return this.handler.getServerVersion();
   }
 
   async connect(): Promise<HelloResponseMessage> {
     return new Promise((resolve, reject) => {
       this.connectResolver = resolve;
-      this.setConnectionState("connecting");
+      this.handler.setConnectionState("connecting");
 
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      this.ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      debugLog("client", `Connecting to ${wsUrl}`);
+      this.ws = new WebSocket(wsUrl);
       this.ws.binaryType = "arraybuffer";
 
       this.ws.onopen = () => {
+        debugLog("client", "WebSocket opened, sending HELLO");
         const hello: HelloMessage = {
           type: MessageType.HELLO,
           client_id: this.clientId,
@@ -65,42 +78,26 @@ export class TrellisClient {
 
       this.ws.onmessage = (event) => {
         const msg = decode(new Uint8Array(event.data)) as Message;
-        this.handleMessage(msg);
+        this.handler.handleMessage(msg);
+
+        // Resolve connect promise on HELLO_RESPONSE
+        if (msg.type === MessageType.HELLO_RESPONSE && this.connectResolver) {
+          this.connectResolver(msg);
+          this.connectResolver = null;
+        }
       };
 
       this.ws.onerror = () => {
-        this.setConnectionState("disconnected");
+        debugLog("client", "WebSocket error");
+        this.handler.setConnectionState("disconnected");
         reject(new Error("WebSocket connection failed"));
       };
 
       this.ws.onclose = () => {
-        this.setConnectionState("disconnected");
+        debugLog("client", "WebSocket closed");
+        this.handler.setConnectionState("disconnected");
       };
     });
-  }
-
-  private handleMessage(msg: Message): void {
-    switch (msg.type) {
-      case MessageType.HELLO_RESPONSE:
-        this.sessionId = msg.session_id;
-        this.setConnectionState("connected");
-        console.log(`Connected to Trellis server v${msg.server_version}`);
-        this.callbacks.onConnected?.(msg);
-        if (this.connectResolver) {
-          this.connectResolver(msg);
-          this.connectResolver = null;
-        }
-        break;
-
-      case MessageType.RENDER:
-        this.callbacks.onRender?.(msg.tree);
-        break;
-
-      case MessageType.ERROR:
-        console.error(`Trellis ${msg.context} error:`, msg.error);
-        this.callbacks.onError?.(msg.error, msg.context);
-        break;
-    }
   }
 
   private send(msg: Message): void {
@@ -111,6 +108,7 @@ export class TrellisClient {
 
   /** Send an event to the server to invoke a callback. */
   sendEvent(callbackId: string, args: unknown[] = []): void {
+    debugLog("client", `sendEvent: ${callbackId} args=${JSON.stringify(args)}`);
     const msg: EventMessage = {
       type: MessageType.EVENT,
       callback_id: callbackId,
@@ -120,11 +118,11 @@ export class TrellisClient {
   }
 
   disconnect(): void {
+    debugLog("client", "Disconnecting");
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
-    this.sessionId = null;
-    this.setConnectionState("disconnected");
+    this.handler.setConnectionState("disconnected");
   }
 }

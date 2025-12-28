@@ -12,7 +12,7 @@ from trellis import widgets as w
 from .example import make_playground_url
 
 if tp.TYPE_CHECKING:
-    from trellis.core.composition_component import CompositionComponent
+    from trellis.core.components.composition import CompositionComponent
 
 
 @component

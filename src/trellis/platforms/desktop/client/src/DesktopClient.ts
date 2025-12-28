@@ -1,4 +1,9 @@
-/** Channel-based client for PyTauri desktop communication. */
+/**
+ * Channel-based client for PyTauri desktop communication.
+ *
+ * Handles PyTauri Channel transport only. Message processing is delegated
+ * to ClientMessageHandler for consistency across platforms.
+ */
 
 import { Channel } from "@tauri-apps/api/core";
 import { pyInvoke } from "tauri-plugin-pytauri-api";
@@ -9,17 +14,18 @@ import {
   HelloMessage,
   HelloResponseMessage,
   EventMessage,
-  SerializedElement,
 } from "../../../common/client/src/types";
+import {
+  ClientMessageHandler,
+  ClientMessageHandlerCallbacks,
+  ConnectionState,
+} from "../../../common/client/src/ClientMessageHandler";
+import { TrellisClient } from "../../../common/client/src/TrellisClient";
+import { TrellisStore } from "../../../common/client/src/core";
 
-export type ConnectionState = "disconnected" | "connecting" | "connected";
+export type { ConnectionState };
 
-export interface DesktopClientCallbacks {
-  onConnectionStateChange?: (state: ConnectionState) => void;
-  onConnected?: (response: HelloResponseMessage) => void;
-  onRender?: (tree: SerializedElement) => void;
-  onError?: (error: string, context: "render" | "callback") => void;
-}
+export interface DesktopClientCallbacks extends ClientMessageHandlerCallbacks {}
 
 /**
  * Desktop client using PyTauri channel for bidirectional communication.
@@ -28,37 +34,40 @@ export interface DesktopClientCallbacks {
  * objects (HelloMessage, EventMessage) and receives identical responses
  * (HelloResponseMessage, RenderMessage).
  */
-export class DesktopClient {
+export class DesktopClient implements TrellisClient {
   private channel: Channel<ArrayBuffer> | null = null;
   private clientId: string;
-  private sessionId: string | null = null;
-  private connectionState: ConnectionState = "disconnected";
-  private callbacks: DesktopClientCallbacks;
+  private handler: ClientMessageHandler;
   private connectResolver: ((response: HelloResponseMessage) => void) | null =
     null;
 
-  constructor(callbacks: DesktopClientCallbacks = {}) {
+  /**
+   * Create a new desktop client.
+   *
+   * @param callbacks - Optional callbacks for connection events
+   * @param store - Optional store instance (defaults to singleton)
+   */
+  constructor(callbacks: DesktopClientCallbacks = {}, store?: TrellisStore) {
     this.clientId = crypto.randomUUID();
-    this.callbacks = callbacks;
-  }
-
-  private setConnectionState(state: ConnectionState): void {
-    this.connectionState = state;
-    this.callbacks.onConnectionStateChange?.(state);
+    this.handler = new ClientMessageHandler(callbacks, store);
   }
 
   getConnectionState(): ConnectionState {
-    return this.connectionState;
+    return this.handler.getConnectionState();
   }
 
   getSessionId(): string | null {
-    return this.sessionId;
+    return this.handler.getSessionId();
+  }
+
+  getServerVersion(): string | null {
+    return this.handler.getServerVersion();
   }
 
   async connect(): Promise<HelloResponseMessage> {
     return new Promise((resolve, reject) => {
       this.connectResolver = resolve;
-      this.setConnectionState("connecting");
+      this.handler.setConnectionState("connecting");
 
       // Create channel for receiving messages from Python
       this.channel = new Channel<ArrayBuffer>();
@@ -66,7 +75,13 @@ export class DesktopClient {
       // Set up message handler for incoming messages from Python
       this.channel.onmessage = (data: ArrayBuffer) => {
         const msg = decode(new Uint8Array(data)) as Message;
-        this.handleMessage(msg);
+        this.handler.handleMessage(msg);
+
+        // Resolve connect promise on HELLO_RESPONSE
+        if (msg.type === MessageType.HELLO_RESPONSE && this.connectResolver) {
+          this.connectResolver(msg);
+          this.connectResolver = null;
+        }
       };
 
       // Register channel with Python backend
@@ -83,34 +98,10 @@ export class DesktopClient {
           this.send(hello);
         })
         .catch((err) => {
-          this.setConnectionState("disconnected");
+          this.handler.setConnectionState("disconnected");
           reject(new Error(`Failed to connect: ${err}`));
         });
     });
-  }
-
-  private handleMessage(msg: Message): void {
-    switch (msg.type) {
-      case MessageType.HELLO_RESPONSE:
-        this.sessionId = msg.session_id;
-        this.setConnectionState("connected");
-        console.log(`Connected to Trellis desktop v${msg.server_version}`);
-        this.callbacks.onConnected?.(msg);
-        if (this.connectResolver) {
-          this.connectResolver(msg);
-          this.connectResolver = null;
-        }
-        break;
-
-      case MessageType.RENDER:
-        this.callbacks.onRender?.(msg.tree);
-        break;
-
-      case MessageType.ERROR:
-        console.error(`Trellis ${msg.context} error:`, msg.error);
-        this.callbacks.onError?.(msg.error, msg.context);
-        break;
-    }
   }
 
   private send(msg: Message): void {
@@ -135,7 +126,6 @@ export class DesktopClient {
 
   disconnect(): void {
     this.channel = null;
-    this.sessionId = null;
-    this.setConnectionState("disconnected");
+    this.handler.setConnectionState("disconnected");
   }
 }

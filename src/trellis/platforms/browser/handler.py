@@ -10,13 +10,15 @@ import asyncio
 import typing as tp
 from collections.abc import Callable
 
-from trellis.core.message_handler import MessageHandler
-from trellis.core.messages import (
+import msgspec
+
+from trellis.core.components.base import Component
+from trellis.platforms.common.handler import MessageHandler
+from trellis.platforms.common.messages import (
     EventMessage,
     HelloMessage,
     Message,
 )
-from trellis.core.rendering import IComponent
 
 __all__ = ["BrowserMessageHandler"]
 
@@ -35,13 +37,18 @@ class BrowserMessageHandler(MessageHandler):
     _send_callback: Callable[[tp.Any], None] | None
     _serializer: Callable[[dict[str, tp.Any]], tp.Any]
 
-    def __init__(self, root_component: IComponent) -> None:
+    def __init__(
+        self,
+        root_component: Component,
+        batch_delay: float = 1.0 / 30,
+    ) -> None:
         """Create a browser message handler.
 
         Args:
             root_component: The root Trellis component to render
+            batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        super().__init__(root_component)
+        super().__init__(root_component, batch_delay=batch_delay)
         self._inbox = asyncio.Queue()
         self._send_callback = None
         # Default serializer just returns dict as-is (for tests)
@@ -104,15 +111,12 @@ class BrowserMessageHandler(MessageHandler):
 
 
 def _message_to_dict(msg: Message) -> dict[str, tp.Any]:
-    """Convert a msgspec Message struct to a plain dict for JavaScript."""
-    # Get the tag (message type) from the struct config
-    msg_type = msg.__struct_config__.tag
+    """Convert a msgspec Message struct to a plain dict for JavaScript.
 
-    # Build dict from struct fields
-    result: dict[str, tp.Any] = {"type": msg_type}
-    for field in msg.__struct_fields__:
-        result[field] = getattr(msg, field)
-
+    Uses msgspec.to_builtins() for recursive conversion of nested structs,
+    which is required for postMessage to clone the object.
+    """
+    result: dict[str, tp.Any] = msgspec.to_builtins(msg)
     return result
 
 

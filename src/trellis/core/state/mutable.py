@@ -27,10 +27,10 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering import get_active_render_tree
+from trellis.core.rendering.session import get_active_session
 
 if tp.TYPE_CHECKING:
-    from trellis.core.state import Stateful
+    from trellis.core.state.stateful import Stateful
 
 T = tp.TypeVar("T")
 
@@ -43,24 +43,24 @@ def record_property_access(owner: Stateful, attr: str, value: tp.Any) -> None:
     Called by Stateful.__getattribute__ during render to track the most
     recent property access. This enables mutable() to capture the reference.
     """
-    tree = get_active_render_tree()
-    if tree is not None:
-        tree._last_property_access = (owner, attr, value)
+    session = get_active_session()
+    if session is not None and session.active is not None:
+        session.active.last_property_access = (owner, attr, value)
 
 
 def clear_property_access() -> None:
     """Clear the last recorded property access."""
-    tree = get_active_render_tree()
-    if tree is not None:
-        tree._last_property_access = None
+    session = get_active_session()
+    if session is not None and session.active is not None:
+        session.active.last_property_access = None
 
 
 def _get_last_property_access() -> tuple[tp.Any, str, tp.Any] | None:
-    """Get the last recorded property access from the active render tree."""
-    tree = get_active_render_tree()
-    if tree is None:
-        return None
-    return tree._last_property_access
+    """Get the last recorded property access from the active render session."""
+    session = get_active_session()
+    if session is not None and session.active is not None:
+        return session.active.last_property_access
+    return None
 
 
 class Mutable(tp.Generic[T]):
@@ -77,7 +77,7 @@ class Mutable(tp.Generic[T]):
         _on_change: Optional custom callback (if None, uses auto-generated setter)
     """
 
-    __slots__ = ("_attr", "_on_change", "_owner")
+    __slots__ = ("_attr", "_on_change", "_owner", "_snapshot")
 
     def __init__(
         self,
@@ -88,6 +88,8 @@ class Mutable(tp.Generic[T]):
         self._owner = owner
         self._attr = attr
         self._on_change = on_change
+        # Capture value at creation time for change detection
+        self._snapshot: T = object.__getattribute__(owner, attr)
 
     @property
     def value(self) -> T:
@@ -107,15 +109,38 @@ class Mutable(tp.Generic[T]):
         """Get the custom callback, if any."""
         return self._on_change
 
-    def __hash__(self) -> int:
-        """Hash based on owner identity and attribute name."""
-        return hash((id(self._owner), self._attr))
+    @property
+    def snapshot(self) -> T:
+        """Get the snapshot value captured at creation time.
+
+        This is used for equality comparison to detect changes across renders.
+        The snapshot is immutable after creation.
+        """
+        return self._snapshot
+
+    def __call__(self, value: T) -> None:
+        """Set the value via call syntax (e.g., mutable_instance(new_value))."""
+        self.value = value
 
     def __eq__(self, other: object) -> bool:
-        """Compare by reference identity (same owner instance and attr)."""
+        """Compare by binding identity AND snapshot value.
+
+        Two Mutables are equal if they reference the same property on the same
+        owner instance AND were created with the same value (snapshot). This
+        enables proper change detection across renders.
+
+        Note: Mutable is intentionally unhashable (no __hash__) because
+        different instances with the same binding may have different snapshots.
+        """
         if not isinstance(other, Mutable):
             return NotImplemented
-        return self._owner is other._owner and self._attr == other._attr
+        return (
+            self._owner is other._owner
+            and self._attr == other._attr
+            and self._snapshot == other._snapshot
+        )
+
+    __hash__ = None  # type: ignore[assignment]  # Mutable is unhashable
 
     def __repr__(self) -> str:
         if self._on_change:

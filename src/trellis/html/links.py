@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering import ElementNode
-from trellis.html.base import Style, auto_collect_hybrid, html_element
+from trellis.core.rendering.element import Element
+from trellis.html.base import Style, html_element
 from trellis.html.events import MouseHandler
 
 __all__ = [
@@ -29,7 +29,7 @@ def Img(
     onClick: MouseHandler | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An image element."""
     ...
 
@@ -47,7 +47,7 @@ def _A(
     onClick: MouseHandler | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An anchor (link) element."""
     ...
 
@@ -63,7 +63,7 @@ def A(
     onClick: MouseHandler | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An anchor (link) element.
 
     Can be used as text-only or as a container:
@@ -72,7 +72,7 @@ def A(
             h.Img(src="icon.png")
             h.Span("Link text")
     """
-    desc = _A(
+    return _A(
         _text=text if text else None,
         href=href,
         target=target,
@@ -83,6 +83,3 @@ def A(
         key=key,
         **props,
     )
-    if text:
-        auto_collect_hybrid(desc)
-    return desc

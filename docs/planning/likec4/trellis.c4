@@ -1,0 +1,391 @@
+// Trellis Diffing and Batching Architecture
+// LikeC4 format - interactive diagrams, MIT licensed
+
+specification {
+  element runtime {
+    style {
+      shape rectangle
+    }
+  }
+  element module {
+    style {
+      color secondary
+    }
+  }
+  element class {
+    style {
+      color muted
+    }
+  }
+  element datastore {
+    style {
+      shape storage
+      color amber
+    }
+  }
+  element message {
+    style {
+      shape queue
+    }
+  }
+
+  relationship sends
+  relationship calls
+  relationship stores
+}
+
+model {
+  server = runtime 'Server' {
+    description '
+      Python server-side Trellis runtime.
+
+      Manages component tree, handles state changes,
+      computes diffs, and sends patches to clients.
+    '
+
+    renderTree = module 'RenderTree' {
+      description '
+        ## RenderTree
+        *rendering.py:292*
+
+        Manages the render lifecycle. Tracks which nodes
+        are dirty and need re-rendering.
+      '
+
+      stateTracking = datastore 'State Tracking' {
+        description '
+          ## Diffing State
+
+          These data structures enable incremental updates:
+
+          ```python
+          _dirty_ids: set[str]
+          # Node IDs needing re-render
+
+          _previous_props: dict[str, dict]
+          # node_id -> last serialized props
+
+          _previous_children: dict[str, list[str]]
+          # node_id -> last child ID list
+
+          _removed_ids: list[str]
+          # Nodes removed since last diff
+          ```
+        '
+      }
+
+      render = class 'render()' {
+        description '
+          ## render() -> dict
+
+          **Used for initial render.**
+
+          1. Builds full tree from root component
+          2. Serializes everything via serialize_node()
+          3. Populates _previous_* state for future diffs
+          4. Returns nested dict for RenderMessage
+        '
+      }
+
+      renderAndDiff = class 'render_and_diff()' {
+        description '
+          ## render_and_diff() -> list[Patch]
+
+          **Used for updates after initial render.**
+
+          1. Renders only dirty nodes
+          2. Calls compute_patches() to diff against previous
+          3. Updates _previous_* state
+          4. Returns list of patches (add/update/remove)
+        '
+      }
+
+      render -> stateTracking 'populates'
+      renderAndDiff -> stateTracking 'reads & updates'
+    }
+
+    serialization = module 'Serialization' {
+      description '
+        ## serialization.py
+
+        Two modes of operation:
+        1. Full tree for initial render
+        2. Patches for incremental updates
+      '
+
+      serializeNode = class 'serialize_node()' {
+        description '
+          Recursively serializes entire tree.
+          Callbacks become {"__callback__": "id"}
+        '
+      }
+
+      computePatches = class 'compute_patches()' {
+        description '
+          ## compute_patches()
+
+          Walks tree comparing to previous state:
+
+          ```python
+          for node in tree:
+            if node_id not in previous_props:
+              # New node -> AddPatch
+            else:
+              if props_diff or children_changed:
+                # -> UpdatePatch
+
+          for id in removed_ids:
+            # -> RemovePatch
+          ```
+        '
+      }
+
+      addPatch = message 'AddPatch' {
+        description '
+          New node mounted.
+          Contains full serialized subtree.
+        '
+        style { color green }
+      }
+
+      updatePatch = message 'UpdatePatch' {
+        description '
+          Props or children changed.
+          Contains only the delta.
+        '
+        style { color amber }
+      }
+
+      removePatch = message 'RemovePatch' {
+        description '
+          Node unmounted.
+          Client removes node + descendants.
+        '
+        style { color red }
+      }
+
+      computePatches -> addPatch 'generates'
+      computePatches -> updatePatch 'generates'
+      computePatches -> removePatch 'generates'
+    }
+
+    messageHandler = module 'MessageHandler' {
+      description '
+        ## MessageHandler
+        *message_handler.py:135*
+
+        Base class for render/event loop.
+        Subclasses only implement transport.
+      '
+
+      renderLoop = class '_render_loop()' {
+        description '
+          ## Batched Render Loop
+
+          ```python
+          while True:
+            await asyncio.sleep(batch_delay)
+            # ~33ms = 30fps
+
+            if tree.has_dirty_nodes():
+              patches = tree.render_and_diff()
+              if patches:
+                await send_message(
+                  PatchMessage(patches)
+                )
+          ```
+
+          **Key insight**: Multiple rapid state changes
+          coalesce into a single patch message.
+        '
+      }
+
+      renderLoop -> renderTree.renderAndDiff 'every ~33ms'
+    }
+
+    platformHandlers = module 'Platform Handlers' {
+      description '
+        Transport only. Subclass MessageHandler, implement:
+        - send_message(msg)
+        - receive_message() -> msg
+
+        All protocol logic stays in base class.
+      '
+      style { color slate }
+    }
+
+    messageHandler -> platformHandlers 'delegates'
+    renderTree.render -> serialization.serializeNode 'calls'
+    renderTree.renderAndDiff -> serialization.computePatches 'calls'
+  }
+
+  transport = message 'Transport' {
+    description '
+      WebSocket (server/desktop) or PostMessage (browser).
+      All messages are msgpack encoded.
+    '
+    style { color slate }
+  }
+
+  client = runtime 'Client' {
+    description '
+      TypeScript client-side runtime.
+
+      Receives tree/patches from server, maintains local
+      state, renders via React with minimal re-renders.
+    '
+    style { color green }
+
+    platformClients = module 'Platform Clients' {
+      description '
+        Transport only - delegates all message handling
+        to ClientMessageHandler.
+
+        - ServerTrellisClient (WebSocket)
+        - BrowserTrellisClient (PostMessage)
+        - DesktopTrellisClient (Tauri IPC)
+      '
+      style { color slate }
+    }
+
+    clientMessageHandler = module 'ClientMessageHandler' {
+      description '
+        ## ClientMessageHandler.ts
+
+        Routes messages to store:
+
+        ```typescript
+        handleMessage(msg) {
+          switch (msg.type) {
+            case RENDER:
+              store.setTree(msg.tree)
+            case PATCH:
+              store.applyPatches(msg.patches)
+          }
+        }
+        ```
+      '
+    }
+
+    trellisStore = module 'TrellisStore' {
+      description '
+        ## core/store.ts
+
+        **ID-keyed storage** (not nested tree!)
+        enables O(1) lookups and surgical updates.
+      '
+
+      storeData = datastore 'Store Data' {
+        description '
+          ```typescript
+          nodes: Map<string, NodeData>
+          // Flat map, NOT nested tree
+
+          nodeListeners: Map<string, Set>
+          // Per-node subscriptions
+
+          rootId: string | null
+          ```
+        '
+      }
+
+      applyPatches = class 'applyPatches()' {
+        description '
+          ```typescript
+          for (patch of patches) {
+            switch (patch.op) {
+              case "add": // Add to map
+              case "update": // Merge props
+              case "remove": // Delete
+            }
+          }
+          // Notify ONLY affected nodes
+          for (id of affectedIds)
+            notifyNode(id)
+          ```
+        '
+      }
+
+      applyPatches -> storeData 'updates'
+    }
+
+    reactComponents = module 'React Components' {
+      description '
+        ## TreeRenderer.tsx
+
+        Per-node rendering with surgical re-renders.
+      '
+
+      nodeRenderer = class 'NodeRenderer' {
+        description '
+          ```tsx
+          function NodeRenderer({ id }) {
+            const node = useNode(id)
+            // Re-renders ONLY when this
+            // specific node data changes
+            return <Component {...node.props}>
+              {node.childIds.map(id =>
+                <NodeRenderer id={id} />
+              )}
+            </Component>
+          }
+          ```
+        '
+      }
+    }
+
+    platformClients -> clientMessageHandler 'delegates'
+    clientMessageHandler -> trellisStore.applyPatches 'PATCH msg'
+    trellisStore.applyPatches -> reactComponents.nodeRenderer 'notifyNode(id)'
+  }
+
+  // Cross-boundary connections
+  server.platformHandlers -[sends]-> transport 'msgpack'
+  transport -[sends]-> client.platformClients 'msgpack'
+}
+
+views {
+  view index {
+    title 'Trellis Diffing Architecture'
+    description '
+      Overview of the batching and diffing system.
+      Click components to drill down.
+    '
+    include *
+  }
+
+  view serverDetail of server {
+    title 'Server Internals'
+    description '
+      Python server-side components that handle
+      rendering and diff computation.
+    '
+    include *
+  }
+
+  view clientDetail of client {
+    title 'Client Internals'
+    description '
+      TypeScript client-side components that handle
+      patch application and React rendering.
+    '
+    include *
+  }
+
+  view dataFlow {
+    title 'Data Flow'
+    description '
+      How updates flow from state change to UI update.
+    '
+    include
+      server.renderTree,
+      server.serialization,
+      server.messageHandler,
+      server.platformHandlers,
+      transport,
+      client.platformClients,
+      client.clientMessageHandler,
+      client.trellisStore,
+      client.reactComponents
+  }
+}

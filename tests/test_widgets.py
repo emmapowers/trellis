@@ -1,8 +1,9 @@
 """Tests for built-in widgets."""
 
-from trellis.core.composition_component import component
-from trellis.core.rendering import RenderTree
-from trellis.core.serialization import serialize_node
+from trellis.core.components.composition import component
+from trellis.core.rendering.render import render
+from trellis.platforms.common.serialization import serialize_node
+from trellis.core.rendering.session import RenderSession
 from trellis.widgets import (
     AreaChart,
     Badge,
@@ -56,15 +57,15 @@ class TestLayoutWidgets:
                 Label(text="A")
                 Label(text="B")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         # App has Column as child
-        column = ctx.root_node.children[0]
+        column = ctx.elements.get(ctx.root_element.child_ids[0])
         assert column.component.name == "Column"
-        assert len(column.children) == 2
-        assert column.children[0].component.name == "Label"
-        assert column.children[1].component.name == "Label"
+        assert len(column.child_ids) == 2
+        assert ctx.elements.get(column.child_ids[0]).component.name == "Label"
+        assert ctx.elements.get(column.child_ids[1]).component.name == "Label"
 
     def test_row_renders_children(self) -> None:
         """Row component renders its children."""
@@ -75,12 +76,12 @@ class TestLayoutWidgets:
                 Button(text="Left")
                 Button(text="Right")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        row = ctx.root_node.children[0]
+        row = ctx.elements.get(ctx.root_element.child_ids[0])
         assert row.component.name == "Row"
-        assert len(row.children) == 2
+        assert len(row.child_ids) == 2
 
     def test_column_with_props(self) -> None:
         """Column accepts gap and padding props."""
@@ -90,10 +91,10 @@ class TestLayoutWidgets:
             with Column(gap=16, padding=8):
                 Label(text="Test")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        column = ctx.root_node.children[0]
+        column = ctx.elements.get(ctx.root_element.child_ids[0])
         assert column.properties["gap"] == 16
         assert column.properties["padding"] == 8
 
@@ -110,19 +111,19 @@ class TestLayoutWidgets:
                     Label(text="C")
                     Label(text="D")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        column = ctx.root_node.children[0]
-        assert len(column.children) == 2
+        column = ctx.elements.get(ctx.root_element.child_ids[0])
+        assert len(column.child_ids) == 2
 
-        row1 = column.children[0]
-        row2 = column.children[1]
+        row1 = ctx.elements.get(column.child_ids[0])
+        row2 = ctx.elements.get(column.child_ids[1])
 
         assert row1.component.name == "Row"
         assert row2.component.name == "Row"
-        assert len(row1.children) == 2
-        assert len(row2.children) == 2
+        assert len(row1.child_ids) == 2
+        assert len(row2.child_ids) == 2
 
 
 class TestBasicWidgets:
@@ -135,10 +136,10 @@ class TestBasicWidgets:
         def App() -> None:
             Label(text="Hello World")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        label = ctx.root_node.children[0]
+        label = ctx.elements.get(ctx.root_element.child_ids[0])
         assert label.component.name == "Label"
         assert label.properties["text"] == "Hello World"
 
@@ -149,10 +150,10 @@ class TestBasicWidgets:
         def App() -> None:
             Label(text="Styled", font_size=24, color="red")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        label = ctx.root_node.children[0]
+        label = ctx.elements.get(ctx.root_element.child_ids[0])
         assert label.properties["font_size"] == 24
         assert label.properties["color"] == "red"
 
@@ -163,10 +164,10 @@ class TestBasicWidgets:
         def App() -> None:
             Button(text="Click Me")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        button = ctx.root_node.children[0]
+        button = ctx.elements.get(ctx.root_element.child_ids[0])
         assert button.component.name == "Button"
         assert button.properties["text"] == "Click Me"
 
@@ -178,10 +179,10 @@ class TestBasicWidgets:
         def App() -> None:
             Button(text="Click", on_click=lambda: clicked.append(True))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        button = ctx.root_node.children[0]
+        button = ctx.elements.get(ctx.root_element.child_ids[0])
         assert callable(button.properties["on_click"])
 
         # Invoke the callback
@@ -195,10 +196,10 @@ class TestBasicWidgets:
         def App() -> None:
             Button(text="Disabled", disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        button = ctx.root_node.children[0]
+        button = ctx.elements.get(ctx.root_element.child_ids[0])
         assert button.properties["disabled"] is True
 
     def test_slider_with_value(self) -> None:
@@ -208,10 +209,10 @@ class TestBasicWidgets:
         def App() -> None:
             Slider(value=50, min=0, max=100, step=1)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        slider = ctx.root_node.children[0]
+        slider = ctx.elements.get(ctx.root_element.child_ids[0])
         assert slider.component.name == "Slider"
         assert slider.properties["value"] == 50
         assert slider.properties["min"] == 0
@@ -226,10 +227,10 @@ class TestBasicWidgets:
         def App() -> None:
             Slider(value=25, on_change=lambda v: values.append(v))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        slider = ctx.root_node.children[0]
+        slider = ctx.elements.get(ctx.root_element.child_ids[0])
         assert callable(slider.properties["on_change"])
 
         # Invoke the callback
@@ -248,10 +249,10 @@ class TestBasicWidgets:
         def App() -> None:
             Slider()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        slider = ctx.root_node.children[0]
+        slider = ctx.elements.get(ctx.root_element.child_ids[0])
         # No explicit props passed, so properties should be empty
         # (React client applies defaults)
         assert "value" not in slider.properties
@@ -266,10 +267,10 @@ class TestBasicWidgets:
         def App() -> None:
             Slider(disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        slider = ctx.root_node.children[0]
+        slider = ctx.elements.get(ctx.root_element.child_ids[0])
         assert slider.properties["disabled"] is True
 
     def test_slider_custom_range(self) -> None:
@@ -279,10 +280,10 @@ class TestBasicWidgets:
         def App() -> None:
             Slider(value=5.5, min=-10, max=10, step=0.5)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        slider = ctx.root_node.children[0]
+        slider = ctx.elements.get(ctx.root_element.child_ids[0])
         assert slider.properties["value"] == 5.5
         assert slider.properties["min"] == -10
         assert slider.properties["max"] == 10
@@ -299,10 +300,10 @@ class TestWidgetSerialization:
         def App() -> None:
             Label(text="Test")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
 
         label_data = result["children"][0]
         assert label_data["type"] == "Label"
@@ -315,10 +316,10 @@ class TestWidgetSerialization:
         def App() -> None:
             Button(text="Click", on_click=lambda: None)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
 
         button_data = result["children"][0]
         assert button_data["type"] == "Button"
@@ -335,10 +336,10 @@ class TestWidgetSerialization:
                     Button(text="OK")
                     Button(text="Cancel")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
 
         column_data = result["children"][0]
         assert column_data["type"] == "Column"
@@ -363,10 +364,10 @@ class TestInputWidgets:
         def App() -> None:
             TextInput(value="hello", placeholder="Enter text...")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        text_input = ctx.root_node.children[0]
+        text_input = ctx.elements.get(ctx.root_element.child_ids[0])
         assert text_input.component.name == "TextInput"
         assert text_input.properties["value"] == "hello"
         assert text_input.properties["placeholder"] == "Enter text..."
@@ -379,10 +380,10 @@ class TestInputWidgets:
         def App() -> None:
             TextInput(value="test", on_change=lambda v: values.append(v))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        text_input = ctx.root_node.children[0]
+        text_input = ctx.elements.get(ctx.root_element.child_ids[0])
         assert callable(text_input.properties["on_change"])
 
         text_input.properties["on_change"]("new value")
@@ -395,10 +396,10 @@ class TestInputWidgets:
         def App() -> None:
             TextInput(disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        text_input = ctx.root_node.children[0]
+        text_input = ctx.elements.get(ctx.root_element.child_ids[0])
         assert text_input.properties["disabled"] is True
 
     def test_number_input_with_value(self) -> None:
@@ -408,10 +409,10 @@ class TestInputWidgets:
         def App() -> None:
             NumberInput(value=42, min=0, max=100, step=1)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        number_input = ctx.root_node.children[0]
+        number_input = ctx.elements.get(ctx.root_element.child_ids[0])
         assert number_input.component.name == "NumberInput"
         assert number_input.properties["value"] == 42
         assert number_input.properties["min"] == 0
@@ -426,10 +427,10 @@ class TestInputWidgets:
         def App() -> None:
             NumberInput(value=10, on_change=lambda v: values.append(v))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        number_input = ctx.root_node.children[0]
+        number_input = ctx.elements.get(ctx.root_element.child_ids[0])
         assert callable(number_input.properties["on_change"])
 
         number_input.properties["on_change"](25.5)
@@ -442,10 +443,10 @@ class TestInputWidgets:
         def App() -> None:
             NumberInput(disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        number_input = ctx.root_node.children[0]
+        number_input = ctx.elements.get(ctx.root_element.child_ids[0])
         assert number_input.properties["disabled"] is True
 
     def test_checkbox_with_checked(self) -> None:
@@ -455,10 +456,10 @@ class TestInputWidgets:
         def App() -> None:
             Checkbox(checked=True, label="Enable feature")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        checkbox = ctx.root_node.children[0]
+        checkbox = ctx.elements.get(ctx.root_element.child_ids[0])
         assert checkbox.component.name == "Checkbox"
         assert checkbox.properties["checked"] is True
         assert checkbox.properties["label"] == "Enable feature"
@@ -471,10 +472,10 @@ class TestInputWidgets:
         def App() -> None:
             Checkbox(checked=False, on_change=lambda v: states.append(v))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        checkbox = ctx.root_node.children[0]
+        checkbox = ctx.elements.get(ctx.root_element.child_ids[0])
         assert callable(checkbox.properties["on_change"])
 
         checkbox.properties["on_change"](True)
@@ -487,10 +488,10 @@ class TestInputWidgets:
         def App() -> None:
             Checkbox(disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        checkbox = ctx.root_node.children[0]
+        checkbox = ctx.elements.get(ctx.root_element.child_ids[0])
         assert checkbox.properties["disabled"] is True
 
     def test_select_with_options(self) -> None:
@@ -507,10 +508,10 @@ class TestInputWidgets:
                 placeholder="Choose...",
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        select = ctx.root_node.children[0]
+        select = ctx.elements.get(ctx.root_element.child_ids[0])
         assert select.component.name == "Select"
         assert select.properties["value"] == "opt1"
         assert len(select.properties["options"]) == 2
@@ -528,10 +529,10 @@ class TestInputWidgets:
                 on_change=lambda v: selections.append(v),
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        select = ctx.root_node.children[0]
+        select = ctx.elements.get(ctx.root_element.child_ids[0])
         assert callable(select.properties["on_change"])
 
         select.properties["on_change"]("opt2")
@@ -544,10 +545,10 @@ class TestInputWidgets:
         def App() -> None:
             Select(disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        select = ctx.root_node.children[0]
+        select = ctx.elements.get(ctx.root_element.child_ids[0])
         assert select.properties["disabled"] is True
 
 
@@ -562,13 +563,13 @@ class TestCardAndDivider:
             with Card():
                 Label(text="Inside card")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        card = ctx.root_node.children[0]
+        card = ctx.elements.get(ctx.root_element.child_ids[0])
         assert card.component.name == "Card"
-        assert len(card.children) == 1
-        assert card.children[0].component.name == "Label"
+        assert len(card.child_ids) == 1
+        assert ctx.elements.get(card.child_ids[0]).component.name == "Label"
 
     def test_card_with_padding(self) -> None:
         """Card accepts padding prop."""
@@ -578,10 +579,10 @@ class TestCardAndDivider:
             with Card(padding=32):
                 Label(text="Content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        card = ctx.root_node.children[0]
+        card = ctx.elements.get(ctx.root_element.child_ids[0])
         assert card.properties["padding"] == 32
 
     def test_card_nested_in_layout(self) -> None:
@@ -595,13 +596,13 @@ class TestCardAndDivider:
                 with Card():
                     Label(text="Card 2")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        column = ctx.root_node.children[0]
-        assert len(column.children) == 2
-        assert column.children[0].component.name == "Card"
-        assert column.children[1].component.name == "Card"
+        column = ctx.elements.get(ctx.root_element.child_ids[0])
+        assert len(column.child_ids) == 2
+        assert ctx.elements.get(column.child_ids[0]).component.name == "Card"
+        assert ctx.elements.get(column.child_ids[1]).component.name == "Card"
 
     def test_divider_renders(self) -> None:
         """Divider component renders."""
@@ -610,10 +611,10 @@ class TestCardAndDivider:
         def App() -> None:
             Divider()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        divider = ctx.root_node.children[0]
+        divider = ctx.elements.get(ctx.root_element.child_ids[0])
         assert divider.component.name == "Divider"
 
     def test_divider_with_props(self) -> None:
@@ -623,10 +624,10 @@ class TestCardAndDivider:
         def App() -> None:
             Divider(margin=24, color="#6366f1")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        divider = ctx.root_node.children[0]
+        divider = ctx.elements.get(ctx.root_element.child_ids[0])
         assert divider.properties["margin"] == 24
         assert divider.properties["color"] == "#6366f1"
 
@@ -637,10 +638,10 @@ class TestCardAndDivider:
         def App() -> None:
             Divider(orientation="vertical")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        divider = ctx.root_node.children[0]
+        divider = ctx.elements.get(ctx.root_element.child_ids[0])
         assert divider.properties["orientation"] == "vertical"
 
     def test_divider_in_layout(self) -> None:
@@ -653,14 +654,14 @@ class TestCardAndDivider:
                 Divider()
                 Label(text="Below")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        column = ctx.root_node.children[0]
-        assert len(column.children) == 3
-        assert column.children[0].component.name == "Label"
-        assert column.children[1].component.name == "Divider"
-        assert column.children[2].component.name == "Label"
+        column = ctx.elements.get(ctx.root_element.child_ids[0])
+        assert len(column.child_ids) == 3
+        assert ctx.elements.get(column.child_ids[0]).component.name == "Label"
+        assert ctx.elements.get(column.child_ids[1]).component.name == "Divider"
+        assert ctx.elements.get(column.child_ids[2]).component.name == "Label"
 
 
 class TestHeadingWidget:
@@ -673,10 +674,10 @@ class TestHeadingWidget:
         def App() -> None:
             Heading(text="Welcome")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        heading = ctx.root_node.children[0]
+        heading = ctx.elements.get(ctx.root_element.child_ids[0])
         assert heading.component.name == "Heading"
         assert heading.properties["text"] == "Welcome"
 
@@ -687,10 +688,10 @@ class TestHeadingWidget:
         def App() -> None:
             Heading(text="Section", level=2)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        heading = ctx.root_node.children[0]
+        heading = ctx.elements.get(ctx.root_element.child_ids[0])
         assert heading.properties["level"] == 2
 
     def test_heading_with_color(self) -> None:
@@ -700,10 +701,10 @@ class TestHeadingWidget:
         def App() -> None:
             Heading(text="Colored", color="#333")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        heading = ctx.root_node.children[0]
+        heading = ctx.elements.get(ctx.root_element.child_ids[0])
         assert heading.properties["color"] == "#333"
 
     def test_heading_with_style(self) -> None:
@@ -713,10 +714,10 @@ class TestHeadingWidget:
         def App() -> None:
             Heading(text="Styled", style={"marginBottom": "16px"})
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        heading = ctx.root_node.children[0]
+        heading = ctx.elements.get(ctx.root_element.child_ids[0])
         assert heading.properties["style"] == {"marginBottom": "16px"}
 
     def test_heading_default_level(self) -> None:
@@ -726,10 +727,10 @@ class TestHeadingWidget:
         def App() -> None:
             Heading(text="Default")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        heading = ctx.root_node.children[0]
+        heading = ctx.elements.get(ctx.root_element.child_ids[0])
         # Default values are applied by React client, not stored in properties
         assert "level" not in heading.properties
 
@@ -744,10 +745,10 @@ class TestProgressBarWidget:
         def App() -> None:
             ProgressBar(value=50, min=0, max=100)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        progress = ctx.root_node.children[0]
+        progress = ctx.elements.get(ctx.root_element.child_ids[0])
         assert progress.component.name == "ProgressBar"
         assert progress.properties["value"] == 50
         assert progress.properties["min"] == 0
@@ -760,10 +761,10 @@ class TestProgressBarWidget:
         def App() -> None:
             ProgressBar(loading=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        progress = ctx.root_node.children[0]
+        progress = ctx.elements.get(ctx.root_element.child_ids[0])
         assert progress.properties["loading"] is True
 
     def test_progress_bar_disabled(self) -> None:
@@ -773,10 +774,10 @@ class TestProgressBarWidget:
         def App() -> None:
             ProgressBar(disabled=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        progress = ctx.root_node.children[0]
+        progress = ctx.elements.get(ctx.root_element.child_ids[0])
         assert progress.properties["disabled"] is True
 
     def test_progress_bar_with_color(self) -> None:
@@ -786,10 +787,10 @@ class TestProgressBarWidget:
         def App() -> None:
             ProgressBar(value=75, color="#22c55e")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        progress = ctx.root_node.children[0]
+        progress = ctx.elements.get(ctx.root_element.child_ids[0])
         assert progress.properties["color"] == "#22c55e"
 
     def test_progress_bar_with_height(self) -> None:
@@ -799,10 +800,10 @@ class TestProgressBarWidget:
         def App() -> None:
             ProgressBar(value=25, height=12)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        progress = ctx.root_node.children[0]
+        progress = ctx.elements.get(ctx.root_element.child_ids[0])
         assert progress.properties["height"] == 12
 
     def test_progress_bar_with_style(self) -> None:
@@ -812,10 +813,10 @@ class TestProgressBarWidget:
         def App() -> None:
             ProgressBar(value=50, style={"marginBottom": "24px"})
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        progress = ctx.root_node.children[0]
+        progress = ctx.elements.get(ctx.root_element.child_ids[0])
         assert progress.properties["style"] == {"marginBottom": "24px"}
 
 
@@ -829,10 +830,10 @@ class TestStatusIndicatorWidget:
         def App() -> None:
             StatusIndicator(status="success")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        indicator = ctx.root_node.children[0]
+        indicator = ctx.elements.get(ctx.root_element.child_ids[0])
         assert indicator.component.name == "StatusIndicator"
         assert indicator.properties["status"] == "success"
 
@@ -843,10 +844,10 @@ class TestStatusIndicatorWidget:
         def App() -> None:
             StatusIndicator(status="error", label="Failed")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        indicator = ctx.root_node.children[0]
+        indicator = ctx.elements.get(ctx.root_element.child_ids[0])
         assert indicator.properties["status"] == "error"
         assert indicator.properties["label"] == "Failed"
 
@@ -857,10 +858,10 @@ class TestStatusIndicatorWidget:
         def App() -> None:
             StatusIndicator(status="warning", show_icon=False)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        indicator = ctx.root_node.children[0]
+        indicator = ctx.elements.get(ctx.root_element.child_ids[0])
         assert indicator.properties["show_icon"] is False
 
 
@@ -874,10 +875,10 @@ class TestBadgeWidget:
         def App() -> None:
             Badge(text="New")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        badge = ctx.root_node.children[0]
+        badge = ctx.elements.get(ctx.root_element.child_ids[0])
         assert badge.component.name == "Badge"
         assert badge.properties["text"] == "New"
 
@@ -888,10 +889,10 @@ class TestBadgeWidget:
         def App() -> None:
             Badge(text="Error", variant="error")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        badge = ctx.root_node.children[0]
+        badge = ctx.elements.get(ctx.root_element.child_ids[0])
         assert badge.properties["variant"] == "error"
 
     def test_badge_with_size(self) -> None:
@@ -901,10 +902,10 @@ class TestBadgeWidget:
         def App() -> None:
             Badge(text="Large", size="md")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        badge = ctx.root_node.children[0]
+        badge = ctx.elements.get(ctx.root_element.child_ids[0])
         assert badge.properties["size"] == "md"
 
 
@@ -919,13 +920,13 @@ class TestTooltipWidget:
             with Tooltip(content="Helpful hint"):
                 Label(text="Hover me")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        tooltip = ctx.root_node.children[0]
+        tooltip = ctx.elements.get(ctx.root_element.child_ids[0])
         assert tooltip.component.name == "Tooltip"
         assert tooltip.properties["content"] == "Helpful hint"
-        assert len(tooltip.children) == 1
+        assert len(tooltip.child_ids) == 1
 
     def test_tooltip_with_position(self) -> None:
         """Tooltip accepts position prop."""
@@ -935,10 +936,10 @@ class TestTooltipWidget:
             with Tooltip(content="Below", position="bottom"):
                 Button(text="Click")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        tooltip = ctx.root_node.children[0]
+        tooltip = ctx.elements.get(ctx.root_element.child_ids[0])
         assert tooltip.properties["position"] == "bottom"
 
     def test_tooltip_with_delay(self) -> None:
@@ -949,10 +950,10 @@ class TestTooltipWidget:
             with Tooltip(content="Slow", delay=500):
                 Label(text="Wait")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        tooltip = ctx.root_node.children[0]
+        tooltip = ctx.elements.get(ctx.root_element.child_ids[0])
         assert tooltip.properties["delay"] == 500
 
 
@@ -972,14 +973,14 @@ class TestTableWidget:
                 ],
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         # Table is a CompositionComponent that wraps _TableInner
-        table_comp = ctx.root_node.children[0]
+        table_comp = ctx.elements.get(ctx.root_element.child_ids[0])
         assert table_comp.component.name == "Table"
         # The actual TableInner is a child
-        table_inner = table_comp.children[0]
+        table_inner = ctx.elements.get(table_comp.child_ids[0])
         assert table_inner.component.element_name == "TableInner"
         assert len(table_inner.properties["columns"]) == 2
         assert len(table_inner.properties["data"]) == 2
@@ -991,10 +992,10 @@ class TestTableWidget:
         def App() -> None:
             Table(striped=True, compact=False, bordered=True)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        table = ctx.root_node.children[0]
+        table = ctx.elements.get(ctx.root_element.child_ids[0])
         assert table.properties["striped"] is True
         assert table.properties["compact"] is False
         assert table.properties["bordered"] is True
@@ -1020,8 +1021,8 @@ class TestTableWidget:
                 ],
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         # Verify render function was called for each row
         assert len(render_calls) == 2
@@ -1029,12 +1030,12 @@ class TestTableWidget:
         assert render_calls[1]["name"] == "Item 2"
 
         # Verify CellSlot children were created
-        table_comp = ctx.root_node.children[0]
-        table_inner = table_comp.children[0]
+        table_comp = ctx.elements.get(ctx.root_element.child_ids[0])
+        table_inner = ctx.elements.get(table_comp.child_ids[0])
         assert table_inner.component.element_name == "TableInner"
 
         # CellSlots are children of TableInner
-        cell_slots = [c for c in table_inner.children if c.component.element_name == "CellSlot"]
+        cell_slots = [ctx.elements.get(cid) for cid in table_inner.child_ids if ctx.elements.get(cid).component.element_name == "CellSlot"]
         assert len(cell_slots) == 2  # One per row (only 'value' column has render)
 
         # Verify slot IDs follow "rowKey:columnName" format
@@ -1062,11 +1063,12 @@ class TestTableWidget:
                 ],
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        table_inner = ctx.root_node.children[0].children[0]
-        cell_slots = [c for c in table_inner.children if c.component.element_name == "CellSlot"]
+        table_comp = ctx.elements.get(ctx.root_element.child_ids[0])
+        table_inner = ctx.elements.get(table_comp.child_ids[0])
+        cell_slots = [ctx.elements.get(cid) for cid in table_inner.child_ids if ctx.elements.get(cid).component.element_name == "CellSlot"]
 
         # Slot keys should use the row_key column value
         slot_ids = [slot.properties["slot"] for slot in cell_slots]
@@ -1092,11 +1094,12 @@ class TestTableWidget:
                 ],
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        table_inner = ctx.root_node.children[0].children[0]
-        cell_slots = [c for c in table_inner.children if c.component.element_name == "CellSlot"]
+        table_comp = ctx.elements.get(ctx.root_element.child_ids[0])
+        table_inner = ctx.elements.get(table_comp.child_ids[0])
+        cell_slots = [ctx.elements.get(cid) for cid in table_inner.child_ids if ctx.elements.get(cid).component.element_name == "CellSlot"]
 
         slot_ids = [slot.properties["slot"] for slot in cell_slots]
         assert "custom1:name" in slot_ids
@@ -1121,15 +1124,56 @@ class TestTableWidget:
                 ],
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        table_inner = ctx.root_node.children[0].children[0]
-        cell_slots = [c for c in table_inner.children if c.component.element_name == "CellSlot"]
+        table_comp = ctx.elements.get(ctx.root_element.child_ids[0])
+        table_inner = ctx.elements.get(table_comp.child_ids[0])
+        cell_slots = [ctx.elements.get(cid) for cid in table_inner.child_ids if ctx.elements.get(cid).component.element_name == "CellSlot"]
 
         slot_ids = [slot.properties["slot"] for slot in cell_slots]
         assert "0:name" in slot_ids
         assert "1:name" in slot_ids
+
+    def test_table_custom_cell_serialization(self) -> None:
+        """Serialized CellSlot children contain the rendered content."""
+
+        def CustomCell(*, row: dict) -> None:
+            Label(text=f"Custom: {row['name']}")
+
+        @component
+        def App() -> None:
+            Table(
+                columns=[
+                    TableColumn(name="name", label="Name", render=CustomCell),
+                ],
+                data=[
+                    {"_key": "row1", "name": "Item 1"},
+                ],
+            )
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        # Serialize the tree
+        serialized = serialize_node(ctx.root_element, ctx)
+
+        # Navigate to the TableInner children (CellSlots)
+        table_comp = serialized["children"][0]
+        table_inner = table_comp["children"][0]
+        assert table_inner["type"] == "TableInner"
+
+        # Find CellSlot children
+        cell_slots = [c for c in table_inner["children"] if c["type"] == "CellSlot"]
+        assert len(cell_slots) == 1
+
+        # The CellSlot should have the Label as a child
+        cell_slot = cell_slots[0]
+        assert cell_slot["props"]["slot"] == "row1:name"
+        assert len(cell_slot["children"]) == 1
+        label_child = cell_slot["children"][0]
+        assert label_child["type"] == "Label"
+        assert label_child["props"]["text"] == "Custom: Item 1"
 
 
 class TestStatWidget:
@@ -1142,10 +1186,10 @@ class TestStatWidget:
         def App() -> None:
             Stat(label="Revenue", value="$12,345")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        stat = ctx.root_node.children[0]
+        stat = ctx.elements.get(ctx.root_element.child_ids[0])
         assert stat.component.name == "Stat"
         assert stat.properties["label"] == "Revenue"
         assert stat.properties["value"] == "$12,345"
@@ -1157,10 +1201,10 @@ class TestStatWidget:
         def App() -> None:
             Stat(label="Users", value="1,234", delta="+12%", delta_type="increase")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        stat = ctx.root_node.children[0]
+        stat = ctx.elements.get(ctx.root_element.child_ids[0])
         assert stat.properties["delta"] == "+12%"
         assert stat.properties["delta_type"] == "increase"
 
@@ -1171,10 +1215,10 @@ class TestStatWidget:
         def App() -> None:
             Stat(label="Big", value="999", size="lg")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        stat = ctx.root_node.children[0]
+        stat = ctx.elements.get(ctx.root_element.child_ids[0])
         assert stat.properties["size"] == "lg"
 
 
@@ -1188,10 +1232,10 @@ class TestTagWidget:
         def App() -> None:
             Tag(text="Python")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        tag = ctx.root_node.children[0]
+        tag = ctx.elements.get(ctx.root_element.child_ids[0])
         assert tag.component.name == "Tag"
         assert tag.properties["text"] == "Python"
 
@@ -1202,10 +1246,10 @@ class TestTagWidget:
         def App() -> None:
             Tag(text="Success", variant="success")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        tag = ctx.root_node.children[0]
+        tag = ctx.elements.get(ctx.root_element.child_ids[0])
         assert tag.properties["variant"] == "success"
 
     def test_tag_removable_with_callback(self) -> None:
@@ -1216,10 +1260,10 @@ class TestTagWidget:
         def App() -> None:
             Tag(text="Remove me", removable=True, on_remove=lambda: removed.append(True))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        tag = ctx.root_node.children[0]
+        tag = ctx.elements.get(ctx.root_element.child_ids[0])
         assert tag.properties["removable"] is True
         assert callable(tag.properties["on_remove"])
 
@@ -1244,10 +1288,10 @@ class TestChartWidgets:
                 height=300,
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        chart = ctx.root_node.children[0]
+        chart = ctx.elements.get(ctx.root_element.child_ids[0])
         assert chart.component.name == "TimeSeriesChart"
         assert len(chart.properties["data"]) == 2
         assert chart.properties["height"] == 300
@@ -1263,10 +1307,10 @@ class TestChartWidgets:
                 x_key="month",
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        chart = ctx.root_node.children[0]
+        chart = ctx.elements.get(ctx.root_element.child_ids[0])
         assert chart.component.name == "LineChart"
         assert len(chart.properties["data"]) == 2
         assert chart.properties["x_key"] == "month"
@@ -1281,10 +1325,10 @@ class TestChartWidgets:
                 stacked=True,
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        chart = ctx.root_node.children[0]
+        chart = ctx.elements.get(ctx.root_element.child_ids[0])
         assert chart.component.name == "BarChart"
         assert chart.properties["stacked"] is True
 
@@ -1298,10 +1342,10 @@ class TestChartWidgets:
                 curve_type="step",
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        chart = ctx.root_node.children[0]
+        chart = ctx.elements.get(ctx.root_element.child_ids[0])
         assert chart.component.name == "AreaChart"
         assert chart.properties["curve_type"] == "step"
 
@@ -1315,10 +1359,10 @@ class TestChartWidgets:
                 inner_radius=50,
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        chart = ctx.root_node.children[0]
+        chart = ctx.elements.get(ctx.root_element.child_ids[0])
         assert chart.component.name == "PieChart"
         assert chart.properties["inner_radius"] == 50
 
@@ -1329,10 +1373,10 @@ class TestChartWidgets:
         def App() -> None:
             Sparkline(data=[10, 20, 15, 25], height=30, color="#22c55e")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        chart = ctx.root_node.children[0]
+        chart = ctx.elements.get(ctx.root_element.child_ids[0])
         assert chart.component.name == "Sparkline"
         assert chart.properties["data"] == [10, 20, 15, 25]
         assert chart.properties["height"] == 30
@@ -1349,10 +1393,10 @@ class TestIconWidget:
         def App() -> None:
             Icon(name="check")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        icon = ctx.root_node.children[0]
+        icon = ctx.elements.get(ctx.root_element.child_ids[0])
         assert icon.component.name == "Icon"
         assert icon.properties["name"] == "check"
 
@@ -1363,10 +1407,10 @@ class TestIconWidget:
         def App() -> None:
             Icon(name="alert-triangle", size=24, color="#d97706")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        icon = ctx.root_node.children[0]
+        icon = ctx.elements.get(ctx.root_element.child_ids[0])
         assert icon.properties["size"] == 24
         assert icon.properties["color"] == "#d97706"
 
@@ -1377,10 +1421,10 @@ class TestIconWidget:
         def App() -> None:
             Icon(name="circle", stroke_width=3)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        icon = ctx.root_node.children[0]
+        icon = ctx.elements.get(ctx.root_element.child_ids[0])
         assert icon.properties["stroke_width"] == 3
 
 
@@ -1398,14 +1442,14 @@ class TestNavigationWidgets:
                 with Tab(id="tab2", label="Second"):
                     Label(text="Content 2")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        tabs = ctx.root_node.children[0]
+        tabs = ctx.elements.get(ctx.root_element.child_ids[0])
         assert tabs.component.name == "Tabs"
         assert tabs.properties["selected"] == "tab1"
         assert tabs.properties["variant"] == "enclosed"
-        assert len(tabs.children) == 2
+        assert len(tabs.child_ids) == 2
 
     def test_tabs_with_callback(self) -> None:
         """Tabs captures on_change callback."""
@@ -1417,10 +1461,10 @@ class TestNavigationWidgets:
                 with Tab(id="t1", label="Tab 1"):
                     Label(text="Content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        tabs = ctx.root_node.children[0]
+        tabs = ctx.elements.get(ctx.root_element.child_ids[0])
         assert callable(tabs.properties["on_change"])
 
         tabs.properties["on_change"]("t2")
@@ -1435,11 +1479,11 @@ class TestNavigationWidgets:
                 with Tab(id="disabled-tab", label="Disabled", disabled=True, icon="lock"):
                     Label(text="Content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        tabs = ctx.root_node.children[0]
-        tab = tabs.children[0]
+        tabs = ctx.elements.get(ctx.root_element.child_ids[0])
+        tab = ctx.elements.get(tabs.child_ids[0])
         assert tab.component.name == "Tab"
         assert tab.properties["id"] == "disabled-tab"
         assert tab.properties["label"] == "Disabled"
@@ -1459,10 +1503,10 @@ class TestNavigationWidgets:
                 expanded=["1"],
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        tree = ctx.root_node.children[0]
+        tree = ctx.elements.get(ctx.root_element.child_ids[0])
         assert tree.component.name == "Tree"
         assert tree.properties["selected"] == "1"
         assert tree.properties["expanded"] == ["1"]
@@ -1480,10 +1524,10 @@ class TestNavigationWidgets:
                 on_expand=lambda id, exp: expansions.append((id, exp)),
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        tree = ctx.root_node.children[0]
+        tree = ctx.elements.get(ctx.root_element.child_ids[0])
         tree.properties["on_select"]("1")
         tree.properties["on_expand"]("1", True)
 
@@ -1500,10 +1544,10 @@ class TestNavigationWidgets:
                 separator=">",
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        breadcrumb = ctx.root_node.children[0]
+        breadcrumb = ctx.elements.get(ctx.root_element.child_ids[0])
         assert breadcrumb.component.name == "Breadcrumb"
         assert len(breadcrumb.properties["items"]) == 3
         assert breadcrumb.properties["separator"] == ">"
@@ -1519,10 +1563,10 @@ class TestNavigationWidgets:
                 on_click=lambda idx: clicks.append(idx),
             )
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        breadcrumb = ctx.root_node.children[0]
+        breadcrumb = ctx.elements.get(ctx.root_element.child_ids[0])
         breadcrumb.properties["on_click"](0)
         assert clicks == [0]
 
@@ -1538,14 +1582,14 @@ class TestFeedbackWidgets:
             with Callout(title="Warning", intent="warning"):
                 Label(text="Be careful!")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        callout = ctx.root_node.children[0]
+        callout = ctx.elements.get(ctx.root_element.child_ids[0])
         assert callout.component.name == "Callout"
         assert callout.properties["title"] == "Warning"
         assert callout.properties["intent"] == "warning"
-        assert len(callout.children) == 1
+        assert len(callout.child_ids) == 1
 
     def test_callout_dismissible_with_callback(self) -> None:
         """Callout captures on_dismiss callback when dismissible."""
@@ -1556,10 +1600,10 @@ class TestFeedbackWidgets:
             with Callout(dismissible=True, on_dismiss=lambda: dismissed.append(True)):
                 Label(text="Dismissable")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        callout = ctx.root_node.children[0]
+        callout = ctx.elements.get(ctx.root_element.child_ids[0])
         assert callout.properties["dismissible"] is True
         callout.properties["on_dismiss"]()
         assert dismissed == [True]
@@ -1572,10 +1616,10 @@ class TestFeedbackWidgets:
             with Collapsible(title="Details", expanded=False):
                 Label(text="Hidden content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        collapsible = ctx.root_node.children[0]
+        collapsible = ctx.elements.get(ctx.root_element.child_ids[0])
         assert collapsible.component.name == "Collapsible"
         assert collapsible.properties["title"] == "Details"
         assert collapsible.properties["expanded"] is False
@@ -1589,10 +1633,10 @@ class TestFeedbackWidgets:
             with Collapsible(title="Toggle", on_toggle=lambda v: toggles.append(v)):
                 Label(text="Content")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        collapsible = ctx.root_node.children[0]
+        collapsible = ctx.elements.get(ctx.root_element.child_ids[0])
         collapsible.properties["on_toggle"](True)
         assert toggles == [True]
 
@@ -1611,12 +1655,12 @@ class TestActionWidgets:
                 MenuDivider()
                 MenuItem(text="Exit")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        menu = ctx.root_node.children[0]
+        menu = ctx.elements.get(ctx.root_element.child_ids[0])
         assert menu.component.name == "Menu"
-        assert len(menu.children) == 4
+        assert len(menu.child_ids) == 4
 
     def test_menu_item_with_props(self) -> None:
         """MenuItem stores text, icon, and other props."""
@@ -1626,11 +1670,11 @@ class TestActionWidgets:
             with Menu():
                 MenuItem(text="Delete", icon="trash", disabled=True, shortcut="Ctrl+D")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        menu = ctx.root_node.children[0]
-        item = menu.children[0]
+        menu = ctx.elements.get(ctx.root_element.child_ids[0])
+        item = ctx.elements.get(menu.child_ids[0])
         assert item.component.name == "MenuItem"
         assert item.properties["text"] == "Delete"
         assert item.properties["icon"] == "trash"
@@ -1646,11 +1690,11 @@ class TestActionWidgets:
             with Menu():
                 MenuItem(text="Click me", on_click=lambda: clicks.append(True))
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        menu = ctx.root_node.children[0]
-        item = menu.children[0]
+        menu = ctx.elements.get(ctx.root_element.child_ids[0])
+        item = ctx.elements.get(menu.child_ids[0])
         item.properties["on_click"]()
         assert clicks == [True]
 
@@ -1662,11 +1706,11 @@ class TestActionWidgets:
             with Menu():
                 MenuDivider()
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        menu = ctx.root_node.children[0]
-        divider = menu.children[0]
+        menu = ctx.elements.get(ctx.root_element.child_ids[0])
+        divider = ctx.elements.get(menu.child_ids[0])
         assert divider.component.name == "MenuDivider"
 
     def test_toolbar_with_children(self) -> None:
@@ -1678,11 +1722,11 @@ class TestActionWidgets:
                 Button(text="Bold")
                 Button(text="Italic")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        toolbar = ctx.root_node.children[0]
+        toolbar = ctx.elements.get(ctx.root_element.child_ids[0])
         assert toolbar.component.name == "Toolbar"
         assert toolbar.properties["variant"] == "minimal"
         assert toolbar.properties["orientation"] == "vertical"
-        assert len(toolbar.children) == 2
+        assert len(toolbar.child_ids) == 2

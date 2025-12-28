@@ -14,16 +14,19 @@ class TerseRichHandler(RichHandler):
 
     def render_message(self, record: logging.LogRecord, message: str) -> Text:
         """Apply level-based styling: faded debug, orange warning, red error."""
-        text = Text.from_markup(message)
-
         if record.levelno == logging.DEBUG:
-            text.stylize("dim")
-        elif record.levelno == logging.WARNING:
-            text = Text.from_markup(f"[orange3]Warning:[/orange3] {message}")
-        elif record.levelno >= logging.ERROR:
-            text = Text.from_markup(f"[red]Error:[/red] {message}")
+            # Debug: light gray with file:line prefix
+            location = f"{record.filename}:{record.lineno}"
+            text = Text()
+            text.append(f"{location} ", style="grey50")
+            text.append(message, style="grey70")
+            return text
+        if record.levelno == logging.WARNING:
+            return Text.from_markup(f"[orange3]Warning:[/orange3] {message}")
+        if record.levelno >= logging.ERROR:
+            return Text.from_markup(f"[red]Error:[/red] {message}")
 
-        return text
+        return Text.from_markup(message)
 
 
 def setup_logging(level: int = logging.INFO) -> None:

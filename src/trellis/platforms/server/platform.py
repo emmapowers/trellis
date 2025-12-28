@@ -9,15 +9,15 @@ from typing import TYPE_CHECKING, Any
 import uvicorn
 
 if TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode
+    from trellis.core.rendering.element import Element
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 
 from trellis.bundler import CORE_PACKAGES, BundleConfig, build_bundle
-from trellis.core.platform import Platform
 from trellis.platforms.common import find_available_port
+from trellis.platforms.common.base import Platform
 from trellis.platforms.server.handler import router as ws_router
 from trellis.platforms.server.middleware import RequestLoggingMiddleware
 from trellis.platforms.server.routes import create_static_dir
@@ -72,11 +72,12 @@ class ServerPlatform(Platform):
 
     async def run(
         self,
-        root_component: Callable[[], ElementNode],
+        root_component: Callable[[], Element],
         *,
         host: str = "127.0.0.1",
         port: int | None = None,
         static_dir: Path | None = None,
+        batch_delay: float = 1.0 / 30,
         **_kwargs: Any,  # Ignore other platform args
     ) -> None:
         """Start FastAPI server with WebSocket support.
@@ -86,6 +87,7 @@ class ServerPlatform(Platform):
             host: Host to bind to
             port: Port to bind to (auto-find if None)
             static_dir: Custom static files directory
+            batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
         # Create FastAPI app
         app = FastAPI()
@@ -97,8 +99,9 @@ class ServerPlatform(Platform):
         app.include_router(http_router)
         app.include_router(ws_router)
 
-        # Store top component in app state
+        # Store top component and config in app state
         app.state.trellis_top_component = root_component
+        app.state.trellis_batch_delay = batch_delay
 
         # Set up static file serving
         static = static_dir or create_static_dir()

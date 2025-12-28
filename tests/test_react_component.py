@@ -4,10 +4,12 @@ from dataclasses import dataclass
 
 import pytest
 
-from trellis.core.composition_component import component
-from trellis.core.react_component import ReactComponentBase, react_component_base
-from trellis.core.rendering import ElementNode, RenderTree
-from trellis.core.serialization import serialize_node
+from trellis.core.components.composition import component
+from trellis.core.rendering.element import Element
+from trellis.core.components.react import ReactComponentBase, react_component_base
+from trellis.core.rendering.render import render
+from trellis.platforms.common.serialization import serialize_node
+from trellis.core.rendering.session import RenderSession
 from trellis.widgets import Button, Column, Label, Row
 
 
@@ -61,14 +63,13 @@ class TestElementNameProperty:
             with Row():
                 pass
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        children = ctx.root_node.children
-        assert children[0].component.element_name == "Label"
-        assert children[1].component.element_name == "Button"
-        assert children[2].component.element_name == "Column"
-        assert children[3].component.element_name == "Row"
+        assert ctx.elements.get(ctx.root_element.child_ids[0]).component.element_name == "Label"
+        assert ctx.elements.get(ctx.root_element.child_ids[1]).component.element_name == "Button"
+        assert ctx.elements.get(ctx.root_element.child_ids[2]).component.element_name == "Column"
+        assert ctx.elements.get(ctx.root_element.child_ids[3]).component.element_name == "Row"
 
     def test_react_component_without_element_name_raises(self) -> None:
         """ReactComponentBase without _element_name raises NotImplementedError."""
@@ -139,10 +140,10 @@ class TestReactComponentBaseDecorator:
     """Tests for the @react_component_base decorator."""
 
     def test_decorator_creates_callable(self) -> None:
-        """Decorator creates a callable that returns ElementNode."""
+        """Decorator creates a callable that returns Element."""
 
         @react_component_base("TestWidget")
-        def TestWidget(value: int = 0) -> ElementNode:
+        def TestWidget(value: int = 0) -> Element:
             """Test widget."""
             ...
 
@@ -150,10 +151,10 @@ class TestReactComponentBaseDecorator:
         def App() -> None:
             TestWidget(value=42)
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        node = ctx.root_node.children[0]
+        node = ctx.elements.get(ctx.root_element.child_ids[0])
         assert node.component.element_name == "TestWidget"
         assert dict(node.props).get("value") == 42
 
@@ -161,7 +162,7 @@ class TestReactComponentBaseDecorator:
         """Decorator preserves function name and docstring."""
 
         @react_component_base("MyWidget")
-        def MyWidget(x: int = 0) -> ElementNode:
+        def MyWidget(x: int = 0) -> Element:
             """My widget docstring."""
             ...
 
@@ -172,7 +173,7 @@ class TestReactComponentBaseDecorator:
         """Decorator creates components with _has_children False by default."""
 
         @react_component_base("LeafWidget")
-        def LeafWidget() -> ElementNode:
+        def LeafWidget() -> Element:
             ...
 
         # Access the underlying component
@@ -182,7 +183,7 @@ class TestReactComponentBaseDecorator:
         """Decorator can create container components."""
 
         @react_component_base("ContainerWidget", has_children=True)
-        def ContainerWidget() -> ElementNode:
+        def ContainerWidget() -> Element:
             ...
 
         assert ContainerWidget._component._has_children_param is True
@@ -191,7 +192,7 @@ class TestReactComponentBaseDecorator:
         """Decorated function exposes _component for introspection."""
 
         @react_component_base("Widget")
-        def Widget() -> ElementNode:
+        def Widget() -> Element:
             ...
 
         assert hasattr(Widget, "_component")
@@ -209,10 +210,10 @@ class TestReactComponentBaseSerialization:
         def App() -> None:
             Label(text="test")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
         label_data = result["children"][0]
 
         # ReactComponent: type is the React component, name is Python name
@@ -226,10 +227,10 @@ class TestReactComponentBaseSerialization:
         def MyCustomComponent() -> None:
             pass
 
-        ctx = RenderTree(MyCustomComponent)
-        ctx.render()
+        ctx = RenderSession(MyCustomComponent)
+        render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
 
         # CompositionComponent: type is generic, name is Python function name
         assert result["type"] == "CompositionComponent"
@@ -248,10 +249,10 @@ class TestReactComponentBaseSerialization:
                 Header()
                 Button(text="Click")
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
-        result = serialize_node(ctx.root_node, ctx)
+        result = serialize_node(ctx.root_element, ctx)
 
         # Root is CompositionComponent
         assert result["type"] == "CompositionComponent"

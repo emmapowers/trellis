@@ -48,17 +48,20 @@ Context API example:
 
 from __future__ import annotations
 
+import logging
 import typing as tp
 import weakref
 from dataclasses import dataclass, field
 from types import TracebackType
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering import RenderTree
+    from trellis.core.rendering.element import Element
 
-from trellis.core.conversion import convert_to_tracked
-from trellis.core.mutable import record_property_access
-from trellis.core.rendering import get_active_render_tree, is_render_active
+from trellis.core.rendering.session import get_active_session, is_render_active
+from trellis.core.state.conversion import convert_to_tracked
+from trellis.core.state.mutable import record_property_access
+
+logger = logging.getLogger(__name__)
 
 
 # Sentinel for missing default argument
@@ -79,17 +82,16 @@ class StatePropertyInfo:
     is added to this property's dependency set. When the property changes,
     all dependent nodes are marked dirty.
 
+    Uses WeakSet[Element] so dependencies are automatically cleaned up
+    when nodes are replaced (on re-render) or removed (on unmount).
+
     Attributes:
         name: The property name being tracked
-        node_ids: Set of node IDs that depend on this property
-        node_trees: Dict mapping node_id to RenderTree for dirty marking
+        watchers: WeakSet of Elements that depend on this property
     """
 
     name: str
-    node_ids: set[str] = field(default_factory=set)
-    # Map node_id to weakref of RenderTree so we can mark dirty outside of render
-    # Uses weakref so sessions can be garbage collected when closed
-    node_trees: dict[str, weakref.ref[RenderTree]] = field(default_factory=dict)
+    watchers: weakref.WeakSet[Element] = field(default_factory=weakref.WeakSet)
 
 
 class Stateful:
@@ -145,24 +147,34 @@ class Stateful:
             cls.__init__ = wrapped_init  # type: ignore[assignment]
             cls._init_wrapped = True
 
-        ctx = get_active_render_tree()
+        session = get_active_session()
 
         # Outside execution context - create normally
-        if ctx is None or not ctx.is_active():
+        if session is None or not session.is_executing():
             return object.__new__(cls)
 
-        # Use _current_node_id and _element_state for caching
-        node_id = ctx._current_node_id
-        assert node_id is not None  # Guaranteed by is_active() check above
+        # Use current_node_id and state store for caching
+        node_id = session.current_node_id
+        assert node_id is not None  # Guaranteed by is_executing() check above
 
-        state = ctx.get_element_state(node_id)
+        state = session.states.get_or_create(node_id)
         call_idx = state.state_call_count
         state.state_call_count += 1
         key = (cls, call_idx)
 
         if key in state.local_state:
+            logger.debug(
+                "State %s retrieved from cache (call_idx=%d)",
+                cls.__name__,
+                call_idx,
+            )
             return tp.cast("Stateful", state.local_state[key])
 
+        logger.debug(
+            "State %s created (new instance, call_idx=%d)",
+            cls.__name__,
+            call_idx,
+        )
         instance = object.__new__(cls)
         state.local_state[key] = instance
         return instance
@@ -192,14 +204,12 @@ class Stateful:
         if callable(value):
             return value
 
-        # Get render context
-        context = get_active_render_tree()
+        # Get render session
+        session = get_active_session()
 
         # Outside render context - return raw value without tracking
-        if context is None or not context.is_active():
+        if session is None or not session.is_executing():
             return value
-
-        # Inside render context - register dependency
 
         # Lazy init _state_props (needed when @dataclass doesn't call super().__init__)
         try:
@@ -212,21 +222,18 @@ class Stateful:
             deps[name] = StatePropertyInfo(name=name)
         state_info = deps[name]
 
-        # Track by node ID and store weakref to RenderTree for dirty marking
-        node_id = context._current_node_id
+        # Add the current Element to watchers (WeakSet auto-cleans on node death)
+        node_id = session.current_node_id
         if node_id is not None:
-            state_info.node_ids.add(node_id)
-            state_info.node_trees[node_id] = weakref.ref(context)
-
-            # Register reverse mapping for cleanup on re-render/unmount
-            # Use composite key (id(self), prop_name) for uniform shape with tracked collections
-            element_state = context.get_element_state(node_id)
-            stateful_id = id(self)
-            composite_key = (stateful_id, name)
-            if stateful_id in element_state.watched_deps:
-                element_state.watched_deps[stateful_id][1].add(composite_key)
-            else:
-                element_state.watched_deps[stateful_id] = (self, {composite_key})
+            node = session.elements.get(node_id)
+            if node is not None:
+                state_info.watchers.add(node)
+                logger.debug(
+                    "Dependency: %s reads %s.%s",
+                    node_id,
+                    type(self).__name__,
+                    name,
+                )
 
         # Record access for mutable() to capture
         record_property_access(self, name, value)
@@ -266,8 +273,14 @@ class Stateful:
             is_modification = True
             # Check if value actually changed
             if old_value == value:
+                logger.debug(
+                    "%s.%s unchanged, skipping",
+                    type(self).__name__,
+                    name,
+                )
                 return  # Value unchanged, skip dirty marking
         else:
+            old_value = None
             is_modification = False
 
         # Prevent state modifications during render (but allow initialization)
@@ -281,6 +294,15 @@ class Stateful:
         # Set the value
         object.__setattr__(self, name, value)
 
+        if is_modification:
+            logger.debug(
+                "%s.%s = %r (was %r)",
+                type(self).__name__,
+                name,
+                value,
+                old_value,
+            )
+
         # Mark dependent nodes as dirty (if we have deps tracking initialized)
         try:
             deps = object.__getattribute__(self, "_state_props")
@@ -290,21 +312,16 @@ class Stateful:
         if name in deps:
             state_info = deps[name]
 
-            # Mark node IDs dirty using stored RenderTree weakrefs
-            stale_node_ids: list[str] = []
-            for node_id in state_info.node_ids:
-                tree_ref = state_info.node_trees.get(node_id)
-                if tree_ref is not None:
-                    tree = tree_ref()
-                    if tree is not None:
-                        tree.mark_dirty_id(node_id)
-                    else:
-                        stale_node_ids.append(node_id)
+            # Mark watcher nodes dirty (WeakSet auto-skips dead refs)
+            dirty_nodes = []
+            for node in state_info.watchers:
+                node_session = node._session_ref()
+                if node_session is not None:
+                    node_session.dirty.mark(node.id)
+                    dirty_nodes.append(node.id)
 
-            # Clean up references to garbage-collected RenderTrees
-            for node_id in stale_node_ids:
-                state_info.node_ids.discard(node_id)
-                state_info.node_trees.pop(node_id, None)
+            if dirty_nodes:
+                logger.debug("Marking dirty: %s", dirty_nodes)
 
     def on_mount(self) -> None:
         """Called after owning element mounts. Override for initialization."""
@@ -313,24 +330,6 @@ class Stateful:
     def on_unmount(self) -> None:
         """Called before owning element unmounts. Override for cleanup."""
         pass
-
-    def _clear_dep(self, node_id: str, dep_key: tp.Any) -> None:
-        """Clear a specific dependency for a node.
-
-        Called by RenderTree.clear_node_dependencies during cleanup.
-
-        Args:
-            node_id: The node ID to remove from dependencies
-            dep_key: The property name to clear
-        """
-        try:
-            deps = object.__getattribute__(self, "_state_props")
-            if dep_key in deps:
-                state_info = deps[dep_key]
-                state_info.node_ids.discard(node_id)
-                state_info.node_trees.pop(node_id, None)
-        except AttributeError:
-            pass  # _state_props may not exist yet
 
     # -------------------------------------------------------------------------
     # Context API - share state with descendant components
@@ -358,17 +357,18 @@ class Stateful:
         Raises:
             RuntimeError: If called outside of a render context
         """
-        ctx = get_active_render_tree()
-        if ctx is None or not ctx.is_active():
+        session = get_active_session()
+        if session is None or not session.is_executing():
             raise RuntimeError(
                 f"Cannot use 'with {type(self).__name__}()' outside of render context. "
                 f"Context API is only available within component execution."
             )
 
-        node_id = ctx._current_node_id
-        assert node_id is not None  # Guaranteed by is_active() check above
-        state = ctx.get_element_state(node_id)
+        node_id = session.current_node_id
+        assert node_id is not None  # Guaranteed by is_executing() check above
+        state = session.states.get_or_create(node_id)
         state.context[type(self)] = self
+        logger.debug("Providing %s context at %s", type(self).__name__, node_id)
         return self
 
     def __exit__(
@@ -431,26 +431,30 @@ class Stateful:
             LookupError: If no instance of this type is in the context stack
                 and no default was provided
         """
-        ctx = get_active_render_tree()
-        if ctx is None or not ctx.is_active():
+        session = get_active_session()
+        if session is None or not session.is_executing():
             raise RuntimeError(
                 f"Cannot call {cls.__name__}.from_context() outside of render context. "
                 f"Context API is only available within component execution."
             )
 
+        logger.debug("Looking up %s context", cls.__name__)
+
         # Walk up the parent_id chain with cycle detection
-        node_id: str | None = ctx._current_node_id
+        node_id: str | None = session.current_node_id
         visited: set[str] = set()
         while node_id is not None:
             if node_id in visited:
                 break  # Cycle detected
             visited.add(node_id)
-            state = ctx._element_state.get(node_id)
+            state = session.states.get(node_id)
             if state is not None and cls in state.context:
+                logger.debug("Found %s at ancestor %s", cls.__name__, node_id)
                 return tp.cast("tp.Self", state.context[cls])
             node_id = state.parent_id if state else None
 
         # No context found - return default or raise
+        logger.debug("No %s found in context", cls.__name__)
         if not isinstance(default, _Missing):
             return default
 

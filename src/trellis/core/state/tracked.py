@@ -29,16 +29,19 @@ Example:
 
 from __future__ import annotations
 
+import logging
 import typing as tp
 import weakref
 from collections.abc import Iterable, Iterator
 from typing import SupportsIndex
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering import RenderTree
-    from trellis.core.state import Stateful
+    from trellis.core.rendering.element import Element
+    from trellis.core.state.stateful import Stateful
 
-from trellis.core.rendering import get_active_render_tree, is_render_active
+from trellis.core.rendering.session import get_active_session, is_render_active
+
+logger = logging.getLogger(__name__)
 
 T = tp.TypeVar("T")
 KT = tp.TypeVar("KT")
@@ -56,12 +59,12 @@ class _TrackedMixin:
     Attributes:
         _owner: Weak reference to the owning Stateful instance
         _attr: The attribute name on the owner this collection is stored in
-        _deps: Dict mapping dep_key -> {node_id -> weakref(RenderTree)}
+        _deps: Dict mapping dep_key -> WeakSet[Element] for automatic cleanup
     """
 
     _owner: weakref.ref[Stateful] | None
     _attr: str
-    _deps: dict[tp.Any, dict[str, weakref.ref[RenderTree]]]
+    _deps: dict[tp.Any, weakref.WeakSet[Element]]
 
     def __init__(self, owner: Stateful | None = None, attr: str = "") -> None:
         """Initialize tracking state.
@@ -96,53 +99,58 @@ class _TrackedMixin:
 
         Called during __getitem__, __iter__, etc. to track which nodes
         depend on which parts of the collection.
+
+        Uses WeakSet[Element] so dependencies are automatically cleaned up
+        when nodes are replaced (on re-render) or removed (on unmount).
         """
-        ctx = get_active_render_tree()
-        if ctx is None or not ctx.is_active():
+        session = get_active_session()
+        if session is None or session.active is None:
             return
 
-        node_id = ctx._current_node_id
+        node_id = session.active.current_node_id
         assert node_id is not None  # Guaranteed by is_active() check above
+
+        node = session.elements.get(node_id)
+        if node is None:
+            return
+
         deps = self._deps
-
         if dep_key not in deps:
-            deps[dep_key] = {}
-        deps[dep_key][node_id] = weakref.ref(ctx)
+            deps[dep_key] = weakref.WeakSet()
+        deps[dep_key].add(node)
 
-        # Also register in ElementState.watched_deps for cleanup
-        # Use a composite key: (id(self), dep_key)
-        element_state = ctx.get_element_state(node_id)
-        tracked_id = id(self)
-        composite_key = (tracked_id, dep_key)
-
-        if tracked_id in element_state.watched_deps:
-            # Existing entry - add to dep_keys set
-            existing = element_state.watched_deps[tracked_id]
-            existing[1].add(composite_key)
-        else:
-            # New entry - store (self, {composite_keys})
-            element_state.watched_deps[tracked_id] = (self, {composite_key})
+        logger.debug(
+            "Tracked[%s] access: key=%r by %s",
+            self._attr,
+            dep_key,
+            node_id,
+        )
 
     def _mark_dirty(self, dep_key: tp.Any) -> None:
         """Mark all nodes that depend on this key as dirty.
 
         Called when the collection is mutated at this key.
+        Uses node's _session_ref to get the RenderSession for marking dirty.
         """
         deps = self._deps
         if dep_key not in deps:
             return
 
-        stale_nodes: list[str] = []
-        for node_id, tree_ref in deps[dep_key].items():
-            tree = tree_ref()
-            if tree is not None:
-                tree.mark_dirty_id(node_id)
-            else:
-                stale_nodes.append(node_id)
+        # WeakSet automatically handles cleanup of dead references
+        dirty_nodes = []
+        for node in deps[dep_key]:
+            session = node._session_ref()
+            if session is not None:
+                session.dirty.mark(node.id)
+                dirty_nodes.append(node.id)
 
-        # Clean up stale references
-        for node_id in stale_nodes:
-            deps[dep_key].pop(node_id, None)
+        if dirty_nodes:
+            logger.debug(
+                "Tracked[%s] mutation at key=%r → dirty: %s",
+                self._attr,
+                dep_key,
+                dirty_nodes,
+            )
 
         # Remove empty dep_key entries
         if not deps.get(dep_key):
@@ -151,17 +159,6 @@ class _TrackedMixin:
     def _mark_iter_dirty(self) -> None:
         """Mark nodes that depend on iteration/length as dirty."""
         self._mark_dirty(ITER_KEY)
-
-    def _clear_dep(self, node_id: str, dep_key: tp.Any) -> None:
-        """Clear a specific dependency for a node.
-
-        Called by clear_node_dependencies during cleanup.
-        """
-        deps = self._deps
-        if dep_key in deps:
-            deps[dep_key].pop(node_id, None)
-            if not deps[dep_key]:
-                del deps[dep_key]
 
 
 class TrackedList(list[T], _TrackedMixin):

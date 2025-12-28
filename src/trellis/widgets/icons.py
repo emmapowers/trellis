@@ -13,9 +13,9 @@ from __future__ import annotations
 import typing as tp
 from enum import StrEnum
 
-from trellis.core.react_component import react_component_base
-from trellis.core.rendering import ElementNode
-from trellis.core.style_props import Margin
+from trellis.core.components.react import react_component_base
+from trellis.core.components.style_props import Margin
+from trellis.core.rendering.element import Element
 
 
 class IconName(StrEnum):
@@ -386,7 +386,7 @@ def Icon(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Render a Lucide icon.
 
     Args:
@@ -401,7 +401,7 @@ def Icon(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Icon component.
+        An Element for the Icon component.
 
     Example:
         from trellis.widgets import Icon, IconName

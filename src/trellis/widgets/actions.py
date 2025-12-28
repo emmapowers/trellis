@@ -8,9 +8,9 @@ from __future__ import annotations
 import typing as tp
 from typing import Literal
 
-from trellis.core.react_component import react_component_base
-from trellis.core.rendering import ElementNode
-from trellis.core.style_props import Margin, Padding, Width
+from trellis.core.components.react import react_component_base
+from trellis.core.components.style_props import Margin, Padding, Width
+from trellis.core.rendering.element import Element
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -26,7 +26,7 @@ def Menu(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Menu container for menu items.
 
     Args:
@@ -54,7 +54,7 @@ def MenuItem(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Individual menu item.
 
     Args:
@@ -77,7 +77,7 @@ def MenuDivider(
     *,
     margin: Margin | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Horizontal divider between menu items.
 
     Args:
@@ -99,7 +99,7 @@ def Toolbar(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Toolbar container for action buttons with keyboard navigation.
 
     Args:

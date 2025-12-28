@@ -1,7 +1,9 @@
 """Tests for trellis.core.composition_component module."""
 
-from trellis.core.rendering import ElementNode, RenderTree
-from trellis.core.composition_component import CompositionComponent, component
+from trellis.core.components.composition import CompositionComponent, component
+from trellis.core.rendering.element import Element
+from trellis.core.rendering.render import render
+from trellis.core.rendering.session import RenderSession
 
 
 class TestCompositionComponent:
@@ -18,12 +20,12 @@ class TestCompositionComponent:
         def Parent() -> None:
             pass
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
-        assert ctx.root_node is not None
-        assert isinstance(ctx.root_node, ElementNode)
-        assert ctx.root_node.component == Parent
+        assert ctx.root_element is not None
+        assert isinstance(ctx.root_element, Element)
+        assert ctx.root_element.component == Parent
 
     def test_nested_components(self) -> None:
         @component
@@ -34,15 +36,17 @@ class TestCompositionComponent:
         def Parent() -> None:
             Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
-        assert ctx.root_node is not None
-        assert len(ctx.root_node.children) == 1
-        assert ctx.root_node.children[0].component == Child
+        assert ctx.root_element is not None
+        assert len(ctx.root_element.child_ids) == 1
+        child = ctx.elements.get(ctx.root_element.child_ids[0])
+        assert child is not None
+        assert child.component == Child
 
     def test_component_with_props_via_parent(self) -> None:
-        """Props are passed when component is called from parent, not from RenderTree."""
+        """Props are passed when component is called from parent, not from RenderSession."""
         received_text: list[str] = []
 
         @component
@@ -53,8 +57,8 @@ class TestCompositionComponent:
         def Parent() -> None:
             Child(text="hello")
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert received_text == ["hello"]
 
@@ -69,10 +73,10 @@ class TestCompositionComponent:
             Child()
             Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
-        assert len(ctx.root_node.children) == 3
+        assert len(ctx.root_element.child_ids) == 3
 
     def test_implicit_child_collection(self) -> None:
         """Elements created in component body are auto-collected as children."""
@@ -87,13 +91,16 @@ class TestCompositionComponent:
             Item(label="b")
             Item(label="c")
 
-        ctx = RenderTree(List)
-        ctx.render()
+        ctx = RenderSession(List)
+        render(ctx)
 
-        assert len(ctx.root_node.children) == 3
-        assert ctx.root_node.children[0].properties["label"] == "a"
-        assert ctx.root_node.children[1].properties["label"] == "b"
-        assert ctx.root_node.children[2].properties["label"] == "c"
+        assert len(ctx.root_element.child_ids) == 3
+        child0 = ctx.elements.get(ctx.root_element.child_ids[0])
+        child1 = ctx.elements.get(ctx.root_element.child_ids[1])
+        child2 = ctx.elements.get(ctx.root_element.child_ids[2])
+        assert child0 is not None and child0.properties["label"] == "a"
+        assert child1 is not None and child1.properties["label"] == "b"
+        assert child2 is not None and child2.properties["label"] == "c"
 
     def test_conditional_children(self) -> None:
         """Only created elements are collected."""
@@ -110,13 +117,13 @@ class TestCompositionComponent:
         def ConditionalFalse() -> None:
             pass  # No Item created
 
-        ctx = RenderTree(ConditionalTrue)
-        ctx.render()
-        assert len(ctx.root_node.children) == 1
+        ctx = RenderSession(ConditionalTrue)
+        render(ctx)
+        assert len(ctx.root_element.child_ids) == 1
 
-        ctx2 = RenderTree(ConditionalFalse)
-        ctx2.render()
-        assert len(ctx2.root_node.children) == 0
+        ctx2 = RenderSession(ConditionalFalse)
+        render(ctx2)
+        assert len(ctx2.root_element.child_ids) == 0
 
     def test_loop_children(self) -> None:
         """Elements created in loops are collected."""
@@ -130,11 +137,13 @@ class TestCompositionComponent:
             for i in range(5):
                 Item(value=i)
 
-        ctx = RenderTree(List)
-        ctx.render()
+        ctx = RenderSession(List)
+        render(ctx)
 
-        assert len(ctx.root_node.children) == 5
-        for i, child in enumerate(ctx.root_node.children):
+        assert len(ctx.root_element.child_ids) == 5
+        for i, child_id in enumerate(ctx.root_element.child_ids):
+            child = ctx.elements.get(child_id)
+            assert child is not None
             assert child.properties["value"] == i
 
     def test_component_with_explicit_none_key(self) -> None:
@@ -150,11 +159,14 @@ class TestCompositionComponent:
             Item()  # No key parameter
             Item(key="explicit")  # Explicit string key
 
-        ctx = RenderTree(App)
-        ctx.render()
+        ctx = RenderSession(App)
+        render(ctx)
 
         # First two should have None key
-        assert ctx.root_node.children[0].key is None
-        assert ctx.root_node.children[1].key is None
+        child0 = ctx.elements.get(ctx.root_element.child_ids[0])
+        child1 = ctx.elements.get(ctx.root_element.child_ids[1])
+        child2 = ctx.elements.get(ctx.root_element.child_ids[2])
+        assert child0 is not None and child0.key is None
+        assert child1 is not None and child1.key is None
         # Third should have explicit key
-        assert ctx.root_node.children[2].key == "explicit"
+        assert child2 is not None and child2.key == "explicit"

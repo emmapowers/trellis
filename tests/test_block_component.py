@@ -2,8 +2,10 @@
 
 import pytest
 
-from trellis.core.rendering import ElementNode, RenderTree
-from trellis.core.composition_component import component
+from trellis.core.components.composition import component
+from trellis.core.rendering.element import Element
+from trellis.core.rendering.render import render
+from trellis.core.rendering.session import RenderSession
 
 
 class TestContainerComponent:
@@ -11,7 +13,7 @@ class TestContainerComponent:
         """Children created in with block are passed to component."""
 
         @component
-        def Column(children: list[ElementNode]) -> None:
+        def Column(children: list[Element]) -> None:
             for child in children:
                 child()
 
@@ -25,27 +27,29 @@ class TestContainerComponent:
                 Child()
                 Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
-        assert ctx.root_node is not None
+        root_node = ctx.elements.get(ctx.root_node_id)
+        assert root_node is not None
         # Parent has Column as child
-        assert len(ctx.root_node.children) == 1
-        column_node = ctx.root_node.children[0]
+        assert len(root_node.child_ids) == 1
+        column_node = ctx.elements.get(root_node.child_ids[0])
+        assert column_node is not None
         assert column_node.component == Column
         # Column has two Child elements (mounted via child())
-        assert len(column_node.children) == 2
+        assert len(column_node.child_ids) == 2
 
     def test_nested_containers(self) -> None:
         """Nested with blocks work correctly."""
 
         @component
-        def Column(children: list[ElementNode]) -> None:
+        def Column(children: list[Element]) -> None:
             for child in children:
                 child()
 
         @component
-        def Row(children: list[ElementNode]) -> None:
+        def Row(children: list[Element]) -> None:
             for child in children:
                 child()
 
@@ -59,21 +63,25 @@ class TestContainerComponent:
                 with Row():
                     Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
-        column_node = ctx.root_node.children[0]
+        root_node = ctx.elements.get(ctx.root_node_id)
+        assert root_node is not None
+        column_node = ctx.elements.get(root_node.child_ids[0])
+        assert column_node is not None
         assert column_node.component.name == "Column"
-        row_node = column_node.children[0]
+        row_node = ctx.elements.get(column_node.child_ids[0])
+        assert row_node is not None
         assert row_node.component.name == "Row"
-        assert len(row_node.children) == 1
+        assert len(row_node.child_ids) == 1
 
     def test_container_receives_children_list(self) -> None:
         """Container component receives children as a list of descriptors."""
         received_children: list = []
 
         @component
-        def Column(children: list[ElementNode]) -> None:
+        def Column(children: list[Element]) -> None:
             received_children.extend(children)
             for child in children:
                 child()
@@ -88,12 +96,12 @@ class TestContainerComponent:
                 Child()
                 Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert len(received_children) == 2
         for child in received_children:
-            assert isinstance(child, ElementNode)
+            assert isinstance(child, Element)
 
     def test_component_without_children_param_raises_on_with(self) -> None:
         """Using with on a component without children param raises TypeError."""
@@ -107,15 +115,15 @@ class TestContainerComponent:
             with NoChildren():  # Should raise
                 pass
 
-        ctx = RenderTree(Parent)
+        ctx = RenderSession(Parent)
         with pytest.raises(TypeError, match="does not accept children"):
-            ctx.render()
+            render(ctx)
 
     def test_cannot_provide_children_prop_and_use_with(self) -> None:
         """Can't pass children as prop AND use with block."""
 
         @component
-        def Column(children: list[ElementNode]) -> None:
+        def Column(children: list[Element]) -> None:
             for child in children:
                 child()
 
@@ -124,16 +132,16 @@ class TestContainerComponent:
             with Column(children=[]):  # Should raise
                 pass
 
-        ctx = RenderTree(Parent)
+        ctx = RenderSession(Parent)
         with pytest.raises(RuntimeError, match="Cannot provide 'children'.*and use 'with' block"):
-            ctx.render()
+            render(ctx)
 
     def test_empty_with_block(self) -> None:
         """Empty with block results in empty children list."""
         received_children: list | None = None
 
         @component
-        def Column(children: list[ElementNode]) -> None:
+        def Column(children: list[Element]) -> None:
             nonlocal received_children
             received_children = children
             for child in children:
@@ -144,8 +152,8 @@ class TestContainerComponent:
             with Column():
                 pass
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
         assert received_children == []
 
@@ -153,7 +161,7 @@ class TestContainerComponent:
         """Calling child() mounts the node in the container."""
 
         @component
-        def Wrapper(children: list[ElementNode]) -> None:
+        def Wrapper(children: list[Element]) -> None:
             # Only mount first child
             if children:
                 children[0]()
@@ -169,18 +177,21 @@ class TestContainerComponent:
                 Child()
                 Child()
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
-        wrapper = ctx.root_node.children[0]
+        root_node = ctx.elements.get(ctx.root_node_id)
+        assert root_node is not None
+        wrapper = ctx.elements.get(root_node.child_ids[0])
+        assert wrapper is not None
         # Only one child mounted, even though 3 were collected
-        assert len(wrapper.children) == 1
+        assert len(wrapper.child_ids) == 1
 
     def test_container_can_reorder_children(self) -> None:
         """Container can mount children in different order."""
 
         @component
-        def Reverse(children: list[ElementNode]) -> None:
+        def Reverse(children: list[Element]) -> None:
             for child in reversed(children):
                 child()
 
@@ -195,11 +206,17 @@ class TestContainerComponent:
                 Item(value=2)
                 Item(value=3)
 
-        ctx = RenderTree(Parent)
-        ctx.render()
+        ctx = RenderSession(Parent)
+        render(ctx)
 
-        reverse_node = ctx.root_node.children[0]
+        root_node = ctx.elements.get(ctx.root_node_id)
+        assert root_node is not None
+        reverse_node = ctx.elements.get(root_node.child_ids[0])
+        assert reverse_node is not None
         # Children should be in reverse order
-        assert reverse_node.children[0].properties["value"] == 3
-        assert reverse_node.children[1].properties["value"] == 2
-        assert reverse_node.children[2].properties["value"] == 1
+        child0 = ctx.elements.get(reverse_node.child_ids[0])
+        child1 = ctx.elements.get(reverse_node.child_ids[1])
+        child2 = ctx.elements.get(reverse_node.child_ids[2])
+        assert child0 is not None and child0.properties["value"] == 3
+        assert child1 is not None and child1.properties["value"] == 2
+        assert child2 is not None and child2.properties["value"] == 1

@@ -12,7 +12,7 @@ from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode
+    from trellis.core.rendering.element import Element
 
 
 class PlatformType(StrEnum):
@@ -63,7 +63,7 @@ class Platform(ABC):
     @abstractmethod
     async def run(
         self,
-        root_component: Callable[[], ElementNode],
+        root_component: Callable[[], Element],
         **kwargs: Any,
     ) -> None:
         """Start the platform and run until shutdown.

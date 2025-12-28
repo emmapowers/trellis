@@ -15,7 +15,7 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.react_component import react_component_base
-from trellis.core.rendering import ElementNode
+from trellis.core.rendering import Element
 from trellis.core.style_props import Margin, Padding
 
 if tp.TYPE_CHECKING:
@@ -35,11 +35,11 @@ def MyButton(
     margin: Margin | None = None,
     padding: Padding | int | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Custom button widget.
 
     The decorator `@react_component_base("MyButton")` means:
-    - This function returns an ElementNode with element_name="MyButton"
+    - This function returns an Element with element_name="MyButton"
     - The client expects a React component named "MyButton" in the bundle
     - Props are serialized and sent to the React component
 
@@ -53,7 +53,7 @@ def MyButton(
         key: Optional key for reconciliation
 
     Returns:
-        ElementNode representing this widget
+        Element representing this widget
     """
     ...  # Implementation is in React
 
@@ -101,7 +101,7 @@ def Card(
     padding: Padding | int | None = None,
     margin: Margin | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Card container with optional title.
 
     Setting `has_children=True` means this widget can contain child elements.
@@ -122,7 +122,7 @@ def Card(
 # 1. Python defines the API (props, types, docstrings)
 # 2. React implements the rendering (TSX, CSS, interactivity)
 # 3. The decorator handles:
-#    - Creating ElementNode with correct element_name
+#    - Creating Element with correct element_name
 #    - Freezing props for reconciliation
 #    - Converting style props (Margin, Padding) to CSS
 #    - Serializing callbacks for client invocation

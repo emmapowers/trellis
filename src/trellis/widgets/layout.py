@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.react_component import react_component_base
-from trellis.core.rendering import ElementNode
-from trellis.core.style_props import Height, Margin, Padding, Width
+from trellis.core.components.react import react_component_base
+from trellis.core.components.style_props import Height, Margin, Padding, Width
+from trellis.core.rendering.element import Element
 
 
 @react_component_base("Column", has_children=True)
@@ -24,7 +24,7 @@ def Column(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Vertical flex container.
 
     Renders children stacked vertically with configurable gap.
@@ -45,7 +45,7 @@ def Column(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Column component.
+        An Element for the Column component.
 
     Example:
         with Column(gap=16):
@@ -74,7 +74,7 @@ def Row(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Horizontal flex container.
 
     Renders children in a row with configurable gap.
@@ -95,7 +95,7 @@ def Row(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Row component.
+        An Element for the Row component.
 
     Example:
         with Row(gap=8):
@@ -116,7 +116,7 @@ def Card(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Visual container with card styling.
 
     Renders children inside a styled container with background, border,
@@ -133,7 +133,7 @@ def Card(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Card component.
+        An Element for the Card component.
 
     Example:
         with Card(padding=16):

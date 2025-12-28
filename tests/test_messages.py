@@ -2,12 +2,12 @@
 
 import msgspec
 
-from trellis.core.messages import (
+from trellis.platforms.common.messages import (
     EventMessage,
     HelloMessage,
     HelloResponseMessage,
     Message,
-    RenderMessage,
+    PatchMessage,
 )
 
 
@@ -76,17 +76,16 @@ class TestMessageUnion:
         assert decoded.session_id == "sess-1"
         assert decoded.server_version == "1.0.0"
 
-    def test_decode_render_message(self) -> None:
-        """RenderMessage decodes correctly from union."""
+    def test_decode_patch_message(self) -> None:
+        """PatchMessage decodes correctly from union."""
         encoder = msgspec.msgpack.Encoder()
         decoder = msgspec.msgpack.Decoder(Message)
 
-        tree = {"type": "Button", "props": {"text": "Click"}, "children": []}
-        original = RenderMessage(tree=tree)
+        original = PatchMessage(patches=[])
         decoded = decoder.decode(encoder.encode(original))
 
-        assert isinstance(decoded, RenderMessage)
-        assert decoded.tree == tree
+        assert isinstance(decoded, PatchMessage)
+        assert decoded.patches == []
 
     def test_decode_event_message(self) -> None:
         """EventMessage decodes correctly from union."""
@@ -108,7 +107,7 @@ class TestMessageUnion:
         messages = [
             HelloMessage(client_id="c1"),
             HelloResponseMessage(session_id="s1", server_version="1.0"),
-            RenderMessage(tree={}),
+            PatchMessage(patches=[]),
             EventMessage(callback_id="cb_1"),
         ]
 

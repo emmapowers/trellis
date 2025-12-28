@@ -6,7 +6,7 @@ import typing as tp
 
 
 class ClassWithLock(tp.Protocol):
-    lock: LockLike
+    _lock: LockLike
 
 
 T = tp.TypeVar("T", bound=ClassWithLock)  # the instance type (i.e., the class of `self`)
@@ -19,7 +19,7 @@ LockLike = contextlib.AbstractContextManager[object]
 def with_lock(fn: tp.Callable[tp.Concatenate[T, P], R]) -> tp.Callable[tp.Concatenate[T, P], R]:
     @functools.wraps(fn)
     def wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
-        with self.lock:
+        with self._lock:
             return fn(self, *args, **kwargs)
 
     return wrapper

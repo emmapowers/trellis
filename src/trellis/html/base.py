@@ -11,14 +11,12 @@ import typing as tp
 from collections.abc import Callable
 from typing import ParamSpec
 
-from trellis.core.base import ElementKind
-from trellis.core.base_component import Component
-from trellis.core.rendering import ElementNode, get_active_render_tree
+from trellis.core.components.base import Component, ElementKind
+from trellis.core.rendering.element import Element
 
 __all__ = [
     "HtmlElement",
     "Style",
-    "auto_collect_hybrid",
     "html_element",
 ]
 
@@ -76,7 +74,7 @@ class HtmlElement(Component):
             raise NotImplementedError(f"{self.__class__.__name__} must set _tag class attribute")
         return self.__class__._tag
 
-    def render(self, /, **props: tp.Any) -> None:
+    def execute(self, /, **props: tp.Any) -> None:
         """Render this element.
 
         For leaf elements (no children), this is a no-op.
@@ -97,7 +95,7 @@ def html_element(
     *,
     is_container: bool = False,
     name: str | None = None,
-) -> Callable[[Callable[P, tp.Any]], Callable[P, ElementNode]]:
+) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]:
     """Decorator to create an HtmlElement from a function signature.
 
     This is the standard way to define HTML elements. The function body is
@@ -111,7 +109,7 @@ def html_element(
             internal functions prefixed with underscore.
 
     Returns:
-        A decorator that creates a callable returning ElementNodes
+        A decorator that creates a callable returning Elements
 
     Example:
         ```python
@@ -120,7 +118,7 @@ def html_element(
             *,
             className: str | None = None,
             style: Style | None = None,
-        ) -> ElementNode:
+        ) -> Element:
             '''A div container element.'''
             ...  # Body ignored
 
@@ -135,7 +133,7 @@ def html_element(
 
     def decorator(
         func: Callable[P, tp.Any],
-    ) -> Callable[P, ElementNode]:
+    ) -> Callable[P, Element]:
         # Use provided name or function name
         element_name = name or func.__name__
 
@@ -148,7 +146,7 @@ def html_element(
         _singleton = _Generated(element_name)
 
         @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> ElementNode:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element:
             return _singleton._place(**kwargs)
 
         # Expose the underlying component for introspection
@@ -157,25 +155,3 @@ def html_element(
         return wrapper
 
     return decorator
-
-
-def auto_collect_hybrid(descriptor: ElementNode) -> ElementNode:
-    """Auto-collect a hybrid element descriptor when text is provided.
-
-    Hybrid elements (like Td, Li, A) can work either as:
-    - Text-only: h.Td("text") - auto-collected
-    - Container: with h.Td(): ... - collected via with block
-
-    This helper enables auto-collection for containers when text is provided.
-
-    Args:
-        descriptor: The element descriptor to auto-collect
-
-    Returns:
-        The same descriptor, for chaining
-    """
-    ctx = get_active_render_tree()
-    if ctx is not None and ctx.has_active_frame():
-        ctx.add_to_current_frame(descriptor)
-        object.__setattr__(descriptor, "_auto_collected", True)
-    return descriptor

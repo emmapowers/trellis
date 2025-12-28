@@ -12,13 +12,13 @@ from typing import TYPE_CHECKING
 
 import msgspec
 
-from trellis.core.message_handler import MessageHandler
-from trellis.core.messages import Message
+from trellis.platforms.common.handler import MessageHandler
+from trellis.platforms.common.messages import Message
 
 if TYPE_CHECKING:
     from pytauri.ipc import Channel
 
-    from trellis.core.rendering import IComponent
+    from trellis.core.components.base import Component
 
 
 class PyTauriMessageHandler(MessageHandler):
@@ -34,14 +34,20 @@ class PyTauriMessageHandler(MessageHandler):
     _encoder: msgspec.msgpack.Encoder
     _decoder: msgspec.msgpack.Decoder[Message]
 
-    def __init__(self, root_component: IComponent, channel: Channel) -> None:
+    def __init__(
+        self,
+        root_component: Component,
+        channel: Channel,
+        batch_delay: float = 1.0 / 30,
+    ) -> None:
         """Create a PyTauri message handler.
 
         Args:
             root_component: The root Trellis component to render
             channel: The PyTauri channel for sending messages to client
+            batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        super().__init__(root_component)
+        super().__init__(root_component, batch_delay=batch_delay)
         self._channel = channel
         self._queue = asyncio.Queue()
         self._encoder = msgspec.msgpack.Encoder()

@@ -10,9 +10,9 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode
+    from trellis.core.rendering.element import Element
 
-from trellis.core.platform import Platform
+from trellis.platforms.common.base import Platform
 
 __all__ = ["BrowserPlatform"]
 
@@ -41,12 +41,18 @@ class BrowserPlatform(Platform):
 
     async def run(
         self,
-        root_component: Callable[[], ElementNode],
+        root_component: Callable[[], Element],
+        *,
+        batch_delay: float = 1.0 / 30,
         **kwargs: Any,
     ) -> None:
         """Run inside Pyodide using the JS bridge.
 
         The bridge is registered by TrellisApp before executing Python code.
+
+        Args:
+            root_component: The root Trellis component to render
+            batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
         # Import the bridge module (registered by JavaScript)
         import js  # type: ignore[import-not-found]
@@ -60,8 +66,8 @@ class BrowserPlatform(Platform):
             return to_js(msg_dict, dict_converter=js.Object.fromEntries)
 
         # Create handler and connect to bridge
-        # root_component is typed as Callable but is actually IComponent at runtime
-        handler = BrowserMessageHandler(root_component)  # type: ignore[arg-type]
+        # root_component is typed as Callable but is actually Component at runtime
+        handler = BrowserMessageHandler(root_component, batch_delay=batch_delay)  # type: ignore[arg-type]
         handler.set_send_callback(bridge.send_message, serializer=pyodide_serializer)
 
         # Create a persistent proxy for the handler so JavaScript can keep a reference

@@ -16,11 +16,12 @@ from pytauri_wheel.lib import builder_factory, context_factory
 from rich.console import Console
 
 from trellis.bundler import CORE_PACKAGES, DESKTOP_PACKAGES, BundleConfig, build_bundle
-from trellis.core.platform import Platform
+from trellis.platforms.common.base import Platform
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
 
 if TYPE_CHECKING:
-    from trellis.core.rendering import ElementNode, IComponent
+    from trellis.core.components.base import Component
+    from trellis.core.rendering.element import Element
 
 _console = Console()
 
@@ -66,14 +67,16 @@ class DesktopPlatform(Platform):
     as the WebSocket server platform.
     """
 
-    _root_component: IComponent | None
+    _root_component: Component | None
     _handler: PyTauriMessageHandler | None
     _handler_task: asyncio.Task[None] | None
+    _batch_delay: float
 
     def __init__(self) -> None:
         self._root_component = None
         self._handler = None
         self._handler_task = None
+        self._batch_delay = 1.0 / 30
 
     @property
     def name(self) -> str:
@@ -113,7 +116,11 @@ class DesktopPlatform(Platform):
         async def trellis_connect(body: ConnectRequest, webview_window: WebviewWindow) -> str:
             """Establish channel connection with frontend."""
             channel: Channel = body.channel_id.channel_on(webview_window.as_ref_webview())
-            self._handler = PyTauriMessageHandler(self._root_component, channel)  # type: ignore[arg-type]
+            self._handler = PyTauriMessageHandler(
+                self._root_component,  # type: ignore[arg-type]
+                channel,
+                batch_delay=self._batch_delay,
+            )
             self._handler_task = asyncio.create_task(self._handler.run())
             return "ok"
 
@@ -133,11 +140,12 @@ class DesktopPlatform(Platform):
 
     async def run(
         self,
-        root_component: Callable[[], ElementNode],
+        root_component: Callable[[], Element],
         *,
         window_title: str = "Trellis App",
         window_width: int = 1024,
         window_height: int = 768,
+        batch_delay: float = 1.0 / 30,
         **_kwargs: Any,
     ) -> None:
         """Start PyTauri desktop application.
@@ -147,9 +155,11 @@ class DesktopPlatform(Platform):
             window_title: Title for the application window
             window_width: Initial window width in pixels
             window_height: Initial window height in pixels
+            batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        # Store root component for handler access
+        # Store root component and config for handler access
         self._root_component = root_component  # type: ignore[assignment]
+        self._batch_delay = batch_delay
 
         # Create commands with registered handlers
         commands = self._create_commands()

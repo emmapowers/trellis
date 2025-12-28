@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.html.base import Style, html_element
 from trellis.html.events import MouseHandler
 
@@ -35,7 +35,7 @@ def Div(
     onMouseLeave: MouseHandler | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A div container element."""
     ...
 
@@ -50,7 +50,7 @@ def _Span(
     onClick: MouseHandler | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An inline span element."""
     ...
 
@@ -64,7 +64,7 @@ def Span(
     onClick: MouseHandler | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An inline span element."""
     return _Span(
         _text=text if text else None,
@@ -85,7 +85,7 @@ def Section(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A section element for grouping content."""
     ...
 
@@ -98,7 +98,7 @@ def Article(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An article element for self-contained content."""
     ...
 
@@ -111,7 +111,7 @@ def Header(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A header element."""
     ...
 
@@ -124,7 +124,7 @@ def Footer(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A footer element."""
     ...
 
@@ -137,7 +137,7 @@ def Nav(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A navigation element."""
     ...
 
@@ -150,7 +150,7 @@ def Main(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A main content element."""
     ...
 
@@ -163,6 +163,6 @@ def Aside(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An aside element for tangential content."""
     ...
