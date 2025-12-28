@@ -1,9 +1,10 @@
-"""Tests for trellis.core.rendering module."""
+"""Integration tests for rendering module - RenderSession, concurrency, lifecycle."""
 
 import concurrent.futures
 import logging
 import threading
 import weakref
+from dataclasses import dataclass
 
 import pytest
 
@@ -12,74 +13,11 @@ from trellis.core.rendering.element import Element
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession, get_active_session, set_active_session
 from trellis.core.state.stateful import Stateful
-from dataclasses import dataclass
 
 
 def make_component(name: str) -> CompositionComponent:
     """Helper to create a simple test component."""
     return CompositionComponent(name=name, render_func=lambda: None)
-
-
-# Dummy session for testing Element creation
-_dummy_session: RenderSession | None = None
-
-
-def _get_dummy_session_ref() -> weakref.ref[RenderSession]:
-    """Get a weakref to a dummy session for testing."""
-    global _dummy_session
-    if _dummy_session is None:
-        _dummy_session = RenderSession(make_component("DummyRoot"))
-    return weakref.ref(_dummy_session)
-
-
-def make_descriptor(
-    comp: CompositionComponent,
-    key: str | None = None,
-    props: dict | None = None,
-) -> Element:
-    """Helper to create an Element."""
-    return Element(
-        component=comp,
-        _session_ref=_get_dummy_session_ref(),
-        render_count=0,
-        key=key,
-        props=props or {},
-    )
-
-
-class TestElement:
-    def test_element_node_creation(self) -> None:
-        comp = make_component("Test")
-        node = make_descriptor(comp)
-
-        assert node.component == comp
-        assert node.key is None
-        assert node.props == {}
-        assert node.child_ids == []
-        assert node.id == ""
-
-    def test_element_node_with_key(self) -> None:
-        comp = make_component("Test")
-        node = make_descriptor(comp, key="my-key")
-
-        assert node.key == "my-key"
-
-    def test_element_node_with_properties(self) -> None:
-        comp = make_component("Test")
-        node = make_descriptor(comp, props={"foo": "bar", "count": 42})
-
-        assert node.properties == {"foo": "bar", "count": 42}
-
-    def test_element_node_is_mutable(self) -> None:
-        comp = make_component("Test")
-        node = make_descriptor(comp, props={"a": 1})
-
-        # Element is mutable and uses render_count-based hashing
-        hash(node)  # Should not raise
-
-        # Can modify attributes
-        node.id = "new-id"
-        assert node.id == "new-id"
 
 
 class TestActiveSession:
@@ -443,8 +381,6 @@ class TestElementStateParentId:
 
     def test_parent_id_preserved_on_rerender(self) -> None:
         """parent_id is preserved when component re-renders."""
-        from dataclasses import dataclass
-        from trellis.core.state.stateful import Stateful
 
         @dataclass
         class Counter(Stateful):
