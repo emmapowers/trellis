@@ -30,51 +30,52 @@ default = ["desktop"]
 ci = []
 
 [tasks]
+# Formatting
 fmt = { cmd = "black src", description = "Format code with black" }
 fmt-check = { cmd = "black --check src", description = "Check black formatting" }
-
 ruff-fix = { cmd = "ruff check --fix src", depends-on = ["fmt"], description = "Run ruff with auto-fix" }
 ruff-check = { cmd = "ruff check src", description = "Check ruff linting" }
 
+# Type checking
 mypy = { cmd = "dmypy run src examples", description = "Run mypy (daemon)" }
 mypy-ci = { cmd = "mypy src examples", description = "Run mypy (full check)" }
 
+# Testing
 test = { cmd = "pytest", description = "Run unit tests" }
 test-cov = { cmd = "pytest --cov=src/trellis --cov-report=term-missing", description = "Run unit tests with coverage" }
 test-integration = { cmd = "pytest tests/integration -vv", description = "Run integration tests (requires network)" }
 install-js-test-deps = { cmd = "npm install", cwd = "tests/js", description = "Install JavaScript test dependencies" }
 test-js = { cmd = "npm test", cwd = "tests/js", depends-on = ["install-js-test-deps"], description = "Run JavaScript unit tests" }
 
+# Composite lint/test tasks
 cleanup = { depends-on = ["fmt", "ruff-fix"], description = "Run formatters with auto-fix" }
 lint = { depends-on = ["fmt-check", "ruff-check", "mypy-ci"], description = "Check all linters (no fix)" }
 ci = { depends-on = ["lint", "test", "test-js", "test-integration"], description = "Run CI checks" }
 
-build-wheel = { cmd = "pip wheel . -w dist --no-deps", description = "Build wheel" }
-clean = { cmd = "rm -rf dist build .mypy_cache .ruff_cache .pytest_cache .coverage", description = "Clean build artifacts" }
+# Build tasks (use Make for incremental builds)
+build-wheel = { cmd = "make wheel", description = "Build wheel (incremental)" }
+build-bundles = { cmd = "make bundles", description = "Build all platform bundles (incremental)" }
+build = { cmd = "make wheel bundles", description = "Build wheel and all bundles (incremental)" }
+clean = { cmd = "make clean", description = "Clean build artifacts" }
 
-# Run demo
-demo = { cmd = "python examples/demo.py", description = "Run the demo app" }
-showcase = { cmd = "python -m examples.widget_showcase", description = "Run the widget showcase" }
+# Examples (all depend on build artifacts)
+demo = { cmd = "python examples/demo.py", depends-on = ["build"], description = "Run counter demo" }
+showcase = { cmd = "python -m examples.widget_showcase", depends-on = ["build"], description = "Run widget showcase" }
+sliders = { cmd = "python examples/all_sliders_all_the_time.py", depends-on = ["build"], description = "Run slider performance demo" }
+breakfast = { cmd = "python -m examples.breakfast_todo", depends-on = ["build"], description = "Run breakfast todo app" }
 
-# Bundle build tasks
-build-browser-bundle = { cmd = "trellis bundle build --platform browser", description = "Build browser client bundle (includes worker)" }
-
-# Playground build tasks (now in docs/static/playground)
+# Playground
 install-playground-deps = { cmd = "npm install", cwd = "docs/static/playground", description = "Install playground dependencies" }
-build-playground = { cmd = "npm run build", cwd = "docs/static/playground", depends-on = ["build-browser-bundle", "build-wheel", "install-playground-deps"], description = "Build playground bundle" }
-playground = { cmd = "python -c \"import http.server, socketserver, socket; s=socket.socket(); s.bind(('',0)); port=s.getsockname()[1]; s.close(); print(f'\\n  Playground: http://localhost:{port}/playground/\\n'); http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler, port=port, bind='127.0.0.1')\"", cwd = "docs/static", depends-on = ["build-playground", "copy-wheel-to-docs"], description = "Run playground server (auto-selects available port)" }
+build-playground = { cmd = "make playground", description = "Build playground (incremental)" }
+playground = { cmd = "python -c \"import http.server, socketserver, socket; s=socket.socket(); s.bind(('',0)); port=s.getsockname()[1]; s.close(); print(f'\\n  Playground: http://localhost:{port}/playground/\\n'); http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler, port=port, bind='127.0.0.1')\"", cwd = "docs/static", depends-on = ["build-playground", "copy-wheel-to-docs"], description = "Run playground server" }
 
-# Documentation tasks
-generate-api-docs = { cmd = "pydoc-markdown", description = "Generate API docs from docstrings" }
-generate-example-pages = { cmd = "python scripts/generate-example-pages.py", depends-on = ["build-browser-bundle"], description = "Generate example pages for docs" }
-copy-wheel-to-docs = { cmd = "find docs/static -maxdepth 1 -name '*.whl' -delete && cp dist/trellis-*.whl docs/static/", depends-on = ["build-wheel"], description = "Copy wheel to docs static folder" }
-build-docs = { cmd = "npm ci && npm run build", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "generate-example-pages", "copy-wheel-to-docs"], description = "Build documentation site" }
+# Documentation
+generate-api-docs = { cmd = "make api-docs", description = "Generate API docs (incremental)" }
+generate-example-pages = { cmd = "make example-pages", description = "Generate example pages (incremental)" }
+copy-wheel-to-docs = { cmd = "make docs-wheel", description = "Copy wheel to docs (incremental)" }
+build-docs = { cmd = "make docs", description = "Build documentation site (incremental)" }
 serve-docs = { cmd = "npm run start", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "generate-example-pages", "copy-wheel-to-docs"], description = "Serve docs locally with hot reload" }
 watch-api-docs = { cmd = "watchfiles 'pixi run generate-api-docs' src/trellis", description = "Watch Python source and regenerate API docs" }
-
-# For full docs dev workflow, run in two terminals:
-#   Terminal 1: pixi run serve-docs
-#   Terminal 2: pixi run watch-api-docs
 
 [target.unix.activation]
 scripts = ["scripts/install-npm-deps.sh"]
