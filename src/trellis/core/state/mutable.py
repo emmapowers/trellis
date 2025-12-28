@@ -77,7 +77,7 @@ class Mutable(tp.Generic[T]):
         _on_change: Optional custom callback (if None, uses auto-generated setter)
     """
 
-    __slots__ = ("_attr", "_on_change", "_owner")
+    __slots__ = ("_attr", "_on_change", "_owner", "_snapshot")
 
     def __init__(
         self,
@@ -88,6 +88,8 @@ class Mutable(tp.Generic[T]):
         self._owner = owner
         self._attr = attr
         self._on_change = on_change
+        # Capture value at creation time for change detection
+        self._snapshot: T = object.__getattribute__(owner, attr)
 
     @property
     def value(self) -> T:
@@ -107,19 +109,38 @@ class Mutable(tp.Generic[T]):
         """Get the custom callback, if any."""
         return self._on_change
 
+    @property
+    def snapshot(self) -> T:
+        """Get the snapshot value captured at creation time.
+
+        This is used for equality comparison to detect changes across renders.
+        The snapshot is immutable after creation.
+        """
+        return self._snapshot
+
     def __call__(self, value: T) -> None:
         """Set the value via call syntax (e.g., mutable_instance(new_value))."""
         self.value = value
 
-    def __hash__(self) -> int:
-        """Hash based on owner identity and attribute name."""
-        return hash((id(self._owner), self._attr))
-
     def __eq__(self, other: object) -> bool:
-        """Compare by reference identity (same owner instance and attr)."""
+        """Compare by binding identity AND snapshot value.
+
+        Two Mutables are equal if they reference the same property on the same
+        owner instance AND were created with the same value (snapshot). This
+        enables proper change detection across renders.
+
+        Note: Mutable is intentionally unhashable (no __hash__) because
+        different instances with the same binding may have different snapshots.
+        """
         if not isinstance(other, Mutable):
             return NotImplemented
-        return self._owner is other._owner and self._attr == other._attr
+        return (
+            self._owner is other._owner
+            and self._attr == other._attr
+            and self._snapshot == other._snapshot
+        )
+
+    __hash__ = None  # type: ignore[assignment]  # Mutable is unhashable
 
     def __repr__(self) -> str:
         if self._on_change:

@@ -224,9 +224,8 @@ def props_equal(old_props: dict[str, tp.Any], new_props: dict[str, tp.Any]) -> b
 def _values_equal(old: tp.Any, new: tp.Any) -> bool:
     """Compare values with callback-equivalence semantics.
 
-    All callables are considered equal since they serialize identically
-    (to {"__callback__": "cb_xxx"}). Mutables use their __eq__ which
-    compares owner identity and attr name.
+    Mutables compare by snapshot (value at creation time) to detect changes.
+    Other callables are considered equal since they serialize identically.
 
     Args:
         old: Previous value
@@ -235,13 +234,13 @@ def _values_equal(old: tp.Any, new: tp.Any) -> bool:
     Returns:
         True if values are semantically equal for rendering purposes
     """
+    # Mutables: compare by snapshot (must check before callable since Mutable is callable)
+    if isinstance(old, Mutable) and isinstance(new, Mutable):
+        return old == new
+
     # Callables: all callbacks are equal (we don't care about identity)
     if callable(old) and callable(new):
         return True
-
-    # Mutables: use their __eq__ (compares owner+attr)
-    if isinstance(old, Mutable) and isinstance(new, Mutable):
-        return old == new
 
     # Everything else: standard equality
     return bool(old == new)
