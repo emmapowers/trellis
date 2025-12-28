@@ -190,7 +190,10 @@ class TestBrowserMessageHandler:
     """Tests for BrowserMessageHandler event handling."""
 
     def test_post_event_adds_to_queue(self) -> None:
-        """post_event() adds EventMessage to inbox."""
+        """post_event() adds EventMessage to inbox.
+
+        INTERNAL TEST: _inbox is the internal queue - no public API to inspect it.
+        """
 
         @component
         def App() -> None:
@@ -200,7 +203,7 @@ class TestBrowserMessageHandler:
 
         handler.post_event("test:callback", [1, 2, 3])
 
-        # Queue should have one message
+        # Verify the message was queued
         assert not handler._inbox.empty()
         msg = handler._inbox.get_nowait()
         assert isinstance(msg, EventMessage)
@@ -330,7 +333,10 @@ class TestAsyncCallbackHandling:
         asyncio.run(test())
 
     def test_background_tasks_tracked(self) -> None:
-        """Background tasks are tracked to prevent GC."""
+        """Background tasks are tracked to prevent GC.
+
+        INTERNAL TEST: _background_tasks is internal - verifies GC prevention.
+        """
         task_completed = []
 
         async def async_handler() -> None:
@@ -351,7 +357,7 @@ class TestAsyncCallbackHandling:
             event_msg = EventMessage(callback_id=cb_id, args=[])
             await handler.handle_message(event_msg)
 
-            # Task should be tracked
+            # Verify task tracking
             assert len(handler._background_tasks) == 1
 
             # Wait for completion

@@ -37,7 +37,7 @@ class TestStateful:
         ctx = RenderSession(MyComponent)
         render(ctx)
 
-        # The component should be registered as dependent on state.text
+        # INTERNAL TEST: Verify dependency tracking internals - no public API to inspect watchers
         state_info = state._state_props["text"]
         assert len(state_info.watchers) == 1
 
@@ -316,7 +316,11 @@ class TestLocalStatePersistence:
 
 
 class TestStateDependencyTracking:
-    """Tests for state dependency tracking internals."""
+    """Tests for state dependency tracking internals.
+
+    INTERNAL TEST: These tests verify the internal dependency tracking mechanism
+    (_state_props, watchers WeakSet, _session_ref) which has no public API.
+    """
 
     def test_watchers_weakset_populated(self) -> None:
         """Accessing state property populates watchers WeakSet."""
@@ -344,7 +348,10 @@ class TestStateDependencyTracking:
         assert watchers_list[0].id == ctx.root_element.id
 
     def test_session_ref_set_on_element_node(self) -> None:
-        """Element has _session_ref pointing to RenderSession."""
+        """Element has _session_ref pointing to RenderSession.
+
+        INTERNAL TEST: _session_ref is internal - verifies Element-Session linkage.
+        """
 
         @dataclass(kw_only=True)
         class MyState(Stateful):
@@ -359,7 +366,6 @@ class TestStateDependencyTracking:
         ctx = RenderSession(Counter)
         render(ctx)
 
-        # Check that the node's _session_ref points to the RenderSession
         node = ctx.root_element
         assert node._session_ref() is ctx
 

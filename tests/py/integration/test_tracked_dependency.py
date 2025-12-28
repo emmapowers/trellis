@@ -11,7 +11,11 @@ from trellis.core.state.tracked import ITER_KEY, TrackedDict, TrackedList, Track
 
 
 class TestDependencyTracking:
-    """Tests for dependency tracking during render."""
+    """Tests for dependency tracking during render.
+
+    INTERNAL TEST: These tests verify the internal dependency graph (_deps)
+    which has no public API for inspection.
+    """
 
     def test_list_getitem_tracks_by_item_identity(self) -> None:
         """Accessing list[i] registers dependency on id(item)."""
@@ -302,7 +306,11 @@ class TestFineGrainedReactivity:
 
 
 class TestDependencyCleanup:
-    """Tests for dependency cleanup on unmount and re-render."""
+    """Tests for dependency cleanup on unmount and re-render.
+
+    INTERNAL TEST: These tests verify the internal dependency graph (_deps)
+    cleanup behavior which has no public API for inspection.
+    """
 
     def test_list_dependency_cleaned_on_unmount(self) -> None:
         """List dependencies are cleaned up when component unmounts."""
