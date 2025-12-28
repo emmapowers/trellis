@@ -48,7 +48,7 @@ The widget implementations live in `src/trellis/platforms/common/client/src/widg
 
 ### Python-side
 
-Each widget is a function decorated with `@react_component_base` that returns an `ElementNode`. The decorator handles:
+Each widget is a function decorated with `@react_component_base` that returns an `Element`. The decorator handles:
 
 - Registering the component type
 - Serializing props for the client
@@ -59,7 +59,7 @@ from collections.abc import Callable
 from typing import Literal
 
 from trellis.core.react_component import react_component_base
-from trellis.core.rendering import ElementNode
+from trellis.core.rendering import Element
 
 @react_component_base("Button")
 def Button(
@@ -68,7 +68,7 @@ def Button(
     on_click: Callable[[], None] | None = None,
     variant: Literal["primary", "secondary", "outline", "ghost", "danger"] = "primary",
     # ...
-) -> ElementNode:
+) -> Element:
     ...
 ```
 

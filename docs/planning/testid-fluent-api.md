@@ -1,11 +1,11 @@
 # Plan: Global `testid` via Fluent `.testid()` Method
 
 ## Goal
-Add a global `.testid()` method on ElementNode that can be called on any component and renders as `data-testid` in the browser DOM. This enables stable Playwright selectors without modifying individual component implementations.
+Add a global `.testid()` method on Element that can be called on any component and renders as `data-testid` in the browser DOM. This enables stable Playwright selectors without modifying individual component implementations.
 
 ## Design Approach
 
-**Fluent API:** Instead of adding `testid=` parameter to every component, provide a `.testid()` method on ElementNode:
+**Fluent API:** Instead of adding `testid=` parameter to every component, provide a `.testid()` method on Element:
 
 ```python
 Button(text="Save", on_click=save).testid("save-btn")
@@ -20,29 +20,29 @@ Counter().testid("counter")
 
 ## Implementation
 
-### 1. Add `testid` field to ElementNode
+### 1. Add `testid` field to Element
 **File:** `src/trellis/core/rendering.py`
 
 ```python
 @dataclass(frozen=True)
-class ElementNode:
+class Element:
     component: IComponent
     props: FrozenProps = ()
     key: str | None = None
     testid: str | None = None  # NEW
-    children: tuple[ElementNode, ...] = ()
+    children: tuple[Element, ...] = ()
     id: str = ""
     _auto_collected: bool = False
 ```
 
-### 2. Add `.testid()` method to ElementNode
+### 2. Add `.testid()` method to Element
 **File:** `src/trellis/core/rendering.py`
 
 ```python
-def testid(self, id: str) -> ElementNode:
+def testid(self, id: str) -> Element:
     """Set testid for this element, updating in frame if auto-collected.
 
-    Returns a new ElementNode with testid set. If this node was auto-collected
+    Returns a new Element with testid set. If this node was auto-collected
     into a parent's frame, the frame is updated with the new node.
 
     Example:
@@ -164,7 +164,7 @@ export function CompositionComponent({
 
 | File | Change |
 |------|--------|
-| `src/trellis/core/rendering.py` | Add `testid` field and `.testid()` method to ElementNode |
+| `src/trellis/core/rendering.py` | Add `testid` field and `.testid()` method to Element |
 | `src/trellis/core/serialization.py` | Serialize `testid` field |
 | `src/trellis/client/src/core/types.ts` | Add `testid` to SerializedElement |
 | `src/trellis/client/src/core/renderTree.tsx` | Apply `data-testid` to HTML elements, wrap widgets |

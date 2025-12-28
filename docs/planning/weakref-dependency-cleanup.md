@@ -1,4 +1,4 @@
-# Simplifying Dependency Cleanup with WeakRef to ElementNode
+# Simplifying Dependency Cleanup with WeakRef to Element
 
 ## Problem
 
@@ -24,29 +24,29 @@ The `watched_deps` reverse mapping exists so `clear_node_dependencies()` can rem
 
 ## Key Insight
 
-`ElementNode` is immutable and replaced on every re-render via `dataclass_replace()`. This ephemeral lifecycle matches exactly what we need:
+`Element` is immutable and replaced on every re-render via `dataclass_replace()`. This ephemeral lifecycle matches exactly what we need:
 
-- **Re-render**: Old `ElementNode` replaced → weakref dies → old registrations gone automatically
-- **Reuse (no re-exec)**: Same `ElementNode` persists → weakref valid → registrations correct
-- **Unmount**: `ElementNode` removed → weakref dies → registrations gone automatically
+- **Re-render**: Old `Element` replaced → weakref dies → old registrations gone automatically
+- **Reuse (no re-exec)**: Same `Element` persists → weakref valid → registrations correct
+- **Unmount**: `Element` removed → weakref dies → registrations gone automatically
 
 ## Proposed Solution
 
-Use `weakref.WeakSet[ElementNode]` instead of storing node ID strings:
+Use `weakref.WeakSet[Element]` instead of storing node ID strings:
 
 ```python
 @dataclass
 class StatePropertyInfo:
     name: str
-    watchers: weakref.WeakSet[ElementNode] = field(default_factory=weakref.WeakSet)
+    watchers: weakref.WeakSet[Element] = field(default_factory=weakref.WeakSet)
 ```
 
 ### Changes Required
 
-1. **Add `_tree_ref` to `ElementNode`** (set at creation in `_place`):
+1. **Add `_tree_ref` to `Element`** (set at creation in `_place`):
    ```python
    @dataclass(frozen=True)
-   class ElementNode:
+   class Element:
        # ... existing fields ...
        _tree_ref: weakref.ref[RenderTree] | None = None
    ```
@@ -54,15 +54,15 @@ class StatePropertyInfo:
 2. **Add `_current_node` to `RenderTree`** (so `__getattribute__` can access it):
    ```python
    class RenderTree:
-       _current_node: ElementNode | None = None  # Set during execution
+       _current_node: Element | None = None  # Set during execution
    ```
 
-3. **Change `StatePropertyInfo`** to use `WeakSet[ElementNode]`:
+3. **Change `StatePropertyInfo`** to use `WeakSet[Element]`:
    ```python
    @dataclass
    class StatePropertyInfo:
        name: str
-       watchers: weakref.WeakSet[ElementNode] = field(default_factory=weakref.WeakSet)
+       watchers: weakref.WeakSet[Element] = field(default_factory=weakref.WeakSet)
    ```
 
 4. **Update `Stateful.__getattribute__`** to register the node:
@@ -92,9 +92,9 @@ class StatePropertyInfo:
 | Scenario | What happens | Result |
 |----------|--------------|--------|
 | First render | Node executes, registers with WeakSet | Dependency tracked |
-| Re-render (props changed) | New ElementNode created, old dies | Old refs gone, fresh registration |
-| Re-render (props same, not dirty) | Same ElementNode reused | Existing refs still valid |
-| Unmount | ElementNode removed from tree | Refs die, auto-cleaned from WeakSet |
+| Re-render (props changed) | New Element created, old dies | Old refs gone, fresh registration |
+| Re-render (props same, not dirty) | Same Element reused | Existing refs still valid |
+| Unmount | Element removed from tree | Refs die, auto-cleaned from WeakSet |
 
 ## Benefits
 
@@ -102,10 +102,10 @@ class StatePropertyInfo:
 - Eliminates `clear_node_dependencies()`
 - No explicit cleanup code needed
 - WeakSet handles all lifecycle automatically
-- Simpler mental model: "Stateful watches ElementNodes, when they die, the watch dies"
+- Simpler mental model: "Stateful watches Elements, when they die, the watch dies"
 
 ## Tradeoffs
 
-- Adds `_tree_ref` field to ElementNode (small memory overhead per node)
+- Adds `_tree_ref` field to Element (small memory overhead per node)
 - Adds `_current_node` to RenderTree (minimal)
 - WeakSet iteration slightly slower than set iteration (negligible)

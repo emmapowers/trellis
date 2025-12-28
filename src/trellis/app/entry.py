@@ -34,7 +34,7 @@ from trellis.platforms.common.base import Platform, PlatformArgumentError, Platf
 from trellis.utils.log_setup import setup_logging
 
 if TYPE_CHECKING:
-    from trellis.core.rendering.element import ElementNode
+    from trellis.core.rendering.element import Element
 
 # Define which arguments belong to which platform
 _SERVER_ARGS = {"host", "port", "static_dir"}
@@ -276,13 +276,13 @@ class Trellis:
     """
 
     platform_type: PlatformType
-    top: Callable[[], ElementNode] | None
+    top: Callable[[], Element] | None
     _platform: Platform
     _args: _TrellisArgs
 
     def __init__(
         self,
-        top: Callable[[], ElementNode] | None = None,
+        top: Callable[[], Element] | None = None,
         *,
         platform: PlatformType | str | None = None,
         ignore_cli: bool = False,

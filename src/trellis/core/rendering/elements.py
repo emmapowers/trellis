@@ -1,6 +1,6 @@
 """Element storage for the render tree.
 
-ElementStore provides flat storage for ElementNode objects, keyed by ID.
+ElementStore provides flat storage for Element objects, keyed by ID.
 """
 
 from __future__ import annotations
@@ -8,13 +8,13 @@ from __future__ import annotations
 import typing as tp
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering.element import ElementNode
+    from trellis.core.rendering.element import Element
 
 __all__ = ["ElementStore"]
 
 
 class ElementStore:
-    """Flat storage for ElementNode objects, keyed by ID.
+    """Flat storage for Element objects, keyed by ID.
 
     Elements are stored in a dictionary and accessed by their position-based ID.
     This class provides a clean interface for element CRUD operations and
@@ -24,20 +24,20 @@ class ElementStore:
     __slots__ = ("_nodes",)
 
     def __init__(self) -> None:
-        self._nodes: dict[str, ElementNode] = {}
+        self._nodes: dict[str, Element] = {}
 
-    def get(self, node_id: str) -> ElementNode | None:
+    def get(self, node_id: str) -> Element | None:
         """Get a node by ID.
 
         Args:
             node_id: The node's ID
 
         Returns:
-            The ElementNode, or None if not found
+            The Element, or None if not found
         """
         return self._nodes.get(node_id)
 
-    def store(self, node: ElementNode) -> None:
+    def store(self, node: Element) -> None:
         """Store a node by its ID.
 
         Args:
@@ -53,14 +53,14 @@ class ElementStore:
         """
         self._nodes.pop(node_id, None)
 
-    def get_children(self, node: ElementNode) -> list[ElementNode]:
+    def get_children(self, node: Element) -> list[Element]:
         """Get child nodes for a parent node.
 
         Args:
             node: The parent node
 
         Returns:
-            List of child ElementNodes (looked up from storage)
+            List of child Elements (looked up from storage)
         """
         return [self._nodes[cid] for cid in node.child_ids if cid in self._nodes]
 
@@ -92,6 +92,6 @@ class ElementStore:
         """Iterate over node IDs."""
         return iter(self._nodes)
 
-    def items(self) -> tp.ItemsView[str, ElementNode]:
+    def items(self) -> tp.ItemsView[str, Element]:
         """Return items view of (node_id, node) pairs."""
         return self._nodes.items()

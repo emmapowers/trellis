@@ -224,13 +224,13 @@ Trellis splits work between Python and React. Python owns application state and 
 
 ### Core Concepts
 
-**Components produce a tree.** Python functions decorated with `@component` describe what the UI should look like. When executed, they produce a tree of `ElementNode` objects—a complete description of the current UI state.
+**Components produce a tree.** Python functions decorated with `@component` describe what the UI should look like. When executed, they produce a tree of `Element` objects—a complete description of the current UI state.
 
 **RenderSession manages the lifecycle.** The RenderSession orchestrates rendering, tracks which components need to re-render, reconciles changes when the tree updates, and maintains per-component state. It's the central coordinator between your components and the React client.
 
 **Reactive state drives updates.** State objects automatically track which components read them. When state changes, dependent components are marked dirty and re-render on the next frame. You modify state; the framework figures out what to update.
 
-**React renders the UI.** The ElementNode tree is serialized and sent to React, which renders it to the DOM. React handles the actual browser interaction—event listeners, DOM updates, accessibility.
+**React renders the UI.** The Element tree is serialized and sent to React, which renders it to the DOM. React handles the actual browser interaction—event listeners, DOM updates, accessibility.
 
 **Callbacks close the loop.** User interactions trigger callbacks that execute Python functions. Those functions modify state, which marks components dirty, which triggers re-renders, which sends updates back to React.
 

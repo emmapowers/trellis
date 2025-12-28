@@ -15,16 +15,16 @@ if tp.TYPE_CHECKING:
     from trellis.core.components.base import Component
 
 __all__ = [
-    "ElementNode",
+    "Element",
     "props_equal",
 ]
 
 
 @dataclass
-class ElementNode:
+class Element:
     """Mutable tree node representing a component invocation.
 
-    ElementNode represents component nodes in the render tree. It is mutable
+    Element represents component nodes in the render tree. It is mutable
     to allow in-place updates during rendering. Runtime state is stored
     separately in ElementState (keyed by node.id in RenderSession.states).
 
@@ -79,7 +79,7 @@ class ElementNode:
             props["child_ids"] = list(self.child_ids)
         return props
 
-    def __enter__(self) -> ElementNode:
+    def __enter__(self) -> Element:
         """Enter a `with` block to collect children for a container component.
 
         This validates that the component accepts children and that no children

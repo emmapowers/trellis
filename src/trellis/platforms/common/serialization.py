@@ -1,6 +1,6 @@
-"""Serialization of ElementNode trees for WebSocket transmission.
+"""Serialization of Element trees for WebSocket transmission.
 
-This module converts the server-side ElementNode trees to a JSON-serializable
+This module converts the server-side Element trees to a JSON-serializable
 format that can be sent to the client for rendering.
 
 Callbacks are replaced with IDs (node_id|prop_name) that the client can use
@@ -20,7 +20,7 @@ from trellis.core.components.composition import CompositionComponent
 from trellis.core.state.mutable import Mutable
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering.element import ElementNode
+    from trellis.core.rendering.element import Element
     from trellis.core.rendering.session import RenderSession
 
 
@@ -101,15 +101,15 @@ def _serialize_value(
     return str(value)
 
 
-def serialize_node(node: ElementNode, session: RenderSession) -> dict[str, tp.Any]:
-    """Convert an ElementNode to a serializable dict.
+def serialize_node(node: Element, session: RenderSession) -> dict[str, tp.Any]:
+    """Convert an Element to a serializable dict.
 
     The resulting structure can be JSON-encoded and sent to the client.
     Callbacks are replaced with `{"__callback__": "cb_123"}` references.
     Children are looked up from the flat node storage via child_ids.
 
     Args:
-        node: The ElementNode to serialize
+        node: The Element to serialize
         session: The RenderSession for callback registration and child lookup
 
     Returns:
@@ -164,13 +164,13 @@ def _serialize_props(
     return result
 
 
-def _serialize_node_props(node: ElementNode, session: RenderSession) -> dict[str, tp.Any]:
+def _serialize_node_props(node: Element, session: RenderSession) -> dict[str, tp.Any]:
     """Serialize just the props of a node (excluding child_ids).
 
     Used by rendering.py for inline patch generation to compare props.
 
     Args:
-        node: The ElementNode to serialize props from
+        node: The Element to serialize props from
         session: The RenderSession for callback registration
 
     Returns:

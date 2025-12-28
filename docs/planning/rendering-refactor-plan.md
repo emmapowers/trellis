@@ -6,14 +6,14 @@ This document describes the planned refactoring of Trellis's rendering, reconcil
 
 ### Core Data Structures
 
-**ElementNode** (`rendering.py:110`) - Immutable tree node:
+**Element** (`rendering.py:110`) - Immutable tree node:
 ```python
 @dataclass(frozen=True)
-class ElementNode:
+class Element:
     component: IComponent
     props: FrozenProps = ()
     key: str | None = None
-    children: tuple[ElementNode, ...] = ()  # Nested children
+    children: tuple[Element, ...] = ()  # Nested children
     id: str = ""  # Assigned during reconciliation
 ```
 
@@ -31,7 +31,7 @@ class ElementState:
 ```
 
 **RenderTree** (`rendering.py:292`) - Orchestrates rendering:
-- `root_node: ElementNode | None` - nested tree
+- `root_node: Element | None` - nested tree
 - `_element_state: dict[str, ElementState]` - mutable state by ID
 - `_dirty_ids: set[str]` - nodes needing re-render
 - `_frame_stack: list[Frame]` - for child collection in `with` blocks
@@ -42,7 +42,7 @@ class ElementState:
 ### Current Render Flow
 
 1. **Initial Render** (`RenderTree.render()`):
-   - `_render_node_tree()` creates root ElementNode via `root_component()`
+   - `_render_node_tree()` creates root Element via `root_component()`
    - `reconcile_node(None, root_node, ...)` assigns IDs and marks dirty
    - `_render_dirty_nodes()` loops until no dirty nodes remain
    - For each dirty node: execute component, collect children, reconcile children
@@ -153,7 +153,7 @@ with Column():           # /@{id(Column)}
 
 ```python
 @dataclass(frozen=True)
-class ElementNode:
+class Element:
     component: IComponent
     props: FrozenProps = ()
     key: str | None = None
@@ -163,8 +163,8 @@ class ElementNode:
 
 **Flat node storage** in RenderTree:
 ```python
-_nodes: dict[str, ElementNode]  # Current render
-_previous_nodes: dict[str, ElementNode]  # Previous render (for comparison)
+_nodes: dict[str, Element]  # Current render
+_previous_nodes: dict[str, Element]  # Previous render (for comparison)
 ```
 
 **Benefits**:
@@ -179,7 +179,7 @@ Children execute immediately when created inside `with` blocks, but with an opti
 
 ```python
 # In ComponentBase.__call__:
-def __call__(self, **props) -> ElementNode:
+def __call__(self, **props) -> Element:
     position_id = compute_position_id()  # From context
     old_node = tree.get_previous_node(position_id)
     is_dirty = tree.is_dirty(position_id)
@@ -190,7 +190,7 @@ def __call__(self, **props) -> ElementNode:
         return old_node  # Skip execution, reuse entire subtree
 
     # Create and execute
-    node = ElementNode(id=position_id, component=self, props=freeze(props))
+    node = Element(id=position_id, component=self, props=freeze(props))
     if is_composition_component:
         execute_body()  # Only if not reused
     tree.register_in_frame(node.id)
@@ -263,8 +263,8 @@ class ReconcileResult:
 def reconcile_children(
     old_child_ids: list[str],
     new_child_ids: list[str],
-    nodes: dict[str, ElementNode],
-    previous_nodes: dict[str, ElementNode],
+    nodes: dict[str, Element],
+    previous_nodes: dict[str, Element],
 ) -> ReconcileResult:
     """Pure function - no side effects, no RenderTree access."""
     ...
@@ -482,7 +482,7 @@ def clear(self) -> None:
 
 | Component | Single Responsibility |
 |-----------|----------------------|
-| `ElementNode` | Immutable node data (component, props, child_ids, id) |
+| `Element` | Immutable node data (component, props, child_ids, id) |
 | `ElementState` | Mutable runtime state (dirty, mounted, local_state, context) |
 | `RenderTree` | Orchestration, node storage, frame stack, dirty tracking |
 | `ComponentBase.__call__` | Position ID computation, reuse check, node creation |
@@ -496,8 +496,8 @@ def clear(self) -> None:
 ```python
 class RenderTree:
     # Node storage (flat)
-    _nodes: dict[str, ElementNode]           # Current render
-    _previous_nodes: dict[str, ElementNode]  # Previous render
+    _nodes: dict[str, Element]           # Current render
+    _previous_nodes: dict[str, Element]  # Previous render
 
     # Runtime state
     _element_state: dict[str, ElementState]  # Mutable state per node
@@ -527,8 +527,8 @@ This is a breaking change. No backwards compatibility needed.
 
 ### Phase 2: Flat Node Storage
 
-1. Change `ElementNode.children` to `ElementNode.child_ids`
-2. Add `_nodes: dict[str, ElementNode]` to RenderTree
+1. Change `Element.children` to `Element.child_ids`
+2. Add `_nodes: dict[str, Element]` to RenderTree
 3. Update node creation to store in flat dict
 4. Update tree walking to use ID lookups
 
@@ -555,7 +555,7 @@ This is a breaking change. No backwards compatibility needed.
 
 ## Open Questions
 
-1. **Frame collection**: Currently collects `ElementNode` objects. With eager execution, should collect IDs instead. Need to track position counter per frame for non-keyed children.
+1. **Frame collection**: Currently collects `Element` objects. With eager execution, should collect IDs instead. Need to track position counter per frame for non-keyed children.
 
 2. **Error handling**: If execution fails mid-render with inline patching, some patches may be generated for nodes that won't exist. May need rollback or transactional approach.
 
@@ -567,7 +567,7 @@ This is a breaking change. No backwards compatibility needed.
 
 | File | Changes |
 |------|---------|
-| `rendering.py` | `ElementNode.child_ids`, flat `_nodes`/`_previous_nodes`, position IDs, remove `_callback_registry`, remove `_previous_props`/`_previous_children`/`_removed_ids`, unified `render()` API, `clear()`, `get_pending_hooks()`, `get_callback()` derives from props |
+| `rendering.py` | `Element.child_ids`, flat `_nodes`/`_previous_nodes`, position IDs, remove `_callback_registry`, remove `_previous_props`/`_previous_children`/`_removed_ids`, unified `render()` API, `clear()`, `get_pending_hooks()`, `get_callback()` derives from props |
 | `reconcile.py` | Pure function returning `ReconcileResult`, no side effects, preserve head/tail/key optimizations |
 | `serialization.py` | Remove `compute_patches()`, simplify `serialize_node()` to `serialize_subtree()`, no callback registration |
 | `base_component.py` | Position ID computation via `compute_position_id()`, reuse check, call `tree.store_node()` |

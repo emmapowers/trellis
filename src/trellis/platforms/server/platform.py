@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import uvicorn
 
 if TYPE_CHECKING:
-    from trellis.core.rendering.element import ElementNode
+    from trellis.core.rendering.element import Element
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -72,7 +72,7 @@ class ServerPlatform(Platform):
 
     async def run(
         self,
-        root_component: Callable[[], ElementNode],
+        root_component: Callable[[], Element],
         *,
         host: str = "127.0.0.1",
         port: int | None = None,

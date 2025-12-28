@@ -28,9 +28,9 @@ Reactive UI framework for Python with fine-grained state tracking.
 ```
 src/trellis/
 ├── core/
-│   ├── rendering.py         # ElementNode, ElementState, RenderSession
+│   ├── rendering.py         # Element, ElementState, RenderSession
 │   ├── reconcile.py         # Tree reconciliation algorithm
-│   ├── serialization.py     # ElementNode tree serialization
+│   ├── serialization.py     # Element tree serialization
 │   ├── base_component.py    # Component base class
 │   ├── functional_component.py  # @component decorator
 │   ├── react_component.py   # ReactComponent base for widgets
@@ -41,8 +41,8 @@ src/trellis/
 
 ## Key Concepts
 
-- **ElementNode**: Immutable tree node representing a component invocation (component, props, key, children, id)
-- **ElementState**: Mutable runtime state for an ElementNode, keyed by node.id (dirty flag, local_state, context)
+- **Element**: Immutable tree node representing a component invocation (component, props, key, children, id)
+- **ElementState**: Mutable runtime state for an Element, keyed by node.id (dirty flag, local_state, context)
 - **RenderSession**: Manages the render lifecycle and node tree; tracks dirty nodes, handles re-rendering
 - **Stateful**: Base class for reactive state; properties auto-track which nodes read them
 - **FunctionalComponent**: Components created via `@component` decorator that use `with` syntax to collect children

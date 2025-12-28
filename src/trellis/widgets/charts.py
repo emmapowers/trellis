@@ -6,7 +6,7 @@ import typing as tp
 
 from trellis.core.components.react import react_component_base
 from trellis.core.components.style_props import Margin
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 
 
 @react_component_base("TimeSeriesChart")
@@ -24,7 +24,7 @@ def TimeSeriesChart(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """High-performance time-series chart using uPlot.
 
     Optimized for real-time data with high update frequencies.
@@ -50,7 +50,7 @@ def TimeSeriesChart(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the TimeSeriesChart component.
+        An Element for the TimeSeriesChart component.
 
     Example:
         TimeSeriesChart(
@@ -87,7 +87,7 @@ def LineChart(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Line chart using Recharts.
 
     General-purpose line chart for trend visualization.
@@ -112,7 +112,7 @@ def LineChart(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the LineChart component.
+        An Element for the LineChart component.
 
     Example:
         LineChart(
@@ -146,7 +146,7 @@ def BarChart(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Bar chart using Recharts.
 
     Categorical data comparison with vertical or horizontal bars.
@@ -170,7 +170,7 @@ def BarChart(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the BarChart component.
+        An Element for the BarChart component.
 
     Example:
         BarChart(
@@ -204,7 +204,7 @@ def AreaChart(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Area chart using Recharts.
 
     Line chart with filled area beneath, good for showing volume/magnitude.
@@ -228,7 +228,7 @@ def AreaChart(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the AreaChart component.
+        An Element for the AreaChart component.
     """
     ...
 
@@ -251,7 +251,7 @@ def PieChart(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Pie/donut chart using Recharts.
 
     Part-to-whole relationships. Set inner_radius > 0 for donut style.
@@ -275,7 +275,7 @@ def PieChart(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the PieChart component.
+        An Element for the PieChart component.
 
     Example:
         PieChart(
@@ -303,7 +303,7 @@ def Sparkline(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Inline mini-chart for compact data visualization.
 
     Ideal for use in tables, cards, or alongside metrics.
@@ -321,7 +321,7 @@ def Sparkline(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Sparkline component.
+        An Element for the Sparkline component.
 
     Example:
         Sparkline(data=[10, 20, 15, 25, 30, 28], color="#22c55e")

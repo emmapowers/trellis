@@ -6,7 +6,7 @@ Dense reference for `src/trellis/core/`. Read source for implementation details.
 
 ## Data Structures
 
-### ElementNode (`element_node.py`)
+### Element (`element_node.py`)
 - Tree node representing a component invocation
 - Fields: `component`, `props` (dict), `key`, `child_ids` (list), `id`, `_session_ref` (weakref)
 - Children stored flat by ID reference, not nested
@@ -62,7 +62,7 @@ Dense reference for `src/trellis/core/`. Read source for implementation details.
 - Same instance returned across re-renders (like React hooks)
 
 ### Dependency Tracking
-- `StatePropertyInfo` per property holds `watchers: WeakSet[ElementNode]`
+- `StatePropertyInfo` per property holds `watchers: WeakSet[Element]`
 - On property read during render: add current node to watchers
 - On property write (outside render only): iterate watchers, mark each dirty
 - WeakSet auto-cleans when nodes are replaced/GC'd
@@ -190,7 +190,7 @@ User action → EventMessage(callback_id, args)
 
 | File | Purpose |
 |------|---------|
-| `rendering.py` | ElementNode, ElementState, RenderSession, render lifecycle |
+| `rendering.py` | Element, ElementState, RenderSession, render lifecycle |
 | `reconcile.py` | Pure reconciliation algorithm |
 | `state.py` | Stateful base, dependency tracking, StatePropertyInfo |
 | `tracked.py` | TrackedList/Dict/Set for fine-grained collection reactivity |

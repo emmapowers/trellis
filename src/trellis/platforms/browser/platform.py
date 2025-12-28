@@ -10,7 +10,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from trellis.core.rendering.element import ElementNode
+    from trellis.core.rendering.element import Element
 
 from trellis.platforms.common.base import Platform
 
@@ -41,7 +41,7 @@ class BrowserPlatform(Platform):
 
     async def run(
         self,
-        root_component: Callable[[], ElementNode],
+        root_component: Callable[[], Element],
         *,
         batch_delay: float = 1.0 / 30,
         **kwargs: Any,

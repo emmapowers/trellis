@@ -1,4 +1,4 @@
-"""Tests for ElementNode tree serialization."""
+"""Tests for Element tree serialization."""
 
 from trellis.core.components.composition import component
 from trellis.core.rendering.render import render

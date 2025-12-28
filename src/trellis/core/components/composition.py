@@ -18,7 +18,7 @@ Example:
 
     # Container component (receives children)
     @component
-    def Card(title: str, children: list[ElementNode]) -> None:
+    def Card(title: str, children: list[Element]) -> None:
         with Column():
             Text(title)
             for child in children:
@@ -26,7 +26,7 @@ Example:
     ```
 
 The decorated function becomes a CompositionComponent that can be called
-to create ElementNodes and used in the component tree.
+to create Elements and used in the component tree.
 """
 
 from __future__ import annotations
@@ -108,7 +108,7 @@ class CompositionComponent(Component):
         """Render this component by calling the render function.
 
         For container components, `props['children']` contains a list of
-        ElementNodes. The render function should call `child()` on
+        Elements. The render function should call `child()` on
         each descriptor to mount it at the appropriate location.
 
         Args:
@@ -122,7 +122,7 @@ def component(render_func: RenderFunc) -> CompositionComponent:
     """Decorator to create a component from a render function.
 
     This is the primary way to define components in Trellis. The decorated
-    function becomes callable and returns ElementNodes when invoked.
+    function becomes callable and returns Elements when invoked.
 
     Args:
         render_func: A function that renders the component. Should accept
@@ -139,11 +139,11 @@ def component(render_func: RenderFunc) -> CompositionComponent:
             Text(f"Hello, {name}!")
 
         # Use it
-        Greeting(name="Alice")  # Creates ElementNode
+        Greeting(name="Alice")  # Creates Element
 
         # Container component
         @component
-        def Box(children: list[ElementNode]) -> None:
+        def Box(children: list[Element]) -> None:
             with Div(class_name="box"):
                 for child in children:
                     child()

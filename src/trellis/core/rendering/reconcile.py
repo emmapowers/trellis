@@ -1,5 +1,5 @@
 """
-React-like reconciliation algorithm for ElementNode trees.
+React-like reconciliation algorithm for Element trees.
 
 This module implements a reconciliation algorithm inspired by React's approach,
 used to efficiently update the node tree when components re-render. The goal
@@ -8,12 +8,12 @@ is to minimize mutations by reusing existing nodes where possible.
 ## Architecture
 
 The rendering system uses:
-- **ElementNode**: Immutable tree nodes with child_ids (references, not nested)
+- **Element**: Immutable tree nodes with child_ids (references, not nested)
 - **ElementState**: Mutable runtime state keyed by node ID (local_state, dirty flag, etc.)
 - **RenderSession._nodes**: Flat storage of all nodes by ID
 
 During reconciliation:
-1. **Node Creation**: Components produce ElementNode descriptors with IDs
+1. **Node Creation**: Components produce Element descriptors with IDs
 2. **Reconciliation/Execution**: Compare old/new child IDs, reconcile as needed
 
 ## Matching Strategy

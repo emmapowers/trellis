@@ -36,7 +36,7 @@ from collections.abc import Iterable, Iterator
 from typing import SupportsIndex
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering.element import ElementNode
+    from trellis.core.rendering.element import Element
     from trellis.core.state.stateful import Stateful
 
 from trellis.core.rendering.session import get_active_session, is_render_active
@@ -59,12 +59,12 @@ class _TrackedMixin:
     Attributes:
         _owner: Weak reference to the owning Stateful instance
         _attr: The attribute name on the owner this collection is stored in
-        _deps: Dict mapping dep_key -> WeakSet[ElementNode] for automatic cleanup
+        _deps: Dict mapping dep_key -> WeakSet[Element] for automatic cleanup
     """
 
     _owner: weakref.ref[Stateful] | None
     _attr: str
-    _deps: dict[tp.Any, weakref.WeakSet[ElementNode]]
+    _deps: dict[tp.Any, weakref.WeakSet[Element]]
 
     def __init__(self, owner: Stateful | None = None, attr: str = "") -> None:
         """Initialize tracking state.
@@ -100,7 +100,7 @@ class _TrackedMixin:
         Called during __getitem__, __iter__, etc. to track which nodes
         depend on which parts of the collection.
 
-        Uses WeakSet[ElementNode] so dependencies are automatically cleaned up
+        Uses WeakSet[Element] so dependencies are automatically cleaned up
         when nodes are replaced (on re-render) or removed (on unmount).
         """
         session = get_active_session()

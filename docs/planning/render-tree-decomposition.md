@@ -14,12 +14,12 @@ Replace monolithic `RenderTree` with composable, single-responsibility classes:
 #### NodeStore (`node_store.py`)
 ```python
 class NodeStore:
-    _nodes: dict[str, ElementNode]
+    _nodes: dict[str, Element]
 
-    def get(self, node_id: str) -> ElementNode | None
-    def store(self, node: ElementNode) -> None
+    def get(self, node_id: str) -> Element | None
+    def store(self, node: Element) -> None
     def remove(self, node_id: str) -> None
-    def get_children(self, node: ElementNode) -> list[ElementNode]
+    def get_children(self, node: Element) -> list[Element]
     def clone(self) -> NodeStore  # For old_nodes snapshot
     def clear(self) -> None
     def __len__(self) -> int
@@ -161,7 +161,7 @@ def get_callback(session: RenderSession, node_id: str, prop_name: str) -> Callab
 ### Modified Files
 | File | Changes |
 |------|---------|
-| `src/trellis/core/rendering.py` | Remove RenderTree, keep ElementNode/ElementState, add free functions for execution, update contextvar |
+| `src/trellis/core/rendering.py` | Remove RenderTree, keep Element/ElementState, add free functions for execution, update contextvar |
 | `src/trellis/core/__init__.py` | Export RenderSession instead of RenderTree |
 | `src/trellis/core/base_component.py` | Update to use RenderSession/ActiveRender |
 | `src/trellis/core/state.py` | Update get_active_render_tree → get_active_session |
@@ -182,7 +182,7 @@ def render(session: RenderSession) -> list[Patch]
 
 ### Private (underscore prefix)
 ```python
-def _eager_execute_node(session: RenderSession, node: ElementNode, parent_id: str | None, old_child_ids: list[str] | None) -> ElementNode
+def _eager_execute_node(session: RenderSession, node: Element, parent_id: str | None, old_child_ids: list[str] | None) -> Element
 def _render_single_node(session: RenderSession, node_id: str) -> None
 def _mount_node_tree(session: RenderSession, node_id: str) -> None
 def _unmount_node_tree(session: RenderSession, node_id: str) -> None
@@ -190,7 +190,7 @@ def _call_mount_hooks(session: RenderSession, node_id: str) -> None
 def _call_unmount_hooks(session: RenderSession, node_id: str) -> None
 def _process_pending_hooks(session: RenderSession) -> None
 def _emit_update_patch_if_changed(session: RenderSession, node_id: str) -> None
-def _serialize_node_for_patch(session: RenderSession, node: ElementNode) -> dict
+def _serialize_node_for_patch(session: RenderSession, node: Element) -> dict
 ```
 
 ## ContextVar Changes

@@ -10,7 +10,7 @@ from typing import Literal
 
 from trellis.core.components.react import react_component_base
 from trellis.core.components.style_props import Margin, Padding, Width
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -32,7 +32,7 @@ def Stat(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Display a key metric with label, value, and optional trend.
 
     Args:
@@ -65,7 +65,7 @@ def Tag(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Display a tag/chip label.
 
     Args:

@@ -168,7 +168,7 @@ sequenceDiagram
     CMH->>CMH: setConnectionState("connected")
 
     MH->>RT: render()
-    RT->>RT: _render_node_tree() - build ElementNode tree
+    RT->>RT: _render_node_tree() - build Element tree
     RT->>RT: _render_dirty_nodes() - execute components
     RT->>RT: serialize_node() - convert to dict
     RT->>RT: _populate_previous_state() - store for future diffs
@@ -329,7 +329,7 @@ sequenceDiagram
 | File | Key Exports | Role |
 |------|-------------|------|
 | `core/messages.py` | `Patch`, `AddPatch`, `UpdatePatch`, `RemovePatch`, `PatchMessage`, `RenderMessage` | Message/patch type definitions |
-| `core/rendering.py` | `RenderTree`, `ElementNode`, `ElementState` | Tree management, dirty tracking, render orchestration |
+| `core/rendering.py` | `RenderTree`, `Element`, `ElementState` | Tree management, dirty tracking, render orchestration |
 | `core/serialization.py` | `serialize_node()`, `compute_patches()` | Full serialization and incremental diff computation |
 | `core/message_handler.py` | `MessageHandler` | Batched render loop (30fps), message protocol |
 | `platforms/*/handler.py` | Platform-specific handlers | Transport only (WebSocket/PostMessage) |
@@ -546,10 +546,10 @@ The reconciler is both discovering changes AND executing responses (mount, unmou
 ```python
 @dataclass
 class ReconcileResult:
-    matched_unchanged: list[ElementNode]                    # Same props, keep as-is
-    matched_changed: list[tuple[ElementNode, ElementNode]]  # (old, new_descriptor), props differ
-    added: list[ElementNode]                                # New descriptors needing execution
-    removed: list[ElementNode]                              # Old nodes to cleanup
+    matched_unchanged: list[Element]                    # Same props, keep as-is
+    matched_changed: list[tuple[Element, Element]]  # (old, new_descriptor), props differ
+    added: list[Element]                                # New descriptors needing execution
+    removed: list[Element]                              # Old nodes to cleanup
     children_order: list[str | Literal["new"]]              # Final order template
 
 def reconcile_children(old_children, new_descriptors) -> ReconcileResult:
@@ -596,7 +596,7 @@ def process_reconcile_result(self, result: ReconcileResult, parent_id: str):
 New nodes execute immediately (not deferred via dirty marking) since they have no prior state:
 
 ```python
-def _execute_subtree(self, descriptor: ElementNode, parent_id: str) -> ElementNode:
+def _execute_subtree(self, descriptor: Element, parent_id: str) -> Element:
     """Execute a new node and all descendants, returning fully built subtree."""
     node_id = self.next_element_id()
     node = dataclass_replace(descriptor, id=node_id)
@@ -732,10 +732,10 @@ No add/remove, just parent's children list changes.
 ```python
 @dataclass
 class ReconcileResult:
-    matched_unchanged: list[ElementNode]                    # Keep as-is
-    matched_changed: list[tuple[ElementNode, ElementNode]]  # Needs re-execution
-    added: list[ElementNode]                                # New descriptors
-    removed: list[ElementNode]                              # To cleanup
+    matched_unchanged: list[Element]                    # Keep as-is
+    matched_changed: list[tuple[Element, Element]]  # Needs re-execution
+    added: list[Element]                                # New descriptors
+    removed: list[Element]                              # To cleanup
     children_order: list[str | Literal["new"]]              # Template for final order
 ```
 
@@ -746,9 +746,9 @@ Reconciler does prop comparison, renderer just acts on decisions.
 ```python
 @dataclass
 class ReconcileResult:
-    matched: list[tuple[ElementNode, ElementNode]]  # (old, new), renderer compares
-    added: list[ElementNode]
-    removed: list[ElementNode]
+    matched: list[tuple[Element, Element]]  # (old, new), renderer compares
+    added: list[Element]
+    removed: list[Element]
     children_order: list[str | Literal["new"]]
 ```
 
@@ -884,7 +884,7 @@ def App():
 
 #### Phase 1: Initial Tree Build (in `_render_node_tree`)
 
-1. `App()` called → `_place()` creates `ElementNode(component=App, id="", children=())`
+1. `App()` called → `_place()` creates `Element(component=App, id="", children=())`
 2. `reconcile_node(None, app_descriptor)` → `mount_new_node()` → assigns ID `"e1"`, marks dirty
 
 #### Phase 2: Dirty Node Processing (in `_render_dirty_nodes`)
@@ -932,7 +932,7 @@ def App():
 
 ### The Core Complexity: Dual Nature of `node.children`
 
-`ElementNode.children` can be in **two different states**:
+`Element.children` can be in **two different states**:
 
 | State | Has IDs? | Source | Meaning |
 |-------|----------|--------|---------|
@@ -1047,7 +1047,7 @@ The inline patch design addresses #1-3 via eager execution. For #4-5, separate c
 
 While exploring the inline patch generation design, we identified deeper complexity in the component rendering model. The core issues:
 
-1. **`ElementNode.children` has dual meaning**: Sometimes descriptors (from `with` blocks, no IDs), sometimes mounted nodes (with IDs after reconciliation).
+1. **`Element.children` has dual meaning**: Sometimes descriptors (from `with` blocks, no IDs), sometimes mounted nodes (with IDs after reconciliation).
 
 2. **"Mounted but not executed" intermediate state**: A node can have an ID but its children are still descriptors.
 
@@ -1174,8 +1174,8 @@ nodes: Map<string, NodeData>  // ID → {type, props, childIds}
 The server currently uses nested trees:
 ```python
 @dataclass
-class ElementNode:
-    children: tuple[ElementNode, ...]  # Nested
+class Element:
+    children: tuple[Element, ...]  # Nested
 ```
 
 **Proposal:** Server also uses flat store:
@@ -1279,8 +1279,8 @@ Two types of components with different client behavior:
 | ID format | Sequential (`e1`, `e2`) | Path-based (`/0/1/:key`) |
 | ID assignment | At mount (reconciliation) | At creation (render context) |
 | ID stability | Based on mount order | Based on position/key |
-| Node storage | Nested `ElementNode` tree | Flat `dict[str, NodeData]` |
-| Children field | `children: tuple[ElementNode]` | `child_ids: tuple[str]` (refs) |
+| Node storage | Nested `Element` tree | Flat `dict[str, NodeData]` |
+| Children field | `children: tuple[Element]` | `child_ids: tuple[str]` (refs) |
 | Children semantics | Descriptors or mounted nodes | Always refs to rendered nodes |
 | Reconciliation | Multi-phase component+key matching | ID lookup (position is identity) |
 | Serialization | Recursive tree → nested dict | Flat store → flat dict |

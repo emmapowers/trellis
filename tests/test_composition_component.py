@@ -1,7 +1,7 @@
 """Tests for trellis.core.composition_component module."""
 
 from trellis.core.components.composition import CompositionComponent, component
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
 
@@ -24,7 +24,7 @@ class TestCompositionComponent:
         render(ctx)
 
         assert ctx.root_element is not None
-        assert isinstance(ctx.root_element, ElementNode)
+        assert isinstance(ctx.root_element, Element)
         assert ctx.root_element.component == Parent
 
     def test_nested_components(self) -> None:

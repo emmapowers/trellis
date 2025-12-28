@@ -12,7 +12,7 @@ from collections.abc import Callable
 from typing import ParamSpec
 
 from trellis.core.components.base import Component, ElementKind
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 
 __all__ = [
     "HtmlElement",
@@ -95,7 +95,7 @@ def html_element(
     *,
     is_container: bool = False,
     name: str | None = None,
-) -> Callable[[Callable[P, tp.Any]], Callable[P, ElementNode]]:
+) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]:
     """Decorator to create an HtmlElement from a function signature.
 
     This is the standard way to define HTML elements. The function body is
@@ -109,7 +109,7 @@ def html_element(
             internal functions prefixed with underscore.
 
     Returns:
-        A decorator that creates a callable returning ElementNodes
+        A decorator that creates a callable returning Elements
 
     Example:
         ```python
@@ -118,7 +118,7 @@ def html_element(
             *,
             className: str | None = None,
             style: Style | None = None,
-        ) -> ElementNode:
+        ) -> Element:
             '''A div container element.'''
             ...  # Body ignored
 
@@ -133,7 +133,7 @@ def html_element(
 
     def decorator(
         func: Callable[P, tp.Any],
-    ) -> Callable[P, ElementNode]:
+    ) -> Callable[P, Element]:
         # Use provided name or function name
         element_name = name or func.__name__
 
@@ -146,7 +146,7 @@ def html_element(
         _singleton = _Generated(element_name)
 
         @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> ElementNode:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element:
             return _singleton._place(**kwargs)
 
         # Expose the underlying component for introspection

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.html.base import Style, html_element
 
 __all__ = [
@@ -25,7 +25,7 @@ def Ul(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An unordered list element."""
     ...
 
@@ -39,7 +39,7 @@ def Ol(
     start: int | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An ordered list element."""
     ...
 
@@ -53,7 +53,7 @@ def _Li(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A list item element."""
     ...
 
@@ -65,7 +65,7 @@ def Li(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A list item element.
 
     Can be used as text-only or as a container:

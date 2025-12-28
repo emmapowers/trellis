@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import pytest
 
 from trellis.core.components.composition import component
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.core.components.react import ReactComponentBase, react_component_base
 from trellis.core.rendering.render import render
 from trellis.platforms.common.serialization import serialize_node
@@ -140,10 +140,10 @@ class TestReactComponentBaseDecorator:
     """Tests for the @react_component_base decorator."""
 
     def test_decorator_creates_callable(self) -> None:
-        """Decorator creates a callable that returns ElementNode."""
+        """Decorator creates a callable that returns Element."""
 
         @react_component_base("TestWidget")
-        def TestWidget(value: int = 0) -> ElementNode:
+        def TestWidget(value: int = 0) -> Element:
             """Test widget."""
             ...
 
@@ -162,7 +162,7 @@ class TestReactComponentBaseDecorator:
         """Decorator preserves function name and docstring."""
 
         @react_component_base("MyWidget")
-        def MyWidget(x: int = 0) -> ElementNode:
+        def MyWidget(x: int = 0) -> Element:
             """My widget docstring."""
             ...
 
@@ -173,7 +173,7 @@ class TestReactComponentBaseDecorator:
         """Decorator creates components with _has_children False by default."""
 
         @react_component_base("LeafWidget")
-        def LeafWidget() -> ElementNode:
+        def LeafWidget() -> Element:
             ...
 
         # Access the underlying component
@@ -183,7 +183,7 @@ class TestReactComponentBaseDecorator:
         """Decorator can create container components."""
 
         @react_component_base("ContainerWidget", has_children=True)
-        def ContainerWidget() -> ElementNode:
+        def ContainerWidget() -> Element:
             ...
 
         assert ContainerWidget._component._has_children_param is True
@@ -192,7 +192,7 @@ class TestReactComponentBaseDecorator:
         """Decorated function exposes _component for introspection."""
 
         @react_component_base("Widget")
-        def Widget() -> ElementNode:
+        def Widget() -> Element:
             ...
 
         assert hasattr(Widget, "_component")

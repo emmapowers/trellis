@@ -25,7 +25,7 @@ from starlette.staticfiles import StaticFiles
 if TYPE_CHECKING:
     from starlette.requests import Request
 
-    from trellis.core.rendering.element import ElementNode
+    from trellis.core.rendering.element import Element
 
 from trellis.bundler import CORE_PACKAGES, BundleConfig, build_bundle
 from trellis.platforms.common import find_available_port
@@ -207,7 +207,7 @@ class BrowserServePlatform(Platform):
 
     async def run(
         self,
-        root_component: Callable[[], ElementNode],
+        root_component: Callable[[], Element],
         **kwargs: Any,
     ) -> None:
         """Build and serve static files for browser testing.

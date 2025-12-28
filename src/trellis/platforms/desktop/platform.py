@@ -21,7 +21,7 @@ from trellis.platforms.desktop.handler import PyTauriMessageHandler
 
 if TYPE_CHECKING:
     from trellis.core.components.base import Component
-    from trellis.core.rendering.element import ElementNode
+    from trellis.core.rendering.element import Element
 
 _console = Console()
 
@@ -140,7 +140,7 @@ class DesktopPlatform(Platform):
 
     async def run(
         self,
-        root_component: Callable[[], ElementNode],
+        root_component: Callable[[], Element],
         *,
         window_title: str = "Trellis App",
         window_width: int = 1024,

@@ -8,7 +8,7 @@ Components:
     - `component`: Decorator to create components from functions
 
 Rendering:
-    - `ElementNode`: Immutable tree node representing a component invocation
+    - `Element`: Immutable tree node representing a component invocation
     - `ElementState`: Mutable runtime state for a node (keyed by node.id)
     - `RenderSession`: Manages the render lifecycle and node tree
 
@@ -53,7 +53,7 @@ from trellis.core.components import (
 
 # Rendering
 from trellis.core.rendering import (
-    ElementNode,
+    Element,
     ElementState,
     RenderSession,
     render,
@@ -77,7 +77,7 @@ from trellis.platforms.common.handler import MessageHandler
 __all__ = [
     "Component",
     "CompositionComponent",
-    "ElementNode",
+    "Element",
     "ElementState",
     "Height",
     "Margin",

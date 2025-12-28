@@ -37,7 +37,7 @@ from trellis.core.components.base import Component, ElementKind
 from trellis.core.components.style_props import Height, Margin, Padding, Width
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering.element import ElementNode
+    from trellis.core.rendering.element import Element
 
 __all__ = ["ReactComponentBase", "react_component_base"]
 
@@ -178,7 +178,7 @@ def react_component_base(
     element_name: str,
     *,
     has_children: bool = False,
-) -> Callable[[Callable[P, tp.Any]], Callable[P, ElementNode]]:
+) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]:
     """Decorator to create a ReactComponentBase from a function signature.
 
     This is the simplest way to define React components. The function body is
@@ -193,7 +193,7 @@ def react_component_base(
         has_children: Whether this component accepts children via `with` block
 
     Returns:
-        A decorator that creates a callable returning ElementNodes
+        A decorator that creates a callable returning Elements
 
     Example:
         ```python
@@ -204,7 +204,7 @@ def react_component_base(
             on_click: Callable[[], None] | None = None,
             disabled: bool = False,
             key: str | None = None,
-        ) -> ElementNode:
+        ) -> Element:
             '''Clickable button widget.'''
             ...  # Body ignored
 
@@ -218,7 +218,7 @@ def react_component_base(
 
     def decorator(
         func: Callable[P, tp.Any],
-    ) -> Callable[P, ElementNode]:
+    ) -> Callable[P, Element]:
         # Create a generated class with the function's name
         class _Generated(ReactComponentBase):
             _element_name = element_name
@@ -228,7 +228,7 @@ def react_component_base(
         _singleton = _Generated(func.__name__)
 
         @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> ElementNode:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element:
             # Widgets only accept keyword arguments, so args should be empty
             return _singleton._place(**_merge_style_props(dict(kwargs)))
 

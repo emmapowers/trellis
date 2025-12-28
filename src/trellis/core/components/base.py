@@ -4,7 +4,7 @@ This module provides the abstract Component base class that all components
 inherit from. Components are the building blocks of Trellis UIs.
 
 The Component class implements the IComponent protocol and provides:
-- `__call__()`: Creates an ElementNode with eager execution
+- `__call__()`: Creates an Element with eager execution
 - `render()`: Abstract method that subclasses implement for rendering
 
 The eager execution model:
@@ -25,7 +25,7 @@ Example:
 
 See Also:
     - `CompositionComponent`: Concrete implementation using decorated functions
-    - `ElementNode`: The node type returned by `__call__()`
+    - `Element`: The node type returned by `__call__()`
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ import weakref
 from abc import ABC, abstractmethod
 from enum import StrEnum
 
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.core.rendering.session import get_active_session
 from trellis.utils.logger import logger
 
@@ -64,7 +64,7 @@ class Component(ABC):
     Components define reusable UI elements. They follow a two-phase rendering model:
 
     1. **Placement Phase**: When called (e.g., `Button(text="Click")`), creates an
-       immutable ElementNode that describes the component invocation.
+       immutable Element that describes the component invocation.
 
     2. **Render Phase**: When the reconciler determines this component needs to
        render, it calls `render()` which produces child descriptors.
@@ -111,7 +111,7 @@ class Component(ABC):
         """
         return False
 
-    def _place(self, /, **props: tp.Any) -> ElementNode:
+    def _place(self, /, **props: tp.Any) -> Element:
         """Place this component with eager execution.
 
         This implements the eager execution model:
@@ -128,7 +128,7 @@ class Component(ABC):
                 is extracted for reconciliation and not passed to `render()`.
 
         Returns:
-            An immutable ElementNode describing this component invocation.
+            An immutable Element describing this component invocation.
 
         Example:
             ```python
@@ -188,7 +188,7 @@ class Component(ABC):
             # reconciliation (old vs new child_ids would be identical).
             if self._has_children_param:
                 logger.debug("Creating new node for container %s (preserving snapshot)", self.name)
-                node = ElementNode(
+                node = Element(
                     component=self,
                     _session_ref=weakref.ref(session),
                     render_count=session.render_count,
@@ -210,7 +210,7 @@ class Component(ABC):
             return old_node
 
         # Create new node
-        node = ElementNode(
+        node = Element(
             component=self,
             _session_ref=weakref.ref(session),
             render_count=session.render_count,
@@ -229,8 +229,8 @@ class Component(ABC):
 
         return node
 
-    def __call__(self, /, **props: tp.Any) -> ElementNode:
-        """Create an ElementNode for this component invocation.
+    def __call__(self, /, **props: tp.Any) -> Element:
+        """Create an Element for this component invocation.
 
         Delegates to _place(). This is the standard way to invoke a component.
 
@@ -238,7 +238,7 @@ class Component(ABC):
             **props: Properties to pass to the component.
 
         Returns:
-            An immutable ElementNode describing this component invocation.
+            An immutable Element describing this component invocation.
         """
         return self._place(**props)
 

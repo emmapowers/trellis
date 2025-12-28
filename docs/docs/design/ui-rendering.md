@@ -23,7 +23,7 @@ title: UI and Rendering
    - [Using @react_component Decorator](#using-react_component-decorator)
    - [Using @react_component_from_files](#using-react_component_from_files)
 5. [Element Tree Architecture](#element-tree-architecture)
-   - [ElementNode](#elementnode)
+   - [Element](#elementnode)
    - [ElementState](#elementstate)
    - [RenderTree](#rendertree)
 6. [Rendering Pipeline](#rendering-pipeline)
@@ -83,7 +83,7 @@ Trellis applications run as a Python server that owns application state and rend
 
 **Key concepts:**
 - **Components** are factories for creating different types of UI elements (HTML elements, React components, etc.)
-- Component instances create **ElementNodes** that form a tree describing the UI
+- Component instances create **Elements** that form a tree describing the UI
 - The **RenderTree** reconciles changes and tracks which nodes are dirty
 - Only changed components re-render; unchanged subtrees are skipped
 - A **diff algorithm** generates minimal patches sent to the client
@@ -117,7 +117,7 @@ The document covers each of these concepts in detail: component types, tree arch
 
 ### What is a Component?
 
-A component is a factory that produces nodes in the UI tree. When called, a component creates an `ElementNode` describing what should be rendered at that position in the tree.
+A component is a factory that produces nodes in the UI tree. When called, a component creates an `Element` describing what should be rendered at that position in the tree.
 
 There are three types of components in Trellis:
 
@@ -196,7 +196,7 @@ def UserCard(user: User, on_delete: Callable[[str], None]) -> None:
 
 **Children and context blocks:**
 
-When components are called inside a `with` block, they are collected as children and passed to the parent component. The parent component receives these as `ElementNode` objects and controls where they appear in the tree by calling them.
+When components are called inside a `with` block, they are collected as children and passed to the parent component. The parent component receives these as `Element` objects and controls where they appear in the tree by calling them.
 
 ```python
 @component
@@ -207,7 +207,7 @@ def MyApp():
         WidgetC()
 
 @component
-def Column(children: list[ElementNode]):
+def Column(children: list[Element]):
     with h.Div(style={"display": "flex", "flexDirection": "column"}):
         for child in children:
             child()  # Position child here in the tree
@@ -217,11 +217,11 @@ def Column(children: list[ElementNode]):
 
 The RenderTree uses a "frame" mechanism to collect children during `with` blocks:
 
-1. **Frame stack:** RenderTree maintains a stack of frames. Each frame collects ElementNodes created within its scope.
+1. **Frame stack:** RenderTree maintains a stack of frames. Each frame collects Elements created within its scope.
 
 2. **Entering a block:** When `with Column():` runs, a new frame is pushed onto the stack before entering the `with` block.
 
-3. **Child creation:** Components called inside the block (WidgetA, WidgetB, WidgetC) create `ElementNode` objects that are added to the current (topmost) frame.
+3. **Child creation:** Components called inside the block (WidgetA, WidgetB, WidgetC) create `Element` objects that are added to the current (topmost) frame.
 
 4. **Exiting the block:** When the `with` block exits, the frame is popped. The collected children are passed to the parent component as the `children` prop.
 
@@ -282,7 +282,7 @@ def Button(
     text: str = "",
     on_click: Callable[[], None] | None = None,
     disabled: bool = False,
-) -> ElementNode:
+) -> Element:
     """A button widget."""
     ...
 ```
@@ -299,7 +299,7 @@ This decorator:
 def Card(
     title: str | None = None,
     elevated: bool = False,
-) -> ElementNode:
+) -> Element:
     """A card container widget."""
     ...
 
@@ -326,7 +326,7 @@ Both of these build on `@react_component_base` and add registry/bundling capabil
 class SomeReactComponent(ReactComponentBase):
     name: str = "Button"
 
-    def __call__(self, text: str, on_click: Callable[[], None] | None = None) -> ElementNode:
+    def __call__(self, text: str, on_click: Callable[[], None] | None = None) -> Element:
         ...
 ```
 
@@ -377,7 +377,7 @@ HTML elements are defined using the `@html_element` decorator, which follows the
 
 ```python
 from trellis.html.base import html_element, Style
-from trellis.core.rendering import ElementNode
+from trellis.core.rendering import Element
 
 @html_element("div", is_container=True)
 def Div(
@@ -387,7 +387,7 @@ def Div(
     id: str | None = None,
     key: str | None = None,
     **props: Any,
-) -> ElementNode:
+) -> Element:
     """A div container element."""
     ...
 ```
@@ -546,7 +546,7 @@ def Button(
     disabled: bool = False,
     variant: Literal["primary", "secondary", "outline", "ghost", "danger"] = "primary",
     size: Literal["sm", "md", "lg"] = "md",
-) -> ElementNode:
+) -> Element:
     """Button component - implementation in Button.tsx"""
     ...
 ```
@@ -615,7 +615,7 @@ The function body typically contains `...` (ellipsis) since the implementation l
 def Button(
     text: str,
     variant: str = "primary",
-) -> ElementNode:
+) -> Element:
     """Button with runtime validation"""
     # Runtime validation beyond type checking
     if variant not in ["primary", "secondary", "danger"]:
@@ -646,15 +646,15 @@ Both `@react_component` and `@react_component_from_files` register components in
 
 ## Element Tree Architecture
 
-The element tree is represented by two separate concerns: structure (ElementNode) and runtime state (ElementState).
+The element tree is represented by two separate concerns: structure (Element) and runtime state (ElementState).
 
-### ElementNode
+### Element
 
-ElementNode represents a node in the component tree - what component to render, with what props, and what children.
+Element represents a node in the component tree - what component to render, with what props, and what children.
 
 ```python
 @dataclass
-class ElementNode:
+class Element:
     component: Component          # The component definition
     props: dict[str, Any]         # Component properties
     key: str | None = None        # Optional key for reconciliation
@@ -671,7 +671,7 @@ class ElementNode:
 **Usage:**
 ```python
 # Created when component is called
-node = ElementNode(
+node = Element(
     component=Button,
     props={"text": "Click", "on_click": handler},
     id="/@root/0@Button"
@@ -680,7 +680,7 @@ node = ElementNode(
 
 ### ElementState
 
-ElementState holds per-node runtime state - dirty flags, lifecycle status, and cached Stateful instances. Stored separately from the tree, keyed by ElementNode.id.
+ElementState holds per-node runtime state - dirty flags, lifecycle status, and cached Stateful instances. Stored separately from the tree, keyed by Element.id.
 
 ```python
 @dataclass
@@ -718,7 +718,7 @@ RenderTree (formerly RenderContext) orchestrates rendering, reconciliation, and 
 
 ```python
 class RenderTree:
-    root_node: ElementNode | None               # Current tree root
+    root_node: Element | None               # Current tree root
     _element_state: dict[str, ElementState]     # State by node ID
     _callback_registry: dict[str, Callable]     # Callback ID → function
     _dirty_ids: set[str]                        # Elements needing render
@@ -762,23 +762,23 @@ del self._element_state[node.id]
 
 ### How Components Become Nodes
 
-When you call a component, it creates an ElementNode describing what should be rendered:
+When you call a component, it creates an Element describing what should be rendered:
 
 ```python
 @component
 def Greeting(name: str) -> None:
     h.P(f"Hello, {name}!")
 
-# Calling the component creates an ElementNode
+# Calling the component creates an Element
 node = Greeting(name="Alice")
-# node is ElementNode(component=Greeting, props={"name": "Alice"})
+# node is Element(component=Greeting, props={"name": "Alice"})
 # The function body hasn't run yet
 ```
 
 **For React components:**
 ```python
 button = Button(text="Click", on_click=handler)
-# button is ElementNode(component=Button, props={...})
+# button is Element(component=Button, props={...})
 ```
 
 **Context-Manager Collection:**
@@ -788,7 +788,7 @@ with Card():          # Card().__enter__() starts collection
     Button("B")       # Creates node, adds to collection
                       # Card().__exit__() creates Card node with children
 
-# Result: ElementNode(component=Card, children=(Button_A, Button_B))
+# Result: Element(component=Card, children=(Button_A, Button_B))
 ```
 
 The component function doesn't execute when called—it only creates a node descriptor. The actual rendering happens later in the RenderTree.
@@ -801,7 +801,7 @@ The component function doesn't execute when called—it only creates a node desc
 1. **Clear callbacks:** Previous render's callbacks are invalid
 2. **Loop until no dirty nodes remain:**
    - Pick a dirty node
-   - Render the node → component function executes, produces updated ElementNode
+   - Render the node → component function executes, produces updated Element
    - Reconcile old node vs new node
    - Reconciliation compares children and marks changed children dirty (but doesn't render them yet)
    - Update tree structure (swap old/new nodes, add/remove children)
@@ -812,7 +812,7 @@ The component function doesn't execute when called—it only creates a node desc
 
 **Rendering Logic:**
 ```python
-def should_render(old_node: ElementNode | None, new_node: ElementNode) -> bool:
+def should_render(old_node: Element | None, new_node: Element) -> bool:
     if old_node is None:
         return True  # New mount
     if old_node.component != new_node.component:
@@ -894,7 +894,7 @@ If no elements are dirty, render is skipped entirely.
 
 ## Reconciliation Algorithm
 
-Reconciliation is the process of matching new ElementNodes (produced by rendering) to existing ElementNodes in the tree, preserving IDs and state for unchanged components.
+Reconciliation is the process of matching new Elements (produced by rendering) to existing Elements in the tree, preserving IDs and state for unchanged components.
 
 ### Tree Matching Strategy
 
@@ -906,9 +906,9 @@ The reconciler walks both trees simultaneously, matching nodes using:
 **High-Level Algorithm:**
 ```python
 def reconcile(
-    old_children: tuple[ElementNode, ...],
-    new_children: tuple[ElementNode, ...]
-) -> tuple[ElementNode, ...]:
+    old_children: tuple[Element, ...],
+    new_children: tuple[Element, ...]
+) -> tuple[Element, ...]:
     # 1. Head scan: match from start
     # 2. Tail scan: match from end
     # 3. Key-based matching: use keys for middle
@@ -1005,7 +1005,7 @@ items = ["C", "A", "B"]
 When nodes match, the new node receives the old node's ID:
 
 ```python
-def preserve_id(old_node: ElementNode, new_node: ElementNode) -> ElementNode:
+def preserve_id(old_node: Element, new_node: Element) -> Element:
     return dataclass.replace(new_node, id=old_node.id)
 ```
 
@@ -1028,7 +1028,7 @@ This ensures:
 **Mount:**
 When a new node appears (no match in old tree):
 ```python
-def mount_node(node: ElementNode) -> ElementNode:
+def mount_node(node: Element) -> Element:
     # Assign new ID
     node_id = self.next_id()
     node = dataclass.replace(node, id=node_id)
@@ -1048,7 +1048,7 @@ def mount_node(node: ElementNode) -> ElementNode:
 **Unmount:**
 When an old node has no match in new tree:
 ```python
-def unmount_node(node: ElementNode) -> None:
+def unmount_node(node: Element) -> None:
     # Recursively unmount children
     for child in node.children:
         unmount_node(child)
@@ -1089,7 +1089,7 @@ The diff algorithm compares these trees and produces a patch describing changes.
 
 **Diff Strategy:**
 ```python
-def diff_tree(old: ElementNode, new: ElementNode) -> Patch | None:
+def diff_tree(old: Element, new: Element) -> Patch | None:
     # Same ID means potentially same node
     if old.id != new.id:
         return Replace(new)  # Different node, full replace
@@ -1134,7 +1134,7 @@ class Update:
 ```python
 @dataclass
 class Replace:
-    node: ElementNode  # New node tree
+    node: Element  # New node tree
 ```
 
 3. **Insert:** Add new child
@@ -1142,7 +1142,7 @@ class Replace:
 @dataclass
 class Insert:
     index: int         # Where to insert
-    node: ElementNode  # What to insert
+    node: Element  # What to insert
 ```
 
 4. **Remove:** Delete child
@@ -1426,7 +1426,7 @@ Button(text="Click", on_click=on_click)
 
 **Serialization:**
 ```python
-def serialize_element(node: ElementNode) -> dict:
+def serialize_element(node: Element) -> dict:
     props = {}
     for key, value in node.props.items():
         if callable(value):
@@ -1586,11 +1586,11 @@ Button(text="Save", on_click=on_save)
 
 ### Tree Serialization
 
-The RenderTree serializes ElementNodes to JSON-compatible dictionaries:
+The RenderTree serializes Elements to JSON-compatible dictionaries:
 
 ```python
-def serialize_element(node: ElementNode) -> dict:
-    """Serialize an ElementNode to JSON-compatible dict."""
+def serialize_element(node: Element) -> dict:
+    """Serialize an Element to JSON-compatible dict."""
     return {
         "type": get_component_type(node.component),  # "functional"|"react"|"html"
         "name": get_component_name(node.component),  # Component/tag name
@@ -1674,7 +1674,7 @@ class HelloResponseMessage:
 @dataclass
 class RenderMessage:
     type: Literal["render"] = "render"
-    tree: dict  # Serialized ElementNode tree
+    tree: dict  # Serialized Element tree
 ```
 
 4. **PatchMessage (server → client):**
@@ -1781,7 +1781,7 @@ def MyComponent():
 For React components defined with `@react_component_from_files`, using `...` makes it clear the function body isn't meant to execute:
 ```python
 @react_component_from_files(sources=["Button.tsx"])
-def Button(text: str) -> ElementNode:
+def Button(text: str) -> Element:
     ...  # Clear: implementation is in .tsx file
 ```
 
@@ -1794,7 +1794,7 @@ Type hints enable comprehensive type checking with mypy or similar tools.
 **Missing required props:**
 ```python
 @react_component_from_files(sources=["Input.tsx"])
-def Input(value: str, on_change: Callable[[str], None]) -> ElementNode:
+def Input(value: str, on_change: Callable[[str], None]) -> Element:
     ...
 
 # Type error: missing required arguments
@@ -1822,7 +1822,7 @@ Input(value="", on_change=correct_handler)
 **Invalid Literal values:**
 ```python
 @react_component_from_files(sources=["Button.tsx"])
-def Button(variant: Literal["primary", "secondary", "danger"] = "primary") -> ElementNode:
+def Button(variant: Literal["primary", "secondary", "danger"] = "primary") -> Element:
     ...
 
 # Type error: invalid literal
@@ -1896,7 +1896,7 @@ The reconciler detects duplicate keys within siblings and warns the developer.
 @react_component_from_files(
     sources=["components/MyButton.tsx"]  # Exports "MyButton"
 )
-def Button(...) -> ElementNode:  # Function named "Button"
+def Button(...) -> Element:  # Function named "Button"
     ...
 
 # RuntimeError at bundle time: No export named "Button" found in MyButton.tsx
@@ -1911,7 +1911,7 @@ Optional runtime validation in function body:
 def Button(
     text: str,
     variant: str = "primary",
-) -> ElementNode:
+) -> Element:
     # Runtime validation beyond type checking
     if variant not in ["primary", "secondary", "danger", "ghost"]:
         raise ValueError(f"Invalid variant: {variant}")
@@ -1937,7 +1937,7 @@ These examples show how multiple layers work together:
 **Example 1: Wrong callback signature**
 ```python
 @react_component_from_files(sources=["Input.tsx"])
-def Input(on_change: Callable[[str], None]) -> ElementNode:
+def Input(on_change: Callable[[str], None]) -> Element:
     ...
 
 def handler():  # Wrong: missing str parameter
@@ -2007,7 +2007,7 @@ This section tracks which features from this design are implemented versus plann
 
 **Core Rendering:**
 
-- ElementNode (tree nodes with props and child references)
+- Element (tree nodes with props and child references)
 - ElementState (runtime state per node)
 - RenderSession (orchestrates rendering, reconciliation, lifecycle)
 - Frame-based child collection during `with` blocks

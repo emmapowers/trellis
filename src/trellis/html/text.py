@@ -8,7 +8,7 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.components.base import Component, ElementKind
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.html.base import Style, html_element
 
 __all__ = [
@@ -67,7 +67,7 @@ def _P(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A paragraph element."""
     ...
 
@@ -81,7 +81,7 @@ def _H1(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A level 1 heading."""
     ...
 
@@ -95,7 +95,7 @@ def _H2(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A level 2 heading."""
     ...
 
@@ -109,7 +109,7 @@ def _H3(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A level 3 heading."""
     ...
 
@@ -123,7 +123,7 @@ def _H4(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A level 4 heading."""
     ...
 
@@ -137,7 +137,7 @@ def _H5(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A level 5 heading."""
     ...
 
@@ -151,7 +151,7 @@ def _H6(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A level 6 heading."""
     ...
 
@@ -164,7 +164,7 @@ def _Strong(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A strong (bold) text element."""
     ...
 
@@ -177,7 +177,7 @@ def _Em(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An emphasis (italic) text element."""
     ...
 
@@ -190,7 +190,7 @@ def _Code(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An inline code element."""
     ...
 
@@ -203,7 +203,7 @@ def _Pre(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A preformatted text element."""
     ...
 
@@ -221,7 +221,7 @@ def P(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A paragraph element."""
     return _P(
         _text=text if text else None,
@@ -241,7 +241,7 @@ def H1(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A level 1 heading."""
     return _H1(
         _text=text if text else None,
@@ -261,7 +261,7 @@ def H2(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A level 2 heading."""
     return _H2(
         _text=text if text else None,
@@ -281,7 +281,7 @@ def H3(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A level 3 heading."""
     return _H3(
         _text=text if text else None,
@@ -301,7 +301,7 @@ def H4(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A level 4 heading."""
     return _H4(
         _text=text if text else None,
@@ -321,7 +321,7 @@ def H5(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A level 5 heading."""
     return _H5(
         _text=text if text else None,
@@ -341,7 +341,7 @@ def H6(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A level 6 heading."""
     return _H6(
         _text=text if text else None,
@@ -360,7 +360,7 @@ def Strong(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A strong (bold) text element."""
     return _Strong(
         _text=text if text else None,
@@ -378,7 +378,7 @@ def Em(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An emphasis (italic) text element."""
     return _Em(
         _text=text if text else None,
@@ -396,7 +396,7 @@ def Code(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An inline code element."""
     return _Code(
         _text=text if text else None,
@@ -414,7 +414,7 @@ def Pre(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A preformatted text element."""
     return _Pre(
         _text=text if text else None,
@@ -429,7 +429,7 @@ def Text(
     value: tp.Any,
     *,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """A plain text node without any wrapper element.
 
     Use this to insert raw text into the DOM without wrapping it

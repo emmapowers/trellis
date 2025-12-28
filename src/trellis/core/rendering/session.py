@@ -19,7 +19,7 @@ from trellis.core.rendering.elements import ElementStore
 if tp.TYPE_CHECKING:
     from trellis.core.components.base import Component
     from trellis.core.rendering.active import ActiveRender
-    from trellis.core.rendering.element import ElementNode
+    from trellis.core.rendering.element import Element
 
 __all__ = [
     "RenderSession",
@@ -87,7 +87,7 @@ class RenderSession:
     Attributes:
         root_component: The top-level component for this session
         root_node_id: ID of the root element (after first render)
-        elements: Flat storage for all ElementNodes
+        elements: Flat storage for all Elements
         states: Storage for ElementState per element
         dirty: Tracker for dirty element IDs
         active: Render-scoped state (None when not rendering)
@@ -116,11 +116,11 @@ class RenderSession:
         self.dirty.set_lock(self.lock)
 
     @property
-    def root_element(self) -> ElementNode | None:
+    def root_element(self) -> Element | None:
         """Get the root element node for this session.
 
         Returns:
-            The root ElementNode, or None if not yet rendered
+            The root Element, or None if not yet rendered
         """
         if self.root_node_id is None:
             return None

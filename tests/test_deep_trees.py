@@ -10,7 +10,7 @@ These tests verify that the framework correctly handles:
 from dataclasses import dataclass
 
 from trellis.core.components.composition import component
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
@@ -38,7 +38,7 @@ class TestDeepTrees:
         render(ctx)
 
         # Verify tree structure by counting levels
-        def count_depth(node: ElementNode) -> int:
+        def count_depth(node: Element) -> int:
             if not node.child_ids:
                 return 1
             return 1 + max(count_depth(ctx.elements.get(cid)) for cid in node.child_ids if ctx.elements.get(cid))
@@ -65,7 +65,7 @@ class TestDeepTrees:
         ctx = RenderSession(Root)
         render(ctx)
 
-        def verify_relationships(node: ElementNode, expected_parent_id: str | None) -> None:
+        def verify_relationships(node: Element, expected_parent_id: str | None) -> None:
             state = ctx.states.get(node.id)
             if state is None:
                 relationship_errors.append(f"No state for node {node.id}")
@@ -100,7 +100,7 @@ class TestDeepTrees:
         ctx = RenderSession(Root)
         render(ctx)
 
-        def collect_ids(node: ElementNode, ids: list[str]) -> None:
+        def collect_ids(node: Element, ids: list[str]) -> None:
             ids.append(node.id)
             for child_id in node.child_ids:
                 child = ctx.elements.get(child_id)
@@ -285,7 +285,7 @@ class TestCombinedDeepAndWide:
         render(ctx)
 
         # Count total nodes
-        def count_nodes(node: ElementNode) -> int:
+        def count_nodes(node: Element) -> int:
             return 1 + sum(count_nodes(ctx.elements.get(cid)) for cid in node.child_ids if ctx.elements.get(cid))
 
         total = count_nodes(ctx.root_element)
@@ -483,7 +483,7 @@ class TestTreeTraversal:
         assert len(ctx.root_element.child_ids) == 2
 
         # Count depth of deep branch
-        def count_depth(node: ElementNode) -> int:
+        def count_depth(node: Element) -> int:
             if not node.child_ids:
                 return 1
             return 1 + max(count_depth(ctx.elements.get(cid)) for cid in node.child_ids if ctx.elements.get(cid))

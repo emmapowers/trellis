@@ -13,7 +13,7 @@ __all__ = ["ElementStateStore"]
 
 @dataclass
 class ElementState:
-    """Mutable runtime state for an ElementNode.
+    """Mutable runtime state for an Element.
 
     ElementState holds all per-node mutable data (local state, context, etc.)
     keyed by node.id in RenderSession.state.

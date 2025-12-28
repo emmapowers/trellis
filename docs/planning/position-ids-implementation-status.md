@@ -37,7 +37,7 @@ All items from Phase 1 have been implemented:
 - `serialize_node()` uses `node.id` directly for the `key` field
 
 ### 6. Container Components (`rendering.py`)
-- `ElementNode.__enter__()` passes `self.id` as parent_id to `push_frame()`
+- `Element.__enter__()` passes `self.id` as parent_id to `push_frame()`
 - `execute_node()` passes `node.id` as parent_id to `push_frame()`
 
 ### 7. Component Identity in IDs
@@ -94,17 +94,17 @@ Two assertions in `tests/test_serialization.py` were updated to match the new ID
 All items from Phase 2 have been implemented:
 
 ### 1. Child ID References
-- Changed `ElementNode.children: tuple[ElementNode, ...]` to `ElementNode.child_ids: tuple[str, ...]`
+- Changed `Element.children: tuple[Element, ...]` to `Element.child_ids: tuple[str, ...]`
 - Child nodes are now referenced by ID instead of nested directly
 
 ### 2. Flat Node Storage
-- Added `_nodes: dict[str, ElementNode]` to RenderTree
+- Added `_nodes: dict[str, Element]` to RenderTree
 - All nodes stored flat, accessible via `get_node(id)`
 - `add_to_current_frame()` stores nodes in flat dict and adds ID to frame
 
 ### 3. Frame Updates
 - `Frame.children` renamed to `Frame.child_ids`
-- Frames collect string IDs, not ElementNode objects
+- Frames collect string IDs, not Element objects
 
 ### 4. Serialization Updates
 - `serialize_node()` builds tree by looking up children via `ctx.get_node()`

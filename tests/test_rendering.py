@@ -7,7 +7,7 @@ import weakref
 import pytest
 
 from trellis.core.components.composition import CompositionComponent, component
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession, get_active_session, set_active_session
 from trellis.core.state.stateful import Stateful
@@ -19,7 +19,7 @@ def make_component(name: str) -> CompositionComponent:
     return CompositionComponent(name=name, render_func=lambda: None)
 
 
-# Dummy session for testing ElementNode creation
+# Dummy session for testing Element creation
 _dummy_session: RenderSession | None = None
 
 
@@ -35,9 +35,9 @@ def make_descriptor(
     comp: CompositionComponent,
     key: str | None = None,
     props: dict | None = None,
-) -> ElementNode:
-    """Helper to create an ElementNode."""
-    return ElementNode(
+) -> Element:
+    """Helper to create an Element."""
+    return Element(
         component=comp,
         _session_ref=_get_dummy_session_ref(),
         render_count=0,
@@ -46,7 +46,7 @@ def make_descriptor(
     )
 
 
-class TestElementNode:
+class TestElement:
     def test_element_node_creation(self) -> None:
         comp = make_component("Test")
         node = make_descriptor(comp)
@@ -73,7 +73,7 @@ class TestElementNode:
         comp = make_component("Test")
         node = make_descriptor(comp, props={"a": 1})
 
-        # ElementNode is mutable and uses render_count-based hashing
+        # Element is mutable and uses render_count-based hashing
         hash(node)  # Should not raise
 
         # Can modify attributes

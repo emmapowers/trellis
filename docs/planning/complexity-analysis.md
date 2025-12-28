@@ -11,7 +11,7 @@ Trellis is a reactive UI framework for Python that enables building web/desktop 
 
 ## Core Data Flow
 
-1. **Components** create `ElementNode` descriptors (immutable)
+1. **Components** create `Element` descriptors (immutable)
 2. **Reconciliation** matches new vs old nodes, preserving IDs
 3. **Serialization** converts tree to JSON
 4. **Diffing** compares against previous state to generate patches
@@ -138,11 +138,11 @@ Either `_dirty_ids` OR `ElementState.dirty` is sufficient. The set is more effic
 ### 3. ID Assignment Timing
 
 Currently:
-1. Component creates `ElementNode` with `id=""`
+1. Component creates `Element` with `id=""`
 2. During mount, ID assigned: `new_id = self.next_element_id()`
 3. Everywhere else checks `if children[0].id` to detect state
 
-Simpler: Assign IDs eagerly in `ElementNode.__init__` or when created by component.
+Simpler: Assign IDs eagerly in `Element.__init__` or when created by component.
 
 ### 4. Key vs ID Duality
 
@@ -172,7 +172,7 @@ Based on the architecture doc's "Design Exploration" section and this analysis:
 
 2. **Unify dirty tracking** - Remove `ElementState.dirty`, keep only `_dirty_ids`. Check `mounted` state in the set iteration.
 
-3. **Eager ID assignment** - Assign IDs when ElementNode is created (in `Component.__call__`). This eliminates the descriptor/mounted distinction.
+3. **Eager ID assignment** - Assign IDs when Element is created (in `Component.__call__`). This eliminates the descriptor/mounted distinction.
 
 4. **Consolidate state storage** - Move `_previous_props`/`_previous_children` into `ElementState` if keeping the two-pass approach, or eliminate them with inline patching.
 

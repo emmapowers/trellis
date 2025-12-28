@@ -3,7 +3,7 @@
 import pytest
 
 from trellis.core.components.composition import component
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
 
@@ -13,7 +13,7 @@ class TestContainerComponent:
         """Children created in with block are passed to component."""
 
         @component
-        def Column(children: list[ElementNode]) -> None:
+        def Column(children: list[Element]) -> None:
             for child in children:
                 child()
 
@@ -44,12 +44,12 @@ class TestContainerComponent:
         """Nested with blocks work correctly."""
 
         @component
-        def Column(children: list[ElementNode]) -> None:
+        def Column(children: list[Element]) -> None:
             for child in children:
                 child()
 
         @component
-        def Row(children: list[ElementNode]) -> None:
+        def Row(children: list[Element]) -> None:
             for child in children:
                 child()
 
@@ -81,7 +81,7 @@ class TestContainerComponent:
         received_children: list = []
 
         @component
-        def Column(children: list[ElementNode]) -> None:
+        def Column(children: list[Element]) -> None:
             received_children.extend(children)
             for child in children:
                 child()
@@ -101,7 +101,7 @@ class TestContainerComponent:
 
         assert len(received_children) == 2
         for child in received_children:
-            assert isinstance(child, ElementNode)
+            assert isinstance(child, Element)
 
     def test_component_without_children_param_raises_on_with(self) -> None:
         """Using with on a component without children param raises TypeError."""
@@ -123,7 +123,7 @@ class TestContainerComponent:
         """Can't pass children as prop AND use with block."""
 
         @component
-        def Column(children: list[ElementNode]) -> None:
+        def Column(children: list[Element]) -> None:
             for child in children:
                 child()
 
@@ -141,7 +141,7 @@ class TestContainerComponent:
         received_children: list | None = None
 
         @component
-        def Column(children: list[ElementNode]) -> None:
+        def Column(children: list[Element]) -> None:
             nonlocal received_children
             received_children = children
             for child in children:
@@ -161,7 +161,7 @@ class TestContainerComponent:
         """Calling child() mounts the node in the container."""
 
         @component
-        def Wrapper(children: list[ElementNode]) -> None:
+        def Wrapper(children: list[Element]) -> None:
             # Only mount first child
             if children:
                 children[0]()
@@ -191,7 +191,7 @@ class TestContainerComponent:
         """Container can mount children in different order."""
 
         @component
-        def Reverse(children: list[ElementNode]) -> None:
+        def Reverse(children: list[Element]) -> None:
             for child in reversed(children):
                 child()
 

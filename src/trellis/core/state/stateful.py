@@ -55,7 +55,7 @@ from dataclasses import dataclass, field
 from types import TracebackType
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering.element import ElementNode
+    from trellis.core.rendering.element import Element
 
 from trellis.core.rendering.session import get_active_session, is_render_active
 from trellis.core.state.conversion import convert_to_tracked
@@ -82,16 +82,16 @@ class StatePropertyInfo:
     is added to this property's dependency set. When the property changes,
     all dependent nodes are marked dirty.
 
-    Uses WeakSet[ElementNode] so dependencies are automatically cleaned up
+    Uses WeakSet[Element] so dependencies are automatically cleaned up
     when nodes are replaced (on re-render) or removed (on unmount).
 
     Attributes:
         name: The property name being tracked
-        watchers: WeakSet of ElementNodes that depend on this property
+        watchers: WeakSet of Elements that depend on this property
     """
 
     name: str
-    watchers: weakref.WeakSet[ElementNode] = field(default_factory=weakref.WeakSet)
+    watchers: weakref.WeakSet[Element] = field(default_factory=weakref.WeakSet)
 
 
 class Stateful:
@@ -222,7 +222,7 @@ class Stateful:
             deps[name] = StatePropertyInfo(name=name)
         state_info = deps[name]
 
-        # Add the current ElementNode to watchers (WeakSet auto-cleans on node death)
+        # Add the current Element to watchers (WeakSet auto-cleans on node death)
         node_id = session.current_node_id
         if node_id is not None:
             node = session.elements.get(node_id)

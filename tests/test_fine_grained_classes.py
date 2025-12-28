@@ -13,7 +13,7 @@ from trellis.core.rendering.lifecycle import LifecycleTracker
 from trellis.platforms.common.messages import AddPatch, RemovePatch, UpdatePatch
 from trellis.core.rendering.elements import ElementStore
 from trellis.core.rendering.patches import PatchCollector
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.core.rendering.element_state import ElementState, ElementStateStore
 from trellis.core.rendering.session import RenderSession
 
@@ -33,7 +33,7 @@ class MockComponent:
         pass
 
 
-def make_node(node_id: str, tree_ref=None) -> ElementNode:
+def make_node(node_id: str, tree_ref=None) -> Element:
     """Create a test node with the given ID."""
     import weakref
 
@@ -43,7 +43,7 @@ def make_node(node_id: str, tree_ref=None) -> ElementNode:
     if tree_ref is None:
         tree_ref = weakref.ref(FakeTree())
 
-    node = ElementNode(
+    node = Element(
         component=MockComponent(),
         _session_ref=tree_ref,
         render_count=0,

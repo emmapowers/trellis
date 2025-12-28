@@ -41,7 +41,7 @@ from dataclasses import dataclass
 from trellis.core.components.composition import component
 from trellis.core.components.react import react_component_base
 from trellis.core.components.style_props import Height, Margin, Width
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.widgets.icons import IconName
 
 __all__ = ["Table", "TableColumn"]
@@ -106,7 +106,7 @@ def CellSlot(
     *,
     slot: str,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Marker component for custom cell content.
 
     Used internally by Table to position custom cell content.
@@ -126,7 +126,7 @@ def _TableInner(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Internal React table component.
 
     Renders the actual table structure and positions custom cell content

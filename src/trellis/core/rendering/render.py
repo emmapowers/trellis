@@ -2,15 +2,15 @@
 
 This module implements the two-phase rendering architecture:
 
-1. **Node Phase**: Components create lightweight `ElementNode` objects
+1. **Node Phase**: Components create lightweight `Element` objects
    that describe what should be rendered, without actually executing anything.
 
 2. **Execution Phase**: The reconciler compares nodes with existing state
    and only executes components when necessary (props changed or marked dirty).
 
 Key Types:
-    - `ElementNode`: Immutable tree node representing a component invocation
-    - `ElementState`: Mutable runtime state for an ElementNode (keyed by node.id)
+    - `Element`: Immutable tree node representing a component invocation
+    - `ElementState`: Mutable runtime state for an Element (keyed by node.id)
 
 Example:
     ```python
@@ -32,7 +32,7 @@ import logging
 import time
 
 from trellis.core.rendering.active import ActiveRender
-from trellis.core.rendering.element import ElementNode, props_equal
+from trellis.core.rendering.element import Element, props_equal
 from trellis.core.rendering.element_state import ElementState
 from trellis.core.rendering.patches import (
     RenderAddPatch,
@@ -90,7 +90,7 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
     # Create render-scoped state
     session.active = ActiveRender(old_elements=session.elements.clone())
     is_initial = session.root_node_id is None
-    root_node: ElementNode | None = None
+    root_node: Element | None = None
 
     try:
         set_active_session(session)
@@ -129,7 +129,7 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
                 if old_node:
                     # Create NEW node for re-render. This ensures the old node
                     # can be GC'd and removed from any WeakSets (dependency tracking).
-                    new_node = ElementNode(
+                    new_node = Element(
                         component=old_node.component,
                         _session_ref=old_node._session_ref,
                         render_count=session.render_count,
@@ -169,9 +169,9 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
 
 def _execute_single_node(
     session: RenderSession,
-    node: ElementNode,
+    node: Element,
     parent_id: str | None,
-) -> ElementNode:
+) -> Element:
     """Execute a single node's execute() and collect its children.
 
     This is the new execution model where execution is separated from tree traversal.

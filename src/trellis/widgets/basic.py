@@ -6,7 +6,7 @@ import typing as tp
 
 from trellis.core.components.react import react_component_base
 from trellis.core.components.style_props import Margin, Padding, Width
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.core.state.mutable import Mutable
 
 if tp.TYPE_CHECKING:
@@ -30,7 +30,7 @@ def Label(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Text display widget.
 
     Args:
@@ -51,7 +51,7 @@ def Label(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Label component.
+        An Element for the Label component.
 
     Example:
         Label(text="Hello, world!", font_size=16, color="blue")
@@ -75,7 +75,7 @@ def Button(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Clickable button widget with modern styling.
 
     Args:
@@ -97,7 +97,7 @@ def Button(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Button component.
+        An Element for the Button component.
 
     Example:
         Button(text="Save", on_click=save_handler, variant="primary")
@@ -121,7 +121,7 @@ def Slider(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Range slider widget.
 
     Args:
@@ -138,7 +138,7 @@ def Slider(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Slider component.
+        An Element for the Slider component.
 
     Example:
         Slider(value=mutable(state.slider_value), min=0, max=100)
@@ -158,7 +158,7 @@ def TextInput(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Single-line text input widget.
 
     Args:
@@ -173,7 +173,7 @@ def TextInput(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the TextInput component.
+        An Element for the TextInput component.
 
     Example:
         TextInput(value=mutable(state.text), placeholder="Enter text...")
@@ -195,7 +195,7 @@ def NumberInput(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Numeric input widget.
 
     Args:
@@ -213,7 +213,7 @@ def NumberInput(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the NumberInput component.
+        An Element for the NumberInput component.
 
     Example:
         NumberInput(value=mutable(state.count), min=0, max=100, step=1)
@@ -232,7 +232,7 @@ def Checkbox(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Checkbox toggle widget.
 
     Args:
@@ -246,7 +246,7 @@ def Checkbox(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Checkbox component.
+        An Element for the Checkbox component.
 
     Example:
         Checkbox(checked=mutable(state.enabled), label="Enable feature")
@@ -263,7 +263,7 @@ def Divider(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Divider line for separating content.
 
     Args:
@@ -277,7 +277,7 @@ def Divider(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Divider component.
+        An Element for the Divider component.
 
     Example:
         Divider()  # horizontal divider
@@ -299,7 +299,7 @@ def Select(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Single-selection dropdown widget.
 
     Args:
@@ -315,7 +315,7 @@ def Select(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Select component.
+        An Element for the Select component.
 
     Example:
         Select(
@@ -337,7 +337,7 @@ def Heading(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Semantic heading widget.
 
     Renders an HTML heading element (<h1> through <h6>) based on the level.
@@ -353,7 +353,7 @@ def Heading(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Heading component.
+        An Element for the Heading component.
 
     Example:
         Heading(text="Welcome", level=1)
@@ -378,7 +378,7 @@ def ProgressBar(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Progress bar widget.
 
     Displays a horizontal progress indicator with optional loading animation.
@@ -399,7 +399,7 @@ def ProgressBar(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the ProgressBar component.
+        An Element for the ProgressBar component.
 
     Example:
         ProgressBar(value=50, min=0, max=100)
@@ -420,7 +420,7 @@ def StatusIndicator(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Status indicator with icon and optional label.
 
     Displays a semantic status (success, error, warning, etc.) with an icon
@@ -444,7 +444,7 @@ def StatusIndicator(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the StatusIndicator component.
+        An Element for the StatusIndicator component.
 
     Example:
         StatusIndicator(status="success", label="Passed")
@@ -465,7 +465,7 @@ def Badge(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Small badge for counts or status labels.
 
     Displays a compact, pill-shaped badge with semantic coloring.
@@ -487,7 +487,7 @@ def Badge(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Badge component.
+        An Element for the Badge component.
 
     Example:
         Badge(text="New", variant="success")
@@ -508,7 +508,7 @@ def Tooltip(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Tooltip wrapper for hover hints.
 
     Wraps child elements and shows a tooltip on hover. The tooltip appears
@@ -529,7 +529,7 @@ def Tooltip(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the Tooltip component.
+        An Element for the Tooltip component.
 
     Example:
         with w.Tooltip(content="Click to save"):

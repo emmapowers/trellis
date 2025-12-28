@@ -10,7 +10,7 @@ from typing import Literal
 
 from trellis.core.components.react import react_component_base
 from trellis.core.components.style_props import Margin, Padding, Width
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.core.state.mutable import Mutable
 
 if tp.TYPE_CHECKING:
@@ -30,7 +30,7 @@ def Collapsible(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Collapsible content section.
 
     Args:
@@ -63,7 +63,7 @@ def Callout(
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Prominent status message or alert.
 
     Args:

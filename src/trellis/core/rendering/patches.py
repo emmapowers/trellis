@@ -3,7 +3,7 @@
 This module provides patch types that describe changes to the element tree
 during rendering, as well as a collector to accumulate them.
 
-Patches reference ElementNode objects directly. Serialization to wire format
+Patches reference Element objects directly. Serialization to wire format
 happens at the protocol boundary in MessageHandler.
 """
 
@@ -14,7 +14,7 @@ import typing as tp
 from dataclasses import dataclass
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering.element import ElementNode
+    from trellis.core.rendering.element import Element
 
 __all__ = [
     "PatchCollector",
@@ -34,12 +34,12 @@ class RenderAddPatch:
     Attributes:
         parent_id: ID of the parent node (None for root)
         children: Parent's new child order after this addition
-        node: The ElementNode that was added (not serialized)
+        node: The Element that was added (not serialized)
     """
 
     parent_id: str | None
     children: tuple[str, ...]
-    node: ElementNode
+    node: Element
 
 
 @dataclass(frozen=True)
@@ -75,7 +75,7 @@ class PatchCollector:
     """Collects render patches generated during a render pass.
 
     Patches describe changes to the UI tree. These are internal patches
-    that reference ElementNode objects directly. Serialization to wire
+    that reference Element objects directly. Serialization to wire
     format happens in MessageHandler.
     """
 

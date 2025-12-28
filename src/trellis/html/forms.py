@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering.element import ElementNode
+from trellis.core.rendering.element import Element
 from trellis.html.base import Style, html_element
 from trellis.html.events import (
     ChangeHandler,
@@ -38,7 +38,7 @@ def Form(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A form element."""
     ...
 
@@ -60,7 +60,7 @@ def Input(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An input element.
 
     Args:
@@ -95,7 +95,7 @@ def Textarea(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A textarea element."""
     ...
 
@@ -112,7 +112,7 @@ def Select(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A select dropdown element."""
     ...
 
@@ -130,7 +130,7 @@ def _HtmlButton(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A native HTML button element."""
     ...
 
@@ -144,7 +144,7 @@ def _Option(
     selected: bool = False,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An option element for use within Select."""
     ...
 
@@ -158,7 +158,7 @@ def _HtmlLabel(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A label element."""
     ...
 
@@ -175,7 +175,7 @@ def HtmlButton(
     id: str | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A native HTML button element.
 
     Note: Named HtmlButton to avoid conflict with trellis.widgets.Button.
@@ -207,7 +207,7 @@ def Option(
     selected: bool = False,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """An option element for use within Select."""
     return _Option(
         _text=text if text else None,
@@ -227,7 +227,7 @@ def HtmlLabel(
     style: Style | None = None,
     key: str | None = None,
     **props: tp.Any,
-) -> ElementNode:
+) -> Element:
     """A label element.
 
     Note: Named HtmlLabel to avoid conflict with trellis.widgets.Label.

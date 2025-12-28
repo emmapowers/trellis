@@ -338,13 +338,13 @@ class TestStateDependencyTracking:
         # Check that node was recorded in state deps
         assert "value" in state._state_props
         deps = state._state_props["value"]
-        # WeakSet contains the ElementNode
+        # WeakSet contains the Element
         watchers_list = list(deps.watchers)
         assert len(watchers_list) == 1
         assert watchers_list[0].id == ctx.root_element.id
 
     def test_session_ref_set_on_element_node(self) -> None:
-        """ElementNode has _session_ref pointing to RenderSession."""
+        """Element has _session_ref pointing to RenderSession."""
 
         @dataclass(kw_only=True)
         class MyState(Stateful):
