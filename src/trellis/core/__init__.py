@@ -38,65 +38,13 @@ See Also:
     - `trellis.core.state`: Reactive state management
 """
 
-# Components
-from trellis.core.components import (
-    Component,
-    CompositionComponent,
-    Height,
-    Margin,
-    Padding,
-    ReactComponentBase,
-    Width,
-    component,
-    react_component_base,
-)
+from trellis.core import components, rendering, state
+from trellis.core.components import *
+from trellis.core.rendering import *
+from trellis.core.state import *
 
-# Rendering
-from trellis.core.rendering import (
-    Element,
-    ElementState,
-    RenderSession,
-    render,
-)
-
-# State
-from trellis.core.state import (
-    Mutable,
-    Stateful,
-    TrackedDict,
-    TrackedList,
-    TrackedSet,
-    callback,
-    mutable,
-)
-
-# Platform (moved to platforms/common/)
-from trellis.platforms.common.base import Platform, PlatformArgumentError, PlatformType
-from trellis.platforms.common.handler import MessageHandler
-
-__all__ = [
-    "Component",
-    "CompositionComponent",
-    "Element",
-    "ElementState",
-    "Height",
-    "Margin",
-    "MessageHandler",
-    "Mutable",
-    "Padding",
-    "Platform",
-    "PlatformArgumentError",
-    "PlatformType",
-    "ReactComponentBase",
-    "RenderSession",
-    "Stateful",
-    "TrackedDict",
-    "TrackedList",
-    "TrackedSet",
-    "Width",
-    "callback",
-    "component",
-    "mutable",
-    "react_component_base",
-    "render",
+__all__ = [  # noqa: PLE0604
+    *components.__all__,
+    *rendering.__all__,
+    *state.__all__,
 ]
