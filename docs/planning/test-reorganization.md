@@ -2,12 +2,23 @@
 
 This document summarizes the findings from the test inventory and outlines a phased plan for reorganizing the test suite.
 
+## Progress Summary
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 1 | Infrastructure Setup | ✅ Complete |
+| 2 | Directory Structure | ✅ Complete |
+| 3 | Split Large Files | ✅ Complete |
+| 4 | Migrate to New Structure | ✅ Complete |
+| 5 | Refactor Internal Access | ⏳ Pending |
+| 6 | Fill Test Gaps | ⏳ Pending |
+
 ## Current State
 
-**Scale**: 31 test files, ~27,000 lines of test code
-- Python: 27 test files
-- JavaScript: 4 test files
-- Largest: `test_tracked.py` (2061 lines), `test_widgets.py` (1692 lines), `test_mutable.py` (937 lines)
+**Scale**: 47 Python + 4 JS test files after Phase 3/4 reorganization
+- Python: 16 unit tests in `py/unit/`, 31 integration tests in `py/integration/`
+- JavaScript: 4 unit test files in `js/unit/`
+- All files under 400 lines after Phase 3 splits
 
 **Classification Breakdown** (from inventory):
 
@@ -172,28 +183,27 @@ Add to `tests/CLAUDE.md`:
 
 ## Phased Reorganization Plan
 
-### Phase 1: Infrastructure Setup
+### Phase 1: Infrastructure Setup ✅ COMPLETE
 
 **Goal**: Establish foundation without moving tests
 
-1. Create `tests/py/conftest.py` with core fixtures
-2. Create `tests/js/test-utils.ts` for JS test utilities
-3. Add pytest markers for slow/network tests
-4. Update `tests/CLAUDE.md` with fixture documentation
+1. ✅ Create `tests/conftest.py` with core fixtures
+2. ✅ Create `tests/js/trellis-test-utils.ts` for JS test utilities
+3. ✅ Add pytest markers for slow/network tests
+4. ✅ Update `tests/CLAUDE.md` with fixture documentation
 
 **Deliverables:**
-- `conftest.py` with `render_session`, `rendered`, `mock_element_state`
-- Updated `tests/CLAUDE.md`
-- Working marker configuration
+- ✅ `conftest.py` with `make_component`, `noop_component`, `rendered`, `capture_patches`, `mock_element_state`
+- ✅ Updated `tests/CLAUDE.md` with test categories, fixtures, and best practices
+- ✅ Working marker configuration (slow, network, platform)
 
-### Phase 2: Create Directory Structure
+### Phase 2: Create Directory Structure ✅ COMPLETE
 
 **Goal**: Set up target hierarchy
 
 ```
 tests/
 ├── py/
-│   ├── conftest.py     # shared fixtures
 │   ├── unit/
 │   │   └── .gitkeep
 │   └── integration/
@@ -209,42 +219,47 @@ tests/
     └── .gitkeep
 ```
 
-### Phase 3: Split Large Files
+### Phase 3: Split Large Files ✅ COMPLETE
 
 **Goal**: Break mixed files into classifiable units (do not move yet)
 
-Priority order:
-1. `test_fine_grained_classes.py` → 4 files (one per class)
-2. `test_tracked.py` → `test_tracked_unit.py` + `test_tracked_integration.py`
-3. `test_mutable.py` → `test_mutable_unit.py` + `test_mutable_integration.py`
-4. `test_rendering.py` → `test_element_unit.py` + `test_rendering_integration.py`
-5. `test_message_handler.py` → `test_message_conversion_unit.py` + `test_render_loop_integration.py`
-6. `test_widgets.py` → by category (layout, inputs, charts, etc.)
+Split 6 large files (7175 lines) into 24 smaller files:
 
-**Rule**: Each resulting file should be <400 lines.
+| Original | Split Into |
+|----------|------------|
+| `test_fine_grained_classes.py` (728 lines) | `test_element_stores.py`, `test_tracking.py`, `test_render_stack.py`, `test_render_session_unit.py` |
+| `test_tracked.py` (2061 lines) | `test_tracked_unit.py`, `test_tracked_dependency.py`, `test_tracked_mutations.py`, `test_tracked_advanced.py` |
+| `test_mutable.py` (937 lines) | `test_mutable_unit.py`, `test_mutable_integration.py` |
+| `test_rendering.py` (877 lines) | `test_element_unit.py`, `test_rendering_integration.py` |
+| `test_message_handler.py` (840 lines) | `test_message_conversion_unit.py`, `test_message_handler_integration.py`, `test_render_loop_integration.py` |
+| `test_widgets.py` (1732 lines) | `test_widget_layout.py`, `test_widget_basic.py`, `test_widget_inputs.py`, `test_widget_containers.py`, `test_widget_indicators.py`, `test_widget_table.py`, `test_widget_data.py`, `test_widget_navigation.py`, `test_widget_actions.py` |
 
-### Phase 4: Migrate to New Structure
+All 684 tests pass. Each resulting file is under 400 lines.
+
+### Phase 4: Migrate to New Structure ✅ COMPLETE
 
 **Goal**: Move files to proper locations
 
-Batch migrations:
-1. Move all pure unit tests to `py/unit/`
-2. Move all pure integration tests to `py/integration/`
-3. Move JS tests to corresponding directories
-4. Update imports and verify tests pass after each batch
+Completed migrations:
+- 16 unit test files moved to `py/unit/`
+- 31 integration test files moved to `py/integration/`
+- 4 JS unit tests moved to `js/unit/` (with `js/unit/core/` subdirectory)
+- Fixed relative import paths in moved files
+- Removed obsolete `--ignore=tests/integration` from pytest config
+- All 701 Python tests and 54 JS tests pass
 
-### Phase 5: Refactor Internal Access
+### Phase 5: Refactor Internal Access ⏳ PENDING
 
 **Goal**: Remove private attribute access where possible
 
 Files to refactor:
 1. `test_state.py` - expose needed state via public API or accept testing internals
-2. `test_tracked.py` - reduce `_deps`, `_owner` access
-3. `test_message_handler.py` - mock at boundaries
+2. `test_tracked_*.py` - reduce `_deps`, `_owner` access
+3. `test_message_handler_integration.py` - mock at boundaries
 
 **Rule**: If internal access is truly necessary, add `# INTERNAL TEST: <reason>` comment.
 
-### Phase 6: Fill Test Gaps
+### Phase 6: Fill Test Gaps ⏳ PENDING
 
 **Goal**: Add missing test coverage
 
@@ -271,8 +286,9 @@ The root `CLAUDE.md` focuses on "how to work with this project" while `tests/CLA
 
 ---
 
-## Recommended First Steps
+## Next Steps
 
-1. **Create the infrastructure** (Phase 1) - this enables all other work
-2. **Split `test_fine_grained_classes.py`** - cleanest split, good practice
-3. **Split `test_tracked.py`** - largest file, clear unit/integration boundary
+Phases 1-4 are complete. Recommended next actions:
+
+1. **Phase 5: Audit internal access** - Review `_private` attribute usage in test files
+2. **Phase 6: Add missing tests** - Start with `Trellis.serve()` platform mocking

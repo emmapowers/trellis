@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
-import { render, screen } from "../test-utils";
+import { render, screen } from "../../test-utils";
 import { processProps, renderNode } from "@common/core/renderTree";
 import { ElementKind, SerializedElement } from "@common/core/types";
 
