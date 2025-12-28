@@ -8,6 +8,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import { TrellisApp } from "../../../../src/trellis/platforms/browser/client/src/TrellisApp";
+import "../../../../src/trellis/platforms/common/client/src/theme.css";
 
 // Monaco types (loaded from CDN)
 declare const require: {
