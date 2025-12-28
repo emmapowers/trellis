@@ -23,7 +23,7 @@ title: UI and Rendering
    - [Using @react_component Decorator](#using-react_component-decorator)
    - [Using @react_component_from_files](#using-react_component_from_files)
 5. [Element Tree Architecture](#element-tree-architecture)
-   - [Element](#elementnode)
+   - [Element](#element)
    - [ElementState](#elementstate)
    - [RenderTree](#rendertree)
 6. [Rendering Pipeline](#rendering-pipeline)
