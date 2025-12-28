@@ -364,3 +364,172 @@ class TestContextAPI:
         ctx = RenderSession(Parent)
         with pytest.raises(RuntimeError, match="Cannot modify state"):
             render(ctx)
+
+
+class TestContextEdgeCases:
+    """Tests for context edge cases and error messages."""
+
+    def test_context_same_type_shadowing(self) -> None:
+        """Inner context of same type shadows outer at nested level."""
+        captured: list[str] = []
+
+        @dataclass
+        class CounterState(Stateful):
+            name: str = "default"
+
+        @component
+        def Leaf() -> None:
+            captured.append(CounterState.from_context().name)
+
+        @component
+        def Inner() -> None:
+            inner_state = CounterState(name="inner")
+            with inner_state:
+                Leaf()
+
+        @component
+        def Parent() -> None:
+            outer_state = CounterState(name="outer")
+            with outer_state:
+                Leaf()  # Should see "outer"
+                Inner()  # Leaf inside should see "inner"
+
+        ctx = RenderSession(Parent)
+        render(ctx)
+
+        assert "outer" in captured
+        assert "inner" in captured
+
+    def test_context_with_custom_default(self) -> None:
+        """from_context() with custom default value returns default when not found."""
+        captured: list[int] = []
+
+        @dataclass
+        class MissingState(Stateful):
+            value: int = 0
+
+        default_instance = MissingState(value=42)
+
+        @component
+        def Child() -> None:
+            result = MissingState.from_context(default=default_instance)
+            captured.append(result.value)
+
+        @component
+        def Parent() -> None:
+            Child()  # No MissingState provided
+
+        ctx = RenderSession(Parent)
+        render(ctx)
+
+        assert captured == [42]
+
+    def test_context_error_message_includes_class_name(self) -> None:
+        """Error message for missing context includes the class name."""
+
+        class MyCustomStatefulClass(Stateful):
+            pass
+
+        @component
+        def Child() -> None:
+            MyCustomStatefulClass.from_context()
+
+        @component
+        def Parent() -> None:
+            Child()
+
+        ctx = RenderSession(Parent)
+        with pytest.raises(LookupError) as exc_info:
+            render(ctx)
+
+        # Verify error message is helpful
+        assert "MyCustomStatefulClass" in str(exc_info.value)
+        assert "with" in str(exc_info.value)  # Suggests the fix
+
+    def test_context_runtime_error_message_includes_class_name(self) -> None:
+        """RuntimeError message for outside-render includes class name."""
+
+        class OutsideRenderState(Stateful):
+            pass
+
+        state = OutsideRenderState()
+
+        with pytest.raises(RuntimeError) as exc_info:
+            with state:
+                pass
+
+        # Verify error message is helpful
+        assert "OutsideRenderState" in str(exc_info.value)
+        assert "render context" in str(exc_info.value)
+
+    def test_from_context_outside_render_error_message(self) -> None:
+        """from_context() outside render has helpful error message."""
+
+        class CalledOutsideState(Stateful):
+            pass
+
+        with pytest.raises(RuntimeError) as exc_info:
+            CalledOutsideState.from_context()
+
+        # Verify error message is helpful
+        assert "CalledOutsideState" in str(exc_info.value)
+        assert "from_context" in str(exc_info.value)
+
+    def test_context_available_after_conditional_branch(self) -> None:
+        """Context is available in subsequent children after conditional."""
+        captured: list[str] = []
+
+        class SafeState(Stateful):
+            value: str = "safe"
+
+        @component
+        def SafeChild() -> None:
+            captured.append(SafeState.from_context().value)
+
+        @component
+        def ConditionalChild() -> None:
+            pass  # Does nothing
+
+        @component
+        def Parent() -> None:
+            state = SafeState()
+            with state:
+                SafeChild()  # First access
+                ConditionalChild()  # Intermediate child
+                SafeChild()  # Second access after conditional
+
+        ctx = RenderSession(Parent)
+        render(ctx)
+
+        # Both SafeChild calls should have accessed context
+        assert captured == ["safe", "safe"]
+
+    def test_context_sibling_components_isolated(self) -> None:
+        """Context provided in one sibling doesn't leak to another."""
+        captured: list[str | None] = []
+
+        class SiblingState(Stateful):
+            name: str = "sibling"
+
+        @component
+        def ProviderChild() -> None:
+            state = SiblingState()
+            with state:
+                pass  # Provides context to self, not siblings
+
+        @component
+        def ConsumerChild() -> None:
+            # Should NOT find SiblingState - not an ancestor
+            result = SiblingState.from_context(default=None)
+            captured.append(result.name if result else None)
+
+        @component
+        def Parent() -> None:
+            ProviderChild()
+            ConsumerChild()
+
+        ctx = RenderSession(Parent)
+        render(ctx)
+
+        # Consumer should not find sibling's context
+        assert captured == [None]

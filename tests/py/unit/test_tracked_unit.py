@@ -389,7 +389,10 @@ class TestMutationsOutsideRender:
         s.clear()
 
     def test_standalone_tracked_then_assign(self) -> None:
-        """TrackedList created standalone, then assigned to Stateful."""
+        """TrackedList created standalone, then assigned to Stateful.
+
+        INTERNAL TEST: _owner/_attr are internal binding attributes.
+        """
 
         @dataclass
         class MyState(Stateful):
@@ -402,7 +405,7 @@ class TestMutationsOutsideRender:
         state = MyState()
         state.items = lst  # type: ignore[assignment]
 
-        # Should be bound now
+        # Verify binding - no public API to check this
         assert state.items._owner is not None
         assert state.items._attr == "items"
 
