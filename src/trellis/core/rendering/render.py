@@ -250,6 +250,7 @@ def _execute_tree(
     session: RenderSession,
     node_id: str,
     parent_id: str | None,
+    in_added_subtree: bool = False,
 ) -> None:
     """Execute a node and recursively execute its children.
 
@@ -260,6 +261,10 @@ def _execute_tree(
         session: The RenderSession
         node_id: The ID of the node to execute
         parent_id: Parent node's ID (for ElementState.parent_id)
+        in_added_subtree: True if this node is a descendant of a newly added
+            node. When True, we skip emitting AddPatch since this node is
+            already included in the ancestor's AddPatch via recursive
+            serialization.
     """
     assert session.active is not None
     node = session.elements.get(node_id)
@@ -274,7 +279,7 @@ def _execute_tree(
     if node is old_node and state and state.mounted and node.id not in session.dirty:
         logger.debug("_execute_tree: reusing %s, recursing to children", node_id)
         for child_id in node.child_ids:
-            _execute_tree(session, child_id, node_id)
+            _execute_tree(session, child_id, node_id, in_added_subtree)
         return
 
     # Get old children for reconciliation
@@ -312,21 +317,35 @@ def _execute_tree(
             session.active.patches.emit(RenderRemovePatch(node_id=removed_id))
             _unmount_node_tree(session, removed_id)
 
+        # Build set of added IDs for quick lookup
+        added_set = set(result.added)
+
         # Execute children (added and matched)
         for child_id in result.child_order:
-            _execute_tree(session, child_id, node_id)
+            child_is_added = child_id in added_set
 
-        # Emit patches for added nodes
-        for added_id in result.added:
-            child_node = session.elements.get(added_id)
-            if child_node:
-                session.active.patches.emit(
-                    RenderAddPatch(
-                        parent_id=node_id,
-                        children=tuple(result.child_order),
-                        node=child_node,
+            # Emit AddPatch for newly added subtree roots BEFORE recursing.
+            # This ensures parent AddPatch comes before child AddPatch.
+            # Skip if we're already inside an added subtree (to avoid duplicates).
+            if child_is_added and not in_added_subtree:
+                child_node = session.elements.get(child_id)
+                if child_node:
+                    session.active.patches.emit(
+                        RenderAddPatch(
+                            parent_id=node_id,
+                            children=tuple(result.child_order),
+                            node=child_node,
+                        )
                     )
-                )
+
+            # Recurse into child. If this child is added (or we're already in
+            # an added subtree), propagate the flag to skip AddPatch emission.
+            _execute_tree(
+                session,
+                child_id,
+                node_id,
+                in_added_subtree=(in_added_subtree or child_is_added),
+            )
 
 
 def _mount_node_tree(session: RenderSession, node_id: str) -> None:
