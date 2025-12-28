@@ -116,7 +116,8 @@ def _message_to_dict(msg: Message) -> dict[str, tp.Any]:
     Uses msgspec.to_builtins() for recursive conversion of nested structs,
     which is required for postMessage to clone the object.
     """
-    return msgspec.to_builtins(msg)
+    result: dict[str, tp.Any] = msgspec.to_builtins(msg)
+    return result
 
 
 def _dict_to_message(msg_dict: dict[str, tp.Any]) -> Message:
