@@ -14,7 +14,15 @@ from trellis.platforms.common.serialization import parse_callback_id
 
 
 def get_callback_from_id(ctx: RenderSession, cb_id: str):
-    """Helper to get callback using the new two-arg API."""
+    """
+    Retrieve the registered callback associated with a serialized callback identifier.
+    
+    Parameters:
+        cb_id (str): Callback identifier string produced during serialization (encodes node id and property name).
+    
+    Returns:
+        callable: The callback registered on the parsed node and property.
+    """
     node_id, prop_name = parse_callback_id(cb_id)
     return ctx.get_callback(node_id, prop_name)
 
@@ -131,7 +139,11 @@ class TestMutableSerialization:
     """Tests for Mutable serialization."""
 
     def test_mutable_serializes_with_callback(self) -> None:
-        """Mutable props serialize to __mutable__ format with callback."""
+        """
+        Verifies that a widget prop bound with `mutable(...)` serializes to the `__mutable__` structure containing the current value.
+        
+        This test renders a component with a TextInput whose `value` is `mutable(state.text)` and asserts the serialized node includes an `__mutable__` dict with a `value` equal to the state's text.
+        """
 
         @dataclass
         class State(Stateful):
@@ -194,7 +206,11 @@ class TestMutableWidgets:
     """Tests for widgets that support mutable bindings."""
 
     def test_number_input_with_mutable(self) -> None:
-        """NumberInput accepts mutable value and updates state."""
+        """
+        Verifies that NumberInput binds to a mutable State property and updates that property when the mutable callback is invoked.
+        
+        Renders a NumberInput whose `value` is bound to `mutable(state.count)`, asserts the serialized prop contains a `__mutable__` with the initial numeric value, invokes the associated callback to update the value, and asserts the underlying state's `count` is updated accordingly.
+        """
 
         @dataclass
         class State(Stateful):

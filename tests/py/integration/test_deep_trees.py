@@ -24,6 +24,15 @@ class TestDeepTrees:
         DEPTH = 50
 
         def make_level(n: int):
+            """
+            Create a Level component representing the current recursion depth.
+            
+            Parameters:
+                n (int): Current depth index for the generated Level component.
+            
+            Returns:
+                Level (callable): A component function that renders the level at depth `n`. When invoked, the component will instantiate a child Level for `n + 1` while `n < DEPTH`.
+            """
             @component
             def Level() -> None:
                 if n < DEPTH:
@@ -40,6 +49,15 @@ class TestDeepTrees:
 
         # Verify tree structure by counting levels
         def count_depth(node: Element) -> int:
+            """
+            Compute the maximum nesting depth of the element subtree rooted at `node`, counting `node` as level 1.
+            
+            Parameters:
+                node (Element): The root element whose subtree depth is measured. Child entries that are missing from the global `ctx.elements` are ignored.
+            
+            Returns:
+                int: Maximum number of levels from `node` to the deepest descendant, with a leaf node returning 1.
+            """
             if not node.child_ids:
                 return 1
             return 1 + max(
@@ -52,11 +70,24 @@ class TestDeepTrees:
         assert max_depth == DEPTH + 1  # +1 for Root
 
     def test_parent_child_relationships_deep_tree(self) -> None:
-        """Parent/child relationships should be correct in deep tree."""
+        """
+        Verify that each element's recorded parent_id matches its actual parent in a 50-level deep tree.
+        
+        Builds a 50-level nested component tree, traverses the rendered element tree, and asserts that every element's state.parent_id equals the expected parent element id.
+        """
         DEPTH = 50
         relationship_errors: list[str] = []
 
         def make_level(n: int):
+            """
+            Create a Level component representing the current recursion depth.
+            
+            Parameters:
+                n (int): Current depth index for the generated Level component.
+            
+            Returns:
+                Level (callable): A component function that renders the level at depth `n`. When invoked, the component will instantiate a child Level for `n + 1` while `n < DEPTH`.
+            """
             @component
             def Level() -> None:
                 if n < DEPTH:
@@ -279,6 +310,12 @@ class TestCombinedDeepAndWide:
 
         @component
         def Level(depth: int = 0) -> None:
+            """
+            Create a branching subtree of Level components up to DEPTH.
+            
+            Parameters:
+                depth (int): Current depth in the subtree; 0 corresponds to the root. When `depth` is less than `DEPTH`, the function creates `BRANCH_FACTOR` child Level components at depth + 1.
+            """
             if depth < DEPTH:
                 for _ in range(BRANCH_FACTOR):
                     Level(depth=depth + 1)
@@ -292,6 +329,15 @@ class TestCombinedDeepAndWide:
 
         # Count total nodes
         def count_nodes(node: Element) -> int:
+            """
+            Count all elements in the subtree rooted at the given node.
+            
+            Parameters:
+                node (Element): The root element of the subtree to count.
+            
+            Returns:
+                int: Total number of elements in the subtree, including `node` itself.
+            """
             return 1 + sum(
                 count_nodes(ctx.elements.get(cid))
                 for cid in node.child_ids
@@ -318,6 +364,15 @@ class TestCombinedDeepAndWide:
         LEAF_COUNT = 50
 
         def make_level(n: int):
+            """
+            Create a Level component bound to a starting depth that builds a recursive chain down to the global DEPTH.
+            
+            Parameters:
+                n (int): The starting depth index for the produced Level component.
+            
+            Returns:
+                Level (callable): A component function which, when invoked, renders nested Level components incrementing depth until `DEPTH` is reached; at the final depth it renders `LEAF_COUNT` Leaf children.
+            """
             @component
             def Level() -> None:
                 if n < DEPTH:
@@ -364,6 +419,15 @@ class TestMountingOrder:
                 mount_order.append(self.level)
 
         def make_level(n: int):
+            """
+            Create a component factory for a tree level at the given depth.
+            
+            Parameters:
+                n (int): The numeric depth for the created level.
+            
+            Returns:
+                Level (callable): A component that, when rendered, mounts a TrackedState with `level=n` and, if `n` is less than DEPTH, renders the next level (n + 1).
+            """
             @component
             def Level() -> None:
                 TrackedState(level=n)
@@ -425,10 +489,19 @@ class TestTreeTraversal:
     """Tests for tree traversal edge cases."""
 
     def test_empty_tree(self) -> None:
-        """Tree with no children should work."""
+        """
+        Verify that rendering a component with no children produces a root element that has zero children.
+        
+        Renders an Empty component and asserts the session's root element exists and its child list is empty.
+        """
 
         @component
         def Empty() -> None:
+            """
+            Render an empty component that produces no children or state.
+            
+            Used in tests to represent a leaf node with an empty render output.
+            """
             pass
 
         ctx = RenderSession(Empty)
@@ -438,10 +511,23 @@ class TestTreeTraversal:
         assert len(ctx.root_element.child_ids) == 0
 
     def test_single_child_chain(self) -> None:
-        """Tree where each node has exactly one child."""
+        """
+        Builds a tree where each node has exactly one child and verifies traversal length.
+        
+        Creates a Root component that nests DEPTH single-child Level components, renders the tree, traverses down the single-child chain, and asserts the number of steps equals DEPTH.
+        """
         DEPTH = 50
 
         def make_level(n: int):
+            """
+            Create a Level component representing the current recursion depth.
+            
+            Parameters:
+                n (int): Current depth index for the generated Level component.
+            
+            Returns:
+                Level (callable): A component function that renders the level at depth `n`. When invoked, the component will instantiate a child Level for `n + 1` while `n < DEPTH`.
+            """
             @component
             def Level() -> None:
                 if n < DEPTH:
@@ -487,6 +573,11 @@ class TestTreeTraversal:
 
         @component
         def Root() -> None:
+            """
+            Compose the top-level root containing a deep left branch and a shallow right branch.
+            
+            Creates a DeepBranch with depth=10 as the left child and a ShallowBranch as the right child.
+            """
             DeepBranch(depth=10)  # Deep left branch
             ShallowBranch()  # Shallow right branch
 
@@ -498,6 +589,15 @@ class TestTreeTraversal:
 
         # Count depth of deep branch
         def count_depth(node: Element) -> int:
+            """
+            Compute the maximum nesting depth of the element subtree rooted at `node`, counting `node` as level 1.
+            
+            Parameters:
+                node (Element): The root element whose subtree depth is measured. Child entries that are missing from the global `ctx.elements` are ignored.
+            
+            Returns:
+                int: Maximum number of levels from `node` to the deepest descendant, with a leaf node returning 1.
+            """
             if not node.child_ids:
                 return 1
             return 1 + max(

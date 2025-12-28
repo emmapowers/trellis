@@ -12,7 +12,12 @@ from trellis.widgets import Label
 
 
 def rerender(ctx: RenderSession) -> None:
-    """Mark root as dirty and re-render."""
+    """
+    Mark the session's root element as dirty and trigger a render pass.
+    
+    Parameters:
+        ctx (RenderSession): Render session whose root element will be re-rendered.
+    """
     ctx.dirty.mark(ctx.root_element.id)
     render(ctx)
 
@@ -28,6 +33,11 @@ class TestExplicitKeyReconciliation:
 
         @component
         def App() -> None:
+            """
+            Render a Label for each item in the current AppState, using each item value as the element key.
+            
+            This function obtains the AppState from the render context and iterates over state.items, rendering a Label with text set to the item and key set to the item for each entry.
+            """
             state = AppState.from_context()
             for item in state.items:
                 Label(text=item, key=item)
@@ -36,6 +46,11 @@ class TestExplicitKeyReconciliation:
 
         @component
         def Root() -> None:
+            """
+            Root component that mounts the App inside the surrounding stateful context.
+            
+            Used by tests to render the App with `state` active so the component tree is created within the shared state scope.
+            """
             with state:
                 App()
 
@@ -64,6 +79,12 @@ class TestExplicitKeyReconciliation:
 
         @component
         def App() -> None:
+            """
+            Render a single Label whose key is derived from the current AppState from context.
+            
+            Reads AppState from the component context and renders a Label with text "Static"
+            and a key formed as "label-{state.key_suffix}".
+            """
             state = AppState.from_context()
             Label(text="Static", key=f"label-{state.key_suffix}")
 
@@ -71,6 +92,11 @@ class TestExplicitKeyReconciliation:
 
         @component
         def Root() -> None:
+            """
+            Root component that mounts the App inside the surrounding stateful context.
+            
+            Used by tests to render the App with `state` active so the component tree is created within the shared state scope.
+            """
             with state:
                 App()
 
@@ -96,11 +122,20 @@ class TestDuplicateKeyIntegration:
     """Integration tests for duplicate key handling."""
 
     def test_duplicate_keys_in_same_parent(self) -> None:
-        """Duplicate keys in same parent don't crash."""
+        """
+        Verify that rendering two sibling elements with the same explicit key does not crash and both elements are created.
+        
+        Renders two Label components that share the same key and asserts that the root contains two child elements.
+        """
 
         @component
         def App() -> None:
             # Both labels have same key - edge case, but shouldn't crash
+            """
+            Render two Label widgets that share the same explicit key to exercise duplicate-key reconciliation behavior.
+            
+            Used by integration tests to verify the renderer accepts duplicate keys under the same parent and still produces both label elements.
+            """
             Label(text="First", key="duplicate")
             Label(text="Second", key="duplicate")
 
@@ -118,6 +153,11 @@ class TestDuplicateKeyIntegration:
 
         @component
         def App() -> None:
+            """
+            Render two Label widgets that share the same explicit key to exercise duplicate-key reconciliation.
+            
+            Each Label's displayed text includes the current state's `count`; both Labels use the key "dup" so they are rendered as distinct sibling elements with identical keys for testing duplicate-key behavior.
+            """
             state = AppState.from_context()
             Label(text=f"First-{state.count}", key="dup")
             Label(text=f"Second-{state.count}", key="dup")
@@ -126,6 +166,11 @@ class TestDuplicateKeyIntegration:
 
         @component
         def Root() -> None:
+            """
+            Root component that mounts the App inside the surrounding stateful context.
+            
+            Used by tests to render the App with `state` active so the component tree is created within the shared state scope.
+            """
             with state:
                 App()
 
@@ -145,6 +190,11 @@ class TestDuplicateKeyIntegration:
 
         @component
         def App() -> None:
+            """
+            Render five Label widgets without explicit keys, relying on their position for element identity.
+            
+            Each rendered Label displays text "Item 0" through "Item 4".
+            """
             for i in range(5):
                 Label(text=f"Item {i}")  # No key - uses position
 
@@ -165,6 +215,11 @@ class TestKeySpecialCharacters:
 
         @component
         def App() -> None:
+            """
+            Render a single Label whose key contains a slash.
+            
+            Used by tests to verify that reconciliation correctly handles keys with forward slashes.
+            """
             Label(text="Path", key="path/to/item")
 
         ctx = RenderSession(App)
@@ -178,6 +233,11 @@ class TestKeySpecialCharacters:
 
         @component
         def App() -> None:
+            """
+            Render a Label widget that uses a namespaced explicit key.
+            
+            Renders a Label with the text "Namespaced" and the explicit key "ns:item" to test key handling for namespaced keys.
+            """
             Label(text="Namespaced", key="ns:item")
 
         ctx = RenderSession(App)
@@ -186,10 +246,19 @@ class TestKeySpecialCharacters:
         assert len(ctx.root_element.child_ids) == 1
 
     def test_key_with_at_sign(self) -> None:
-        """Key containing @ is handled correctly."""
+        """
+        Verify that an element with a key containing the '@' character is rendered and reconciled as a single child.
+        
+        Renders a Label with the key "user@example.com" and asserts the root element contains exactly one child.
+        """
 
         @component
         def App() -> None:
+            """
+            Render a Label with the text "Email" and the explicit key "user@example.com".
+            
+            Creates a single Label element labeled "Email" and assigns the key "user@example.com" to control reconciliation identity.
+            """
             Label(text="Email", key="user@example.com")
 
         ctx = RenderSession(App)
@@ -202,6 +271,11 @@ class TestKeySpecialCharacters:
 
         @component
         def App() -> None:
+            """
+            Render a simple component that emits a Label with a Unicode-containing key.
+            
+            Renders a Label widget with text "Unicode" and the explicit key "item-日本語" to exercise handling of keys that include non-ASCII characters.
+            """
             Label(text="Unicode", key="item-日本語")
 
         ctx = RenderSession(App)
@@ -221,6 +295,11 @@ class TestKeyReorderingPatterns:
 
         @component
         def App() -> None:
+            """
+            Render a Label for each item in the current AppState, using each item value as the element key.
+            
+            This function obtains the AppState from the render context and iterates over state.items, rendering a Label with text set to the item and key set to the item for each entry.
+            """
             state = AppState.from_context()
             for item in state.items:
                 Label(text=item, key=item)
@@ -229,6 +308,11 @@ class TestKeyReorderingPatterns:
 
         @component
         def Root() -> None:
+            """
+            Root component that mounts the App inside the surrounding stateful context.
+            
+            Used by tests to render the App with `state` active so the component tree is created within the shared state scope.
+            """
             with state:
                 App()
 
@@ -259,6 +343,11 @@ class TestKeyReorderingPatterns:
 
         @component
         def App() -> None:
+            """
+            Render a Label for each item in the current AppState, using each item value as the element key.
+            
+            This function obtains the AppState from the render context and iterates over state.items, rendering a Label with text set to the item and key set to the item for each entry.
+            """
             state = AppState.from_context()
             for item in state.items:
                 Label(text=item, key=item)
@@ -267,6 +356,11 @@ class TestKeyReorderingPatterns:
 
         @component
         def Root() -> None:
+            """
+            Root component that mounts the App inside the surrounding stateful context.
+            
+            Used by tests to render the App with `state` active so the component tree is created within the shared state scope.
+            """
             with state:
                 App()
 
@@ -296,6 +390,11 @@ class TestKeyReorderingPatterns:
 
         @component
         def App() -> None:
+            """
+            Render a Label for each item in the current AppState, using each item value as the element key.
+            
+            This function obtains the AppState from the render context and iterates over state.items, rendering a Label with text set to the item and key set to the item for each entry.
+            """
             state = AppState.from_context()
             for item in state.items:
                 Label(text=item, key=item)
@@ -304,6 +403,11 @@ class TestKeyReorderingPatterns:
 
         @component
         def Root() -> None:
+            """
+            Root component that mounts the App inside the surrounding stateful context.
+            
+            Used by tests to render the App with `state` active so the component tree is created within the shared state scope.
+            """
             with state:
                 App()
 

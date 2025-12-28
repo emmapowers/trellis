@@ -57,6 +57,9 @@ class TestElementNameProperty:
         # Get the underlying component from factory function result
         @component
         def App() -> None:
+            """
+            Defines a composition containing a Label, a Button, an empty Column, and an empty Row for testing rendering and element naming.
+            """
             Label(text="test")
             Button(text="test")
             with Column():
@@ -174,16 +177,30 @@ class TestReactComponentBaseDecorator:
         """Decorator creates components with _has_children False by default."""
 
         @react_component_base("LeafWidget")
-        def LeafWidget() -> Element: ...
+        def LeafWidget() -> Element: """
+Create a LeafWidget element with no children.
+
+Returns:
+    element (Element): An Element representing the LeafWidget component.
+"""
+...
 
         # Access the underlying component
         assert LeafWidget._component._has_children_param is False
 
     def test_decorator_has_children_true(self) -> None:
-        """Decorator can create container components."""
+        """
+        Verifies the decorator produces a component whose underlying ReactComponentBase accepts children when `has_children=True`.
+        """
 
         @react_component_base("ContainerWidget", has_children=True)
-        def ContainerWidget() -> Element: ...
+        def ContainerWidget() -> Element: """
+A test composition component representing a container widget.
+
+Returns:
+    Element: An Element node representing the container widget used in tests.
+"""
+...
 
         assert ContainerWidget._component._has_children_param is True
 
@@ -191,7 +208,13 @@ class TestReactComponentBaseDecorator:
         """Decorated function exposes _component for introspection."""
 
         @react_component_base("Widget")
-        def Widget() -> Element: ...
+        def Widget() -> Element: """
+Create a Widget element.
+
+Returns:
+    element (Element): An Element node representing the `Widget` component.
+"""
+...
 
         assert hasattr(Widget, "_component")
         assert isinstance(Widget._component, ReactComponentBase)

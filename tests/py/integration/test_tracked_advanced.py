@@ -25,6 +25,11 @@ class TestPopitem:
 
         @component
         def IterViewer() -> None:
+            """
+            Component used in tests to iterate over state.data while recording renders.
+            
+            Increments the external render counter at each invocation and iterates over `state.data` to establish an iteration-based dependency for reactive tests.
+            """
             renders[0] += 1
             for _ in state.data:
                 pass
@@ -55,6 +60,11 @@ class TestSetUpdate:
 
         @component
         def IterViewer() -> None:
+            """
+            Component that iterates over the tracked set `state.tags` to record render occurrences.
+            
+            Increments the external render counter and iterates `state.tags` so the component's render depends on the collection's iteration.
+            """
             renders[0] += 1
             for _ in state.tags:
                 pass
@@ -87,17 +97,32 @@ class TestDictSetdefault:
 
         @component
         def IterViewer() -> None:
+            """
+            Component that increments a render counter and iterates over state.data to observe iteration-based reactivity.
+            
+            Increments iter_renders[0] as a side effect.
+            """
             iter_renders[0] += 1
             for _ in state.data:
                 pass
 
         @component
         def KeyBViewer() -> None:
+            """
+            Record a render and access the 'b' key of state.data to establish a reactive dependency.
+            
+            Increments the external counter key_b_renders[0] and reads state.data.get("b") so components observing this function react when key 'b' is added, removed, or changed.
+            """
             key_b_renders[0] += 1
             _ = state.data.get("b")
 
         @component
         def App() -> None:
+            """
+            Compose a component tree that renders IterViewer followed by KeyBViewer.
+            
+            Used in tests to observe reactivity for dictionary iteration and for accessing the key "b".
+            """
             IterViewer()
             KeyBViewer()
 
@@ -126,6 +151,11 @@ class TestDictSetdefault:
 
         @component
         def IterViewer() -> None:
+            """
+            Component used in tests to iterate over state.data while recording renders.
+            
+            Increments the external render counter at each invocation and iterates over `state.data` to establish an iteration-based dependency for reactive tests.
+            """
             renders[0] += 1
             for _ in state.data:
                 pass
@@ -158,6 +188,11 @@ class TestDictUpdateVariants:
 
         @component
         def IterViewer() -> None:
+            """
+            Component used in tests to iterate over state.data while recording renders.
+            
+            Increments the external render counter at each invocation and iterates over `state.data` to establish an iteration-based dependency for reactive tests.
+            """
             renders[0] += 1
             for _ in state.data:
                 pass
@@ -186,6 +221,11 @@ class TestDictUpdateVariants:
 
         @component
         def IterViewer() -> None:
+            """
+            Component used in tests to iterate over state.data while recording renders.
+            
+            Increments the external render counter at each invocation and iterates over `state.data` to establish an iteration-based dependency for reactive tests.
+            """
             renders[0] += 1
             for _ in state.data:
                 pass
@@ -215,17 +255,30 @@ class TestDictUpdateVariants:
 
         @component
         def IterViewer() -> None:
+            """
+            Component that increments a render counter and iterates over state.data to observe iteration-based reactivity.
+            
+            Increments iter_renders[0] as a side effect.
+            """
             iter_renders[0] += 1
             for _ in state.data:
                 pass
 
         @component
         def AViewer() -> None:
+            """
+            Increments the render counter and accesses state.data["a"] to register a dependency on the 'a' key for reactivity.
+            """
             a_renders[0] += 1
             _ = state.data["a"]
 
         @component
         def App() -> None:
+            """
+            Compose the UI by instantiating IterViewer and AViewer components.
+            
+            This function creates the component tree used by tests to observe rendering and reactivity for iteration and key-specific viewers.
+            """
             IterViewer()
             AViewer()
 
@@ -259,17 +312,32 @@ class TestSetBulkOperations:
 
         @component
         def IterViewer() -> None:
+            """
+            Record a render and observe iteration over the state's tags set.
+            
+            Increments the external render counter and iterates over `state.tags` to establish an iteration dependency used by the test.
+            """
             iter_renders[0] += 1
             for _ in state.tags:
                 pass
 
         @component
         def CChecker() -> None:
+            """
+            Component that records a render and observes whether the tag "c" is present in state.tags.
+            
+            Increments the shared render counter and reads membership of "c" in state.tags to create a reactive dependency on that membership.
+            """
             c_renders[0] += 1
             _ = "c" in state.tags
 
         @component
         def App() -> None:
+            """
+            Compose IterViewer and CChecker into a single component.
+            
+            This component mounts IterViewer (which observes iteration over a collection) and CChecker (which checks membership of "c") so they can be rendered together in tests verifying collection reactivity.
+            """
             IterViewer()
             CChecker()
 
@@ -286,7 +354,11 @@ class TestSetBulkOperations:
         assert state.tags == {"a", "b"}
 
     def test_difference_update_marks_removed_dirty(self) -> None:
-        """difference_update() marks removed items dirty."""
+        """
+        Verify that removing items with `set.difference_update` causes dependent components to re-render.
+        
+        This test creates a tracked set containing {"a", "b", "c"}, renders a component that observes membership of "b", performs `difference_update({"b", "x"})`, and asserts the component re-renders and the set becomes {"a", "c"}.
+        """
 
         @dataclass
         class MyState(Stateful):
@@ -299,6 +371,11 @@ class TestSetBulkOperations:
 
         @component
         def BChecker() -> None:
+            """
+            Component that observes whether the tag "b" is present in state.tags and increments the render counter.
+            
+            This function reads membership of "b" from the tracked set to establish a reactive dependency used by tests.
+            """
             renders[0] += 1
             _ = "b" in state.tags
 
@@ -313,7 +390,11 @@ class TestSetBulkOperations:
         assert state.tags == {"a", "c"}
 
     def test_symmetric_difference_update(self) -> None:
-        """symmetric_difference_update() marks changed items dirty."""
+        """
+        Verify that symmetric_difference_update marks removed and added set items as dirty, causing dependent components to re-render.
+        
+        After performing symmetric_difference_update with {"b", "c"}, the component observing membership of "b" re-renders (due to removal), the component observing "c" re-renders (due to addition), and the set becomes {"a", "c"}.
+        """
 
         @dataclass
         class MyState(Stateful):
@@ -327,16 +408,29 @@ class TestSetBulkOperations:
 
         @component
         def BChecker() -> None:
+            """
+            Increment the B-render counter and read whether 'b' is present in state.tags.
+            
+            This increments b_renders[0] and performs a membership check for "b" in the tracked set to establish a dependency on that membership.
+            """
             b_renders[0] += 1
             _ = "b" in state.tags
 
         @component
         def CChecker() -> None:
+            """
+            Component that records a render and observes whether the tag "c" is present in state.tags.
+            
+            Increments the shared render counter and reads membership of "c" in state.tags to create a reactive dependency on that membership.
+            """
             c_renders[0] += 1
             _ = "c" in state.tags
 
         @component
         def App() -> None:
+            """
+            Compose and render the BChecker and CChecker components within a single test component tree.
+            """
             BChecker()
             CChecker()
 
@@ -357,7 +451,11 @@ class TestEdgeCasesExtended:
     """Extended edge case tests."""
 
     def test_list_imul_zero_clears(self) -> None:
-        """list *= 0 clears the list."""
+        """
+        Verifies that in-place list multiplication by zero empties the list and triggers a re-render.
+        
+        Asserts that `state.items *= 0` clears the list and marks the iteration dependency dirty so an observing component re-renders.
+        """
 
         @dataclass
         class MyState(Stateful):
@@ -370,6 +468,11 @@ class TestEdgeCasesExtended:
 
         @component
         def IterViewer() -> None:
+            """
+            Component that iterates over state.items to establish an iteration-based reactive dependency.
+            
+            Increments renders[0] each time it is executed.
+            """
             renders[0] += 1
             for _ in state.items:
                 pass
@@ -397,6 +500,11 @@ class TestEdgeCasesExtended:
 
         @component
         def IterViewer() -> None:
+            """
+            Component used in tests to iterate over state.data while recording renders.
+            
+            Increments the external render counter at each invocation and iterates over `state.data` to establish an iteration-based dependency for reactive tests.
+            """
             renders[0] += 1
             for _ in state.data:
                 pass
@@ -425,6 +533,11 @@ class TestEdgeCasesExtended:
 
         @component
         def IterViewer() -> None:
+            """
+            Component that iterates over the tracked set `state.tags` to record render occurrences.
+            
+            Increments the external render counter and iterates `state.tags` so the component's render depends on the collection's iteration.
+            """
             renders[0] += 1
             for _ in state.tags:
                 pass

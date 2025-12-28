@@ -23,6 +23,11 @@ class TestFeedbackWidgets:
 
         @component
         def App() -> None:
+            """
+            Create a small test application containing a warning Callout with a label.
+            
+            Defines a Callout titled "Warning" with intent "warning" that contains a Label with the text "Be careful!".
+            """
             with Callout(title="Warning", intent="warning"):
                 Label(text="Be careful!")
 
@@ -57,6 +62,11 @@ class TestFeedbackWidgets:
 
         @component
         def App() -> None:
+            """
+            Define a component tree with a collapsed Collapsible titled "Details" containing a Label.
+            
+            The Collapsible is created with expanded set to False and contains a single Label with text "Hidden content".
+            """
             with Collapsible(title="Details", expanded=False):
                 Label(text="Hidden content")
 
@@ -74,6 +84,11 @@ class TestFeedbackWidgets:
 
         @component
         def App() -> None:
+            """
+            Create an App component that renders a Collapsible titled "Toggle" containing a Label.
+            
+            The Collapsible's on_toggle callback appends the new expanded state to the outer-scope list `toggles`.
+            """
             with Collapsible(title="Toggle", on_toggle=lambda v: toggles.append(v)):
                 Label(text="Content")
 
@@ -93,6 +108,11 @@ class TestActionWidgets:
 
         @component
         def App() -> None:
+            """
+            Create an application menu containing common file actions.
+            
+            The menu contains four entries in order: "Open", "Save", a divider, and "Exit".
+            """
             with Menu():
                 MenuItem(text="Open")
                 MenuItem(text="Save")
@@ -107,10 +127,17 @@ class TestActionWidgets:
         assert len(menu.child_ids) == 4
 
     def test_menu_item_with_props(self) -> None:
-        """MenuItem stores text, icon, and other props."""
+        """
+        Verifies that a MenuItem preserves the provided properties `text`, `icon`, `disabled`, and `shortcut`.
+        """
 
         @component
         def App() -> None:
+            """
+            Defines a test application that renders a Menu containing a single disabled "Delete" MenuItem.
+            
+            The MenuItem is labeled "Delete", uses the "trash" icon, is disabled, and has the shortcut "Ctrl+D".
+            """
             with Menu():
                 MenuItem(text="Delete", icon="trash", disabled=True, shortcut="Ctrl+D")
 
@@ -126,11 +153,20 @@ class TestActionWidgets:
         assert item.properties["shortcut"] == "Ctrl+D"
 
     def test_menu_item_with_callback(self) -> None:
-        """MenuItem captures on_click callback."""
+        """
+        Verifies that a MenuItem calls its `on_click` callback when invoked.
+        
+        Sets up a MenuItem with an `on_click` handler that records a value and asserts the handler was executed.
+        """
         clicks = []
 
         @component
         def App() -> None:
+            """
+            Test App component that renders a Menu containing a single MenuItem wired to record clicks.
+            
+            Defines a Menu with one MenuItem whose `on_click` callback appends `True` to the outer `clicks` list.
+            """
             with Menu():
                 MenuItem(text="Click me", on_click=lambda: clicks.append(True))
 
@@ -147,6 +183,11 @@ class TestActionWidgets:
 
         @component
         def App() -> None:
+            """
+            Defines an App component that renders a Menu with a single MenuDivider child.
+            
+            This component is intended for tests that verify a Menu containing a divider renders correctly.
+            """
             with Menu():
                 MenuDivider()
 
@@ -162,6 +203,11 @@ class TestActionWidgets:
 
         @component
         def App() -> None:
+            """
+            Create a Toolbar with variant "minimal" and vertical orientation containing two Buttons labeled "Bold" and "Italic".
+            
+            This component is used in tests to verify Toolbar rendering, its `variant` and `orientation` properties, and that it contains two child Button elements.
+            """
             with Toolbar(variant="minimal", orientation="vertical"):
                 Button(text="Bold")
                 Button(text="Italic")

@@ -14,6 +14,11 @@ class TestCardAndDivider:
 
         @component
         def App() -> None:
+            """
+            Root test component that renders a Card containing a single Label with text "Inside card".
+            
+            Used by tests to produce an element tree where the Card component contains one Label child.
+            """
             with Card():
                 Label(text="Inside card")
 
@@ -26,10 +31,15 @@ class TestCardAndDivider:
         assert ctx.elements.get(card.child_ids[0]).component.name == "Label"
 
     def test_card_with_padding(self) -> None:
-        """Card accepts padding prop."""
+        """
+        Verify that a Card element stores the provided `padding` property.
+        """
 
         @component
         def App() -> None:
+            """
+            Render an App component containing a Card with padding set to 32 that wraps a Label with text "Content".
+            """
             with Card(padding=32):
                 Label(text="Content")
 
@@ -44,6 +54,11 @@ class TestCardAndDivider:
 
         @component
         def App() -> None:
+            """
+            Declare a component that renders a Column containing two Card widgets, each with a Label.
+            
+            The first Card contains a Label with text "Card 1" and the second Card contains a Label with text "Card 2".
+            """
             with Column():
                 with Card():
                     Label(text="Card 1")
@@ -63,6 +78,11 @@ class TestCardAndDivider:
 
         @component
         def App() -> None:
+            """
+            A test component that renders a Divider widget.
+            
+            Used in integration tests to produce a root element containing a single Divider for rendering assertions.
+            """
             Divider()
 
         ctx = RenderSession(App)
@@ -76,6 +96,9 @@ class TestCardAndDivider:
 
         @component
         def App() -> None:
+            """
+            Render a Divider configured with margin 24 and color "#6366f1".
+            """
             Divider(margin=24, color="#6366f1")
 
         ctx = RenderSession(App)
@@ -90,6 +113,11 @@ class TestCardAndDivider:
 
         @component
         def App() -> None:
+            """
+            Renders a vertical Divider component.
+            
+            This test component creates a Divider with orientation set to "vertical".
+            """
             Divider(orientation="vertical")
 
         ctx = RenderSession(App)
@@ -103,6 +131,11 @@ class TestCardAndDivider:
 
         @component
         def App() -> None:
+            """
+            Renders a Column containing a top label, a Divider, and a bottom label.
+            
+            The component creates a vertical layout with a Label displaying "Above", a Divider between items, and a Label displaying "Below".
+            """
             with Column():
                 Label(text="Above")
                 Divider()
@@ -126,6 +159,11 @@ class TestHeadingWidget:
 
         @component
         def App() -> None:
+            """
+            Simple app component that renders a Heading with text "Welcome".
+            
+            Used by tests to verify Heading rendering and propagation of the `text` property.
+            """
             Heading(text="Welcome")
 
         ctx = RenderSession(App)
@@ -136,10 +174,15 @@ class TestHeadingWidget:
         assert heading.properties["text"] == "Welcome"
 
     def test_heading_with_level(self) -> None:
-        """Heading accepts level prop for h1-h6."""
+        """
+        Verify that Heading stores the provided heading level (1–6) in its properties.
+        """
 
         @component
         def App() -> None:
+            """
+            Renders a Heading component with text "Section" at heading level 2.
+            """
             Heading(text="Section", level=2)
 
         ctx = RenderSession(App)
@@ -153,6 +196,9 @@ class TestHeadingWidget:
 
         @component
         def App() -> None:
+            """
+            Defines an app component that renders a Heading with text "Colored" and color "#333".
+            """
             Heading(text="Colored", color="#333")
 
         ctx = RenderSession(App)
@@ -166,6 +212,11 @@ class TestHeadingWidget:
 
         @component
         def App() -> None:
+            """
+            Render a Heading component with text "Styled" and a custom style.
+            
+            This component creates a Heading whose `text` is "Styled" and whose `style` property is {"marginBottom": "16px"}.
+            """
             Heading(text="Styled", style={"marginBottom": "16px"})
 
         ctx = RenderSession(App)
@@ -179,6 +230,9 @@ class TestHeadingWidget:
 
         @component
         def App() -> None:
+            """
+            Render an application component containing a Heading with the text "Default".
+            """
             Heading(text="Default")
 
         ctx = RenderSession(App)

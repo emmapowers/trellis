@@ -14,7 +14,15 @@ from trellis.core.state.stateful import Stateful
 
 
 def make_component(name: str) -> CompositionComponent:
-    """Helper to create a simple test component."""
+    """
+    Create a CompositionComponent with the given name whose render function is a no-op.
+    
+    Parameters:
+        name (str): Name of the component.
+    
+    Returns:
+        CompositionComponent: A component named `name` with a render function that does nothing.
+    """
     return CompositionComponent(name=name, render_func=lambda: None)
 
 
@@ -275,6 +283,12 @@ class TestThreadSafeStateUpdates:
         node = ctx.root_element
 
         def test_cb() -> str:
+            """
+            Return the fixed name used for a test callback.
+            
+            Returns:
+                'test_callback' — the callback identifier string.
+            """
             return "test_callback"
 
         node.props["on_click"] = test_cb
@@ -381,7 +395,11 @@ class TestElementStateParentId:
         assert child_state.parent_id == ctx.root_element.id
 
     def test_parent_id_preserved_on_rerender(self) -> None:
-        """parent_id is preserved when component re-renders."""
+        """
+        Ensure an element state's parent_id remains the same after its parent component re-renders.
+        
+        The test mounts a Parent that creates a Counter Stateful and renders a Child; after mutating the Counter to trigger a re-render, the Child state's parent_id is expected to be unchanged.
+        """
 
         @dataclass
         class Counter(Stateful):
@@ -617,7 +635,11 @@ class TestBuiltinWidgetsReconciliation:
         assert len(ctx.root_element.child_ids) == 2
 
     def test_widgets_in_dynamic_list(self) -> None:
-        """Widgets (via @react_component_base) should be hashable for reconciliation."""
+        """
+        Verifies that widget components in a dynamic list are reconciled so removing items updates the rendered child list accordingly.
+        
+        This test renders a list of widget-based items, removes some items from the source list, marks the root as dirty, re-renders, and asserts the rendered child count reflects the removal.
+        """
         from trellis.widgets import Button, Column, Label, Row
 
         items_ref = [[1, 2, 3, 4, 5]]

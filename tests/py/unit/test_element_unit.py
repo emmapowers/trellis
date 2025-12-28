@@ -8,7 +8,15 @@ from trellis.core.rendering.session import RenderSession
 
 
 def make_component(name: str) -> CompositionComponent:
-    """Helper to create a simple test component."""
+    """
+    Create a CompositionComponent with the given name and a no-op render function.
+    
+    Parameters:
+        name (str): Name to assign to the component.
+    
+    Returns:
+        CompositionComponent: A component named `name` whose `render_func` is a no-op.
+    """
     return CompositionComponent(name=name, render_func=lambda: None)
 
 
@@ -17,7 +25,14 @@ _dummy_session: RenderSession | None = None
 
 
 def _get_dummy_session_ref() -> weakref.ref[RenderSession]:
-    """Get a weakref to a dummy session for testing."""
+    """
+    Return a weak reference to a cached dummy RenderSession used by tests.
+    
+    Creates and caches a RenderSession with a root component named "DummyRoot" on first call and returns a weak reference to that cached session.
+    
+    Returns:
+        weakref.ref[RenderSession]: Weak reference to the cached dummy RenderSession.
+    """
     global _dummy_session
     if _dummy_session is None:
         _dummy_session = RenderSession(make_component("DummyRoot"))
@@ -29,7 +44,17 @@ def make_descriptor(
     key: str | None = None,
     props: dict | None = None,
 ) -> Element:
-    """Helper to create an Element."""
+    """
+    Create an Element configured with the given component, optional key, and optional properties, using a dummy render session.
+    
+    Parameters:
+        comp (CompositionComponent): Component to attach to the Element.
+        key (str | None): Optional key for the Element; defaults to None.
+        props (dict | None): Optional properties dict for the Element; defaults to an empty dict.
+    
+    Returns:
+        Element: An Element instance with the provided component, key, and props, and a dummy session reference.
+    """
     return Element(
         component=comp,
         _session_ref=_get_dummy_session_ref(),

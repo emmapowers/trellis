@@ -17,6 +17,11 @@ class MockComponent:
     _has_children_param = False
 
     def render(self):
+        """
+        No-op render method for MockComponent.
+        
+        Present to satisfy the component API; it performs no rendering and has no side effects.
+        """
         pass
 
 

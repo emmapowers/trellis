@@ -14,6 +14,11 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
+            """
+            Renders a TextInput component pre-filled with "hello" and a placeholder.
+            
+            Used by tests to produce a TextInput element with value "hello" and placeholder "Enter text...".
+            """
             TextInput(value="hello", placeholder="Enter text...")
 
         ctx = RenderSession(App)
@@ -30,6 +35,11 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
+            """
+            Render a TextInput for tests with a preset value and a change handler.
+            
+            This component renders a TextInput initialized with the value "test". Its on_change callback appends the new input value to the external `values` list used by the test.
+            """
             TextInput(value="test", on_change=lambda v: values.append(v))
 
         ctx = RenderSession(App)
@@ -46,6 +56,11 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
+            """
+            Renders an application component containing a disabled TextInput.
+            
+            This component is used in tests to verify that a TextInput is rendered with its disabled property set to True.
+            """
             TextInput(disabled=True)
 
         ctx = RenderSession(App)
@@ -55,10 +70,21 @@ class TestInputWidgets:
         assert text_input.properties["disabled"] is True
 
     def test_number_input_with_value(self) -> None:
-        """NumberInput stores value and range props."""
+        """
+        Verify that the NumberInput component preserves value, min, max, and step properties when rendered.
+        """
 
         @component
         def App() -> None:
+            """
+            Renders a NumberInput component preconfigured with value 42 and range 0 to 100 with step 1.
+            
+            This App component is used in tests to produce a single NumberInput element with:
+            - value set to 42
+            - min set to 0
+            - max set to 100
+            - step set to 1
+            """
             NumberInput(value=42, min=0, max=100, step=1)
 
         ctx = RenderSession(App)
@@ -77,6 +103,9 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
+            """
+            Renders a NumberInput initialized to 10 with an on_change handler that appends the new value to the outer `values` list.
+            """
             NumberInput(value=10, on_change=lambda v: values.append(v))
 
         ctx = RenderSession(App)
@@ -93,6 +122,11 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
+            """
+            Render a NumberInput component configured as disabled.
+            
+            This test component mounts a NumberInput with the `disabled` property set to True for use in rendering assertions.
+            """
             NumberInput(disabled=True)
 
         ctx = RenderSession(App)
@@ -106,6 +140,11 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
+            """
+            Render a Checkbox component configured as checked with the label "Enable feature".
+            
+            This component invocation mounts a Checkbox with checked=True and label="Enable feature".
+            """
             Checkbox(checked=True, label="Enable feature")
 
         ctx = RenderSession(App)
@@ -117,11 +156,20 @@ class TestInputWidgets:
         assert checkbox.properties["label"] == "Enable feature"
 
     def test_checkbox_with_callback(self) -> None:
-        """Checkbox captures on_change callback."""
+        """
+        Ensures Checkbox exposes an on_change callback that receives the updated checked state.
+        
+        Invokes the callback with True and asserts the provided handler is called with the boolean value.
+        """
         states: list[bool] = []
 
         @component
         def App() -> None:
+            """
+            Renders a Checkbox initialized as unchecked with an on_change callback that appends the new value to the enclosing `states` list.
+            
+            Used by tests to verify the Checkbox's callback is invoked with the updated boolean value.
+            """
             Checkbox(checked=False, on_change=lambda v: states.append(v))
 
         ctx = RenderSession(App)
@@ -138,6 +186,11 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
+            """
+            Render a disabled Checkbox component.
+            
+            Used by tests to verify that a Checkbox rendered with `disabled=True` produces the expected disabled element.
+            """
             Checkbox(disabled=True)
 
         ctx = RenderSession(App)
@@ -151,6 +204,11 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
+            """
+            Renders a Select component configured with two options and a default selection.
+            
+            The rendered Select has a default value of "opt1", two options (Option 1 and Option 2), and a placeholder of "Choose...".
+            """
             Select(
                 value="opt1",
                 options=[
@@ -175,6 +233,11 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
+            """
+            Render a Select widget that records chosen values.
+            
+            The Select is initialized with value "opt1", a single option labeled "Option 1", and an on_change callback that appends the selected value to the outer `selections` list.
+            """
             Select(
                 value="opt1",
                 options=[{"value": "opt1", "label": "Option 1"}],
@@ -195,6 +258,11 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
+            """
+            Provide an App component that renders a Select widget with the disabled flag set.
+            
+            This component is used by the test to produce a rendered Select element with disabled=True.
+            """
             Select(disabled=True)
 
         ctx = RenderSession(App)

@@ -74,7 +74,11 @@ class TestMutableClass:
         assert m1 != m2
 
     def test_equality_with_non_mutable(self) -> None:
-        """Comparing Mutable to non-Mutable returns NotImplemented."""
+        """
+        Verify that comparing a Mutable instance with a non-Mutable value is treated as unequal.
+        
+        This ensures the Mutable's equality machinery defers to Python's comparison protocol so that comparisons with unrelated types do not raise and result in inequality.
+        """
 
         @dataclass
         class State(Stateful):

@@ -18,7 +18,11 @@ class TestDependencyTracking:
     """
 
     def test_list_getitem_tracks_by_item_identity(self) -> None:
-        """Accessing list[i] registers dependency on id(item)."""
+        """
+        Verify that reading a list element by index records a dependency keyed by the element's identity.
+        
+        After rendering a component that accesses state.items[i], the tracked list's internal dependencies contain an entry keyed by id(the item) and the render session's root element is registered in that dependency set.
+        """
 
         @dataclass
         class MyState(Stateful):
@@ -29,6 +33,11 @@ class TestDependencyTracking:
 
         @component
         def ItemViewer() -> None:
+            """
+            Component that reads the item at index 1 from state.items to establish a dependency.
+            
+            This component performs a single read of state.items[1], causing the render system to track a dependency on that specific list entry.
+            """
             _ = state.items[1]  # Access item at index 1
 
         ctx = RenderSession(ItemViewer)
@@ -52,6 +61,11 @@ class TestDependencyTracking:
 
         @component
         def ListViewer() -> None:
+            """
+            Reads every element of `state.items` to register an iteration dependency used by tests.
+            
+            Used in integration tests to ensure iteration tracking (the `ITER_KEY`) is recorded when a component iterates over a tracked list.
+            """
             for item in state.items:
                 _ = item
 
@@ -75,6 +89,9 @@ class TestDependencyTracking:
 
         @component
         def DataViewer() -> None:
+            """
+            Reads the "x" entry from the shared state data to establish a render dependency.
+            """
             _ = state.data["x"]
 
         ctx = RenderSession(DataViewer)
@@ -86,7 +103,11 @@ class TestDependencyTracking:
         assert ctx.root_element in tracked_dict._deps["x"]
 
     def test_set_contains_tracks_by_value(self) -> None:
-        """item in set registers dependency on the value itself."""
+        """
+        Asserts that checking membership of a value in a TrackedSet registers a dependency on that value (by value, not identity).
+        
+        Verifies that rendering a component which evaluates `"python" in state.tags` results in the tracked set's dependency map containing the key `"python"` and the render session's root element being recorded for that key.
+        """
 
         @dataclass
         class MyState(Stateful):
@@ -121,6 +142,11 @@ class TestDependencyTracking:
 
         @component
         def ListViewer() -> None:
+            """
+            Component that iterates over state.items and increments the iterator render counter.
+            
+            Increments iter_renders[0] on each render and reads each element of state.items to establish an iteration dependency for testing.
+            """
             iter_renders[0] += 1
             for _ in state.items:
                 pass
@@ -149,17 +175,32 @@ class TestDependencyTracking:
 
         @component
         def Iterator() -> None:
+            """
+            Increment the iteration render counter and iterate over state.data to register iteration dependencies.
+            
+            This component increments iter_renders[0] each time it renders, then iterates over state.data (no other side effects), so tests can observe iteration-based dependency tracking.
+            """
             iter_renders[0] += 1
             for _ in state.data:
                 pass
 
         @component
         def AViewer() -> None:
+            """
+            Component that reads the "a" key from state.data and records a render by incrementing a_renders[0].
+            
+            Reading the key registers a dependency on the dictionary entry "a".
+            """
             a_renders[0] += 1
             _ = state.data["a"]
 
         @component
         def App() -> None:
+            """
+            Component that mounts the Iterator and AViewer components.
+            
+            Used in tests to render both components together so iteration-related updates and individual key views can be exercised within a single app.
+            """
             Iterator()
             AViewer()
 
@@ -195,16 +236,27 @@ class TestFineGrainedReactivity:
 
         @component
         def Item0() -> None:
+            """
+            Increment the Item0 render counter and access the first item of state.items to register a read dependency.
+            
+            This increments item0_renders[0] and reads state.items[0], causing the render to be associated with that item.
+            """
             item0_renders[0] += 1
             _ = state.items[0]
 
         @component
         def Item1() -> None:
+            """
+            Test component that increments the Item1 render counter and reads the second item from state to establish a dependency.
+            """
             item1_renders[0] += 1
             _ = state.items[1]
 
         @component
         def App() -> None:
+            """
+            Compose and render Item0 and Item1 components in sequence.
+            """
             Item0()
             Item1()
 
@@ -236,16 +288,29 @@ class TestFineGrainedReactivity:
 
         @component
         def XViewer() -> None:
+            """
+            Test component that increments the x_renders counter and reads state.data["x"] to establish a dependency on the "x" key.
+            """
             x_renders[0] += 1
             _ = state.data["x"]
 
         @component
         def YViewer() -> None:
+            """
+            Increment the shared render counter and read state.data["y"] to establish a dependency on the "y" key.
+            
+            This component is used in tests to count renders and ensure dependency tracking for the `"y"` dictionary key.
+            """
             y_renders[0] += 1
             _ = state.data["y"]
 
         @component
         def App() -> None:
+            """
+            Compose and mount XViewer and YViewer into the current render tree.
+            
+            Instantiates both viewer components so they are rendered together as part of the application.
+            """
             XViewer()
             YViewer()
 
@@ -277,17 +342,30 @@ class TestFineGrainedReactivity:
 
         @component
         def ListViewer() -> None:
+            """
+            Component used in tests that iterates over state.items and increments the list render counter each render.
+            
+            Increments list_renders[0] and iterates over state.items to exercise iteration-based dependency tracking during a render.
+            """
             list_renders[0] += 1
             for _ in state.items:
                 pass
 
         @component
         def Item0Viewer() -> None:
+            """
+            Component used in tests to record a render and read the first item from `state.items` to establish a dependency.
+            """
             item0_renders[0] += 1
             _ = state.items[0]
 
         @component
         def App() -> None:
+            """
+            Compose the application component tree containing the list iterator and a single-item viewer.
+            
+            This component instantiates ListViewer and Item0Viewer so both child components are part of the rendered tree.
+            """
             ListViewer()
             Item0Viewer()
 
@@ -330,6 +408,11 @@ class TestDependencyCleanup:
 
         @component
         def App() -> None:
+            """
+            Conditionally renders the Consumer component when the show_consumer flag is set.
+            
+            If show_consumer[0] is True, mounts Consumer; otherwise renders nothing.
+            """
             if show_consumer[0]:
                 Consumer()
 
@@ -372,6 +455,11 @@ class TestDependencyCleanup:
 
         @component
         def Consumer() -> None:
+            """
+            Conditionally accesses the "x" key of the shared state dictionary when the external flag is true.
+            
+            When `read_data[0]` is truthy, reads `state.data["x"]` so the current render will depend on that key; does nothing when the flag is false.
+            """
             if read_data[0]:
                 _ = state.data["x"]
 
@@ -425,16 +513,31 @@ class TestTrackedWithStatefulItems:
 
         @component
         def Todo1Viewer() -> None:
+            """
+            Increment the Todo1 render counter and read the first todo's completed property to establish a dependency.
+            
+            This component increments todo1_renders[0] when invoked and accesses state.todos[0].completed so the viewer depends on that property's value.
+            """
             todo1_renders[0] += 1
             _ = state.todos[0].completed  # Read todo1.completed
 
         @component
         def Todo2Viewer() -> None:
+            """
+            Increment the second todo's render counter and read its `completed` property to establish a dependency.
+            
+            This component-side function updates `todo2_renders[0]` and accesses `state.todos[1].completed`.
+            """
             todo2_renders[0] += 1
             _ = state.todos[1].completed  # Read todo2.completed
 
         @component
         def App() -> None:
+            """
+            Mounts the two todo viewer components.
+            
+            This App component composes Todo1Viewer and Todo2Viewer for tests that assert fine-grained re-rendering behavior.
+            """
             Todo1Viewer()
             Todo2Viewer()
 
@@ -470,6 +573,11 @@ class TestTrackedWithStatefulItems:
 
         @component
         def ItemViewer() -> None:
+            """
+            Component used in tests that increments a render counter and reads the first todo item to record a dependency on that item.
+            
+            Increments `item_renders[0]` each time it is invoked and reads `state.todos[0]`.
+            """
             item_renders[0] += 1
             _ = state.todos[0]  # Just read the item
 
@@ -503,16 +611,29 @@ class TestMultiComponentScenarios:
 
         @component
         def Component1() -> None:
+            """
+            Component that reads the first item of `state.items` to register a dependency and increments a render counter.
+            """
             comp1_renders[0] += 1
             _ = state.items[0]
 
         @component
         def Component2() -> None:
+            """
+            Increment the component render counter and read the first item from state to establish a dependency.
+            
+            This component increments comp2_renders[0] each time it runs and accesses state.items[0] so the render system registers a dependency on that list slot.
+            """
             comp2_renders[0] += 1
             _ = state.items[0]
 
         @component
         def App() -> None:
+            """
+            Compose and render Component1 followed by Component2.
+            
+            This function invokes Component1 and Component2 in sequence to assemble the application UI.
+            """
             Component1()
             Component2()
 
@@ -532,7 +653,11 @@ class TestDeeplyNested:
     """Tests for deeply nested access."""
 
     def test_deeply_nested_list_dict_list(self) -> None:
-        """Deeply nested state.a[0]["x"][1] works correctly."""
+        """
+        Verify that reading a value nested inside a list of dicts of lists is tracked at every container level and that updating that deeply nested element triggers a re-render.
+        
+        This test builds a Stateful with type list[dict[str, list[int]]], confirms the nested runtime containers are TrackedList/TrackedDict/TrackedList, accesses state.data[0]["x"][1] during rendering, then mutates that element and asserts the component renders again.
+        """
 
         @dataclass
         class MyState(Stateful):
@@ -545,6 +670,11 @@ class TestDeeplyNested:
 
         @component
         def DeepViewer() -> None:
+            """
+            Increment the render counter and read the deeply nested value at data[0]["x"][1] to register its dependency.
+            
+            This component records a render (increments renders[0]) and accesses the nested element so the rendering system tracks dependencies on that specific nested location.
+            """
             renders[0] += 1
             _ = state.data[0]["x"][1]  # Access 20
 
@@ -567,7 +697,11 @@ class TestSetValueTracking:
     """Tests for set value-based tracking (vs id-based)."""
 
     def test_set_contains_with_different_string_objects(self) -> None:
-        """Set tracking works with different string objects of same value."""
+        """
+        Verifies set membership tracking uses value equality rather than object identity.
+        
+        Renders a component that checks whether a specific string value is in a tracked set, then adds a distinct string object with the same value and asserts the component re-renders due to the value-based dependency.
+        """
 
         @dataclass
         class MyState(Stateful):
@@ -581,6 +715,11 @@ class TestSetValueTracking:
 
         @component
         def TagChecker() -> None:
+            """
+            Component that records a render and reads membership of `check_value` in `state.tags`.
+            
+            Increments `renders[0]` to count this render, and evaluates `check_value in state.tags` so a dependency on the set membership is observed.
+            """
             renders[0] += 1
             _ = check_value in state.tags
 

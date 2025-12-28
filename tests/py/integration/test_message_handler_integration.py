@@ -20,7 +20,15 @@ from trellis.widgets import Button, Label
 
 
 def get_initial_tree(handler: MessageHandler) -> dict[str, tp.Any]:
-    """Helper to get tree dict from initial render."""
+    """
+    Extract the root node dictionary produced by a handler's initial render.
+    
+    Returns:
+        The `node` dictionary from the single `AddPatch` contained in the `PatchMessage` returned by `handler.initial_render()`.
+    
+    Raises:
+        AssertionError: If the initial render does not return a `PatchMessage` with exactly one patch, or if that patch is not an `AddPatch`.
+    """
     msg = handler.initial_render()
     assert isinstance(msg, PatchMessage)
     assert len(msg.patches) == 1
@@ -37,6 +45,11 @@ class TestMessageHandler:
 
         @component
         def App() -> None:
+            """
+            Simple example component that renders a Label with the text "Hello".
+            
+            Used by tests to produce an initial render tree containing a single Label node whose props.text is "Hello".
+            """
             Label(text="Hello")
 
         handler = MessageHandler(App)
@@ -55,6 +68,9 @@ class TestMessageHandler:
 
         @component
         def App() -> None:
+            """
+            Create a simple UI component containing a single Button labeled "Click" whose on_click handler appends True to the outer `clicked` list.
+            """
             Button(text="Click", on_click=lambda: clicked.append(True))
 
         handler = MessageHandler(App)
@@ -74,10 +90,19 @@ class TestMessageHandler:
         assert clicked == [True]
 
     def test_handle_message_with_unknown_callback(self) -> None:
-        """handle_message() returns ErrorMessage for unknown callback."""
+        """
+        Verify that handling an EventMessage with an unknown callback ID produces an ErrorMessage.
+        
+        Asserts the response is an ErrorMessage with context "callback" and an error message containing the missing callback ID.
+        """
 
         @component
         def App() -> None:
+            """
+            Simple example component that renders a Label with the text "Hello".
+            
+            Used by tests to produce an initial render tree containing a single Label node whose props.text is "Hello".
+            """
             Label(text="Hello")
 
         handler = MessageHandler(App)
@@ -100,9 +125,17 @@ class TestMessageHandler:
 
         @component
         def Counter() -> None:
+            """
+            A stateful counter component that displays the current count and provides a button to increment it.
+            
+            Renders a Label showing the counter's current value and a Button labeled "+" that, when clicked, increments the component's internal `count` state.
+            """
             state = CounterState()
 
             def increment() -> None:
+                """
+                Increment the current state's count by one.
+                """
                 state.count += 1
 
             Label(text=str(state.count))
@@ -145,6 +178,11 @@ class TestMessageHandler:
 
         @component
         def App() -> None:
+            """
+            Define a minimal application with a Button that records click events.
+            
+            The Button's on_click handler appends the received event object to the surrounding `received` list.
+            """
             Button(text="Click", on_click=lambda e: received.append(e))
 
         handler = MessageHandler(App)
@@ -171,6 +209,11 @@ class TestMessageHandler:
 
         @component
         def App() -> None:
+            """
+            Declare a minimal application that renders a single Button labeled "Click" with a no-op click handler.
+            
+            The component has no parameters and does not return a value; it defines UI structure by creating a Button with its `text` set to "Click" and `on_click` set to a function that does nothing.
+            """
             Button(text="Click", on_click=lambda: None)
 
         handler = MessageHandler(App)
@@ -197,6 +240,11 @@ class TestBrowserMessageHandler:
 
         @component
         def App() -> None:
+            """
+            Simple example component that renders a Label with the text "Hello".
+            
+            Used by tests to produce an initial render tree containing a single Label node whose props.text is "Hello".
+            """
             Label(text="Hello")
 
         handler = BrowserMessageHandler(App)
@@ -215,6 +263,11 @@ class TestBrowserMessageHandler:
 
         @component
         def App() -> None:
+            """
+            Simple example component that renders a Label with the text "Hello".
+            
+            Used by tests to produce an initial render tree containing a single Label node whose props.text is "Hello".
+            """
             Label(text="Hello")
 
         handler = BrowserMessageHandler(App)
@@ -233,6 +286,11 @@ class TestBrowserMessageHandler:
 
         @component
         def App() -> None:
+            """
+            Simple example component that renders a Label with the text "Hello".
+            
+            Used by tests to produce an initial render tree containing a single Label node whose props.text is "Hello".
+            """
             Label(text="Hello")
 
         handler = BrowserMessageHandler(App)
@@ -250,6 +308,11 @@ class TestBrowserMessageHandler:
 
         @component
         def App() -> None:
+            """
+            Simple example component that renders a Label with the text "Hello".
+            
+            Used by tests to produce an initial render tree containing a single Label node whose props.text is "Hello".
+            """
             Label(text="Hello")
 
         handler = BrowserMessageHandler(App)
@@ -264,6 +327,9 @@ class TestBrowserMessageHandler:
 
         @component
         def App() -> None:
+            """
+            Create a simple UI component containing a single Button labeled "Click" whose on_click handler appends True to the outer `clicked` list.
+            """
             Button(text="Click", on_click=lambda: clicked.append(True))
 
         handler = BrowserMessageHandler(App)
@@ -278,6 +344,11 @@ class TestBrowserMessageHandler:
 
         # Process one message
         async def process_one() -> None:
+            """
+            Process a single incoming message by receiving it from the handler and forwarding it for handling.
+            
+            Awaits a message from handler.receive_message(), passes it to handler.handle_message(), and asserts that the handler returns None (expected when rendering is batched). Raises AssertionError if the handler returns a non-None response.
+            """
             msg = await handler.receive_message()
             response = await handler.handle_message(msg)
             # With batched rendering, handle_message returns None
@@ -298,12 +369,22 @@ class TestAsyncCallbackHandling:
         completed = []
 
         async def async_handler() -> None:
+            """
+            Asynchronous test callback that records its start and completion in surrounding lists.
+            
+            Appends True to the outer `started` list, awaits a short delay (~0.01s), then appends True to the outer `completed` list.
+            """
             started.append(True)
             await asyncio.sleep(0.01)
             completed.append(True)
 
         @component
         def App() -> None:
+            """
+            Render a simple app containing a single Button labeled "Async" that invokes `async_handler` when clicked.
+            
+            Used in tests to verify asynchronous callback scheduling and background task tracking.
+            """
             Button(text="Async", on_click=async_handler)
 
         handler = MessageHandler(App)
@@ -340,11 +421,21 @@ class TestAsyncCallbackHandling:
         task_completed = []
 
         async def async_handler() -> None:
+            """
+            Waits briefly then records completion by appending True to the enclosing `task_completed` list.
+            
+            This coroutine sleeps for approximately 0.01 seconds and then appends `True` to the `task_completed` list captured from the surrounding scope.
+            """
             await asyncio.sleep(0.01)
             task_completed.append(True)
 
         @component
         def App() -> None:
+            """
+            Render a simple app containing a single Button labeled "Async" that invokes `async_handler` when clicked.
+            
+            Used in tests to verify asynchronous callback scheduling and background task tracking.
+            """
             Button(text="Async", on_click=async_handler)
 
         handler = MessageHandler(App)

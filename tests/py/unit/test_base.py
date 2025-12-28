@@ -67,7 +67,13 @@ class TestIComponentProtocolConformance:
         """HtmlElement should return JSX_ELEMENT kind."""
 
         @html_element("div")
-        def TestDiv() -> Element: ...
+        def TestDiv() -> Element: """
+Create an Element representing a 'div' HTML element.
+
+Returns:
+    Element: An Element configured as a `div` HTML element for use in tests.
+"""
+...
 
         # Access the underlying component via the decorator's _component attribute
         elem = TestDiv._component

@@ -61,7 +61,9 @@ class TestTrackedListBasics:
         assert list(lst) == []
 
     def test_copy_returns_plain_list(self) -> None:
-        """copy() returns a plain list, not TrackedList."""
+        """
+        Verifies that TrackedList.copy() returns a plain Python list rather than a TrackedList.
+        """
         lst = TrackedList([1, 2, 3])
         copy = lst.copy()
         assert copy == [1, 2, 3]
@@ -195,7 +197,9 @@ class TestTrackedSetBasics:
         assert len(s) == 0
 
     def test_copy_returns_plain_set(self) -> None:
-        """copy() returns a plain set, not TrackedSet."""
+        """
+        Verify that calling `copy()` on a TrackedSet produces a plain `set` instance, not a `TrackedSet`.
+        """
         s = TrackedSet({1, 2, 3})
         copy = s.copy()
         assert copy == {1, 2, 3}
@@ -442,7 +446,9 @@ class TestMutationsOutsideRender:
         assert result == 99
 
     def test_update_multiple_iterables(self) -> None:
-        """update() with multiple iterables works correctly."""
+        """
+        Verifies that TrackedSet.update accepts multiple iterables and adds all their elements.
+        """
         s: TrackedSet[int] = TrackedSet({1, 2})
         s.update({3, 4}, {5, 6})
         assert s == {1, 2, 3, 4, 5, 6}
@@ -471,7 +477,11 @@ class TestRebinding:
             s2.items = s1.items
 
     def test_tracked_list_can_copy_to_new_owner(self) -> None:
-        """TrackedList can be copied to a new owner."""
+        """
+        Verify that copying a TrackedList from one Stateful owner to another produces a distinct TrackedList with the same contents.
+        
+        Creates two Stateful instances, copies the list from the first to the second via a plain list, and asserts the resulting tracked lists are different objects but contain identical elements.
+        """
 
         @dataclass
         class State1(Stateful):

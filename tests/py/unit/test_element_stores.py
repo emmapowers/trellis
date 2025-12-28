@@ -15,11 +15,25 @@ class MockComponent:
     _has_children_param = False
 
     def render(self):
+        """
+        No-op render method used by MockComponent for tests; intentionally performs no action.
+        """
         pass
 
 
 def make_node(node_id: str, tree_ref=None) -> Element:
-    """Create a test node with the given ID."""
+    """
+    Create a lightweight test Element with the specified id.
+    
+    If `tree_ref` is provided it should be a weak reference to a tree object; otherwise a new weak reference to a fresh fake tree is created. The returned Element uses a MockComponent, has `render_count` set to 0, and its `id` set to `node_id`.
+    
+    Parameters:
+        node_id (str): Identifier to assign to the created Element.
+        tree_ref (optional): A weak reference to a tree object; if omitted, a new weak reference is created.
+    
+    Returns:
+        Element: A test Element instance configured for unit tests.
+    """
 
     class FakeTree:
         pass

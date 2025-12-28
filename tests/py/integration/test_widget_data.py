@@ -23,6 +23,11 @@ class TestStatWidget:
 
         @component
         def App() -> None:
+            """
+            Render a Stat widget showing revenue and its value.
+            
+            Renders a Stat component with label "Revenue" and value "$12,345".
+            """
             Stat(label="Revenue", value="$12,345")
 
         ctx = RenderSession(App)
@@ -38,6 +43,11 @@ class TestStatWidget:
 
         @component
         def App() -> None:
+            """
+            Render a component that displays a Stat widget for user count with a delta indicator.
+            
+            Renders a Stat widget with label "Users", value "1,234", delta "+12%", and delta_type "increase".
+            """
             Stat(label="Users", value="1,234", delta="+12%", delta_type="increase")
 
         ctx = RenderSession(App)
@@ -52,6 +62,11 @@ class TestStatWidget:
 
         @component
         def App() -> None:
+            """
+            Component that renders a Stat widget with label "Big", value "999", and size "lg".
+            
+            Used by tests as a minimal application component to verify Stat widget rendering and prop propagation.
+            """
             Stat(label="Big", value="999", size="lg")
 
         ctx = RenderSession(App)
@@ -69,6 +84,9 @@ class TestTagWidget:
 
         @component
         def App() -> None:
+            """
+            Renders a simple test component that displays a Tag with the text "Python".
+            """
             Tag(text="Python")
 
         ctx = RenderSession(App)
@@ -83,6 +101,11 @@ class TestTagWidget:
 
         @component
         def App() -> None:
+            """
+            Renders a Tag component with text "Success" and variant "success" for testing.
+            
+            This component is used in tests to verify that a Tag with the given text and variant is created.
+            """
             Tag(text="Success", variant="success")
 
         ctx = RenderSession(App)
@@ -97,6 +120,11 @@ class TestTagWidget:
 
         @component
         def App() -> None:
+            """
+            Render a removable Tag component labeled "Remove me" that triggers an on_remove callback when removed.
+            
+            The Tag is configured with removable=True and an on_remove callback that appends True to the enclosing `removed` list.
+            """
             Tag(text="Remove me", removable=True, on_remove=lambda: removed.append(True))
 
         ctx = RenderSession(App)
@@ -118,6 +146,11 @@ class TestChartWidgets:
 
         @component
         def App() -> None:
+            """
+            Render a TimeSeriesChart with a small sample dataset for testing.
+            
+            Renders a chart using two-row data (timestamps and corresponding values), a single series labeled "CPU" with stroke color "#6366f1", and a height of 300 pixels. This App exists solely to provide a predictable component instance for unit tests.
+            """
             TimeSeriesChart(
                 data=[
                     [1700000000, 1700000001, 1700000002],
@@ -140,6 +173,9 @@ class TestChartWidgets:
 
         @component
         def App() -> None:
+            """
+            Renders a LineChart component configured with two months of sample data, using "month" as the x-axis key and "value" as the data series key.
+            """
             LineChart(
                 data=[{"month": "Jan", "value": 100}, {"month": "Feb", "value": 120}],
                 data_keys=["value"],
@@ -159,6 +195,11 @@ class TestChartWidgets:
 
         @component
         def App() -> None:
+            """
+            Render a minimal test app containing a stacked BarChart widget.
+            
+            Renders a BarChart with a single data point {"category": "A", "value": 100"} and `stacked=True` for use in unit tests.
+            """
             BarChart(
                 data=[{"category": "A", "value": 100}],
                 stacked=True,
@@ -176,6 +217,11 @@ class TestChartWidgets:
 
         @component
         def App() -> None:
+            """
+            Renders an AreaChart component configured with a single data point and a step curve.
+            
+            The component is created with data containing one entry for "Jan" with value 100 and with `curve_type` set to "step".
+            """
             AreaChart(
                 data=[{"name": "Jan", "value": 100}],
                 curve_type="step",
@@ -206,10 +252,19 @@ class TestChartWidgets:
         assert chart.properties["inner_radius"] == 50
 
     def test_sparkline_with_data(self) -> None:
-        """Sparkline stores data props."""
+        """
+        Verify that a Sparkline component stores provided visual and data properties.
+        
+        Asserts that the rendered Sparkline element exposes the supplied `data`, `height`, and `color` properties.
+        """
 
         @component
         def App() -> None:
+            """
+            Render an App component that displays a Sparkline chart with predefined data, height, and color.
+            
+            The Sparkline is configured with data [10, 20, 15, 25], a height of 30, and color "#22c55e".
+            """
             Sparkline(data=[10, 20, 15, 25], height=30, color="#22c55e")
 
         ctx = RenderSession(App)

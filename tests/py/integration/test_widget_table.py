@@ -15,6 +15,13 @@ class TestTableWidget:
 
         @component
         def App() -> None:
+            """
+            Top-level test App component that renders a Table configured with two columns and two data rows.
+            
+            Renders a Table with columns "name" and "value" and two rows:
+            - {"name": "Item 1", "value": 100}
+            - {"name": "Item 2", "value": 200}
+            """
             Table(
                 columns=["name", "value"],
                 data=[
@@ -40,6 +47,11 @@ class TestTableWidget:
 
         @component
         def App() -> None:
+            """
+            Render a Table configured with specific styling options.
+            
+            Creates a Table with striped rows enabled, compact spacing disabled, and borders enabled.
+            """
             Table(striped=True, compact=False, bordered=True)
 
         ctx = RenderSession(App)
@@ -51,15 +63,30 @@ class TestTableWidget:
         assert table.properties["bordered"] is True
 
     def test_table_with_custom_cell_render(self) -> None:
-        """Table with custom cell rendering creates CellSlot children."""
+        """
+        Verifies that a column-level custom render function is invoked per row and that per-cell CellSlot elements are created with correct slot IDs.
+        
+        Asserts the custom renderer is called once for each data row, that TableInner contains one CellSlot per rendered column cell, and that each CellSlot's `slot` property uses the format "rowKey:columnName" (using the row `_key`).
+        """
         render_calls: list[dict] = []
 
         def CustomCell(*, row: dict) -> None:
+            """
+            Render a table cell that records the provided row and creates a Label displaying the row's name.
+            
+            Parameters:
+                row (dict): The data for the current table row; must contain a 'name' key used for the Label text.
+            """
             render_calls.append(row)
             Label(text=f"Custom: {row['name']}")
 
         @component
         def App() -> None:
+            """
+            Defines an App component that renders a Table with two columns ("name" and "value") and two data rows.
+            
+            The "value" column uses CustomCell for custom cell rendering; the two data rows include _key values "row1" and "row2".
+            """
             Table(
                 columns=[
                     TableColumn(name="name", label="Name"),
@@ -102,10 +129,21 @@ class TestTableWidget:
 
         @component
         def CustomCell(*, row: dict) -> None:
+            """
+            Render a Label showing the provided row's "name" value.
+            
+            Parameters:
+                row (dict): Mapping representing the table row; must contain the "name" key whose value will be displayed.
+            """
             Label(text=row["name"])
 
         @component
         def App() -> None:
+            """
+            Component that renders a Table with an ID row-key column and a name column using a custom cell renderer.
+            
+            Renders a Table with two columns and two data rows; the "id" column is marked as the row key and the "name" column uses `CustomCell` to render each cell's content.
+            """
             Table(
                 columns=[
                     TableColumn(name="id", label="ID", row_key=True),
@@ -138,10 +176,21 @@ class TestTableWidget:
 
         @component
         def CustomCell(*, row: dict) -> None:
+            """
+            Render a Label showing the provided row's "name" value.
+            
+            Parameters:
+                row (dict): Mapping representing the table row; must contain the "name" key whose value will be displayed.
+            """
             Label(text=row["name"])
 
         @component
         def App() -> None:
+            """
+            Renders a Table with a single "name" column that uses CustomCell for cell rendering and two data rows identified by `_key` values.
+            
+            The table's data contains two rows with `_key` "custom1" and "custom2" and names "Item 1" and "Item 2", respectively. This component is used in tests to exercise custom cell rendering and row-key-based slot generation.
+            """
             Table(
                 columns=[
                     TableColumn(name="name", label="Name", render=CustomCell),
@@ -172,10 +221,21 @@ class TestTableWidget:
 
         @component
         def CustomCell(*, row: dict) -> None:
+            """
+            Render a Label showing the provided row's "name" value.
+            
+            Parameters:
+                row (dict): Mapping representing the table row; must contain the "name" key whose value will be displayed.
+            """
             Label(text=row["name"])
 
         @component
         def App() -> None:
+            """
+            Defines an App component that renders a Table with a single "name" column using a custom cell renderer.
+            
+            The table is populated with two rows that do not provide a `_key` field or a column marked as `row_key`; row identifiers therefore use the row index. Used to test custom cell rendering and index-based row-key resolution.
+            """
             Table(
                 columns=[
                     TableColumn(name="name", label="Name", render=CustomCell),
@@ -205,10 +265,21 @@ class TestTableWidget:
         """Serialized CellSlot children contain the rendered content."""
 
         def CustomCell(*, row: dict) -> None:
+            """
+            Render a Label showing the row's name prefixed with "Custom:".
+            
+            Parameters:
+                row (dict): The table row data. Must contain a 'name' key whose value will be displayed.
+            """
             Label(text=f"Custom: {row['name']}")
 
         @component
         def App() -> None:
+            """
+            Render a Table with a single "name" column that uses CustomCell and one data row with _key "row1".
+            
+            This component is used in tests to exercise custom cell rendering and row-key handling for a table containing one row ("Item 1").
+            """
             Table(
                 columns=[
                     TableColumn(name="name", label="Name", render=CustomCell),

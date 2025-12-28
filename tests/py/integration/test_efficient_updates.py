@@ -404,6 +404,15 @@ class TestDeeplyNestedStateUpdates:
             _ = leaf_state.value
 
         def make_level(n: int):
+            """
+            Create a component representing level `n` of the nested test tree.
+            
+            Parameters:
+                n (int): The level index within the nested chain; when `n` equals `DEPTH`, the component renders the `Leaf`.
+            
+            Returns:
+                Level (callable): A component function that records its render count and, when rendered, either renders the next deeper level or the `Leaf` if at `DEPTH`.
+            """
             @component
             def Level() -> None:
                 render_counts[f"level{n}"] = render_counts.get(f"level{n}", 0) + 1

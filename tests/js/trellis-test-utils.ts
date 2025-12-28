@@ -23,14 +23,13 @@ import {
 // =============================================================================
 
 /**
- * Create a minimal SerializedElement for testing.
+ * Create a minimal SerializedElement representing a React component for tests.
  *
- * @example
- * const button = makeElement("btn-1", "Button", { text: "Click" });
- * const app = makeElement("root", "App", {}, [
- *   makeElement("header", "Header"),
- *   makeElement("content", "Content"),
- * ]);
+ * @param key - The unique key for the element
+ * @param type - The component type/name
+ * @param props - Props to attach to the element; defaults to an empty object
+ * @param children - Child SerializedElement nodes; defaults to an empty array
+ * @returns A SerializedElement representing a react_component node with the given key, type, props, and children
  */
 export function makeElement(
   key: string,
@@ -53,7 +52,12 @@ export function makeElement(
 // =============================================================================
 
 /**
- * Create an AddPatch for inserting a new subtree.
+ * Create an AddPatch that inserts a subtree rooted at `node` under a parent.
+ *
+ * @param node - Root element of the subtree to insert
+ * @param parentId - ID of the parent node to attach to, or `null` to indicate no parent
+ * @param children - Array of child node keys for the parent; defaults to an array containing `node.key`
+ * @returns An AddPatch describing the add operation
  */
 export function makeAddPatch(
   node: SerializedElement,
@@ -69,7 +73,11 @@ export function makeAddPatch(
 }
 
 /**
- * Create an UpdatePatch for modifying props.
+ * Create an UpdatePatch that replaces the props of the specified node.
+ *
+ * @param id - The target node's id to update
+ * @param props - The props to apply to the node
+ * @returns An UpdatePatch object with `op` set to `"update"`, the target `id`, and the provided `props`
  */
 export function makeUpdatePatch(
   id: string,
@@ -83,7 +91,10 @@ export function makeUpdatePatch(
 }
 
 /**
- * Create a RemovePatch for deleting a node.
+ * Create a patch that removes a node from a tree.
+ *
+ * @param id - The identifier of the node to remove
+ * @returns A patch object that describes removing the node with the given `id`
  */
 export function makeRemovePatch(id: string): RemovePatch {
   return {
@@ -97,7 +108,11 @@ export function makeRemovePatch(id: string): RemovePatch {
 // =============================================================================
 
 /**
- * Create a HelloResponseMessage.
+ * Construct a Hello response message for tests.
+ *
+ * @param sessionId - Session identifier to include in the message; defaults to `"test-session"`.
+ * @param serverVersion - Server version string to include; defaults to `"1.0.0"`.
+ * @returns A `HelloResponseMessage` containing `type: MessageType.HELLO_RESPONSE`, `session_id`, and `server_version`.
  */
 export function makeHelloResponse(
   sessionId: string = "test-session",
@@ -111,7 +126,10 @@ export function makeHelloResponse(
 }
 
 /**
- * Create a PatchMessage with the given patches.
+ * Creates a patch message containing the provided patches.
+ *
+ * @param patches - The patches to include in the message
+ * @returns The PatchMessage with `type` set to MessageType.PATCH and the given `patches`
  */
 export function makePatchMessage(
   patches: Array<AddPatch | UpdatePatch | RemovePatch>
@@ -123,7 +141,11 @@ export function makePatchMessage(
 }
 
 /**
- * Create an ErrorMessage.
+ * Create an error message object for the protocol.
+ *
+ * @param message - Human-readable error description
+ * @param code - Error code identifier (defaults to "ERROR")
+ * @returns An ErrorMessage with `type` set to MessageType.ERROR, and the provided `message` and `code`
  */
 export function makeErrorMessage(
   message: string,
@@ -141,7 +163,9 @@ export function makeErrorMessage(
 // =============================================================================
 
 /**
- * Create a mock callback set for ClientMessageHandler tests.
+ * Creates a set of vi mock callbacks used by ClientMessageHandler tests.
+ *
+ * @returns An object containing `onConnectionStateChange`, `onConnected`, and `onError` mock functions.
  */
 export function makeHandlerCallbacks(): {
   onConnectionStateChange: Mock;
@@ -160,7 +184,9 @@ export function makeHandlerCallbacks(): {
 // =============================================================================
 
 /**
- * Extract all node keys from a SerializedElement tree (depth-first).
+ * Collects all node keys from a SerializedElement tree in depth-first order.
+ *
+ * @returns An array of node keys in depth-first order, starting with the root element's key.
  */
 export function getAllKeys(element: SerializedElement): string[] {
   const keys: string[] = [element.key];
@@ -171,7 +197,11 @@ export function getAllKeys(element: SerializedElement): string[] {
 }
 
 /**
- * Find a node in a SerializedElement tree by key.
+ * Searches a SerializedElement tree for a node with the given key.
+ *
+ * @param element - The root element to search
+ * @param key - The node key to locate
+ * @returns The node with the matching key, or `undefined` if not found
  */
 export function findByKey(
   element: SerializedElement,

@@ -129,6 +129,12 @@ class TestContainerComponent:
 
         @component
         def Parent() -> None:
+            """
+            Component used to verify that providing a `children` argument while using a `with` block is disallowed.
+            
+            Raises:
+                RuntimeError: if `children` is supplied when the component is also used as a container via a `with` block.
+            """
             with Column(children=[]):  # Should raise
                 pass
 

@@ -379,16 +379,29 @@ class TestContextEdgeCases:
 
         @component
         def Leaf() -> None:
+            """
+            Capture the current CounterState name and append it to the module-level `captured` list.
+            
+            This function reads CounterState.from_context() and records its `name` value into the existing `captured` list for later assertions.
+            """
             captured.append(CounterState.from_context().name)
 
         @component
         def Inner() -> None:
+            """
+            Establish a CounterState context named "inner" for the duration of rendering the Leaf component.
+            
+            Creates a CounterState with name "inner" and invokes Leaf() while that state is active so Leaf can read the inner CounterState.
+            """
             inner_state = CounterState(name="inner")
             with inner_state:
                 Leaf()
 
         @component
         def Parent() -> None:
+            """
+            Establishes an outer CounterState context and renders Leaf and Inner so that Leaf sees the outer state and the Leaf inside Inner sees a nested inner state.
+            """
             outer_state = CounterState(name="outer")
             with outer_state:
                 Leaf()  # Should see "outer"
@@ -412,11 +425,21 @@ class TestContextEdgeCases:
 
         @component
         def Child() -> None:
+            """
+            Append the `value` from the current `MissingState` context (or the provided default) to the `captured` list.
+            
+            If no `MissingState` is present in the render context, `default_instance` is used and its `value` is appended.
+            """
             result = MissingState.from_context(default=default_instance)
             captured.append(result.value)
 
         @component
         def Parent() -> None:
+            """
+            Render a parent component that invokes Child without supplying MissingState.
+            
+            This causes Child to run with no MissingState present in the context.
+            """
             Child()  # No MissingState provided
 
         ctx = RenderSession(Parent)
@@ -425,17 +448,27 @@ class TestContextEdgeCases:
         assert captured == [42]
 
     def test_context_error_message_includes_class_name(self) -> None:
-        """Error message for missing context includes the class name."""
+        """
+        Verifies that a missing context LookupError message includes the Stateful subclass name and suggests using `with`.
+        
+        Creates a small component tree that attempts to read a custom Stateful subclass from context, renders it, and asserts the raised LookupError message contains the subclass's class name and the word "with".
+        """
 
         class MyCustomStatefulClass(Stateful):
             pass
 
         @component
         def Child() -> None:
+            """
+            Component that reads MyCustomStatefulClass from the current render context.
+            """
             MyCustomStatefulClass.from_context()
 
         @component
         def Parent() -> None:
+            """
+            Renders the Child component.
+            """
             Child()
 
         ctx = RenderSession(Parent)
@@ -463,7 +496,9 @@ class TestContextEdgeCases:
         assert "render context" in str(exc_info.value)
 
     def test_from_context_outside_render_error_message(self) -> None:
-        """from_context() outside render has helpful error message."""
+        """
+        Verifies that calling `from_context` on a `Stateful` subclass outside a render context raises a `RuntimeError` whose message includes the subclass name and the text "from_context".
+        """
 
         class CalledOutsideState(Stateful):
             pass
@@ -484,14 +519,29 @@ class TestContextEdgeCases:
 
         @component
         def SafeChild() -> None:
+            """
+            Append the current SafeState context's value to the outer `captured` list.
+            
+            This function reads the active SafeState from the render context and appends its `value` attribute to the surrounding `captured` list as a side effect.
+            """
             captured.append(SafeState.from_context().value)
 
         @component
         def ConditionalChild() -> None:
+            """
+            A no-op component used in tests to represent a conditional child that performs no rendering.
+            
+            This function intentionally does nothing and exists solely as a placeholder for conditional-branch tests.
+            """
             pass  # Does nothing
 
         @component
         def Parent() -> None:
+            """
+            Renders child components within a SafeState context to verify the state's availability before and after an intermediate conditional child.
+            
+            Used by tests to ensure a provided context remains accessible to later children following a conditional branch.
+            """
             state = SafeState()
             with state:
                 SafeChild()  # First access
@@ -513,6 +563,11 @@ class TestContextEdgeCases:
 
         @component
         def ProviderChild() -> None:
+            """
+            Establishes a SiblingState instance in the current render context for this component and its descendants.
+            
+            This function creates a SiblingState and enters it as a context provider so that nested children can read the state via the context API. The provided context is scoped to this with-block and is not visible to sibling components outside the block.
+            """
             state = SiblingState()
             with state:
                 pass  # Provides context to self, not siblings
@@ -525,6 +580,11 @@ class TestContextEdgeCases:
 
         @component
         def Parent() -> None:
+            """
+            Render a parent component that mounts a provider child followed by a consumer child.
+            
+            This component composes ProviderChild and ConsumerChild in sequence to establish and then consume context during a render.
+            """
             ProviderChild()
             ConsumerChild()
 

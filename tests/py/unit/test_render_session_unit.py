@@ -17,11 +17,27 @@ class MockComponent:
     _has_children_param = False
 
     def render(self):
+        """
+        Perform a single render pass for this active render instance.
+        
+        This executes one cycle of the render process, processing the current node (and any nodes it enqueues) and updating the render/session state as needed.
+        """
         pass
 
 
 def make_node(node_id: str, tree_ref=None) -> Element:
-    """Create a test node with the given ID."""
+    """
+    Create a test Element with the specified node id and an associated tree reference.
+    
+    Parameters:
+        node_id (str): Identifier to assign to the created Element.
+        tree_ref (optional): A weakref.ref to a tree object to use as the Element's session/tree reference.
+            If omitted, a weak reference to a temporary FakeTree instance will be created.
+    
+    Returns:
+        Element: A test Element whose component is a MockComponent, whose `_session_ref` is set to
+        `tree_ref` (or the generated weak reference), and whose `render_count` is initialized to 0.
+    """
 
     class FakeTree:
         pass
@@ -95,6 +111,12 @@ class TestRenderSession:
         session = RenderSession(root_component=comp)
 
         def my_callback():
+            """
+            Produce the string "called".
+            
+            Returns:
+                str: The string "called".
+            """
             return "called"
 
         # Create a node and store it

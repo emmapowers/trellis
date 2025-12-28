@@ -11,10 +11,15 @@ class TestBasicWidgets:
     """Tests for Label and Button widgets."""
 
     def test_label_with_text(self) -> None:
-        """Label stores text prop."""
+        """
+        Verify that a Label component preserves its text property after rendering.
+        """
 
         @component
         def App() -> None:
+            """
+            Renders a component tree containing a single Label with text "Hello World".
+            """
             Label(text="Hello World")
 
         ctx = RenderSession(App)
@@ -29,6 +34,11 @@ class TestBasicWidgets:
 
         @component
         def App() -> None:
+            """
+            Creates an application component containing a single Label with text "Styled" and styling applied.
+            
+            The Label is configured with font_size 24 and color "red".
+            """
             Label(text="Styled", font_size=24, color="red")
 
         ctx = RenderSession(App)
@@ -39,10 +49,19 @@ class TestBasicWidgets:
         assert label.properties["color"] == "red"
 
     def test_button_with_text(self) -> None:
-        """Button stores text prop."""
+        """
+        Verify that a Button component preserves its text property when rendered.
+        
+        Creates an App containing a Button with text "Click Me", renders it, and asserts the rendered element is a Button whose `text` property equals "Click Me".
+        """
 
         @component
         def App() -> None:
+            """
+            Top-level app component that renders a single Button with the text "Click Me".
+            
+            Used in tests to create a simple UI containing a Button component.
+            """
             Button(text="Click Me")
 
         ctx = RenderSession(App)
@@ -58,6 +77,11 @@ class TestBasicWidgets:
 
         @component
         def App() -> None:
+            """
+            Create an app component that renders a Button which appends True to the surrounding `clicked` list when invoked.
+            
+            Used in tests to verify that a Button's `on_click` callback is stored and callable.
+            """
             Button(text="Click", on_click=lambda: clicked.append(True))
 
         ctx = RenderSession(App)
@@ -75,6 +99,11 @@ class TestBasicWidgets:
 
         @component
         def App() -> None:
+            """
+            Component that renders a single Button set to disabled.
+            
+            Creates a Button with text "Disabled" and disabled=True.
+            """
             Button(text="Disabled", disabled=True)
 
         ctx = RenderSession(App)
@@ -88,6 +117,9 @@ class TestBasicWidgets:
 
         @component
         def App() -> None:
+            """
+            Create an app component that renders a Slider initialized to 50 with a range of 0 to 100 and step 1.
+            """
             Slider(value=50, min=0, max=100, step=1)
 
         ctx = RenderSession(App)
@@ -106,6 +138,11 @@ class TestBasicWidgets:
 
         @component
         def App() -> None:
+            """
+            Create a Slider component initialized to 25 with an on_change callback that appends the new value to the surrounding `values` list.
+            
+            The function builds and returns no value; it produces a Slider node with `value=25` and an `on_change` handler that records changes by appending the passed value to the external `values` list.
+            """
             Slider(value=25, on_change=lambda v: values.append(v))
 
         ctx = RenderSession(App)
@@ -119,15 +156,19 @@ class TestBasicWidgets:
         assert values == [75.0]
 
     def test_slider_default_values(self) -> None:
-        """Slider with no explicit props has empty properties.
-
-        Default values (value=50, min=0, max=100, step=1) are defined in the
-        function signature for documentation but applied by the React client.
-        Only explicitly passed props appear in properties.
+        """
+        Verify that a Slider created without explicit props yields no properties on the server-rendered element.
+        
+        Only props explicitly passed by the app appear in the element's properties; client-side defaults (value=50, min=0, max=100, step=1) are applied by the frontend and are not present on the server-rendered node.
         """
 
         @component
         def App() -> None:
+            """
+            Component that renders a Slider with default properties.
+            
+            Used as a minimal app component to produce a Slider element for rendering and testing.
+            """
             Slider()
 
         ctx = RenderSession(App)
@@ -146,6 +187,11 @@ class TestBasicWidgets:
 
         @component
         def App() -> None:
+            """
+            Create a minimal app that contains a single Slider component disabled for interaction.
+            
+            This component builds a UI tree with one Slider whose `disabled` property is set to True.
+            """
             Slider(disabled=True)
 
         ctx = RenderSession(App)
@@ -159,6 +205,11 @@ class TestBasicWidgets:
 
         @component
         def App() -> None:
+            """
+            Create an app component that renders a Slider configured with value 5.5, min -10, max 10, and step 0.5.
+            
+            This component is used by tests to verify a slider with a custom numeric range and fractional step behaves as expected.
+            """
             Slider(value=5.5, min=-10, max=10, step=0.5)
 
         ctx = RenderSession(App)
@@ -179,6 +230,9 @@ class TestWidgetSerialization:
 
         @component
         def App() -> None:
+            """
+            Creates an app component that renders a single Label with the text "Test".
+            """
             Label(text="Test")
 
         ctx = RenderSession(App)
@@ -195,6 +249,11 @@ class TestWidgetSerialization:
 
         @component
         def App() -> None:
+            """
+            Create a minimal app component that declares a Button labeled "Click" with a no-op click handler.
+            
+            Used in tests as the component root for rendering and serialization checks.
+            """
             Button(text="Click", on_click=lambda: None)
 
         ctx = RenderSession(App)
@@ -211,6 +270,14 @@ class TestWidgetSerialization:
 
         @component
         def App() -> None:
+            """
+            Create a simple component tree: a Column with a header label and a Row containing "OK" and "Cancel" buttons.
+            
+            This component is used in tests to render and serialize a nested layout consisting of:
+            - a Column with gap set to 16
+            - a Label with text "Header"
+            - a Row containing two Buttons with texts "OK" and "Cancel"
+            """
             with Column(gap=16):
                 Label(text="Header")
                 with Row():

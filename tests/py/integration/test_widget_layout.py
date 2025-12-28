@@ -14,6 +14,9 @@ class TestLayoutWidgets:
 
         @component
         def App() -> None:
+            """
+            Component that renders a Column containing two Label children with texts "A" and "B".
+            """
             with Column():
                 Label(text="A")
                 Label(text="B")
@@ -33,6 +36,11 @@ class TestLayoutWidgets:
 
         @component
         def App() -> None:
+            """
+            Top-level component that renders a Row containing two Buttons labeled "Left" and "Right".
+            
+            The component builds a horizontal layout with a Button whose text is "Left" followed by a Button whose text is "Right".
+            """
             with Row():
                 Button(text="Left")
                 Button(text="Right")
@@ -45,10 +53,19 @@ class TestLayoutWidgets:
         assert len(row.child_ids) == 2
 
     def test_column_with_props(self) -> None:
-        """Column accepts gap and padding props."""
+        """
+        Verify that a Column element preserves the provided gap and padding properties on its rendered element.
+        
+        Renders an App containing Column(gap=16, padding=8) with a child Label and asserts the resulting Column element's `gap` is 16 and `padding` is 8.
+        """
 
         @component
         def App() -> None:
+            """
+            Defines a UI component that renders a Column containing a single Label.
+            
+            The Column is created with gap=16 and padding=8. The Label displays the text "Test".
+            """
             with Column(gap=16, padding=8):
                 Label(text="Test")
 
@@ -60,10 +77,17 @@ class TestLayoutWidgets:
         assert column.properties["padding"] == 8
 
     def test_nested_layout(self) -> None:
-        """Layouts can be nested."""
+        """
+        Verify that a Column can contain Row children and that each Row renders its Label children; asserts the root Column has two Row children and each Row has two children.
+        """
 
         @component
         def App() -> None:
+            """
+            Defines an App component that builds a Column containing two Row children, each Row holding two Labels.
+            
+            The first Row contains Labels with texts "A" and "B"; the second Row contains Labels with texts "C" and "D".
+            """
             with Column():
                 with Row():
                     Label(text="A")

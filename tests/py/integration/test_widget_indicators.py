@@ -14,6 +14,11 @@ class TestProgressBarWidget:
 
         @component
         def App() -> None:
+            """
+            Renders a ProgressBar set to value 50 with minimum 0 and maximum 100.
+            
+            This component provides a simple wrapper that mounts a ProgressBar with predefined value and bounds for use in tests.
+            """
             ProgressBar(value=50, min=0, max=100)
 
         ctx = RenderSession(App)
@@ -30,6 +35,11 @@ class TestProgressBarWidget:
 
         @component
         def App() -> None:
+            """
+            Defines a test component that renders a ProgressBar configured in the loading state.
+            
+            This component produces a single ProgressBar with loading=True for use in rendering tests.
+            """
             ProgressBar(loading=True)
 
         ctx = RenderSession(App)
@@ -43,6 +53,9 @@ class TestProgressBarWidget:
 
         @component
         def App() -> None:
+            """
+            Render a disabled ProgressBar component used by tests.
+            """
             ProgressBar(disabled=True)
 
         ctx = RenderSession(App)
@@ -56,6 +69,11 @@ class TestProgressBarWidget:
 
         @component
         def App() -> None:
+            """
+            Render a ProgressBar with a value of 75 and color "#22c55e".
+            
+            This component creates a ProgressBar configured to 75% progress and styled with the hex color #22c55e.
+            """
             ProgressBar(value=75, color="#22c55e")
 
         ctx = RenderSession(App)
@@ -69,6 +87,11 @@ class TestProgressBarWidget:
 
         @component
         def App() -> None:
+            """
+            Render a ProgressBar configured with a value of 25 and a height of 12.
+            
+            This component function is used by tests to produce a ProgressBar element with those props.
+            """
             ProgressBar(value=25, height=12)
 
         ctx = RenderSession(App)
@@ -82,6 +105,11 @@ class TestProgressBarWidget:
 
         @component
         def App() -> None:
+            """
+            Render a minimal App component containing a ProgressBar configured with a value of 50 and a bottom margin.
+            
+            The component instantiates a single ProgressBar with `value=50` and `style={"marginBottom": "24px"}`.
+            """
             ProgressBar(value=50, style={"marginBottom": "24px"})
 
         ctx = RenderSession(App)
@@ -95,10 +123,17 @@ class TestStatusIndicatorWidget:
     """Tests for StatusIndicator widget."""
 
     def test_status_indicator_with_status(self) -> None:
-        """StatusIndicator stores status prop."""
+        """
+        Verifies that StatusIndicator receives and exposes the provided status property.
+        
+        Renders a component containing a StatusIndicator with status "success" and asserts the rendered element's component name is "StatusIndicator" and its "status" property equals "success".
+        """
 
         @component
         def App() -> None:
+            """
+            Component that renders a StatusIndicator with status "success".
+            """
             StatusIndicator(status="success")
 
         ctx = RenderSession(App)
@@ -113,6 +148,9 @@ class TestStatusIndicatorWidget:
 
         @component
         def App() -> None:
+            """
+            Render a StatusIndicator component with status "error" and label "Failed".
+            """
             StatusIndicator(status="error", label="Failed")
 
         ctx = RenderSession(App)
@@ -127,6 +165,11 @@ class TestStatusIndicatorWidget:
 
         @component
         def App() -> None:
+            """
+            Create an application component that renders a StatusIndicator with a "warning" status and its icon hidden.
+            
+            This App component instantiates a single StatusIndicator configured with status="warning" and show_icon=False.
+            """
             StatusIndicator(status="warning", show_icon=False)
 
         ctx = RenderSession(App)
@@ -144,6 +187,11 @@ class TestBadgeWidget:
 
         @component
         def App() -> None:
+            """
+            Render a test application containing a single Badge with text "New".
+            
+            Used by unit tests to instantiate and render a single Badge component for inspection.
+            """
             Badge(text="New")
 
         ctx = RenderSession(App)
@@ -158,6 +206,9 @@ class TestBadgeWidget:
 
         @component
         def App() -> None:
+            """
+            Renders a Badge component with text "Error" and variant "error" for use in tests.
+            """
             Badge(text="Error", variant="error")
 
         ctx = RenderSession(App)
@@ -171,6 +222,11 @@ class TestBadgeWidget:
 
         @component
         def App() -> None:
+            """
+            Test component that renders a medium-sized Badge with the text "Large".
+            
+            Used by tests to produce a Badge widget configured with size "md" and text "Large".
+            """
             Badge(text="Large", size="md")
 
         ctx = RenderSession(App)
@@ -188,6 +244,11 @@ class TestTooltipWidget:
 
         @component
         def App() -> None:
+            """
+            Renders a Tooltip with the text "Helpful hint" that wraps a Label displaying "Hover me".
+            
+            Used by tests to produce a widget tree containing a Tooltip element with a single Label child.
+            """
             with Tooltip(content="Helpful hint"):
                 Label(text="Hover me")
 
@@ -204,6 +265,9 @@ class TestTooltipWidget:
 
         @component
         def App() -> None:
+            """
+            Create a component that renders a Tooltip positioned at the bottom with content "Below" wrapping a Button labeled "Click".
+            """
             with Tooltip(content="Below", position="bottom"):
                 Button(text="Click")
 
@@ -218,6 +282,9 @@ class TestTooltipWidget:
 
         @component
         def App() -> None:
+            """
+            Render a Tooltip with content "Slow" and a 500ms delay around a Label displaying "Wait".
+            """
             with Tooltip(content="Slow", delay=500):
                 Label(text="Wait")
 

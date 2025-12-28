@@ -13,7 +13,18 @@ from trellis.platforms.common.base import Platform
 
 @pytest.fixture
 def mock_platform() -> Mock:
-    """Mock Platform implementation for testing serve()."""
+    """
+    Create a Mock implementing the Platform interface, preconfigured for serve() tests.
+    
+    The returned Mock has:
+    - spec set to `Platform`
+    - `name` set to `"test"`
+    - `bundle` as a `unittest.mock.Mock`
+    - `run` as an `AsyncMock`
+    
+    Returns:
+        platform (Mock): A Mock object representing a platform suitable for unit tests of Trellis.serve().
+    """
     platform = Mock(spec=Platform)
     platform.name = "test"
     platform.bundle = Mock()
@@ -23,9 +34,22 @@ def mock_platform() -> Mock:
 
 @pytest.fixture
 def trellis_with_mock_platform(mock_platform: Mock) -> Trellis:
-    """Trellis instance with a mocked platform."""
+    """
+    Create a Trellis instance configured to use the provided mock platform.
+    
+    Parameters:
+        mock_platform (Mock): Mock object that will be returned by the module's platform lookup to simulate a Platform.
+    
+    Returns:
+        Trellis: A Trellis instance whose top is a minimal dummy component and which is configured to ignore CLI arguments.
+    """
 
     def dummy_component() -> None:
+        """
+        Create a minimal placeholder component used as a Trellis top component in tests.
+        
+        This component has no behavior and exists only to supply a non-None top value for test cases.
+        """
         pass
 
     with patch("trellis.app.entry._get_platform", return_value=mock_platform):
@@ -67,6 +91,11 @@ class TestServeBundling:
         """serve() calls platform.bundle() with force=True when build_bundle=True."""
 
         def dummy_component() -> None:
+            """
+            A no-op placeholder component used as the Trellis top component in tests.
+            
+            Intended solely as a minimal stand-in for a real component; it performs no actions.
+            """
             pass
 
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
@@ -81,6 +110,11 @@ class TestServeBundling:
         """serve() respects --build-bundle CLI flag."""
 
         def dummy_component() -> None:
+            """
+            A no-op placeholder component used as the Trellis top component in tests.
+            
+            Intended solely as a minimal stand-in for a real component; it performs no actions.
+            """
             pass
 
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
@@ -108,6 +142,11 @@ class TestServePlatformRun:
         """serve() passes root_component to platform.run()."""
 
         def my_component() -> None:
+            """
+            Dummy top-level component used as a placeholder.
+            
+            Serves as a no-op root component when constructing Trellis instances for testing.
+            """
             pass
 
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
@@ -138,6 +177,11 @@ class TestServePlatformRun:
         """serve() passes custom host/port to platform.run()."""
 
         def dummy_component() -> None:
+            """
+            A no-op placeholder component used as the Trellis top component in tests.
+            
+            Intended solely as a minimal stand-in for a real component; it performs no actions.
+            """
             pass
 
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
@@ -159,6 +203,11 @@ class TestServePlatformRun:
         """serve() passes custom batch_delay to platform.run()."""
 
         def dummy_component() -> None:
+            """
+            A no-op placeholder component used as the Trellis top component in tests.
+            
+            Intended solely as a minimal stand-in for a real component; it performs no actions.
+            """
             pass
 
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
@@ -183,15 +232,31 @@ class TestServeOrdering:
         call_order: list[str] = []
 
         def record_bundle(*args, **kwargs) -> None:
+            """
+            Record that a bundle operation occurred by appending "bundle" to the shared `call_order` list.
+            
+            Appends the string "bundle" to the module-level list `call_order`; any positional or keyword arguments are ignored.
+            """
             call_order.append("bundle")
 
         async def record_run(*args, **kwargs) -> None:
+            """
+            Record that a platform run occurred by appending "run" to the shared call_order list.
+            
+            Appends the string "run" to the module-level `call_order` list. Any positional or keyword
+            arguments are ignored.
+            """
             call_order.append("run")
 
         mock_platform.bundle.side_effect = record_bundle
         mock_platform.run.side_effect = record_run
 
         def dummy_component() -> None:
+            """
+            A no-op placeholder component used as the Trellis top component in tests.
+            
+            Intended solely as a minimal stand-in for a real component; it performs no actions.
+            """
             pass
 
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
