@@ -46,7 +46,7 @@ def set_active_session(session: RenderSession | None) -> None:
 def is_render_active() -> bool:
     """Check if currently inside a render context."""
     session = _active_session.get()
-    return session is not None and session.is_executing()
+    return session is not None and session.is_rendering()
 
 
 # Pattern to parse prop paths: matches "name", "[0]", or ".name" segments

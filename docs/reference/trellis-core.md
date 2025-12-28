@@ -1,203 +1,265 @@
 # Trellis Core Reference
 
-Dense reference for `src/trellis/core/`. Read source for implementation details.
+> **Terminology note**: The codebase uses "node" and "element" interchangeably. Prefer "element" in new code.
+
+## Architecture Overview
+
+```
+State change → dirty.mark(node_id) → render() → patches → frontend
+```
+
+**Render loop**: Session holds element tree. State mutations mark nodes dirty. `render()` processes dirty nodes, creating patches (Add/Update/Remove) sent to frontend.
 
 ---
 
-## Data Structures
+## Core Data Structures
 
-### Element (`element_node.py`)
-- Tree node representing a component invocation
-- Fields: `component`, `props` (dict), `key`, `child_ids` (list), `id`, `_session_ref` (weakref)
-- Children stored flat by ID reference, not nested
-- Position-based IDs encode path + component: `/@{parent}/0@{component_id}`
-- Keys override position index: `/@{parent}/:my_key@{component_id}`
+### Element
+Immutable tree node representing a component invocation.
 
-### ElementState (`element_state.py`)
-- Per-node runtime state, keyed by `node.id` in `RenderSession.state`
-- Fields: `dirty`, `mounted`, `local_state` (cached Stateful instances), `state_call_count`, `context`, `parent_id`
+```python
+@dataclass
+class Element:
+    component: Component
+    props: dict
+    key: str | None
+    child_ids: tuple[str, ...]  # Populated after execution
+    id: str                      # Position-based: "{parent_id}/{pos}@{id(component)}"
+    render_count: int            # Session's render_count at creation
+```
 
-### RenderSession (`rendering.py`)
-- Orchestrates render lifecycle, owns all nodes and state
-- Key fields:
-  - `_nodes`: current node dict
-  - `_old_nodes`: snapshot before render (for diffing)
-  - `_dirty_ids`: nodes needing re-render
-  - `_element_state`: mutable state per node
-  - `_frame_stack`: collects child IDs during `with` blocks
-  - `_callback_registry`: callbacks by deterministic ID
-  - `_patches`: accumulated patches during render
-  - `_current_node_id`: executing node (for dependency tracking)
+**ID format**: `{parent_id}/{position}@{id(component)}` or `{parent_id}/:{key}@{id(component)}`
+
+Component identity in ID enables reuse optimization: same component + same props + mounted + not dirty → skip re-execution.
+
+### ElementState
+Mutable runtime state for each Element, keyed by `node.id`.
+
+```python
+@dataclass
+class ElementState:
+    mounted: bool
+    local_state: dict[(type, int), Stateful]  # (class, call_index) → cached instance
+    state_call_count: int                      # Counter for hook-like ordering
+    context: dict[type, Stateful]              # Context API storage
+    parent_id: str | None                      # For context walking
+```
+
+### RenderSession
+Container managing entire render lifecycle.
+
+```python
+class RenderSession:
+    root_component: Component
+    elements: ElementStore      # Flat storage: id → Element
+    states: ElementStateStore   # Flat storage: id → ElementState
+    dirty: DirtyTracker         # Set of node IDs needing re-render
+    active: ActiveRender | None # Only set during render pass
+    render_count: int           # Incremented each render
+    lock: RLock                 # Thread-safe concurrent renders
+```
 
 ---
 
-## Rendering
+## Component System
+
+### Hierarchy
+
+| Class | Purpose | Created By |
+|-------|---------|------------|
+| `Component` | Abstract base | — |
+| `CompositionComponent` | User render functions | `@component` decorator |
+| `ReactComponentBase` | Widgets with React impl | `@react_component_base(name)` |
+
+### CompositionComponent
+Created via `@component` decorator. Wraps a render function.
+
+```python
+@component
+def MyComponent(label: str, children: list[Element] = []):
+    with Column():
+        Label(text=label)
+        for child in children:
+            child()
+```
+
+**Children**: Function has `children` param → supports `with` block → children collected in Frame.
+
+### ReactComponentBase
+Base for widgets. Sets `_element_name` for frontend. Provides style prop merging.
+
+```python
+@react_component_base("Button", has_children=True)
+class Button(ReactComponentBase):
+    def __call__(self, text: str = "", on_click: Callback = None, ...):
+        return super().__call__(text=text, on_click=on_click, ...)
+```
+
+---
+
+## State System
+
+### Stateful Base Class
+Automatic dependency tracking for fine-grained reactivity.
+
+**Instance caching** (hooks pattern):
+- `Stateful()` during render → cached by `(class, call_index)` on ElementState
+- Same instance returned across re-renders
+- Order matters: call index incremented per call
+
+**Dependency tracking** (`__getattribute__`):
+- Property access during render → node added to `StatePropertyInfo.watchers` WeakSet
+- WeakSet auto-cleans when nodes GC
+
+**Mutation** (`__setattr__`):
+- Marks all watcher nodes dirty
+- Raises `RuntimeError` if called during render
+- Auto-converts collections to Tracked versions
+
+### Context API
+
+```python
+# Provider
+with my_state:  # Stores on current node's ElementState.context
+    ChildComponent()
+
+# Consumer
+state = MyState.from_context()  # Walks parent_id chain
+```
+
+### Tracked Collections
+Fine-grained reactivity within collections.
+
+| Type | Tracks By | Example |
+|------|-----------|---------|
+| `TrackedList` | Item identity | `lst[i]` → dependency on `id(item)` |
+| `TrackedDict` | Key | `d[key]` → dependency on key |
+| `TrackedSet` | Value | `s.add(x)` → dependency on x |
+
+Iteration/length tracked via special `ITER_KEY`.
+
+### Mutable References
+Two-way data binding for form inputs.
+
+```python
+TextInput(value=mutable(state.text))  # Reads and writes state.text
+```
+
+`mutable(state.prop)` captures property reference immediately after access.
+
+---
+
+## Render Flow
 
 ### Initial Render
-- `render(session)` executes root component
-- Components execute eagerly (non-containers) or defer to `__exit__` (containers)
-- Frame stack tracks parent-child relationships during `with` blocks
-- Returns `[AddPatch]` with full serialized tree
-- Processes mount hooks after tree built
+1. Increment `session.render_count`
+2. Create root Element via `_place()`
+3. `_execute_tree()` recursively executes all nodes
+4. Return `RenderAddPatch` with root
 
-### Incremental Re-render
-- Background loop runs ~30fps, checks `_dirty_ids`
-- Snapshot: `_old_nodes = dict(_nodes)`
-- Re-execute each dirty node via `_render_single_node()`
-- Reconcile old vs new children, emit patches inline
-- Returns batch of patches
+### Node Execution (`_execute_single_node`)
+1. Create/reuse Element
+2. Get/create ElementState
+3. Set `current_node_id` in ActiveRender (for dependency tracking)
+4. Push Frame for child collection
+5. `component.execute(**props)` — component function runs
+6. Pop Frame, collect child IDs
+7. Reconcile children (diff old vs new)
+8. Recursively execute children
 
-### Execution Flow
-- Non-containers: eager execution on call
-- Containers: `__enter__` pushes frame, collects children, `__exit__` executes with children
-- Frame pop assigns `child_ids` to parent node
+### Node Reuse Check
+At `_place()`:
+- Same position + same component + same props + mounted + not dirty → **reuse old node** (skip execution)
+- Otherwise → create new Element
 
----
+### Incremental Render
+1. Process dirty nodes one at a time from `session.dirty`
+2. Create NEW Element instances (enables GC of old)
+3. Generate patches for changes
+4. Return patch list
 
-## State Management
+### Reconciliation (`reconcile.py`)
+Two-pointer algorithm (head + tail) for fast matching, set-based for middle.
 
-### Stateful (`state.py`)
-- Base dataclass for reactive state
-- Auto-cached per component via `(type, call_index)` key in `local_state`
-- Same instance returned across re-renders (like React hooks)
-
-### Dependency Tracking
-- `StatePropertyInfo` per property holds `watchers: WeakSet[Element]`
-- On property read during render: add current node to watchers
-- On property write (outside render only): iterate watchers, mark each dirty
-- WeakSet auto-cleans when nodes are replaced/GC'd
-
-### Tracked Collections (`tracked.py`)
-- `TrackedList`: tracks by item identity + `ITER_KEY` for structure
-- `TrackedDict`: tracks by key + `ITER_KEY` for new keys
-- `TrackedSet`: tracks by item value + `ITER_KEY`
-- Auto-converted from plain collections in Stateful fields
+Returns: `added`, `removed`, `matched`, `child_order`
 
 ---
 
-## Reconciliation (`reconcile.py`)
+## Patches
 
-### Algorithm
-- Pure function: `reconcile_children(old_ids, new_ids) → ReconcileResult`
-- Three phases: head scan → tail scan → set lookup for middle
-- O(n) typical case
+| Type | Fields | When |
+|------|--------|------|
+| `RenderAddPatch` | `parent_id`, `children`, `node` | New node |
+| `RenderUpdatePatch` | `node_id`, `props?`, `children?` | Props or children changed |
+| `RenderRemovePatch` | `node_id` | Node removed |
 
-### ReconcileResult
-- `added`: new IDs not in old
-- `removed`: old IDs not in new
-- `matched`: IDs in both (check for prop changes)
-- `child_order`: final ordering
-
-### Processing
-- Removed: emit `RemovePatch`, unmount subtree
-- Added: emit `AddPatch` with serialized subtree
-- Matched: compare props, emit `UpdatePatch` if changed
+Initial render: one AddPatch. Updates: mix of Add/Update/Remove.
 
 ---
 
-## Patches (`messages.py`)
-
-### Types
-- `AddPatch(parent_id, children, node)`: add subtree
-- `UpdatePatch(id, props, children)`: change props and/or child order
-- `RemovePatch(id)`: remove subtree
-
-### Generation
-- Inline during reconciliation, accumulated in `_patches`
-- Initial render: single `AddPatch` with full tree
-- Incremental: batch of mixed patch types
-
----
-
-## Components
-
-### Base (`base_component.py`)
-- Abstract `Component` with `render()` method
-- `_place()` handles node creation and eager execution
-
-### CompositionComponent (`composition_component.py`)
-- Created via `@component` decorator wrapping user function
-- `element_name="CompositionComponent"` on client (layout-only)
-
-### ReactComponentBase (`react_component.py`)
-- Leaf components mapping to React widgets
-- `_element_name`: React component name
-- `_has_children`: accepts children via `with` block
-
-### ElementKind
-- `REACT_COMPONENT`: custom component
-- `JSX_ELEMENT`: HTML element
-- `TEXT`: text node
-
----
-
-## Serialization (`serialization.py`)
-
-### Node Serialization
-- Recursive conversion to JSON-serializable dict
-- Fields: `kind`, `type`, `name`, `key` (node ID), `props`, `children`
-- CompositionComponent props omitted (layout-only)
-
-### Callback Registration
-- Callables → deterministic ID: `"{node_id}:{prop_name}"`
-- Stored in `_callback_registry`, overwritten on re-render
-- Serialized as `{"__callback__": cb_id}`
-
-### Mutable (`mutable.py`)
-- Two-way binding wrapper for state properties
-- Serialized as `{"__mutable__": cb_id, "value": current}`
-- `mutable()` captures last property access from `_last_property_access`
-
----
-
-## Messages (`messages.py`, `message_handler.py`)
-
-### Types
-- `HelloMessage`: client handshake (client_id)
-- `HelloResponseMessage`: server response (session_id, version, debug config)
-- `PatchMessage`: batch of patches
-- `EventMessage`: user interaction (callback_id, args)
-- `ErrorMessage`: exception info (error, context)
-
-### MessageHandler Lifecycle
-1. Hello handshake
-2. Initial render → send patches
-3. Start background render loop
-4. Event loop: receive messages, invoke callbacks, send responses
-
-### Render Loop
-- ~30fps (configurable batch_delay)
-- Check `has_dirty_nodes()`, call `render()`, send `PatchMessage`
-
----
-
-## Complete Flow
+## Dirty Tracking
 
 ```
-User action → EventMessage(callback_id, args)
-  → MessageHandler invokes callback
-  → Callback mutates state: state.x = y
-  → Stateful.__setattr__ marks watchers dirty
-  → Background loop detects dirty nodes
-  → render(): snapshot → re-execute dirty → reconcile → emit patches
-  → PatchMessage sent to client
-  → React applies patches
+state.x = 5
+  → Stateful.__setattr__
+    → for node in StatePropertyInfo.watchers:
+        session.dirty.mark(node.id)
+  → next render() picks up dirty nodes
+```
+
+`DirtyTracker`: Set-based. `mark()` acquires session lock to synchronize with ongoing renders.
+
+---
+
+## Frame Stack
+Child collection via `with` blocks.
+
+```python
+with Column():     # Push Frame
+    Button(...)    # child_id added to Frame
+    Button(...)    # child_id added to Frame
+# Pop Frame → child_ids stored in Element
 ```
 
 ---
 
-## Key Files
+## Lifecycle
+
+Mount/unmount tracked in `LifecycleTracker` (pending lists). Processed AFTER `session.active` is cleared and lock is released. Unmounts first, then mounts.
+
+Hooks can safely modify state because `is_render_active()` returns False (session.active is None).
+
+---
+
+## Critical Invariants
+
+1. **Components run during render** — no side effects, use callbacks/hooks
+2. **State instances cached per component** — call order matters (like React hooks)
+3. **Dependencies tracked by property access** — reading registers dependency
+4. **State mutations forbidden during render** — raises RuntimeError
+5. **WeakSets auto-cleanup** — dead nodes removed from watchers automatically
+6. **One render per session at a time** — lock prevents concurrent renders
+7. **Element recreation on re-render** — new objects so old ones GC
+
+---
+
+## File Map
 
 | File | Purpose |
 |------|---------|
-| `rendering.py` | Element, ElementState, RenderSession, render lifecycle |
-| `reconcile.py` | Pure reconciliation algorithm |
-| `state.py` | Stateful base, dependency tracking, StatePropertyInfo |
-| `tracked.py` | TrackedList/Dict/Set for fine-grained collection reactivity |
-| `serialization.py` | Tree → JSON, callback registration |
-| `messages.py` | Message types, Patch types |
-| `message_handler.py` | WebSocket lifecycle, render loop |
-| `base_component.py` | Component base class |
-| `composition_component.py` | @component decorator |
-| `react_component.py` | ReactComponentBase for widgets |
-| `mutable.py` | Two-way binding wrapper |
+| `rendering/render.py` | Main render loop, tree execution, patches |
+| `rendering/element.py` | Element definition, with-block protocol |
+| `rendering/element_state.py` | Runtime state per node |
+| `rendering/session.py` | Session container, context vars |
+| `rendering/reconcile.py` | Tree diffing algorithm |
+| `rendering/dirty_tracker.py` | Dirty node set |
+| `rendering/active.py` | Render-scoped state |
+| `rendering/frames.py` | Frame stack for children |
+| `rendering/patches.py` | Patch types |
+| `rendering/lifecycle.py` | Mount/unmount tracking |
+| `components/base.py` | Component base, placement logic |
+| `components/composition.py` | @component decorator |
+| `components/react.py` | ReactComponentBase |
+| `state/stateful.py` | Reactive state, dependency tracking |
+| `state/tracked.py` | Tracked collections |
+| `state/mutable.py` | Two-way binding |

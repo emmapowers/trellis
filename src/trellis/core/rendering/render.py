@@ -35,11 +35,23 @@ __all__ = [
 def render(session: RenderSession) -> list[RenderPatch]:
     """Render the session and return patches."""
     with session.lock:
-        return _render_impl(session)
+        patches, pending_mounts, pending_unmounts = _render_impl(session)
+
+    # Process hooks AFTER session.active is cleared and lock is released.
+    # This allows hooks to safely modify state (which marks nodes dirty).
+    _process_pending_hooks(session, pending_mounts, pending_unmounts)
+    return patches
 
 
-def _render_impl(session: RenderSession) -> list[RenderPatch]:
-    """Internal render implementation (called with lock held)."""
+def _render_impl(
+    session: RenderSession,
+) -> tuple[list[RenderPatch], list[str], list[str]]:
+    """Internal render implementation (called with lock held).
+
+    Returns:
+        Tuple of (patches, pending_mounts, pending_unmounts).
+        Hooks are processed by the caller after session.active is cleared.
+    """
     if get_active_session() is not None:
         raise RuntimeError("Attempted to render with another context active!")
 
@@ -100,26 +112,31 @@ def _render_impl(session: RenderSession) -> list[RenderPatch]:
                     session.elements.store(new_node)
                 _execute_tree(session, node_id, state.parent_id)
 
-        # Process hooks after tree is fully built
-        _process_pending_hooks(session)
+        # Extract pending hooks before clearing session.active
+        pending_mounts = session.active.lifecycle.pop_mounts()
+        pending_unmounts = session.active.lifecycle.pop_unmounts()
 
         # Build result patches
         root_node = session.elements.get(session.root_node_id) if session.root_node_id else None
         if is_initial and root_node is not None:
             # Initial render: single RenderAddPatch with root node
-            return [
-                RenderAddPatch(
-                    parent_id=None,
-                    children=(session.root_node_id,) if session.root_node_id else (),
-                    node=root_node,
-                )
-            ]
+            return (
+                [
+                    RenderAddPatch(
+                        parent_id=None,
+                        children=(session.root_node_id,) if session.root_node_id else (),
+                        node=root_node,
+                    )
+                ],
+                pending_mounts,
+                pending_unmounts,
+            )
 
         # Incremental render: return accumulated patches
         patches = session.active.patches.get_all()
         if patches:
             logger.debug("render complete: %d patches", len(patches))
-        return patches
+        return patches, pending_mounts, pending_unmounts
 
     finally:
         set_active_session(None)
@@ -377,17 +394,23 @@ def _call_unmount_hooks(session: RenderSession, node_id: str) -> None:
                 logging.exception(f"Error in Stateful.on_unmount: {e}")
 
 
-def _process_pending_hooks(session: RenderSession) -> None:
-    """Process all pending mount/unmount hooks."""
-    assert session.active is not None
+def _process_pending_hooks(
+    session: RenderSession,
+    pending_mounts: list[str],
+    pending_unmounts: list[str],
+) -> None:
+    """Process all pending mount/unmount hooks.
+
+    Called AFTER session.active is cleared, so hooks can safely modify state.
+    """
     # Process unmounts first (cleanup before new mounts)
-    for node_id in session.active.lifecycle.pop_unmounts():
+    for node_id in pending_unmounts:
         _call_unmount_hooks(session, node_id)
         # With component identity in IDs, we can safely remove ElementState
         session.states.remove(node_id)
 
     # Process mounts
-    for node_id in session.active.lifecycle.pop_mounts():
+    for node_id in pending_mounts:
         _call_mount_hooks(session, node_id)
 
 

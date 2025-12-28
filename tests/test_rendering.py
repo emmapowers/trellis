@@ -1,6 +1,7 @@
 """Tests for trellis.core.rendering module."""
 
 import concurrent.futures
+import logging
 import threading
 import weakref
 
@@ -782,6 +783,248 @@ class TestEscapeKey:
         assert _escape_key("a:b@c/d%e") == "a%3Ab%40c%2Fd%25e"
         # Percent first, then others
         assert _escape_key("%:@/") == "%25%3A%40%2F"
+
+
+class TestIsRenderActiveSemantics:
+    """Tests for is_render_active() semantics.
+
+    is_render_active() returns True when session.active is not None,
+    i.e., when we're inside a render pass.
+
+    - True during component execution
+    - False during hooks (hooks run after session.active is cleared)
+    - False outside render
+    """
+
+    def test_is_render_active_true_during_component_execution(self) -> None:
+        """is_render_active() returns True during component execution."""
+        from trellis.core.rendering.session import is_render_active
+
+        values_during_execution: list[bool] = []
+
+        @component
+        def App() -> None:
+            values_during_execution.append(is_render_active())
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        assert len(values_during_execution) == 1
+        assert values_during_execution[0] is True
+
+    def test_is_render_active_false_during_hooks(self) -> None:
+        """is_render_active() returns False during lifecycle hooks."""
+        from trellis.core.rendering.session import is_render_active
+
+        values_during_mount: list[bool] = []
+
+        @dataclass
+        class CheckDuringMount(Stateful):
+            def on_mount(self) -> None:
+                values_during_mount.append(is_render_active())
+
+        @component
+        def App() -> None:
+            CheckDuringMount()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        assert len(values_during_mount) == 1
+        assert values_during_mount[0] is False
+
+    def test_session_active_none_during_hooks(self) -> None:
+        """session.active should be None during lifecycle hooks.
+
+        This is the implementation requirement: hooks must run after
+        session.active is cleared, not just after current_node_id is None.
+        """
+        from trellis.core.rendering.session import get_active_session
+
+        active_values: list[bool] = []
+
+        @dataclass
+        class CheckSessionActive(Stateful):
+            def on_mount(self) -> None:
+                session = get_active_session()
+                # session.active should be None during hooks
+                active_values.append(session.active is None if session else True)
+
+        @component
+        def App() -> None:
+            CheckSessionActive()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        assert len(active_values) == 1
+        assert active_values[0] is True, "session.active should be None during hooks"
+
+
+class TestLifecycleHooksCanModifyState:
+    """Tests that lifecycle hooks can safely modify state.
+
+    Hooks run AFTER session.active is cleared, so is_render_active()=False.
+    This allows state modification during hooks.
+    """
+
+    def test_on_mount_can_modify_shared_state(self) -> None:
+        """on_mount hook should be able to modify shared state without error.
+
+        This tests the case where an on_mount hook modifies a Stateful instance
+        that other components depend on - the real scenario that could deadlock
+        or raise RuntimeError if hooks run during render.
+        """
+        # Shared state that will be modified by on_mount
+        @dataclass
+        class SharedState(Stateful):
+            value: int = 0
+
+        shared: SharedState | None = None
+
+        @dataclass
+        class StateWithMount(Stateful):
+            def on_mount(self) -> None:
+                # Modify shared state - this triggers dirty marking
+                if shared is not None:
+                    shared.value = 42
+
+        @component
+        def Consumer() -> None:
+            # Read shared state to register dependency
+            if shared is not None:
+                _ = shared.value
+
+        @component
+        def Producer() -> None:
+            StateWithMount()
+
+        @component
+        def App() -> None:
+            Consumer()
+            Producer()
+
+        # Create shared state outside render
+        shared = SharedState()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        # Hook should have modified shared state
+        assert shared.value == 42
+
+    def test_on_unmount_can_modify_shared_state(self) -> None:
+        """on_unmount hook should be able to modify shared state without error."""
+        @dataclass
+        class SharedState(Stateful):
+            value: int = 0
+
+        shared: SharedState | None = None
+
+        @dataclass
+        class StateWithUnmount(Stateful):
+            def on_unmount(self) -> None:
+                if shared is not None:
+                    shared.value = 99
+
+        show_child = [True]
+
+        @component
+        def Child() -> None:
+            StateWithUnmount()
+
+        @component
+        def App() -> None:
+            if show_child[0]:
+                Child()
+
+        shared = SharedState()
+        ctx = RenderSession(App)
+        render(ctx)
+
+        # Remove child to trigger unmount
+        show_child[0] = False
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        assert shared.value == 99
+
+
+class TestHookErrorHandling:
+    """Tests for error handling in lifecycle hooks.
+
+    Ensures that exceptions in hooks don't prevent state cleanup.
+    """
+
+    def test_unmount_hook_exception_logs_and_removes_state(self, caplog: pytest.LogCaptureFixture) -> None:
+        """When on_unmount raises, the exception is logged and state is still removed."""
+
+        @dataclass
+        class ThrowingStateful(Stateful):
+            def on_unmount(self) -> None:
+                raise ValueError("unmount hook error")
+
+        show_child = [True]
+
+        @component
+        def Child() -> None:
+            ThrowingStateful()
+
+        @component
+        def App() -> None:
+            if show_child[0]:
+                Child()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        child_id = ctx.root_element.child_ids[0]
+        assert ctx.states.get(child_id) is not None
+
+        show_child[0] = False
+        ctx.dirty.mark(ctx.root_element.id)
+
+        with caplog.at_level(logging.ERROR):
+            render(ctx)  # Should not raise
+
+        # State should still be removed
+        assert ctx.states.get(child_id) is None
+        # Exception should be logged
+        assert "unmount hook error" in caplog.text
+
+    def test_mount_hook_exception_logs_and_continues(self, caplog: pytest.LogCaptureFixture) -> None:
+        """When on_mount raises, the exception is logged and render continues."""
+        mount_order: list[str] = []
+
+        @dataclass
+        class ThrowingMountStateful(Stateful):
+            name: str = ""
+
+            def on_mount(self) -> None:
+                mount_order.append(f"before_{self.name}")
+                if self.name == "child1":
+                    raise ValueError("mount hook error")
+                mount_order.append(f"after_{self.name}")
+
+        @component
+        def Child(name: str = "") -> None:
+            ThrowingMountStateful(name=name)
+
+        @component
+        def App() -> None:
+            Child(name="child1")
+            Child(name="child2")
+
+        ctx = RenderSession(App)
+
+        with caplog.at_level(logging.ERROR):
+            render(ctx)  # Should not raise
+
+        # Exception should be logged
+        assert "mount hook error" in caplog.text
+        # child2's mount should still have been called
+        assert "before_child2" in mount_order
+        assert "after_child2" in mount_order
 
 
 class TestPositionIdGeneration:
