@@ -1,50 +1,4 @@
-"""
-React-like reconciliation algorithm for Element trees.
-
-This module implements a reconciliation algorithm inspired by React's approach,
-used to efficiently update the node tree when components re-render. The goal
-is to minimize mutations by reusing existing nodes where possible.
-
-## Architecture
-
-The rendering system uses:
-- **Element**: Immutable tree nodes with child_ids (references, not nested)
-- **ElementState**: Mutable runtime state keyed by node ID (local_state, dirty flag, etc.)
-- **RenderSession._nodes**: Flat storage of all nodes by ID
-
-During reconciliation:
-1. **Node Creation**: Components produce Element descriptors with IDs
-2. **Reconciliation/Execution**: Compare old/new child IDs, reconcile as needed
-
-## Matching Strategy
-
-With position-based IDs (which encode position AND component identity), matching
-is now by ID:
-- Same ID = same position and component type
-- Different ID = different position or component type
-
-The multi-phase optimization is still used for efficient child list reconciliation:
-1. **Head scan**: Match IDs from the start while they match
-2. **Tail scan**: Match IDs from the end while they match
-3. **Middle**: Use ID-based lookup for remaining nodes
-
-## Complexity
-
-- Best case (append/prepend): O(n) where n = list length
-- Average/worst case: O(n) with hash lookups
-
-## Pure Reconciliation
-
-The `reconcile_children` function is a pure function that compares old and new
-child ID lists and returns a `ReconcileResult` categorizing each node:
-- **added**: New nodes not in old list
-- **removed**: Old nodes not in new list
-- **matched**: Nodes present in both (may need props comparison to determine if changed)
-- **child_order**: Final order of child IDs
-
-The renderer interprets this result and performs the actual side effects
-(mount/unmount, mark dirty, generate patches).
-"""
+"""Reconciliation algorithm for Element trees."""
 
 from __future__ import annotations
 
@@ -56,18 +10,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ReconcileResult:
-    """Result of reconciling old and new child ID lists.
-
-    This is a pure data structure containing categorized changes.
-    No side effects are performed during reconciliation - the renderer
-    interprets this result and applies mutations.
-
-    Attributes:
-        added: Node IDs that are new (not in old list)
-        removed: Node IDs that were removed (in old, not in new)
-        matched: Node IDs that exist in both old and new lists
-        child_order: Final order of child IDs after reconciliation
-    """
+    """Result of reconciling old and new child ID lists."""
 
     added: list[str] = field(default_factory=list)
     removed: list[str] = field(default_factory=list)
@@ -79,23 +22,7 @@ def reconcile_children(
     old_child_ids: list[str],
     new_child_ids: list[str],
 ) -> ReconcileResult:
-    """Pure reconciliation of old and new child ID lists.
-
-    This function is PURE - it performs no side effects and doesn't access
-    any mutable state. It only compares the two lists and categorizes each ID.
-
-    Uses a multi-phase algorithm for optimal performance:
-    1. Head scan: Match IDs from start while they match
-    2. Tail scan: Match IDs from end while they match
-    3. Middle: Use set-based lookup for remaining nodes
-
-    Args:
-        old_child_ids: Previous child IDs
-        new_child_ids: New child IDs
-
-    Returns:
-        ReconcileResult with categorized IDs and final order
-    """
+    """Reconcile old and new child ID lists."""
     logger.debug("Reconcile: old=%d → new=%d", len(old_child_ids), len(new_child_ids))
 
     result = ReconcileResult(child_order=list(new_child_ids))

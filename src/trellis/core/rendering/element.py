@@ -22,34 +22,7 @@ __all__ = [
 
 @dataclass
 class Element:
-    """Mutable tree node representing a component invocation.
-
-    Element represents component nodes in the render tree. It is mutable
-    to allow in-place updates during rendering. Runtime state is stored
-    separately in ElementState (keyed by node.id in RenderSession.states).
-
-    Nodes can be used as context managers for container components:
-
-    ```python
-    with Column():      # Creates node, pushes to collection stack
-        Button()        # Creates node, added to Column's children
-        Text("hello")   # Same
-    # __exit__ pops Column, stores children, adds to parent
-    ```
-
-    When reconciling, nodes are matched by ID (position + component identity).
-    Different component types at the same position get different IDs.
-
-    Attributes:
-        component: The component that will be/was executed
-        _session_ref: Weak reference to the RenderSession that owns this node
-        render_count: The render pass when this node was created (for hash stability)
-        props: Component properties as a dictionary
-        key: Optional stable identifier for reconciliation
-        child_ids: IDs of child nodes. Nodes are stored flat in
-            RenderSession.elements and accessed by ID.
-        id: Position-based ID assigned at creation time
-    """
+    """Tree node representing a component invocation."""
 
     component: Component
     _session_ref: weakref.ref[RenderSession]
@@ -80,19 +53,7 @@ class Element:
         return props
 
     def __enter__(self) -> Element:
-        """Enter a `with` block to collect children for a container component.
-
-        This validates that the component accepts children and that no children
-        prop was provided, then pushes a new collection frame.
-
-        Returns:
-            self, for use in `with ... as` patterns
-
-        Raises:
-            TypeError: If the component doesn't accept children
-            RuntimeError: If called outside of a render context, or if both
-                children prop and with block are used
-        """
+        """Enter a `with` block to collect children for a container component."""
         # Ensure we're inside a render context - containers cannot be used
         # in callbacks or other code outside of rendering
         session = get_active_session()
@@ -116,8 +77,7 @@ class Element:
                 f"Component: {self.component.name}"
             )
 
-        # Push new collection list for children created in this scope
-        # parent_id is this node's ID for computing child position IDs
+        # Push new frame for children created in this scope
         session.active.frames.push(parent_id=self.id)
         return self
 
@@ -127,21 +87,7 @@ class Element:
         exc_val: BaseException | None,
         exc_tb: tp.Any,
     ) -> None:
-        """Exit the `with` block, storing child_ids for later execution.
-
-        This:
-        1. Pops the collection list from the stack (input children from with block)
-        2. Stores input children in child_ids (for render() to access via children prop)
-        3. Re-stores the node with updated child_ids
-
-        Execution happens later via _execute_tree in rendering.py.
-        The node was already auto-collected in _place().
-
-        Args:
-            exc_type: Exception type if an error occurred, else None
-            exc_val: Exception value if an error occurred, else None
-            exc_tb: Traceback if an error occurred, else None
-        """
+        """Exit the `with` block, storing child_ids for later execution."""
         session = get_active_session()
         if session is None or session.active is None:
             return
@@ -158,26 +104,14 @@ class Element:
             len(child_ids),
         )
 
-        # Store collected child IDs as input for render()
+        # Store collected child IDs as input for execute()
         self.child_ids = list(child_ids)
 
         # Re-store node with child_ids set (execution happens later in _execute_tree)
         session.elements.store(self)
 
     def __call__(self) -> None:
-        """Mount this node at the current position (the "child() rule").
-
-        This implements the key behavior for container components:
-        - If called inside a `with` block: add to that block's pending children
-        - If called outside any `with` block: actually mount via reconciler
-
-        This allows container components to control when and where children
-        are mounted by iterating over their `children` prop and calling
-        `child()` on each node.
-
-        Raises:
-            RuntimeError: If called outside both `with` block and render context
-        """
+        """Mount this node at the current position."""
         session = get_active_session()
         if (
             session is not None

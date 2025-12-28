@@ -1,11 +1,4 @@
-"""Component definition system for the Trellis UI framework.
-
-This package provides:
-- `Component`: Abstract base class for all components
-- `CompositionComponent`: Component implementation using render functions
-- `component`: Decorator to create components from functions
-- `ReactComponentBase`: Base class for React-based widget components
-"""
+"""Component definition system for the Trellis UI framework."""
 
 from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent, component

@@ -1,30 +1,4 @@
-"""Core rendering primitives for the Trellis UI framework.
-
-This module implements the two-phase rendering architecture:
-
-1. **Node Phase**: Components create lightweight `Element` objects
-   that describe what should be rendered, without actually executing anything.
-
-2. **Execution Phase**: The reconciler compares nodes with existing state
-   and only executes components when necessary (props changed or marked dirty).
-
-Key Types:
-    - `Element`: Immutable tree node representing a component invocation
-    - `ElementState`: Mutable runtime state for an Element (keyed by node.id)
-
-Example:
-    ```python
-    @component
-    def Counter() -> None:
-        state = CounterState()
-        Text(f"Count: {state.count}")
-
-    session = RenderSession(Counter)
-    patches = render(session)  # Returns list of Patch objects
-    # Initial render returns single AddPatch with full tree
-    # Subsequent renders return patches for changed nodes
-    ```
-"""
+"""Render function and tree execution."""
 
 from __future__ import annotations
 
@@ -59,22 +33,7 @@ __all__ = [
 
 
 def render(session: RenderSession) -> list[RenderPatch]:
-    """Render and return patches describing the session state.
-
-    This is the main public API for rendering. It:
-    1. Builds tree via eager execution (initial) or re-renders dirty nodes
-    2. Processes any pending mount/unmount hooks
-    3. Returns render patches (not serialized)
-
-    For initial render, returns a single RenderAddPatch containing the root node.
-    For incremental renders, returns patches for nodes that changed.
-
-    Args:
-        session: The RenderSession to render
-
-    Returns:
-        List of RenderPatch objects. Caller (MessageHandler) serializes to wire format.
-    """
+    """Render the session and return patches."""
     with session.lock:
         return _render_impl(session)
 
@@ -172,19 +131,7 @@ def _execute_single_node(
     node: Element,
     parent_id: str | None,
 ) -> Element:
-    """Execute a single node's execute() and collect its children.
-
-    This is the new execution model where execution is separated from tree traversal.
-    Called by _execute_tree() for each node that needs execution.
-
-    Args:
-        session: The RenderSession
-        node: The node to execute (must have id assigned)
-        parent_id: Parent node's ID
-
-    Returns:
-        Node with child_ids populated from execution, stored in nodes
-    """
+    """Execute a single node and collect its children."""
     assert session.active is not None
     node_id = node.id
 
@@ -252,20 +199,7 @@ def _execute_tree(
     parent_id: str | None,
     in_added_subtree: bool = False,
 ) -> None:
-    """Execute a node and recursively execute its children.
-
-    This drives all execution after nodes are created by _place()/__exit__().
-    Handles reconciliation at the tree level rather than per-node.
-
-    Args:
-        session: The RenderSession
-        node_id: The ID of the node to execute
-        parent_id: Parent node's ID (for ElementState.parent_id)
-        in_added_subtree: True if this node is a descendant of a newly added
-            node. When True, we skip emitting AddPatch since this node is
-            already included in the ancestor's AddPatch via recursive
-            serialization.
-    """
+    """Execute a node and recursively execute its children."""
     assert session.active is not None
     node = session.elements.get(node_id)
     if node is None:
@@ -349,15 +283,7 @@ def _execute_tree(
 
 
 def _mount_node_tree(session: RenderSession, node_id: str) -> None:
-    """Mount a node and all its descendants.
-
-    Mounting is performed parent-first. Hooks are tracked for deferred
-    execution after the render phase completes.
-
-    Args:
-        session: The RenderSession
-        node_id: The ID of the node to mount
-    """
+    """Mount a node and all its descendants."""
     assert session.active is not None
     state = session.states.get(node_id)
     if state is None or state.mounted:
@@ -375,16 +301,7 @@ def _mount_node_tree(session: RenderSession, node_id: str) -> None:
 
 
 def _unmount_node_tree(session: RenderSession, node_id: str) -> None:
-    """Unmount a node and all its descendants.
-
-    Unmounting is performed children-first. Hooks are tracked for deferred
-    execution after the render phase completes. State cleanup is also deferred
-    so hooks can access local_state.
-
-    Args:
-        session: The RenderSession
-        node_id: The ID of the node to unmount
-    """
+    """Unmount a node and all its descendants."""
     assert session.active is not None
     state = session.states.get(node_id)
     if state is None or not state.mounted:
@@ -420,14 +337,7 @@ def _unmount_node_tree(session: RenderSession, node_id: str) -> None:
 
 
 def _call_mount_hooks(session: RenderSession, node_id: str) -> None:
-    """Call on_mount() for all Stateful instances on a node.
-
-    Exceptions are logged but not propagated, to ensure all mount hooks run.
-
-    Args:
-        session: The RenderSession
-        node_id: The node's ID
-    """
+    """Call on_mount() for all Stateful instances on a node."""
     state = session.states.get(node_id)
     if state is None:
         return
@@ -448,12 +358,7 @@ def _call_mount_hooks(session: RenderSession, node_id: str) -> None:
 
 
 def _call_unmount_hooks(session: RenderSession, node_id: str) -> None:
-    """Call on_unmount() for all Stateful instances on a node (reverse order).
-
-    Args:
-        session: The RenderSession
-        node_id: The node's ID
-    """
+    """Call on_unmount() for all Stateful instances on a node."""
     state = session.states.get(node_id)
     if state is None:
         return
@@ -473,15 +378,7 @@ def _call_unmount_hooks(session: RenderSession, node_id: str) -> None:
 
 
 def _process_pending_hooks(session: RenderSession) -> None:
-    """Process all pending mount/unmount hooks.
-
-    Called at the end of render() after the tree is fully built.
-    Hooks are called in no particular order since they are just
-    convenience methods and don't interact with DOM.
-
-    Args:
-        session: The RenderSession
-    """
+    """Process all pending mount/unmount hooks."""
     assert session.active is not None
     # Process unmounts first (cleanup before new mounts)
     for node_id in session.active.lifecycle.pop_unmounts():
@@ -495,15 +392,7 @@ def _process_pending_hooks(session: RenderSession) -> None:
 
 
 def _emit_update_patch_if_changed(session: RenderSession, node_id: str) -> None:
-    """Emit a RenderUpdatePatch if props or children changed.
-
-    Compares current node (in nodes) to old node (in old_elements snapshot)
-    and emits RenderUpdatePatch if there are differences.
-
-    Args:
-        session: The RenderSession
-        node_id: The node's ID
-    """
+    """Emit a RenderUpdatePatch if props or children changed."""
     assert session.active is not None
     node = session.elements.get(node_id)
     if not node:

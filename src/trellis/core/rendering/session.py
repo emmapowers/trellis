@@ -1,8 +1,4 @@
-"""Session-scoped state container.
-
-RenderSession holds state that persists across renders for a single session.
-This is the target for the contextvar that tracks the active rendering context.
-"""
+"""Session-scoped state container."""
 
 from __future__ import annotations
 
@@ -38,36 +34,17 @@ _active_session: contextvars.ContextVar[RenderSession | None] = contextvars.Cont
 
 
 def get_active_session() -> RenderSession | None:
-    """Get the currently active render session, if any.
-
-    Returns:
-        The active RenderSession, or None if not currently rendering
-    """
+    """Get the currently active render session, if any."""
     return _active_session.get()
 
 
 def set_active_session(session: RenderSession | None) -> None:
-    """Set the active render session.
-
-    This is called internally by render() to establish
-    the current session for component execution.
-
-    Args:
-        session: The RenderSession to make active, or None to clear
-    """
+    """Set the active render session."""
     _active_session.set(session)
 
 
 def is_render_active() -> bool:
-    """Check if currently inside a render context.
-
-    Returns True if there is an active session with a node being executed.
-    Used by Stateful and tracked collections to determine if dependency
-    tracking should occur.
-
-    Returns:
-        True if inside render context, False otherwise
-    """
+    """Check if currently inside a render context."""
     session = _active_session.get()
     return session is not None and session.is_executing()
 
@@ -78,21 +55,7 @@ _PATH_SEGMENT_RE = re.compile(r"^([a-zA-Z_][a-zA-Z0-9_]*)|^\[(\d+)\]|^\.([a-zA-Z
 
 @dataclass
 class RenderSession:
-    """Session-scoped state container.
-
-    Holds state that persists across renders for a single session (e.g., one
-    WebSocket connection). The contextvar points here to provide access to
-    the current rendering context.
-
-    Attributes:
-        root_component: The top-level component for this session
-        root_node_id: ID of the root element (after first render)
-        elements: Flat storage for all Elements
-        states: Storage for ElementState per element
-        dirty: Tracker for dirty element IDs
-        active: Render-scoped state (None when not rendering)
-        lock: RLock for thread-safe operations
-    """
+    """Session-scoped state container."""
 
     root_component: Component
     root_node_id: str | None = None
@@ -112,66 +75,32 @@ class RenderSession:
     render_count: int = 0
 
     def __post_init__(self) -> None:
-        """Link the dirty tracker to the session lock for thread-safe marking."""
         self.dirty.set_lock(self.lock)
 
     @property
     def root_element(self) -> Element | None:
-        """Get the root element node for this session.
-
-        Returns:
-            The root Element, or None if not yet rendered
-        """
+        """Get the root element node for this session."""
         if self.root_node_id is None:
             return None
         return self.elements.get(self.root_node_id)
 
     def is_rendering(self) -> bool:
-        """Check if currently inside a render pass.
-
-        Returns:
-            True if active is not None, False otherwise
-        """
+        """Check if currently inside a render pass."""
         return self.active is not None
 
     def is_executing(self) -> bool:
-        """Check if currently executing a component.
-
-        Returns:
-            True if inside render and a node is being executed
-        """
+        """Check if currently executing a component."""
         return self.active is not None and self.active.current_node_id is not None
 
     @property
     def current_node_id(self) -> str | None:
-        """Get the ID of the node currently being executed.
-
-        Returns:
-            The current node ID during execution, or None
-        """
+        """Get the ID of the node currently being executed."""
         if self.active is None:
             return None
         return self.active.current_node_id
 
     def get_callback(self, node_id: str, prop_name: str) -> tp.Callable[..., tp.Any] | None:
-        """Get a callback from a node's props.
-
-        Looks up the node by ID and finds the property. Returns the value
-        if it's callable (including Mutable objects which have __call__).
-
-        Supports nested paths from serialization:
-        - "on_click" -> props["on_click"]
-        - "handlers[0]" -> props["handlers"][0]
-        - "config.on_change" -> props["config"]["on_change"]
-        - "handlers[0].callback" -> props["handlers"][0]["callback"]
-
-        Args:
-            node_id: The node's ID
-            prop_name: The property name or path containing the callback
-
-        Returns:
-            The callable if found, None otherwise
-        """
+        """Get a callback from a node's props by path."""
         node = self.elements.get(node_id)
         if node is None:
             return None
@@ -184,21 +113,7 @@ class RenderSession:
 
 
 def _resolve_prop_path(props: dict[str, tp.Any], path: str) -> tp.Any:
-    """Resolve a nested property path to its value.
-
-    Parses paths like:
-    - "on_click" -> props["on_click"]
-    - "handlers[0]" -> props["handlers"][0]
-    - "config.on_change" -> props["config"]["on_change"]
-    - "handlers[0].callback" -> props["handlers"][0]["callback"]
-
-    Args:
-        props: The props dict to traverse
-        path: The property path to resolve
-
-    Returns:
-        The value at the path, or None if not found
-    """
+    """Resolve a nested property path to its value."""
     value: tp.Any = props
     pos = 0
 

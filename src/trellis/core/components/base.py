@@ -1,32 +1,4 @@
-"""Base component class for the Trellis UI framework.
-
-This module provides the abstract Component base class that all components
-inherit from. Components are the building blocks of Trellis UIs.
-
-The Component class implements the IComponent protocol and provides:
-- `__call__()`: Creates an Element with eager execution
-- `render()`: Abstract method that subclasses implement for rendering
-
-The eager execution model:
-1. When a component is called, it checks if the old node can be reused
-2. If reusable (same component, same props, not dirty), returns old node
-3. If not reusable, executes immediately (for non-container components)
-4. Container components defer execution to __exit__ after children collected
-
-Example:
-    ```python
-    class MyComponent(Component):
-        def __init__(self, name: str = "MyComponent") -> None:
-            super().__init__(name)
-
-        def render(self, **props) -> None:
-            Text(f"Hello, {props.get('name', 'World')}!")
-    ```
-
-See Also:
-    - `CompositionComponent`: Concrete implementation using decorated functions
-    - `Element`: The node type returned by `__call__()`
-"""
+"""Base component class."""
 
 from __future__ import annotations
 
@@ -43,15 +15,7 @@ __all__ = ["Component"]
 
 
 class ElementKind(StrEnum):
-    """Kind of element in the render tree.
-
-    Used by the client to determine how to render each node:
-    - REACT_COMPONENT: Custom React component (Button, Slider, etc.)
-    - JSX_ELEMENT: Intrinsic HTML element (div, span, p)
-    - TEXT: Raw text node
-
-    Values are explicit strings for stable wire format (serialized to client).
-    """
+    """Kind of element: REACT_COMPONENT, JSX_ELEMENT, or TEXT."""
 
     REACT_COMPONENT = "react_component"
     JSX_ELEMENT = "jsx_element"
@@ -59,21 +23,7 @@ class ElementKind(StrEnum):
 
 
 class Component(ABC):
-    """Abstract base class for all Trellis components.
-
-    Components define reusable UI elements. They follow a two-phase rendering model:
-
-    1. **Placement Phase**: When called (e.g., `Button(text="Click")`), creates an
-       immutable Element that describes the component invocation.
-
-    2. **Render Phase**: When the reconciler determines this component needs to
-       render, it calls `render()` which produces child descriptors.
-
-    Attributes:
-        name: Human-readable component name (used for debugging and error messages)
-        element_kind: The kind of element (REACT_COMPONENT, JSX_ELEMENT, TEXT)
-        element_name: The type name used to render this on the client
-    """
+    """Abstract base class for all Trellis components."""
 
     name: str
 
@@ -83,64 +33,22 @@ class Component(ABC):
     @property
     @abstractmethod
     def element_kind(self) -> ElementKind:
-        """The kind of element (REACT_COMPONENT, JSX_ELEMENT, or TEXT).
-
-        Must be overridden by subclasses:
-        - Most components return REACT_COMPONENT
-        - HTML elements return JSX_ELEMENT
-        - Text nodes return TEXT
-        """
+        """The kind of element."""
         ...
 
     @property
     @abstractmethod
     def element_name(self) -> str:
-        """The element type name used to render this component on the client.
-
-        For CompositionComponents, this is always "CompositionComponent".
-        For ReactComponentBase subclasses, this is the specific React component name.
-        For HTML elements, this is the tag name (e.g., "div").
-        """
+        """The element type name for the client."""
         ...
 
     @property
     def _has_children_param(self) -> bool:
-        """Whether this component accepts children via `with` block.
-
-        Override in subclasses that support children. Default is False.
-        """
+        """Whether this component accepts children via `with` block."""
         return False
 
     def _place(self, /, **props: tp.Any) -> Element:
-        """Place this component with eager execution.
-
-        This implements the eager execution model:
-        1. Check if the old node at this position can be reused
-        2. If reusable (same component, same props, not dirty), return old node
-        3. If not reusable, create new node and execute immediately
-        4. Container components defer execution to __exit__ after children collected
-
-        If called inside a `with` block (and this component doesn't accept children),
-        the node is automatically added to the parent's pending children.
-
-        Args:
-            **props: Properties to pass to the component. The special `key` prop
-                is extracted for reconciliation and not passed to `render()`.
-
-        Returns:
-            An immutable Element describing this component invocation.
-
-        Example:
-            ```python
-            # Creates and executes immediately (if not reused)
-            node = Button(text="Click me", key="btn-1")
-
-            # Inside a with block, auto-collected
-            with Column():
-                Button(text="First")   # Executed immediately, added to children
-                Button(text="Second")  # Executed immediately, added to children
-            ```
-        """
+        """Place this component, creating or reusing an Element."""
         key: str | None = None
         if "key" in props:
             raw_key = props.pop("key")
@@ -230,16 +138,7 @@ class Component(ABC):
         return node
 
     def __call__(self, /, **props: tp.Any) -> Element:
-        """Create an Element for this component invocation.
-
-        Delegates to _place(). This is the standard way to invoke a component.
-
-        Args:
-            **props: Properties to pass to the component.
-
-        Returns:
-            An immutable Element describing this component invocation.
-        """
+        """Create an Element for this component invocation."""
         return self._place(**props)
 
     @abstractmethod

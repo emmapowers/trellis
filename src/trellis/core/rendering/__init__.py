@@ -1,11 +1,4 @@
-"""Render pipeline for the Trellis UI framework.
-
-This package provides the core rendering infrastructure:
-- `Element`: Immutable tree node representing a component invocation
-- `ElementState`: Mutable runtime state for an Element
-- `RenderSession`: Manages the render lifecycle and element tree
-- `render`: Main render function
-"""
+"""Render pipeline for the Trellis UI framework."""
 
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.dirty_tracker import DirtyTracker
