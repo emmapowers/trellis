@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from trellis import Stateful, component
 from trellis import html as h
 from trellis import widgets as w
+from trellis.widgets import theme
 
 from .example import make_playground_url
 
@@ -29,7 +30,7 @@ def CodeBlock(*, code: str) -> None:
             "fontSize": "13px",
             "lineHeight": "1.5",
             "whiteSpace": "pre",
-            "backgroundColor": "#1e293b",
+            "backgroundColor": "#000000",
             "color": "#e2e8f0",
             "padding": "16px",
             "borderRadius": "6px",
@@ -63,7 +64,7 @@ def ExampleCard(*, example: CompositionComponent) -> None:
     with w.Column(gap=12):
         # Header with title and action buttons
         with w.Row(justify="between", align="center"):
-            w.Label(text=title, font_size=12, color="#64748b", bold=True)
+            w.Label(text=title, font_size=12, color=theme.text_secondary, bold=True)
 
             with w.Row(gap=4):
                 w.Button(
