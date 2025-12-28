@@ -3,8 +3,8 @@
 import pytest
 
 from trellis.core.client_state import ClientState, ThemeMode
-from trellis.core.composition_component import component
-from trellis.core.rendering import RenderTree
+from trellis.core.components.composition import component
+from trellis.core.rendering import RenderSession, render
 from trellis.core.trellis_app import TrellisApp
 from trellis.widgets.theme_switcher import ThemeSwitcher, _get_next_mode, _get_icon_for_mode
 from trellis.widgets.icons import IconName
@@ -54,9 +54,9 @@ class TestThemeSwitcherComponent:
         def App() -> None:
             ThemeSwitcher()
 
-        tree = RenderTree(App)
+        tree = RenderSession(App)
         with pytest.raises(LookupError):
-            tree.render()
+            render(tree)
 
     def test_renders_with_client_state_context(self) -> None:
         """ThemeSwitcher should render when ClientState is in context."""
@@ -72,8 +72,8 @@ class TestThemeSwitcherComponent:
         def Root() -> None:
             TrellisApp(app=App)
 
-        tree = RenderTree(Root)
-        tree.render()
+        tree = RenderSession(Root)
+        render(tree)
 
         assert rendered is True
 
@@ -93,7 +93,7 @@ class TestThemeSwitcherComponent:
         def Root() -> None:
             TrellisApp(app=App, client_state=client_state)
 
-        tree = RenderTree(Root)
-        tree.render()
+        tree = RenderSession(Root)
+        render(tree)
 
         assert rendered_mode == ThemeMode.DARK

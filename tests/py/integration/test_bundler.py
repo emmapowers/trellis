@@ -91,7 +91,7 @@ class TestDesktopPlatformBundle:
         assert index_path.exists()
         # Verify HTML contains expected content
         html_content = index_path.read_text()
-        assert '<div id="root"></div>' in html_content
+        assert '<div id="root" class="trellis-root"></div>' in html_content
         assert "bundle.js" in html_content
 
 

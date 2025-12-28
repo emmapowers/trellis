@@ -13,8 +13,8 @@ from collections.abc import Callable
 from typing import Literal
 
 from trellis.core.client_state import ThemeMode
-from trellis.core.react_component import react_component_base
-from trellis.core.rendering import ElementNode
+from trellis.core.components.react import react_component_base
+from trellis.core.rendering.element import Element
 
 
 @react_component_base("ThemeProvider", has_children=True)
@@ -26,7 +26,7 @@ def ThemeProvider(
     on_system_theme_change: Callable[[Literal["light", "dark"]], None] | None = None,
     on_theme_mode_change: Callable[[Literal["system", "light", "dark"]], None] | None = None,
     key: str | None = None,
-) -> ElementNode:
+) -> Element:
     """Theme provider that manages the data-theme attribute on trellis-root.
 
     Updates the data-theme attribute on the trellis-root element based on

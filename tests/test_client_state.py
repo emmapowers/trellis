@@ -178,8 +178,8 @@ class TestClientStateContext:
 
     def test_context_provision_in_component(self) -> None:
         """ClientState should be accessible via context when provided in component."""
-        from trellis.core.composition_component import component
-        from trellis.core.rendering import RenderTree
+        from trellis.core.components.composition import component
+        from trellis.core.rendering import RenderSession, render
 
         retrieved_state: ClientState | None = None
 
@@ -194,16 +194,16 @@ class TestClientStateContext:
             with state:
                 ChildComponent()
 
-        tree = RenderTree(ParentComponent)
-        tree.render()
+        tree = RenderSession(ParentComponent)
+        render(tree)
 
         assert retrieved_state is not None
         assert retrieved_state.mode == ThemeMode.DARK
 
     def test_context_not_found_raises_lookup_error(self) -> None:
         """from_context() without provider raises LookupError."""
-        from trellis.core.composition_component import component
-        from trellis.core.rendering import RenderTree
+        from trellis.core.components.composition import component
+        from trellis.core.rendering import RenderSession, render
 
         error_raised = False
 
@@ -215,15 +215,15 @@ class TestClientStateContext:
             except LookupError:
                 error_raised = True
 
-        tree = RenderTree(ComponentWithoutContext)
-        tree.render()
+        tree = RenderSession(ComponentWithoutContext)
+        render(tree)
 
         assert error_raised is True
 
     def test_context_default_returns_none(self) -> None:
         """from_context(default=None) returns None when not found."""
-        from trellis.core.composition_component import component
-        from trellis.core.rendering import RenderTree
+        from trellis.core.components.composition import component
+        from trellis.core.rendering import RenderSession, render
 
         result: ClientState | None = "not_set"  # type: ignore
 
@@ -232,7 +232,7 @@ class TestClientStateContext:
             nonlocal result
             result = ClientState.from_context(default=None)
 
-        tree = RenderTree(ComponentWithDefault)
-        tree.render()
+        tree = RenderSession(ComponentWithDefault)
+        render(tree)
 
         assert result is None

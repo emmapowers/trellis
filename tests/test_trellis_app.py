@@ -1,8 +1,8 @@
 """Tests for TrellisApp wrapper component."""
 
 from trellis.core.client_state import ClientState, ThemeMode
-from trellis.core.composition_component import component
-from trellis.core.rendering import RenderTree
+from trellis.core.components.composition import component
+from trellis.core.rendering import RenderSession, render
 from trellis.core.trellis_app import TrellisApp
 from trellis import widgets as w
 
@@ -27,8 +27,8 @@ class TestTrellisApp:
         def Root() -> None:
             TrellisApp(app=MyApp)
 
-        tree = RenderTree(Root)
-        tree.render()
+        tree = RenderSession(Root)
+        render(tree)
 
         assert retrieved_state is not None
         assert isinstance(retrieved_state, ClientState)
@@ -47,8 +47,8 @@ class TestTrellisApp:
         def Root() -> None:
             TrellisApp(app=MyApp, client_state=custom_state)
 
-        tree = RenderTree(Root)
-        tree.render()
+        tree = RenderSession(Root)
+        render(tree)
 
         assert retrieved_state is custom_state
         assert retrieved_state.mode == ThemeMode.DARK
@@ -66,8 +66,8 @@ class TestTrellisApp:
         def Root() -> None:
             TrellisApp(app=MyApp)
 
-        tree = RenderTree(Root)
-        tree.render()
+        tree = RenderSession(Root)
+        render(tree)
 
         assert retrieved_state is not None
         assert retrieved_state.mode == ThemeMode.SYSTEM  # Default
@@ -86,8 +86,8 @@ class TestTrellisApp:
         def Root() -> None:
             TrellisApp(app=MyApp)
 
-        tree = RenderTree(Root)
-        tree.render()
+        tree = RenderSession(Root)
+        render(tree)
 
         assert label_rendered is True
 
@@ -107,8 +107,8 @@ class TestTrellisApp:
         def Root() -> None:
             TrellisApp(app=MyApp, client_state=ClientState(mode=ThemeMode.DARK))
 
-        tree = RenderTree(Root)
-        tree.render()
+        tree = RenderSession(Root)
+        render(tree)
 
         assert is_dark is True
         assert is_light is False
