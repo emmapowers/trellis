@@ -1,11 +1,11 @@
 """Tests for Element tree serialization."""
 
+import trellis.html as h
 from trellis.core.components.composition import component
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
 from trellis.platforms.common.serialization import parse_callback_id, serialize_node
 from trellis.widgets.basic import Button
-import trellis.html as h
 
 
 class TestSerializeNode:

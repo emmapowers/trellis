@@ -124,6 +124,7 @@ class TestDetectEntryPoint:
         """Returns the __main__ module's file path."""
         import sys
         from unittest.mock import MagicMock, patch
+
         from trellis.platforms.browser.serve_platform import _detect_entry_point
 
         # Mock __main__ module
@@ -141,6 +142,7 @@ class TestDetectEntryPoint:
         """Returns module name when run with python -m."""
         import sys
         from unittest.mock import MagicMock, patch
+
         from trellis.platforms.browser.serve_platform import _detect_entry_point
 
         # Mock __main__ module run as "python -m mypackage.module"
@@ -160,8 +162,10 @@ class TestDetectEntryPoint:
     def test_raises_when_main_not_found(self) -> None:
         """Raises RuntimeError when __main__ is not in sys.modules."""
         import sys
-        import pytest
         from unittest.mock import patch
+
+        import pytest
+
         from trellis.platforms.browser.serve_platform import _detect_entry_point
 
         # Remove __main__ from modules
@@ -172,8 +176,10 @@ class TestDetectEntryPoint:
     def test_raises_when_file_not_set(self) -> None:
         """Raises RuntimeError when __main__.__file__ is None."""
         import sys
-        import pytest
         from unittest.mock import MagicMock, patch
+
+        import pytest
+
         from trellis.platforms.browser.serve_platform import _detect_entry_point
 
         mock_main = MagicMock()

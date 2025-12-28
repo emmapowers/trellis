@@ -3,9 +3,10 @@
 import inspect
 from dataclasses import dataclass
 
+import pytest
+
 from trellis.core.components.composition import component
 from trellis.core.rendering.render import render
-from trellis.platforms.common.serialization import parse_callback_id, serialize_node
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
 from trellis.html.events import (
@@ -19,6 +20,7 @@ from trellis.platforms.common.handler import (
     _extract_args_kwargs,
     _process_callback_args,
 )
+from trellis.platforms.common.serialization import parse_callback_id, serialize_node
 from trellis.widgets import Button, Label
 
 
@@ -345,9 +347,7 @@ class TestArgsKwargsExtraction:
 
     def test_kwargs_only(self) -> None:
         """Kwargs-only invocation works."""
-        args, kwargs = _extract_args_kwargs(
-            [{"__kwargs__": True, "name": "test"}]
-        )
+        args, kwargs = _extract_args_kwargs([{"__kwargs__": True, "name": "test"}])
         assert args == []
         assert kwargs == {"name": "test"}
 
@@ -359,9 +359,7 @@ class TestArgsKwargsExtraction:
 
     def test_kwargs_marker_false_not_kwargs(self) -> None:
         """Dict with __kwargs__: False is not treated as kwargs."""
-        args, kwargs = _extract_args_kwargs(
-            [{"__kwargs__": False, "key": "value"}]
-        )
+        args, kwargs = _extract_args_kwargs([{"__kwargs__": False, "key": "value"}])
         assert args == [{"__kwargs__": False, "key": "value"}]
         assert kwargs == {}
 
@@ -588,11 +586,8 @@ class TestCallbackErrorHandling:
         callback = get_callback_from_id(ctx, cb_id)
         assert callback is not None
 
-        try:
+        with pytest.raises(ValueError, match="Test error"):
             callback()
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert str(e) == "Test error"
 
     def test_multiple_callbacks_independent(self) -> None:
         """Multiple callbacks don't affect each other."""

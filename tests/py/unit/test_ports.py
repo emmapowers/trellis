@@ -66,8 +66,8 @@ class TestFindAvailablePort:
     def test_uses_default_range(self) -> None:
         """Uses default range when not specified."""
         from trellis.platforms.common.ports import (
-            DEFAULT_PORT_START,
             DEFAULT_PORT_END,
+            DEFAULT_PORT_START,
             find_available_port,
         )
 

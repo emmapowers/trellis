@@ -1,12 +1,10 @@
 """Tests for core component types and props functions."""
 
-import pytest
-
 from trellis.core.components.base import ElementKind
-from trellis.core.components.composition import CompositionComponent, component
+from trellis.core.components.composition import component
 from trellis.core.components.react import ReactComponentBase
 from trellis.core.rendering.element import Element
-from trellis.html.base import HtmlElement, html_element
+from trellis.html.base import html_element
 from trellis.html.text import TextNode
 
 
@@ -69,8 +67,7 @@ class TestIComponentProtocolConformance:
         """HtmlElement should return JSX_ELEMENT kind."""
 
         @html_element("div")
-        def TestDiv() -> Element:
-            ...
+        def TestDiv() -> Element: ...
 
         # Access the underlying component via the decorator's _component attribute
         elem = TestDiv._component

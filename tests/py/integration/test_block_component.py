@@ -133,7 +133,7 @@ class TestContainerComponent:
                 pass
 
         ctx = RenderSession(Parent)
-        with pytest.raises(RuntimeError, match="Cannot provide 'children'.*and use 'with' block"):
+        with pytest.raises(RuntimeError, match=r"Cannot provide 'children'.*and use 'with' block"):
             render(ctx)
 
     def test_empty_with_block(self) -> None:

@@ -3,7 +3,6 @@
 from trellis.core.rendering.dirty_tracker import DirtyTracker
 from trellis.core.rendering.lifecycle import LifecycleTracker
 
-
 # =============================================================================
 # DirtyTracker Tests
 # =============================================================================

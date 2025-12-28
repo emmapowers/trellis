@@ -77,9 +77,7 @@ class TestServeBundling:
 
         mock_platform.bundle.assert_called_once_with(force=True)
 
-    def test_serve_calls_bundle_with_cli_build_bundle(
-        self, mock_platform: Mock
-    ) -> None:
+    def test_serve_calls_bundle_with_cli_build_bundle(self, mock_platform: Mock) -> None:
         """serve() respects --build-bundle CLI flag."""
 
         def dummy_component() -> None:
@@ -157,9 +155,7 @@ class TestServePlatformRun:
         assert call_kwargs["host"] == "0.0.0.0"
         assert call_kwargs["port"] == 8080
 
-    def test_serve_passes_custom_batch_delay_to_run(
-        self, mock_platform: Mock
-    ) -> None:
+    def test_serve_passes_custom_batch_delay_to_run(self, mock_platform: Mock) -> None:
         """serve() passes custom batch_delay to platform.run()."""
 
         def dummy_component() -> None:

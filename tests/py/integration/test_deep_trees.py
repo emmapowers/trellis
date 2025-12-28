@@ -28,6 +28,7 @@ class TestDeepTrees:
             def Level() -> None:
                 if n < DEPTH:
                     make_level(n + 1)()
+
             return Level
 
         @component
@@ -41,7 +42,11 @@ class TestDeepTrees:
         def count_depth(node: Element) -> int:
             if not node.child_ids:
                 return 1
-            return 1 + max(count_depth(ctx.elements.get(cid)) for cid in node.child_ids if ctx.elements.get(cid))
+            return 1 + max(
+                count_depth(ctx.elements.get(cid))
+                for cid in node.child_ids
+                if ctx.elements.get(cid)
+            )
 
         max_depth = count_depth(ctx.root_element)
         assert max_depth == DEPTH + 1  # +1 for Root
@@ -56,6 +61,7 @@ class TestDeepTrees:
             def Level() -> None:
                 if n < DEPTH:
                     make_level(n + 1)()
+
             return Level
 
         @component
@@ -274,7 +280,7 @@ class TestCombinedDeepAndWide:
         @component
         def Level(depth: int = 0) -> None:
             if depth < DEPTH:
-                for i in range(BRANCH_FACTOR):
+                for _ in range(BRANCH_FACTOR):
                     Level(depth=depth + 1)
 
         @component
@@ -286,7 +292,11 @@ class TestCombinedDeepAndWide:
 
         # Count total nodes
         def count_nodes(node: Element) -> int:
-            return 1 + sum(count_nodes(ctx.elements.get(cid)) for cid in node.child_ids if ctx.elements.get(cid))
+            return 1 + sum(
+                count_nodes(ctx.elements.get(cid))
+                for cid in node.child_ids
+                if ctx.elements.get(cid)
+            )
 
         total = count_nodes(ctx.root_element)
 
@@ -316,6 +326,7 @@ class TestCombinedDeepAndWide:
                     # Leaf level - add many children
                     for i in range(LEAF_COUNT):
                         Leaf(n=i)
+
             return Level
 
         @component
@@ -358,6 +369,7 @@ class TestMountingOrder:
                 TrackedState(level=n)
                 if n < DEPTH:
                     make_level(n + 1)()
+
             return Level
 
         @component
@@ -414,6 +426,7 @@ class TestTreeTraversal:
 
     def test_empty_tree(self) -> None:
         """Tree with no children should work."""
+
         @component
         def Empty() -> None:
             pass
@@ -433,6 +446,7 @@ class TestTreeTraversal:
             def Level() -> None:
                 if n < DEPTH:
                     make_level(n + 1)()
+
             return Level
 
         @component
@@ -474,7 +488,7 @@ class TestTreeTraversal:
         @component
         def Root() -> None:
             DeepBranch(depth=10)  # Deep left branch
-            ShallowBranch()       # Shallow right branch
+            ShallowBranch()  # Shallow right branch
 
         ctx = RenderSession(Root)
         render(ctx)
@@ -486,7 +500,11 @@ class TestTreeTraversal:
         def count_depth(node: Element) -> int:
             if not node.child_ids:
                 return 1
-            return 1 + max(count_depth(ctx.elements.get(cid)) for cid in node.child_ids if ctx.elements.get(cid))
+            return 1 + max(
+                count_depth(ctx.elements.get(cid))
+                for cid in node.child_ids
+                if ctx.elements.get(cid)
+            )
 
         deep_branch = ctx.elements.get(ctx.root_element.child_ids[0])
         shallow_branch = ctx.elements.get(ctx.root_element.child_ids[1])

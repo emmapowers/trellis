@@ -3,7 +3,9 @@
 import pytest
 
 from trellis.core.rendering.active import ActiveRender
+from trellis.core.rendering.elements import ElementStore
 from trellis.core.rendering.frames import Frame, FrameStack
+from trellis.core.rendering.lifecycle import LifecycleTracker
 from trellis.core.rendering.patches import PatchCollector
 from trellis.platforms.common.messages import AddPatch, RemovePatch, UpdatePatch
 
@@ -270,8 +272,3 @@ class TestActiveRender:
 
         assert active.lifecycle.pop_mounts() == ["e1"]
         assert active.lifecycle.pop_unmounts() == ["e2"]
-
-
-# Import for ActiveRender tests
-from trellis.core.rendering.elements import ElementStore
-from trellis.core.rendering.lifecycle import LifecycleTracker

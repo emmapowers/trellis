@@ -14,13 +14,15 @@ import pytest
 class TestAsyncMain:
     def test_runs_when_main(self) -> None:
         """@async_main runs the function when module is __main__."""
-        code = textwrap.dedent("""
+        code = textwrap.dedent(
+            """
             from trellis.utils import async_main
 
             @async_main
             async def main() -> None:
                 print("executed")
-        """)
+        """
+        )
 
         result = subprocess.run(
             [sys.executable, "-c", code],
@@ -108,10 +110,12 @@ class TestLogger:
     def test_logger_different_per_module(self) -> None:
         """Different modules get different logger names."""
         # Import from a subprocess to test different module context
-        code = textwrap.dedent("""
+        code = textwrap.dedent(
+            """
             from trellis.utils.logger import logger
             print(logger.name)
-        """)
+        """
+        )
 
         result = subprocess.run(
             [sys.executable, "-c", code],

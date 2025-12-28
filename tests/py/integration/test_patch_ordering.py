@@ -179,8 +179,8 @@ class TestPatchOrdering:
         assert child_add_patch.node.id == child_id, "AddPatch should be for Child"
 
         assert len(child_add_patch.node.child_ids) > 0, (
-            f"AddPatch's node.child_ids is empty - subtree not fully populated. "
-            f"This happens when AddPatch is emitted BEFORE executing the subtree."
+            "AddPatch's node.child_ids is empty - subtree not fully populated. "
+            "This happens when AddPatch is emitted BEFORE executing the subtree."
         )
 
         # Verify Grandchild is in Child's child_ids
@@ -226,9 +226,9 @@ class TestInitialRenderInvariants:
         )
 
         # Must be an AddPatch
-        assert isinstance(patches[0], RenderAddPatch), (
-            f"Initial render patch must be RenderAddPatch, got {type(patches[0]).__name__}"
-        )
+        assert isinstance(
+            patches[0], RenderAddPatch
+        ), f"Initial render patch must be RenderAddPatch, got {type(patches[0]).__name__}"
 
     def test_initial_render_add_patch_contains_full_tree(self) -> None:
         """The single AddPatch must contain the entire tree structure."""
@@ -313,12 +313,10 @@ class TestIncrementalAddInvariants:
 
         # Should have exactly: 1 UpdatePatch (Root) + 1 AddPatch (Child)
         assert len(remove_patches) == 0, f"No removes expected, got {len(remove_patches)}"
-        assert len(update_patches) == 1, (
-            f"Expected 1 UpdatePatch for parent, got {len(update_patches)}"
-        )
-        assert len(add_patches) == 1, (
-            f"Expected 1 AddPatch for new subtree, got {len(add_patches)}"
-        )
+        assert (
+            len(update_patches) == 1
+        ), f"Expected 1 UpdatePatch for parent, got {len(update_patches)}"
+        assert len(add_patches) == 1, f"Expected 1 AddPatch for new subtree, got {len(add_patches)}"
 
         # UpdatePatch should be for Root (its child_ids changed)
         assert update_patches[0].node_id == ctx.root_element.id
@@ -395,6 +393,6 @@ class TestIncrementalAddInvariants:
 
         # 1 UpdatePatch for Root + 2 AddPatches for ChildA and ChildB
         assert len(update_patches) == 1
-        assert len(add_patches) == 2, (
-            f"Expected 2 AddPatches (one per sibling), got {len(add_patches)}"
-        )
+        assert (
+            len(add_patches) == 2
+        ), f"Expected 2 AddPatches (one per sibling), got {len(add_patches)}"

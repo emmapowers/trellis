@@ -1,8 +1,8 @@
 """Integration tests for MessageHandler and BrowserMessageHandler."""
 
 import asyncio
-from dataclasses import dataclass
 import typing as tp
+from dataclasses import dataclass
 
 from trellis.core.components.composition import component
 from trellis.core.rendering.patches import RenderUpdatePatch

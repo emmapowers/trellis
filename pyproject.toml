@@ -100,6 +100,16 @@ ignore = [
     "UP047",    # generic function style - defer to later cleanup
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "PLR2004",  # magic values in tests are idiomatic
+    "PT018",    # compound assertions are common in tests
+    "RET504",   # intermediate variable before return aids readability in tests
+    "RUF005",   # list concatenation is clearer than spread in tests
+    "RUF001",   # Unicode characters intentional (e.g. × for close button)
+    "RUF012",   # Stateful classes intentionally use mutable defaults
+]
+
 [tool.mypy]
 python_version = "3.13"
 strict = true
