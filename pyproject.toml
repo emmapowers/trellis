@@ -48,7 +48,7 @@ packages = ["src/trellis"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-vv --ignore=tests/integration"
+addopts = "-vv"
 
 [tool.coverage.run]
 source = ["src/trellis"]

@@ -53,7 +53,7 @@ class TestServerPlatformBundle:
         from trellis.platforms.server.platform import ServerPlatform
 
         # Bundle is now at platforms/server/client/dist/
-        platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
+        platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
         bundle_path = platforms_dir / "server" / "client" / "dist" / "bundle.js"
 
         # Force rebuild
@@ -74,7 +74,7 @@ class TestDesktopPlatformBundle:
             pytest.skip("pytauri not installed")
 
         # Bundle is at platforms/desktop/client/dist/
-        platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
+        platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
         dist_dir = platforms_dir / "desktop" / "client" / "dist"
         bundle_path = dist_dir / "bundle.js"
         index_path = dist_dir / "index.html"
