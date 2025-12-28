@@ -43,17 +43,30 @@ const cellStyles: React.CSSProperties = {
 /**
  * Extract cell slot content from children.
  * Children are CellSlot components with a `slot` prop of format "rowKey:columnName".
+ * Handles ChildWrapper metadata from TreeRenderer (used for compound component inspection).
  */
 function useCellSlots(children: React.ReactNode): Map<string, React.ReactNode> {
   return useMemo(() => {
     const slots = new Map<string, React.ReactNode>();
     React.Children.forEach(children, (child) => {
-      if (
-        React.isValidElement(child) &&
-        typeof child.props.slot === "string"
-      ) {
-        // The CellSlot's children are the actual content to render
-        slots.set(child.props.slot, child.props.children);
+      if (!React.isValidElement(child)) return;
+
+      // Check for ChildWrapper metadata (from TreeRenderer)
+      const childProps = child.props as {
+        __componentType__?: string;
+        __componentProps__?: { slot?: string };
+        children?: React.ReactNode;
+        slot?: string;
+      };
+      const componentType = childProps.__componentType__;
+      const componentProps = childProps.__componentProps__;
+
+      if (componentType === "CellSlot" && typeof componentProps?.slot === "string") {
+        // Wrapped in ChildWrapper - get slot from __componentProps__, content from children
+        slots.set(componentProps.slot, childProps.children);
+      } else if (typeof childProps.slot === "string") {
+        // Fallback for direct usage (non-Trellis rendering)
+        slots.set(childProps.slot, childProps.children);
       }
     });
     return slots;

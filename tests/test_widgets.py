@@ -1135,6 +1135,46 @@ class TestTableWidget:
         assert "0:name" in slot_ids
         assert "1:name" in slot_ids
 
+    def test_table_custom_cell_serialization(self) -> None:
+        """Serialized CellSlot children contain the rendered content."""
+
+        def CustomCell(*, row: dict) -> None:
+            Label(text=f"Custom: {row['name']}")
+
+        @component
+        def App() -> None:
+            Table(
+                columns=[
+                    TableColumn(name="name", label="Name", render=CustomCell),
+                ],
+                data=[
+                    {"_key": "row1", "name": "Item 1"},
+                ],
+            )
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        # Serialize the tree
+        serialized = serialize_node(ctx.root_element, ctx)
+
+        # Navigate to the TableInner children (CellSlots)
+        table_comp = serialized["children"][0]
+        table_inner = table_comp["children"][0]
+        assert table_inner["type"] == "TableInner"
+
+        # Find CellSlot children
+        cell_slots = [c for c in table_inner["children"] if c["type"] == "CellSlot"]
+        assert len(cell_slots) == 1
+
+        # The CellSlot should have the Label as a child
+        cell_slot = cell_slots[0]
+        assert cell_slot["props"]["slot"] == "row1:name"
+        assert len(cell_slot["children"]) == 1
+        label_child = cell_slot["children"][0]
+        assert label_child["type"] == "Label"
+        assert label_child["props"]["text"] == "Custom: Item 1"
+
 
 class TestStatWidget:
     """Tests for Stat widget."""
