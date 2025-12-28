@@ -196,6 +196,45 @@ class TestBrowserMessageHandler:
 
         assert result == {"type": "patch", "patches": []}
 
+    def test_message_to_dict_converts_nested_patch_structs(self) -> None:
+        """_message_to_dict recursively converts nested msgspec structs to dicts.
+
+        This is required for postMessage which can only clone plain objects,
+        not msgspec Struct instances.
+        """
+        from trellis.platforms.browser.handler import _message_to_dict
+        from trellis.platforms.common.messages import AddPatch, UpdatePatch, RemovePatch
+
+        msg = PatchMessage(patches=[
+            AddPatch(parent_id="root", children=["child1"], node={"id": "child1", "name": "Label"}),
+            UpdatePatch(id="node1", props={"text": "hello"}, children=None),
+            RemovePatch(id="node2"),
+        ])
+        result = _message_to_dict(msg)
+
+        # All patches should be plain dicts, not msgspec Struct instances
+        assert isinstance(result["patches"], list)
+        for patch in result["patches"]:
+            assert isinstance(patch, dict), f"Expected dict, got {type(patch)}"
+
+        # Verify the structure is correct
+        assert result["patches"][0] == {
+            "op": "add",
+            "parent_id": "root",
+            "children": ["child1"],
+            "node": {"id": "child1", "name": "Label"},
+        }
+        assert result["patches"][1] == {
+            "op": "update",
+            "id": "node1",
+            "props": {"text": "hello"},
+            "children": None,
+        }
+        assert result["patches"][2] == {
+            "op": "remove",
+            "id": "node2",
+        }
+
     def test_message_to_dict_converts_error_message(self) -> None:
         """_message_to_dict converts ErrorMessage to dict with type field."""
         from trellis.platforms.browser.handler import _message_to_dict

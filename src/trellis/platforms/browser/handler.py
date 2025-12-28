@@ -10,6 +10,8 @@ import asyncio
 import typing as tp
 from collections.abc import Callable
 
+import msgspec
+
 from trellis.core.components.base import Component
 from trellis.platforms.common.handler import MessageHandler
 from trellis.platforms.common.messages import (
@@ -109,16 +111,12 @@ class BrowserMessageHandler(MessageHandler):
 
 
 def _message_to_dict(msg: Message) -> dict[str, tp.Any]:
-    """Convert a msgspec Message struct to a plain dict for JavaScript."""
-    # Get the tag (message type) from the struct config
-    msg_type = msg.__struct_config__.tag
+    """Convert a msgspec Message struct to a plain dict for JavaScript.
 
-    # Build dict from struct fields
-    result: dict[str, tp.Any] = {"type": msg_type}
-    for field in msg.__struct_fields__:
-        result[field] = getattr(msg, field)
-
-    return result
+    Uses msgspec.to_builtins() for recursive conversion of nested structs,
+    which is required for postMessage to clone the object.
+    """
+    return msgspec.to_builtins(msg)
 
 
 def _dict_to_message(msg_dict: dict[str, tp.Any]) -> Message:
