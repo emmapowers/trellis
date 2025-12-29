@@ -5,6 +5,7 @@ These tests download from npm registry and require network access.
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 
@@ -90,3 +91,46 @@ class TestDesktopPlatformBundle:
         html_content = index_path.read_text()
         assert "<div id=\"root\"></div>" in html_content
         assert "bundle.js" in html_content
+
+
+class TestBundleBuildCli:
+    """Tests for the `trellis bundle build` CLI command."""
+
+    def test_bundle_build_force_succeeds(self) -> None:
+        """Running `trellis bundle build --force` exits successfully and regenerates bundles."""
+        platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
+        server_bundle = platforms_dir / "server" / "client" / "dist" / "bundle.js"
+        browser_bundle = platforms_dir / "browser" / "client" / "dist" / "bundle.js"
+        desktop_bundle = platforms_dir / "desktop" / "client" / "dist" / "bundle.js"
+
+        # Record modification times before the build (if files exist)
+        server_mtime_before = server_bundle.stat().st_mtime if server_bundle.exists() else None
+        browser_mtime_before = browser_bundle.stat().st_mtime if browser_bundle.exists() else None
+        desktop_mtime_before = desktop_bundle.stat().st_mtime if desktop_bundle.exists() else None
+
+        result = subprocess.run(
+            ["trellis", "bundle", "build", "--force"],
+            capture_output=True,
+            text=True,
+            check=False,  # Return code is explicitly tested below
+        )
+
+        assert result.returncode == 0, f"Bundle build failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+
+        # Verify server bundle exists and was regenerated
+        assert server_bundle.exists(), "Server bundle not created"
+        assert server_bundle.stat().st_size > 0
+        if server_mtime_before is not None:
+            assert server_bundle.stat().st_mtime > server_mtime_before, "Server bundle was not regenerated"
+
+        # Verify browser bundle exists and was regenerated
+        assert browser_bundle.exists(), "Browser bundle not created"
+        assert browser_bundle.stat().st_size > 0
+        if browser_mtime_before is not None:
+            assert browser_bundle.stat().st_mtime > browser_mtime_before, "Browser bundle was not regenerated"
+
+        # Verify desktop bundle exists and was regenerated
+        assert desktop_bundle.exists(), "Desktop bundle not created"
+        assert desktop_bundle.stat().st_size > 0
+        if desktop_mtime_before is not None:
+            assert desktop_bundle.stat().st_mtime > desktop_mtime_before, "Desktop bundle was not regenerated"
