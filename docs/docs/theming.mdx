@@ -1,0 +1,157 @@
+---
+sidebar_position: 6
+title: Theming
+---
+
+import TrellisDemo from '@site/src/components/TrellisDemo';
+
+# Theming
+
+Trellis includes built-in dark mode support with automatic OS theme detection and a complete set of design tokens for styling.
+
+## Quick Start
+
+Wrap your app with `TrellisApp` to enable theming:
+
+```python
+from trellis import component
+from trellis.app import TrellisApp, ClientState
+from trellis import widgets as w
+
+@component
+def MyApp():
+    state = ClientState.from_context()
+    w.Label(text=f"Theme: {'Dark' if state.is_dark else 'Light'}")
+
+@component
+def Main():
+    TrellisApp(app=MyApp)
+```
+
+`TrellisApp` provides:
+- `ClientState` accessible via context
+- Automatic OS theme detection
+- `ThemeProvider` for CSS theming
+
+## ThemeSwitcher Widget
+
+Add a theme toggle button with `ThemeSwitcher`:
+
+<TrellisDemo
+  title="Theme Switcher"
+  code={`from trellis import component
+from trellis.app import TrellisApp, ClientState
+from trellis import widgets as w
+
+@component
+def MyApp():
+    state = ClientState.from_context()
+
+    with w.Column(gap=16):
+        with w.Row(gap=8, align="center"):
+            w.Label(text="Toggle theme:")
+            w.ThemeSwitcher()
+
+        w.Label(text=f"Mode: {state.mode.value}")
+        w.Label(text=f"Resolved: {'Dark' if state.is_dark else 'Light'}")
+
+@component
+def Main():
+    TrellisApp(app=MyApp)
+
+App = Main`}
+/>
+
+The switcher cycles through: **System** (follows OS) → **Light** → **Dark** → **System**...
+
+## ClientState API
+
+Access theme state anywhere within a `TrellisApp`:
+
+```python
+from trellis.app import ClientState
+
+state = ClientState.from_context()
+
+# Properties
+state.mode           # ThemeMode.SYSTEM | LIGHT | DARK
+state.resolved_theme # Actual theme: LIGHT or DARK
+state.is_dark        # True if dark mode active
+state.is_light       # True if light mode active
+
+# Methods
+state.toggle()       # Cycle to next mode
+state.set_mode("dark")  # Set explicitly
+```
+
+## Theme Tokens
+
+Use `theme` tokens for colors that adapt to light/dark mode:
+
+```python
+from trellis.widgets import theme
+from trellis import html as h
+
+h.Div(
+    style={
+        "backgroundColor": theme.bg_surface,
+        "color": theme.text_primary,
+        "border": f"1px solid {theme.border_default}",
+    }
+)
+```
+
+### Available Tokens
+
+| Category | Tokens |
+|----------|--------|
+| **Backgrounds** | `bg_page`, `bg_surface`, `bg_surface_raised`, `bg_surface_hover`, `bg_input` |
+| **Text** | `text_primary`, `text_secondary`, `text_muted`, `text_inverse` |
+| **Borders** | `border_default`, `border_subtle`, `border_strong`, `border_focus` |
+| **Accent** | `accent_primary`, `accent_primary_hover`, `accent_primary_active`, `accent_subtle` |
+| **Success** | `success`, `success_bg`, `success_border` |
+| **Error** | `error`, `error_bg`, `error_border`, `error_hover` |
+| **Warning** | `warning`, `warning_bg`, `warning_border` |
+| **Info** | `info`, `info_bg`, `info_border` |
+| **Shadows** | `shadow_sm`, `shadow_md`, `shadow_lg` |
+| **Focus** | `focus_ring_color` |
+
+Each token is a CSS variable reference (e.g., `var(--trellis-bg-page)`) that automatically updates when the theme changes.
+
+## Conditional Styling
+
+For logic that depends on the current theme:
+
+<TrellisDemo
+  title="Conditional Styling"
+  code={`from trellis import component
+from trellis.app import TrellisApp, ClientState
+from trellis import widgets as w
+from trellis.widgets import theme
+
+@component
+def ThemeAwareCard():
+    state = ClientState.from_context()
+
+    with w.Card(style={"padding": "16px"}):
+        w.Heading(text="Theme-Aware Card", level=3)
+        w.Label(
+            text=f"Current theme: {'Dark' if state.is_dark else 'Light'}",
+            color=theme.text_secondary,
+        )
+        w.ThemeSwitcher()
+
+@component
+def Main():
+    TrellisApp(app=ThemeAwareCard)
+
+App = Main`}
+/>
+
+## How It Works
+
+1. **Connection**: Client sends OS theme preference in hello message
+2. **Initialization**: `TrellisApp` creates `ClientState` with detected theme
+3. **Rendering**: `ThemeProvider` sets `data-theme` attribute on root element
+4. **CSS Variables**: Tokens resolve based on `[data-theme="light"]` or `[data-theme="dark"]`
+5. **Updates**: When OS theme changes (in System mode), client notifies server, triggering re-render

@@ -425,7 +425,7 @@ class TestHelloHandshake:
 
     def test_handle_hello_creates_client_state_with_dark_system_theme(self) -> None:
         """handle_hello should create ClientState with dark system theme."""
-        from trellis.app.client_state import ThemeMode
+        from trellis.app import ThemeMode
         from trellis.platforms.common.messages import HelloMessage
 
         @component
@@ -450,7 +450,7 @@ class TestHelloHandshake:
 
     def test_handle_hello_creates_client_state_with_light_system_theme(self) -> None:
         """handle_hello should create ClientState with light system theme."""
-        from trellis.app.client_state import ThemeMode
+        from trellis.app import ThemeMode
         from trellis.platforms.common.messages import HelloMessage
 
         @component
@@ -482,7 +482,7 @@ class TestHelloHandshake:
 
     def test_handle_hello_with_theme_mode_dark(self) -> None:
         """handle_hello should set mode from theme_mode in HelloMessage."""
-        from trellis.app.client_state import ThemeMode
+        from trellis.app import ThemeMode
         from trellis.platforms.common.messages import HelloMessage
 
         @component
@@ -508,7 +508,7 @@ class TestHelloHandshake:
 
     def test_handle_hello_with_theme_mode_system(self) -> None:
         """handle_hello should set mode to SYSTEM when theme_mode is 'system'."""
-        from trellis.app.client_state import ThemeMode
+        from trellis.app import ThemeMode
         from trellis.platforms.common.messages import HelloMessage
 
         @component
@@ -531,7 +531,7 @@ class TestHelloHandshake:
 
     def test_handle_hello_without_theme_mode_defaults_to_system(self) -> None:
         """handle_hello should default mode to SYSTEM when theme_mode is None."""
-        from trellis.app.client_state import ThemeMode
+        from trellis.app import ThemeMode
         from trellis.platforms.common.messages import HelloMessage
 
         @component

@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 if TYPE_CHECKING:
-    from trellis.core.client_state import ClientState
+    from trellis.app import ClientState
 
 from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent
@@ -236,7 +236,7 @@ class MessageHandler:
             root_component: The root Trellis component to render
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        from trellis.core.trellis_app import TrellisApp
+        from trellis.app import TrellisApp
 
         # Store reference for use in wrapped_app closure
         handler = self
@@ -268,7 +268,7 @@ class MessageHandler:
         Raises:
             ValueError: If received message is not HelloMessage
         """
-        from trellis.core.client_state import ClientState, ThemeMode
+        from trellis.app import ClientState, ThemeMode
 
         msg = await self.receive_message()
         if not isinstance(msg, HelloMessage):

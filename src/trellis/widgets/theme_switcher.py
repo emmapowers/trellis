@@ -9,7 +9,7 @@ from __future__ import annotations
 from trellis import component
 from trellis import html as h
 from trellis import widgets as w
-from trellis.core.client_state import ClientState, ThemeMode, theme
+from trellis.app import ClientState, ThemeMode, theme
 from trellis.widgets.icons import IconName
 
 # Mode cycle order and display info

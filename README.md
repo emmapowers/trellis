@@ -53,6 +53,7 @@ Trellis aims for both: simple to start, maintainable as applications grow.
 - **Declarative UI in Python** — `@component` functions with context-manager syntax. No templates, no separate frontend language.
 - **Reactive state** — Automatic dependency tracking. Components re-render when dependencies change.
 - **Fine-grained updates** — Only affected components re-render. Efficient diffs over the wire.
+- **Dark mode** — System theme detection with light/dark toggle. Theme tokens for consistent styling.
 - **Three platforms** — Server (web app), Desktop (native), Browser (Pyodide). Same codebase, each adapts to platform strengths.
 - **Type-safe throughout** — Full type hints. IDE autocompletion works.
 - **Widget toolkit** — Layout, forms, data display, charts, navigation. Full HTML support when you need lower-level control.
@@ -75,6 +76,7 @@ Widgets are accessed via `trellis.widgets` (conventionally imported as `w`):
 | **Feedback** | `ProgressBar`, `StatusIndicator`, `Tooltip`, `Callout`, `Collapsible` |
 | **Navigation** | `Tabs`/`Tab`, `Breadcrumb`, `Tree`, `Menu`/`MenuItem`, `Toolbar` |
 | **Icons** | `Icon` (800+ [Lucide](https://lucide.dev) icons) |
+| **Theme** | `ThemeSwitcher` |
 
 All widgets support React Aria for accessibility (keyboard navigation, focus management, ARIA attributes).
 

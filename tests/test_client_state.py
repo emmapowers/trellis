@@ -2,7 +2,7 @@
 
 import pytest
 
-from trellis.core.client_state import ClientState, ThemeMode
+from trellis.app import ClientState, ThemeMode
 
 
 class TestClientStateTheme:
@@ -110,7 +110,7 @@ class TestThemeTokens:
 
     def test_theme_tokens_are_css_variables(self) -> None:
         """Theme tokens should be CSS variable references."""
-        from trellis.core.client_state import theme
+        from trellis.app import theme
 
         assert theme.bg_page == "var(--trellis-bg-page)"
         assert theme.text_primary == "var(--trellis-text-primary)"
@@ -118,14 +118,14 @@ class TestThemeTokens:
 
     def test_theme_tokens_are_frozen(self) -> None:
         """Theme tokens should be immutable."""
-        from trellis.core.client_state import theme
+        from trellis.app import theme
 
         with pytest.raises(Exception):  # FrozenInstanceError
             theme.bg_page = "something else"  # type: ignore
 
     def test_theme_tokens_all_have_values(self) -> None:
         """All theme tokens should have CSS variable values."""
-        from trellis.core.client_state import ThemeTokens
+        from trellis.app import ThemeTokens
 
         tokens = ThemeTokens()
         import dataclasses
@@ -150,7 +150,7 @@ class TestClientStateDeviceInfo:
 
     def test_device_info_preserved(self) -> None:
         """Device info fields should be preserved."""
-        from trellis.core.client_state import Browser, DeviceType, OperatingSystem
+        from trellis.app import Browser, DeviceType, OperatingSystem
 
         state = ClientState(
             device_type=DeviceType.WEB,

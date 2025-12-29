@@ -304,8 +304,44 @@ def Dashboard():
 App = Dashboard`}
 />
 
+## Responding to Theme Changes
+
+Access the current theme and style components accordingly:
+
+<TrellisDemo
+  title="Theme-Aware Component"
+  code={`from trellis import component
+from trellis.app import TrellisApp, ClientState
+from trellis import widgets as w
+from trellis.widgets import theme
+
+@component
+def ThemeAwareCard():
+    state = ClientState.from_context()
+
+    with w.Card(style={
+        "backgroundColor": theme.bg_surface,
+        "border": f"1px solid {theme.border_default}",
+        "padding": "16px",
+    }):
+        w.Label(
+            text=f"Current theme: {'Dark' if state.is_dark else 'Light'}",
+            color=theme.text_primary,
+        )
+        w.Button(text="Toggle Theme", on_click=state.toggle)
+
+@component
+def Main():
+    TrellisApp(app=ThemeAwareCard)
+
+App = Main`}
+/>
+
+Use `theme` tokens for colors that adapt automatically, and `ClientState.from_context()` when you need conditional logic based on the active theme.
+
 ## Next Steps
 
+- [Theming](./theming) — Dark mode, theme tokens, and styling
 - [Design Overview](./design/overview) — How Trellis works under the hood
 - [State Management](./design/state) — Deep dive into the state system
 - [UI and Rendering](./design/ui-rendering) — How rendering works

@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from trellis.core.client_state import ClientState
+from trellis.app.client_state import ClientState
+from trellis.app.theme_provider import ThemeProvider
 from trellis.core.components.composition import component
-from trellis.widgets.theme_provider import ThemeProvider
 
 
 @component

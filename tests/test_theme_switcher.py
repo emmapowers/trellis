@@ -2,10 +2,9 @@
 
 import pytest
 
-from trellis.core.client_state import ClientState, ThemeMode
+from trellis.app import ClientState, ThemeMode, TrellisApp
 from trellis.core.components.composition import component
 from trellis.core.rendering import RenderSession, render
-from trellis.core.trellis_app import TrellisApp
 from trellis.widgets.theme_switcher import ThemeSwitcher, _get_next_mode, _get_icon_for_mode
 from trellis.widgets.icons import IconName
 

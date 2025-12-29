@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Literal
 
-from trellis.core.client_state import ThemeMode
+from trellis.app.client_state import ThemeMode
 from trellis.core.components.react import react_component_base
 from trellis.core.rendering.element import Element
 
