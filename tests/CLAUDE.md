@@ -82,7 +82,7 @@ Run excluding slow tests: `pytest -m "not slow"`
 
 ## Python Fixtures
 
-Shared fixtures are defined in `conftest.py`. Use these instead of writing custom setup.
+Shared fixtures are defined in `conftest.py`. **All integration tests have been migrated to use these fixtures.** Use them instead of writing custom setup.
 
 ### Component Creation
 
