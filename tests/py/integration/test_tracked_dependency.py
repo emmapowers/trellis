@@ -366,10 +366,10 @@ class TestDependencyCleanup:
             dep_node_ids = {n.id for n in tracked_list._deps[id(item_a)]}
             assert consumer_id not in dep_node_ids
 
-    def test_dict_dependency_cleaned_on_rerender_without_read(
+    def test_dict_dependency_cleaned_on_unmount(
         self, capture_patches: "type[PatchCapture]"
     ) -> None:
-        """Dict dependencies are cleaned when component stops reading."""
+        """Dict dependencies are cleaned up when component unmounts."""
 
         @dataclass
         class MyState(Stateful):
@@ -378,37 +378,41 @@ class TestDependencyCleanup:
         state = MyState()
         state.data = {"x": 1}
 
-        read_data = [True]
+        show_consumer = [True]
 
         @component
         def Consumer() -> None:
-            if read_data[0]:
-                _ = state.data["x"]
+            _ = state.data["x"]
 
-        capture = capture_patches(Consumer)
+        @component
+        def App() -> None:
+            if show_consumer[0]:
+                Consumer()
+
+        capture = capture_patches(App)
         capture.render()
 
-        # Get root ID without keeping strong reference to old node
+        # Get consumer ID without keeping strong reference to node
         ctx = capture.session
-        root_id = ctx.root_element.id
+        consumer_id = ctx.elements.get(ctx.root_element.child_ids[0]).id
         tracked_dict = state.data
 
-        # Initially tracking (check by node ID since object identity may differ)
+        # Verify consumer is tracking (check by node ID since object identity may differ)
         dep_node_ids = {n.id for n in tracked_dict._deps["x"]}
-        assert root_id in dep_node_ids
+        assert consumer_id in dep_node_ids
 
-        # Stop reading and re-render
-        read_data[0] = False
-        ctx.dirty.mark(root_id)
+        # Unmount Consumer
+        show_consumer[0] = False
+        ctx.dirty.mark(ctx.root_element.id)
         capture.render()
 
-        # Force GC so WeakSet can remove dead references (old node from previous render)
+        # Force GC so WeakSet can remove dead references
         gc.collect()
 
-        # No longer tracking (WeakSet auto-removes dead refs after GC)
+        # Dependency should be cleaned up (WeakSet auto-removes dead refs after GC)
         if "x" in tracked_dict._deps:
             dep_node_ids = {n.id for n in tracked_dict._deps["x"]}
-            assert root_id not in dep_node_ids
+            assert consumer_id not in dep_node_ids
 
 
 class TestTrackedWithStatefulItems:
