@@ -7,9 +7,6 @@ import pytest
 from trellis.core.components.composition import component
 from trellis.core.components.react import ReactComponentBase, react_component_base
 from trellis.core.rendering.element import Element
-from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
-from trellis.platforms.common.serialization import serialize_node
 from trellis.widgets import Button, Column, Label, Row
 
 
@@ -51,7 +48,7 @@ class TestElementNameProperty:
         assert ComponentB.element_name == "CompositionComponent"
         assert ComponentA.element_name == ComponentB.element_name
 
-    def test_widget_element_names(self) -> None:
+    def test_widget_element_names(self, rendered) -> None:
         """Built-in widgets have correct element_name values."""
 
         # Get the underlying component from factory function result
@@ -64,13 +61,24 @@ class TestElementNameProperty:
             with Row():
                 pass
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        assert ctx.elements.get(ctx.root_element.child_ids[0]).component.element_name == "Label"
-        assert ctx.elements.get(ctx.root_element.child_ids[1]).component.element_name == "Button"
-        assert ctx.elements.get(ctx.root_element.child_ids[2]).component.element_name == "Column"
-        assert ctx.elements.get(ctx.root_element.child_ids[3]).component.element_name == "Row"
+        assert (
+            result.session.elements.get(result.root_element.child_ids[0]).component.element_name
+            == "Label"
+        )
+        assert (
+            result.session.elements.get(result.root_element.child_ids[1]).component.element_name
+            == "Button"
+        )
+        assert (
+            result.session.elements.get(result.root_element.child_ids[2]).component.element_name
+            == "Column"
+        )
+        assert (
+            result.session.elements.get(result.root_element.child_ids[3]).component.element_name
+            == "Row"
+        )
 
     def test_react_component_without_element_name_raises(self) -> None:
         """ReactComponentBase without _element_name raises NotImplementedError."""
@@ -140,7 +148,7 @@ class TestReactComponentBaseSubclass:
 class TestReactComponentBaseDecorator:
     """Tests for the @react_component_base decorator."""
 
-    def test_decorator_creates_callable(self) -> None:
+    def test_decorator_creates_callable(self, rendered) -> None:
         """Decorator creates a callable that returns Element."""
 
         @react_component_base("TestWidget")
@@ -152,10 +160,9 @@ class TestReactComponentBaseDecorator:
         def App() -> None:
             TestWidget(value=42)
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        node = ctx.elements.get(ctx.root_element.child_ids[0])
+        node = result.session.elements.get(result.root_element.child_ids[0])
         assert node.component.element_name == "TestWidget"
         assert dict(node.props).get("value") == 42
 
@@ -201,40 +208,35 @@ class TestReactComponentBaseDecorator:
 class TestReactComponentBaseSerialization:
     """Tests for serialization of ReactComponentBase."""
 
-    def test_react_component_type_equals_name(self) -> None:
+    def test_react_component_type_equals_name(self, rendered) -> None:
         """For ReactComponents, type and name are both the component name."""
 
         @component
         def App() -> None:
             Label(text="test")
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        result = serialize_node(ctx.root_element, ctx)
-        label_data = result["children"][0]
+        label_data = result.tree["children"][0]
 
         # ReactComponent: type is the React component, name is Python name
         assert label_data["type"] == "Label"
         assert label_data["name"] == "Label"
 
-    def test_composition_component_type_differs_from_name(self) -> None:
+    def test_composition_component_type_differs_from_name(self, rendered) -> None:
         """For CompositionComponents, type is generic but name is specific."""
 
         @component
         def MyCustomComponent() -> None:
             pass
 
-        ctx = RenderSession(MyCustomComponent)
-        render(ctx)
-
-        result = serialize_node(ctx.root_element, ctx)
+        result = rendered(MyCustomComponent)
 
         # CompositionComponent: type is generic, name is Python function name
-        assert result["type"] == "CompositionComponent"
-        assert result["name"] == "MyCustomComponent"
+        assert result.tree["type"] == "CompositionComponent"
+        assert result.tree["name"] == "MyCustomComponent"
 
-    def test_mixed_tree_serialization(self) -> None:
+    def test_mixed_tree_serialization(self, rendered) -> None:
         """Tree with both component types serializes correctly."""
 
         @component
@@ -247,17 +249,14 @@ class TestReactComponentBaseSerialization:
                 Header()
                 Button(text="Click")
 
-        ctx = RenderSession(App)
-        render(ctx)
-
-        result = serialize_node(ctx.root_element, ctx)
+        result = rendered(App)
 
         # Root is CompositionComponent
-        assert result["type"] == "CompositionComponent"
-        assert result["name"] == "App"
+        assert result.tree["type"] == "CompositionComponent"
+        assert result.tree["name"] == "App"
 
         # Column is ReactComponentBase
-        column = result["children"][0]
+        column = result.tree["children"][0]
         assert column["type"] == "Column"
         assert column["name"] == "Column"
 

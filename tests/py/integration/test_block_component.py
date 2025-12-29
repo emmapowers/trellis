@@ -9,7 +9,7 @@ from trellis.core.rendering.session import RenderSession
 
 
 class TestContainerComponent:
-    def test_with_statement_collects_children(self) -> None:
+    def test_with_statement_collects_children(self, rendered) -> None:
         """Children created in with block are passed to component."""
 
         @component
@@ -27,20 +27,19 @@ class TestContainerComponent:
                 Child()
                 Child()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        result = rendered(Parent)
 
-        root_node = ctx.elements.get(ctx.root_node_id)
+        root_node = result.session.elements.get(result.session.root_node_id)
         assert root_node is not None
         # Parent has Column as child
         assert len(root_node.child_ids) == 1
-        column_node = ctx.elements.get(root_node.child_ids[0])
+        column_node = result.session.elements.get(root_node.child_ids[0])
         assert column_node is not None
         assert column_node.component == Column
         # Column has two Child elements (mounted via child())
         assert len(column_node.child_ids) == 2
 
-    def test_nested_containers(self) -> None:
+    def test_nested_containers(self, rendered) -> None:
         """Nested with blocks work correctly."""
 
         @component
@@ -63,20 +62,19 @@ class TestContainerComponent:
                 with Row():
                     Child()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        result = rendered(Parent)
 
-        root_node = ctx.elements.get(ctx.root_node_id)
+        root_node = result.session.elements.get(result.session.root_node_id)
         assert root_node is not None
-        column_node = ctx.elements.get(root_node.child_ids[0])
+        column_node = result.session.elements.get(root_node.child_ids[0])
         assert column_node is not None
         assert column_node.component.name == "Column"
-        row_node = ctx.elements.get(column_node.child_ids[0])
+        row_node = result.session.elements.get(column_node.child_ids[0])
         assert row_node is not None
         assert row_node.component.name == "Row"
         assert len(row_node.child_ids) == 1
 
-    def test_container_receives_children_list(self) -> None:
+    def test_container_receives_children_list(self, rendered) -> None:
         """Container component receives children as a list of descriptors."""
         received_children: list = []
 
@@ -96,8 +94,7 @@ class TestContainerComponent:
                 Child()
                 Child()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         assert len(received_children) == 2
         for child in received_children:
@@ -136,7 +133,7 @@ class TestContainerComponent:
         with pytest.raises(RuntimeError, match=r"Cannot provide 'children'.*and use 'with' block"):
             render(ctx)
 
-    def test_empty_with_block(self) -> None:
+    def test_empty_with_block(self, rendered) -> None:
         """Empty with block results in empty children list."""
         received_children: list | None = None
 
@@ -152,12 +149,11 @@ class TestContainerComponent:
             with Column():
                 pass
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         assert received_children == []
 
-    def test_child_call_mounts_element(self) -> None:
+    def test_child_call_mounts_element(self, rendered) -> None:
         """Calling child() mounts the node in the container."""
 
         @component
@@ -177,17 +173,16 @@ class TestContainerComponent:
                 Child()
                 Child()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        result = rendered(Parent)
 
-        root_node = ctx.elements.get(ctx.root_node_id)
+        root_node = result.session.elements.get(result.session.root_node_id)
         assert root_node is not None
-        wrapper = ctx.elements.get(root_node.child_ids[0])
+        wrapper = result.session.elements.get(root_node.child_ids[0])
         assert wrapper is not None
         # Only one child mounted, even though 3 were collected
         assert len(wrapper.child_ids) == 1
 
-    def test_container_can_reorder_children(self) -> None:
+    def test_container_can_reorder_children(self, rendered) -> None:
         """Container can mount children in different order."""
 
         @component
@@ -206,17 +201,16 @@ class TestContainerComponent:
                 Item(value=2)
                 Item(value=3)
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        result = rendered(Parent)
 
-        root_node = ctx.elements.get(ctx.root_node_id)
+        root_node = result.session.elements.get(result.session.root_node_id)
         assert root_node is not None
-        reverse_node = ctx.elements.get(root_node.child_ids[0])
+        reverse_node = result.session.elements.get(root_node.child_ids[0])
         assert reverse_node is not None
         # Children should be in reverse order
-        child0 = ctx.elements.get(reverse_node.child_ids[0])
-        child1 = ctx.elements.get(reverse_node.child_ids[1])
-        child2 = ctx.elements.get(reverse_node.child_ids[2])
+        child0 = result.session.elements.get(reverse_node.child_ids[0])
+        child1 = result.session.elements.get(reverse_node.child_ids[1])
+        child2 = result.session.elements.get(reverse_node.child_ids[2])
         assert child0 is not None and child0.properties["value"] == 3
         assert child1 is not None and child1.properties["value"] == 2
         assert child2 is not None and child2.properties["value"] == 1

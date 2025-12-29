@@ -3,8 +3,6 @@
 from trellis.core.components.composition import component
 from trellis.core.components.react import _merge_style_props
 from trellis.core.components.style_props import Height, Margin, Padding, Width
-from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
 from trellis.widgets import Button, Card, Column, Label
 
 
@@ -194,46 +192,43 @@ class TestMergeStyleProps:
 class TestWidgetIntegration:
     """Integration tests for style props with widgets."""
 
-    def test_label_with_margin(self) -> None:
+    def test_label_with_margin(self, rendered) -> None:
         """Label accepts Margin dataclass."""
 
         @component
         def App() -> None:
             Label(text="Test", margin=Margin(bottom=16))
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        label = ctx.elements.get(ctx.root_element.child_ids[0])
+        label = result.session.elements.get(result.root_element.child_ids[0])
         assert label.properties["style"] == {"marginBottom": "16px"}
 
-    def test_label_with_width(self) -> None:
+    def test_label_with_width(self, rendered) -> None:
         """Label accepts width prop."""
 
         @component
         def App() -> None:
             Label(text="Test", width=100)
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        label = ctx.elements.get(ctx.root_element.child_ids[0])
+        label = result.session.elements.get(result.root_element.child_ids[0])
         assert label.properties["style"] == {"width": "100px"}
 
-    def test_label_with_flex(self) -> None:
+    def test_label_with_flex(self, rendered) -> None:
         """Label accepts flex prop."""
 
         @component
         def App() -> None:
             Label(text="Test", flex=1)
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        label = ctx.elements.get(ctx.root_element.child_ids[0])
+        label = result.session.elements.get(result.root_element.child_ids[0])
         assert label.properties["style"] == {"flex": 1}
 
-    def test_column_with_padding_dataclass(self) -> None:
+    def test_column_with_padding_dataclass(self, rendered) -> None:
         """Column accepts Padding dataclass."""
 
         @component
@@ -241,10 +236,9 @@ class TestWidgetIntegration:
             with Column(padding=Padding(x=24, y=16)):
                 Label(text="Test")
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        column = ctx.elements.get(ctx.root_element.child_ids[0])
+        column = result.session.elements.get(result.root_element.child_ids[0])
         assert column.properties["style"] == {
             "paddingLeft": "24px",
             "paddingRight": "24px",
@@ -252,7 +246,7 @@ class TestWidgetIntegration:
             "paddingBottom": "16px",
         }
 
-    def test_column_with_padding_int(self) -> None:
+    def test_column_with_padding_int(self, rendered) -> None:
         """Column accepts padding int (passed to React)."""
 
         @component
@@ -260,13 +254,12 @@ class TestWidgetIntegration:
             with Column(padding=24):
                 Label(text="Test")
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        column = ctx.elements.get(ctx.root_element.child_ids[0])
+        column = result.session.elements.get(result.root_element.child_ids[0])
         assert column.properties["padding"] == 24
 
-    def test_card_with_width(self) -> None:
+    def test_card_with_width(self, rendered) -> None:
         """Card accepts width prop."""
 
         @component
@@ -274,26 +267,24 @@ class TestWidgetIntegration:
             with Card(width=320):
                 Label(text="Test")
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        card = ctx.elements.get(ctx.root_element.child_ids[0])
+        card = result.session.elements.get(result.root_element.child_ids[0])
         assert card.properties["style"] == {"width": "320px"}
 
-    def test_button_with_width_string(self) -> None:
+    def test_button_with_width_string(self, rendered) -> None:
         """Button accepts width string."""
 
         @component
         def App() -> None:
             Button(text="Test", width="100%")
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        button = ctx.elements.get(ctx.root_element.child_ids[0])
+        button = result.session.elements.get(result.root_element.child_ids[0])
         assert button.properties["style"] == {"width": "100%"}
 
-    def test_style_props_merge_with_existing_style(self) -> None:
+    def test_style_props_merge_with_existing_style(self, rendered) -> None:
         """Style props merge with existing style dict."""
 
         @component
@@ -305,10 +296,9 @@ class TestWidgetIntegration:
                 style={"color": "blue", "fontWeight": "bold"},
             )
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        label = ctx.elements.get(ctx.root_element.child_ids[0])
+        label = result.session.elements.get(result.root_element.child_ids[0])
         assert label.properties["style"] == {
             "color": "blue",
             "fontWeight": "bold",
