@@ -57,10 +57,12 @@ async def _trellis_main():
 `;
 }
 
-const DEFAULT_CODE = `from dataclasses import dataclass
-from trellis import component, Stateful, mutable, callback, Margin, Padding, Width, Height
+const DEFAULT_CODE = `import typing as tp
+from dataclasses import dataclass
+from trellis import *
 from trellis import widgets as w
 from trellis import html as h
+from trellis.widgets import IconName
 
 @dataclass
 class CounterState(Stateful):
