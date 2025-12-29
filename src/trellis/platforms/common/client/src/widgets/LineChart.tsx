@@ -130,8 +130,8 @@ export function LineChart({
   }
 
   return (
-    <div className={className} style={{ width: "100%", height, ...style }}>
-      <ResponsiveContainer width="100%" height="100%">
+    <div className={className} style={{ width: "100%", minWidth: 0, height, ...style }}>
+      <ResponsiveContainer width="100%" height={height}>
         {chart}
       </ResponsiveContainer>
     </div>
