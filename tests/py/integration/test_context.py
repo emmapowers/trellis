@@ -1,13 +1,15 @@
 """Tests for Stateful context API."""
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import pytest
 
 from trellis.core.components.composition import component
-from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
+
+if TYPE_CHECKING:
+    from tests.conftest import RenderResult
 
 
 class TestContextAPI:
@@ -34,7 +36,7 @@ class TestContextAPI:
         with pytest.raises(RuntimeError, match="outside of render context"):
             MissingState.from_context()
 
-    def test_context_basic_push_pop(self) -> None:
+    def test_context_basic_push_pop(self, rendered: "type[RenderResult]") -> None:
         """Basic context push/pop with 'with' statement inside render."""
         captured: list[str] = []
 
@@ -52,12 +54,11 @@ class TestContextAPI:
             with state:
                 Child()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         assert captured == ["alice"]
 
-    def test_context_nested_same_type(self) -> None:
+    def test_context_nested_same_type(self, rendered: "type[RenderResult]") -> None:
         """Nested contexts of same type - inner shadows outer in child components."""
         captured: list[tuple[str, int]] = []
 
@@ -93,8 +94,7 @@ class TestContextAPI:
                 MiddleWithInner()
                 OuterOnlyChild()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         # Verify all components found the correct context values
         # (execution order between siblings is non-deterministic due to set iteration)
@@ -104,7 +104,7 @@ class TestContextAPI:
         assert ("DeepChild", 2) in captured
         assert len(captured) == 4
 
-    def test_context_different_types(self) -> None:
+    def test_context_different_types(self, rendered: "type[RenderResult]") -> None:
         """Different state types have separate context stacks."""
         captured: list[tuple[str, bool]] = []
 
@@ -126,12 +126,11 @@ class TestContextAPI:
                 with theme:
                     Child()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         assert captured == [("bob", True)]
 
-    def test_context_not_found_raises(self) -> None:
+    def test_context_not_found_raises(self, rendered: "type[RenderResult]") -> None:
         """from_context() raises LookupError when no context provided."""
 
         class MissingState(Stateful):
@@ -145,11 +144,10 @@ class TestContextAPI:
         def Parent() -> None:
             Child()
 
-        ctx = RenderSession(Parent)
         with pytest.raises(LookupError, match="No MissingState found in context"):
-            render(ctx)
+            rendered(Parent)
 
-    def test_context_with_default_returns_none(self) -> None:
+    def test_context_with_default_returns_none(self, rendered: "type[RenderResult]") -> None:
         """from_context(default=None) returns None when no context provided."""
         captured: list[Stateful | None] = []
 
@@ -165,12 +163,11 @@ class TestContextAPI:
         def Parent() -> None:
             Child()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         assert captured == [None]
 
-    def test_context_with_default_returns_found(self) -> None:
+    def test_context_with_default_returns_found(self, rendered: "type[RenderResult]") -> None:
         """from_context(default=None) returns found context when available."""
         captured: list[Stateful | None] = []
 
@@ -188,14 +185,13 @@ class TestContextAPI:
             with state:
                 Child()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         assert len(captured) == 1
         assert captured[0] is not None
         assert captured[0].value == "found"
 
-    def test_context_with_render(self) -> None:
+    def test_context_with_render(self, rendered: "type[RenderResult]") -> None:
         """Context works during component rendering."""
 
         class SharedState(Stateful):
@@ -214,12 +210,11 @@ class TestContextAPI:
             with shared:
                 Child()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         assert captured == ["hello from parent"]
 
-    def test_context_deeply_nested_components(self) -> None:
+    def test_context_deeply_nested_components(self, rendered: "type[RenderResult]") -> None:
         """Context accessible through deep component nesting."""
 
         class AppState(Stateful):
@@ -246,12 +241,11 @@ class TestContextAPI:
             with app_state:
                 Wrapper()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        rendered(App)
 
         assert captured == ["deep"]
 
-    def test_context_as_variable(self) -> None:
+    def test_context_as_variable(self, rendered: "type[RenderResult]") -> None:
         """'with state as var' pattern works."""
         captured: list[bool] = []
 
@@ -269,12 +263,11 @@ class TestContextAPI:
                 assert config.debug is True
                 Child()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         assert captured == [True]
 
-    def test_context_exception_safety(self) -> None:
+    def test_context_exception_safety(self, rendered: "type[RenderResult]") -> None:
         """Context is still accessible in except block during render."""
         captured: list[bool] = []
 
@@ -288,12 +281,13 @@ class TestContextAPI:
                 captured.append(TestState.from_context() is state)
                 # Context persists on node, not a stack, so no cleanup needed
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         assert captured == [True]
 
-    def test_context_multiple_instances_different_subclasses(self) -> None:
+    def test_context_multiple_instances_different_subclasses(
+        self, rendered: "type[RenderResult]"
+    ) -> None:
         """Subclasses have their own context stacks."""
         captured: list[tuple[int, int, str]] = []
 
@@ -318,12 +312,11 @@ class TestContextAPI:
                 with derived:
                     Child()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         assert captured == [(1, 2, "hello")]
 
-    def test_context_reuse_same_instance(self) -> None:
+    def test_context_reuse_same_instance(self, rendered: "type[RenderResult]") -> None:
         """Same instance can be used in context multiple times."""
         captured: list[int] = []
 
@@ -343,13 +336,14 @@ class TestContextAPI:
             with state:
                 Child()  # Second child - same instance
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         # Both children see the same state instance
         assert captured == [10, 10]
 
-    def test_context_state_modification_during_render_raises(self) -> None:
+    def test_context_state_modification_during_render_raises(
+        self, rendered: "type[RenderResult]"
+    ) -> None:
         """Modifying state during render raises RuntimeError."""
 
         @dataclass
@@ -361,15 +355,14 @@ class TestContextAPI:
             state = ModState()  # value=1 is now in instance __dict__
             state.value = 2  # Try to modify existing value - should raise
 
-        ctx = RenderSession(Parent)
         with pytest.raises(RuntimeError, match="Cannot modify state"):
-            render(ctx)
+            rendered(Parent)
 
 
 class TestContextEdgeCases:
     """Tests for context edge cases and error messages."""
 
-    def test_context_same_type_shadowing(self) -> None:
+    def test_context_same_type_shadowing(self, rendered: "type[RenderResult]") -> None:
         """Inner context of same type shadows outer at nested level."""
         captured: list[str] = []
 
@@ -394,13 +387,12 @@ class TestContextEdgeCases:
                 Leaf()  # Should see "outer"
                 Inner()  # Leaf inside should see "inner"
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         assert "outer" in captured
         assert "inner" in captured
 
-    def test_context_with_custom_default(self) -> None:
+    def test_context_with_custom_default(self, rendered: "type[RenderResult]") -> None:
         """from_context() with custom default value returns default when not found."""
         captured: list[int] = []
 
@@ -419,12 +411,13 @@ class TestContextEdgeCases:
         def Parent() -> None:
             Child()  # No MissingState provided
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         assert captured == [42]
 
-    def test_context_error_message_includes_class_name(self) -> None:
+    def test_context_error_message_includes_class_name(
+        self, rendered: "type[RenderResult]"
+    ) -> None:
         """Error message for missing context includes the class name."""
 
         class MyCustomStatefulClass(Stateful):
@@ -438,9 +431,8 @@ class TestContextEdgeCases:
         def Parent() -> None:
             Child()
 
-        ctx = RenderSession(Parent)
         with pytest.raises(LookupError) as exc_info:
-            render(ctx)
+            rendered(Parent)
 
         # Verify error message is helpful
         assert "MyCustomStatefulClass" in str(exc_info.value)
@@ -475,7 +467,9 @@ class TestContextEdgeCases:
         assert "CalledOutsideState" in str(exc_info.value)
         assert "from_context" in str(exc_info.value)
 
-    def test_context_available_after_conditional_branch(self) -> None:
+    def test_context_available_after_conditional_branch(
+        self, rendered: "type[RenderResult]"
+    ) -> None:
         """Context is available in subsequent children after conditional."""
         captured: list[str] = []
 
@@ -498,13 +492,12 @@ class TestContextEdgeCases:
                 ConditionalChild()  # Intermediate child
                 SafeChild()  # Second access after conditional
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         # Both SafeChild calls should have accessed context
         assert captured == ["safe", "safe"]
 
-    def test_context_sibling_components_isolated(self) -> None:
+    def test_context_sibling_components_isolated(self, rendered: "type[RenderResult]") -> None:
         """Context provided in one sibling doesn't leak to another."""
         captured: list[str | None] = []
 
@@ -528,8 +521,7 @@ class TestContextEdgeCases:
             ProviderChild()
             ConsumerChild()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        rendered(Parent)
 
         # Consumer should not find sibling's context
         assert captured == [None]

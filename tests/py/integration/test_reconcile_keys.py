@@ -4,23 +4,22 @@ These tests verify that the reconciler handles keys correctly when components
 render with explicit keys, including edge cases like duplicate keys.
 """
 
+from typing import TYPE_CHECKING
+
 from trellis.core.components.composition import component
-from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
 from trellis.widgets import Label
 
-
-def rerender(ctx: RenderSession) -> None:
-    """Mark root as dirty and re-render."""
-    ctx.dirty.mark(ctx.root_element.id)
-    render(ctx)
+if TYPE_CHECKING:
+    from tests.conftest import PatchCapture, RenderResult
 
 
 class TestExplicitKeyReconciliation:
     """Tests for reconciliation with explicit keys."""
 
-    def test_same_key_across_renders_preserves_state(self) -> None:
+    def test_same_key_across_renders_preserves_state(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """Components with same key across renders are matched."""
 
         class AppState(Stateful):
@@ -39,16 +38,18 @@ class TestExplicitKeyReconciliation:
             with state:
                 App()
 
-        ctx = RenderSession(Root)
-        render(ctx)
+        capture = capture_patches(Root)
+        capture.render()
 
         # Capture initial child IDs
+        ctx = capture.session
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
         initial_child_ids = set(app_element.child_ids)
 
         # Reorder items
         state.items = ["c", "a", "b"]
-        rerender(ctx)
+        ctx.dirty.mark(ctx.root_element.id)
+        capture.render()
 
         # Child IDs should remain the same (matched by key)
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -56,7 +57,7 @@ class TestExplicitKeyReconciliation:
 
         assert initial_child_ids == final_child_ids
 
-    def test_key_change_triggers_replacement(self) -> None:
+    def test_key_change_triggers_replacement(self, capture_patches: "type[PatchCapture]") -> None:
         """Changing a component's key triggers removal and re-add."""
 
         class AppState(Stateful):
@@ -74,16 +75,18 @@ class TestExplicitKeyReconciliation:
             with state:
                 App()
 
-        ctx = RenderSession(Root)
-        render(ctx)
+        capture = capture_patches(Root)
+        capture.render()
 
         # Get initial label ID
+        ctx = capture.session
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
         initial_label_id = app_element.child_ids[0]
 
         # Change key
         state.key_suffix = "v2"
-        rerender(ctx)
+        ctx.dirty.mark(ctx.root_element.id)
+        capture.render()
 
         # Label should have new ID (different key = new element)
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -95,7 +98,7 @@ class TestExplicitKeyReconciliation:
 class TestDuplicateKeyIntegration:
     """Integration tests for duplicate key handling."""
 
-    def test_duplicate_keys_in_same_parent(self) -> None:
+    def test_duplicate_keys_in_same_parent(self, rendered: "type[RenderResult]") -> None:
         """Duplicate keys in same parent don't crash."""
 
         @component
@@ -104,13 +107,12 @@ class TestDuplicateKeyIntegration:
             Label(text="First", key="duplicate")
             Label(text="Second", key="duplicate")
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
         # Both elements should exist
-        assert len(ctx.root_element.child_ids) == 2
+        assert len(result.root_element.child_ids) == 2
 
-    def test_duplicate_keys_rerender_stable(self) -> None:
+    def test_duplicate_keys_rerender_stable(self, capture_patches: "type[PatchCapture]") -> None:
         """Re-rendering with duplicate keys is stable."""
 
         class AppState(Stateful):
@@ -129,18 +131,20 @@ class TestDuplicateKeyIntegration:
             with state:
                 App()
 
-        ctx = RenderSession(Root)
-        render(ctx)
+        capture = capture_patches(Root)
+        capture.render()
 
         # Trigger re-render
+        ctx = capture.session
         state.count = 1
-        rerender(ctx)
+        ctx.dirty.mark(ctx.root_element.id)
+        capture.render()
 
         # Should still render without issues
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
         assert len(app_element.child_ids) == 2
 
-    def test_position_based_keys_unique(self) -> None:
+    def test_position_based_keys_unique(self, rendered: "type[RenderResult]") -> None:
         """Components without explicit keys get unique position-based IDs."""
 
         @component
@@ -148,11 +152,10 @@ class TestDuplicateKeyIntegration:
             for i in range(5):
                 Label(text=f"Item {i}")  # No key - uses position
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
         # All 5 elements should have unique IDs
-        child_ids = ctx.root_element.child_ids
+        child_ids = result.root_element.child_ids
         assert len(child_ids) == 5
         assert len(set(child_ids)) == 5  # All unique
 
@@ -160,60 +163,56 @@ class TestDuplicateKeyIntegration:
 class TestKeySpecialCharacters:
     """Tests for keys with special characters."""
 
-    def test_key_with_slash(self) -> None:
+    def test_key_with_slash(self, rendered: "type[RenderResult]") -> None:
         """Key containing slash is handled correctly."""
 
         @component
         def App() -> None:
             Label(text="Path", key="path/to/item")
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
         # Element should render without issues
-        assert len(ctx.root_element.child_ids) == 1
+        assert len(result.root_element.child_ids) == 1
 
-    def test_key_with_colon(self) -> None:
+    def test_key_with_colon(self, rendered: "type[RenderResult]") -> None:
         """Key containing colon is handled correctly."""
 
         @component
         def App() -> None:
             Label(text="Namespaced", key="ns:item")
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        assert len(ctx.root_element.child_ids) == 1
+        assert len(result.root_element.child_ids) == 1
 
-    def test_key_with_at_sign(self) -> None:
+    def test_key_with_at_sign(self, rendered: "type[RenderResult]") -> None:
         """Key containing @ is handled correctly."""
 
         @component
         def App() -> None:
             Label(text="Email", key="user@example.com")
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        assert len(ctx.root_element.child_ids) == 1
+        assert len(result.root_element.child_ids) == 1
 
-    def test_key_with_unicode(self) -> None:
+    def test_key_with_unicode(self, rendered: "type[RenderResult]") -> None:
         """Key containing unicode characters is handled correctly."""
 
         @component
         def App() -> None:
             Label(text="Unicode", key="item-日本語")
 
-        ctx = RenderSession(App)
-        render(ctx)
+        result = rendered(App)
 
-        assert len(ctx.root_element.child_ids) == 1
+        assert len(result.root_element.child_ids) == 1
 
 
 class TestKeyReorderingPatterns:
     """Tests for common key reordering patterns."""
 
-    def test_reverse_order(self) -> None:
+    def test_reverse_order(self, capture_patches: "type[PatchCapture]") -> None:
         """Reversing list order with keys maintains element identity."""
 
         class AppState(Stateful):
@@ -232,16 +231,18 @@ class TestKeyReorderingPatterns:
             with state:
                 App()
 
-        ctx = RenderSession(Root)
-        render(ctx)
+        capture = capture_patches(Root)
+        capture.render()
 
         # Get initial state
+        ctx = capture.session
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
         initial_ids = app_element.child_ids[:]
 
         # Reverse
         state.items = ["c", "b", "a"]
-        rerender(ctx)
+        ctx.dirty.mark(ctx.root_element.id)
+        capture.render()
 
         # Get final state
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -251,7 +252,7 @@ class TestKeyReorderingPatterns:
         assert set(initial_ids) == set(final_ids)
         assert final_ids == list(reversed(initial_ids))
 
-    def test_remove_middle_item(self) -> None:
+    def test_remove_middle_item(self, capture_patches: "type[PatchCapture]") -> None:
         """Removing middle item with keys maintains other elements."""
 
         class AppState(Stateful):
@@ -270,15 +271,17 @@ class TestKeyReorderingPatterns:
             with state:
                 App()
 
-        ctx = RenderSession(Root)
-        render(ctx)
+        capture = capture_patches(Root)
+        capture.render()
 
+        ctx = capture.session
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
         initial_ids = {ctx.elements.get(id).key: id for id in app_element.child_ids}
 
         # Remove middle item
         state.items = ["a", "c"]
-        rerender(ctx)
+        ctx.dirty.mark(ctx.root_element.id)
+        capture.render()
 
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
         final_ids = {ctx.elements.get(id).key: id for id in app_element.child_ids}
@@ -288,7 +291,7 @@ class TestKeyReorderingPatterns:
         assert initial_ids["c"] == final_ids["c"]
         assert len(app_element.child_ids) == 2
 
-    def test_insert_middle_item(self) -> None:
+    def test_insert_middle_item(self, capture_patches: "type[PatchCapture]") -> None:
         """Inserting item in middle with keys maintains other elements."""
 
         class AppState(Stateful):
@@ -307,15 +310,17 @@ class TestKeyReorderingPatterns:
             with state:
                 App()
 
-        ctx = RenderSession(Root)
-        render(ctx)
+        capture = capture_patches(Root)
+        capture.render()
 
+        ctx = capture.session
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
         initial_ids = {ctx.elements.get(id).key: id for id in app_element.child_ids}
 
         # Insert in middle
         state.items = ["a", "b", "c"]
-        rerender(ctx)
+        ctx.dirty.mark(ctx.root_element.id)
+        capture.render()
 
         app_element = ctx.elements.get(ctx.root_element.child_ids[0])
         final_ids = {ctx.elements.get(id).key: id for id in app_element.child_ids}

@@ -1,22 +1,23 @@
 """Unit tests for Element class and related utilities."""
 
 import weakref
+from typing import TYPE_CHECKING
 
 from trellis.core.components.composition import CompositionComponent
 from trellis.core.rendering.element import Element
 from trellis.core.rendering.session import RenderSession
 
-
-def make_component(name: str) -> CompositionComponent:
-    """Helper to create a simple test component."""
-    return CompositionComponent(name=name, render_func=lambda: None)
+if TYPE_CHECKING:
+    import typing as tp
 
 
 # Dummy session for testing Element creation
 _dummy_session: RenderSession | None = None
 
 
-def _get_dummy_session_ref() -> weakref.ref[RenderSession]:
+def _get_dummy_session_ref(
+    make_component: "tp.Callable[[str], CompositionComponent]",
+) -> weakref.ref[RenderSession]:
     """Get a weakref to a dummy session for testing."""
     global _dummy_session
     if _dummy_session is None:
@@ -24,7 +25,8 @@ def _get_dummy_session_ref() -> weakref.ref[RenderSession]:
     return weakref.ref(_dummy_session)
 
 
-def make_descriptor(
+def _make_descriptor(
+    make_component: "tp.Callable[[str], CompositionComponent]",
     comp: CompositionComponent,
     key: str | None = None,
     props: dict | None = None,
@@ -32,7 +34,7 @@ def make_descriptor(
     """Helper to create an Element."""
     return Element(
         component=comp,
-        _session_ref=_get_dummy_session_ref(),
+        _session_ref=_get_dummy_session_ref(make_component),
         render_count=0,
         key=key,
         props=props or {},
@@ -40,9 +42,11 @@ def make_descriptor(
 
 
 class TestElement:
-    def test_element_node_creation(self) -> None:
+    def test_element_node_creation(
+        self, make_component: "tp.Callable[[str], CompositionComponent]"
+    ) -> None:
         comp = make_component("Test")
-        node = make_descriptor(comp)
+        node = _make_descriptor(make_component, comp)
 
         assert node.component == comp
         assert node.key is None
@@ -50,21 +54,27 @@ class TestElement:
         assert node.child_ids == []
         assert node.id == ""
 
-    def test_element_node_with_key(self) -> None:
+    def test_element_node_with_key(
+        self, make_component: "tp.Callable[[str], CompositionComponent]"
+    ) -> None:
         comp = make_component("Test")
-        node = make_descriptor(comp, key="my-key")
+        node = _make_descriptor(make_component, comp, key="my-key")
 
         assert node.key == "my-key"
 
-    def test_element_node_with_properties(self) -> None:
+    def test_element_node_with_properties(
+        self, make_component: "tp.Callable[[str], CompositionComponent]"
+    ) -> None:
         comp = make_component("Test")
-        node = make_descriptor(comp, props={"foo": "bar", "count": 42})
+        node = _make_descriptor(make_component, comp, props={"foo": "bar", "count": 42})
 
         assert node.properties == {"foo": "bar", "count": 42}
 
-    def test_element_node_is_mutable(self) -> None:
+    def test_element_node_is_mutable(
+        self, make_component: "tp.Callable[[str], CompositionComponent]"
+    ) -> None:
         comp = make_component("Test")
-        node = make_descriptor(comp, props={"a": 1})
+        node = _make_descriptor(make_component, comp, props={"a": 1})
 
         # Element is mutable and uses render_count-based hashing
         hash(node)  # Should not raise

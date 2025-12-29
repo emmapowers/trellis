@@ -4,8 +4,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from tests.conftest import PatchCapture
-from tests.helpers import render_to_tree
+from tests.conftest import PatchCapture, render_to_tree
 from trellis.core.components.composition import component
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.mutable import Mutable, callback, mutable

@@ -1,6 +1,7 @@
 """Unit tests for RenderSession class."""
 
 import weakref
+from typing import TYPE_CHECKING
 
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.dirty_tracker import DirtyTracker
@@ -9,18 +10,21 @@ from trellis.core.rendering.element_state import ElementStateStore
 from trellis.core.rendering.elements import ElementStore
 from trellis.core.rendering.session import RenderSession
 
+if TYPE_CHECKING:
+    from trellis.core.components.composition import CompositionComponent
 
-class MockComponent:
-    """Minimal component for testing."""
 
-    name = "MockComponent"
+class _MockElementComponent:
+    """Minimal component for creating test Element nodes."""
+
+    name = "MockElement"
     _has_children_param = False
 
-    def render(self):
+    def render(self) -> None:
         pass
 
 
-def make_node(node_id: str, tree_ref=None) -> Element:
+def _make_node(node_id: str, tree_ref=None) -> Element:
     """Create a test node with the given ID."""
 
     class FakeTree:
@@ -30,7 +34,7 @@ def make_node(node_id: str, tree_ref=None) -> Element:
         tree_ref = weakref.ref(FakeTree())
 
     node = Element(
-        component=MockComponent(),
+        component=_MockElementComponent(),
         _session_ref=tree_ref,
         render_count=0,
         id=node_id,
@@ -44,20 +48,18 @@ def make_node(node_id: str, tree_ref=None) -> Element:
 
 
 class TestRenderSession:
-    def test_creation(self):
-        comp = MockComponent()
-        session = RenderSession(root_component=comp)
+    def test_creation(self, noop_component: "CompositionComponent") -> None:
+        session = RenderSession(root_component=noop_component)
 
-        assert session.root_component is comp
+        assert session.root_component is noop_component
         assert session.root_node_id is None
         assert isinstance(session.elements, ElementStore)
         assert isinstance(session.states, ElementStateStore)
         assert isinstance(session.dirty, DirtyTracker)
         assert session.active is None
 
-    def test_is_rendering(self):
-        comp = MockComponent()
-        session = RenderSession(root_component=comp)
+    def test_is_rendering(self, noop_component: "CompositionComponent") -> None:
+        session = RenderSession(root_component=noop_component)
 
         assert not session.is_rendering()
 
@@ -67,9 +69,8 @@ class TestRenderSession:
         session.active = None
         assert not session.is_rendering()
 
-    def test_is_executing(self):
-        comp = MockComponent()
-        session = RenderSession(root_component=comp)
+    def test_is_executing(self, noop_component: "CompositionComponent") -> None:
+        session = RenderSession(root_component=noop_component)
 
         assert not session.is_executing()
 
@@ -79,9 +80,8 @@ class TestRenderSession:
         session.active.current_node_id = "e1"
         assert session.is_executing()
 
-    def test_current_node_id(self):
-        comp = MockComponent()
-        session = RenderSession(root_component=comp)
+    def test_current_node_id(self, noop_component: "CompositionComponent") -> None:
+        session = RenderSession(root_component=noop_component)
 
         assert session.current_node_id is None
 
@@ -89,16 +89,15 @@ class TestRenderSession:
         session.active.current_node_id = "e1"
         assert session.current_node_id == "e1"
 
-    def test_get_callback_from_node_props(self):
+    def test_get_callback_from_node_props(self, noop_component: "CompositionComponent") -> None:
         """get_callback looks up callbacks from node props."""
-        comp = MockComponent()
-        session = RenderSession(root_component=comp)
+        session = RenderSession(root_component=noop_component)
 
         def my_callback():
             return "called"
 
         # Create a node and store it
-        node = make_node("e1")
+        node = _make_node("e1")
         node.props["on_click"] = my_callback
         session.elements.store(node)
 
@@ -113,13 +112,12 @@ class TestRenderSession:
         # Non-existent node returns None
         assert session.get_callback("nonexistent", "on_click") is None
 
-    def test_stores_integration(self):
+    def test_stores_integration(self, noop_component: "CompositionComponent") -> None:
         """Test that stores work correctly within RenderSession."""
-        comp = MockComponent()
-        session = RenderSession(root_component=comp)
+        session = RenderSession(root_component=noop_component)
 
         # Nodes
-        node = make_node("e1")
+        node = _make_node("e1")
         session.elements.store(node)
         assert session.elements.get("e1") is node
 
@@ -131,10 +129,9 @@ class TestRenderSession:
         session.dirty.mark("e1")
         assert session.dirty.has_dirty()
 
-    def test_lock_is_reentrant(self):
+    def test_lock_is_reentrant(self, noop_component: "CompositionComponent") -> None:
         """Test that the lock is reentrant (RLock)."""
-        comp = MockComponent()
-        session = RenderSession(root_component=comp)
+        session = RenderSession(root_component=noop_component)
 
         with session.lock:
             with session.lock:

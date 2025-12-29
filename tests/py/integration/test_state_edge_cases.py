@@ -8,17 +8,19 @@ These tests verify correct behavior in complex state scenarios:
 """
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from trellis.core.components.composition import component
-from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
+
+if TYPE_CHECKING:
+    from tests.conftest import PatchCapture
 
 
 class TestDeepDependencyTracking:
     """Tests for dependency tracking in deep component trees."""
 
-    def test_state_read_in_deep_component(self) -> None:
+    def test_state_read_in_deep_component(self, capture_patches: "type[PatchCapture]") -> None:
         """State read 50 levels deep should trigger re-render of only that component."""
         DEPTH = 50
         render_counts: dict[str, int] = {}
@@ -43,8 +45,8 @@ class TestDeepDependencyTracking:
             render_counts["root"] = render_counts.get("root", 0) + 1
             Level(n=1)
 
-        ctx = RenderSession(Root)
-        render(ctx)
+        capture = capture_patches(Root)
+        capture.render()
 
         # All should have rendered once
         assert render_counts["root"] == 1
@@ -52,7 +54,7 @@ class TestDeepDependencyTracking:
 
         # Change state - only deepest level should re-render
         state.value = 1
-        render(ctx)
+        capture.render()
 
         assert render_counts["root"] == 1
         assert render_counts[f"level_{DEPTH}"] == 2
@@ -60,7 +62,7 @@ class TestDeepDependencyTracking:
         for i in range(1, DEPTH):
             assert render_counts[f"level_{i}"] == 1
 
-    def test_multiple_components_same_property(self) -> None:
+    def test_multiple_components_same_property(self, capture_patches: "type[PatchCapture]") -> None:
         """Multiple components reading same state property all get updates."""
         render_counts: dict[str, int] = {}
 
@@ -80,18 +82,20 @@ class TestDeepDependencyTracking:
             for name in ["a", "b", "c", "d", "e"]:
                 Reader(name=name)
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
         assert all(render_counts[n] == 1 for n in ["a", "b", "c", "d", "e"])
 
         # All readers should re-render on state change
         state.value = 1
-        render(ctx)
+        capture.render()
 
         assert all(render_counts[n] == 2 for n in ["a", "b", "c", "d", "e"])
 
-    def test_component_reads_but_doesnt_use_value(self) -> None:
+    def test_component_reads_but_doesnt_use_value(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """Reading state creates dependency even if value isn't used."""
         render_counts: dict[str, int] = {}
 
@@ -110,13 +114,13 @@ class TestDeepDependencyTracking:
         def App() -> None:
             Reader()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
         assert render_counts["reader"] == 1
 
         state.value = 1
-        render(ctx)
+        capture.render()
 
         # Should still re-render because dependency was created
         assert render_counts["reader"] == 2
@@ -125,7 +129,7 @@ class TestDeepDependencyTracking:
 class TestStateLifecycle:
     """Tests for state lifecycle hooks."""
 
-    def test_on_mount_called_once(self) -> None:
+    def test_on_mount_called_once(self, capture_patches: "type[PatchCapture]") -> None:
         """Stateful.on_mount is called exactly once per element."""
         mount_count = [0]
 
@@ -138,20 +142,21 @@ class TestStateLifecycle:
         def MyComponent() -> None:
             TrackedState()
 
-        ctx = RenderSession(MyComponent)
-        render(ctx)
+        capture = capture_patches(MyComponent)
+        capture.render()
 
         assert mount_count[0] == 1
 
         # Re-render multiple times
+        ctx = capture.session
         for _ in range(5):
             ctx.dirty.mark(ctx.root_element.id)
-            render(ctx)
+            capture.render()
 
         # Still only 1 mount
         assert mount_count[0] == 1
 
-    def test_on_unmount_called_when_removed(self) -> None:
+    def test_on_unmount_called_when_removed(self, capture_patches: "type[PatchCapture]") -> None:
         """Stateful.on_unmount is called when element is removed."""
         unmount_log: list[str] = []
         show_ref = [True]
@@ -172,19 +177,20 @@ class TestStateLifecycle:
             if show_ref[0]:
                 Child()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
         assert len(unmount_log) == 0
 
         # Remove child
+        ctx = capture.session
         show_ref[0] = False
         ctx.dirty.mark(ctx.root_element.id)
-        render(ctx)
+        capture.render()
 
         assert "child_state" in unmount_log
 
-    def test_state_persists_across_rerenders(self) -> None:
+    def test_state_persists_across_rerenders(self, capture_patches: "type[PatchCapture]") -> None:
         """State instance identity persists across re-renders."""
         state_instances: list[int] = []  # Store id() of state instances
 
@@ -197,15 +203,16 @@ class TestStateLifecycle:
             state = MyState()
             state_instances.append(id(state))
 
-        ctx = RenderSession(MyComponent)
-        render(ctx)
+        capture = capture_patches(MyComponent)
+        capture.render()
 
         # Re-render
+        ctx = capture.session
         ctx.dirty.mark(ctx.root_element.id)
-        render(ctx)
+        capture.render()
 
         ctx.dirty.mark(ctx.root_element.id)
-        render(ctx)
+        capture.render()
 
         # All should be the same instance
         assert len(state_instances) == 3
@@ -215,7 +222,7 @@ class TestStateLifecycle:
 class TestHookOrdering:
     """Tests for correct ordering of state hooks."""
 
-    def test_multiple_state_instances_order(self) -> None:
+    def test_multiple_state_instances_order(self, capture_patches: "type[PatchCapture]") -> None:
         """Multiple state instances in same component use call order."""
 
         @dataclass
@@ -236,17 +243,18 @@ class TestHookOrdering:
             StateB(value="hello")
             StateC(value=True)
 
-        ctx = RenderSession(MyComponent)
-        render(ctx)
+        capture = capture_patches(MyComponent)
+        capture.render()
 
         # Check local_state keys
+        ctx = capture.session
         root_state = ctx.states.get(ctx.root_element.id)
         keys = list(root_state.local_state.keys())
         # Keys are (class, call_index)
         indices = [k[1] for k in keys]
         assert sorted(indices) == [0, 1, 2]
 
-    def test_state_order_preserved_on_rerender(self) -> None:
+    def test_state_order_preserved_on_rerender(self, capture_patches: "type[PatchCapture]") -> None:
         """State instances maintain order across re-renders."""
 
         @dataclass
@@ -264,22 +272,23 @@ class TestHookOrdering:
             # Track identity across renders
             state_ids.append([id(a), id(b), id(c)])
 
-        ctx = RenderSession(MyComponent)
-        render(ctx)
+        capture = capture_patches(MyComponent)
+        capture.render()
 
         # Re-render - instances should be same
+        ctx = capture.session
         ctx.dirty.mark(ctx.root_element.id)
-        render(ctx)
+        capture.render()
 
         # Third render
         ctx.dirty.mark(ctx.root_element.id)
-        render(ctx)
+        capture.render()
 
         # All renders should use the same instances in the same order
         assert len(state_ids) == 3
         assert state_ids[0] == state_ids[1] == state_ids[2]
 
-    def test_state_in_loop(self) -> None:
+    def test_state_in_loop(self, capture_patches: "type[PatchCapture]") -> None:
         """State created in a loop gets different instances per iteration."""
         count_ref = [3]
 
@@ -298,10 +307,11 @@ class TestHookOrdering:
                 if len(first_render_indices) < count_ref[0]:
                     first_render_indices.append(state.index)
 
-        ctx = RenderSession(MyComponent)
-        render(ctx)
+        capture = capture_patches(MyComponent)
+        capture.render()
 
         # Should have 3 state instances
+        ctx = capture.session
         root_state = ctx.states.get(ctx.root_element.id)
         assert len(root_state.local_state) == 3
 
@@ -311,7 +321,7 @@ class TestHookOrdering:
 
         # Re-render with same count - states preserved
         ctx.dirty.mark(ctx.root_element.id)
-        render(ctx)
+        capture.render()
 
         assert len(root_state.local_state) == 3
         indices = [s.index for s in root_state.local_state.values()]
@@ -321,7 +331,7 @@ class TestHookOrdering:
 class TestDependencyAcrossComponents:
     """Tests for state dependencies across component boundaries."""
 
-    def test_parent_and_child_read_same_state(self) -> None:
+    def test_parent_and_child_read_same_state(self, capture_patches: "type[PatchCapture]") -> None:
         """Parent and child reading same state both get updates."""
         render_counts: dict[str, int] = {}
 
@@ -342,18 +352,20 @@ class TestDependencyAcrossComponents:
             _ = state.value
             Child()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        capture = capture_patches(Parent)
+        capture.render()
 
         assert render_counts == {"parent": 1, "child": 1}
 
         state.value = 1
-        render(ctx)
+        capture.render()
 
         # Both should re-render
         assert render_counts == {"parent": 2, "child": 2}
 
-    def test_sibling_components_independent_state(self) -> None:
+    def test_sibling_components_independent_state(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """Siblings with different state dependencies update independently."""
         render_counts: dict[str, int] = {}
 
@@ -383,20 +395,20 @@ class TestDependencyAcrossComponents:
             SiblingA()
             SiblingB()
 
-        ctx = RenderSession(Parent)
-        render(ctx)
+        capture = capture_patches(Parent)
+        capture.render()
 
         assert render_counts == {"a": 1, "b": 1}
 
         # Change only state_a
         state_a.value = 1
-        render(ctx)
+        capture.render()
 
         assert render_counts == {"a": 2, "b": 1}
 
         # Change only state_b
         state_b.value = 1
-        render(ctx)
+        capture.render()
 
         assert render_counts == {"a": 2, "b": 2}
 
@@ -404,7 +416,7 @@ class TestDependencyAcrossComponents:
 class TestStateCleanup:
     """Tests for proper state cleanup."""
 
-    def test_state_cleared_on_unmount(self) -> None:
+    def test_state_cleared_on_unmount(self, capture_patches: "type[PatchCapture]") -> None:
         """State is cleared from element when unmounted."""
         show_ref = [True]
 
@@ -421,10 +433,11 @@ class TestStateCleanup:
             if show_ref[0]:
                 Child()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
         # Capture child node and state
+        ctx = capture.session
         child_id = ctx.root_element.child_ids[0]
         child_state = ctx.states.get(child_id)
         assert len(child_state.local_state) == 1
@@ -432,12 +445,12 @@ class TestStateCleanup:
         # Unmount
         show_ref[0] = False
         ctx.dirty.mark(ctx.root_element.id)
-        render(ctx)
+        capture.render()
 
         # State should be cleaned up - element state removed entirely
         assert child_id not in ctx.states
 
-    def test_dirty_elements_cleaned_on_unmount(self) -> None:
+    def test_dirty_elements_cleaned_on_unmount(self, capture_patches: "type[PatchCapture]") -> None:
         """Element removed from dirty set when unmounted."""
         show_ref = [True]
 
@@ -456,9 +469,10 @@ class TestStateCleanup:
             if show_ref[0]:
                 Child()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
+        ctx = capture.session
         child_id = ctx.root_element.child_ids[0]
 
         # Mark child dirty by changing state
@@ -468,7 +482,7 @@ class TestStateCleanup:
         # Unmount child (without render_dirty first)
         show_ref[0] = False
         ctx.dirty.mark(ctx.root_element.id)
-        render(ctx)
+        capture.render()
 
         # Child should be removed from dirty set
         assert child_id not in ctx.dirty
@@ -477,7 +491,7 @@ class TestStateCleanup:
 class TestMultipleStateTypes:
     """Tests for components using multiple state types."""
 
-    def test_different_state_types_independent(self) -> None:
+    def test_different_state_types_independent(self, capture_patches: "type[PatchCapture]") -> None:
         """Different state types in same component are independent."""
         render_count = [0]
 
@@ -498,22 +512,22 @@ class TestMultipleStateTypes:
             _ = counter.count
             _ = name.name
 
-        ctx = RenderSession(MyComponent)
-        render(ctx)
+        capture = capture_patches(MyComponent)
+        capture.render()
 
         assert render_count[0] == 1
 
         # Change counter - should re-render
         counter.count = 1
-        render(ctx)
+        capture.render()
         assert render_count[0] == 2
 
         # Change name - should re-render
         name.name = "Alice"
-        render(ctx)
+        capture.render()
         assert render_count[0] == 3
 
-    def test_state_inheritance(self) -> None:
+    def test_state_inheritance(self, capture_patches: "type[PatchCapture]") -> None:
         """State subclasses work correctly."""
 
         @dataclass
@@ -529,10 +543,11 @@ class TestMultipleStateTypes:
             BaseState(base_value=1)
             ExtendedState(base_value=2, extended_value="hello")
 
-        ctx = RenderSession(MyComponent)
-        render(ctx)
+        capture = capture_patches(MyComponent)
+        capture.render()
 
         # Both should be cached
+        ctx = capture.session
         root_state = ctx.states.get(ctx.root_element.id)
         assert len(root_state.local_state) == 2
 
