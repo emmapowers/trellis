@@ -3,9 +3,8 @@
 import gc
 from dataclasses import dataclass, field
 
+from tests.conftest import PatchCapture
 from trellis.core.components.composition import component
-from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
 from trellis.core.state.tracked import ITER_KEY, TrackedDict, TrackedList
 
@@ -17,7 +16,9 @@ class TestDependencyTracking:
     which has no public API for inspection.
     """
 
-    def test_list_getitem_tracks_by_item_identity(self) -> None:
+    def test_list_getitem_tracks_by_item_identity(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """Accessing list[i] registers dependency on id(item)."""
 
         @dataclass
@@ -31,16 +32,16 @@ class TestDependencyTracking:
         def ItemViewer() -> None:
             _ = state.items[1]  # Access item at index 1
 
-        ctx = RenderSession(ItemViewer)
-        render(ctx)
+        capture = capture_patches(ItemViewer)
+        capture.render()
 
         # Check that dependency was registered for id("b")
         tracked_list = state.items
         item_b = list.__getitem__(tracked_list, 1)
         assert id(item_b) in tracked_list._deps
-        assert ctx.root_element in tracked_list._deps[id(item_b)]
+        assert capture.session.root_element in tracked_list._deps[id(item_b)]
 
-    def test_list_iteration_tracks_iter_key(self) -> None:
+    def test_list_iteration_tracks_iter_key(self, capture_patches: "type[PatchCapture]") -> None:
         """Iterating over list registers dependency on ITER_KEY."""
 
         @dataclass
@@ -55,15 +56,15 @@ class TestDependencyTracking:
             for item in state.items:
                 _ = item
 
-        ctx = RenderSession(ListViewer)
-        render(ctx)
+        capture = capture_patches(ListViewer)
+        capture.render()
 
         # Check ITER_KEY dependency
         tracked_list = state.items
         assert ITER_KEY in tracked_list._deps
-        assert ctx.root_element in tracked_list._deps[ITER_KEY]
+        assert capture.session.root_element in tracked_list._deps[ITER_KEY]
 
-    def test_dict_getitem_tracks_by_key(self) -> None:
+    def test_dict_getitem_tracks_by_key(self, capture_patches: "type[PatchCapture]") -> None:
         """Accessing dict[key] registers dependency on that key."""
 
         @dataclass
@@ -77,15 +78,15 @@ class TestDependencyTracking:
         def DataViewer() -> None:
             _ = state.data["x"]
 
-        ctx = RenderSession(DataViewer)
-        render(ctx)
+        capture = capture_patches(DataViewer)
+        capture.render()
 
         # Check dependency on key "x"
         tracked_dict = state.data
         assert "x" in tracked_dict._deps
-        assert ctx.root_element in tracked_dict._deps["x"]
+        assert capture.session.root_element in tracked_dict._deps["x"]
 
-    def test_set_contains_tracks_by_value(self) -> None:
+    def test_set_contains_tracks_by_value(self, capture_patches: "type[PatchCapture]") -> None:
         """item in set registers dependency on the value itself."""
 
         @dataclass
@@ -99,15 +100,15 @@ class TestDependencyTracking:
         def TagChecker() -> None:
             _ = "python" in state.tags
 
-        ctx = RenderSession(TagChecker)
-        render(ctx)
+        capture = capture_patches(TagChecker)
+        capture.render()
 
         # Check dependency on the value "python" (not id)
         tracked_set = state.tags
         assert "python" in tracked_set._deps
-        assert ctx.root_element in tracked_set._deps["python"]
+        assert capture.session.root_element in tracked_set._deps["python"]
 
-    def test_list_sort_marks_iter_dirty(self) -> None:
+    def test_list_sort_marks_iter_dirty(self, capture_patches: "type[PatchCapture]") -> None:
         """Sorting a list marks ITER_KEY dirty."""
 
         @dataclass
@@ -125,16 +126,16 @@ class TestDependencyTracking:
             for _ in state.items:
                 pass
 
-        ctx = RenderSession(ListViewer)
-        render(ctx)
+        capture = capture_patches(ListViewer)
+        capture.render()
         assert iter_renders[0] == 1
 
         # Sort - should mark ITER_KEY dirty
         state.items.sort()
-        render(ctx)
+        capture.render()
         assert iter_renders[0] == 2
 
-    def test_dict_new_key_marks_iter_dirty(self) -> None:
+    def test_dict_new_key_marks_iter_dirty(self, capture_patches: "type[PatchCapture]") -> None:
         """Adding a new key marks ITER_KEY dirty for iterators."""
 
         @dataclass
@@ -163,15 +164,15 @@ class TestDependencyTracking:
             Iterator()
             AViewer()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
         assert iter_renders[0] == 1
         assert a_renders[0] == 1
 
         # Add new key - Iterator should re-render
         state.data["b"] = 2
-        render(ctx)
+        capture.render()
 
         assert iter_renders[0] == 2  # Iteration affected by new key
         assert a_renders[0] == 1  # AViewer not affected
@@ -180,7 +181,9 @@ class TestDependencyTracking:
 class TestFineGrainedReactivity:
     """Tests for fine-grained re-rendering based on tracked collections."""
 
-    def test_list_item_change_only_rerenders_affected(self) -> None:
+    def test_list_item_change_only_rerenders_affected(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """Modifying one list item only re-renders components that read it."""
 
         @dataclass
@@ -208,20 +211,22 @@ class TestFineGrainedReactivity:
             Item0()
             Item1()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
         assert item0_renders[0] == 1
         assert item1_renders[0] == 1
 
         # Modify item at index 0 - only Item0 should re-render
         state.items[0] = "updated"
-        render(ctx)
+        capture.render()
 
         assert item0_renders[0] == 2
         assert item1_renders[0] == 1  # Should NOT have re-rendered
 
-    def test_dict_key_change_only_rerenders_affected(self) -> None:
+    def test_dict_key_change_only_rerenders_affected(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """Modifying one dict key only re-renders components that read it."""
 
         @dataclass
@@ -249,20 +254,20 @@ class TestFineGrainedReactivity:
             XViewer()
             YViewer()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
         assert x_renders[0] == 1
         assert y_renders[0] == 1
 
         # Modify key "x" - only XViewer should re-render
         state.data["x"] = 100
-        render(ctx)
+        capture.render()
 
         assert x_renders[0] == 2
         assert y_renders[0] == 1  # Should NOT have re-rendered
 
-    def test_list_append_rerenders_iterators(self) -> None:
+    def test_list_append_rerenders_iterators(self, capture_patches: "type[PatchCapture]") -> None:
         """Appending to list re-renders components that iterate."""
 
         @dataclass
@@ -291,15 +296,15 @@ class TestFineGrainedReactivity:
             ListViewer()
             Item0Viewer()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
         assert list_renders[0] == 1
         assert item0_renders[0] == 1
 
         # Append - ListViewer should re-render (iterates), Item0Viewer should not
         state.items.append("c")
-        render(ctx)
+        capture.render()
 
         assert list_renders[0] == 2  # Iterating = ITER_KEY dependency
         assert item0_renders[0] == 1  # Should NOT re-render
@@ -312,7 +317,9 @@ class TestDependencyCleanup:
     cleanup behavior which has no public API for inspection.
     """
 
-    def test_list_dependency_cleaned_on_unmount(self) -> None:
+    def test_list_dependency_cleaned_on_unmount(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """List dependencies are cleaned up when component unmounts."""
 
         @dataclass
@@ -333,10 +340,11 @@ class TestDependencyCleanup:
             if show_consumer[0]:
                 Consumer()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
         # Get consumer ID without keeping strong reference to node
+        ctx = capture.session
         consumer_id = ctx.elements.get(ctx.root_element.child_ids[0]).id
         tracked_list = state.items
         item_a = list.__getitem__(tracked_list, 0)
@@ -348,7 +356,7 @@ class TestDependencyCleanup:
         # Unmount Consumer
         show_consumer[0] = False
         ctx.dirty.mark(ctx.root_element.id)
-        render(ctx)
+        capture.render()
 
         # Force GC so WeakSet can remove dead references
         gc.collect()
@@ -358,7 +366,9 @@ class TestDependencyCleanup:
             dep_node_ids = {n.id for n in tracked_list._deps[id(item_a)]}
             assert consumer_id not in dep_node_ids
 
-    def test_dict_dependency_cleaned_on_rerender_without_read(self) -> None:
+    def test_dict_dependency_cleaned_on_rerender_without_read(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """Dict dependencies are cleaned when component stops reading."""
 
         @dataclass
@@ -375,10 +385,11 @@ class TestDependencyCleanup:
             if read_data[0]:
                 _ = state.data["x"]
 
-        ctx = RenderSession(Consumer)
-        render(ctx)
+        capture = capture_patches(Consumer)
+        capture.render()
 
         # Get root ID without keeping strong reference to old node
+        ctx = capture.session
         root_id = ctx.root_element.id
         tracked_dict = state.data
 
@@ -389,7 +400,7 @@ class TestDependencyCleanup:
         # Stop reading and re-render
         read_data[0] = False
         ctx.dirty.mark(root_id)
-        render(ctx)
+        capture.render()
 
         # Force GC so WeakSet can remove dead references (old node from previous render)
         gc.collect()
@@ -403,7 +414,9 @@ class TestDependencyCleanup:
 class TestTrackedWithStatefulItems:
     """Tests for tracked collections containing Stateful items."""
 
-    def test_stateful_item_tracks_own_properties(self) -> None:
+    def test_stateful_item_tracks_own_properties(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """Stateful items in a list track their own properties."""
 
         @dataclass
@@ -438,20 +451,20 @@ class TestTrackedWithStatefulItems:
             Todo1Viewer()
             Todo2Viewer()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
         assert todo1_renders[0] == 1
         assert todo2_renders[0] == 1
 
         # Modify todo1.completed - only Todo1Viewer should re-render
         todo1.completed = True
-        render(ctx)
+        capture.render()
 
         assert todo1_renders[0] == 2
         assert todo2_renders[0] == 1  # Should NOT have re-rendered
 
-    def test_replacing_stateful_item_in_list(self) -> None:
+    def test_replacing_stateful_item_in_list(self, capture_patches: "type[PatchCapture]") -> None:
         """Replacing a Stateful item in list marks the slot dirty."""
 
         @dataclass
@@ -473,14 +486,14 @@ class TestTrackedWithStatefulItems:
             item_renders[0] += 1
             _ = state.todos[0]  # Just read the item
 
-        ctx = RenderSession(ItemViewer)
-        render(ctx)
+        capture = capture_patches(ItemViewer)
+        capture.render()
         assert item_renders[0] == 1
 
         # Replace the item - should trigger re-render
         new_todo = Todo(text="New")
         state.todos[0] = new_todo
-        render(ctx)
+        capture.render()
 
         assert item_renders[0] == 2
 
@@ -488,7 +501,7 @@ class TestTrackedWithStatefulItems:
 class TestMultiComponentScenarios:
     """Tests for multiple components reading same data."""
 
-    def test_two_components_read_same_item(self) -> None:
+    def test_two_components_read_same_item(self, capture_patches: "type[PatchCapture]") -> None:
         """Two components reading same item both re-render on change."""
 
         @dataclass
@@ -516,14 +529,14 @@ class TestMultiComponentScenarios:
             Component1()
             Component2()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
         assert comp1_renders[0] == 1
         assert comp2_renders[0] == 1
 
         # Both should re-render when the shared item changes
         state.items[0] = "updated"
-        render(ctx)
+        capture.render()
         assert comp1_renders[0] == 2
         assert comp2_renders[0] == 2
 
@@ -531,7 +544,7 @@ class TestMultiComponentScenarios:
 class TestDeeplyNested:
     """Tests for deeply nested access."""
 
-    def test_deeply_nested_list_dict_list(self) -> None:
+    def test_deeply_nested_list_dict_list(self, capture_patches: "type[PatchCapture]") -> None:
         """Deeply nested state.a[0]["x"][1] works correctly."""
 
         @dataclass
@@ -548,8 +561,8 @@ class TestDeeplyNested:
             renders[0] += 1
             _ = state.data[0]["x"][1]  # Access 20
 
-        ctx = RenderSession(DeepViewer)
-        render(ctx)
+        capture = capture_patches(DeepViewer)
+        capture.render()
         assert renders[0] == 1
 
         # All levels should be tracked
@@ -559,14 +572,16 @@ class TestDeeplyNested:
 
         # Modify the deeply nested value
         state.data[0]["x"][1] = 999
-        render(ctx)
+        capture.render()
         assert renders[0] == 2
 
 
 class TestSetValueTracking:
     """Tests for set value-based tracking (vs id-based)."""
 
-    def test_set_contains_with_different_string_objects(self) -> None:
+    def test_set_contains_with_different_string_objects(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """Set tracking works with different string objects of same value."""
 
         @dataclass
@@ -584,13 +599,13 @@ class TestSetValueTracking:
             renders[0] += 1
             _ = check_value in state.tags
 
-        ctx = RenderSession(TagChecker)
-        render(ctx)
+        capture = capture_patches(TagChecker)
+        capture.render()
         assert renders[0] == 1
 
         # Add a different string object with same value
         # (In practice, Python often interns strings, but the point is
         # we track by value, not id)
         state.tags.add("python")
-        render(ctx)
+        capture.render()
         assert renders[0] == 2  # Should re-render!

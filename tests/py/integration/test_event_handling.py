@@ -5,8 +5,8 @@ from dataclasses import dataclass
 
 import pytest
 
+from tests.conftest import PatchCapture
 from trellis.core.components.composition import component
-from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
 from trellis.html.events import (
@@ -33,7 +33,7 @@ def get_callback_from_id(ctx: RenderSession, cb_id: str):
 class TestCallbackInvocation:
     """Tests for callback lookup and invocation."""
 
-    def test_callback_invoked_by_id(self) -> None:
+    def test_callback_invoked_by_id(self, capture_patches: "type[PatchCapture]") -> None:
         """Callback can be looked up by ID and invoked."""
         invocations: list[str] = []
 
@@ -44,23 +44,23 @@ class TestCallbackInvocation:
         def App() -> None:
             Button(text="Click", on_click=on_click)
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
         # Get callback ID from serialized tree
-        assert ctx.root_element is not None
-        tree = serialize_node(ctx.root_element, ctx)
+        assert capture.session.root_element is not None
+        tree = serialize_node(capture.session.root_element, capture.session)
         button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Simulate event handling
-        callback = get_callback_from_id(ctx, cb_id)
+        callback = get_callback_from_id(capture.session, cb_id)
         assert callback is not None
         callback()
 
         assert invocations == ["clicked"]
 
-    def test_callback_with_args(self) -> None:
+    def test_callback_with_args(self, capture_patches: "type[PatchCapture]") -> None:
         """Callback can receive arguments from event."""
         received_args: list[tuple] = []
 
@@ -71,15 +71,15 @@ class TestCallbackInvocation:
         def App() -> None:
             Button(text="Test", on_click=on_change)
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
-        assert ctx.root_element is not None
-        tree = serialize_node(ctx.root_element, ctx)
+        assert capture.session.root_element is not None
+        tree = serialize_node(capture.session.root_element, capture.session)
         button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
-        callback = get_callback_from_id(ctx, cb_id)
+        callback = get_callback_from_id(capture.session, cb_id)
         assert callback is not None
         callback("arg1", 42, True)
 
@@ -95,7 +95,7 @@ class TestCallbackInvocation:
 class TestStateUpdateOnEvent:
     """Tests for state updates triggered by events."""
 
-    def test_callback_updates_state(self) -> None:
+    def test_callback_updates_state(self, capture_patches: "type[PatchCapture]") -> None:
         """Callback can modify Stateful and trigger re-render."""
 
         @dataclass(kw_only=True)
@@ -112,31 +112,31 @@ class TestStateUpdateOnEvent:
             Label(text=str(state.count))
             Button(text="+", on_click=increment)
 
-        ctx = RenderSession(Counter)
-        render(ctx)
+        capture = capture_patches(Counter)
+        capture.render()
 
         # Get initial state
-        assert ctx.root_element is not None
-        tree = serialize_node(ctx.root_element, ctx)
+        assert capture.session.root_element is not None
+        tree = serialize_node(capture.session.root_element, capture.session)
         label = tree["children"][0]
         assert label["props"]["text"] == "0"
 
         # Get callback and invoke it
         button = tree["children"][1]
         cb_id = button["props"]["on_click"]["__callback__"]
-        callback = get_callback_from_id(ctx, cb_id)
+        callback = get_callback_from_id(capture.session, cb_id)
         assert callback is not None
         callback()
 
         # Re-render dirty elements
-        render(ctx)
+        capture.render()
 
         # Verify state updated
-        tree = serialize_node(ctx.root_element, ctx)
+        tree = serialize_node(capture.session.root_element, capture.session)
         label = tree["children"][0]
         assert label["props"]["text"] == "1"
 
-    def test_multiple_state_updates(self) -> None:
+    def test_multiple_state_updates(self, capture_patches: "type[PatchCapture]") -> None:
         """Multiple callbacks can update state sequentially."""
 
         @dataclass(kw_only=True)
@@ -157,35 +157,35 @@ class TestStateUpdateOnEvent:
             Label(text=str(state.count))
             Button(text="+", on_click=increment)
 
-        ctx = RenderSession(Counter)
-        render(ctx)
+        capture = capture_patches(Counter)
+        capture.render()
 
-        assert ctx.root_element is not None
+        assert capture.session.root_element is not None
 
         # Increment twice
         for _ in range(2):
-            tree = serialize_node(ctx.root_element, ctx)
+            tree = serialize_node(capture.session.root_element, capture.session)
             inc_button = tree["children"][2]
             cb_id = inc_button["props"]["on_click"]["__callback__"]
-            callback = get_callback_from_id(ctx, cb_id)
+            callback = get_callback_from_id(capture.session, cb_id)
             assert callback is not None
             callback()
-            render(ctx)
+            capture.render()
 
-        tree = serialize_node(ctx.root_element, ctx)
+        tree = serialize_node(capture.session.root_element, capture.session)
         label = tree["children"][1]
         assert label["props"]["text"] == "7"
 
         # Decrement once
-        tree = serialize_node(ctx.root_element, ctx)
+        tree = serialize_node(capture.session.root_element, capture.session)
         dec_button = tree["children"][0]
         cb_id = dec_button["props"]["on_click"]["__callback__"]
-        callback = get_callback_from_id(ctx, cb_id)
+        callback = get_callback_from_id(capture.session, cb_id)
         assert callback is not None
         callback()
-        render(ctx)
+        capture.render()
 
-        tree = serialize_node(ctx.root_element, ctx)
+        tree = serialize_node(capture.session.root_element, capture.session)
         label = tree["children"][1]
         assert label["props"]["text"] == "6"
 
@@ -193,7 +193,7 @@ class TestStateUpdateOnEvent:
 class TestDisabledStateOnBoundary:
     """Tests for disabled state based on value boundaries."""
 
-    def test_button_disabled_at_min(self) -> None:
+    def test_button_disabled_at_min(self, capture_patches: "type[PatchCapture]") -> None:
         """Decrement button disabled when at minimum value."""
 
         @dataclass(kw_only=True)
@@ -210,17 +210,17 @@ class TestDisabledStateOnBoundary:
             Button(text="-", on_click=decrement, disabled=state.count <= 1)
             Label(text=str(state.count))
 
-        ctx = RenderSession(Counter)
-        render(ctx)
+        capture = capture_patches(Counter)
+        capture.render()
 
-        assert ctx.root_element is not None
-        tree = serialize_node(ctx.root_element, ctx)
+        assert capture.session.root_element is not None
+        tree = serialize_node(capture.session.root_element, capture.session)
         dec_button = tree["children"][0]
 
         # Button should be disabled at count=1
         assert dec_button["props"]["disabled"] is True
 
-    def test_button_disabled_at_max(self) -> None:
+    def test_button_disabled_at_max(self, capture_patches: "type[PatchCapture]") -> None:
         """Increment button disabled when at maximum value."""
 
         @dataclass(kw_only=True)
@@ -237,17 +237,17 @@ class TestDisabledStateOnBoundary:
             Label(text=str(state.count))
             Button(text="+", on_click=increment, disabled=state.count >= 10)
 
-        ctx = RenderSession(Counter)
-        render(ctx)
+        capture = capture_patches(Counter)
+        capture.render()
 
-        assert ctx.root_element is not None
-        tree = serialize_node(ctx.root_element, ctx)
+        assert capture.session.root_element is not None
+        tree = serialize_node(capture.session.root_element, capture.session)
         inc_button = tree["children"][1]
 
         # Button should be disabled at count=10
         assert inc_button["props"]["disabled"] is True
 
-    def test_button_enabled_in_range(self) -> None:
+    def test_button_enabled_in_range(self, capture_patches: "type[PatchCapture]") -> None:
         """Buttons enabled when value is within range."""
 
         @dataclass(kw_only=True)
@@ -268,11 +268,11 @@ class TestDisabledStateOnBoundary:
             Label(text=str(state.count))
             Button(text="+", on_click=increment, disabled=state.count >= 10)
 
-        ctx = RenderSession(Counter)
-        render(ctx)
+        capture = capture_patches(Counter)
+        capture.render()
 
-        assert ctx.root_element is not None
-        tree = serialize_node(ctx.root_element, ctx)
+        assert capture.session.root_element is not None
+        tree = serialize_node(capture.session.root_element, capture.session)
         dec_button = tree["children"][0]
         inc_button = tree["children"][2]
 
@@ -280,7 +280,9 @@ class TestDisabledStateOnBoundary:
         assert dec_button["props"]["disabled"] is False
         assert inc_button["props"]["disabled"] is False
 
-    def test_disabled_state_updates_on_boundary(self) -> None:
+    def test_disabled_state_updates_on_boundary(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """Button disabled state updates when hitting boundary."""
 
         @dataclass(kw_only=True)
@@ -297,25 +299,25 @@ class TestDisabledStateOnBoundary:
             Button(text="-", on_click=decrement, disabled=state.count <= 1)
             Label(text=str(state.count))
 
-        ctx = RenderSession(Counter)
-        render(ctx)
+        capture = capture_patches(Counter)
+        capture.render()
 
-        assert ctx.root_element is not None
+        assert capture.session.root_element is not None
 
         # Initially enabled at count=2
-        tree = serialize_node(ctx.root_element, ctx)
+        tree = serialize_node(capture.session.root_element, capture.session)
         dec_button = tree["children"][0]
         assert dec_button["props"]["disabled"] is False
 
         # Decrement to 1
         cb_id = dec_button["props"]["on_click"]["__callback__"]
-        callback = get_callback_from_id(ctx, cb_id)
+        callback = get_callback_from_id(capture.session, cb_id)
         assert callback is not None
         callback()
-        render(ctx)
+        capture.render()
 
         # Now should be disabled at count=1
-        tree = serialize_node(ctx.root_element, ctx)
+        tree = serialize_node(capture.session.root_element, capture.session)
         dec_button = tree["children"][0]
         assert dec_button["props"]["disabled"] is True
         label = tree["children"][1]
@@ -531,7 +533,7 @@ class TestAsyncCallbackDetection:
 class TestAsyncCallbackExecution:
     """Tests for async callback execution."""
 
-    def test_async_callback_invocation(self) -> None:
+    def test_async_callback_invocation(self, capture_patches: "type[PatchCapture]") -> None:
         """Async callback can be invoked and returns awaitable."""
         import asyncio
 
@@ -545,15 +547,15 @@ class TestAsyncCallbackExecution:
         def App() -> None:
             Button(text="Async", on_click=async_handler)
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
-        assert ctx.root_element is not None
-        tree = serialize_node(ctx.root_element, ctx)
+        assert capture.session.root_element is not None
+        tree = serialize_node(capture.session.root_element, capture.session)
         button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
-        callback = get_callback_from_id(ctx, cb_id)
+        callback = get_callback_from_id(capture.session, cb_id)
         assert callback is not None
         assert inspect.iscoroutinefunction(callback)
 
@@ -565,7 +567,9 @@ class TestAsyncCallbackExecution:
 class TestCallbackErrorHandling:
     """Tests for callback error handling."""
 
-    def test_sync_callback_exception_propagates(self) -> None:
+    def test_sync_callback_exception_propagates(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """Sync callback exceptions propagate normally."""
 
         def failing_callback() -> None:
@@ -575,21 +579,21 @@ class TestCallbackErrorHandling:
         def App() -> None:
             Button(text="Fail", on_click=failing_callback)
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
-        assert ctx.root_element is not None
-        tree = serialize_node(ctx.root_element, ctx)
+        assert capture.session.root_element is not None
+        tree = serialize_node(capture.session.root_element, capture.session)
         button = tree["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
-        callback = get_callback_from_id(ctx, cb_id)
+        callback = get_callback_from_id(capture.session, cb_id)
         assert callback is not None
 
         with pytest.raises(ValueError, match="Test error"):
             callback()
 
-    def test_multiple_callbacks_independent(self) -> None:
+    def test_multiple_callbacks_independent(self, capture_patches: "type[PatchCapture]") -> None:
         """Multiple callbacks don't affect each other."""
         results: list[str] = []
 
@@ -604,18 +608,18 @@ class TestCallbackErrorHandling:
             Button(text="A", on_click=callback_a)
             Button(text="B", on_click=callback_b)
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
 
-        assert ctx.root_element is not None
-        tree = serialize_node(ctx.root_element, ctx)
+        assert capture.session.root_element is not None
+        tree = serialize_node(capture.session.root_element, capture.session)
         btn_a = tree["children"][0]
         btn_b = tree["children"][1]
         cb_id_a = btn_a["props"]["on_click"]["__callback__"]
         cb_id_b = btn_b["props"]["on_click"]["__callback__"]
 
-        get_callback_from_id(ctx, cb_id_a)()
-        get_callback_from_id(ctx, cb_id_b)()
-        get_callback_from_id(ctx, cb_id_a)()
+        get_callback_from_id(capture.session, cb_id_a)()
+        get_callback_from_id(capture.session, cb_id_b)()
+        get_callback_from_id(capture.session, cb_id_a)()
 
         assert results == ["a", "b", "a"]

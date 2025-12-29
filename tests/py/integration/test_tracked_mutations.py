@@ -4,16 +4,17 @@ from dataclasses import dataclass, field
 
 import pytest
 
+from tests.conftest import PatchCapture
 from trellis.core.components.composition import component
-from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
 
 
 class TestRenderTimeMutationGuard:
     """Tests for preventing mutations during render."""
 
-    def test_list_mutation_during_render_raises(self) -> None:
+    def test_list_mutation_during_render_raises(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """Mutating TrackedList during render raises RuntimeError."""
 
         @dataclass
@@ -27,11 +28,13 @@ class TestRenderTimeMutationGuard:
         def BadComponent() -> None:
             state.items.append(4)  # Mutation during render!
 
-        ctx = RenderSession(BadComponent)
+        capture = capture_patches(BadComponent)
         with pytest.raises(RuntimeError, match="Cannot modify tracked collection"):
-            render(ctx)
+            capture.render()
 
-    def test_dict_mutation_during_render_raises(self) -> None:
+    def test_dict_mutation_during_render_raises(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """Mutating TrackedDict during render raises RuntimeError."""
 
         @dataclass
@@ -45,11 +48,11 @@ class TestRenderTimeMutationGuard:
         def BadComponent() -> None:
             state.data["b"] = 2  # Mutation during render!
 
-        ctx = RenderSession(BadComponent)
+        capture = capture_patches(BadComponent)
         with pytest.raises(RuntimeError, match="Cannot modify tracked collection"):
-            render(ctx)
+            capture.render()
 
-    def test_set_mutation_during_render_raises(self) -> None:
+    def test_set_mutation_during_render_raises(self, capture_patches: "type[PatchCapture]") -> None:
         """Mutating TrackedSet during render raises RuntimeError."""
 
         @dataclass
@@ -63,15 +66,15 @@ class TestRenderTimeMutationGuard:
         def BadComponent() -> None:
             state.tags.add("b")  # Mutation during render!
 
-        ctx = RenderSession(BadComponent)
+        capture = capture_patches(BadComponent)
         with pytest.raises(RuntimeError, match="Cannot modify tracked collection"):
-            render(ctx)
+            capture.render()
 
 
 class TestNewTrackingMethods:
     """Tests for newly added tracking methods."""
 
-    def test_list_index_tracks_iter_key(self) -> None:
+    def test_list_index_tracks_iter_key(self, capture_patches: "type[PatchCapture]") -> None:
         """list.index() registers ITER_KEY dependency."""
 
         @dataclass
@@ -88,16 +91,16 @@ class TestNewTrackingMethods:
             renders[0] += 1
             _ = state.items.index("b")
 
-        ctx = RenderSession(IndexChecker)
-        render(ctx)
+        capture = capture_patches(IndexChecker)
+        capture.render()
         assert renders[0] == 1
 
         # Append should trigger re-render (ITER_KEY)
         state.items.append("d")
-        render(ctx)
+        capture.render()
         assert renders[0] == 2
 
-    def test_list_count_tracks_iter_key(self) -> None:
+    def test_list_count_tracks_iter_key(self, capture_patches: "type[PatchCapture]") -> None:
         """list.count() registers ITER_KEY dependency."""
 
         @dataclass
@@ -114,16 +117,16 @@ class TestNewTrackingMethods:
             renders[0] += 1
             _ = state.items.count("a")
 
-        ctx = RenderSession(CountChecker)
-        render(ctx)
+        capture = capture_patches(CountChecker)
+        capture.render()
         assert renders[0] == 1
 
         # Append should trigger re-render (ITER_KEY)
         state.items.append("a")
-        render(ctx)
+        capture.render()
         assert renders[0] == 2
 
-    def test_dict_contains_tracks_by_key(self) -> None:
+    def test_dict_contains_tracks_by_key(self, capture_patches: "type[PatchCapture]") -> None:
         """key in dict registers dependency on that key."""
 
         @dataclass
@@ -140,21 +143,21 @@ class TestNewTrackingMethods:
             renders[0] += 1
             _ = "y" in state.data  # Check for missing key
 
-        ctx = RenderSession(KeyChecker)
-        render(ctx)
+        capture = capture_patches(KeyChecker)
+        capture.render()
         assert renders[0] == 1
 
         # Adding "y" should trigger re-render (key dependency)
         state.data["y"] = 2
-        render(ctx)
+        capture.render()
         assert renders[0] == 2
 
         # Adding "z" should NOT trigger re-render
         state.data["z"] = 3
-        render(ctx)
+        capture.render()
         assert renders[0] == 2  # No change
 
-    def test_set_issubset_tracks_iter_key(self) -> None:
+    def test_set_issubset_tracks_iter_key(self, capture_patches: "type[PatchCapture]") -> None:
         """set.issubset() registers ITER_KEY dependency."""
 
         @dataclass
@@ -171,16 +174,16 @@ class TestNewTrackingMethods:
             renders[0] += 1
             _ = state.tags.issubset({"a", "b", "c"})
 
-        ctx = RenderSession(SubsetChecker)
-        render(ctx)
+        capture = capture_patches(SubsetChecker)
+        capture.render()
         assert renders[0] == 1
 
         # Adding item should trigger re-render (ITER_KEY)
         state.tags.add("c")
-        render(ctx)
+        capture.render()
         assert renders[0] == 2
 
-    def test_set_issuperset_tracks_iter_key(self) -> None:
+    def test_set_issuperset_tracks_iter_key(self, capture_patches: "type[PatchCapture]") -> None:
         """set.issuperset() registers ITER_KEY dependency."""
 
         @dataclass
@@ -197,16 +200,16 @@ class TestNewTrackingMethods:
             renders[0] += 1
             _ = state.tags.issuperset({"a", "b"})
 
-        ctx = RenderSession(SupersetChecker)
-        render(ctx)
+        capture = capture_patches(SupersetChecker)
+        capture.render()
         assert renders[0] == 1
 
         # Removing item should trigger re-render (ITER_KEY)
         state.tags.remove("c")
-        render(ctx)
+        capture.render()
         assert renders[0] == 2
 
-    def test_set_isdisjoint_tracks_iter_key(self) -> None:
+    def test_set_isdisjoint_tracks_iter_key(self, capture_patches: "type[PatchCapture]") -> None:
         """set.isdisjoint() registers ITER_KEY dependency."""
 
         @dataclass
@@ -223,20 +226,20 @@ class TestNewTrackingMethods:
             renders[0] += 1
             _ = state.tags.isdisjoint({"x", "y"})
 
-        ctx = RenderSession(DisjointChecker)
-        render(ctx)
+        capture = capture_patches(DisjointChecker)
+        capture.render()
         assert renders[0] == 1
 
         # Adding item should trigger re-render (ITER_KEY)
         state.tags.add("x")
-        render(ctx)
+        capture.render()
         assert renders[0] == 2
 
 
 class TestSliceOperations:
     """Tests for slice assignment and deletion."""
 
-    def test_list_slice_assignment(self) -> None:
+    def test_list_slice_assignment(self, capture_patches: "type[PatchCapture]") -> None:
         """Slice assignment marks old items and ITER_KEY dirty."""
 
         @dataclass
@@ -265,18 +268,18 @@ class TestSliceOperations:
             IterViewer()
             ItemAViewer()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
         assert iter_renders[0] == 1
         assert item_a_renders[0] == 1
 
         # Slice assignment in middle - should trigger iter, not item_a
         state.items[1:3] = ["x", "y", "z"]
-        render(ctx)
+        capture.render()
         assert iter_renders[0] == 2
         assert item_a_renders[0] == 1  # Not affected
 
-    def test_list_slice_deletion(self) -> None:
+    def test_list_slice_deletion(self, capture_patches: "type[PatchCapture]") -> None:
         """Slice deletion marks old items and ITER_KEY dirty."""
 
         @dataclass
@@ -294,12 +297,12 @@ class TestSliceOperations:
             for _ in state.items:
                 pass
 
-        ctx = RenderSession(IterViewer)
-        render(ctx)
+        capture = capture_patches(IterViewer)
+        capture.render()
         assert iter_renders[0] == 1
 
         del state.items[1:3]
-        render(ctx)
+        capture.render()
         assert iter_renders[0] == 2
         assert list(state.items) == ["a", "d"]
 
@@ -307,7 +310,7 @@ class TestSliceOperations:
 class TestReverseAndSort:
     """Tests for reverse() and sort() methods."""
 
-    def test_list_reverse_marks_iter_dirty(self) -> None:
+    def test_list_reverse_marks_iter_dirty(self, capture_patches: "type[PatchCapture]") -> None:
         """reverse() marks ITER_KEY dirty."""
 
         @dataclass
@@ -325,16 +328,16 @@ class TestReverseAndSort:
             for _ in state.items:
                 pass
 
-        ctx = RenderSession(IterViewer)
-        render(ctx)
+        capture = capture_patches(IterViewer)
+        capture.render()
         assert renders[0] == 1
 
         state.items.reverse()
-        render(ctx)
+        capture.render()
         assert renders[0] == 2
         assert list(state.items) == [3, 2, 1]
 
-    def test_list_sort_with_key(self) -> None:
+    def test_list_sort_with_key(self, capture_patches: "type[PatchCapture]") -> None:
         """sort() with key parameter works correctly."""
 
         @dataclass
@@ -352,13 +355,13 @@ class TestReverseAndSort:
             for _ in state.items:
                 pass
 
-        ctx = RenderSession(IterViewer)
-        render(ctx)
+        capture = capture_patches(IterViewer)
+        capture.render()
         assert renders[0] == 1
 
         # Sort by length
         state.items.sort(key=len)
-        render(ctx)
+        capture.render()
         assert renders[0] == 2
         assert list(state.items) == ["pie", "zoo", "apple"]
 
@@ -366,7 +369,7 @@ class TestReverseAndSort:
 class TestPopWithIndex:
     """Tests for pop() with specific index."""
 
-    def test_list_pop_with_index(self) -> None:
+    def test_list_pop_with_index(self, capture_patches: "type[PatchCapture]") -> None:
         """pop(i) marks the correct item dirty."""
 
         @dataclass
@@ -395,15 +398,15 @@ class TestPopWithIndex:
             ItemBViewer()
             IterViewer()
 
-        ctx = RenderSession(App)
-        render(ctx)
+        capture = capture_patches(App)
+        capture.render()
         assert item_b_renders[0] == 1
         assert iter_renders[0] == 1
 
         # Pop item at index 1 ("b")
         popped = state.items.pop(1)
         assert popped == "b"
-        render(ctx)
+        capture.render()
         assert item_b_renders[0] == 2  # Was watching "b"
         assert iter_renders[0] == 2  # Length changed
 
@@ -411,7 +414,7 @@ class TestPopWithIndex:
 class TestInPlaceOperators:
     """Tests for in-place operators."""
 
-    def test_list_iadd(self) -> None:
+    def test_list_iadd(self, capture_patches: "type[PatchCapture]") -> None:
         """list += triggers ITER_KEY."""
 
         @dataclass
@@ -429,16 +432,16 @@ class TestInPlaceOperators:
             for _ in state.items:
                 pass
 
-        ctx = RenderSession(IterViewer)
-        render(ctx)
+        capture = capture_patches(IterViewer)
+        capture.render()
         assert renders[0] == 1
 
         state.items += [3, 4]
-        render(ctx)
+        capture.render()
         assert renders[0] == 2
         assert list(state.items) == [1, 2, 3, 4]
 
-    def test_list_imul(self) -> None:
+    def test_list_imul(self, capture_patches: "type[PatchCapture]") -> None:
         """list *= triggers ITER_KEY."""
 
         @dataclass
@@ -456,16 +459,16 @@ class TestInPlaceOperators:
             for _ in state.items:
                 pass
 
-        ctx = RenderSession(IterViewer)
-        render(ctx)
+        capture = capture_patches(IterViewer)
+        capture.render()
         assert renders[0] == 1
 
         state.items *= 2
-        render(ctx)
+        capture.render()
         assert renders[0] == 2
         assert list(state.items) == [1, 2, 1, 2]
 
-    def test_set_ior(self) -> None:
+    def test_set_ior(self, capture_patches: "type[PatchCapture]") -> None:
         """set |= triggers ITER_KEY."""
 
         @dataclass
@@ -483,15 +486,15 @@ class TestInPlaceOperators:
             for _ in state.tags:
                 pass
 
-        ctx = RenderSession(IterViewer)
-        render(ctx)
+        capture = capture_patches(IterViewer)
+        capture.render()
         assert renders[0] == 1
 
         state.tags |= {"c", "d"}
-        render(ctx)
+        capture.render()
         assert renders[0] == 2
 
-    def test_set_iand(self) -> None:
+    def test_set_iand(self, capture_patches: "type[PatchCapture]") -> None:
         """set &= triggers ITER_KEY."""
 
         @dataclass
@@ -509,12 +512,12 @@ class TestInPlaceOperators:
             for _ in state.tags:
                 pass
 
-        ctx = RenderSession(IterViewer)
-        render(ctx)
+        capture = capture_patches(IterViewer)
+        capture.render()
         assert renders[0] == 1
 
         state.tags &= {"a", "b"}
-        render(ctx)
+        capture.render()
         assert renders[0] == 2
         assert state.tags == {"a", "b"}
 
@@ -522,7 +525,7 @@ class TestInPlaceOperators:
 class TestNegativeIndices:
     """Tests for negative indices."""
 
-    def test_list_negative_index_getitem(self) -> None:
+    def test_list_negative_index_getitem(self, capture_patches: "type[PatchCapture]") -> None:
         """Negative index access works correctly."""
 
         @dataclass
@@ -539,11 +542,11 @@ class TestNegativeIndices:
             renders[0] += 1
             _ = state.items[-1]  # Read last item
 
-        ctx = RenderSession(LastItemViewer)
-        render(ctx)
+        capture = capture_patches(LastItemViewer)
+        capture.render()
         assert renders[0] == 1
 
         # Modify last item
         state.items[-1] = "z"
-        render(ctx)
+        capture.render()
         assert renders[0] == 2

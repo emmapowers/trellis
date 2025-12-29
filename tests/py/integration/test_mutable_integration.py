@@ -4,9 +4,9 @@ from dataclasses import dataclass
 
 import pytest
 
+from tests.conftest import PatchCapture
 from tests.helpers import render_to_tree
 from trellis.core.components.composition import component
-from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.mutable import Mutable, callback, mutable
 from trellis.core.state.stateful import Stateful
@@ -22,7 +22,7 @@ def get_callback_from_id(ctx: RenderSession, cb_id: str):
 class TestMutableFunction:
     """Tests for the mutable() function."""
 
-    def test_mutable_captures_property_access(self) -> None:
+    def test_mutable_captures_property_access(self, capture_patches: "type[PatchCapture]") -> None:
         """mutable() captures the reference from a Stateful property access."""
 
         @dataclass
@@ -37,8 +37,8 @@ class TestMutableFunction:
             m = mutable(state.name)
             captured.append(m)
 
-        ctx = RenderSession(TestComponent)
-        render(ctx)
+        capture = capture_patches(TestComponent)
+        capture.render()
 
         assert len(captured) == 1
         assert captured[0].value == "hello"
@@ -54,7 +54,9 @@ class TestMutableFunction:
         with pytest.raises(TypeError, match="must be called immediately after"):
             mutable(state.value)
 
-    def test_mutable_with_non_property_value_raises(self) -> None:
+    def test_mutable_with_non_property_value_raises(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """mutable() raises TypeError if value doesn't match last access."""
 
         @dataclass
@@ -67,11 +69,13 @@ class TestMutableFunction:
             _ = state.value  # Access property
             mutable(42)  # But pass different value
 
-        ctx = RenderSession(TestComponent)
+        capture = capture_patches(TestComponent)
         with pytest.raises(TypeError, match="must be called immediately after"):
-            render(ctx)
+            capture.render()
 
-    def test_mutable_with_plain_variable_raises(self) -> None:
+    def test_mutable_with_plain_variable_raises(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """mutable() raises TypeError with plain variable (no property access)."""
 
         @component
@@ -79,11 +83,11 @@ class TestMutableFunction:
             x = 42
             mutable(x)
 
-        ctx = RenderSession(TestComponent)
+        capture = capture_patches(TestComponent)
         with pytest.raises(TypeError, match="must be called immediately after"):
-            render(ctx)
+            capture.render()
 
-    def test_mutable_clears_after_capture(self) -> None:
+    def test_mutable_clears_after_capture(self, capture_patches: "type[PatchCapture]") -> None:
         """mutable() clears the recorded access so it can't be reused."""
 
         @dataclass
@@ -101,11 +105,11 @@ class TestMutableFunction:
             # Now _last_property_access should be None
             mutable(val)  # Should fail - no recorded access
 
-        ctx = RenderSession(TestComponent)
+        capture = capture_patches(TestComponent)
         with pytest.raises(TypeError, match="must be called immediately after"):
-            render(ctx)
+            capture.render()
 
-    def test_mutable_works_with_new_access(self) -> None:
+    def test_mutable_works_with_new_access(self, capture_patches: "type[PatchCapture]") -> None:
         """mutable() works if you access the property again."""
 
         @dataclass
@@ -120,8 +124,8 @@ class TestMutableFunction:
             captured.append(mutable(state.value))  # First capture
             captured.append(mutable(state.value))  # New access, new capture
 
-        ctx = RenderSession(TestComponent)
-        render(ctx)
+        capture = capture_patches(TestComponent)
+        capture.render()
 
         assert len(captured) == 2
         assert captured[0] == captured[1]  # Same reference
@@ -395,7 +399,7 @@ class TestMutableWidgets:
 class TestCallbackFunction:
     """Tests for the callback() function."""
 
-    def test_callback_captures_property_access(self) -> None:
+    def test_callback_captures_property_access(self, capture_patches: "type[PatchCapture]") -> None:
         """callback() captures the reference from a Stateful property access."""
 
         @dataclass
@@ -414,8 +418,8 @@ class TestCallbackFunction:
             m = callback(state.name, custom_handler)
             captured.append(m)
 
-        ctx = RenderSession(TestComponent)
-        render(ctx)
+        capture = capture_patches(TestComponent)
+        capture.render()
 
         assert len(captured) == 1
         assert captured[0].value == "hello"
@@ -432,7 +436,9 @@ class TestCallbackFunction:
         with pytest.raises(TypeError, match="must be called immediately after"):
             callback(state.value, lambda v: None)
 
-    def test_callback_with_non_property_value_raises(self) -> None:
+    def test_callback_with_non_property_value_raises(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """callback() raises TypeError if value doesn't match last access."""
 
         @dataclass
@@ -445,9 +451,9 @@ class TestCallbackFunction:
             _ = state.value  # Access property
             callback(42, lambda v: None)  # But pass different value
 
-        ctx = RenderSession(TestComponent)
+        capture = capture_patches(TestComponent)
         with pytest.raises(TypeError, match="must be called immediately after"):
-            render(ctx)
+            capture.render()
 
     def test_callback_serializes_with_custom_handler(self) -> None:
         """callback() serializes to __mutable__ format with custom handler."""
@@ -529,7 +535,9 @@ class TestMutableRerender:
     This is critical for two-way data binding to work correctly.
     """
 
-    def test_checkbox_rerender_sends_updated_value(self) -> None:
+    def test_checkbox_rerender_sends_updated_value(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """After mutable callback changes state, re-render should send update patch.
 
         This test reproduces a bug where:
@@ -557,28 +565,28 @@ class TestMutableRerender:
             node = w.Checkbox(checked=mutable(state.checked), label="Test")
             checkbox_id.append(node.id)
 
-        ctx = RenderSession(TestComponent)
+        capture = capture_patches(TestComponent)
 
         # Initial render
-        initial_patches = render(ctx)
+        initial_patches = capture.render()
         assert len(initial_patches) > 0
 
         # Get the checkbox's initial serialized value
-        checkbox_node = ctx.elements.get(checkbox_id[0])
+        checkbox_node = capture.session.elements.get(checkbox_id[0])
         assert checkbox_node is not None
-        initial_serialized = serialize_node(checkbox_node, ctx)
+        initial_serialized = serialize_node(checkbox_node, capture.session)
         assert initial_serialized["props"]["checked"]["value"] is False
 
         # Simulate user clicking checkbox - invoke the mutable callback
         checked_prop = initial_serialized["props"]["checked"]
-        cb = get_callback_from_id(ctx, checked_prop["__mutable__"])
+        cb = get_callback_from_id(capture.session, checked_prop["__mutable__"])
         cb(True)
 
         # Verify state changed
         assert state_ref[0].checked is True
 
         # Re-render should produce an update patch for the checkbox
-        update_patches = render(ctx)
+        update_patches = capture.render()
 
         # Find the update patch for the checkbox
         checkbox_update = None
@@ -597,7 +605,9 @@ class TestMutableRerender:
         assert isinstance(checked_mutable, Mutable)
         assert checked_mutable.value is True
 
-    def test_text_input_rerender_sends_updated_value(self) -> None:
+    def test_text_input_rerender_sends_updated_value(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """After mutable callback changes state, TextInput re-render should send update."""
         from trellis.core.rendering.patches import RenderUpdatePatch
         from trellis.platforms.common.serialization import serialize_node
@@ -618,25 +628,25 @@ class TestMutableRerender:
             node = w.TextInput(value=mutable(state.text))
             input_id.append(node.id)
 
-        ctx = RenderSession(TestComponent)
+        capture = capture_patches(TestComponent)
 
         # Initial render
-        render(ctx)
+        capture.render()
 
         # Get initial serialized value
-        input_node = ctx.elements.get(input_id[0])
-        initial_serialized = serialize_node(input_node, ctx)
+        input_node = capture.session.elements.get(input_id[0])
+        initial_serialized = serialize_node(input_node, capture.session)
         assert initial_serialized["props"]["value"]["value"] == "initial"
 
         # Invoke mutable callback
         value_prop = initial_serialized["props"]["value"]
-        cb = get_callback_from_id(ctx, value_prop["__mutable__"])
+        cb = get_callback_from_id(capture.session, value_prop["__mutable__"])
         cb("updated")
 
         assert state_ref[0].text == "updated"
 
         # Re-render should produce update patch
-        update_patches = render(ctx)
+        update_patches = capture.render()
 
         input_update = None
         for patch in update_patches:
@@ -653,7 +663,9 @@ class TestMutableRerender:
         assert isinstance(value_mutable, Mutable)
         assert value_mutable.value == "updated"
 
-    def test_slider_rerender_sends_updated_value(self) -> None:
+    def test_slider_rerender_sends_updated_value(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
         """After mutable callback changes state, Slider re-render should send update."""
         from trellis.core.rendering.patches import RenderUpdatePatch
         from trellis.platforms.common.serialization import serialize_node
@@ -674,25 +686,25 @@ class TestMutableRerender:
             node = w.Slider(value=mutable(state.value), min=0, max=100)
             slider_id.append(node.id)
 
-        ctx = RenderSession(TestComponent)
+        capture = capture_patches(TestComponent)
 
         # Initial render
-        render(ctx)
+        capture.render()
 
         # Get initial serialized value
-        slider_node = ctx.elements.get(slider_id[0])
-        initial_serialized = serialize_node(slider_node, ctx)
+        slider_node = capture.session.elements.get(slider_id[0])
+        initial_serialized = serialize_node(slider_node, capture.session)
         assert initial_serialized["props"]["value"]["value"] == 50.0
 
         # Invoke mutable callback
         value_prop = initial_serialized["props"]["value"]
-        cb = get_callback_from_id(ctx, value_prop["__mutable__"])
+        cb = get_callback_from_id(capture.session, value_prop["__mutable__"])
         cb(75.0)
 
         assert state_ref[0].value == 75.0
 
         # Re-render should produce update patch
-        update_patches = render(ctx)
+        update_patches = capture.render()
 
         slider_update = None
         for patch in update_patches:
