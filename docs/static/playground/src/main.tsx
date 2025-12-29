@@ -20,6 +20,7 @@ declare const monaco: MonacoNamespace;
 interface MonacoNamespace {
   editor: {
     create(container: HTMLElement, options: MonacoEditorOptions): MonacoEditor;
+    setTheme(themeName: string): void;
   };
 }
 
@@ -104,12 +105,51 @@ function getCodeFromUrl(): string | null {
   return null;
 }
 
+type ThemeMode = "system" | "light" | "dark";
+
+function getSystemTheme(): "light" | "dark" {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function resolveTheme(mode: ThemeMode): "light" | "dark" {
+  return mode === "system" ? getSystemTheme() : mode;
+}
+
+const THEME_ICONS: Record<ThemeMode, string> = {
+  system: "💻",
+  light: "☀️",
+  dark: "🌙",
+};
+
+function applyTheme(mode: ThemeMode): void {
+  const resolved = resolveTheme(mode);
+  // Apply to body (playground UI)
+  document.body.dataset.theme = resolved;
+  // Apply to preview container (Trellis components)
+  const preview = document.getElementById("preview");
+  if (preview) {
+    preview.dataset.theme = resolved;
+  }
+  // Update theme toggle button icon
+  const toggleBtn = document.getElementById("theme-toggle");
+  if (toggleBtn) {
+    toggleBtn.textContent = THEME_ICONS[mode];
+    toggleBtn.title = `Theme: ${mode}`;
+  }
+}
+
+function cycleTheme(current: ThemeMode): ThemeMode {
+  const order: ThemeMode[] = ["system", "light", "dark"];
+  const idx = order.indexOf(current);
+  return order[(idx + 1) % order.length];
+}
+
 function Playground(): React.ReactElement {
   const [code, setCode] = useState(DEFAULT_CODE);
   const [runId, setRunId] = useState(0);
-  const [status, setStatus] = useState("Initializing...");
   const [error, setError] = useState<string | null>(null);
   const [editorReady, setEditorReady] = useState(false);
+  const [themeMode, setThemeMode] = useState<ThemeMode>("system");
   const editorRef = useRef<MonacoEditor | null>(null);
 
   // Initialize Monaco editor
@@ -122,7 +162,10 @@ function Playground(): React.ReactElement {
 
     require(["vs/editor/editor.main"], function () {
       const container = document.getElementById("editor-container")!;
-      container.innerHTML = "";
+      // Clear loading spinner
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
 
       // Check for code in URL hash
       const urlCode = getCodeFromUrl();
@@ -131,10 +174,11 @@ function Playground(): React.ReactElement {
         setCode(urlCode);
       }
 
+      const resolvedTheme = getSystemTheme();
       editorRef.current = monaco.editor.create(container, {
         value: initialCode,
         language: "python",
-        theme: "vs-light",
+        theme: resolvedTheme === "dark" ? "vs-dark" : "vs-light",
         minimap: { enabled: false },
         fontSize: 14,
         lineNumbers: "on",
@@ -142,6 +186,9 @@ function Playground(): React.ReactElement {
         automaticLayout: true,
         tabSize: 4,
       });
+
+      // Apply initial theme to DOM (starts in system mode)
+      applyTheme("system");
 
       setEditorReady(true);
     });
@@ -183,13 +230,40 @@ function Playground(): React.ReactElement {
     }
   }, [editorReady, handleRun]);
 
-  // Update status display
+  // Handle theme toggle button
   useEffect(() => {
-    const statusEl = document.getElementById("status");
-    if (statusEl) {
-      statusEl.textContent = status;
+    const toggleBtn = document.getElementById("theme-toggle");
+    if (toggleBtn) {
+      toggleBtn.onclick = () => {
+        setThemeMode((current) => cycleTheme(current));
+      };
     }
-  }, [status]);
+  }, []);
+
+  // Apply theme changes and update Monaco editor
+  useEffect(() => {
+    applyTheme(themeMode);
+    const resolved = resolveTheme(themeMode);
+    if (editorReady) {
+      monaco.editor.setTheme(resolved === "dark" ? "vs-dark" : "vs-light");
+    }
+  }, [themeMode, editorReady]);
+
+  // Listen for system theme changes (only affects "system" mode)
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = () => {
+      // Re-apply theme when system preference changes (will only matter if in "system" mode)
+      if (themeMode === "system") {
+        applyTheme("system");
+        if (editorReady) {
+          monaco.editor.setTheme(getSystemTheme() === "dark" ? "vs-dark" : "vs-light");
+        }
+      }
+    };
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [themeMode, editorReady]);
 
   // Update error display
   useEffect(() => {
@@ -205,7 +279,11 @@ function Playground(): React.ReactElement {
   }, [error]);
 
   if (runId === 0) {
-    return <div style={{ padding: "20px", color: "#64748b" }}>Click Run to start...</div>;
+    return (
+      <div style={{ padding: "20px", color: "var(--trellis-text-secondary)" }}>
+        Click Run to start...
+      </div>
+    );
   }
 
   // Wrap the user code with boilerplate
@@ -215,7 +293,6 @@ function Playground(): React.ReactElement {
     <TrellisApp
       key={runId}
       source={{ type: "code", code: wrappedCode }}
-      onStatusChange={setStatus}
       errorComponent={(msg) => {
         setError(msg);
         return null;
