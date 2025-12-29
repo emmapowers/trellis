@@ -39,9 +39,9 @@ const sizeConfig = {
   },
 };
 
-// Tab is now just a marker component - Tabs extracts its props
-export function Tab(_props: TabProps): React.ReactElement | null {
-  return null;
+// Tab passes through its children so they render via NodeRenderer in Trellis
+export function Tab({ children }: TabProps): React.ReactElement {
+  return <>{children}</>;
 }
 
 function TabButton({
@@ -182,7 +182,28 @@ export function Tabs({
   const tabData: { id: string; label: string; icon?: string; disabled?: boolean; content?: React.ReactNode }[] = [];
 
   Children.forEach(children, (child) => {
-    if (isValidElement(child) && (child.type as any) === Tab) {
+    if (!isValidElement(child)) return;
+
+    // Check for ChildWrapper metadata (from TreeRenderer)
+    const childProps = child.props as {
+      __componentType__?: string;
+      __componentProps__?: TabProps;
+      children?: React.ReactNode;
+    };
+    const componentType = childProps.__componentType__;
+    const componentProps = childProps.__componentProps__;
+
+    if (componentType === "Tab" && componentProps) {
+      // Wrapped in ChildWrapper - get props from __componentProps__, content from children
+      tabData.push({
+        id: componentProps.id,
+        label: componentProps.label,
+        icon: componentProps.icon,
+        disabled: componentProps.disabled,
+        content: childProps.children,
+      });
+    } else if ((child.type as any) === Tab) {
+      // Fallback for direct usage (non-Trellis rendering)
       const tabProps = child.props as TabProps;
       tabData.push({
         id: tabProps.id,
