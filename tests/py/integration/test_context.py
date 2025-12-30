@@ -1,0 +1,527 @@
+"""Tests for Stateful context API."""
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+import pytest
+
+from trellis.core.components.composition import component
+from trellis.core.state.stateful import Stateful
+
+if TYPE_CHECKING:
+    from tests.conftest import RenderResult
+
+
+class TestContextAPI:
+    """Tests for the context API (with state: / from_context())."""
+
+    def test_context_requires_render_context(self) -> None:
+        """Context API raises RuntimeError outside render context."""
+
+        class AppState(Stateful):
+            name: str = "test"
+
+        state = AppState()
+
+        with pytest.raises(RuntimeError, match="outside of render context"):
+            with state:
+                pass
+
+    def test_from_context_requires_render_context(self) -> None:
+        """from_context() raises RuntimeError outside render context."""
+
+        class MissingState(Stateful):
+            pass
+
+        with pytest.raises(RuntimeError, match="outside of render context"):
+            MissingState.from_context()
+
+    def test_context_basic_push_pop(self, rendered: "type[RenderResult]") -> None:
+        """Basic context push/pop with 'with' statement inside render."""
+        captured: list[str] = []
+
+        class AppState(Stateful):
+            name: str = "alice"  # Use class default
+
+        @component
+        def Child() -> None:
+            retrieved = AppState.from_context()
+            captured.append(retrieved.name)
+
+        @component
+        def Parent() -> None:
+            state = AppState()
+            with state:
+                Child()
+
+        rendered(Parent)
+
+        assert captured == ["alice"]
+
+    def test_context_nested_same_type(self, rendered: "type[RenderResult]") -> None:
+        """Nested contexts of same type - inner shadows outer in child components."""
+        captured: list[tuple[str, int]] = []
+
+        # Use separate classes to represent different context levels
+        class OuterState(Stateful):
+            level: int = 1
+
+        class InnerState(Stateful):
+            level: int = 2
+
+        @component
+        def DeepChild() -> None:
+            # DeepChild finds InnerState from MiddleWithInner
+            captured.append(("DeepChild", InnerState.from_context().level))
+
+        @component
+        def MiddleWithInner() -> None:
+            inner = InnerState()
+            with inner:
+                DeepChild()
+            captured.append(("MiddleWithInner", InnerState.from_context().level))
+
+        @component
+        def OuterOnlyChild() -> None:
+            # This component finds OuterState from Parent
+            captured.append(("OuterOnlyChild", OuterState.from_context().level))
+
+        @component
+        def Parent() -> None:
+            outer = OuterState()
+            with outer:
+                captured.append(("Parent", OuterState.from_context().level))
+                MiddleWithInner()
+                OuterOnlyChild()
+
+        rendered(Parent)
+
+        # Verify all components found the correct context values
+        # (execution order between siblings is non-deterministic due to set iteration)
+        assert ("Parent", 1) in captured
+        assert ("MiddleWithInner", 2) in captured
+        assert ("OuterOnlyChild", 1) in captured
+        assert ("DeepChild", 2) in captured
+        assert len(captured) == 4
+
+    def test_context_different_types(self, rendered: "type[RenderResult]") -> None:
+        """Different state types have separate context stacks."""
+        captured: list[tuple[str, bool]] = []
+
+        class UserState(Stateful):
+            name: str = "bob"  # Use class default
+
+        class ThemeState(Stateful):
+            dark: bool = True  # Use class default
+
+        @component
+        def Child() -> None:
+            captured.append((UserState.from_context().name, ThemeState.from_context().dark))
+
+        @component
+        def Parent() -> None:
+            user = UserState()
+            theme = ThemeState()
+            with user:
+                with theme:
+                    Child()
+
+        rendered(Parent)
+
+        assert captured == [("bob", True)]
+
+    def test_context_not_found_raises(self, rendered: "type[RenderResult]") -> None:
+        """from_context() raises LookupError when no context provided."""
+
+        class MissingState(Stateful):
+            pass
+
+        @component
+        def Child() -> None:
+            MissingState.from_context()
+
+        @component
+        def Parent() -> None:
+            Child()
+
+        with pytest.raises(LookupError, match="No MissingState found in context"):
+            rendered(Parent)
+
+    def test_context_with_default_returns_none(self, rendered: "type[RenderResult]") -> None:
+        """from_context(default=None) returns None when no context provided."""
+        captured: list[Stateful | None] = []
+
+        class OptionalState(Stateful):
+            pass
+
+        @component
+        def Child() -> None:
+            result = OptionalState.from_context(default=None)
+            captured.append(result)
+
+        @component
+        def Parent() -> None:
+            Child()
+
+        rendered(Parent)
+
+        assert captured == [None]
+
+    def test_context_with_default_returns_found(self, rendered: "type[RenderResult]") -> None:
+        """from_context(default=None) returns found context when available."""
+        captured: list[Stateful | None] = []
+
+        class FoundState(Stateful):
+            value: str = "found"
+
+        @component
+        def Child() -> None:
+            result = FoundState.from_context(default=None)
+            captured.append(result)
+
+        @component
+        def Parent() -> None:
+            state = FoundState()
+            with state:
+                Child()
+
+        rendered(Parent)
+
+        assert len(captured) == 1
+        assert captured[0] is not None
+        assert captured[0].value == "found"
+
+    def test_context_with_render(self, rendered: "type[RenderResult]") -> None:
+        """Context works during component rendering."""
+
+        class SharedState(Stateful):
+            message: str = "hello from parent"  # Use class default
+
+        captured: list[str] = []
+
+        @component
+        def Child() -> None:
+            state = SharedState.from_context()
+            captured.append(state.message)
+
+        @component
+        def Parent() -> None:
+            shared = SharedState()
+            with shared:
+                Child()
+
+        rendered(Parent)
+
+        assert captured == ["hello from parent"]
+
+    def test_context_deeply_nested_components(self, rendered: "type[RenderResult]") -> None:
+        """Context accessible through deep component nesting."""
+
+        class AppState(Stateful):
+            value: str = "deep"  # Use class default
+
+        captured: list[str] = []
+
+        @component
+        def DeepChild() -> None:
+            state = AppState.from_context()
+            captured.append(state.value)
+
+        @component
+        def Middle() -> None:
+            DeepChild()
+
+        @component
+        def Wrapper() -> None:
+            Middle()
+
+        @component
+        def App() -> None:
+            app_state = AppState()
+            with app_state:
+                Wrapper()
+
+        rendered(App)
+
+        assert captured == ["deep"]
+
+    def test_context_as_variable(self, rendered: "type[RenderResult]") -> None:
+        """'with state as var' pattern works."""
+        captured: list[bool] = []
+
+        class ConfigState(Stateful):
+            debug: bool = True  # Use class default
+
+        @component
+        def Child() -> None:
+            captured.append(ConfigState.from_context().debug)
+
+        @component
+        def Parent() -> None:
+            config_state = ConfigState()
+            with config_state as config:
+                assert config.debug is True
+                Child()
+
+        rendered(Parent)
+
+        assert captured == [True]
+
+    def test_context_exception_safety(self, rendered: "type[RenderResult]") -> None:
+        """Context is still accessible in except block during render."""
+        captured: list[bool] = []
+
+        class TestState(Stateful):
+            pass
+
+        @component
+        def Parent() -> None:
+            state = TestState()
+            with state:
+                captured.append(TestState.from_context() is state)
+                # Context persists on node, not a stack, so no cleanup needed
+
+        rendered(Parent)
+
+        assert captured == [True]
+
+    def test_context_multiple_instances_different_subclasses(
+        self, rendered: "type[RenderResult]"
+    ) -> None:
+        """Subclasses have their own context stacks."""
+        captured: list[tuple[int, int, str]] = []
+
+        class BaseState(Stateful):
+            base_val: int = 1  # Use class default
+
+        class DerivedState(Stateful):
+            base_val: int = 2  # Use class default
+            derived_val: str = "hello"  # Use class default
+
+        @component
+        def Child() -> None:
+            base = BaseState.from_context()
+            derived = DerivedState.from_context()
+            captured.append((base.base_val, derived.base_val, derived.derived_val))
+
+        @component
+        def Parent() -> None:
+            base = BaseState()
+            derived = DerivedState()
+            with base:
+                with derived:
+                    Child()
+
+        rendered(Parent)
+
+        assert captured == [(1, 2, "hello")]
+
+    def test_context_reuse_same_instance(self, rendered: "type[RenderResult]") -> None:
+        """Same instance can be used in context multiple times."""
+        captured: list[int] = []
+
+        class CountState(Stateful):
+            count: int = 10  # Use constructor default
+
+        @component
+        def Child() -> None:
+            captured.append(CountState.from_context().count)
+
+        @component
+        def Parent() -> None:
+            # Same instance used in context multiple times
+            state = CountState()
+            with state:
+                Child()  # First child
+            with state:
+                Child()  # Second child - same instance
+
+        rendered(Parent)
+
+        # Both children see the same state instance
+        assert captured == [10, 10]
+
+    def test_context_state_modification_during_render_raises(
+        self, rendered: "type[RenderResult]"
+    ) -> None:
+        """Modifying state during render raises RuntimeError."""
+
+        @dataclass
+        class ModState(Stateful):
+            value: int = 1
+
+        @component
+        def Parent() -> None:
+            state = ModState()  # value=1 is now in instance __dict__
+            state.value = 2  # Try to modify existing value - should raise
+
+        with pytest.raises(RuntimeError, match="Cannot modify state"):
+            rendered(Parent)
+
+
+class TestContextEdgeCases:
+    """Tests for context edge cases and error messages."""
+
+    def test_context_same_type_shadowing(self, rendered: "type[RenderResult]") -> None:
+        """Inner context of same type shadows outer at nested level."""
+        captured: list[str] = []
+
+        @dataclass
+        class CounterState(Stateful):
+            name: str = "default"
+
+        @component
+        def Leaf() -> None:
+            captured.append(CounterState.from_context().name)
+
+        @component
+        def Inner() -> None:
+            inner_state = CounterState(name="inner")
+            with inner_state:
+                Leaf()
+
+        @component
+        def Parent() -> None:
+            outer_state = CounterState(name="outer")
+            with outer_state:
+                Leaf()  # Should see "outer"
+                Inner()  # Leaf inside should see "inner"
+
+        rendered(Parent)
+
+        assert "outer" in captured
+        assert "inner" in captured
+
+    def test_context_with_custom_default(self, rendered: "type[RenderResult]") -> None:
+        """from_context() with custom default value returns default when not found."""
+        captured: list[int] = []
+
+        @dataclass
+        class MissingState(Stateful):
+            value: int = 0
+
+        default_instance = MissingState(value=42)
+
+        @component
+        def Child() -> None:
+            result = MissingState.from_context(default=default_instance)
+            captured.append(result.value)
+
+        @component
+        def Parent() -> None:
+            Child()  # No MissingState provided
+
+        rendered(Parent)
+
+        assert captured == [42]
+
+    def test_context_error_message_includes_class_name(
+        self, rendered: "type[RenderResult]"
+    ) -> None:
+        """Error message for missing context includes the class name."""
+
+        class MyCustomStatefulClass(Stateful):
+            pass
+
+        @component
+        def Child() -> None:
+            MyCustomStatefulClass.from_context()
+
+        @component
+        def Parent() -> None:
+            Child()
+
+        with pytest.raises(LookupError) as exc_info:
+            rendered(Parent)
+
+        # Verify error message is helpful
+        assert "MyCustomStatefulClass" in str(exc_info.value)
+        assert "with" in str(exc_info.value)  # Suggests the fix
+
+    def test_context_runtime_error_message_includes_class_name(self) -> None:
+        """RuntimeError message for outside-render includes class name."""
+
+        class OutsideRenderState(Stateful):
+            pass
+
+        state = OutsideRenderState()
+
+        with pytest.raises(RuntimeError) as exc_info:
+            with state:
+                pass
+
+        # Verify error message is helpful
+        assert "OutsideRenderState" in str(exc_info.value)
+        assert "render context" in str(exc_info.value)
+
+    def test_from_context_outside_render_error_message(self) -> None:
+        """from_context() outside render has helpful error message."""
+
+        class CalledOutsideState(Stateful):
+            pass
+
+        with pytest.raises(RuntimeError) as exc_info:
+            CalledOutsideState.from_context()
+
+        # Verify error message is helpful
+        assert "CalledOutsideState" in str(exc_info.value)
+        assert "from_context" in str(exc_info.value)
+
+    def test_context_available_after_conditional_branch(
+        self, rendered: "type[RenderResult]"
+    ) -> None:
+        """Context is available in subsequent children after conditional."""
+        captured: list[str] = []
+
+        class SafeState(Stateful):
+            value: str = "safe"
+
+        @component
+        def SafeChild() -> None:
+            captured.append(SafeState.from_context().value)
+
+        @component
+        def ConditionalChild() -> None:
+            pass  # Does nothing
+
+        @component
+        def Parent() -> None:
+            state = SafeState()
+            with state:
+                SafeChild()  # First access
+                ConditionalChild()  # Intermediate child
+                SafeChild()  # Second access after conditional
+
+        rendered(Parent)
+
+        # Both SafeChild calls should have accessed context
+        assert captured == ["safe", "safe"]
+
+    def test_context_sibling_components_isolated(self, rendered: "type[RenderResult]") -> None:
+        """Context provided in one sibling doesn't leak to another."""
+        captured: list[str | None] = []
+
+        class SiblingState(Stateful):
+            name: str = "sibling"
+
+        @component
+        def ProviderChild() -> None:
+            state = SiblingState()
+            with state:
+                pass  # Provides context to self, not siblings
+
+        @component
+        def ConsumerChild() -> None:
+            # Should NOT find SiblingState - not an ancestor
+            result = SiblingState.from_context(default=None)
+            captured.append(result.name if result else None)
+
+        @component
+        def Parent() -> None:
+            ProviderChild()
+            ConsumerChild()
+
+        rendered(Parent)
+
+        # Consumer should not find sibling's context
+        assert captured == [None]

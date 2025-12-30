@@ -31,26 +31,25 @@ ci = []
 
 [tasks]
 # Formatting
-fmt = { cmd = "black src", description = "Format code with black" }
-fmt-check = { cmd = "black --check src", description = "Check black formatting" }
-ruff-fix = { cmd = "ruff check --fix src", depends-on = ["fmt"], description = "Run ruff with auto-fix" }
-ruff-check = { cmd = "ruff check src", description = "Check ruff linting" }
+fmt = { cmd = "black src tests", description = "Format code with black" }
+fmt-check = { cmd = "black --check src tests", description = "Check black formatting" }
+ruff-fix = { cmd = "ruff check --fix src tests", depends-on = ["fmt"], description = "Run ruff with auto-fix" }
+ruff-check = { cmd = "ruff check src tests", description = "Check ruff linting" }
 
 # Type checking
 mypy = { cmd = "dmypy run src examples", description = "Run mypy (daemon)" }
 mypy-ci = { cmd = "mypy src examples", description = "Run mypy (full check)" }
 
 # Testing
-test = { cmd = "pytest", description = "Run unit tests" }
-test-cov = { cmd = "pytest --cov=src/trellis --cov-report=term-missing", description = "Run unit tests with coverage" }
-test-integration = { cmd = "pytest tests/integration -vv", description = "Run integration tests (requires network)" }
+test = { cmd = "pytest tests/py", description = "Run Python tests" }
+test-cov = { cmd = "pytest tests/py --cov=src/trellis --cov-report=term-missing", description = "Run Python tests with coverage" }
 install-js-test-deps = { cmd = "npm install", cwd = "tests/js", description = "Install JavaScript test dependencies" }
 test-js = { cmd = "npm test", cwd = "tests/js", depends-on = ["install-js-test-deps"], description = "Run JavaScript unit tests" }
 
 # Composite lint/test tasks
 cleanup = { depends-on = ["fmt", "ruff-fix"], description = "Run formatters with auto-fix" }
 lint = { depends-on = ["fmt-check", "ruff-check", "mypy-ci"], description = "Check all linters (no fix)" }
-ci = { depends-on = ["lint", "test", "test-js", "test-integration"], description = "Run CI checks" }
+ci = { depends-on = ["lint", "test", "test-js"], description = "Run CI checks" }
 
 # Build tasks (use Make for incremental builds)
 build-wheel = { cmd = "make wheel", description = "Build wheel (incremental)" }

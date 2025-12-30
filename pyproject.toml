@@ -48,7 +48,7 @@ packages = ["src/trellis"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-vv --ignore=tests/integration"
+addopts = "-vv"
 
 [tool.coverage.run]
 source = ["src/trellis"]
@@ -98,6 +98,16 @@ ignore = [
     "PLC0415",  # import not at top level - needed to avoid circular imports
     "UP046",    # generic class style - defer to later cleanup
     "UP047",    # generic function style - defer to later cleanup
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "PLR2004",  # magic values in tests are idiomatic
+    "PT018",    # compound assertions are common in tests
+    "RET504",   # intermediate variable before return aids readability in tests
+    "RUF005",   # list concatenation is clearer than spread in tests
+    "RUF001",   # Unicode characters intentional (e.g. × for close button)
+    "RUF012",   # Stateful classes intentionally use mutable defaults
 ]
 
 [tool.mypy]
