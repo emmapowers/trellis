@@ -5,6 +5,7 @@ These tests download from npm registry and require network access.
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 
@@ -90,3 +91,73 @@ class TestDesktopPlatformBundle:
         html_content = index_path.read_text()
         assert "<div id=\"root\"></div>" in html_content
         assert "bundle.js" in html_content
+
+
+class TestBundleBuildCli:
+    """Tests for the `trellis bundle build` CLI command."""
+
+    def test_bundle_build_server_succeeds(self) -> None:
+        """Running `trellis bundle build --platform server --force` succeeds."""
+        platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
+        server_bundle = platforms_dir / "server" / "client" / "dist" / "bundle.js"
+
+        mtime_before = server_bundle.stat().st_mtime if server_bundle.exists() else None
+
+        result = subprocess.run(
+            ["trellis", "bundle", "build", "--platform", "server", "--force"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert result.returncode == 0, f"Bundle build failed:\n{result.stderr}"
+        assert server_bundle.exists(), "Server bundle not created"
+        assert server_bundle.stat().st_size > 0
+        if mtime_before is not None:
+            assert server_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"
+
+    def test_bundle_build_browser_succeeds(self) -> None:
+        """Running `trellis bundle build --platform browser --force` succeeds."""
+        platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
+        browser_bundle = platforms_dir / "browser" / "client" / "dist" / "bundle.js"
+
+        mtime_before = browser_bundle.stat().st_mtime if browser_bundle.exists() else None
+
+        result = subprocess.run(
+            ["trellis", "bundle", "build", "--platform", "browser", "--force"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert result.returncode == 0, f"Bundle build failed:\n{result.stderr}"
+        assert browser_bundle.exists(), "Browser bundle not created"
+        assert browser_bundle.stat().st_size > 0
+        if mtime_before is not None:
+            assert browser_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"
+
+    def test_bundle_build_desktop_succeeds(self) -> None:
+        """Running `trellis bundle build --platform desktop --force` succeeds."""
+        pytest = __import__("pytest")
+        try:
+            import pytauri  # noqa: F401
+        except ImportError:
+            pytest.skip("pytauri not installed")
+
+        platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
+        desktop_bundle = platforms_dir / "desktop" / "client" / "dist" / "bundle.js"
+
+        mtime_before = desktop_bundle.stat().st_mtime if desktop_bundle.exists() else None
+
+        result = subprocess.run(
+            ["trellis", "bundle", "build", "--platform", "desktop", "--force"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert result.returncode == 0, f"Bundle build failed:\n{result.stderr}"
+        assert desktop_bundle.exists(), "Desktop bundle not created"
+        assert desktop_bundle.stat().st_size > 0
+        if mtime_before is not None:
+            assert desktop_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"

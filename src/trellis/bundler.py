@@ -13,7 +13,7 @@ from pathlib import Path
 
 import httpx
 
-ESBUILD_VERSION = "0.24.0"
+ESBUILD_VERSION = "0.27.2"
 CACHE_DIR = Path.home() / ".cache" / "trellis"
 BIN_DIR = CACHE_DIR / "bin"
 PACKAGES_DIR = CACHE_DIR / "node_modules"
@@ -51,13 +51,25 @@ CORE_PACKAGES = {
     "lucide-react": "0.468.0",
     # Charts
     "uplot": "1.6.31",
-    "recharts": "2.15.0",
-    # Recharts dependencies
-    "@babel/runtime": "7.26.0",
+    "recharts": "3.6.0",
+    # Recharts 3.x dependencies
+    "@reduxjs/toolkit": "2.5.0",
+    "redux": "5.0.1",
+    "redux-thunk": "3.1.0",
     "clsx": "2.1.1",
+    "decimal.js-light": "2.5.1",
+    "es-toolkit": "1.43.0",
+    "eventemitter3": "5.0.1",
+    "immer": "10.1.1",
+    "react-redux": "9.2.0",
+    "reselect": "5.1.1",
+    "tiny-invariant": "1.3.3",
+    "use-sync-external-store": "1.4.0",
+    "victory-vendor": "37.3.6",
+    # victory-vendor re-exports from actual d3 packages
     "d3-array": "3.2.4",
-    "dom-helpers": "5.2.1",
     "d3-color": "3.1.0",
+    "d3-ease": "3.0.1",
     "d3-format": "3.1.0",
     "d3-interpolate": "3.0.1",
     "d3-path": "3.1.0",
@@ -65,19 +77,11 @@ CORE_PACKAGES = {
     "d3-shape": "3.2.0",
     "d3-time": "3.1.0",
     "d3-time-format": "4.1.0",
-    "decimal.js-light": "2.5.1",
-    "eventemitter3": "4.0.7",
-    "fast-equals": "5.2.2",
+    "d3-timer": "3.0.1",
+    "d3-voronoi": "1.1.4",
     "internmap": "2.0.3",
-    "lodash": "4.17.21",
-    "object-assign": "4.1.1",
-    "prop-types": "15.8.1",
+    # recharts dependency
     "react-is": "18.3.1",
-    "react-smooth": "4.0.4",
-    "react-transition-group": "4.4.5",
-    "recharts-scale": "0.4.5",
-    "tiny-invariant": "1.3.3",
-    "victory-vendor": "36.9.2",
     # React Aria (accessibility) - umbrella packages
     "react-aria": "3.35.0",
     "react-stately": "3.33.0",

@@ -204,14 +204,13 @@ def make_playground_url(
     Returns:
         Full URL with #code=<base64> hash.
     """
-    # Import core framework features for playground experimentation
-    imports_str = "component, Stateful, mutable, callback, Margin, Padding, Width, Height"
-
     # Build full code with imports and App wrapper
     full_code = f"""\
-from trellis import {imports_str}
+import typing as tp
+from trellis import *
 from trellis import widgets as w
 from trellis import html as h
+from trellis.widgets import IconName
 
 {source}
 
