@@ -100,7 +100,7 @@ class TestBundleBuildCli:
 
     def test_bundle_build_server_succeeds(self) -> None:
         """Running `trellis bundle build --platform server --force` succeeds."""
-        platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
+        platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
         server_bundle = platforms_dir / "server" / "client" / "dist" / "bundle.js"
 
         mtime_before = server_bundle.stat().st_mtime if server_bundle.exists() else None
@@ -120,7 +120,7 @@ class TestBundleBuildCli:
 
     def test_bundle_build_browser_succeeds(self) -> None:
         """Running `trellis bundle build --platform browser --force` succeeds."""
-        platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
+        platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
         browser_bundle = platforms_dir / "browser" / "client" / "dist" / "bundle.js"
 
         mtime_before = browser_bundle.stat().st_mtime if browser_bundle.exists() else None
@@ -146,7 +146,7 @@ class TestBundleBuildCli:
         except ImportError:
             pytest.skip("pytauri not installed")
 
-        platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
+        platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
         desktop_bundle = platforms_dir / "desktop" / "client" / "dist" / "bundle.js"
 
         mtime_before = desktop_bundle.stat().st_mtime if desktop_bundle.exists() else None
