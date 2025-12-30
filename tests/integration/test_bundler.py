@@ -96,41 +96,68 @@ class TestDesktopPlatformBundle:
 class TestBundleBuildCli:
     """Tests for the `trellis bundle build` CLI command."""
 
-    def test_bundle_build_force_succeeds(self) -> None:
-        """Running `trellis bundle build --force` exits successfully and regenerates bundles."""
+    def test_bundle_build_server_succeeds(self) -> None:
+        """Running `trellis bundle build --platform server --force` succeeds."""
         platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
         server_bundle = platforms_dir / "server" / "client" / "dist" / "bundle.js"
-        browser_bundle = platforms_dir / "browser" / "client" / "dist" / "bundle.js"
-        desktop_bundle = platforms_dir / "desktop" / "client" / "dist" / "bundle.js"
 
-        # Record modification times before the build (if files exist)
-        server_mtime_before = server_bundle.stat().st_mtime if server_bundle.exists() else None
-        browser_mtime_before = browser_bundle.stat().st_mtime if browser_bundle.exists() else None
-        desktop_mtime_before = desktop_bundle.stat().st_mtime if desktop_bundle.exists() else None
+        mtime_before = server_bundle.stat().st_mtime if server_bundle.exists() else None
 
         result = subprocess.run(
-            ["trellis", "bundle", "build", "--force"],
+            ["trellis", "bundle", "build", "--platform", "server", "--force"],
             capture_output=True,
             text=True,
-            check=False,  # Return code is explicitly tested below
+            check=False,
         )
 
-        assert result.returncode == 0, f"Bundle build failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
-
-        # Verify server bundle exists and was regenerated
+        assert result.returncode == 0, f"Bundle build failed:\n{result.stderr}"
         assert server_bundle.exists(), "Server bundle not created"
         assert server_bundle.stat().st_size > 0
-        if server_mtime_before is not None:
-            assert server_bundle.stat().st_mtime > server_mtime_before, "Server bundle was not regenerated"
+        if mtime_before is not None:
+            assert server_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"
 
-        # Verify browser bundle exists and was regenerated
+    def test_bundle_build_browser_succeeds(self) -> None:
+        """Running `trellis bundle build --platform browser --force` succeeds."""
+        platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
+        browser_bundle = platforms_dir / "browser" / "client" / "dist" / "bundle.js"
+
+        mtime_before = browser_bundle.stat().st_mtime if browser_bundle.exists() else None
+
+        result = subprocess.run(
+            ["trellis", "bundle", "build", "--platform", "browser", "--force"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert result.returncode == 0, f"Bundle build failed:\n{result.stderr}"
         assert browser_bundle.exists(), "Browser bundle not created"
         assert browser_bundle.stat().st_size > 0
-        if browser_mtime_before is not None:
-            assert browser_bundle.stat().st_mtime > browser_mtime_before, "Browser bundle was not regenerated"
+        if mtime_before is not None:
+            assert browser_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"
 
-        # Verify desktop bundle exists and was regenerated
+    def test_bundle_build_desktop_succeeds(self) -> None:
+        """Running `trellis bundle build --platform desktop --force` succeeds."""
+        pytest = __import__("pytest")
+        try:
+            import pytauri  # noqa: F401
+        except ImportError:
+            pytest.skip("pytauri not installed")
+
+        platforms_dir = Path(__file__).parent.parent.parent / "src" / "trellis" / "platforms"
+        desktop_bundle = platforms_dir / "desktop" / "client" / "dist" / "bundle.js"
+
+        mtime_before = desktop_bundle.stat().st_mtime if desktop_bundle.exists() else None
+
+        result = subprocess.run(
+            ["trellis", "bundle", "build", "--platform", "desktop", "--force"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert result.returncode == 0, f"Bundle build failed:\n{result.stderr}"
         assert desktop_bundle.exists(), "Desktop bundle not created"
         assert desktop_bundle.stat().st_size > 0
-        if desktop_mtime_before is not None:
-            assert desktop_bundle.stat().st_mtime > desktop_mtime_before, "Desktop bundle was not regenerated"
+        if mtime_before is not None:
+            assert desktop_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"
