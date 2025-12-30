@@ -66,6 +66,22 @@ CORE_PACKAGES = {
     "tiny-invariant": "1.3.3",
     "use-sync-external-store": "1.4.0",
     "victory-vendor": "37.3.6",
+    # victory-vendor re-exports from actual d3 packages
+    "d3-array": "3.2.4",
+    "d3-color": "3.1.0",
+    "d3-ease": "3.0.1",
+    "d3-format": "3.1.0",
+    "d3-interpolate": "3.0.1",
+    "d3-path": "3.1.0",
+    "d3-scale": "4.0.2",
+    "d3-shape": "3.2.0",
+    "d3-time": "3.1.0",
+    "d3-time-format": "4.1.0",
+    "d3-timer": "3.0.1",
+    "d3-voronoi": "1.1.4",
+    "internmap": "2.0.3",
+    # recharts dependency
+    "react-is": "18.3.1",
     # React Aria (accessibility) - umbrella packages
     "react-aria": "3.35.0",
     "react-stately": "3.33.0",
