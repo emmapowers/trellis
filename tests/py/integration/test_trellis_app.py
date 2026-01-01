@@ -1,4 +1,4 @@
-"""Tests for TrellisApp wrapper component."""
+"""Integration tests for TrellisApp wrapper component."""
 
 from trellis import widgets as w
 from trellis.app import ClientState, ThemeMode, TrellisApp
@@ -50,7 +50,7 @@ class TestTrellisApp:
         render(tree)
 
         assert retrieved_state is custom_state
-        assert retrieved_state.mode == ThemeMode.DARK
+        assert retrieved_state.theme_setting == ThemeMode.DARK
 
     def test_creates_default_client_state_when_none_provided(self) -> None:
         """TrellisApp should create ClientState with defaults when not provided."""
@@ -69,7 +69,7 @@ class TestTrellisApp:
         render(tree)
 
         assert retrieved_state is not None
-        assert retrieved_state.mode == ThemeMode.SYSTEM  # Default
+        assert retrieved_state.theme_setting == ThemeMode.SYSTEM  # Default
 
     def test_renders_app_content(self) -> None:
         """TrellisApp should render the app component's content."""

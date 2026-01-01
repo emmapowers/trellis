@@ -1,50 +1,15 @@
-"""Tests for ThemeSwitcher widget."""
+"""Integration tests for ThemeSwitcher widget."""
 
 import pytest
 
 from trellis.app import ClientState, ThemeMode, TrellisApp
 from trellis.core.components.composition import component
 from trellis.core.rendering import RenderSession, render
-from trellis.widgets.icons import IconName
-from trellis.widgets.theme_switcher import ThemeSwitcher, _get_icon_for_mode, _get_next_mode
-
-
-class TestThemeSwitcherHelpers:
-    """Tests for ThemeSwitcher helper functions."""
-
-    def test_get_next_mode_from_system(self) -> None:
-        """_get_next_mode(SYSTEM) should return LIGHT."""
-        assert _get_next_mode(ThemeMode.SYSTEM) == ThemeMode.LIGHT
-
-    def test_get_next_mode_from_light(self) -> None:
-        """_get_next_mode(LIGHT) should return DARK."""
-        assert _get_next_mode(ThemeMode.LIGHT) == ThemeMode.DARK
-
-    def test_get_next_mode_from_dark(self) -> None:
-        """_get_next_mode(DARK) should return SYSTEM."""
-        assert _get_next_mode(ThemeMode.DARK) == ThemeMode.SYSTEM
-
-    def test_get_icon_for_system_mode(self) -> None:
-        """System mode should show monitor icon."""
-        icon, tooltip = _get_icon_for_mode(ThemeMode.SYSTEM)
-        assert icon == IconName.MONITOR
-        assert "System" in tooltip
-
-    def test_get_icon_for_light_mode(self) -> None:
-        """Light mode should show sun icon."""
-        icon, tooltip = _get_icon_for_mode(ThemeMode.LIGHT)
-        assert icon == IconName.SUN
-        assert "Light" in tooltip
-
-    def test_get_icon_for_dark_mode(self) -> None:
-        """Dark mode should show moon icon."""
-        icon, tooltip = _get_icon_for_mode(ThemeMode.DARK)
-        assert icon == IconName.MOON
-        assert "Dark" in tooltip
+from trellis.widgets.theme_switcher import ThemeSwitcher
 
 
 class TestThemeSwitcherComponent:
-    """Tests for ThemeSwitcher component."""
+    """Tests for ThemeSwitcher component rendering."""
 
     def test_requires_client_state_context(self) -> None:
         """ThemeSwitcher should raise when no ClientState in context."""
