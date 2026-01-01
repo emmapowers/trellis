@@ -78,6 +78,9 @@ class RenderSession:
     # Background tasks for async lifecycle hooks (prevents GC)
     _background_tasks: set[asyncio.Task[None]] = field(default_factory=set)
 
+    # Initial URL path from client HelloMessage (for routing)
+    initial_path: str = "/"
+
     def __post_init__(self) -> None:
         self.dirty.set_lock(self.lock)
 
