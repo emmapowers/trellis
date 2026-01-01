@@ -30,11 +30,13 @@ def get_initial_tree(handler: MessageHandler) -> dict[str, tp.Any]:
 
 
 # Components that are part of the TrellisApp wrapper infrastructure
-_WRAPPER_COMPONENT_TYPES = frozenset({
-    "CompositionComponent",  # Generic wrapper (TrellisRoot, TrellisApp, etc.)
-    "ThemeProvider",         # Theme provider
-    "ClientState",           # Client state context
-})
+_WRAPPER_COMPONENT_TYPES = frozenset(
+    {
+        "CompositionComponent",  # Generic wrapper (TrellisRoot, TrellisApp, etc.)
+        "ThemeProvider",  # Theme provider
+        "ClientState",  # Client state context
+    }
+)
 
 
 def find_app_children(tree: dict[str, tp.Any]) -> list[dict[str, tp.Any]]:

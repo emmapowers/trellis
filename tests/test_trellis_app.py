@@ -1,9 +1,9 @@
 """Tests for TrellisApp wrapper component."""
 
+from trellis import widgets as w
 from trellis.app import ClientState, ThemeMode, TrellisApp
 from trellis.core.components.composition import component
 from trellis.core.rendering import RenderSession, render
-from trellis import widgets as w
 
 
 class TestTrellisApp:

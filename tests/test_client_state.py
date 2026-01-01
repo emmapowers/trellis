@@ -95,13 +95,13 @@ class TestClientStateTheme:
     def test_set_mode_invalid_string_raises_value_error(self) -> None:
         """set_mode should raise ValueError for invalid string values."""
         state = ClientState()
-        with pytest.raises(ValueError, match="Invalid theme mode.*invalid"):
+        with pytest.raises(ValueError, match=r"Invalid theme mode.*invalid"):
             state.set_mode("invalid")  # type: ignore
 
     def test_set_mode_invalid_string_with_typo(self) -> None:
         """set_mode should raise ValueError for typos in mode names."""
         state = ClientState()
-        with pytest.raises(ValueError, match="Invalid theme mode.*Dark"):
+        with pytest.raises(ValueError, match=r"Invalid theme mode.*Dark"):
             state.set_mode("Dark")  # type: ignore  # Should be lowercase
 
 
@@ -118,9 +118,11 @@ class TestThemeTokens:
 
     def test_theme_tokens_are_frozen(self) -> None:
         """Theme tokens should be immutable."""
+        import dataclasses
+
         from trellis.app import theme
 
-        with pytest.raises(Exception):  # FrozenInstanceError
+        with pytest.raises(dataclasses.FrozenInstanceError):
             theme.bg_page = "something else"  # type: ignore
 
     def test_theme_tokens_all_have_values(self) -> None:
