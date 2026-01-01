@@ -3,7 +3,7 @@ import { useHostThemeMode } from "../TrellisContext";
 
 interface ThemeProviderProps {
   mode: string; // "system" | "light" | "dark" - user's preference
-  resolved_theme: string; // "light" | "dark" - actual theme to apply
+  theme: string; // "light" | "dark" - actual theme to apply
   root_id?: string;
   on_system_theme_change?: (theme: string) => void;
   on_theme_mode_change?: (mode: string) => void;
@@ -14,14 +14,14 @@ interface ThemeProviderProps {
  * ThemeProvider manages the theme for a Trellis app.
  *
  * It updates the data-theme attribute on the trellis-root element based on
- * resolved_theme, and listens for OS theme changes to keep Python in sync.
+ * theme, and listens for OS theme changes to keep Python in sync.
  *
  * The trellis-root element should already exist in the DOM (created by the HTML
  * template or host page) with the .trellis-root class applied.
  */
 export function ThemeProvider({
   mode,
-  resolved_theme,
+  theme,
   root_id,
   on_system_theme_change,
   on_theme_mode_change,
@@ -41,8 +41,8 @@ export function ThemeProvider({
 
   // Apply theme to the trellis-root element
   // When host explicitly controls theme (light/dark), use that directly to avoid
-  // timing issues where Python's resolved_theme hasn't caught up yet.
-  // For "system" mode or when host doesn't control, use resolved_theme from Python.
+  // timing issues where Python's theme hasn't caught up yet.
+  // For "system" mode or when host doesn't control, use theme from Python.
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -61,10 +61,10 @@ export function ThemeProvider({
       const themeToApply =
         hostThemeMode === "light" || hostThemeMode === "dark"
           ? hostThemeMode
-          : resolved_theme;
+          : theme;
       rootEl.dataset.theme = themeToApply;
     }
-  }, [resolved_theme, root_id, hostThemeMode]);
+  }, [theme, root_id, hostThemeMode]);
 
   // Listen for OS theme changes regardless of current mode
   // This ensures Python always knows the current system theme so switching

@@ -52,7 +52,7 @@ def MyApp():
             w.Label(text="Toggle theme:")
             w.ThemeSwitcher()
 
-        w.Label(text=f"Mode: {state.mode.value}")
+        w.Label(text=f"Mode: {state.theme.value}")
         w.Label(text=f"Resolved: {'Dark' if state.is_dark else 'Light'}")
 
 @component
@@ -74,8 +74,8 @@ from trellis.app import ClientState
 state = ClientState.from_context()
 
 # Properties
-state.mode           # ThemeMode.SYSTEM | LIGHT | DARK
-state.resolved_theme # Actual theme: LIGHT or DARK
+state.theme_setting  # ThemeMode.SYSTEM | LIGHT | DARK
+state.theme          # Actual theme: LIGHT or DARK
 state.is_dark        # True if dark mode active
 state.is_light       # True if light mode active
 

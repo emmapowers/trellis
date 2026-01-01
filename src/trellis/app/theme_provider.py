@@ -21,7 +21,7 @@ from trellis.core.rendering.element import Element
 def ThemeProvider(
     *,
     mode: ThemeMode | Literal["system", "light", "dark"],
-    resolved_theme: ThemeMode | Literal["light", "dark"],
+    theme: ThemeMode | Literal["light", "dark"],
     root_id: str | None = None,
     on_system_theme_change: Callable[[Literal["light", "dark"]], None] | None = None,
     on_theme_mode_change: Callable[[Literal["system", "light", "dark"]], None] | None = None,
@@ -30,12 +30,12 @@ def ThemeProvider(
     """Theme provider that manages the data-theme attribute on trellis-root.
 
     Updates the data-theme attribute on the trellis-root element based on
-    resolved_theme, and listens for OS theme changes when mode is "system".
+    theme, and listens for OS theme changes when mode is "system".
 
     Args:
         mode: The user's theme mode preference ("system", "light", or "dark").
             When "system", the component listens for OS theme changes.
-        resolved_theme: The actual theme to apply ("light" or "dark").
+        theme: The actual theme to apply ("light" or "dark").
             This is what gets set as the data-theme attribute.
         root_id: ID of the trellis-root element. If not provided, finds
             the element by .trellis-root class.
@@ -53,8 +53,8 @@ def ThemeProvider(
 
     Example:
         with ThemeProvider(
-            mode=theme.mode,
-            resolved_theme=theme.resolved_theme,
+            theme_setting=theme.theme_setting,
+            theme=theme.theme,
             on_system_theme_change=theme.handle_system_theme_change,
         ):
             Label(text="This content is themed")

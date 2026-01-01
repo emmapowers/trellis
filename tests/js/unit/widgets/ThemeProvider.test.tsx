@@ -60,7 +60,7 @@ describe("ThemeProvider", () => {
       render(
         <ThemeProvider
           mode="system"
-          resolved_theme="light"
+          theme="light"
           on_system_theme_change={onSystemThemeChange}
         >
           <div>content</div>
@@ -80,7 +80,7 @@ describe("ThemeProvider", () => {
       render(
         <ThemeProvider
           mode="light"
-          resolved_theme="light"
+          theme="light"
           on_system_theme_change={onSystemThemeChange}
         >
           <div>content</div>
@@ -100,7 +100,7 @@ describe("ThemeProvider", () => {
       render(
         <ThemeProvider
           mode="dark"
-          resolved_theme="dark"
+          theme="dark"
           on_system_theme_change={onSystemThemeChange}
         >
           <div>content</div>
