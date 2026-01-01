@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import time
 
+from trellis.core.callback_context import callback_context
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.element import Element, props_equal
@@ -369,7 +370,8 @@ def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
     for _, stateful in items:
         if hasattr(stateful, "on_mount"):
             try:
-                stateful.on_mount()
+                with callback_context(session, node_id):
+                    stateful.on_mount()
             except Exception as e:
                 logging.exception(f"Error in Stateful.on_mount: {e}")
 
@@ -389,7 +391,8 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
     for _, stateful in items:
         if hasattr(stateful, "on_unmount"):
             try:
-                stateful.on_unmount()
+                with callback_context(session, node_id):
+                    stateful.on_unmount()
             except Exception as e:
                 logging.exception(f"Error in Stateful.on_unmount: {e}")
 

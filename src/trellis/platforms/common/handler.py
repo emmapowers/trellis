@@ -15,6 +15,7 @@ import typing as tp
 from collections.abc import Callable
 from uuid import uuid4
 
+from trellis.core.callback_context import callback_context
 from trellis.core.components.base import Component
 from trellis.core.rendering.patches import (
     RenderAddPatch,
@@ -359,14 +360,19 @@ class MessageHandler:
         logger.debug("Invoking callback %s with %d args", callback_id, len(processed_args))
 
         if inspect.iscoroutinefunction(callback):
-            # Async: fire-and-forget
+            # Async: wrap to provide callback context
+            async def run_async_with_context() -> None:
+                with callback_context(self.session, node_id):
+                    await callback(*processed_args, **kwargs)
+
             logger.debug("Callback %s is async, scheduled as task", callback_id)
-            task = asyncio.create_task(callback(*processed_args, **kwargs))
+            task = asyncio.create_task(run_async_with_context())
             self._background_tasks.add(task)
             task.add_done_callback(self._background_tasks.discard)
         else:
-            # Sync: call directly
-            callback(*processed_args, **kwargs)
+            # Sync: call with callback context
+            with callback_context(self.session, node_id):
+                callback(*processed_args, **kwargs)
 
     # -------------------------------------------------------------------------
     # Render loop - batches updates at 30fps

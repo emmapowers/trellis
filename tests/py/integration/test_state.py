@@ -608,3 +608,105 @@ class TestStateDependencyTracking:
         # doesn't register because it doesn't read state.value
         watcher_ids = {node.id for node in state._state_props["value"].watchers}
         assert node_id not in watcher_ids
+
+
+class TestLifecycleHooksWithContext:
+    """Tests for from_context() working in on_mount and on_unmount hooks."""
+
+    def test_from_context_works_in_on_mount(self, capture_patches: "type[PatchCapture]") -> None:
+        """from_context() retrieves state in on_mount hook."""
+
+        @dataclass(kw_only=True)
+        class AppState(Stateful):
+            value: str = ""
+
+        retrieved_values: list[str] = []
+
+        @dataclass(kw_only=True)
+        class ChildState(Stateful):
+            def on_mount(self) -> None:
+                # This should work - from_context() in on_mount
+                state = AppState.from_context()
+                retrieved_values.append(state.value)
+
+        @component
+        def App() -> None:
+            with AppState(value="mounted"):
+                Child()
+
+        @component
+        def Child() -> None:
+            ChildState()
+
+        capture = capture_patches(App)
+        capture.render()
+
+        # on_mount should have been called and from_context should have worked
+        assert retrieved_values == ["mounted"]
+
+    def test_from_context_works_in_on_unmount(self, capture_patches: "type[PatchCapture]") -> None:
+        """from_context() retrieves state in on_unmount hook."""
+
+        @dataclass(kw_only=True)
+        class AppState(Stateful):
+            value: str = ""
+
+        retrieved_values: list[str] = []
+        show_child = [True]
+
+        @dataclass(kw_only=True)
+        class ChildState(Stateful):
+            def on_unmount(self) -> None:
+                # This should work - from_context() in on_unmount
+                state = AppState.from_context()
+                retrieved_values.append(state.value)
+
+        @component
+        def App() -> None:
+            with AppState(value="unmounting"):
+                if show_child[0]:
+                    Child()
+
+        @component
+        def Child() -> None:
+            ChildState()
+
+        capture = capture_patches(App)
+        capture.render()
+
+        # Initially, nothing should be in retrieved_values
+        assert retrieved_values == []
+
+        # Unmount the child
+        show_child[0] = False
+        capture.session.dirty.mark(capture.session.root_element.id)
+        capture.render()
+
+        # on_unmount should have been called and from_context should have worked
+        assert retrieved_values == ["unmounting"]
+
+    def test_from_context_returns_default_in_mount_when_not_in_context(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """from_context(default=None) returns None in on_mount when state not found."""
+
+        @dataclass(kw_only=True)
+        class MissingState(Stateful):
+            pass
+
+        results: list = []
+
+        @dataclass(kw_only=True)
+        class ChildState(Stateful):
+            def on_mount(self) -> None:
+                state = MissingState.from_context(default=None)
+                results.append(state)
+
+        @component
+        def App() -> None:
+            ChildState()
+
+        capture = capture_patches(App)
+        capture.render()
+
+        assert results == [None]
