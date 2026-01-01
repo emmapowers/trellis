@@ -1,7 +1,8 @@
 /** Message types for WebSocket communication. */
 
 // Re-export core types for backward compatibility
-export { SerializedElement, CallbackRef, isCallbackRef } from "./core";
+export type { SerializedElement, CallbackRef } from "./core";
+export { isCallbackRef } from "./core";
 
 export const MessageType = {
   HELLO: "hello",

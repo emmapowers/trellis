@@ -1,5 +1,11 @@
 /** Core tree rendering - shared between server client and playground. */
 
-export { SerializedElement, ElementKind, CallbackRef, isCallbackRef, EventHandler } from "./types";
-export { renderNode, processProps, WidgetComponent, WidgetRegistry } from "./renderTree";
-export { store, useNode, useRootId, NodeData, TrellisStore } from "./store";
+// Type-only exports (erased at runtime)
+export type { SerializedElement, CallbackRef, EventHandler } from "./types";
+export type { WidgetComponent, WidgetRegistry } from "./renderTree";
+export type { NodeData } from "./store";
+
+// Value exports (exist at runtime)
+export { ElementKind, isCallbackRef } from "./types";
+export { renderNode, processProps } from "./renderTree";
+export { store, useNode, useRootId, TrellisStore } from "./store";
