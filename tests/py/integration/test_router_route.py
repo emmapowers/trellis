@@ -1,6 +1,5 @@
 """Integration tests for Route component."""
 
-
 from tests.conftest import PatchCapture
 from trellis.core.components.composition import component
 from trellis.routing import Route, RouterState, router
