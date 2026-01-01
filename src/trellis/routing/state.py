@@ -1,7 +1,9 @@
 """Router state management."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from trellis.core.rendering.session import get_active_session
 from trellis.core.state.stateful import Stateful
 
 
@@ -43,13 +45,33 @@ class RouterState(Stateful):
     _history: list[str] = field(default_factory=list, init=False)
     _history_index: int = field(default=0, init=False)
 
-    def __init__(self, *, path: str = "/") -> None:
-        """Initialize with starting path."""
+    # Callbacks for notifying handler about navigation (set by handler)
+    _on_navigate: Callable[[str], None] | None = field(default=None, init=False)
+    _on_go_back: Callable[[], None] | None = field(default=None, init=False)
+    _on_go_forward: Callable[[], None] | None = field(default=None, init=False)
+
+    def __init__(self, *, path: str | None = None) -> None:
+        """Initialize with starting path.
+
+        If no path is provided, uses the initial_path from the session
+        (set from HelloMessage). Falls back to "/" if no session.
+        """
+        if path is None:
+            # Try to get initial path from session
+            session = get_active_session()
+            if session is not None:
+                path = session.initial_path
+            else:
+                path = "/"
+
         self._path = path
         self._params = {}
         self._query = {}
         self._history = [path]
         self._history_index = 0
+        self._on_navigate = None
+        self._on_go_back = None
+        self._on_go_forward = None
 
     @property
     def path(self) -> str:
@@ -117,6 +139,10 @@ class RouterState(Stateful):
         self._path = path
         self._notify_path_change()
 
+        # Notify handler to update browser history
+        if self._on_navigate is not None:
+            self._on_navigate(path)
+
     def go_back(self) -> None:
         """Navigate back in history.
 
@@ -128,6 +154,10 @@ class RouterState(Stateful):
         self._path = self._history[self._history_index]
         self._notify_path_change()
 
+        # Notify handler to update browser history
+        if self._on_go_back is not None:
+            self._on_go_back()
+
     def go_forward(self) -> None:
         """Navigate forward in history.
 
@@ -137,6 +167,22 @@ class RouterState(Stateful):
             return
         self._history_index += 1
         self._path = self._history[self._history_index]
+        self._notify_path_change()
+
+        # Notify handler to update browser history
+        if self._on_go_forward is not None:
+            self._on_go_forward()
+
+    def _update_path_from_url(self, path: str) -> None:
+        """Update path from browser URL change (popstate).
+
+        Called by handler when receiving UrlChanged message. Does NOT
+        trigger history callbacks since this is a browser-initiated change.
+
+        Args:
+            path: The new path from browser URL
+        """
+        self._path = path
         self._notify_path_change()
 
     def set_params(self, params: dict[str, str]) -> None:
