@@ -710,3 +710,157 @@ class TestLifecycleHooksWithContext:
         capture.render()
 
         assert results == [None]
+
+
+class TestAsyncLifecycleHooks:
+    """Tests for async on_mount and on_unmount hooks."""
+
+    def test_async_on_mount_is_called(self, capture_patches: "type[PatchCapture]") -> None:
+        """Async on_mount hooks are called and complete."""
+        import asyncio
+
+        completed: list[str] = []
+        done_event = asyncio.Event()
+
+        @dataclass(kw_only=True)
+        class AsyncMountState(Stateful):
+            async def on_mount(self) -> None:
+                completed.append("mount")
+                done_event.set()
+
+        @component
+        def App() -> None:
+            AsyncMountState()
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+            await asyncio.wait_for(done_event.wait(), timeout=1.0)
+            assert completed == ["mount"]
+
+        asyncio.run(test())
+
+    def test_async_on_unmount_is_called(self, capture_patches: "type[PatchCapture]") -> None:
+        """Async on_unmount hooks are called and complete."""
+        import asyncio
+
+        completed: list[str] = []
+        done_event = asyncio.Event()
+        show_child = [True]
+
+        @dataclass(kw_only=True)
+        class AsyncUnmountState(Stateful):
+            async def on_unmount(self) -> None:
+                completed.append("unmount")
+                done_event.set()
+
+        @component
+        def App() -> None:
+            if show_child[0]:
+                Child()
+
+        @component
+        def Child() -> None:
+            AsyncUnmountState()
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+            assert completed == []
+
+            # Unmount the child
+            show_child[0] = False
+            capture.session.dirty.mark(capture.session.root_element.id)
+            capture.render()
+
+            await asyncio.wait_for(done_event.wait(), timeout=1.0)
+            assert completed == ["unmount"]
+
+        asyncio.run(test())
+
+    def test_async_on_mount_with_from_context(self, capture_patches: "type[PatchCapture]") -> None:
+        """Async on_mount can use from_context()."""
+        import asyncio
+
+        retrieved_values: list[str] = []
+        done_event = asyncio.Event()
+
+        @dataclass(kw_only=True)
+        class AppState(Stateful):
+            value: str = ""
+
+        @dataclass(kw_only=True)
+        class AsyncChildState(Stateful):
+            async def on_mount(self) -> None:
+                state = AppState.from_context()
+                retrieved_values.append(state.value)
+                done_event.set()
+
+        @component
+        def App() -> None:
+            with AppState(value="async-mounted"):
+                Child()
+
+        @component
+        def Child() -> None:
+            AsyncChildState()
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+            await asyncio.wait_for(done_event.wait(), timeout=1.0)
+
+        asyncio.run(test())
+
+        assert retrieved_values == ["async-mounted"]
+
+    def test_background_tasks_tracked_on_session(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """Background tasks from async hooks are tracked on session.
+
+        INTERNAL TEST: _background_tasks is internal - verifies GC prevention.
+        """
+        import asyncio
+
+        completed: list[str] = []
+        proceed_event = asyncio.Event()
+        done_event = asyncio.Event()
+
+        @dataclass(kw_only=True)
+        class AsyncState(Stateful):
+            async def on_mount(self) -> None:
+                await proceed_event.wait()
+                completed.append("done")
+                done_event.set()
+
+        @component
+        def App() -> None:
+            AsyncState()
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+
+            # Give task a chance to start
+            await asyncio.sleep(0)
+
+            # Task should be tracked
+            assert len(capture.session._background_tasks) == 1
+
+            # Let task complete
+            proceed_event.set()
+            await asyncio.wait_for(done_event.wait(), timeout=1.0)
+
+            # Give done callback a chance to run
+            await asyncio.sleep(0)
+
+            # Task should be removed after completion
+            assert len(capture.session._background_tasks) == 0
+            assert completed == ["done"]
+
+        asyncio.run(test())
