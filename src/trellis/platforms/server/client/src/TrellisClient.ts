@@ -12,6 +12,7 @@ import {
   HelloMessage,
   HelloResponseMessage,
   EventMessage,
+  UrlChangedMessage,
 } from "../../../common/client/src/types";
 import {
   ClientMessageHandler,
@@ -21,6 +22,7 @@ import {
 import { TrellisClient } from "../../../common/client/src/TrellisClient";
 import { TrellisStore } from "../../../common/client/src/core";
 import { debugLog } from "../../../common/client/src/debug";
+import { RouterManager } from "../../../common/client/src/RouterManager";
 
 export type { ConnectionState };
 
@@ -30,6 +32,7 @@ export class ServerTrellisClient implements TrellisClient {
   private ws: WebSocket | null = null;
   private clientId: string;
   private handler: ClientMessageHandler;
+  private routerManager: RouterManager;
   private connectResolver: ((response: HelloResponseMessage) => void) | null =
     null;
 
@@ -41,7 +44,22 @@ export class ServerTrellisClient implements TrellisClient {
    */
   constructor(callbacks: TrellisClientCallbacks = {}, store?: TrellisStore) {
     this.clientId = crypto.randomUUID();
-    this.handler = new ClientMessageHandler(callbacks, store);
+
+    // Create router manager for standalone mode
+    this.routerManager = new RouterManager({
+      embedded: false,
+      sendMessage: (msg: UrlChangedMessage) => this.send(msg),
+    });
+
+    // Merge router callbacks with user callbacks
+    const handlerCallbacks: ClientMessageHandlerCallbacks = {
+      ...callbacks,
+      onHistoryPush: (path: string) => this.routerManager.pushState(path),
+      onHistoryBack: () => this.routerManager.back(),
+      onHistoryForward: () => this.routerManager.forward(),
+    };
+
+    this.handler = new ClientMessageHandler(handlerCallbacks, store);
   }
 
   getConnectionState(): ConnectionState {
@@ -77,6 +95,7 @@ export class ServerTrellisClient implements TrellisClient {
           type: MessageType.HELLO,
           client_id: this.clientId,
           system_theme: systemTheme,
+          path: window.location.pathname,
         };
         this.send(hello);
       };
@@ -128,6 +147,7 @@ export class ServerTrellisClient implements TrellisClient {
       this.ws.close();
       this.ws = null;
     }
+    this.routerManager.destroy();
     this.handler.setConnectionState("disconnected");
   }
 }

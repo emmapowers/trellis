@@ -10,6 +10,9 @@ import {
   HelloResponseMessage,
   PatchMessage,
   ErrorMessage,
+  HistoryPushMessage,
+  HistoryBackMessage,
+  HistoryForwardMessage,
 } from "@common/types";
 
 // Mock the store
@@ -25,6 +28,9 @@ describe("ClientMessageHandler", () => {
     onConnectionStateChange: Mock;
     onConnected: Mock;
     onError: Mock;
+    onHistoryPush: Mock;
+    onHistoryBack: Mock;
+    onHistoryForward: Mock;
   };
 
   beforeEach(() => {
@@ -34,6 +40,9 @@ describe("ClientMessageHandler", () => {
       onConnectionStateChange: vi.fn(),
       onConnected: vi.fn(),
       onError: vi.fn(),
+      onHistoryPush: vi.fn(),
+      onHistoryBack: vi.fn(),
+      onHistoryForward: vi.fn(),
     };
 
     handler = new ClientMessageHandler(callbacks);
@@ -158,6 +167,43 @@ describe("ClientMessageHandler", () => {
     });
   });
 
+  describe("handleMessage - HISTORY_PUSH", () => {
+    it("calls onHistoryPush callback with path", () => {
+      const historyPush: HistoryPushMessage = {
+        type: MessageType.HISTORY_PUSH,
+        path: "/users/123",
+      };
+
+      handler.handleMessage(historyPush);
+
+      expect(callbacks.onHistoryPush).toHaveBeenCalledWith("/users/123");
+    });
+  });
+
+  describe("handleMessage - HISTORY_BACK", () => {
+    it("calls onHistoryBack callback", () => {
+      const historyBack: HistoryBackMessage = {
+        type: MessageType.HISTORY_BACK,
+      };
+
+      handler.handleMessage(historyBack);
+
+      expect(callbacks.onHistoryBack).toHaveBeenCalled();
+    });
+  });
+
+  describe("handleMessage - HISTORY_FORWARD", () => {
+    it("calls onHistoryForward callback", () => {
+      const historyForward: HistoryForwardMessage = {
+        type: MessageType.HISTORY_FORWARD,
+      };
+
+      handler.handleMessage(historyForward);
+
+      expect(callbacks.onHistoryForward).toHaveBeenCalled();
+    });
+  });
+
   describe("works without callbacks", () => {
     it("handles messages without errors when no callbacks provided", () => {
       const handlerNoCallbacks = new ClientMessageHandler();
@@ -173,6 +219,30 @@ describe("ClientMessageHandler", () => {
 
       expect(() => {
         handlerNoCallbacks.setConnectionState("connecting");
+      }).not.toThrow();
+    });
+
+    it("handles router messages without errors when no callbacks provided", () => {
+      const handlerNoCallbacks = new ClientMessageHandler();
+
+      // Should not throw
+      expect(() => {
+        handlerNoCallbacks.handleMessage({
+          type: MessageType.HISTORY_PUSH,
+          path: "/test",
+        });
+      }).not.toThrow();
+
+      expect(() => {
+        handlerNoCallbacks.handleMessage({
+          type: MessageType.HISTORY_BACK,
+        });
+      }).not.toThrow();
+
+      expect(() => {
+        handlerNoCallbacks.handleMessage({
+          type: MessageType.HISTORY_FORWARD,
+        });
       }).not.toThrow();
     });
   });

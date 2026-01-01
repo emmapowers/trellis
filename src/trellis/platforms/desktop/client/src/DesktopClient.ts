@@ -14,6 +14,7 @@ import {
   HelloMessage,
   HelloResponseMessage,
   EventMessage,
+  UrlChangedMessage,
 } from "../../../common/client/src/types";
 import {
   ClientMessageHandler,
@@ -22,6 +23,7 @@ import {
 } from "../../../common/client/src/ClientMessageHandler";
 import { TrellisClient } from "../../../common/client/src/TrellisClient";
 import { TrellisStore } from "../../../common/client/src/core";
+import { RouterManager } from "../../../common/client/src/RouterManager";
 
 export type { ConnectionState };
 
@@ -38,6 +40,7 @@ export class DesktopClient implements TrellisClient {
   private channel: Channel<ArrayBuffer> | null = null;
   private clientId: string;
   private handler: ClientMessageHandler;
+  private routerManager: RouterManager;
   private connectResolver: ((response: HelloResponseMessage) => void) | null =
     null;
 
@@ -49,7 +52,23 @@ export class DesktopClient implements TrellisClient {
    */
   constructor(callbacks: DesktopClientCallbacks = {}, store?: TrellisStore) {
     this.clientId = crypto.randomUUID();
-    this.handler = new ClientMessageHandler(callbacks, store);
+
+    // Create router manager for embedded mode (desktop has no URL bar)
+    this.routerManager = new RouterManager({
+      embedded: true,
+      sendMessage: (msg: UrlChangedMessage) => this.send(msg),
+      initialPath: "/",
+    });
+
+    // Merge router callbacks with user callbacks
+    const handlerCallbacks: ClientMessageHandlerCallbacks = {
+      ...callbacks,
+      onHistoryPush: (path: string) => this.routerManager.pushState(path),
+      onHistoryBack: () => this.routerManager.back(),
+      onHistoryForward: () => this.routerManager.forward(),
+    };
+
+    this.handler = new ClientMessageHandler(handlerCallbacks, store);
   }
 
   getConnectionState(): ConnectionState {
@@ -99,6 +118,7 @@ export class DesktopClient implements TrellisClient {
             type: MessageType.HELLO,
             client_id: this.clientId,
             system_theme: systemTheme,
+            path: this.routerManager.getCurrentPath(),
           };
           this.send(hello);
         })
@@ -131,6 +151,7 @@ export class DesktopClient implements TrellisClient {
 
   disconnect(): void {
     this.channel = null;
+    this.routerManager.destroy();
     this.handler.setConnectionState("disconnected");
   }
 }

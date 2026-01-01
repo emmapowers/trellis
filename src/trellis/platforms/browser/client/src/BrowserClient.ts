@@ -15,6 +15,7 @@ import {
   MessageType,
   HelloMessage,
   EventMessage,
+  UrlChangedMessage,
 } from "../../../common/client/src/types";
 import {
   ClientMessageHandler,
@@ -22,6 +23,7 @@ import {
   ConnectionState,
 } from "../../../common/client/src/ClientMessageHandler";
 import { TrellisStore } from "../../../common/client/src/core";
+import { RouterManager } from "../../../common/client/src/RouterManager";
 
 export type { ConnectionState };
 
@@ -40,6 +42,7 @@ type SendCallback = (msg: Record<string, unknown>) => void;
 export class BrowserClient implements TrellisClient {
   private clientId: string;
   private handler: ClientMessageHandler;
+  private routerManager: RouterManager;
   private sendCallback: SendCallback | null = null;
 
   /**
@@ -50,7 +53,22 @@ export class BrowserClient implements TrellisClient {
    */
   constructor(callbacks: BrowserClientCallbacks = {}, store?: TrellisStore) {
     this.clientId = crypto.randomUUID();
-    this.handler = new ClientMessageHandler(callbacks, store);
+
+    // Create router manager for standalone mode (can be made configurable in Phase 8)
+    this.routerManager = new RouterManager({
+      embedded: false,
+      sendMessage: (msg: UrlChangedMessage) => this.sendCallback?.(msg),
+    });
+
+    // Merge router callbacks with user callbacks
+    const handlerCallbacks: ClientMessageHandlerCallbacks = {
+      ...callbacks,
+      onHistoryPush: (path: string) => this.routerManager.pushState(path),
+      onHistoryBack: () => this.routerManager.back(),
+      onHistoryForward: () => this.routerManager.forward(),
+    };
+
+    this.handler = new ClientMessageHandler(handlerCallbacks, store);
   }
 
   getConnectionState(): ConnectionState {
@@ -98,6 +116,7 @@ export class BrowserClient implements TrellisClient {
       client_id: this.clientId,
       system_theme: systemTheme,
       theme_mode: themeMode,
+      path: window.location.pathname,
     };
     this.sendCallback?.(hello);
   }
@@ -114,6 +133,7 @@ export class BrowserClient implements TrellisClient {
 
   disconnect(): void {
     this.sendCallback = null;
+    this.routerManager.destroy();
     this.handler.setConnectionState("disconnected");
   }
 }
