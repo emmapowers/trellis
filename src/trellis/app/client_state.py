@@ -227,8 +227,9 @@ class ClientState(Stateful):
     def handle_system_theme_change(self, new_theme: Literal["light", "dark"]) -> None:
         """Handle OS theme change notification from client.
 
-        Only has effect when mode is SYSTEM. Called by ThemeProvider
-        when the client detects an OS theme preference change.
+        Updates system_theme regardless of current theme_setting, so that
+        switching back to SYSTEM mode will immediately reflect the OS theme.
+        Called by ThemeProvider when the client detects an OS theme change.
 
         Args:
             new_theme: The new OS theme ("light" or "dark")

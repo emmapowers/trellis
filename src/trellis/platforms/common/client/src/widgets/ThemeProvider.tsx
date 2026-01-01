@@ -14,7 +14,7 @@ interface ThemeProviderProps {
  * ThemeProvider manages the theme for a Trellis app.
  *
  * It updates the data-theme attribute on the trellis-root element based on
- * resolved_theme, and listens for OS theme changes when mode is "system".
+ * resolved_theme, and listens for OS theme changes to keep Python in sync.
  *
  * The trellis-root element should already exist in the DOM (created by the HTML
  * template or host page) with the .trellis-root class applied.
@@ -66,10 +66,11 @@ export function ThemeProvider({
     }
   }, [resolved_theme, root_id, hostThemeMode]);
 
-  // Listen for OS theme changes when mode is "system"
+  // Listen for OS theme changes regardless of current mode
+  // This ensures Python always knows the current system theme so switching
+  // back to "system" mode shows the correct theme immediately
   useEffect(() => {
-    // Only listen when mode is "system" and callback is provided
-    if (mode !== "system" || !systemThemeCallbackRef.current) return;
+    if (!systemThemeCallbackRef.current) return;
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleMediaChange = (e: MediaQueryListEvent) => {
@@ -80,7 +81,7 @@ export function ThemeProvider({
     return () => {
       mediaQuery.removeEventListener("change", handleMediaChange);
     };
-  }, [mode]);
+  }, []);
 
   // Notify Python when host theme mode changes (for browser extension use)
   // Skip initial render (undefined -> value) and only fire on actual changes

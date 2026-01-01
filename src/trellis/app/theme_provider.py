@@ -3,8 +3,8 @@
 The ThemeProvider manages the data-theme attribute on the trellis-root element,
 enabling CSS selectors like `[data-theme="dark"]` for styling widgets.
 
-The React component listens for OS theme changes (via matchMedia) when mode
-is "system" and calls back to Python to update the theme state.
+The React component listens for OS theme changes (via matchMedia) and calls
+back to Python to update the theme state, regardless of current mode.
 """
 
 from __future__ import annotations
@@ -40,8 +40,9 @@ def ThemeProvider(
         root_id: ID of the trellis-root element. If not provided, finds
             the element by .trellis-root class.
         on_system_theme_change: Callback invoked when OS theme changes.
-            Only called when mode is "system". Receives the new theme
-            as a string ("light" or "dark").
+            Always called regardless of current mode, so switching back
+            to "system" mode reflects the current OS theme. Receives the
+            new theme as a string ("light" or "dark").
         on_theme_mode_change: Callback invoked when host application changes
             the theme mode (for browser extension use). Receives the new mode
             as a string ("system", "light", or "dark").
