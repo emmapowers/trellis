@@ -324,12 +324,18 @@ class Stateful:
             if dirty_elements:
                 logger.debug("Marking dirty: %s", dirty_elements)
 
-    def on_mount(self) -> None:
-        """Called after owning element mounts. Override for initialization."""
+    def on_mount(self) -> None | tp.Coroutine[tp.Any, tp.Any, None]:
+        """Called after owning element mounts. Override for initialization.
+
+        Can be sync or async. Async hooks are scheduled as background tasks.
+        """
         pass
 
-    def on_unmount(self) -> None:
-        """Called before owning element unmounts. Override for cleanup."""
+    def on_unmount(self) -> None | tp.Coroutine[tp.Any, tp.Any, None]:
+        """Called before owning element unmounts. Override for cleanup.
+
+        Can be sync or async. Async hooks are scheduled as background tasks.
+        """
         pass
 
     # -------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import contextvars
 import re
 import threading
@@ -76,6 +77,9 @@ class RenderSession:
 
     # Render count - incremented at the start of each render pass
     render_count: int = 0
+
+    # Background tasks for async lifecycle hooks (prevents GC)
+    _background_tasks: set[asyncio.Task[None]] = field(default_factory=set)
 
     def __post_init__(self) -> None:
         self.dirty.set_lock(self.lock)
