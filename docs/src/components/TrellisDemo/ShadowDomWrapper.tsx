@@ -157,9 +157,56 @@ export function ShadowDomWrapper({
       shadow.appendChild(container);
     }
 
+    // Event forwarding for React Aria compatibility.
+    // React Aria's usePress registers global event listeners on document for
+    // mouseup/pointerup to complete press interactions. Events from shadow DOM
+    // don't bubble to document, so we re-dispatch them.
+    // See: https://github.com/adobe/react-spectrum/issues/2040
+    //
+    // Critical: React Aria checks if event.target is contained within the pressed
+    // element. We must preserve the original target, which requires overriding
+    // the target getter since it's normally set by dispatchEvent.
+    const eventsToForward = [
+      "mouseup",
+      "pointerup",
+      "pointercancel",
+      "keydown",
+      "keyup",
+    ] as const;
+
+    const forwardEvent = (e: Event) => {
+      // Stop the original event from reaching document with retargeted target.
+      // Composed events bubble from shadow DOM to light DOM, but the target gets
+      // retargeted to the shadow host. React Aria would see the wrong target and
+      // fail its containment check. We stop the original and dispatch a corrected one.
+      e.stopPropagation();
+
+      // Re-dispatch the event on document so React Aria's global listeners receive it
+      const clonedEvent = new (e.constructor as typeof Event)(e.type, e);
+
+      // Preserve the original target so React Aria's containment check works
+      const originalTarget = e.target;
+      Object.defineProperty(clonedEvent, "target", {
+        get: () => originalTarget,
+        configurable: true,
+      });
+
+      document.dispatchEvent(clonedEvent);
+    };
+
+    eventsToForward.forEach((eventType) => {
+      shadow!.addEventListener(eventType, forwardEvent);
+    });
+
     // Get the container for rendering
     const container = shadow.querySelector(".trellis-root") as HTMLElement;
     setShadowContainer(container);
+
+    return () => {
+      eventsToForward.forEach((eventType) => {
+        shadow!.removeEventListener(eventType, forwardEvent);
+      });
+    };
   }, []);
 
   // Keep data-theme in sync with initialTheme (host's color mode)
