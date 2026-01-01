@@ -10,6 +10,10 @@ export const MessageType = {
   PATCH: "patch",
   EVENT: "event",
   ERROR: "error",
+  HISTORY_PUSH: "history_push",
+  HISTORY_BACK: "history_back",
+  HISTORY_FORWARD: "history_forward",
+  URL_CHANGED: "url_changed",
 } as const;
 
 // ============================================================================
@@ -46,6 +50,7 @@ export interface HelloMessage {
   client_id: string;
   system_theme: "light" | "dark"; // Detected from OS preference
   theme_mode?: "system" | "light" | "dark"; // Host-controlled theme mode override
+  path?: string;
 }
 
 /** Debug configuration from the server. */
@@ -78,9 +83,39 @@ export interface PatchMessage {
   patches: Patch[];
 }
 
+// ============================================================================
+// Router messages for client-side navigation
+// ============================================================================
+
+/** Push a new path to browser history. Sent from server to client. */
+export interface HistoryPushMessage {
+  type: typeof MessageType.HISTORY_PUSH;
+  path: string;
+}
+
+/** Navigate back in browser history. Sent from server to client. */
+export interface HistoryBackMessage {
+  type: typeof MessageType.HISTORY_BACK;
+}
+
+/** Navigate forward in browser history. Sent from server to client. */
+export interface HistoryForwardMessage {
+  type: typeof MessageType.HISTORY_FORWARD;
+}
+
+/** URL changed in browser (e.g., popstate). Sent from client to server. */
+export interface UrlChangedMessage {
+  type: typeof MessageType.URL_CHANGED;
+  path: string;
+}
+
 export type Message =
   | HelloMessage
   | HelloResponseMessage
   | PatchMessage
   | EventMessage
-  | ErrorMessage;
+  | ErrorMessage
+  | HistoryPushMessage
+  | HistoryBackMessage
+  | HistoryForwardMessage
+  | UrlChangedMessage;
