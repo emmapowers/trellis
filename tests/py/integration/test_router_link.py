@@ -1,16 +1,26 @@
 """Integration tests for Link component."""
 
+import typing as tp
+
 from tests.conftest import PatchCapture, find_element_by_type
+from trellis.core.callback_context import callback_context
 from trellis.core.components.composition import component
 from trellis.core.rendering.session import RenderSession
 from trellis.platforms.common.serialization import parse_callback_id, serialize_node
 from trellis.routing import Link, RouterState
 
 
-def get_callback_from_id(session: RenderSession, cb_id: str):
-    """Helper to get callback using the two-arg API."""
+def invoke_callback(session: RenderSession, cb_id: str, *args: tp.Any) -> None:
+    """Invoke a callback with proper callback_context.
+
+    This simulates how MessageHandler invokes callbacks, providing
+    the callback context needed for from_context() to work.
+    """
     node_id, prop_name = parse_callback_id(cb_id)
-    return session.get_callback(node_id, prop_name)
+    callback = session.get_callback(node_id, prop_name)
+    assert callback is not None, f"Callback {cb_id} not found"
+    with callback_context(session, node_id):
+        callback(*args)
 
 
 class TestLinkRendering:
@@ -91,10 +101,8 @@ class TestLinkNavigation:
         assert on_click_data is not None, "Link should have onClick handler"
         cb_id = on_click_data["__callback__"]
 
-        # Invoke the callback
-        callback = get_callback_from_id(capture.session, cb_id)
-        assert callback is not None, f"Callback {cb_id} not found"
-        callback()
+        # Invoke the callback with callback_context (simulates handler behavior)
+        invoke_callback(capture.session, cb_id)
 
         # Verify navigation occurred
         assert router_state.path == "/about"
@@ -114,8 +122,9 @@ class TestLinkNavigation:
         tree = serialize_node(capture.session.root_element, capture.session)
         anchor = find_element_by_type(tree, "a")
         cb_id = anchor.get("props", {}).get("onClick")["__callback__"]
-        callback = get_callback_from_id(capture.session, cb_id)
-        callback()
+
+        # Invoke the callback with callback_context
+        invoke_callback(capture.session, cb_id)
 
         assert router_state.history == ["/", "/users"]
 

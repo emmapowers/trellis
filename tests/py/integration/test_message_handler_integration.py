@@ -635,3 +635,157 @@ class TestHelloHandshake:
             assert captured[0] == ("dark", None)
 
         asyncio.run(test())
+
+
+class TestCallbackContextIntegration:
+    """Tests for from_context() working in callbacks invoked via MessageHandler."""
+
+    def test_from_context_works_in_sync_callback(self, app_wrapper: AppWrapper) -> None:
+        """from_context() retrieves state in sync callback invoked via handle_message."""
+
+        @dataclass(kw_only=True)
+        class AppState(Stateful):
+            value: str = "initial"
+
+        retrieved_values: list[str] = []
+
+        @component
+        def App() -> None:
+            with AppState(value="hello"):
+                Child()
+
+        @component
+        def Child() -> None:
+            def on_click() -> None:
+                # This should work - from_context() in callback
+                state = AppState.from_context()
+                retrieved_values.append(state.value)
+
+            Button(text="Click", on_click=on_click)
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        tree = get_initial_tree(handler)
+
+        # Find the button and get callback ID (navigate through wrappers)
+        app_children = find_app_children(tree)
+        child = app_children[0]
+        button = child["children"][0]
+        cb_id = button["props"]["on_click"]["__callback__"]
+
+        # Invoke callback via handle_message
+        event_msg = EventMessage(callback_id=cb_id, args=[])
+        asyncio.run(handler.handle_message(event_msg))
+
+        # from_context() should have worked in the callback
+        assert retrieved_values == ["hello"]
+
+    def test_from_context_works_in_async_callback(self, app_wrapper: AppWrapper) -> None:
+        """from_context() retrieves state in async callback invoked via handle_message."""
+
+        @dataclass(kw_only=True)
+        class AppState(Stateful):
+            value: str = "initial"
+
+        retrieved_values: list[str] = []
+
+        @component
+        def App() -> None:
+            with AppState(value="async-test"):
+                Child()
+
+        @component
+        def Child() -> None:
+            async def on_click() -> None:
+                # This should work - from_context() in async callback
+                state = AppState.from_context()
+                retrieved_values.append(state.value)
+
+            Button(text="Click", on_click=on_click)
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        tree = get_initial_tree(handler)
+
+        app_children = find_app_children(tree)
+        child = app_children[0]
+        button = child["children"][0]
+        cb_id = button["props"]["on_click"]["__callback__"]
+
+        async def test() -> None:
+            event_msg = EventMessage(callback_id=cb_id, args=[])
+            await handler.handle_message(event_msg)
+            # Give async callback time to run
+            await asyncio.sleep(0.01)
+
+        asyncio.run(test())
+
+        assert retrieved_values == ["async-test"]
+
+    def test_from_context_returns_default_when_state_not_in_context(
+        self, app_wrapper: AppWrapper
+    ) -> None:
+        """from_context(default=None) returns None when state not found in callback."""
+
+        @dataclass(kw_only=True)
+        class MissingState(Stateful):
+            pass
+
+        results: list[tp.Any] = []
+
+        @component
+        def App() -> None:
+            def on_click() -> None:
+                # No MissingState in context - should return None
+                state = MissingState.from_context(default=None)
+                results.append(state)
+
+            Button(text="Click", on_click=on_click)
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        tree = get_initial_tree(handler)
+
+        app_children = find_app_children(tree)
+        button = app_children[0]
+        cb_id = button["props"]["on_click"]["__callback__"]
+
+        event_msg = EventMessage(callback_id=cb_id, args=[])
+        asyncio.run(handler.handle_message(event_msg))
+
+        assert results == [None]
+
+    def test_from_context_raises_when_state_not_in_context_no_default(
+        self, app_wrapper: AppWrapper
+    ) -> None:
+        """from_context() raises LookupError when state not found and no default."""
+
+        @dataclass(kw_only=True)
+        class MissingState(Stateful):
+            pass
+
+        errors: list[Exception] = []
+
+        @component
+        def App() -> None:
+            def on_click() -> None:
+                try:
+                    MissingState.from_context()
+                except LookupError as e:
+                    errors.append(e)
+
+            Button(text="Click", on_click=on_click)
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        tree = get_initial_tree(handler)
+
+        app_children = find_app_children(tree)
+        button = app_children[0]
+        cb_id = button["props"]["on_click"]["__callback__"]
+
+        event_msg = EventMessage(callback_id=cb_id, args=[])
+        asyncio.run(handler.handle_message(event_msg))
+
+        assert len(errors) == 1
+        assert "No MissingState found" in str(errors[0])

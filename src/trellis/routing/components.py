@@ -64,11 +64,9 @@ def Link(*, to: str, text: str = "", children: list[Element] | None = None) -> N
         ```
     """
 
-    # Capture router state at render time, not callback time
-    router_state = router()
-
     def handle_click() -> None:
-        router_state.navigate(to)
+        # router() works in callbacks via callback_context
+        router().navigate(to)
 
     with A(text, href=to, onClick=handle_click):
         if children:
