@@ -10,87 +10,87 @@ class TestClientStateTheme:
 
     def test_system_mode_follows_os_dark(self) -> None:
         """When mode is SYSTEM, resolved_theme should follow system_theme."""
-        state = ClientState(mode=ThemeMode.SYSTEM, system_theme=ThemeMode.DARK)
-        assert state.resolved_theme == ThemeMode.DARK
+        state = ClientState(theme_setting=ThemeMode.SYSTEM, system_theme=ThemeMode.DARK)
+        assert state.theme == ThemeMode.DARK
         assert state.is_dark is True
         assert state.is_light is False
 
     def test_system_mode_follows_os_light(self) -> None:
         """When mode is SYSTEM and OS is light, resolved_theme is LIGHT."""
-        state = ClientState(mode=ThemeMode.SYSTEM, system_theme=ThemeMode.LIGHT)
-        assert state.resolved_theme == ThemeMode.LIGHT
+        state = ClientState(theme_setting=ThemeMode.SYSTEM, system_theme=ThemeMode.LIGHT)
+        assert state.theme == ThemeMode.LIGHT
         assert state.is_dark is False
         assert state.is_light is True
 
     def test_explicit_dark_mode_ignores_system(self) -> None:
         """When mode is DARK, system_theme should be ignored."""
-        state = ClientState(mode=ThemeMode.DARK, system_theme=ThemeMode.LIGHT)
-        assert state.resolved_theme == ThemeMode.DARK
+        state = ClientState(theme_setting=ThemeMode.DARK, system_theme=ThemeMode.LIGHT)
+        assert state.theme == ThemeMode.DARK
         assert state.is_dark is True
 
     def test_explicit_light_mode_ignores_system(self) -> None:
         """When mode is LIGHT, system_theme should be ignored."""
-        state = ClientState(mode=ThemeMode.LIGHT, system_theme=ThemeMode.DARK)
-        assert state.resolved_theme == ThemeMode.LIGHT
+        state = ClientState(theme_setting=ThemeMode.LIGHT, system_theme=ThemeMode.DARK)
+        assert state.theme == ThemeMode.LIGHT
         assert state.is_light is True
 
     def test_handle_system_theme_change_to_dark(self) -> None:
         """handle_system_theme_change should update system_theme to dark."""
-        state = ClientState(mode=ThemeMode.SYSTEM, system_theme=ThemeMode.LIGHT)
+        state = ClientState(theme_setting=ThemeMode.SYSTEM, system_theme=ThemeMode.LIGHT)
         state.handle_system_theme_change("dark")
         assert state.system_theme == ThemeMode.DARK
-        assert state.resolved_theme == ThemeMode.DARK
+        assert state.theme == ThemeMode.DARK
 
     def test_handle_system_theme_change_to_light(self) -> None:
         """handle_system_theme_change should update system_theme to light."""
-        state = ClientState(mode=ThemeMode.SYSTEM, system_theme=ThemeMode.DARK)
+        state = ClientState(theme_setting=ThemeMode.SYSTEM, system_theme=ThemeMode.DARK)
         state.handle_system_theme_change("light")
         assert state.system_theme == ThemeMode.LIGHT
-        assert state.resolved_theme == ThemeMode.LIGHT
+        assert state.theme == ThemeMode.LIGHT
 
     def test_toggle_cycles_system_to_light(self) -> None:
         """toggle() should cycle SYSTEM → LIGHT."""
-        state = ClientState(mode=ThemeMode.SYSTEM)
+        state = ClientState(theme_setting=ThemeMode.SYSTEM)
         state.toggle()
-        assert state.mode == ThemeMode.LIGHT
+        assert state.theme_setting == ThemeMode.LIGHT
 
     def test_toggle_cycles_light_to_dark(self) -> None:
         """toggle() should cycle LIGHT → DARK."""
-        state = ClientState(mode=ThemeMode.LIGHT)
+        state = ClientState(theme_setting=ThemeMode.LIGHT)
         state.toggle()
-        assert state.mode == ThemeMode.DARK
+        assert state.theme_setting == ThemeMode.DARK
 
     def test_toggle_cycles_dark_to_system(self) -> None:
         """toggle() should cycle DARK → SYSTEM."""
-        state = ClientState(mode=ThemeMode.DARK)
+        state = ClientState(theme_setting=ThemeMode.DARK)
         state.toggle()
-        assert state.mode == ThemeMode.SYSTEM
+        assert state.theme_setting == ThemeMode.SYSTEM
 
     def test_toggle_full_cycle(self) -> None:
         """toggle() should complete full cycle: SYSTEM → LIGHT → DARK → SYSTEM."""
-        state = ClientState(mode=ThemeMode.SYSTEM)
+        state = ClientState(theme_setting=ThemeMode.SYSTEM)
         state.toggle()
-        assert state.mode == ThemeMode.LIGHT
+        assert state.theme_setting == ThemeMode.LIGHT
         state.toggle()
-        assert state.mode == ThemeMode.DARK
+        assert state.theme_setting == ThemeMode.DARK
         state.toggle()
-        assert state.mode == ThemeMode.SYSTEM
+        assert state.theme_setting == ThemeMode.SYSTEM
 
     def test_set_mode_with_string(self) -> None:
         """set_mode should accept string values."""
         state = ClientState()
         state.set_mode("dark")
-        assert state.mode == ThemeMode.DARK
+        assert state.theme_setting == ThemeMode.DARK
         state.set_mode("light")
-        assert state.mode == ThemeMode.LIGHT
+        assert state.theme_setting == ThemeMode.LIGHT
         state.set_mode("system")
-        assert state.mode == ThemeMode.SYSTEM
+        assert state.theme_setting == ThemeMode.SYSTEM
 
     def test_set_mode_with_enum(self) -> None:
         """set_mode should accept ThemeMode enum values."""
         state = ClientState()
         state.set_mode(ThemeMode.DARK)
-        assert state.mode == ThemeMode.DARK
+        assert state.theme_setting == ThemeMode.DARK
 
     def test_set_mode_invalid_string_raises_value_error(self) -> None:
         """set_mode should raise ValueError for invalid string values."""
@@ -143,7 +143,7 @@ class TestClientStateDeviceInfo:
     def test_default_values(self) -> None:
         """ClientState should have sensible defaults."""
         state = ClientState()
-        assert state.mode == ThemeMode.SYSTEM
+        assert state.theme_setting == ThemeMode.SYSTEM
         assert state.system_theme == ThemeMode.LIGHT
         assert state.device_type.value == "unknown"
         assert state.os.value == "unknown"
@@ -192,7 +192,7 @@ class TestClientStateContext:
 
         @component
         def ParentComponent() -> None:
-            state = ClientState(mode=ThemeMode.DARK)
+            state = ClientState(theme_setting=ThemeMode.DARK)
             with state:
                 ChildComponent()
 

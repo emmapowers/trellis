@@ -34,7 +34,7 @@ class TestTrellisApp:
 
     def test_uses_provided_client_state(self) -> None:
         """TrellisApp should use provided ClientState instead of creating one."""
-        custom_state = ClientState(mode=ThemeMode.DARK)
+        custom_state = ClientState(theme_setting=ThemeMode.DARK)
         retrieved_state: ClientState | None = None
 
         @component
@@ -104,7 +104,7 @@ class TestTrellisApp:
 
         @component
         def Root() -> None:
-            TrellisApp(app=MyApp, client_state=ClientState(mode=ThemeMode.DARK))
+            TrellisApp(app=MyApp, client_state=ClientState(theme_setting=ThemeMode.DARK))
 
         tree = RenderSession(Root)
         render(tree)

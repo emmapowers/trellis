@@ -286,7 +286,7 @@ class MessageHandler:
         else:
             mode = ThemeMode.SYSTEM
 
-        self._pending_client_state = ClientState(mode=mode, system_theme=system_theme)
+        self._pending_client_state = ClientState(theme_setting=mode, system_theme=system_theme)
 
         self.session_id = str(uuid4())
 

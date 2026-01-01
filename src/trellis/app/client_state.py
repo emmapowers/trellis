@@ -160,7 +160,7 @@ class ClientState(Stateful):
     """
 
     # Theme state
-    mode: ThemeMode = ThemeMode.SYSTEM
+    theme_setting: ThemeMode = ThemeMode.SYSTEM
     system_theme: ThemeMode = ThemeMode.LIGHT
 
     # Device info (set at connection time, typically not changed after)
@@ -174,25 +174,25 @@ class ClientState(Stateful):
     # -------------------------------------------------------------------------
 
     @property
-    def resolved_theme(self) -> ThemeMode:
+    def theme(self) -> ThemeMode:
         """The actual theme to apply (LIGHT or DARK).
 
         When mode is SYSTEM, returns the detected OS theme.
         Otherwise returns the explicit mode setting.
         """
-        if self.mode == ThemeMode.SYSTEM:
+        if self.theme_setting == ThemeMode.SYSTEM:
             return self.system_theme
-        return self.mode
+        return self.theme_setting
 
     @property
     def is_dark(self) -> bool:
         """Check if dark theme should be applied."""
-        return self.resolved_theme == ThemeMode.DARK
+        return self.theme == ThemeMode.DARK
 
     @property
     def is_light(self) -> bool:
         """Check if light theme should be applied."""
-        return self.resolved_theme == ThemeMode.LIGHT
+        return self.theme == ThemeMode.LIGHT
 
     # -------------------------------------------------------------------------
     # Theme methods
@@ -213,16 +213,16 @@ class ClientState(Stateful):
                     f"Invalid theme mode: {mode!r}. Must be 'system', 'light', or 'dark'."
                 )
             mode = ThemeMode(mode)
-        self.mode = mode
+        self.theme_setting = mode
 
     def toggle(self) -> None:
         """Cycle through theme modes: SYSTEM → LIGHT → DARK → SYSTEM."""
-        if self.mode == ThemeMode.SYSTEM:
-            self.mode = ThemeMode.LIGHT
-        elif self.mode == ThemeMode.LIGHT:
-            self.mode = ThemeMode.DARK
+        if self.theme_setting == ThemeMode.SYSTEM:
+            self.theme_setting = ThemeMode.LIGHT
+        elif self.theme_setting == ThemeMode.LIGHT:
+            self.theme_setting = ThemeMode.DARK
         else:
-            self.mode = ThemeMode.SYSTEM
+            self.theme_setting = ThemeMode.SYSTEM
 
     def handle_system_theme_change(self, new_theme: Literal["light", "dark"]) -> None:
         """Handle OS theme change notification from client.

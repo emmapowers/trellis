@@ -78,14 +78,14 @@ class TestThemeSwitcherComponent:
 
     def test_uses_client_state_mode(self) -> None:
         """ThemeSwitcher should read mode from ClientState context."""
-        client_state = ClientState(mode=ThemeMode.DARK)
+        client_state = ClientState(theme_setting=ThemeMode.DARK)
         rendered_mode: ThemeMode | None = None
 
         @component
         def App() -> None:
             nonlocal rendered_mode
             state = ClientState.from_context()
-            rendered_mode = state.mode
+            rendered_mode = state.theme_setting
             ThemeSwitcher()
 
         @component

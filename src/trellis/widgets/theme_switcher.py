@@ -51,10 +51,10 @@ def ThemeSwitcher() -> None:
     """
     client_state = ClientState.from_context()
 
-    icon, tooltip = _get_icon_for_mode(client_state.mode)
+    icon, tooltip = _get_icon_for_mode(client_state.theme_setting)
 
     def handle_click(*_args: object) -> None:
-        next_mode = _get_next_mode(client_state.mode)
+        next_mode = _get_next_mode(client_state.theme_setting)
         client_state.set_mode(next_mode)
 
     with h.Div(

@@ -502,7 +502,7 @@ class TestHelloHandshake:
 
             # ClientState should use the theme_mode override
             assert handler._pending_client_state is not None
-            assert handler._pending_client_state.mode == ThemeMode.DARK
+            assert handler._pending_client_state.theme_setting == ThemeMode.DARK
             # system_theme should still be set from the message
             assert handler._pending_client_state.system_theme == ThemeMode.LIGHT
 
@@ -526,7 +526,7 @@ class TestHelloHandshake:
             await handler.handle_hello()
 
             assert handler._pending_client_state is not None
-            assert handler._pending_client_state.mode == ThemeMode.SYSTEM
+            assert handler._pending_client_state.theme_setting == ThemeMode.SYSTEM
             assert handler._pending_client_state.system_theme == ThemeMode.DARK
 
         asyncio.run(test())
@@ -549,6 +549,6 @@ class TestHelloHandshake:
             await handler.handle_hello()
 
             assert handler._pending_client_state is not None
-            assert handler._pending_client_state.mode == ThemeMode.SYSTEM
+            assert handler._pending_client_state.theme_setting == ThemeMode.SYSTEM
 
         asyncio.run(test())
