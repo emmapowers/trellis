@@ -16,7 +16,6 @@ from trellis.core.components.base import Component
 from trellis.platforms.common.handler import MessageHandler
 from trellis.platforms.common.messages import (
     EventMessage,
-    HelloMessage,
     Message,
 )
 
@@ -121,17 +120,11 @@ def _message_to_dict(msg: Message) -> dict[str, tp.Any]:
 
 
 def _dict_to_message(msg_dict: dict[str, tp.Any]) -> Message:
-    """Convert a dict from JavaScript to a msgspec Message struct."""
-    msg_type = msg_dict.get("type")
+    """Convert a dict from JavaScript to a msgspec Message struct.
 
-    if msg_type == "hello":
-        return HelloMessage(client_id=msg_dict.get("client_id", ""))
-    if msg_type == "event":
-        callback_id = msg_dict.get("callback_id")
-        if callback_id is None:
-            raise ValueError("Event message missing required 'callback_id' field")
-        return EventMessage(
-            callback_id=callback_id,
-            args=msg_dict.get("args", []),
-        )
-    raise ValueError(f"Unknown message type: {msg_type}")
+    Uses msgspec.convert() with the Message union type, which automatically
+    dispatches to the correct struct based on the 'type' tag field.
+    This is symmetric with msgspec.to_builtins() used in _message_to_dict().
+    """
+    result: Message = msgspec.convert(msg_dict, Message)
+    return result
