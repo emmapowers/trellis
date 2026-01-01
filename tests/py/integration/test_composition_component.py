@@ -155,7 +155,7 @@ class TestCompositionComponent:
         child0 = result.session.elements.get(result.root_element.child_ids[0])
         child1 = result.session.elements.get(result.root_element.child_ids[1])
         child2 = result.session.elements.get(result.root_element.child_ids[2])
-        assert child0 is not None and child0.key is None
-        assert child1 is not None and child1.key is None
+        assert child0 is not None and child0._key is None
+        assert child1 is not None and child1._key is None
         # Third should have explicit key
-        assert child2 is not None and child2.key == "explicit"
+        assert child2 is not None and child2._key == "explicit"

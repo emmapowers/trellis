@@ -8,6 +8,7 @@ from trellis.core.rendering.session import (
     RenderSession,
     get_active_session,
 )
+from trellis.core.rendering.traits import KeyTrait
 from trellis.core.state.mutable import Mutable
 from trellis.utils.logger import logger
 
@@ -21,14 +22,14 @@ __all__ = [
 
 
 @dataclass
-class Element:
+class Element(KeyTrait):
     """Tree node representing a component invocation."""
 
     component: Component
     _session_ref: weakref.ref[RenderSession]
     render_count: int  # Required, no default - must be set from session.render_count
     props: dict[str, tp.Any] = field(default_factory=dict)
-    key: str | None = None
+    _key: str | None = None
     child_ids: list[str] = field(default_factory=list)
     id: str = ""  # Position-based ID assigned at creation
 

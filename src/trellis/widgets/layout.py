@@ -23,7 +23,6 @@ def Column(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Vertical flex container.
 
@@ -73,7 +72,6 @@ def Row(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Horizontal flex container.
 
@@ -115,7 +113,6 @@ def Card(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Visual container with card styling.
 

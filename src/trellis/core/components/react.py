@@ -9,9 +9,7 @@ from typing import ParamSpec
 
 from trellis.core.components.base import Component, ElementKind
 from trellis.core.components.style_props import Height, Margin, Padding, Width
-
-if tp.TYPE_CHECKING:
-    from trellis.core.rendering.element import Element
+from trellis.core.rendering.element import Element
 
 __all__ = ["ReactComponentBase", "react_component_base"]
 
@@ -100,6 +98,7 @@ def react_component_base(
     element_name: str,
     *,
     has_children: bool = False,
+    element_class: type[Element] = Element,
 ) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]:
     """Decorator to create a ReactComponentBase from a function signature."""
 
@@ -111,8 +110,8 @@ def react_component_base(
             _element_name = element_name
             _has_children = has_children
 
-        # Create singleton instance
-        _singleton = _Generated(func.__name__)
+        # Create singleton instance with the element_class
+        _singleton = _Generated(func.__name__, element_class=element_class)
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element:

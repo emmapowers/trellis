@@ -28,7 +28,6 @@ def Tabs(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Tab container for organizing content.
 
@@ -56,7 +55,6 @@ def Tab(
     padding: Padding | int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Individual tab within a Tabs container.
 
@@ -88,7 +86,6 @@ def Tree(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Hierarchical tree view.
 
@@ -120,7 +117,6 @@ def Breadcrumb(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Navigation breadcrumb trail.
 

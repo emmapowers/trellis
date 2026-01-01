@@ -29,7 +29,6 @@ def Label(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Text display widget.
 
@@ -48,7 +47,6 @@ def Label(
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
-        key: Optional key for reconciliation.
 
     Returns:
         An Element for the Label component.
@@ -74,7 +72,6 @@ def Button(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Clickable button widget with modern styling.
 
@@ -94,7 +91,6 @@ def Button(
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
-        key: Optional key for reconciliation.
 
     Returns:
         An Element for the Button component.
@@ -120,7 +116,6 @@ def Slider(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Range slider widget.
 
@@ -157,7 +152,6 @@ def TextInput(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Single-line text input widget.
 
@@ -194,7 +188,6 @@ def NumberInput(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Numeric input widget.
 
@@ -231,7 +224,6 @@ def Checkbox(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Checkbox toggle widget.
 
@@ -262,7 +254,6 @@ def Divider(
     color: str | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Divider line for separating content.
 
@@ -298,7 +289,6 @@ def Select(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Single-selection dropdown widget.
 
@@ -336,7 +326,6 @@ def Heading(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Semantic heading widget.
 
@@ -377,7 +366,6 @@ def ProgressBar(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Progress bar widget.
 
@@ -419,7 +407,6 @@ def StatusIndicator(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Status indicator with icon and optional label.
 
@@ -464,7 +451,6 @@ def Badge(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Small badge for counts or status labels.
 
@@ -507,7 +493,6 @@ def Tooltip(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Tooltip wrapper for hover hints.
 

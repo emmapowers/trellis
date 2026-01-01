@@ -23,7 +23,6 @@ def TimeSeriesChart(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """High-performance time-series chart using uPlot.
 
@@ -86,7 +85,6 @@ def LineChart(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Line chart using Recharts.
 
@@ -145,7 +143,6 @@ def BarChart(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Bar chart using Recharts.
 
@@ -203,7 +200,6 @@ def AreaChart(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Area chart using Recharts.
 
@@ -250,7 +246,6 @@ def PieChart(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Pie/donut chart using Recharts.
 
@@ -302,7 +297,6 @@ def Sparkline(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Inline mini-chart for compact data visualization.
 

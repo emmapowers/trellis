@@ -95,6 +95,7 @@ def html_element(
     *,
     is_container: bool = False,
     name: str | None = None,
+    element_class: type[Element] = Element,
 ) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]:
     """Decorator to create an HtmlElement from a function signature.
 
@@ -107,6 +108,8 @@ def html_element(
         is_container: Whether this element accepts children via `with` block
         name: Optional name override (defaults to function name). Useful for
             internal functions prefixed with underscore.
+        element_class: Optional Element subclass to use for nodes created by
+            this element. Useful for adding custom trait methods.
 
     Returns:
         A decorator that creates a callable returning Elements
@@ -142,8 +145,8 @@ def html_element(
             _tag = tag
             _is_container = is_container
 
-        # Create singleton instance with explicit name
-        _singleton = _Generated(element_name)
+        # Create singleton instance with explicit name and element_class
+        _singleton = _Generated(element_name, element_class=element_class)
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element:

@@ -100,12 +100,14 @@ def _render_impl(
                 if old_node:
                     # Create NEW node for re-render. This ensures the old node
                     # can be GC'd and removed from any WeakSets (dependency tracking).
-                    new_node = Element(
+                    # Preserve the element class from the component.
+                    element_class = old_node.component.element_class
+                    new_node = element_class(
                         component=old_node.component,
                         _session_ref=old_node._session_ref,
                         render_count=session.render_count,
                         props=old_node.props,
-                        key=old_node.key,
+                        _key=old_node._key,
                         child_ids=list(old_node.child_ids),
                         id=old_node.id,
                     )

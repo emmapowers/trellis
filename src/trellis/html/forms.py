@@ -36,7 +36,6 @@ def Form(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A form element."""
@@ -58,7 +57,6 @@ def Input(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An input element.
@@ -93,7 +91,6 @@ def Textarea(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A textarea element."""
@@ -110,7 +107,6 @@ def Select(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A select dropdown element."""
@@ -128,7 +124,6 @@ def _HtmlButton(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A native HTML button element."""
@@ -142,7 +137,6 @@ def _Option(
     value: str | None = None,
     disabled: bool = False,
     selected: bool = False,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An option element for use within Select."""
@@ -156,7 +150,6 @@ def _HtmlLabel(
     htmlFor: str | None = None,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A label element."""
@@ -173,7 +166,6 @@ def HtmlButton(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A native HTML button element.
@@ -194,7 +186,6 @@ def HtmlButton(
         className=className,
         style=style,
         id=id,
-        key=key,
         **props,
     )
 
@@ -205,7 +196,6 @@ def Option(
     value: str | None = None,
     disabled: bool = False,
     selected: bool = False,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An option element for use within Select."""
@@ -214,7 +204,6 @@ def Option(
         value=value,
         disabled=disabled,
         selected=selected,
-        key=key,
         **props,
     )
 
@@ -225,7 +214,6 @@ def HtmlLabel(
     htmlFor: str | None = None,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A label element.
@@ -243,6 +231,5 @@ def HtmlLabel(
         htmlFor=htmlFor,
         className=className,
         style=style,
-        key=key,
         **props,
     )

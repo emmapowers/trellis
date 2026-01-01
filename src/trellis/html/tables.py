@@ -26,7 +26,6 @@ def Table(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A table element."""
@@ -38,7 +37,6 @@ def Thead(
     *,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A table header section element."""
@@ -50,7 +48,6 @@ def Tbody(
     *,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A table body section element."""
@@ -62,7 +59,6 @@ def Tr(
     *,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A table row element."""
@@ -79,7 +75,6 @@ def _Th(
     rowSpan: int | None = None,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A table header cell element."""
@@ -94,7 +89,6 @@ def _Td(
     rowSpan: int | None = None,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A table data cell element."""
@@ -109,7 +103,6 @@ def Th(
     rowSpan: int | None = None,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A table header cell element.
@@ -127,7 +120,6 @@ def Th(
         rowSpan=rowSpan,
         className=className,
         style=style,
-        key=key,
         **props,
     )
 
@@ -139,7 +131,6 @@ def Td(
     rowSpan: int | None = None,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A table data cell element.
@@ -156,6 +147,5 @@ def Td(
         rowSpan=rowSpan,
         className=className,
         style=style,
-        key=key,
         **props,
     )

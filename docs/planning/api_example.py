@@ -11,6 +11,7 @@ Key Concepts:
 * The `mutable()` function enables two-way binding for form inputs
 * Context API (`with state:` / `from_context()`) shares state with descendants
 * Components use `with` blocks to define parent-child relationships
+* Elements use `.key()` for stable identity in dynamic lists
 """
 
 from dataclasses import dataclass
@@ -81,6 +82,22 @@ def ErrorMessage(message: str) -> None:
     if message:
         with h.Div(style={"color": "red", "padding": "8px"}):
             w.Label(text=message)
+
+
+@component
+def UserList(users: list[dict]) -> None:
+    """Display a list of users with proper key usage.
+
+    The `.key()` method ensures stable element identity when the list
+    changes. Without keys, reordering items would cause incorrect state
+    preservation. Keys should be unique, stable identifiers (like IDs).
+    """
+    with w.Column(gap=8):
+        for user in users:
+            # Use .key() for stable identity - essential for dynamic lists
+            with w.Row(gap=8, align="center").key(user["id"]):
+                w.Label(text=user["name"])
+                w.Label(text=user["email"], style={"color": "gray"})
 
 
 @component

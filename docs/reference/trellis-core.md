@@ -32,6 +32,28 @@ class Element:
 
 Component identity in ID enables reuse optimization: same component + same props + mounted + not dirty → skip re-execution.
 
+### Element Traits
+
+Elements support fluent method chaining via traits. The primary trait is `KeyTrait` for setting reconciliation keys:
+
+```python
+# Set key for stable identity across re-renders
+Button(text="Delete").key("delete-btn")
+
+# Keys in loops for proper reconciliation
+for item in items:
+    ListItem(text=item.name).key(item.id)
+```
+
+The `.key()` method returns the element, enabling chaining with `with` blocks:
+
+```python
+with Column().key("main-content"):
+    Label(text="Hello")
+```
+
+Keys are essential when rendering dynamic lists — without them, Trellis uses position-based matching which can cause incorrect state preservation when items are reordered, inserted, or removed.
+
 ### ElementState
 Mutable runtime state for each Element, keyed by `node.id`.
 

@@ -24,6 +24,7 @@ title: UI and Rendering
    - [Using @react_component_from_files](#using-react_component_from_files)
 5. [Element Tree Architecture](#element-tree-architecture)
    - [Element](#element)
+   - [Element Traits](#element-traits)
    - [ElementState](#elementstate)
    - [RenderTree](#rendertree)
 6. [Rendering Pipeline](#rendering-pipeline)
@@ -385,11 +386,13 @@ def Div(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: Any,
 ) -> Element:
     """A div container element."""
     ...
+
+# Keys are set via fluent method:
+Div(className="container").key("my-div")
 ```
 
 This decorator:
@@ -654,10 +657,10 @@ Element represents a node in the component tree - what component to render, with
 
 ```python
 @dataclass
-class Element:
+class Element(KeyTrait):
     component: Component          # The component definition
     props: dict[str, Any]         # Component properties
-    key: str | None = None        # Optional key for reconciliation
+    _key: str | None = None       # Optional key for reconciliation (set via .key())
     child_ids: list[str] = []     # Child node IDs (flat storage)
     id: str = ""                  # Position-based ID
 ```
@@ -677,6 +680,55 @@ node = Element(
     id="/@root/0@Button"
 )
 ```
+
+### Element Traits
+
+Elements support fluent method chaining for configuration through trait mixins. Traits provide a clean API for setting element properties.
+
+**KeyTrait:**
+
+The `KeyTrait` mixin provides the `.key()` method for setting reconciliation keys:
+
+```python
+# Fluent key setting
+h.Div("Item 1").key("item-1")
+Button(text="Click").key("btn-1")
+```
+
+Keys help the reconciler match elements across renders, preserving state when items are reordered.
+
+**Custom Traits:**
+
+Component authors can define custom Element subclasses with additional traits:
+
+```python
+from trellis.core.rendering import Element, KeyTrait
+from typing import Self
+
+class TestableElement(Element):
+    """Element with test ID support."""
+
+    def test_id(self, value: str) -> Self:
+        """Set a data-testid for testing."""
+        self.props["data-testid"] = value
+        return self
+```
+
+Use the `element_class` parameter to specify custom element classes:
+
+```python
+@component(element_class=TestableElement)
+def MyWidget() -> None:
+    h.P("Content")
+
+# Now MyWidget creates TestableElement instances
+MyWidget().test_id("my-widget")
+```
+
+The `element_class` parameter is supported on:
+- `@component`
+- `@react_component_base`
+- `@html_element`
 
 ### ElementState
 
@@ -964,7 +1016,7 @@ For complex reorderings, deletions, and insertions, keys provide stable identity
 **Usage:**
 ```python
 for item in items:
-    with Card(key=item.id):  # Stable key
+    with Card().key(item.id):  # Stable key via fluent method
         h.P(item.name)
 ```
 
@@ -1885,7 +1937,7 @@ This is caught because `Stateful.__setattr__` checks if we're currently renderin
 **Non-unique keys:**
 ```python
 for item in items:
-    with Card(key="duplicate"):  # RuntimeWarning: Duplicate key "duplicate"
+    with Card().key("duplicate"):  # RuntimeWarning: Duplicate key "duplicate"
         h.P(item.name)
 ```
 

@@ -65,7 +65,6 @@ def _P(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A paragraph element."""
@@ -79,7 +78,6 @@ def _H1(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A level 1 heading."""
@@ -93,7 +91,6 @@ def _H2(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A level 2 heading."""
@@ -107,7 +104,6 @@ def _H3(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A level 3 heading."""
@@ -121,7 +117,6 @@ def _H4(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A level 4 heading."""
@@ -135,7 +130,6 @@ def _H5(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A level 5 heading."""
@@ -149,7 +143,6 @@ def _H6(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A level 6 heading."""
@@ -162,7 +155,6 @@ def _Strong(
     _text: str | None = None,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A strong (bold) text element."""
@@ -175,7 +167,6 @@ def _Em(
     _text: str | None = None,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An emphasis (italic) text element."""
@@ -188,7 +179,6 @@ def _Code(
     _text: str | None = None,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An inline code element."""
@@ -201,7 +191,6 @@ def _Pre(
     _text: str | None = None,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A preformatted text element."""
@@ -219,7 +208,6 @@ def P(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A paragraph element."""
@@ -228,7 +216,6 @@ def P(
         className=className,
         style=style,
         id=id,
-        key=key,
         **props,
     )
 
@@ -239,7 +226,6 @@ def H1(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A level 1 heading."""
@@ -248,7 +234,6 @@ def H1(
         className=className,
         style=style,
         id=id,
-        key=key,
         **props,
     )
 
@@ -259,7 +244,6 @@ def H2(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A level 2 heading."""
@@ -268,7 +252,6 @@ def H2(
         className=className,
         style=style,
         id=id,
-        key=key,
         **props,
     )
 
@@ -279,7 +262,6 @@ def H3(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A level 3 heading."""
@@ -288,7 +270,6 @@ def H3(
         className=className,
         style=style,
         id=id,
-        key=key,
         **props,
     )
 
@@ -299,7 +280,6 @@ def H4(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A level 4 heading."""
@@ -308,7 +288,6 @@ def H4(
         className=className,
         style=style,
         id=id,
-        key=key,
         **props,
     )
 
@@ -319,7 +298,6 @@ def H5(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A level 5 heading."""
@@ -328,7 +306,6 @@ def H5(
         className=className,
         style=style,
         id=id,
-        key=key,
         **props,
     )
 
@@ -339,7 +316,6 @@ def H6(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A level 6 heading."""
@@ -348,7 +324,6 @@ def H6(
         className=className,
         style=style,
         id=id,
-        key=key,
         **props,
     )
 
@@ -358,7 +333,6 @@ def Strong(
     *,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A strong (bold) text element."""
@@ -366,7 +340,6 @@ def Strong(
         _text=text if text else None,
         className=className,
         style=style,
-        key=key,
         **props,
     )
 
@@ -376,7 +349,6 @@ def Em(
     *,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An emphasis (italic) text element."""
@@ -384,7 +356,6 @@ def Em(
         _text=text if text else None,
         className=className,
         style=style,
-        key=key,
         **props,
     )
 
@@ -394,7 +365,6 @@ def Code(
     *,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An inline code element."""
@@ -402,7 +372,6 @@ def Code(
         _text=text if text else None,
         className=className,
         style=style,
-        key=key,
         **props,
     )
 
@@ -412,7 +381,6 @@ def Pre(
     *,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A preformatted text element."""
@@ -420,15 +388,12 @@ def Pre(
         _text=text if text else None,
         className=className,
         style=style,
-        key=key,
         **props,
     )
 
 
 def Text(
     value: tp.Any,
-    *,
-    key: str | None = None,
 ) -> Element:
     """A plain text node without any wrapper element.
 
@@ -437,6 +402,5 @@ def Text(
 
     Args:
         value: Any value to display (will be converted to string)
-        key: Optional key for reconciliation
     """
-    return _text_node(_text=str(value), key=key)
+    return _text_node(_text=str(value))
