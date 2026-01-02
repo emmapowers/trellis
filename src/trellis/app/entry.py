@@ -35,6 +35,7 @@ from trellis.utils.log_setup import setup_logging
 
 if TYPE_CHECKING:
     from trellis.core.rendering.element import Element
+    from trellis.platforms.common.handler import AppWrapper
 
 # Define which arguments belong to which platform
 _SERVER_ARGS = {"host", "port", "static_dir"}
@@ -401,6 +402,43 @@ class Trellis:
         """The platform instance."""
         return self._platform
 
+    def _create_app_wrapper(self) -> AppWrapper:
+        """Create the app wrapper callback for platforms.
+
+        The wrapper handles:
+        - Converting string theme data to enums
+        - Creating ClientState with detected theme
+        - Wrapping the component with TrellisApp
+
+        Returns:
+            A callback that takes (component, system_theme, theme_mode) and
+            returns a wrapped Component ready for RenderSession.
+        """
+        from trellis.app.client_state import ClientState, ThemeMode
+        from trellis.app.trellis_app import TrellisApp
+        from trellis.core.components.base import Component
+        from trellis.core.components.composition import CompositionComponent
+
+        def wrapper(
+            component: Component,
+            system_theme: str,
+            theme_mode: str | None,
+        ) -> Component:
+            # Convert strings to enums
+            sys_theme = ThemeMode.DARK if system_theme == "dark" else ThemeMode.LIGHT
+            mode = ThemeMode(theme_mode) if theme_mode else ThemeMode.SYSTEM
+
+            client_state = ClientState(theme_setting=mode, system_theme=sys_theme)
+
+            def wrapped_app() -> None:
+                TrellisApp(app=component, client_state=client_state)
+
+            return CompositionComponent(name="TrellisRoot", render_func=wrapped_app)
+
+        # Type assertion for clarity
+        result: AppWrapper = wrapper
+        return result
+
     async def serve(self) -> None:
         """Start the application on the selected platform.
 
@@ -417,6 +455,7 @@ class Trellis:
 
         await self._platform.run(
             root_component=self.top,
+            app_wrapper=self._create_app_wrapper(),
             **self._args.to_dict(),
         )
 

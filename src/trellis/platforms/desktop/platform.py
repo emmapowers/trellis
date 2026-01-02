@@ -22,6 +22,7 @@ from trellis.platforms.desktop.handler import PyTauriMessageHandler
 if TYPE_CHECKING:
     from trellis.core.components.base import Component
     from trellis.core.rendering.element import Element
+    from trellis.platforms.common.handler import AppWrapper
 
 _console = Console()
 
@@ -68,12 +69,14 @@ class DesktopPlatform(Platform):
     """
 
     _root_component: Component | None
+    _app_wrapper: AppWrapper | None
     _handler: PyTauriMessageHandler | None
     _handler_task: asyncio.Task[None] | None
     _batch_delay: float
 
     def __init__(self) -> None:
         self._root_component = None
+        self._app_wrapper = None
         self._handler = None
         self._handler_task = None
         self._batch_delay = 1.0 / 30
@@ -118,6 +121,7 @@ class DesktopPlatform(Platform):
             channel: Channel = body.channel_id.channel_on(webview_window.as_ref_webview())
             self._handler = PyTauriMessageHandler(
                 self._root_component,  # type: ignore[arg-type]
+                self._app_wrapper,  # type: ignore[arg-type]
                 channel,
                 batch_delay=self._batch_delay,
             )
@@ -141,6 +145,7 @@ class DesktopPlatform(Platform):
     async def run(
         self,
         root_component: Callable[[], Element],
+        app_wrapper: AppWrapper,
         *,
         window_title: str = "Trellis App",
         window_width: int = 1024,
@@ -152,6 +157,7 @@ class DesktopPlatform(Platform):
 
         Args:
             root_component: The root Trellis component to render
+            app_wrapper: Callback to wrap component with TrellisApp
             window_title: Title for the application window
             window_width: Initial window width in pixels
             window_height: Initial window height in pixels
@@ -159,6 +165,7 @@ class DesktopPlatform(Platform):
         """
         # Store root component and config for handler access
         self._root_component = root_component  # type: ignore[assignment]
+        self._app_wrapper = app_wrapper
         self._batch_delay = batch_delay
 
         # Create commands with registered handlers

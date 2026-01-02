@@ -25,7 +25,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum, auto
-from typing import Literal
 
 from trellis.core.state import Stateful
 
@@ -195,21 +194,12 @@ class ClientState(Stateful):
     # Theme methods
     # -------------------------------------------------------------------------
 
-    def set_mode(self, mode: ThemeMode | Literal["system", "light", "dark"]) -> None:
+    def set_mode(self, mode: ThemeMode) -> None:
         """Set the theme mode.
 
         Args:
-            mode: The mode to set (SYSTEM, LIGHT, DARK, or string equivalent)
-
-        Raises:
-            ValueError: If mode string is not one of "system", "light", "dark"
+            mode: The mode to set (SYSTEM, LIGHT, or DARK)
         """
-        if isinstance(mode, str):
-            if mode not in ("system", "light", "dark"):
-                raise ValueError(
-                    f"Invalid theme mode: {mode!r}. Must be 'system', 'light', or 'dark'."
-                )
-            mode = ThemeMode(mode)
         self.theme_setting = mode
 
     def toggle(self) -> None:
@@ -221,14 +211,19 @@ class ClientState(Stateful):
         else:
             self.theme_setting = ThemeMode.SYSTEM
 
-    def handle_system_theme_change(self, new_theme: Literal["light", "dark"]) -> None:
+    def handle_system_theme_change(self, new_theme: ThemeMode) -> None:
         """Handle OS theme change notification from client.
 
         Updates system_theme regardless of current theme_setting, so that
         switching back to SYSTEM mode will immediately reflect the OS theme.
-        Called by ThemeProvider when the client detects an OS theme change.
+        Called by TrellisApp when the client detects an OS theme change.
 
         Args:
-            new_theme: The new OS theme ("light" or "dark")
+            new_theme: The new OS theme (LIGHT or DARK, not SYSTEM)
+
+        Raises:
+            ValueError: If new_theme is SYSTEM
         """
-        self.system_theme = ThemeMode.DARK if new_theme == "dark" else ThemeMode.LIGHT
+        if new_theme == ThemeMode.SYSTEM:
+            raise ValueError("System theme change must be LIGHT or DARK, not SYSTEM")
+        self.system_theme = new_theme

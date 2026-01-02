@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from starlette.requests import Request
 
     from trellis.core.rendering.element import Element
+    from trellis.platforms.common.handler import AppWrapper
 
 from trellis.bundler import CORE_PACKAGES, BundleConfig, build_bundle
 from trellis.platforms.common import find_available_port
@@ -208,11 +209,15 @@ class BrowserServePlatform(Platform):
     async def run(
         self,
         root_component: Callable[[], Element],
+        app_wrapper: AppWrapper,
         **kwargs: Any,
     ) -> None:
         """Build and serve static files for browser testing.
 
         This is for development/testing with `python app.py --browser`.
+
+        Note: app_wrapper is accepted for signature compatibility but not used
+        here - the actual handler runs in Pyodide and receives its own wrapper.
         """
         # Detect the actual entry point (not the component location)
         entry_path, module_name = _detect_entry_point()

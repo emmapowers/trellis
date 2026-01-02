@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from trellis.core.rendering.element import Element
+    from trellis.platforms.common.handler import AppWrapper
 
 from trellis.platforms.common.base import Platform
 
@@ -42,6 +43,7 @@ class BrowserPlatform(Platform):
     async def run(
         self,
         root_component: Callable[[], Element],
+        app_wrapper: AppWrapper,
         *,
         batch_delay: float = 1.0 / 30,
         **kwargs: Any,
@@ -52,6 +54,7 @@ class BrowserPlatform(Platform):
 
         Args:
             root_component: The root Trellis component to render
+            app_wrapper: Callback to wrap component with TrellisApp
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
         # Import the bridge module (registered by JavaScript)
@@ -67,7 +70,7 @@ class BrowserPlatform(Platform):
 
         # Create handler and connect to bridge
         # root_component is typed as Callable but is actually Component at runtime
-        handler = BrowserMessageHandler(root_component, batch_delay=batch_delay)  # type: ignore[arg-type]
+        handler = BrowserMessageHandler(root_component, app_wrapper, batch_delay=batch_delay)  # type: ignore[arg-type]
         handler.set_send_callback(bridge.send_message, serializer=pyodide_serializer)
 
         # Create a persistent proxy for the handler so JavaScript can keep a reference

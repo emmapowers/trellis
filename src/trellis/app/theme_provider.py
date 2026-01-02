@@ -12,7 +12,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Literal
 
-from trellis.app.client_state import ThemeMode
 from trellis.core.components.react import react_component_base
 from trellis.core.rendering.element import Element
 
@@ -20,8 +19,8 @@ from trellis.core.rendering.element import Element
 @react_component_base("ThemeProvider", has_children=True)
 def ThemeProvider(
     *,
-    theme_setting: ThemeMode | Literal["system", "light", "dark"],
-    theme: ThemeMode | Literal["light", "dark"],
+    theme_setting: Literal["system", "light", "dark"],
+    theme: Literal["light", "dark"],
     root_id: str | None = None,
     on_system_theme_change: Callable[[Literal["light", "dark"]], None] | None = None,
     on_theme_mode_change: Callable[[Literal["system", "light", "dark"]], None] | None = None,
@@ -50,14 +49,5 @@ def ThemeProvider(
 
     Returns:
         An ElementNode for the ThemeProvider component.
-
-    Example:
-        with ThemeProvider(
-            theme_setting=client_state.theme_setting,
-            theme=client_state.theme,
-            on_system_theme_change=client_state.handle_system_theme_change,
-        ):
-            Label(text="This content is themed")
-            Button(text="Click me")
     """
     ...

@@ -12,14 +12,10 @@ import inspect
 import logging
 import traceback
 import typing as tp
-from typing import TYPE_CHECKING
+from collections.abc import Callable
 from uuid import uuid4
 
-if TYPE_CHECKING:
-    from trellis.app import ClientState
-
 from trellis.core.components.base import Component
-from trellis.core.components.composition import CompositionComponent
 from trellis.core.rendering.patches import (
     RenderAddPatch,
     RenderPatch,
@@ -62,8 +58,14 @@ def _get_version() -> str:
 
 
 __all__ = [
+    "AppWrapper",
     "MessageHandler",
 ]
+
+
+# Type alias for the app wrapper callback
+# Takes (component, system_theme, theme_mode) and returns a wrapped component
+AppWrapper = Callable[[Component, str, str | None], Component]
 
 
 # =============================================================================
@@ -212,53 +214,44 @@ class MessageHandler:
             async def receive_message(self) -> Message:
                 return decode(await self.websocket.receive_bytes())
 
-        handler = WebSocketMessageHandler(root_component, websocket)
+        handler = WebSocketMessageHandler(root_component, app_wrapper, websocket)
         await handler.run()
     """
 
-    session: RenderSession
+    session: RenderSession | None
     session_id: str | None
     batch_delay: float
+    _root_component: Component
+    _app_wrapper: AppWrapper
     _background_tasks: set[asyncio.Task[tp.Any]]
     _render_task: asyncio.Task[None] | None
-
-    # Client state is stored here temporarily until rendering begins
-    _pending_client_state: ClientState | None
 
     def __init__(
         self,
         root_component: Component,
+        app_wrapper: AppWrapper,
         batch_delay: float = 1.0 / 30,
     ) -> None:
         """Create a new message handler.
 
         Args:
             root_component: The root Trellis component to render
+            app_wrapper: Callback to wrap the component (e.g., with TrellisApp)
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        from trellis.app import TrellisApp
-
-        # Store reference for use in wrapped_app closure
-        handler = self
-
-        # Create a wrapper component that wraps the user's app with TrellisApp
-        def wrapped_app() -> None:
-            # Use pending client state if available (set by handle_hello)
-            TrellisApp(app=root_component, client_state=handler._pending_client_state)
-
-        wrapped = CompositionComponent(name="TrellisRoot", render_func=wrapped_app)
-        self.session = RenderSession(wrapped)
+        self._root_component = root_component
+        self._app_wrapper = app_wrapper
+        self.session = None  # Created in handle_hello after receiving theme info
         self.session_id = None
         self.batch_delay = batch_delay
         self._background_tasks = set()
         self._render_task = None
-        self._pending_client_state = None
 
     async def handle_hello(self) -> str:
         """Handle hello handshake with client.
 
         Receives HelloMessage from client, generates session ID,
-        creates ClientState with detected system theme, and sends
+        creates wrapped component with theme info, and sends
         HelloResponseMessage. All platforms use this handshake for
         session initialization.
 
@@ -268,25 +261,20 @@ class MessageHandler:
         Raises:
             ValueError: If received message is not HelloMessage
         """
-        from trellis.app import ClientState, ThemeMode
-
         msg = await self.receive_message()
         if not isinstance(msg, HelloMessage):
             raise ValueError(f"Expected HelloMessage, got {type(msg).__name__}")
 
         logger.debug("Hello from client_id=%s", msg.client_id)
 
-        # Create ClientState with detected system theme and optional host-controlled mode
-        # This will be passed to TrellisApp during the first render
-        system_theme = ThemeMode.DARK if msg.system_theme == "dark" else ThemeMode.LIGHT
-
-        # If host provided a theme_mode, use it; otherwise default to SYSTEM
-        if msg.theme_mode is not None:
-            mode = ThemeMode(msg.theme_mode)
-        else:
-            mode = ThemeMode.SYSTEM
-
-        self._pending_client_state = ClientState(theme_setting=mode, system_theme=system_theme)
+        # Wrap the component with theme data from the client
+        # The wrapper handles conversion to enums and TrellisApp setup
+        wrapped = self._app_wrapper(
+            self._root_component,
+            msg.system_theme,  # "light" or "dark"
+            msg.theme_mode,  # "system", "light", "dark", or None
+        )
+        self.session = RenderSession(wrapped)
 
         self.session_id = str(uuid4())
 
@@ -309,6 +297,7 @@ class MessageHandler:
         Returns:
             PatchMessage on success, ErrorMessage on exception
         """
+        assert self.session is not None, "handle_hello must be called before initial_render"
         try:
             render_patches = render(self.session)
             wire_patches = _serialize_patches(render_patches, self.session)
@@ -358,6 +347,7 @@ class MessageHandler:
         """
         from trellis.platforms.common.serialization import parse_callback_id
 
+        assert self.session is not None
         node_id, prop_name = parse_callback_id(callback_id)
         callback = self.session.get_callback(node_id, prop_name)
         if callback is None:
@@ -387,6 +377,7 @@ class MessageHandler:
         then checking if any nodes need re-rendering. If so, it renders
         and sends patches to the client.
         """
+        assert self.session is not None
         while True:
             # Wait for frame period (configured via batch_delay)
             await asyncio.sleep(self.batch_delay)

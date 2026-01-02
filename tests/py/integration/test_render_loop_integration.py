@@ -7,11 +7,12 @@ from dataclasses import dataclass, field
 import pytest
 
 from trellis.core.components.base import Component
-from trellis.core.components.composition import component
+from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.rendering.patches import RenderAddPatch, RenderRemovePatch, RenderUpdatePatch
 from trellis.core.rendering.render import render
 from trellis.core.state.stateful import Stateful
-from trellis.platforms.common.handler import MessageHandler
+from trellis.platforms.browser.handler import BrowserMessageHandler
+from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.messages import (
     AddPatch,
     ErrorMessage,
@@ -22,6 +23,31 @@ from trellis.platforms.common.messages import (
     UpdatePatch,
 )
 from trellis.widgets import Button, Card, Label
+
+
+def _make_test_wrapper() -> AppWrapper:
+    """Create a simple wrapper for tests that don't need full TrellisApp."""
+
+    def wrapper(
+        comp: Component,
+        system_theme: str,
+        theme_mode: str | None,
+    ) -> CompositionComponent:
+        def render_func() -> None:
+            comp()
+
+        return CompositionComponent(name="TestRoot", render_func=render_func)
+
+    return wrapper
+
+
+def _init_handler_for_test(handler: BrowserMessageHandler) -> None:
+    """Initialize handler by posting HelloMessage and calling handle_hello.
+
+    This simulates the production flow where handle_hello creates the session.
+    """
+    handler._inbox.put_nowait(HelloMessage(client_id="test", system_theme="light"))
+    asyncio.run(handler.handle_hello())
 
 
 def get_initial_tree(handler: MessageHandler) -> dict[str, tp.Any]:
@@ -103,9 +129,9 @@ class TestRenderLoop:
         class TestableHandler(MessageHandler):
             """Handler that captures sent messages."""
 
-            def __init__(self, root: Component) -> None:
+            def __init__(self, root: Component, app_wrapper: AppWrapper) -> None:
                 # Use very short batch delay for testing
-                super().__init__(root, batch_delay=0.01)
+                super().__init__(root, app_wrapper, batch_delay=0.01)
                 self._hello_sent = False
                 self._inbox: asyncio.Queue[Message] = asyncio.Queue()
 
@@ -122,7 +148,7 @@ class TestRenderLoop:
                 self._inbox.put_nowait(msg)
 
         async def run_test() -> None:
-            handler = TestableHandler(Counter)
+            handler = TestableHandler(Counter, _make_test_wrapper())
 
             # Start run() in background
             run_task = asyncio.create_task(handler.run())
@@ -178,8 +204,8 @@ class TestRenderLoop:
         sent_messages: list[Message] = []
 
         class TestableHandler(MessageHandler):
-            def __init__(self, root: Component) -> None:
-                super().__init__(root, batch_delay=0.01)
+            def __init__(self, root: Component, app_wrapper: AppWrapper) -> None:
+                super().__init__(root, app_wrapper, batch_delay=0.01)
                 self._hello_sent = False
                 self._inbox: asyncio.Queue[Message] = asyncio.Queue()
 
@@ -196,7 +222,7 @@ class TestRenderLoop:
                 self._inbox.put_nowait(msg)
 
         async def run_test() -> None:
-            handler = TestableHandler(FailingApp)
+            handler = TestableHandler(FailingApp, _make_test_wrapper())
 
             run_task = asyncio.create_task(handler.run())
             await asyncio.sleep(0.02)
@@ -231,8 +257,8 @@ class TestRenderLoop:
             Label(text="Hello")
 
         class TestableHandler(MessageHandler):
-            def __init__(self, root: Component) -> None:
-                super().__init__(root, batch_delay=0.01)
+            def __init__(self, root: Component, app_wrapper: AppWrapper) -> None:
+                super().__init__(root, app_wrapper, batch_delay=0.01)
                 self._hello_sent = False
 
             async def send_message(self, msg: Message) -> None:
@@ -246,7 +272,7 @@ class TestRenderLoop:
                 return HelloMessage(client_id="never")
 
         async def run_test() -> None:
-            handler = TestableHandler(App)
+            handler = TestableHandler(App, _make_test_wrapper())
             run_task = asyncio.create_task(handler.run())
             await asyncio.sleep(0.02)
 
@@ -287,7 +313,8 @@ class TestPatchComputation:
             Label(text="Outer")
             Middle()
 
-        handler = MessageHandler(Outer)
+        handler = BrowserMessageHandler(Outer, _make_test_wrapper())
+        _init_handler_for_test(handler)
         tree = get_initial_tree(handler)
 
         # Get the button callback (deeply nested)
@@ -330,7 +357,8 @@ class TestPatchComputation:
                 Label(text=item, key=item)
             Button(text="Reverse", on_click=reverse)
 
-        handler = MessageHandler(ListApp)
+        handler = BrowserMessageHandler(ListApp, _make_test_wrapper())
+        _init_handler_for_test(handler)
         tree = get_initial_tree(handler)
 
         # Initial order: a, b, c (within wrapper)
@@ -369,7 +397,8 @@ class TestPatchComputation:
             Label(text=str(state.count))
             Button(text="+", on_click=increment)
 
-        handler = MessageHandler(Counter)
+        handler = BrowserMessageHandler(Counter, _make_test_wrapper())
+        _init_handler_for_test(handler)
         tree = get_initial_tree(handler)
 
         # Get the static label's key to track it (within wrapper)
@@ -434,7 +463,8 @@ class TestPatchComputation:
                 else:
                     Tab2Content()
 
-        handler = MessageHandler(TabApp)
+        handler = BrowserMessageHandler(TabApp, _make_test_wrapper())
+        _init_handler_for_test(handler)
         tree = get_initial_tree(handler)
 
         # Verify initial state - Card contains Tab1Content (within wrapper)

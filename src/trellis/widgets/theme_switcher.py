@@ -1,7 +1,6 @@
 """ThemeSwitcher widget for toggling between system/light/dark themes.
 
 A single button that cycles through theme modes on click.
-Accesses ClientState via context - must be used inside TrellisApp.
 """
 
 from __future__ import annotations
@@ -46,8 +45,6 @@ def ThemeSwitcher() -> None:
     - Monitor icon = System (follows OS preference)
     - Sun icon = Light mode
     - Moon icon = Dark mode
-
-    Must be used inside a TrellisApp wrapper to access ClientState via context.
     """
     client_state = ClientState.from_context()
 

@@ -13,7 +13,7 @@ from collections.abc import Callable
 import msgspec
 
 from trellis.core.components.base import Component
-from trellis.platforms.common.handler import MessageHandler
+from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.messages import (
     EventMessage,
     Message,
@@ -39,15 +39,17 @@ class BrowserMessageHandler(MessageHandler):
     def __init__(
         self,
         root_component: Component,
+        app_wrapper: AppWrapper,
         batch_delay: float = 1.0 / 30,
     ) -> None:
         """Create a browser message handler.
 
         Args:
             root_component: The root Trellis component to render
+            app_wrapper: Callback to wrap component with TrellisApp
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        super().__init__(root_component, batch_delay=batch_delay)
+        super().__init__(root_component, app_wrapper, batch_delay=batch_delay)
         self._inbox = asyncio.Queue()
         self._send_callback = None
         # Default serializer just returns dict as-is (for tests)

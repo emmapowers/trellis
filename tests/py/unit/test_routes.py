@@ -1,7 +1,5 @@
 """Tests for server platform routes."""
 
-from pathlib import Path
-
 
 class TestIndexHtmlTemplate:
     """Tests for index.html Jinja2 template."""

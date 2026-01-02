@@ -10,6 +10,7 @@ import uvicorn
 
 if TYPE_CHECKING:
     from trellis.core.rendering.element import Element
+    from trellis.platforms.common.handler import AppWrapper
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -73,6 +74,7 @@ class ServerPlatform(Platform):
     async def run(
         self,
         root_component: Callable[[], Element],
+        app_wrapper: AppWrapper,
         *,
         host: str = "127.0.0.1",
         port: int | None = None,
@@ -84,6 +86,7 @@ class ServerPlatform(Platform):
 
         Args:
             root_component: The root Trellis component to render
+            app_wrapper: Callback to wrap component with TrellisApp
             host: Host to bind to
             port: Port to bind to (auto-find if None)
             static_dir: Custom static files directory
@@ -101,6 +104,7 @@ class ServerPlatform(Platform):
 
         # Store top component and config in app state
         app.state.trellis_top_component = root_component
+        app.state.trellis_app_wrapper = app_wrapper
         app.state.trellis_batch_delay = batch_delay
 
         # Set up static file serving

@@ -39,16 +39,22 @@ class TestClientStateTheme:
     def test_handle_system_theme_change_to_dark(self) -> None:
         """handle_system_theme_change should update system_theme to dark."""
         state = ClientState(theme_setting=ThemeMode.SYSTEM, system_theme=ThemeMode.LIGHT)
-        state.handle_system_theme_change("dark")
+        state.handle_system_theme_change(ThemeMode.DARK)
         assert state.system_theme == ThemeMode.DARK
         assert state.theme == ThemeMode.DARK
 
     def test_handle_system_theme_change_to_light(self) -> None:
         """handle_system_theme_change should update system_theme to light."""
         state = ClientState(theme_setting=ThemeMode.SYSTEM, system_theme=ThemeMode.DARK)
-        state.handle_system_theme_change("light")
+        state.handle_system_theme_change(ThemeMode.LIGHT)
         assert state.system_theme == ThemeMode.LIGHT
         assert state.theme == ThemeMode.LIGHT
+
+    def test_handle_system_theme_change_rejects_system(self) -> None:
+        """handle_system_theme_change should reject SYSTEM as input."""
+        state = ClientState()
+        with pytest.raises(ValueError, match=r"LIGHT or DARK"):
+            state.handle_system_theme_change(ThemeMode.SYSTEM)
 
     def test_toggle_cycles_system_to_light(self) -> None:
         """toggle() should cycle SYSTEM -> LIGHT."""
@@ -78,33 +84,15 @@ class TestClientStateTheme:
         state.toggle()
         assert state.theme_setting == ThemeMode.SYSTEM
 
-    def test_set_mode_with_string(self) -> None:
-        """set_mode should accept string values."""
-        state = ClientState()
-        state.set_mode("dark")
-        assert state.theme_setting == ThemeMode.DARK
-        state.set_mode("light")
-        assert state.theme_setting == ThemeMode.LIGHT
-        state.set_mode("system")
-        assert state.theme_setting == ThemeMode.SYSTEM
-
-    def test_set_mode_with_enum(self) -> None:
+    def test_set_mode(self) -> None:
         """set_mode should accept ThemeMode enum values."""
         state = ClientState()
         state.set_mode(ThemeMode.DARK)
         assert state.theme_setting == ThemeMode.DARK
-
-    def test_set_mode_rejects_invalid_string(self) -> None:
-        """set_mode should raise ValueError for invalid string values."""
-        state = ClientState()
-        with pytest.raises(ValueError, match=r"Invalid theme mode.*invalid"):
-            state.set_mode("invalid")  # type: ignore
-
-    def test_set_mode_rejects_case_sensitive_typo(self) -> None:
-        """set_mode should raise ValueError for typos in mode names."""
-        state = ClientState()
-        with pytest.raises(ValueError, match=r"Invalid theme mode.*Dark"):
-            state.set_mode("Dark")  # type: ignore  # Should be lowercase
+        state.set_mode(ThemeMode.LIGHT)
+        assert state.theme_setting == ThemeMode.LIGHT
+        state.set_mode(ThemeMode.SYSTEM)
+        assert state.theme_setting == ThemeMode.SYSTEM
 
 
 class TestThemeTokens:

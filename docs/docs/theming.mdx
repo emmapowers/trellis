@@ -11,27 +11,22 @@ Trellis includes built-in dark mode support with automatic OS theme detection an
 
 ## Quick Start
 
-Wrap your app with `TrellisApp` to enable theming:
+Use `theme` tokens for colors that adapt automatically to light/dark mode:
 
 ```python
-from trellis import component
-from trellis.app import TrellisApp, ClientState
-from trellis import widgets as w
+from trellis.app import theme
+from trellis import html as h
 
-@component
-def MyApp():
-    state = ClientState.from_context()
-    w.Label(text=f"Theme: {'Dark' if state.is_dark else 'Light'}")
-
-@component
-def Main():
-    TrellisApp(app=MyApp)
+h.Div(
+    style={
+        "backgroundColor": theme.bg_surface,
+        "color": theme.text_primary,
+        "border": f"1px solid {theme.border_default}",
+    }
+)
 ```
 
-`TrellisApp` provides:
-- `ClientState` accessible via context
-- Automatic OS theme detection
-- `ThemeProvider` for CSS theming
+Theme tokens are CSS variable references that automatically update when the theme changes.
 
 ## ThemeSwitcher Widget
 
@@ -66,10 +61,10 @@ The switcher cycles through: **System** (follows OS) → **Light** → **Dark** 
 
 ## ClientState API
 
-Access theme state anywhere within a `TrellisApp`:
+Access theme state anywhere in your app:
 
 ```python
-from trellis.app import ClientState
+from trellis.app import ClientState, ThemeMode
 
 state = ClientState.from_context()
 
@@ -80,8 +75,8 @@ state.is_dark        # True if dark mode active
 state.is_light       # True if light mode active
 
 # Methods
-state.toggle()       # Cycle to next mode
-state.set_mode("dark")  # Set explicitly
+state.toggle()                    # Cycle to next mode
+state.set_mode(ThemeMode.DARK)    # Set explicitly
 ```
 
 ## Theme Tokens

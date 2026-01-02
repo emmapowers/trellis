@@ -6,7 +6,7 @@ import msgspec
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from trellis.core.components.base import Component
-from trellis.platforms.common.handler import MessageHandler
+from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.messages import Message
 
 router = APIRouter()
@@ -25,6 +25,7 @@ class WebSocketMessageHandler(MessageHandler):
     def __init__(
         self,
         root_component: Component,
+        app_wrapper: AppWrapper,
         websocket: WebSocket,
         batch_delay: float = 1.0 / 30,
     ) -> None:
@@ -32,10 +33,11 @@ class WebSocketMessageHandler(MessageHandler):
 
         Args:
             root_component: The root Trellis component to render
+            app_wrapper: Callback to wrap component with TrellisApp
             websocket: The FastAPI WebSocket connection
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        super().__init__(root_component, batch_delay=batch_delay)
+        super().__init__(root_component, app_wrapper, batch_delay=batch_delay)
         self.websocket = websocket
         self._encoder = msgspec.msgpack.Encoder()
         # Single decoder for all message types (including HelloMessage)
@@ -62,16 +64,19 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     """
     await websocket.accept()
 
-    # Get top component from app state
+    # Get top component and wrapper from app state
     top_component = websocket.app.state.trellis_top_component
-    if top_component is None:
+    app_wrapper = websocket.app.state.trellis_app_wrapper
+    if top_component is None or app_wrapper is None:
         await websocket.close(code=4000, reason="No top component configured")
         return
 
     # Get batch_delay from app state (defaults to 30fps if not set)
     batch_delay = getattr(websocket.app.state, "trellis_batch_delay", 1.0 / 30)
 
-    handler = WebSocketMessageHandler(top_component, websocket, batch_delay=batch_delay)
+    handler = WebSocketMessageHandler(
+        top_component, app_wrapper, websocket, batch_delay=batch_delay
+    )
 
     try:
         await handler.run()
