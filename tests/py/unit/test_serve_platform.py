@@ -281,3 +281,35 @@ class TestGenerateHtml:
         # (it should only appear as the actual closing tag for the script element)
         script_section = result.split("<script>")[1].split("</script>")[0]
         assert "</script>" not in script_section
+
+    def test_includes_embedded_false_by_default(self) -> None:
+        """embedded defaults to false in config."""
+        from trellis.platforms.browser.serve_platform import _generate_html
+
+        source = {"type": "code", "code": "# test"}
+
+        result = _generate_html(source)
+
+        # embedded should be in the config
+        assert "embedded" in result
+        assert "embedded: false" in result
+
+    def test_includes_embedded_true_when_specified(self) -> None:
+        """embedded can be set to true."""
+        from trellis.platforms.browser.serve_platform import _generate_html
+
+        source = {"type": "code", "code": "# test"}
+
+        result = _generate_html(source, embedded=True)
+
+        assert "embedded: true" in result
+
+    def test_includes_embedded_false_when_specified(self) -> None:
+        """embedded can be set to false."""
+        from trellis.platforms.browser.serve_platform import _generate_html
+
+        source = {"type": "code", "code": "# test"}
+
+        result = _generate_html(source, embedded=False)
+
+        assert "embedded: false" in result

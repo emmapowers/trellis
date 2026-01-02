@@ -302,6 +302,7 @@ class Trellis:
         build_bundle: bool = False,
         batch_delay: float | None = None,
         hot_reload: bool | None = None,
+        embedded: bool | None = None,
         # Server args
         host: str | None = None,
         port: int | None = None,
@@ -320,6 +321,8 @@ class Trellis:
             build_bundle: Force rebuild client bundle
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
             hot_reload: Enable hot reload (default True, disable with --no-hot-reload)
+            embedded: If True, use internal history instead of browser history API.
+                Desktop forces this to True. Browser respects the value. Server ignores it.
             host: Server bind host (server only)
             port: Server bind port (server only)
             static_dir: Custom static files directory (server only)
@@ -340,6 +343,7 @@ class Trellis:
         self._args.set_default("build_bundle", False)
         self._args.set_default("batch_delay", 1.0 / 30)
         self._args.set_default("hot_reload", True)
+        self._args.set_default("embedded", False)
         self._args.set_default("host", "127.0.0.1")
         self._args.set_default("port", None)
         self._args.set_default("static_dir", None)
@@ -354,6 +358,8 @@ class Trellis:
             self._args.set("batch_delay", batch_delay)
         if hot_reload is not None:
             self._args.set("hot_reload", hot_reload)
+        if embedded is not None:
+            self._args.set("embedded", embedded)
         if host is not None:
             self._args.set("host", host)
         if port is not None:
@@ -384,6 +390,10 @@ class Trellis:
             self._args.set("platform", platform)
 
         self.platform_type = self._args.get("platform")
+
+        # Desktop always uses embedded mode (no URL bar)
+        if self.platform_type == PlatformType.DESKTOP:
+            self._args.set("embedded", True)
 
         # Validate: check for explicit args from wrong platforms
         self._validate_platform_args()
