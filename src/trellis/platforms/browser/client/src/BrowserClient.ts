@@ -29,6 +29,11 @@ export type { ConnectionState };
 
 export interface BrowserClientCallbacks extends ClientMessageHandlerCallbacks {}
 
+export interface BrowserClientOptions {
+  /** If true, use internal history instead of browser history API */
+  embedded?: boolean;
+}
+
 type SendCallback = (msg: Record<string, unknown>) => void;
 
 /**
@@ -50,13 +55,18 @@ export class BrowserClient implements TrellisClient {
    *
    * @param callbacks - Optional callbacks for connection events
    * @param store - Optional store instance (defaults to singleton)
+   * @param options - Optional client options
    */
-  constructor(callbacks: BrowserClientCallbacks = {}, store?: TrellisStore) {
+  constructor(
+    callbacks: BrowserClientCallbacks = {},
+    store?: TrellisStore,
+    options: BrowserClientOptions = {}
+  ) {
     this.clientId = crypto.randomUUID();
 
-    // Create router manager for standalone mode (can be made configurable in Phase 8)
+    // Create router manager with configured embedded mode
     this.routerManager = new RouterManager({
-      embedded: false,
+      embedded: options.embedded ?? false,
       sendMessage: (msg: UrlChangedMessage) => this.sendCallback?.(msg),
     });
 

@@ -18,6 +18,7 @@ declare global {
       main?: string;
       workerUrl: string;
       trellisWheelUrl?: string;
+      embedded?: boolean;
     };
   }
 }
@@ -50,6 +51,7 @@ function App() {
       main={config.main}
       workerUrl={config.workerUrl}
       trellisWheelUrl={config.trellisWheelUrl}
+      embedded={config.embedded}
     />
   );
 }
