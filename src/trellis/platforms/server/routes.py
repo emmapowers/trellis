@@ -9,37 +9,29 @@ from pathlib import Path
 
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
+from jinja2 import Environment, FileSystemLoader
 
 router = APIRouter()
 
+# Jinja2 environment for HTML templates
+_TEMPLATE_DIR = Path(__file__).parent / "client" / "src"
+_jinja_env = Environment(loader=FileSystemLoader(_TEMPLATE_DIR), autoescape=False)
 
-def get_index_html(static_path: str = "/static") -> str:
-    """Generate the HTML page that loads the React app."""
-    return f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Trellis App</title>
-    <link rel="stylesheet" href="{static_path}/bundle.css">
-    <script>
-        // Early theme detection to prevent flash of wrong theme
-        (function() {{
-            var theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            document.documentElement.dataset.theme = theme;
-        }})();
-    </script>
-    <style>
-        *, *::before, *::after {{ box-sizing: border-box; }}
-        html, body, #root {{ margin: 0; padding: 0; height: 100%; min-height: 100vh; }}
-    </style>
-</head>
-<body>
-    <div id="root" class="trellis-root"></div>
-    <script type="module" src="{static_path}/bundle.js"></script>
-</body>
-</html>
-"""
+
+def get_index_html(static_path: str = "/static", title: str = "Trellis App") -> str:
+    """Generate the HTML page that loads the React app.
+
+    Uses the index.html Jinja2 template from server/client/src/.
+
+    Args:
+        static_path: URL path prefix for static assets (bundle.js, bundle.css)
+        title: Page title
+
+    Returns:
+        Rendered HTML string
+    """
+    template = _jinja_env.get_template("index.html")
+    return template.render(static_path=static_path, title=title)
 
 
 @router.get("/", response_class=HTMLResponse)
