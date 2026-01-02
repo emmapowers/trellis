@@ -2,6 +2,7 @@
 
 from trellis import component
 from trellis import widgets as w
+from trellis.app import theme
 
 from ..components import ExampleCard
 from ..example import example
@@ -78,7 +79,7 @@ def Sparklines() -> None:
             data=[5, 10, 8, 15, 12, 20, 18],
             width=100,
             height=30,
-            color=w.theme.success,
+            color=theme.success,
         )
 
 

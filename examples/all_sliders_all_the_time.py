@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from trellis import Height, Margin, Stateful, Trellis, async_main, callback, component, mutable
 from trellis import widgets as w
-from trellis.widgets import theme
+from trellis.app import theme
 
 
 # =============================================================================

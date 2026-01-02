@@ -89,7 +89,7 @@ state.set_mode("dark")  # Set explicitly
 Use `theme` tokens for colors that adapt to light/dark mode:
 
 ```python
-from trellis.widgets import theme
+from trellis.app import theme
 from trellis import html as h
 
 h.Div(
@@ -124,7 +124,7 @@ For logic that depends on the current theme:
   code={`from trellis import component
 from trellis.app import TrellisApp, ClientState
 from trellis import widgets as w
-from trellis.widgets import theme
+from trellis.app import theme
 
 @component
 def ThemeAwareCard():

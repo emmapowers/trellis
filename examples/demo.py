@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from trellis import Margin, Padding, Stateful, Trellis, async_main, component
 from trellis import widgets as w
-from trellis.widgets import theme
+from trellis.app import theme
 
 # =============================================================================
 # Styles

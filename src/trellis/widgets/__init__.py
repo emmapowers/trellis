@@ -4,7 +4,6 @@ Provides basic UI building blocks that map to React components on the client.
 """
 
 # Re-export theme tokens for styling convenience
-from trellis.app import ThemeTokens, theme
 from trellis.widgets.actions import Menu, MenuDivider, MenuItem, Toolbar
 from trellis.widgets.basic import (
     Badge,
@@ -73,10 +72,8 @@ __all__ = [
     "Tag",
     "TextInput",
     "ThemeSwitcher",
-    "ThemeTokens",
     "TimeSeriesChart",
     "Toolbar",
     "Tooltip",
     "Tree",
-    "theme",
 ]

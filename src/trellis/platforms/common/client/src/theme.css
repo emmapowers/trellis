@@ -17,6 +17,10 @@
   --trellis-bg-surface-hover: #f1f5f9;
   --trellis-bg-input: #ffffff;
 
+  /* Interactive element backgrounds (buttons, controls) */
+  --trellis-bg-interactive: #e2e8f0;
+  --trellis-bg-interactive-hover: #cbd5e1;
+
   /* Borders */
   --trellis-border-default: #e2e8f0;
   --trellis-border-subtle: #f1f5f9;
@@ -87,6 +91,10 @@
   --trellis-bg-surface-raised: #334155;
   --trellis-bg-surface-hover: #475569;
   --trellis-bg-input: #1e293b;
+
+  /* Interactive element backgrounds (buttons, controls) */
+  --trellis-bg-interactive: #475569;
+  --trellis-bg-interactive-hover: #64748b;
 
   /* Borders */
   --trellis-border-default: #334155;

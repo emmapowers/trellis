@@ -2,7 +2,7 @@
 
 from trellis import Padding, component, mutable
 from trellis import widgets as w
-from trellis.widgets import theme
+from trellis.app import theme
 
 from .state import FilterType, Todo, TodosState
 

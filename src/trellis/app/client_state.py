@@ -7,7 +7,7 @@ references) for use in widget styles.
 Example:
     ```python
     from trellis.app import ClientState
-    from trellis.widgets import theme
+    from trellis.app import theme
 
     @component
     def MyComponent():
@@ -98,6 +98,8 @@ class ThemeTokens:
     bg_surface_raised: str = "var(--trellis-bg-surface-raised)"
     bg_surface_hover: str = "var(--trellis-bg-surface-hover)"
     bg_input: str = "var(--trellis-bg-input)"
+    bg_interactive: str = "var(--trellis-bg-interactive)"
+    bg_interactive_hover: str = "var(--trellis-bg-interactive-hover)"
     # Borders
     border_default: str = "var(--trellis-border-default)"
     border_subtle: str = "var(--trellis-border-subtle)"

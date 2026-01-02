@@ -14,6 +14,8 @@ export const colors = {
     surfaceRaised: "var(--trellis-bg-surface-raised)",
     surfaceHover: "var(--trellis-bg-surface-hover)",
     input: "var(--trellis-bg-input)",
+    interactive: "var(--trellis-bg-interactive)",
+    interactiveHover: "var(--trellis-bg-interactive-hover)",
   },
 
   // Borders

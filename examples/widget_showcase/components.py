@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from trellis import Stateful, component
 from trellis import html as h
 from trellis import widgets as w
-from trellis.widgets import theme
+from trellis.app import theme
 
 from .example import make_playground_url
 
