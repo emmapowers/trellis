@@ -13,5 +13,5 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["src/**/*", "../src/trellis/client/src/**/*"]
+  "include": ["src/**/*"]
 }

@@ -2,7 +2,6 @@
 
 from trellis import component
 from trellis import widgets as w
-from trellis.widgets import theme
 
 from ..components import ExampleCard
 from ..example import example

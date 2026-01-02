@@ -6,7 +6,8 @@ references) for use in widget styles.
 
 Example:
     ```python
-    from trellis.core.client_state import ClientState, theme
+    from trellis.app import ClientState
+    from trellis.widgets import theme
 
     @component
     def MyComponent():
@@ -16,7 +17,7 @@ Example:
         w.Button(text="Toggle", on_click=state.toggle)
 
         # Use theme tokens in styles
-        h.Div(style={"background": theme.bg_subtle, "color": theme.fg})
+        h.Div(style={"background": theme.bg_surface, "color": theme.text_primary})
     ```
 """
 
@@ -82,10 +83,13 @@ class Browser(StrEnum):
 
 @dataclass(frozen=True)
 class ThemeTokens:
-    """CSS variable references for theme tokens.
+    """CSS variable references matching theme.css exactly.
 
-    These map to the CSS custom properties defined in theme.css.
-    All values are strings like "var(--trellis-bg-page)".
+    Use these tokens in inline styles to reference theme colors that
+    adapt to light/dark mode. All values are CSS var() references.
+
+    Example:
+        h.Div(style={"background": theme.bg_surface, "color": theme.text_primary})
     """
 
     # Backgrounds
@@ -94,35 +98,26 @@ class ThemeTokens:
     bg_surface_raised: str = "var(--trellis-bg-surface-raised)"
     bg_surface_hover: str = "var(--trellis-bg-surface-hover)"
     bg_input: str = "var(--trellis-bg-input)"
-    # Text
-    text_primary: str = "var(--trellis-text-primary)"
-    text_secondary: str = "var(--trellis-text-secondary)"
-    text_muted: str = "var(--trellis-text-muted)"
-    text_inverse: str = "var(--trellis-text-inverse)"
     # Borders
     border_default: str = "var(--trellis-border-default)"
     border_subtle: str = "var(--trellis-border-subtle)"
     border_strong: str = "var(--trellis-border-strong)"
     border_focus: str = "var(--trellis-border-focus)"
+    # Text
+    text_primary: str = "var(--trellis-text-primary)"
+    text_secondary: str = "var(--trellis-text-secondary)"
+    text_muted: str = "var(--trellis-text-muted)"
+    text_inverse: str = "var(--trellis-text-inverse)"
+    # Semantic
+    success: str = "var(--trellis-success)"
+    error: str = "var(--trellis-error)"
+    error_hover: str = "var(--trellis-error-hover)"
+    warning: str = "var(--trellis-warning)"
+    info: str = "var(--trellis-info)"
     # Accent
     accent_primary: str = "var(--trellis-accent-primary)"
     accent_primary_hover: str = "var(--trellis-accent-primary-hover)"
-    accent_primary_active: str = "var(--trellis-accent-primary-active)"
     accent_subtle: str = "var(--trellis-accent-subtle)"
-    # Semantic
-    success: str = "var(--trellis-success)"
-    success_bg: str = "var(--trellis-success-bg)"
-    success_border: str = "var(--trellis-success-border)"
-    error: str = "var(--trellis-error)"
-    error_bg: str = "var(--trellis-error-bg)"
-    error_border: str = "var(--trellis-error-border)"
-    error_hover: str = "var(--trellis-error-hover)"
-    warning: str = "var(--trellis-warning)"
-    warning_bg: str = "var(--trellis-warning-bg)"
-    warning_border: str = "var(--trellis-warning-border)"
-    info: str = "var(--trellis-info)"
-    info_bg: str = "var(--trellis-info-bg)"
-    info_border: str = "var(--trellis-info-border)"
     # Shadows
     shadow_sm: str = "var(--trellis-shadow-sm)"
     shadow_md: str = "var(--trellis-shadow-md)"

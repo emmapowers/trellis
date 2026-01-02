@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { useHostThemeMode } from "../TrellisContext";
 
 interface ThemeProviderProps {
-  mode: string; // "system" | "light" | "dark" - user's preference
+  theme_setting: string; // "system" | "light" | "dark" - user's preference
   theme: string; // "light" | "dark" - actual theme to apply
   root_id?: string;
   on_system_theme_change?: (theme: string) => void;
@@ -20,7 +20,7 @@ interface ThemeProviderProps {
  * template or host page) with the .trellis-root class applied.
  */
 export function ThemeProvider({
-  mode,
+  theme_setting: _theme_setting, // Currently unused but part of the interface
   theme,
   root_id,
   on_system_theme_change,

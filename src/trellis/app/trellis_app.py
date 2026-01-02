@@ -48,7 +48,7 @@ def TrellisApp(
 
     with client_state:  # Provide to descendants via context
         with ThemeProvider(
-            mode=client_state.theme_setting,
+            theme_setting=client_state.theme_setting,
             theme=client_state.theme,
             on_system_theme_change=client_state.handle_system_theme_change,
             on_theme_mode_change=client_state.set_mode,

@@ -59,7 +59,7 @@ describe("ThemeProvider", () => {
 
       render(
         <ThemeProvider
-          mode="system"
+          theme_setting="system"
           theme="light"
           on_system_theme_change={onSystemThemeChange}
         >
@@ -73,13 +73,11 @@ describe("ThemeProvider", () => {
     });
 
     it("notifies callback when system theme changes while in explicit light mode", () => {
-      // BUG: This test should pass but currently fails because ThemeProvider
-      // only listens for system theme changes when mode is "system"
       const onSystemThemeChange = vi.fn();
 
       render(
         <ThemeProvider
-          mode="light"
+          theme_setting="light"
           theme="light"
           on_system_theme_change={onSystemThemeChange}
         >
@@ -99,7 +97,7 @@ describe("ThemeProvider", () => {
 
       render(
         <ThemeProvider
-          mode="dark"
+          theme_setting="dark"
           theme="dark"
           on_system_theme_change={onSystemThemeChange}
         >
