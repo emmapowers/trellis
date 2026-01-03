@@ -4,6 +4,7 @@ import typing as tp
 import weakref
 from dataclasses import dataclass, field
 
+from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.session import (
     RenderSession,
     get_active_session,
@@ -89,8 +90,6 @@ class Element(KeyTrait):
         exc_tb: tp.Any,
     ) -> None:
         """Exit the `with` block, storing ChildRefs in props["children"]."""
-        from trellis.core.rendering.child_ref import ChildRef
-
         session = get_active_session()
         if session is None or session.active is None:
             return

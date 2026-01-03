@@ -8,7 +8,6 @@ This solves the problem where conditional containers lose their children when
 they don't render them on a subsequent pass. With ChildRef:
 - props["children"] contains ChildRefs (stable references)
 - child_ids reflects what was actually rendered (for frontend)
-- Container can call ChildRef() to render children when needed
 """
 
 from __future__ import annotations
@@ -16,6 +15,8 @@ from __future__ import annotations
 import typing as tp
 import weakref
 from dataclasses import dataclass
+
+from trellis.core.rendering.session import get_active_session
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering.element import Element
@@ -49,8 +50,6 @@ class ChildRef:
         Raises:
             RuntimeError: If called outside of render context
         """
-        from trellis.core.rendering.session import get_active_session
-
         session = get_active_session()
         if session is None or session.active is None:
             raise RuntimeError("Cannot render child outside of render context")

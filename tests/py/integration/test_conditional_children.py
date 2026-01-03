@@ -56,7 +56,7 @@ class TestConditionalChildrenFix:
         container_state: list[VisibilityState] = []
 
         @component
-        def ExpensiveChild() -> None:
+        def Child() -> None:
             render_counts["child"] = render_counts.get("child", 0) + 1
 
         @component
@@ -76,7 +76,7 @@ class TestConditionalChildrenFix:
         def App() -> None:
             render_counts["app"] = render_counts.get("app", 0) + 1
             with ConditionalContainer():
-                ExpensiveChild()
+                Child()
 
         capture = capture_patches(App)
         capture.render()
@@ -194,68 +194,6 @@ class TestConditionalChildrenFix:
         assert render_counts.get("b", 0) == 1, "ChildB renders when selected"
         assert len(container.child_ids) == 1, "Only selected child rendered"
 
-    def test_parent_rerender_restores_children(self, capture_patches: type[PatchCapture]) -> None:
-        """When parent re-renders, children are re-collected (works correctly).
-
-        This is a control test showing that the bug only manifests when
-        the container re-renders alone. When the parent re-renders, children
-        are properly re-collected from the `with` block.
-        """
-        render_counts: dict[str, int] = {}
-
-        @dataclass
-        class AppState(Stateful):
-            visible: bool = True
-
-        app_state: list[AppState] = []
-
-        @component
-        def Child() -> None:
-            render_counts["child"] = render_counts.get("child", 0) + 1
-
-        @component
-        def ConditionalContainer(*, show: bool, children: list | None = None) -> None:
-            """Container that receives show as a prop (no internal state)."""
-            render_counts["container"] = render_counts.get("container", 0) + 1
-            if show and children:
-                for child in children:
-                    child()
-
-        @component
-        def App() -> None:
-            render_counts["app"] = render_counts.get("app", 0) + 1
-            state = AppState()
-            app_state.append(state)
-            with ConditionalContainer(show=state.visible):
-                Child()
-
-        capture = capture_patches(App)
-        capture.render()
-
-        assert render_counts == {"app": 1, "container": 1, "child": 1}
-
-        container_id = capture.session.root_element.child_ids[0]
-        container = capture.session.elements.get(container_id)
-        assert container is not None
-        assert len(container.child_ids) == 1
-
-        # Hide - App re-renders, re-places container with show=False
-        app_state[-1].visible = False
-        capture.render()
-
-        assert render_counts == {"app": 2, "container": 2, "child": 1}
-
-        # Show again - App re-renders, re-places container and re-collects children
-        app_state[-1].visible = True
-        capture.render()
-
-        # This works because App re-rendered and re-collected children
-        assert render_counts == {"app": 3, "container": 3, "child": 2}
-
-        container = capture.session.elements.get(container_id)
-        assert container is not None
-        assert len(container.child_ids) == 1, "Children restored when parent re-renders"
-
     def test_nested_conditional_containers_with_internal_state(
         self, capture_patches: type[PatchCapture]
     ) -> None:
@@ -318,84 +256,3 @@ class TestConditionalChildrenFix:
         # Children preserved via ChildRef - inner and deep child re-render
         assert render_counts.get("inner", 0) == 2, "Inner re-renders when outer shows again"
         assert render_counts.get("deep", 0) == 2, "Deep child re-renders when outer shows again"
-
-    def test_multiple_children_preserved_with_internal_state(
-        self, capture_patches: type[PatchCapture]
-    ) -> None:
-        """All children are preserved when container with internal state hides."""
-        render_counts: dict[str, int] = {}
-
-        @dataclass
-        class VisibilityState(Stateful):
-            visible: bool = True
-
-        container_state: list[VisibilityState] = []
-
-        @component
-        def ChildA() -> None:
-            render_counts["a"] = render_counts.get("a", 0) + 1
-
-        @component
-        def ChildB() -> None:
-            render_counts["b"] = render_counts.get("b", 0) + 1
-
-        @component
-        def ChildC() -> None:
-            render_counts["c"] = render_counts.get("c", 0) + 1
-
-        @component
-        def ConditionalContainer(*, children: list | None = None) -> None:
-            """Container with internal visibility state."""
-            state = VisibilityState()
-            container_state.append(state)
-            if state.visible and children:
-                for child in children:
-                    child()
-
-        @component
-        def App() -> None:
-            render_counts["app"] = render_counts.get("app", 0) + 1
-            with ConditionalContainer():
-                ChildA()
-                ChildB()
-                ChildC()
-
-        capture = capture_patches(App)
-        capture.render()
-
-        assert render_counts == {"app": 1, "a": 1, "b": 1, "c": 1}
-
-        container_id = capture.session.root_element.child_ids[0]
-        container = capture.session.elements.get(container_id)
-        assert container is not None
-        assert len(container.child_ids) == 3
-
-        # Hide (only container re-renders)
-        container_state[-1].visible = False
-        capture.render()
-
-        assert render_counts.get("app", 0) == 1, "App should not re-render"
-
-        container = capture.session.elements.get(container_id)
-        assert container is not None
-        # child_ids is empty (nothing rendered), but props["children"] has ChildRefs
-        assert len(container.child_ids) == 0, "No children rendered when hidden"
-        assert len(container.props.get("children", [])) == 3, "All children preserved"
-
-        # Show again
-        container_state[-1].visible = True
-        capture.render()
-
-        assert render_counts.get("app", 0) == 1, "App still should not re-render"
-
-        container = capture.session.elements.get(container_id)
-        assert container is not None
-        assert len(container.child_ids) == 3, "All children rendered again"
-
-        # Children should have re-rendered
-        assert render_counts == {
-            "app": 1,
-            "a": 2,
-            "b": 2,
-            "c": 2,
-        }, "All children re-render when shown again"

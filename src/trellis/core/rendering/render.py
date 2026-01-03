@@ -6,6 +6,7 @@ import logging
 import time
 
 from trellis.core.rendering.active import ActiveRender
+from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.element import Element, props_equal
 from trellis.core.rendering.element_state import ElementState
 from trellis.core.rendering.patches import (
@@ -182,20 +183,6 @@ def _execute_single_node(
 
     # Get props including children if component accepts them
     props = node.props.copy()
-    if node.component._has_children_param:
-        # Use existing children (ChildRefs) if present, otherwise build from child_ids.
-        # ChildRefs are stable references created when the parent's `with` block executed.
-        # We only rebuild from child_ids for initial render or when parent re-renders.
-        if "children" not in props:
-            # Fallback: create ChildRefs from child_ids (for backward compatibility
-            # and cases where children weren't collected via `with` block)
-            from trellis.core.rendering.child_ref import ChildRef
-
-            props["children"] = [
-                ChildRef(id=cid, _session_ref=node._session_ref)
-                for cid in node.child_ids
-                if session.elements.get(cid) is not None
-            ]
 
     # Set up execution context
     old_node_id = session.active.current_node_id
@@ -279,8 +266,6 @@ def _execute_tree(
 
         # Process removals first
         # Check if child is still collected (in props["children"]) but just not rendered
-        from trellis.core.rendering.child_ref import ChildRef
-
         collected_ids = {
             c.id for c in executed_node.props.get("children", []) if isinstance(c, ChildRef)
         }
