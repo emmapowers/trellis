@@ -2,7 +2,7 @@
 
 from trellis import html as h
 from trellis.core.components.composition import component
-from trellis.platforms.common.serialization import parse_callback_id, serialize_node
+from trellis.platforms.common.serialization import parse_callback_id, serialize_element
 
 
 class TestHtmlElements:
@@ -147,7 +147,7 @@ class TestHtmlSerialization:
 
         result = rendered(App)
 
-        serialized = serialize_node(result.root_element, result.session)
+        serialized = serialize_element(result.root_element, result.session)
         div_data = serialized["children"][0]
 
         assert div_data["type"] == "div"
@@ -165,7 +165,7 @@ class TestHtmlSerialization:
 
         result = rendered(App)
 
-        serialized = serialize_node(result.root_element, result.session)
+        serialized = serialize_element(result.root_element, result.session)
 
         assert serialized["children"][0]["type"] == "span"
         assert serialized["children"][1]["type"] == "h1"
@@ -181,7 +181,7 @@ class TestHtmlSerialization:
 
         result = rendered(App)
 
-        serialized = serialize_node(result.root_element, result.session)
+        serialized = serialize_element(result.root_element, result.session)
         h1_data = serialized["children"][0]
 
         assert h1_data["type"] == "h1"
@@ -199,7 +199,7 @@ class TestHtmlSerialization:
 
         result = rendered(App)
 
-        serialized = serialize_node(result.root_element, result.session)
+        serialized = serialize_element(result.root_element, result.session)
         outer = serialized["children"][0]
 
         assert outer["type"] == "div"
@@ -225,7 +225,7 @@ class TestHtmlSerialization:
 
         result = rendered(App)
 
-        serialized = serialize_node(result.root_element, result.session)
+        serialized = serialize_element(result.root_element, result.session)
         div_data = serialized["children"][0]
 
         assert "__callback__" in div_data["props"]["onClick"]
@@ -245,7 +245,7 @@ class TestHtmlSerialization:
 
         result = rendered(App)
 
-        serialized = serialize_node(result.root_element, result.session)
+        serialized = serialize_element(result.root_element, result.session)
         a_data = serialized["children"][0]
 
         assert a_data["type"] == "a"
@@ -264,7 +264,7 @@ class TestHtmlSerialization:
 
         result = rendered(App)
 
-        serialized = serialize_node(result.root_element, result.session)
+        serialized = serialize_element(result.root_element, result.session)
         div_data = serialized["children"][0]
 
         assert len(div_data["children"]) == 2

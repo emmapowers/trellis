@@ -10,7 +10,7 @@ Usage:
     trellis run app.py -d all          # Enable all debug logging
 
 Categories:
-    render    - Render lifecycle, node execution, mount/unmount
+    render    - Render lifecycle, element execution, mount/unmount
     reconcile - Child reconciliation algorithm
     state     - Stateful property access and mutations
     tracked   - TrackedList/Dict/Set mutations
@@ -48,7 +48,7 @@ class DebugCategory(NamedTuple):
 # Detailed category descriptions for help text
 CATEGORY_DESCRIPTIONS: list[DebugCategory] = [
     DebugCategory(
-        "render", "trellis.core.rendering", "Render lifecycle, node execution, mount/unmount"
+        "render", "trellis.core.rendering", "Render lifecycle, element execution, mount/unmount"
     ),
     DebugCategory("reconcile", "trellis.core.reconcile", "Child reconciliation algorithm"),
     DebugCategory("state", "trellis.core.state", "Stateful property access and mutations"),

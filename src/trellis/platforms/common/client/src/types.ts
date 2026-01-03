@@ -21,7 +21,7 @@ export interface AddPatch {
   op: "add";
   parent_id: string | null;
   children: string[]; // Parent's new children list (for positioning)
-  node: import("./core").SerializedElement; // Full subtree for the new node
+  element: import("./core").SerializedElement; // Full subtree for the new node
 }
 
 /** Update an existing node's props and/or children order. */

@@ -14,7 +14,7 @@ from trellis.core.rendering.patches import RenderPatch
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
-from trellis.platforms.common.serialization import serialize_node
+from trellis.platforms.common.serialization import serialize_element
 
 # =============================================================================
 # Marker Configuration
@@ -104,7 +104,7 @@ def rendered() -> tp.Callable[[CompositionComponent], RenderResult]:
     def _render(root: CompositionComponent) -> RenderResult:
         session = RenderSession(root)
         patches = render(session)
-        tree = serialize_node(session.root_element, session)
+        tree = serialize_element(session.root_element, session)
         return RenderResult(session=session, patches=patches, tree=tree)
 
     return _render
@@ -254,8 +254,8 @@ def render_to_tree(session: RenderSession) -> dict[str, tp.Any]:
     if not isinstance(first_patch, RenderAddPatch):
         raise ValueError(f"Expected RenderAddPatch, got {type(first_patch).__name__}")
 
-    # Serialize the node to wire format for test assertions
-    return serialize_node(first_patch.node, session)
+    # Serialize the element to wire format for test assertions
+    return serialize_element(first_patch.element, session)
 
 
 # =============================================================================

@@ -76,14 +76,14 @@ _MISSING = _Missing()
 
 @dataclass(kw_only=True)
 class StatePropertyInfo:
-    """Tracks which nodes depend on a specific state property.
+    """Tracks which elements depend on a specific state property.
 
-    When a component reads a state property during execution, the node
+    When a component reads a state property during execution, the element
     is added to this property's dependency set. When the property changes,
-    all dependent nodes are marked dirty.
+    all dependent elements are marked dirty.
 
     Uses WeakSet[Element] so dependencies are automatically cleaned up
-    when nodes are replaced (on re-render) or removed (on unmount).
+    when elements are replaced (on re-render) or removed (on unmount).
 
     Attributes:
         name: The property name being tracked
@@ -120,7 +120,7 @@ class Stateful:
         """Create or retrieve a cached Stateful instance.
 
         During component execution, state instances are cached on the
-        current node's ElementState. This implements React-like hooks behavior
+        current element's ElementState. This implements React-like hooks behavior
         where the same state instance is returned across re-renders.
 
         The cache key is (class, call_index), ensuring that:
@@ -153,11 +153,11 @@ class Stateful:
         if session is None or not session.is_executing():
             return object.__new__(cls)
 
-        # Use current_node_id and state store for caching
-        node_id = session.current_node_id
-        assert node_id is not None  # Guaranteed by is_executing() check above
+        # Use current_element_id and state store for caching
+        element_id = session.current_element_id
+        assert element_id is not None  # Guaranteed by is_executing() check above
 
-        state = session.states.get_or_create(node_id)
+        state = session.states.get_or_create(element_id)
         call_idx = state.state_call_count
         state.state_call_count += 1
         key = (cls, call_idx)
@@ -222,15 +222,15 @@ class Stateful:
             deps[name] = StatePropertyInfo(name=name)
         state_info = deps[name]
 
-        # Add the current Element to watchers (WeakSet auto-cleans on node death)
-        node_id = session.current_node_id
-        if node_id is not None:
-            node = session.elements.get(node_id)
-            if node is not None:
-                state_info.watchers.add(node)
+        # Add the current Element to watchers (WeakSet auto-cleans on element death)
+        element_id = session.current_element_id
+        if element_id is not None:
+            element = session.elements.get(element_id)
+            if element is not None:
+                state_info.watchers.add(element)
                 logger.debug(
                     "Dependency: %s reads %s.%s",
-                    node_id,
+                    element_id,
                     type(self).__name__,
                     name,
                 )
@@ -241,9 +241,9 @@ class Stateful:
         return value
 
     def __setattr__(self, name: str, value: tp.Any) -> None:
-        """Set an attribute, marking dependent nodes as dirty.
+        """Set an attribute, marking dependent elements as dirty.
 
-        When a public attribute is modified, all nodes that previously
+        When a public attribute is modified, all elements that previously
         read that attribute are marked dirty and will re-render.
 
         Plain list/dict/set values are auto-converted to TrackedList/Dict/Set
@@ -303,7 +303,7 @@ class Stateful:
                 old_value,
             )
 
-        # Mark dependent nodes as dirty (if we have deps tracking initialized)
+        # Mark dependent elements as dirty (if we have deps tracking initialized)
         try:
             deps = object.__getattribute__(self, "_state_props")
         except AttributeError:
@@ -312,16 +312,16 @@ class Stateful:
         if name in deps:
             state_info = deps[name]
 
-            # Mark watcher nodes dirty (WeakSet auto-skips dead refs)
-            dirty_nodes = []
-            for node in state_info.watchers:
-                node_session = node._session_ref()
-                if node_session is not None:
-                    node_session.dirty.mark(node.id)
-                    dirty_nodes.append(node.id)
+            # Mark watcher elements dirty (WeakSet auto-skips dead refs)
+            dirty_elements = []
+            for element in state_info.watchers:
+                element_session = element._session_ref()
+                if element_session is not None:
+                    element_session.dirty.mark(element.id)
+                    dirty_elements.append(element.id)
 
-            if dirty_nodes:
-                logger.debug("Marking dirty: %s", dirty_nodes)
+            if dirty_elements:
+                logger.debug("Marking dirty: %s", dirty_elements)
 
     def on_mount(self) -> None:
         """Called after owning element mounts. Override for initialization."""
@@ -339,7 +339,7 @@ class Stateful:
         """Push this state instance onto the context stack for its type.
 
         This makes the instance retrievable by descendant components via
-        `from_context()`. Context is stored on the current node's ElementState.
+        `from_context()`. Context is stored on the current element's ElementState.
 
         Example:
             ```python
@@ -364,11 +364,11 @@ class Stateful:
                 f"Context API is only available within component execution."
             )
 
-        node_id = session.current_node_id
-        assert node_id is not None  # Guaranteed by is_executing() check above
-        state = session.states.get_or_create(node_id)
+        element_id = session.current_element_id
+        assert element_id is not None  # Guaranteed by is_executing() check above
+        state = session.states.get_or_create(element_id)
         state.context[type(self)] = self
-        logger.debug("Providing %s context at %s", type(self).__name__, node_id)
+        logger.debug("Providing %s context at %s", type(self).__name__, element_id)
         return self
 
     def __exit__(
@@ -379,10 +379,10 @@ class Stateful:
     ) -> None:
         """Exit the context block.
 
-        Note: Context stored on nodes is NOT removed here - it persists
-        for the lifetime of the node so child components can find it.
+        Note: Context stored on elements is NOT removed here - it persists
+        for the lifetime of the element so child components can find it.
         """
-        # Context is stored on the node, not on a stack, so nothing to pop
+        # Context is stored on the element, not on a stack, so nothing to pop
         pass
 
     @tp.overload
@@ -401,7 +401,7 @@ class Stateful:
     def from_context(cls, *, default: tp.Self | None | _Missing = _MISSING) -> tp.Self | None:
         """Retrieve the nearest ancestor instance of this state type.
 
-        Walks up the node tree looking for context. Must be called during
+        Walks up the element tree looking for context. Must be called during
         component execution within a render context.
 
         Example:
@@ -441,17 +441,17 @@ class Stateful:
         logger.debug("Looking up %s context", cls.__name__)
 
         # Walk up the parent_id chain with cycle detection
-        node_id: str | None = session.current_node_id
+        element_id: str | None = session.current_element_id
         visited: set[str] = set()
-        while node_id is not None:
-            if node_id in visited:
+        while element_id is not None:
+            if element_id in visited:
                 break  # Cycle detected
-            visited.add(node_id)
-            state = session.states.get(node_id)
+            visited.add(element_id)
+            state = session.states.get(element_id)
             if state is not None and cls in state.context:
-                logger.debug("Found %s at ancestor %s", cls.__name__, node_id)
+                logger.debug("Found %s at ancestor %s", cls.__name__, element_id)
                 return tp.cast("tp.Self", state.context[cls])
-            node_id = state.parent_id if state else None
+            element_id = state.parent_id if state else None
 
         # No context found - return default or raise
         logger.debug("No %s found in context", cls.__name__)

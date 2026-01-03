@@ -5,7 +5,7 @@ from dataclasses import replace
 
 from trellis.core.rendering.element import Element
 from trellis.core.rendering.element_state import ElementState, ElementStateStore
-from trellis.core.rendering.elements import ElementStore
+from trellis.core.rendering.element_store import ElementStore
 
 
 class MockComponent:

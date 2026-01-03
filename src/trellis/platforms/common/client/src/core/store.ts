@@ -97,11 +97,11 @@ export class TrellisStore {
   }
 
   private applyAdd(patch: AddPatch, affectedIds: Set<string>): void {
-    const nodeId = patch.node.key ?? patch.node.name ?? `unknown-${Math.random().toString(36).slice(2)}`;
+    const nodeId = patch.element.key ?? patch.element.name ?? `unknown-${Math.random().toString(36).slice(2)}`;
     debugLog("store", `ADD: ${nodeId} under parent ${patch.parent_id}`);
 
     // Add the new node and all descendants
-    this.addNodeRecursive(patch.node);
+    this.addNodeRecursive(patch.element);
     affectedIds.add(nodeId);
 
     // Update parent's childIds if parent exists
@@ -125,7 +125,7 @@ export class TrellisStore {
       // Adding a new root - clear existing tree first
       this.nodes.clear();
       this.nodeListeners.clear();
-      this.addNodeRecursive(patch.node);
+      this.addNodeRecursive(patch.element);
       this.rootId = nodeId;
     }
   }

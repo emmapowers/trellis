@@ -57,19 +57,19 @@ class TestPatchOrdering:
         add_patches = [p for p in patches if isinstance(p, RenderAddPatch)]
         assert len(add_patches) >= 1, f"Expected at least 1 AddPatch, got {len(add_patches)}"
 
-        # Extract node IDs from AddPatches in order
-        add_patch_node_ids = [p.node.id for p in add_patches]
+        # Extract element IDs from AddPatches in order
+        add_patch_element_ids = [p.element.id for p in add_patches]
 
         # Find Child and Grandchild IDs
         child_id = capture.session.root_element.child_ids[0]
-        child_node = capture.session.elements.get(child_id)
-        grandchild_id = child_node.child_ids[0] if child_node.child_ids else None
+        child_element = capture.session.elements.get(child_id)
+        grandchild_id = child_element.child_ids[0] if child_element.child_ids else None
 
         # If both Child and Grandchild have separate AddPatches,
         # Child's AddPatch must come BEFORE Grandchild's AddPatch
-        if child_id in add_patch_node_ids and grandchild_id in add_patch_node_ids:
-            child_index = add_patch_node_ids.index(child_id)
-            grandchild_index = add_patch_node_ids.index(grandchild_id)
+        if child_id in add_patch_element_ids and grandchild_id in add_patch_element_ids:
+            child_index = add_patch_element_ids.index(child_id)
+            grandchild_index = add_patch_element_ids.index(grandchild_id)
             assert child_index < grandchild_index, (
                 f"Parent AddPatch must come before child AddPatch. "
                 f"Got Child at index {child_index}, Grandchild at index {grandchild_index}"
@@ -118,22 +118,22 @@ class TestPatchOrdering:
         # Collect all AddPatches
         add_patches = [p for p in patches if isinstance(p, RenderAddPatch)]
 
-        # Get the IDs of nodes that received AddPatches
-        add_patch_node_ids = {p.node.id for p in add_patches}
+        # Get the IDs of elements that received AddPatches
+        add_patch_element_ids = {p.element.id for p in add_patches}
 
         # Find Child and Grandchild IDs
         child_id = capture.session.root_element.child_ids[0]
-        child_node = capture.session.elements.get(child_id)
-        grandchild_id = child_node.child_ids[0]
+        child_element = capture.session.elements.get(child_id)
+        grandchild_id = child_element.child_ids[0]
 
         # Child should have an AddPatch (it's a new subtree root)
-        assert child_id in add_patch_node_ids, "Child should have an AddPatch"
+        assert child_id in add_patch_element_ids, "Child should have an AddPatch"
 
         # Grandchild should NOT have its own AddPatch (it's included in Child's)
-        assert grandchild_id not in add_patch_node_ids, (
+        assert grandchild_id not in add_patch_element_ids, (
             f"Grandchild should not have its own AddPatch. "
             f"It's already included in Child's AddPatch via recursive serialization. "
-            f"Got AddPatches for: {add_patch_node_ids}"
+            f"Got AddPatches for: {add_patch_element_ids}"
         )
 
     def test_new_subtree_emits_single_complete_add_patch(
@@ -175,24 +175,24 @@ class TestPatchOrdering:
         add_patches = [p for p in patches if isinstance(p, RenderAddPatch)]
         assert len(add_patches) == 1, (
             f"Expected exactly 1 AddPatch for the new subtree, got {len(add_patches)}. "
-            f"Patches for: {[p.node.id for p in add_patches]}"
+            f"Patches for: {[p.element.id for p in add_patches]}"
         )
 
         # The single AddPatch must have child_ids populated (contains Grandchild)
         child_add_patch = add_patches[0]
         child_id = capture.session.root_element.child_ids[0]
-        assert child_add_patch.node.id == child_id, "AddPatch should be for Child"
+        assert child_add_patch.element.id == child_id, "AddPatch should be for Child"
 
-        assert len(child_add_patch.node.child_ids) > 0, (
-            "AddPatch's node.child_ids is empty - subtree not fully populated. "
+        assert len(child_add_patch.element.child_ids) > 0, (
+            "AddPatch's element.child_ids is empty - subtree not fully populated. "
             "This happens when AddPatch is emitted BEFORE executing the subtree."
         )
 
         # Verify Grandchild is in Child's child_ids
         grandchild_id = capture.session.elements.get(child_id).child_ids[0]
-        assert grandchild_id in child_add_patch.node.child_ids, (
+        assert grandchild_id in child_add_patch.element.child_ids, (
             f"Child's AddPatch should include Grandchild. "
-            f"Expected {grandchild_id} in {child_add_patch.node.child_ids}"
+            f"Expected {grandchild_id} in {child_add_patch.element.child_ids}"
         )
 
 
@@ -260,15 +260,15 @@ class TestInitialRenderInvariants:
         add_patch = patches[0]
         assert isinstance(add_patch, RenderAddPatch)
 
-        # Root node should have child_ids populated
-        root_node = add_patch.node
-        assert len(root_node.child_ids) == 1, "Root should have Child in child_ids"
+        # Root element should have child_ids populated
+        root_element = add_patch.element
+        assert len(root_element.child_ids) == 1, "Root should have Child in child_ids"
 
         # Child should have GrandChild in child_ids
-        child_id = root_node.child_ids[0]
-        child_node = capture.session.elements.get(child_id)
-        assert child_node is not None
-        assert len(child_node.child_ids) == 1, "Child should have GrandChild in child_ids"
+        child_id = root_element.child_ids[0]
+        child_element = capture.session.elements.get(child_id)
+        assert child_element is not None
+        assert len(child_element.child_ids) == 1, "Child should have GrandChild in child_ids"
 
     def test_initial_render_add_patch_has_no_parent(
         self, capture_patches: "type[PatchCapture]"
@@ -332,12 +332,12 @@ class TestIncrementalAddInvariants:
         assert len(add_patches) == 1, f"Expected 1 AddPatch for new subtree, got {len(add_patches)}"
 
         # UpdatePatch should be for Root (its child_ids changed)
-        assert update_patches[0].node_id == capture.session.root_element.id
+        assert update_patches[0].element_id == capture.session.root_element.id
         assert update_patches[0].children is not None, "UpdatePatch should include new children"
 
         # AddPatch should be for Child
         child_id = capture.session.root_element.child_ids[0]
-        assert add_patches[0].node.id == child_id
+        assert add_patches[0].element.id == child_id
 
     def test_adding_deep_subtree_emits_single_add_patch(
         self, capture_patches: "type[PatchCapture]"

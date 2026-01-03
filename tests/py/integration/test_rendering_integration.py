@@ -775,7 +775,7 @@ class TestIsRenderActiveSemantics:
         """session.active should be None during lifecycle hooks.
 
         This is the implementation requirement: hooks must run after
-        session.active is cleared, not just after current_node_id is None.
+        session.active is cleared, not just after current_element_id is None.
         """
         from trellis.core.rendering.session import get_active_session
 

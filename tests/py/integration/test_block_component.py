@@ -29,15 +29,15 @@ class TestContainerComponent:
 
         result = rendered(Parent)
 
-        root_node = result.session.elements.get(result.session.root_node_id)
-        assert root_node is not None
+        root_element = result.session.elements.get(result.session.root_element_id)
+        assert root_element is not None
         # Parent has Column as child
-        assert len(root_node.child_ids) == 1
-        column_node = result.session.elements.get(root_node.child_ids[0])
-        assert column_node is not None
-        assert column_node.component == Column
+        assert len(root_element.child_ids) == 1
+        column_element = result.session.elements.get(root_element.child_ids[0])
+        assert column_element is not None
+        assert column_element.component == Column
         # Column has two Child elements (mounted via child())
-        assert len(column_node.child_ids) == 2
+        assert len(column_element.child_ids) == 2
 
     def test_nested_containers(self, rendered) -> None:
         """Nested with blocks work correctly."""
@@ -64,15 +64,15 @@ class TestContainerComponent:
 
         result = rendered(Parent)
 
-        root_node = result.session.elements.get(result.session.root_node_id)
-        assert root_node is not None
-        column_node = result.session.elements.get(root_node.child_ids[0])
-        assert column_node is not None
-        assert column_node.component.name == "Column"
-        row_node = result.session.elements.get(column_node.child_ids[0])
-        assert row_node is not None
-        assert row_node.component.name == "Row"
-        assert len(row_node.child_ids) == 1
+        root_element = result.session.elements.get(result.session.root_element_id)
+        assert root_element is not None
+        column_element = result.session.elements.get(root_element.child_ids[0])
+        assert column_element is not None
+        assert column_element.component.name == "Column"
+        row_element = result.session.elements.get(column_element.child_ids[0])
+        assert row_element is not None
+        assert row_element.component.name == "Row"
+        assert len(row_element.child_ids) == 1
 
     def test_container_receives_children_list(self, rendered) -> None:
         """Container component receives children as a list of ChildRefs."""
@@ -154,7 +154,7 @@ class TestContainerComponent:
         assert received_children == []
 
     def test_child_call_mounts_element(self, rendered) -> None:
-        """Calling child() mounts the node in the container."""
+        """Calling child() mounts the element in the container."""
 
         @component
         def Wrapper(children: list[ChildRef]) -> None:
@@ -175,9 +175,9 @@ class TestContainerComponent:
 
         result = rendered(Parent)
 
-        root_node = result.session.elements.get(result.session.root_node_id)
-        assert root_node is not None
-        wrapper = result.session.elements.get(root_node.child_ids[0])
+        root_element = result.session.elements.get(result.session.root_element_id)
+        assert root_element is not None
+        wrapper = result.session.elements.get(root_element.child_ids[0])
         assert wrapper is not None
         # Only one child mounted, even though 3 were collected
         assert len(wrapper.child_ids) == 1
@@ -203,14 +203,14 @@ class TestContainerComponent:
 
         result = rendered(Parent)
 
-        root_node = result.session.elements.get(result.session.root_node_id)
-        assert root_node is not None
-        reverse_node = result.session.elements.get(root_node.child_ids[0])
-        assert reverse_node is not None
+        root_element = result.session.elements.get(result.session.root_element_id)
+        assert root_element is not None
+        reverse_element = result.session.elements.get(root_element.child_ids[0])
+        assert reverse_element is not None
         # Children should be in reverse order
-        child0 = result.session.elements.get(reverse_node.child_ids[0])
-        child1 = result.session.elements.get(reverse_node.child_ids[1])
-        child2 = result.session.elements.get(reverse_node.child_ids[2])
+        child0 = result.session.elements.get(reverse_element.child_ids[0])
+        child1 = result.session.elements.get(reverse_element.child_ids[1])
+        child2 = result.session.elements.get(reverse_element.child_ids[2])
         assert child0 is not None and child0.properties["value"] == 3
         assert child1 is not None and child1.properties["value"] == 2
         assert child2 is not None and child2.properties["value"] == 1

@@ -40,7 +40,7 @@ from trellis.platforms.common.messages import (
 )
 from trellis.platforms.common.serialization import (
     _serialize_props,
-    serialize_node,
+    serialize_element,
 )
 from trellis.utils.debug import get_enabled_categories
 
@@ -164,7 +164,7 @@ def _serialize_patches(patches: list[RenderPatch], session: RenderSession) -> li
 
     Args:
         patches: List of RenderPatch objects from render()
-        session: The RenderSession for callback registration and node lookup
+        session: The RenderSession for callback registration and element lookup
 
     Returns:
         List of wire-format Patch objects ready for transmission
@@ -176,23 +176,23 @@ def _serialize_patches(patches: list[RenderPatch], session: RenderSession) -> li
                 AddPatch(
                     parent_id=patch.parent_id,
                     children=list(patch.children),
-                    node=serialize_node(patch.node, session),
+                    element=serialize_element(patch.element, session),
                 )
             )
         elif isinstance(patch, RenderUpdatePatch):
             # Serialize props if present
             props = None
             if patch.props is not None:
-                props = _serialize_props(patch.props, session, patch.node_id)
+                props = _serialize_props(patch.props, session, patch.element_id)
             result.append(
                 UpdatePatch(
-                    id=patch.node_id,
+                    id=patch.element_id,
                     props=props,
                     children=list(patch.children) if patch.children else None,
                 )
             )
         elif isinstance(patch, RenderRemovePatch):
-            result.append(RemovePatch(id=patch.node_id))
+            result.append(RemovePatch(id=patch.element_id))
     return result
 
 
@@ -301,8 +301,10 @@ class MessageHandler:
         try:
             render_patches = render(self.session)
             wire_patches = _serialize_patches(render_patches, self.session)
-            node_count = len(self.session.elements)
-            logger.debug("Initial render complete, sending PatchMessage (%d nodes)", node_count)
+            element_count = len(self.session.elements)
+            logger.debug(
+                "Initial render complete, sending PatchMessage (%d elements)", element_count
+            )
             return PatchMessage(patches=wire_patches)
         except Exception as e:
             logger.exception(f"Error during initial render: {e}")
@@ -329,7 +331,7 @@ class MessageHandler:
                 logger.exception(f"Error in callback {msg.callback_id}: {e}")
                 return ErrorMessage(error=_format_exception(e), context="callback")
 
-            # Callback executed successfully. State changes mark nodes dirty.
+            # Callback executed successfully. State changes mark elements dirty.
             # The render loop will pick them up on the next frame.
             return None
 
@@ -339,7 +341,7 @@ class MessageHandler:
         """Invoke callback with event conversion.
 
         Args:
-            callback_id: The callback ID to invoke (format: node_id|prop_name)
+            callback_id: The callback ID to invoke (format: element_id|prop_name)
             args: Raw arguments from the client
 
         Raises:
@@ -348,8 +350,8 @@ class MessageHandler:
         from trellis.platforms.common.serialization import parse_callback_id
 
         assert self.session is not None
-        node_id, prop_name = parse_callback_id(callback_id)
-        callback = self.session.get_callback(node_id, prop_name)
+        element_id, prop_name = parse_callback_id(callback_id)
+        callback = self.session.get_callback(element_id, prop_name)
         if callback is None:
             raise KeyError(f"Callback not found: {callback_id}")
 
@@ -371,10 +373,10 @@ class MessageHandler:
     # -------------------------------------------------------------------------
 
     async def _render_loop(self) -> None:
-        """Background loop that renders when dirty nodes exist.
+        """Background loop that renders when dirty elements exist.
 
         This loop runs continuously, sleeping for the configured batch_delay,
-        then checking if any nodes need re-rendering. If so, it renders
+        then checking if any elements need re-rendering. If so, it renders
         and sends patches to the client.
         """
         assert self.session is not None
@@ -382,12 +384,12 @@ class MessageHandler:
             # Wait for frame period (configured via batch_delay)
             await asyncio.sleep(self.batch_delay)
 
-            # Check if there are dirty nodes to render
+            # Check if there are dirty elements to render
             if not self.session.dirty.has_dirty():
                 continue
 
             dirty_count = len(self.session.dirty)
-            logger.debug("Render loop: %d dirty nodes", dirty_count)
+            logger.debug("Render loop: %d dirty elements", dirty_count)
 
             try:
                 render_patches = render(self.session)
@@ -446,6 +448,6 @@ class MessageHandler:
 
     def cleanup(self) -> None:
         """Clean up resources. Call when session ends."""
-        # No explicit cleanup needed - callbacks are stored in node props
-        # and cleaned up when nodes are unmounted
+        # No explicit cleanup needed - callbacks are stored in element props
+        # and cleaned up when elements are unmounted
         pass

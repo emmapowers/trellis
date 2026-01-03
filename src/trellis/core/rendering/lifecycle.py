@@ -23,37 +23,37 @@ class LifecycleTracker:
         self._pending_mounts: list[str] = []
         self._pending_unmounts: list[str] = []
 
-    def track_mount(self, node_id: str) -> None:
-        """Track a node for mount hook.
+    def track_mount(self, element_id: str) -> None:
+        """Track an element for mount hook.
 
         Args:
-            node_id: The ID of the newly mounted node
+            element_id: The ID of the newly mounted element
         """
-        self._pending_mounts.append(node_id)
+        self._pending_mounts.append(element_id)
 
-    def track_unmount(self, node_id: str) -> None:
-        """Track a node for unmount hook.
+    def track_unmount(self, element_id: str) -> None:
+        """Track an element for unmount hook.
 
         Args:
-            node_id: The ID of the node being unmounted
+            element_id: The ID of the element being unmounted
         """
-        self._pending_unmounts.append(node_id)
+        self._pending_unmounts.append(element_id)
 
     def pop_mounts(self) -> list[str]:
-        """Pop and return all pending mount node IDs.
+        """Pop and return all pending mount element IDs.
 
         Returns:
-            List of node IDs needing mount hooks called
+            List of element IDs needing mount hooks called
         """
         mounts = list(self._pending_mounts)
         self._pending_mounts.clear()
         return mounts
 
     def pop_unmounts(self) -> list[str]:
-        """Pop and return all pending unmount node IDs.
+        """Pop and return all pending unmount element IDs.
 
         Returns:
-            List of node IDs needing unmount hooks called
+            List of element IDs needing unmount hooks called
         """
         unmounts = list(self._pending_unmounts)
         self._pending_unmounts.clear()

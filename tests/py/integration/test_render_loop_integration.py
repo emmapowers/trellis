@@ -57,7 +57,7 @@ def get_initial_tree(handler: MessageHandler) -> dict[str, tp.Any]:
     assert len(msg.patches) == 1
     patch = msg.patches[0]
     assert isinstance(patch, AddPatch)
-    return patch.node
+    return patch.element
 
 
 # Components that are part of the TrellisApp wrapper infrastructure
@@ -158,7 +158,7 @@ class TestRenderLoop:
 
             # Get the increment callback from initial PatchMessage
             initial = next(m for m in sent_messages if isinstance(m, PatchMessage))
-            tree = initial.patches[0].node
+            tree = initial.patches[0].element
             app_children = find_app_children(tree)
             button = app_children[1]
             cb_id = button["props"]["on_click"]["__callback__"]
@@ -228,7 +228,7 @@ class TestRenderLoop:
             await asyncio.sleep(0.02)
 
             initial = next(m for m in sent_messages if isinstance(m, PatchMessage))
-            tree = initial.patches[0].node
+            tree = initial.patches[0].element
             app_children = find_app_children(tree)
             button = app_children[1]
             cb_id = button["props"]["on_click"]["__callback__"]
@@ -379,8 +379,8 @@ class TestPatchComputation:
         # At least one update should exist
         assert len(update_patches) > 0
 
-    def test_unchanged_nodes_no_patches(self) -> None:
-        """Unchanged nodes should not generate any patches."""
+    def test_unchanged_elements_no_patches(self) -> None:
+        """Unchanged elements should not generate any patches."""
 
         @dataclass(kw_only=True)
         class CounterState(Stateful):
@@ -489,6 +489,6 @@ class TestPatchComputation:
         assert len(remove_patches) >= 1, f"Expected RenderRemovePatch, got patches: {patches}"
         assert len(add_patches) >= 1, f"Expected RenderAddPatch, got patches: {patches}"
 
-        # Verify the added node is Tab2Content
-        added_names = [p.node.component.name for p in add_patches]
+        # Verify the added element is Tab2Content
+        added_names = [p.element.component.name for p in add_patches]
         assert "Tab2Content" in added_names, f"Expected Tab2Content in {added_names}"

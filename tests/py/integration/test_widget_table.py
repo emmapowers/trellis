@@ -1,7 +1,7 @@
 """Tests for Table widget."""
 
 from trellis.core.components.composition import component
-from trellis.platforms.common.serialization import serialize_node
+from trellis.platforms.common.serialization import serialize_element
 from trellis.widgets import Label, Table, TableColumn
 
 
@@ -213,7 +213,7 @@ class TestTableWidget:
         result = rendered(App)
 
         # Serialize the tree
-        serialized = serialize_node(result.root_element, result.session)
+        serialized = serialize_element(result.root_element, result.session)
 
         # Navigate to the TableInner children (CellSlots)
         table_comp = serialized["children"][0]

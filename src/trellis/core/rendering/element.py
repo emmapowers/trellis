@@ -24,7 +24,7 @@ __all__ = [
 
 @dataclass
 class Element(KeyTrait):
-    """Tree node representing a component invocation."""
+    """Tree nod e representing a component invocation."""
 
     component: Component
     _session_ref: weakref.ref[RenderSession]
@@ -37,7 +37,7 @@ class Element(KeyTrait):
     def __hash__(self) -> int:
         """Hash based on id, session, and render_count for stable identity.
 
-        This allows nodes to be used in WeakSets for dependency tracking,
+        This allows elements to be used in WeakSets for dependency tracking,
         where identity matters more than content equality.
         """
         return hash(
@@ -114,7 +114,7 @@ class Element(KeyTrait):
         children = [ChildRef(id=cid, _session_ref=self._session_ref) for cid in child_ids]
         self.props["children"] = children
 
-        # Re-store node with child_ids and children props set
+        # Re-store element with child_ids and children props set
         session.elements.store(self)
 
 

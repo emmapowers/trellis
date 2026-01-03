@@ -75,30 +75,32 @@ class Component(ABC):
 
         # REUSE CHECK - the key optimization from Phase 5
         # We can only reuse if:
-        # 1. Old node exists at this position
+        # 1. Old element exists at this position
         # 2. Same component type
         # 3. Same props
-        # 4. Node is mounted (has active ElementState with mounted=True)
-        # 5. Node is not dirty
-        old_node = session.elements.get(position_id)
+        # 4. Element is mounted (has active ElementState with mounted=True)
+        # 5. Element is not dirty
+        old_element = session.elements.get(position_id)
         state = session.states.get(position_id)
         is_mounted = state is not None and state.mounted
         is_dirty = position_id in session.dirty
 
         if (
-            old_node is not None
-            and old_node.component == self
-            and old_node.props == props
+            old_element is not None
+            and old_element.component == self
+            and old_element.props == props
             and is_mounted
             and not is_dirty
         ):
-            # For containers with `with` blocks, we must create a new node object.
-            # The old_elements snapshot shares node references, so modifying
-            # old_node.child_ids in __exit__ would corrupt the snapshot and break
+            # For containers with `with` blocks, we must create a new element object.
+            # The old_elements snapshot shares element references, so modifying
+            # old_element.child_ids in __exit__ would corrupt the snapshot and break
             # reconciliation (old vs new child_ids would be identical).
             if self._has_children_param:
-                logger.debug("Creating new node for container %s (preserving snapshot)", self.name)
-                node = self.element_class(
+                logger.debug(
+                    "Creating new element for container %s (preserving snapshot)", self.name
+                )
+                element = self.element_class(
                     component=self,
                     _session_ref=weakref.ref(session),
                     render_count=session.render_count,
@@ -107,20 +109,20 @@ class Component(ABC):
                     id=position_id,
                     child_ids=[],  # Will be populated by __exit__
                 )
-                session.elements.store(node)
+                session.elements.store(element)
                 # Add container to parent's frame (same as non-container path below)
                 if session.active.frames.has_active():
-                    session.active.frames.add_child(node.id)
-                return node
+                    session.active.frames.add_child(element.id)
+                return element
 
-            # Non-container: reuse old node - skip execution entirely, preserve subtree
-            logger.debug("Reusing node %s", self.name)
+            # Non-container: reuse old element - skip execution entirely, preserve subtree
+            logger.debug("Reusing element %s", self.name)
             if session.active.frames.has_active():
-                session.active.frames.add_child(old_node.id)
-            return old_node
+                session.active.frames.add_child(old_element.id)
+            return old_element
 
-        # Create new node
-        node = self.element_class(
+        # Create new element
+        element = self.element_class(
             component=self,
             _session_ref=weakref.ref(session),
             render_count=session.render_count,
@@ -129,15 +131,15 @@ class Component(ABC):
             id=position_id,
         )
 
-        # Store node (execution happens later via _execute_tree)
-        session.elements.store(node)
+        # Store element (execution happens later via _execute_tree)
+        session.elements.store(element)
 
-        # Auto-collect: add to parent node's pending children
+        # Auto-collect: add to parent element's pending children
         # Containers are also auto-collected now (execution deferred to _execute_tree)
         if session.active.frames.has_active():
-            session.active.frames.add_child(node.id)
+            session.active.frames.add_child(element.id)
 
-        return node
+        return element
 
     def __call__(self, /, **props: tp.Any) -> Element:
         """Create an Element for this component invocation."""

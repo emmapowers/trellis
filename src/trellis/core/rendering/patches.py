@@ -29,43 +29,43 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class RenderAddPatch:
-    """A new node was added to the tree.
+    """A new element was added to the tree.
 
     Attributes:
-        parent_id: ID of the parent node (None for root)
+        parent_id: ID of the parent element (None for root)
         children: Parent's new child order after this addition
-        node: The Element that was added (not serialized)
+        element: The Element that was added (not serialized)
     """
 
     parent_id: str | None
     children: tuple[str, ...]
-    node: Element
+    element: Element
 
 
 @dataclass(frozen=True)
 class RenderUpdatePatch:
-    """A node's props or children changed.
+    """An element's props or children changed.
 
     Attributes:
-        node_id: ID of the node that changed
+        element_id: ID of the element that changed
         props: Serialized props dict if props changed, None otherwise
         children: New child order if changed, None otherwise
     """
 
-    node_id: str
+    element_id: str
     props: dict[str, tp.Any] | None
     children: tuple[str, ...] | None
 
 
 @dataclass(frozen=True)
 class RenderRemovePatch:
-    """A node was removed from the tree.
+    """An element was removed from the tree.
 
     Attributes:
-        node_id: ID of the node that was removed
+        element_id: ID of the element that was removed
     """
 
-    node_id: str
+    element_id: str
 
 
 RenderPatch = RenderAddPatch | RenderUpdatePatch | RenderRemovePatch
@@ -93,19 +93,19 @@ class PatchCollector:
         # Log patch details
         if isinstance(patch, RenderAddPatch):
             logger.debug(
-                "Patch: RenderAddPatch(parent=%s, node=%s)",
+                "Patch: RenderAddPatch(parent=%s, element=%s)",
                 patch.parent_id,
-                patch.node.component.name,
+                patch.element.component.name,
             )
         elif isinstance(patch, RenderUpdatePatch):
             logger.debug(
                 "Patch: RenderUpdatePatch(id=%s, has_props=%s, children=%s)",
-                patch.node_id,
+                patch.element_id,
                 patch.props is not None,
                 patch.children is not None,
             )
         elif isinstance(patch, RenderRemovePatch):
-            logger.debug("Patch: RenderRemovePatch(id=%s)", patch.node_id)
+            logger.debug("Patch: RenderRemovePatch(id=%s)", patch.element_id)
 
         self._patches.append(patch)
 

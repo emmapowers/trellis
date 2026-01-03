@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 from trellis.core.rendering.dirty_tracker import DirtyTracker
 from trellis.core.rendering.element_state import ElementStateStore
-from trellis.core.rendering.elements import ElementStore
+from trellis.core.rendering.element_store import ElementStore
 
 if tp.TYPE_CHECKING:
     from trellis.core.components.base import Component
@@ -58,7 +58,7 @@ class RenderSession:
     """Session-scoped state container."""
 
     root_component: Component
-    root_node_id: str | None = None
+    root_element_id: str | None = None
 
     # Fine-grained stores
     elements: ElementStore = field(default_factory=ElementStore)
@@ -79,10 +79,10 @@ class RenderSession:
 
     @property
     def root_element(self) -> Element | None:
-        """Get the root element node for this session."""
-        if self.root_node_id is None:
+        """Get the root element for this session."""
+        if self.root_element_id is None:
             return None
-        return self.elements.get(self.root_node_id)
+        return self.elements.get(self.root_element_id)
 
     def is_rendering(self) -> bool:
         """Check if currently inside a render pass."""
@@ -90,22 +90,22 @@ class RenderSession:
 
     def is_executing(self) -> bool:
         """Check if currently executing a component."""
-        return self.active is not None and self.active.current_node_id is not None
+        return self.active is not None and self.active.current_element_id is not None
 
     @property
-    def current_node_id(self) -> str | None:
-        """Get the ID of the node currently being executed."""
+    def current_element_id(self) -> str | None:
+        """Get the ID of the element currently being executed."""
         if self.active is None:
             return None
-        return self.active.current_node_id
+        return self.active.current_element_id
 
-    def get_callback(self, node_id: str, prop_name: str) -> tp.Callable[..., tp.Any] | None:
-        """Get a callback from a node's props by path."""
-        node = self.elements.get(node_id)
-        if node is None:
+    def get_callback(self, element_id: str, prop_name: str) -> tp.Callable[..., tp.Any] | None:
+        """Get a callback from a element's props by path."""
+        element = self.elements.get(element_id)
+        if element is None:
             return None
 
-        value = _resolve_prop_path(node.props, prop_name)
+        value = _resolve_prop_path(element.props, prop_name)
 
         if value is not None and callable(value):
             return tp.cast("tp.Callable[..., tp.Any]", value)
