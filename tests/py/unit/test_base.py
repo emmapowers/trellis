@@ -61,7 +61,7 @@ class TestIComponentProtocolConformance:
 
         assert callable(MyComp)
         assert hasattr(MyComp, "execute")
-        assert hasattr(MyComp, "_has_children_param")
+        assert hasattr(MyComp, "is_container")
 
     def test_html_element_has_jsx_element_kind(self) -> None:
         """HtmlElement should return JSX_ELEMENT kind."""

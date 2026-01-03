@@ -106,43 +106,43 @@ class TestReactComponentBaseSubclass:
         assert MyWidget._element_name == "MyType"
         assert MyWidget().element_name == "MyType"
 
-    def test_subclass_has_children_false_by_default(self) -> None:
-        """Subclasses have _has_children False by default."""
+    def test_subclass_is_container_false_by_default(self) -> None:
+        """Subclasses have _is_container False by default."""
 
         @dataclass(kw_only=True)
         class LeafWidget(ReactComponentBase):
             name: str = "LeafWidget"
             _element_name = "LeafWidget"
 
-        assert LeafWidget._has_children is False
+        assert LeafWidget._is_container is False
 
-    def test_subclass_has_children_true(self) -> None:
-        """Subclasses can set _has_children True."""
+    def test_subclass_is_container_true(self) -> None:
+        """Subclasses can set _is_container True."""
 
         @dataclass(kw_only=True)
         class ContainerWidget(ReactComponentBase):
             name: str = "ContainerWidget"
             _element_name = "ContainerWidget"
-            _has_children = True
+            _is_container = True
 
-        assert ContainerWidget._has_children is True
+        assert ContainerWidget._is_container is True
 
-    def test_has_children_param_property(self) -> None:
-        """_has_children_param property reads from class variable."""
+    def testis_container_property(self) -> None:
+        """is_container property reads from class variable."""
 
         @dataclass(kw_only=True)
         class Container(ReactComponentBase):
             name: str = "Container"
             _element_name = "Container"
-            _has_children = True
+            _is_container = True
 
         @dataclass(kw_only=True)
         class Leaf(ReactComponentBase):
             name: str = "Leaf"
             _element_name = "Leaf"
 
-        assert Container()._has_children_param is True
-        assert Leaf()._has_children_param is False
+        assert Container().is_container is True
+        assert Leaf().is_container is False
 
 
 class TestReactComponentBaseDecorator:
@@ -177,22 +177,22 @@ class TestReactComponentBaseDecorator:
         assert MyWidget.__name__ == "MyWidget"
         assert MyWidget.__doc__ == "My widget docstring."
 
-    def test_decorator_has_children_false_by_default(self) -> None:
-        """Decorator creates components with _has_children False by default."""
+    def test_decorator_is_container_false_by_default(self) -> None:
+        """Decorator creates components with _is_container False by default."""
 
         @react_component_base("LeafWidget")
         def LeafWidget() -> Element: ...
 
         # Access the underlying component
-        assert LeafWidget._component._has_children_param is False
+        assert LeafWidget._component.is_container is False
 
-    def test_decorator_has_children_true(self) -> None:
+    def test_decorator_is_container_true(self) -> None:
         """Decorator can create container components."""
 
-        @react_component_base("ContainerWidget", has_children=True)
+        @react_component_base("ContainerWidget", is_container=True)
         def ContainerWidget() -> Element: ...
 
-        assert ContainerWidget._component._has_children_param is True
+        assert ContainerWidget._component.is_container is True
 
     def test_decorator_exposes_component(self) -> None:
         """Decorated function exposes _component for introspection."""

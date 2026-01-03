@@ -17,7 +17,7 @@ if tp.TYPE_CHECKING:
     from collections.abc import Callable
 
 
-@react_component_base("Tabs", has_children=True)
+@react_component_base("Tabs", is_container=True)
 def Tabs(
     *,
     selected: str | Mutable[str] | None = None,
@@ -45,7 +45,7 @@ def Tabs(
     ...
 
 
-@react_component_base("Tab", has_children=True)
+@react_component_base("Tab", is_container=True)
 def Tab(
     *,
     id: str,

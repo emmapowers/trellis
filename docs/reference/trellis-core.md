@@ -1,14 +1,12 @@
 # Trellis Core Reference
 
-> **Terminology note**: The codebase uses "node" and "element" interchangeably. Prefer "element" in new code.
-
 ## Architecture Overview
 
 ```
-State change → dirty.mark(node_id) → render() → patches → frontend
+State change → dirty.mark(element_id) → render() → patches → frontend
 ```
 
-**Render loop**: Session holds element tree. State mutations mark nodes dirty. `render()` processes dirty nodes, creating patches (Add/Update/Remove) sent to frontend.
+**Render loop**: Session holds element tree. State mutations mark elements dirty. `render()` processes dirty elements, creating patches (Add/Update/Remove) sent to frontend.
 
 ---
 
@@ -55,7 +53,7 @@ with Column().key("main-content"):
 Keys are essential when rendering dynamic lists — without them, Trellis uses position-based matching which can cause incorrect state preservation when items are reordered, inserted, or removed.
 
 ### ElementState
-Mutable runtime state for each Element, keyed by `node.id`.
+Mutable runtime state for each Element, keyed by `element.id`.
 
 ```python
 @dataclass
@@ -75,7 +73,7 @@ class RenderSession:
     root_component: Component
     elements: ElementStore      # Flat storage: id → Element
     states: ElementStateStore   # Flat storage: id → ElementState
-    dirty: DirtyTracker         # Set of node IDs needing re-render
+    dirty: DirtyTracker         # Set of element IDs needing re-render
     active: ActiveRender | None # Only set during render pass
     render_count: int           # Incremented each render
     lock: RLock                 # Thread-safe concurrent renders
@@ -98,7 +96,7 @@ Created via `@component` decorator. Wraps a render function.
 
 ```python
 @component
-def MyComponent(label: str, children: list[Element] = []):
+def MyComponent(label: str, children: list[ChildRef] = []):
     with Column():
         Label(text=label)
         for child in children:
@@ -111,7 +109,7 @@ def MyComponent(label: str, children: list[Element] = []):
 Base for widgets. Sets `_element_name` for frontend. Provides style prop merging.
 
 ```python
-@react_component_base("Button", has_children=True)
+@react_component_base("Button", is_container=True)
 class Button(ReactComponentBase):
     def __call__(self, text: str = "", on_click: Callback = None, ...):
         return super().__call__(text=text, on_click=on_click, ...)
@@ -130,11 +128,11 @@ Automatic dependency tracking for fine-grained reactivity.
 - Order matters: call index incremented per call
 
 **Dependency tracking** (`__getattribute__`):
-- Property access during render → node added to `StatePropertyInfo.watchers` WeakSet
-- WeakSet auto-cleans when nodes GC
+- Property access during render → element added to `StatePropertyInfo.watchers` WeakSet
+- WeakSet auto-cleans when elements GC
 
 **Mutation** (`__setattr__`):
-- Marks all watcher nodes dirty
+- Marks all watcher elements dirty
 - Raises `RuntimeError` if called during render
 - Auto-converts collections to Tracked versions
 
@@ -142,7 +140,7 @@ Automatic dependency tracking for fine-grained reactivity.
 
 ```python
 # Provider
-with my_state:  # Stores on current node's ElementState.context
+with my_state:  # Stores on current element's ElementState.context
     ChildComponent()
 
 # Consumer
@@ -176,26 +174,26 @@ TextInput(value=mutable(state.text))  # Reads and writes state.text
 ### Initial Render
 1. Increment `session.render_count`
 2. Create root Element via `_place()`
-3. `_execute_tree()` recursively executes all nodes
+3. `_execute_tree()` recursively executes all elements
 4. Return `RenderAddPatch` with root
 
-### Node Execution (`_execute_single_node`)
+### Element Execution (`_execute_single_element`)
 1. Create/reuse Element
 2. Get/create ElementState
-3. Set `current_node_id` in ActiveRender (for dependency tracking)
+3. Set `current_element_id` in ActiveRender (for dependency tracking)
 4. Push Frame for child collection
 5. `component.execute(**props)` — component function runs
 6. Pop Frame, collect child IDs
 7. Reconcile children (diff old vs new)
 8. Recursively execute children
 
-### Node Reuse Check
+### Element Reuse Check
 At `_place()`:
-- Same position + same component + same props + mounted + not dirty → **reuse old node** (skip execution)
+- Same position + same component + same props + mounted + not dirty → **reuse old element** (skip execution)
 - Otherwise → create new Element
 
 ### Incremental Render
-1. Process dirty nodes one at a time from `session.dirty`
+1. Process dirty elements one at a time from `session.dirty`
 2. Create NEW Element instances (enables GC of old)
 3. Generate patches for changes
 4. Return patch list
@@ -211,9 +209,9 @@ Returns: `added`, `removed`, `matched`, `child_order`
 
 | Type | Fields | When |
 |------|--------|------|
-| `RenderAddPatch` | `parent_id`, `children`, `node` | New node |
-| `RenderUpdatePatch` | `node_id`, `props?`, `children?` | Props or children changed |
-| `RenderRemovePatch` | `node_id` | Node removed |
+| `RenderAddPatch` | `parent_id`, `children`, `element` | New element |
+| `RenderUpdatePatch` | `element_id`, `props?`, `children?` | Props or children changed |
+| `RenderRemovePatch` | `element_id` | Element removed |
 
 Initial render: one AddPatch. Updates: mix of Add/Update/Remove.
 
@@ -224,9 +222,9 @@ Initial render: one AddPatch. Updates: mix of Add/Update/Remove.
 ```
 state.x = 5
   → Stateful.__setattr__
-    → for node in StatePropertyInfo.watchers:
-        session.dirty.mark(node.id)
-  → next render() picks up dirty nodes
+    → for element in StatePropertyInfo.watchers:
+        session.dirty.mark(element.id)
+  → next render() picks up dirty elements
 ```
 
 `DirtyTracker`: Set-based. `mark()` acquires session lock to synchronize with ongoing renders.
@@ -259,7 +257,7 @@ Hooks can safely modify state because `is_render_active()` returns False (sessio
 2. **State instances cached per component** — call order matters (like React hooks)
 3. **Dependencies tracked by property access** — reading registers dependency
 4. **State mutations forbidden during render** — raises RuntimeError
-5. **WeakSets auto-cleanup** — dead nodes removed from watchers automatically
+5. **WeakSets auto-cleanup** — dead elements removed from watchers automatically
 6. **One render per session at a time** — lock prevents concurrent renders
 7. **Element recreation on re-render** — new objects so old ones GC
 
@@ -271,14 +269,15 @@ Hooks can safely modify state because `is_render_active()` returns False (sessio
 |------|---------|
 | `rendering/render.py` | Main render loop, tree execution, patches |
 | `rendering/element.py` | Element definition, with-block protocol |
-| `rendering/element_state.py` | Runtime state per node |
+| `rendering/element_state.py` | Runtime state per element |
 | `rendering/session.py` | Session container, context vars |
 | `rendering/reconcile.py` | Tree diffing algorithm |
-| `rendering/dirty_tracker.py` | Dirty node set |
+| `rendering/dirty_tracker.py` | Dirty element set |
 | `rendering/active.py` | Render-scoped state |
 | `rendering/frames.py` | Frame stack for children |
 | `rendering/patches.py` | Patch types |
 | `rendering/lifecycle.py` | Mount/unmount tracking |
+| `rendering/child_ref.py` | ChildRef for stable child references |
 | `components/base.py` | Component base, placement logic |
 | `components/composition.py` | @component decorator |
 | `components/react.py` | ReactComponentBase |

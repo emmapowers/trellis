@@ -31,7 +31,7 @@ class HtmlElement(Component):
     """Base class for native HTML elements like div, span, button, etc.
 
     HtmlElement provides type-safe wrappers around standard HTML tags. Elements
-    are rendered directly as native DOM nodes on the client (not as React
+    are rendered directly as native DOM elements on the client (not as React
     components), enabling full HTML/CSS capabilities with Python type hints.
 
     Use the `@html_element` decorator to define elements rather than
@@ -58,7 +58,7 @@ class HtmlElement(Component):
     _is_container: tp.ClassVar[bool] = False
 
     @property
-    def _has_children_param(self) -> bool:
+    def is_container(self) -> bool:
         """Whether this element accepts children via with block."""
         return self.__class__._is_container
 
@@ -108,7 +108,7 @@ def html_element(
         is_container: Whether this element accepts children via `with` block
         name: Optional name override (defaults to function name). Useful for
             internal functions prefixed with underscore.
-        element_class: Optional Element subclass to use for nodes created by
+        element_class: Optional Element subclass to use for elements created by
             this element. Useful for adding custom trait methods.
 
     Returns:

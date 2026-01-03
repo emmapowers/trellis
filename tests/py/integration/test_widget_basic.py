@@ -1,7 +1,7 @@
 """Tests for basic widgets: Label, Button, Slider, and widget serialization."""
 
 from trellis.core.components.composition import component
-from trellis.platforms.common.serialization import serialize_node
+from trellis.platforms.common.serialization import serialize_element
 from trellis.widgets import Button, Column, Label, Row, Slider
 
 
@@ -171,7 +171,7 @@ class TestWidgetSerialization:
 
         result = rendered(App)
 
-        serialized = serialize_node(result.root_element, result.session)
+        serialized = serialize_element(result.root_element, result.session)
 
         label_data = serialized["children"][0]
         assert label_data["type"] == "Label"
@@ -186,7 +186,7 @@ class TestWidgetSerialization:
 
         result = rendered(App)
 
-        serialized = serialize_node(result.root_element, result.session)
+        serialized = serialize_element(result.root_element, result.session)
 
         button_data = serialized["children"][0]
         assert button_data["type"] == "Button"
@@ -205,7 +205,7 @@ class TestWidgetSerialization:
 
         result = rendered(App)
 
-        serialized = serialize_node(result.root_element, result.session)
+        serialized = serialize_element(result.root_element, result.session)
 
         column_data = serialized["children"][0]
         assert column_data["type"] == "Column"

@@ -4,6 +4,7 @@ import typing as tp
 import weakref
 from dataclasses import dataclass, field
 
+from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.session import (
     RenderSession,
     get_active_session,
@@ -23,7 +24,7 @@ __all__ = [
 
 @dataclass
 class Element(KeyTrait):
-    """Tree node representing a component invocation."""
+    """Tree nod e representing a component invocation."""
 
     component: Component
     _session_ref: weakref.ref[RenderSession]
@@ -36,7 +37,7 @@ class Element(KeyTrait):
     def __hash__(self) -> int:
         """Hash based on id, session, and render_count for stable identity.
 
-        This allows nodes to be used in WeakSets for dependency tracking,
+        This allows elements to be used in WeakSets for dependency tracking,
         where identity matters more than content equality.
         """
         return hash(
@@ -65,7 +66,7 @@ class Element(KeyTrait):
             )
 
         # Validate that the component accepts children
-        if not self.component._has_children_param:
+        if not self.component.is_container:
             raise TypeError(
                 f"Component '{self.component.name}' cannot be used with 'with' statement: "
                 f"it does not accept children"
@@ -88,7 +89,7 @@ class Element(KeyTrait):
         exc_val: BaseException | None,
         exc_tb: tp.Any,
     ) -> None:
-        """Exit the `with` block, storing child_ids for later execution."""
+        """Exit the `with` block, storing ChildRefs in props["children"]."""
         session = get_active_session()
         if session is None or session.active is None:
             return
@@ -105,30 +106,16 @@ class Element(KeyTrait):
             len(child_ids),
         )
 
-        # Store collected child IDs as input for execute()
+        # Store collected child IDs (for initial render/reconciliation)
         self.child_ids = list(child_ids)
 
-        # Re-store node with child_ids set (execution happens later in _execute_tree)
-        session.elements.store(self)
+        # Create ChildRefs for the container to use during execution.
+        # These are stable references that survive container re-renders.
+        children = [ChildRef(id=cid, _session_ref=self._session_ref) for cid in child_ids]
+        self.props["children"] = children
 
-    def __call__(self) -> None:
-        """Mount this node at the current position."""
-        session = get_active_session()
-        if (
-            session is not None
-            and session.active is not None
-            and session.active.frames.has_active()
-        ):
-            # Inside a `with` block - just add to pending children
-            session.active.frames.add_child(self.id)
-        elif session is not None:
-            # Inside render context but outside any component execution frame
-            raise RuntimeError(
-                "Cannot call child() outside component execution. "
-                "Ensure you're inside a component function or with block."
-            )
-        else:
-            raise RuntimeError("Cannot mount node outside of render context")
+        # Re-store element with child_ids and children props set
+        session.elements.store(self)
 
 
 def props_equal(old_props: dict[str, tp.Any], new_props: dict[str, tp.Any]) -> bool:

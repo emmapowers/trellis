@@ -56,15 +56,15 @@ export function makeElement(
  * Create an AddPatch for inserting a new subtree.
  */
 export function makeAddPatch(
-  node: SerializedElement,
+  element: SerializedElement,
   parentId: string | null = null,
-  children: string[] = [node.key]
+  children: string[] = [element.key]
 ): AddPatch {
   return {
     op: "add",
     parent_id: parentId,
     children,
-    node,
+    element,
   };
 }
 

@@ -101,7 +101,7 @@ def _get_row_key(
     return str(row_index)
 
 
-@react_component_base("CellSlot", has_children=True)
+@react_component_base("CellSlot", is_container=True)
 def CellSlot(
     *,
     slot: str,
@@ -114,7 +114,7 @@ def CellSlot(
     ...
 
 
-@react_component_base("TableInner", has_children=True)
+@react_component_base("TableInner", is_container=True)
 def _TableInner(
     *,
     columns: list[dict[str, tp.Any]],

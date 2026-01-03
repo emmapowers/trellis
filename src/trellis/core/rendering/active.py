@@ -9,7 +9,7 @@ from __future__ import annotations
 import typing as tp
 from dataclasses import dataclass, field
 
-from trellis.core.rendering.elements import ElementStore
+from trellis.core.rendering.element_store import ElementStore
 from trellis.core.rendering.frames import FrameStack
 from trellis.core.rendering.lifecycle import LifecycleTracker
 from trellis.core.rendering.patches import PatchCollector
@@ -29,7 +29,7 @@ class ActiveRender:
         patches: Collector for patches generated during this render
         lifecycle: Tracker for pending mount/unmount hooks
         old_elements: Snapshot of elements from before render (for diffing)
-        current_node_id: ID of the element currently being executed
+        current_element_id: ID of the element currently being executed
         last_property_access: Last Stateful property access (for mutable/callback capture)
     """
 
@@ -39,5 +39,5 @@ class ActiveRender:
     old_elements: ElementStore = field(default_factory=ElementStore)
 
     # Execution context
-    current_node_id: str | None = None
+    current_element_id: str | None = None
     last_property_access: tuple[tp.Any, str, tp.Any] | None = None

@@ -36,7 +36,7 @@ def get_initial_tree(handler: BrowserMessageHandler) -> dict[str, tp.Any]:
     assert len(msg.patches) == 1
     patch = msg.patches[0]
     assert isinstance(patch, AddPatch)
-    return patch.node
+    return patch.element
 
 
 # Components that are part of the TrellisApp wrapper infrastructure
@@ -104,7 +104,7 @@ class TestMessageHandler:
         assert isinstance(msg, PatchMessage)
         assert len(msg.patches) == 1
         assert isinstance(msg.patches[0], AddPatch)
-        tree = msg.patches[0].node
+        tree = msg.patches[0].element
         assert "children" in tree
         # Navigate through wrapper to find user content
         app_children = find_app_children(tree)

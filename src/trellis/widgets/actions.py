@@ -16,7 +16,7 @@ if tp.TYPE_CHECKING:
     from collections.abc import Callable
 
 
-@react_component_base("Menu", has_children=True)
+@react_component_base("Menu", is_container=True)
 def Menu(
     *,
     padding: Padding | int | None = None,
@@ -81,7 +81,7 @@ def MenuDivider(
     ...
 
 
-@react_component_base("Toolbar", has_children=True)
+@react_component_base("Toolbar", is_container=True)
 def Toolbar(
     *,
     variant: Literal["default", "minimal"] = "default",

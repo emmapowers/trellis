@@ -16,7 +16,7 @@ from trellis.platforms.common.messages import (
     UpdatePatch,
 )
 from trellis.platforms.common.ports import find_available_port
-from trellis.platforms.common.serialization import parse_callback_id, serialize_node
+from trellis.platforms.common.serialization import parse_callback_id, serialize_element
 
 __all__ = [
     "AddPatch",
@@ -36,5 +36,5 @@ __all__ = [
     "UpdatePatch",
     "find_available_port",
     "parse_callback_id",
-    "serialize_node",
+    "serialize_element",
 ]

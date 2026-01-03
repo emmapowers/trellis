@@ -37,7 +37,7 @@ class CompositionComponent(Component):
         self._children_param = "children" in sig.parameters
 
     @property
-    def _has_children_param(self) -> bool:
+    def is_container(self) -> bool:
         return self._children_param
 
     @property

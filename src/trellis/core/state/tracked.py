@@ -97,59 +97,59 @@ class _TrackedMixin:
     def _register_access(self, dep_key: tp.Any) -> None:
         """Register that current render context accessed this dependency key.
 
-        Called during __getitem__, __iter__, etc. to track which nodes
+        Called during __getitem__, __iter__, etc. to track which elements
         depend on which parts of the collection.
 
         Uses WeakSet[Element] so dependencies are automatically cleaned up
-        when nodes are replaced (on re-render) or removed (on unmount).
+        when elements are replaced (on re-render) or removed (on unmount).
         """
         session = get_active_session()
         if session is None or session.active is None:
             return
 
-        node_id = session.active.current_node_id
-        assert node_id is not None  # Guaranteed by is_active() check above
+        element_id = session.active.current_element_id
+        assert element_id is not None  # Guaranteed by is_active() check above
 
-        node = session.elements.get(node_id)
-        if node is None:
+        element = session.elements.get(element_id)
+        if element is None:
             return
 
         deps = self._deps
         if dep_key not in deps:
             deps[dep_key] = weakref.WeakSet()
-        deps[dep_key].add(node)
+        deps[dep_key].add(element)
 
         logger.debug(
             "Tracked[%s] access: key=%r by %s",
             self._attr,
             dep_key,
-            node_id,
+            element_id,
         )
 
     def _mark_dirty(self, dep_key: tp.Any) -> None:
-        """Mark all nodes that depend on this key as dirty.
+        """Mark all elements that depend on this key as dirty.
 
         Called when the collection is mutated at this key.
-        Uses node's _session_ref to get the RenderSession for marking dirty.
+        Uses element's _session_ref to get the RenderSession for marking dirty.
         """
         deps = self._deps
         if dep_key not in deps:
             return
 
         # WeakSet automatically handles cleanup of dead references
-        dirty_nodes = []
-        for node in deps[dep_key]:
-            session = node._session_ref()
+        dirty_elements = []
+        for element in deps[dep_key]:
+            session = element._session_ref()
             if session is not None:
-                session.dirty.mark(node.id)
-                dirty_nodes.append(node.id)
+                session.dirty.mark(element.id)
+                dirty_elements.append(element.id)
 
-        if dirty_nodes:
+        if dirty_elements:
             logger.debug(
                 "Tracked[%s] mutation at key=%r → dirty: %s",
                 self._attr,
                 dep_key,
-                dirty_nodes,
+                dirty_elements,
             )
 
         # Remove empty dep_key entries
@@ -157,7 +157,7 @@ class _TrackedMixin:
             deps.pop(dep_key, None)
 
     def _mark_iter_dirty(self) -> None:
-        """Mark nodes that depend on iteration/length as dirty."""
+        """Mark elements that depend on iteration/length as dirty."""
         self._mark_dirty(ITER_KEY)
 
 

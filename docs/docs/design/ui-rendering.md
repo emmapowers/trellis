@@ -28,7 +28,7 @@ title: UI and Rendering
    - [ElementState](#elementstate)
    - [RenderTree](#rendertree)
 6. [Rendering Pipeline](#rendering-pipeline)
-   - [How Components Become Nodes](#how-components-become-nodes)
+   - [How Components Become Elements](#how-components-become-elements)
    - [Rendering and Reconciliation](#rendering-and-reconciliation)
    - [Render Triggers](#render-triggers)
 7. [Reconciliation Algorithm](#reconciliation-algorithm)
@@ -85,7 +85,7 @@ Trellis applications run as a Python server that owns application state and rend
 **Key concepts:**
 - **Components** are factories for creating different types of UI elements (HTML elements, React components, etc.)
 - Component instances create **Elements** that form a tree describing the UI
-- The **RenderTree** reconciles changes and tracks which nodes are dirty
+- The **RenderTree** reconciles changes and tracks which elements are dirty
 - Only changed components re-render; unchanged subtrees are skipped
 - A **diff algorithm** generates minimal patches sent to the client
 - User interactions trigger **callbacks** on the server, which modify state and trigger re-renders
@@ -118,7 +118,7 @@ The document covers each of these concepts in detail: component types, tree arch
 
 ### What is a Component?
 
-A component is a factory that produces nodes in the UI tree. When called, a component creates an `Element` describing what should be rendered at that position in the tree.
+A component is a factory that produces elements in the UI tree. When called, a component creates an `Element` describing what should be rendered at that position in the tree.
 
 There are three types of components in Trellis:
 
@@ -130,8 +130,8 @@ There are three types of components in Trellis:
 - All components are class-based under the hood
 - All components can be called via `__call__()`
 - Decorators like `@component` and `@react_component` are convenience wrappers that create component classes from your definitions
-- HTMLElement and ReactComponentBase can be leaf nodes (no children)
-- CompositionComponents cannot be leaf nodes—they exist to compose other components
+- HTMLElement and ReactComponentBase can be leaf elements (no children)
+- CompositionComponents cannot be leaf elements—they exist to compose other components
 - While every component produces at least one React/JSX element in the client-side tree, the relationship varies by type
 
 ### CompositionComponent
@@ -170,7 +170,7 @@ def Counter(count: int, on_increment: Callable[[], None]) -> None:
 - **Execution-based composition:** Child position determined by execution order and which `with` block they're in
 - **Type-safe:** Full type hints for IDE autocomplete and type checking
 - **Context-manager syntax:** Hierarchical nesting uses `with` blocks
-- **Return None:** Components don't return values; they add nodes via execution
+- **Return None:** Components don't return values; they add elements via execution
 - **Limited side effects:** Components cannot modify state during rendering—only callbacks can modify state, and this happens outside the rendering process. This prevents components from triggering re-renders just by rendering.
 
 **Execution model:**
@@ -180,7 +180,7 @@ Component functions render when:
 - State they depend on changes (marks them dirty)
 - They're newly mounted
 
-They're not pure functions—rendering has side effects (adding nodes to the collection frame), but these side effects are strictly limited to tree construction.
+They're not pure functions—rendering has side effects (adding elements to the collection frame), but these side effects are strictly limited to tree construction.
 
 **Example:**
 ```python
@@ -197,7 +197,7 @@ def UserCard(user: User, on_delete: Callable[[str], None]) -> None:
 
 **Children and context blocks:**
 
-When components are called inside a `with` block, they are collected as children and passed to the parent component. The parent component receives these as `Element` objects and controls where they appear in the tree by calling them.
+When components are called inside a `with` block, they are collected as children and passed to the parent component. The parent component receives these as `ChildRef` objects (stable references) and controls where they appear in the tree by calling them.
 
 ```python
 @component
@@ -208,7 +208,7 @@ def MyApp():
         WidgetC()
 
 @component
-def Column(children: list[Element]):
+def Column(children: list[ChildRef]):
     with h.Div(style={"display": "flex", "flexDirection": "column"}):
         for child in children:
             child()  # Position child here in the tree
@@ -226,7 +226,7 @@ The RenderTree uses a "frame" mechanism to collect children during `with` blocks
 
 4. **Exiting the block:** When the `with` block exits, the frame is popped. The collected children are passed to the parent component as the `children` prop.
 
-5. **Positioning:** Inside `Column`, calling `child()` renders that node and positions the resulting element at the current location in the tree—in this case, inside the `h.Div`. Components called in a `with` block defer their final position in the tree; the parent decides where they appear by calling them. This enables flexible layout components that wrap and arrange their children.
+5. **Positioning:** Inside `Column`, calling `child()` renders that element and positions it at the current location in the tree—in this case, inside the `h.Div`. Components called in a `with` block defer their final position in the tree; the parent decides where they appear by calling them. This enables flexible layout components that wrap and arrange their children.
 
 **Direct calls vs context blocks:**
 
@@ -234,7 +234,7 @@ The RenderTree uses a "frame" mechanism to collect children during `with` blocks
 # Direct call - positions immediately at current location
 Button(text="Click")
 
-# Inside with block - node collected, parent positions it later
+# Inside with block - element collected, parent positions it later
 with Card():
     Button(text="Click")  # Collected, positioned when Card calls it
 ```
@@ -293,10 +293,10 @@ This decorator:
 1. Creates a `ReactComponentBase` subclass with the given element name ("Button")
 2. Uses the function signature to define the component's props
 3. Creates a singleton instance and wrapper function for calling the component
-4. Supports `has_children=True` parameter for container components
+4. Supports `is_container=True` parameter for container components
 
 ```python
-@react_component_base("Card", has_children=True)
+@react_component_base("Card", is_container=True)
 def Card(
     title: str | None = None,
     elevated: bool = False,
@@ -369,7 +369,7 @@ HTMLElements represent native HTML tags with typed props and event handlers. The
 - Uses `ElementKind.JSX_ELEMENT` to indicate native DOM rendering
 - Props mirror HTML attributes
 - Event handlers are typed (MouseEvent, KeyboardEvent, etc.)
-- Can be leaf nodes OR containers
+- Can be leaf elements OR containers
 - Rendered directly as JSX on client
 
 **The @html_element decorator:**
@@ -653,7 +653,7 @@ The element tree is represented by two separate concerns: structure (Element) an
 
 ### Element
 
-Element represents a node in the component tree - what component to render, with what props, and what children.
+Element represents a node in the component tree—what component to render, with what props, and what children.
 
 ```python
 @dataclass
@@ -661,20 +661,20 @@ class Element(KeyTrait):
     component: Component          # The component definition
     props: dict[str, Any]         # Component properties
     _key: str | None = None       # Optional key for reconciliation (set via .key())
-    child_ids: list[str] = []     # Child node IDs (flat storage)
+    child_ids: list[str] = []     # Child element IDs (flat storage)
     id: str = ""                  # Position-based ID
 ```
 
 **Characteristics:**
 - **Structural:** Describes what to render, not runtime state
 - **Serializable:** Can be converted to JSON for transmission
-- **ID-based:** Each node has a unique ID for state lookup
+- **ID-based:** Each element has a unique ID for state lookup
 - **Flat storage:** Children referenced by ID, not nested
 
 **Usage:**
 ```python
 # Created when component is called
-node = Element(
+element = Element(
     component=Button,
     props={"text": "Click", "on_click": handler},
     id="/@root/0@Button"
@@ -732,7 +732,7 @@ The `element_class` parameter is supported on:
 
 ### ElementState
 
-ElementState holds per-node runtime state - dirty flags, lifecycle status, and cached Stateful instances. Stored separately from the tree, keyed by Element.id.
+ElementState holds per-element runtime state—dirty flags, lifecycle status, and cached Stateful instances. Stored separately from the tree, keyed by Element.id.
 
 ```python
 @dataclass
@@ -770,8 +770,8 @@ RenderTree (formerly RenderContext) orchestrates rendering, reconciliation, and 
 
 ```python
 class RenderTree:
-    root_node: Element | None               # Current tree root
-    _element_state: dict[str, ElementState]     # State by node ID
+    root_element: Element | None                # Current tree root
+    _element_state: dict[str, ElementState]     # State by element ID
     _callback_registry: dict[str, Callable]     # Callback ID → function
     _dirty_ids: set[str]                        # Elements needing render
     _next_id: int = 0                           # ID counter
@@ -779,9 +779,9 @@ class RenderTree:
 ```
 
 **Key Responsibilities:**
-1. **Tree Management:** Maintains root_node and element state
+1. **Tree Management:** Maintains root_element and element state
 2. **ID Generation:** Assigns unique IDs via `next_id()`
-3. **State Lookup:** Maps node.id → ElementState
+3. **State Lookup:** Maps element.id → ElementState
 4. **Dirty Tracking:** Marks and tracks elements needing re-render
 5. **Callbacks:** Registers and executes event handlers
 6. **Reconciliation:** Compares old and new trees, preserves IDs
@@ -790,29 +790,29 @@ class RenderTree:
 **ID Generation:**
 ```python
 def next_element_id(self) -> str:
-    self._node_counter += 1
-    return f"e{self._node_counter}"
+    self._element_counter += 1
+    return f"e{self._element_counter}"
 ```
 
-Simple counter provides unique, stable IDs (e.g., `e1`, `e2`, `e3`). IDs are assigned during reconciliation and preserved when nodes match.
+Simple counter provides unique, stable IDs (e.g., `e1`, `e2`, `e3`). IDs are assigned during reconciliation and preserved when elements match.
 
 **State Lifecycle:**
 ```python
 # Mount: Create state
-self._element_state[node.id] = ElementState(mounted=True, parent_id=parent_id)
+self._element_state[element.id] = ElementState(mounted=True, parent_id=parent_id)
 
-# Update: State persists, node may change
+# Update: State persists, element may change
 # (ID preserved during reconciliation)
 
 # Unmount: Delete state
-del self._element_state[node.id]
+del self._element_state[element.id]
 ```
 
 ---
 
 ## Rendering Pipeline
 
-### How Components Become Nodes
+### How Components Become Elements
 
 When you call a component, it creates an Element describing what should be rendered:
 
@@ -822,8 +822,8 @@ def Greeting(name: str) -> None:
     h.P(f"Hello, {name}!")
 
 # Calling the component creates an Element
-node = Greeting(name="Alice")
-# node is Element(component=Greeting, props={"name": "Alice"})
+element = Greeting(name="Alice")
+# element is Element(component=Greeting, props={"name": "Alice"})
 # The function body hasn't run yet
 ```
 
@@ -836,42 +836,42 @@ button = Button(text="Click", on_click=handler)
 **Context-Manager Collection:**
 ```python
 with Card():          # Card().__enter__() starts collection
-    Button("A")       # Creates node, adds to collection
-    Button("B")       # Creates node, adds to collection
-                      # Card().__exit__() creates Card node with children
+    Button("A")       # Creates element, adds to collection
+    Button("B")       # Creates element, adds to collection
+                      # Card().__exit__() creates Card element with children
 
 # Result: Element(component=Card, children=(Button_A, Button_B))
 ```
 
-The component function doesn't execute when called—it only creates a node descriptor. The actual rendering happens later in the RenderTree.
+The component function doesn't execute when called—it only creates an element descriptor. The actual rendering happens later in the RenderTree.
 
 ### Rendering and Reconciliation
 
-`RenderTree.render()` performs the actual rendering work. It iterates through dirty nodes, renders them, and reconciles changes.
+`RenderTree.render()` performs the actual rendering work. It iterates through dirty elements, renders them, and reconciles changes.
 
 **Process:**
 1. **Clear callbacks:** Previous render's callbacks are invalid
-2. **Loop until no dirty nodes remain:**
-   - Pick a dirty node
-   - Render the node → component function executes, produces updated Element
-   - Reconcile old node vs new node
+2. **Loop until no dirty elements remain:**
+   - Pick a dirty element
+   - Render the element → component function executes, produces updated Element
+   - Reconcile old element vs new element
    - Reconciliation compares children and marks changed children dirty (but doesn't render them yet)
-   - Update tree structure (swap old/new nodes, add/remove children)
+   - Update tree structure (swap old/new elements, add/remove children)
 3. **After rendering completes:** Call mount/unmount hooks (no guaranteed order)
 4. **Serialize:** Convert tree to JSON for client
 
-**Key insight:** Reconciliation happens **after each node renders**. When reconciling a node's children, changed children are marked dirty and will be rendered in a subsequent loop iteration. This continues until no nodes are dirty.
+**Key insight:** Reconciliation happens **after each element renders**. When reconciling an element's children, changed children are marked dirty and will be rendered in a subsequent loop iteration. This continues until no elements are dirty.
 
 **Rendering Logic:**
 ```python
-def should_render(old_node: Element | None, new_node: Element) -> bool:
-    if old_node is None:
+def should_render(old_element: Element | None, new_element: Element) -> bool:
+    if old_element is None:
         return True  # New mount
-    if old_node.component != new_node.component:
+    if old_element.component != new_element.component:
         return True  # Different component type
-    if old_node.props != new_node.props:
+    if old_element.props != new_element.props:
         return True  # Props changed
-    if new_node.id in self._dirty_ids:
+    if new_element.id in self._dirty_ids:
         return True  # State marked it dirty
     return False  # Skip rendering, reuse old tree
 ```
@@ -950,7 +950,7 @@ Reconciliation is the process of matching new Elements (produced by rendering) t
 
 ### Tree Matching Strategy
 
-The reconciler walks both trees simultaneously, matching nodes using:
+The reconciler walks both trees simultaneously, matching elements using:
 1. Component type equality
 2. Key matching (if keys provided)
 3. Position-based matching (fallback)
@@ -965,8 +965,8 @@ def reconcile(
     # 2. Tail scan: match from end
     # 3. Key-based matching: use keys for middle
     # 4. Position fallback: match by index
-    # 5. Unmount unmatched old nodes
-    # 6. Mount new nodes
+    # 5. Unmount unmatched old elements
+    # 6. Mount new elements
     return final_children
 ```
 
@@ -1022,16 +1022,16 @@ for item in items:
 
 **Matching Algorithm:**
 ```python
-# After head/tail scan, remaining nodes:
-old_remaining = {node.key: node for node in old_middle if node.key}
-new_remaining = [node for node in new_middle]
+# After head/tail scan, remaining elements:
+old_remaining = {el.key: el for el in old_middle if el.key}
+new_remaining = [el for el in new_middle]
 
-for new_node in new_remaining:
-    if new_node.key and new_node.key in old_remaining:
-        old_node = old_remaining[new_node.key]
-        if old_node.component == new_node.component:
+for new_el in new_remaining:
+    if new_el.key and new_el.key in old_remaining:
+        old_el = old_remaining[new_el.key]
+        if old_el.component == new_el.component:
             # Match found, preserve ID
-            new_node = preserve_id(old_node, new_node)
+            new_el = preserve_id(old_el, new_el)
 ```
 
 **Key Rules:**
@@ -1049,67 +1049,67 @@ items = ["A", "B", "C"]
 items = ["C", "A", "B"]
 
 # Without keys: All three unmount/remount (state lost)
-# With keys: Nodes reordered, state preserved
+# With keys: Elements reordered, state preserved
 ```
 
 ### ID Preservation
 
-When nodes match, the new node receives the old node's ID:
+When elements match, the new element receives the old element's ID:
 
 ```python
-def preserve_id(old_node: Element, new_node: Element) -> Element:
-    return dataclass.replace(new_node, id=old_node.id)
+def preserve_id(old_element: Element, new_element: Element) -> Element:
+    return dataclass.replace(new_element, id=old_element.id)
 ```
 
 This ensures:
 - State lookup continues working (same ID)
 - Callbacks reference correct state
-- React reconciliation identifies node correctly
+- React reconciliation identifies element correctly
 
 **State Transfer:**
 ```python
-# Old node: id="el_42"
+# Old element: id="el_42"
 # State: element_state["el_42"] = ElementState(...)
 
-# New node matches, gets id="el_42"
+# New element matches, gets id="el_42"
 # State preserved: element_state["el_42"] still valid
 ```
 
 ### Mount/Unmount Lifecycle
 
 **Mount:**
-When a new node appears (no match in old tree):
+When a new element appears (no match in old tree):
 ```python
-def mount_node(node: Element) -> Element:
+def mount_element(element: Element) -> Element:
     # Assign new ID
-    node_id = self.next_id()
-    node = dataclass.replace(node, id=node_id)
+    element_id = self.next_id()
+    element = dataclass.replace(element, id=element_id)
 
     # Create state
-    self._element_state[node_id] = ElementState(
+    self._element_state[element_id] = ElementState(
         mounted=True,
-        parent_id=parent_node_id
+        parent_id=parent_element_id
     )
 
     # Render component
-    self.render(node)
+    self.render(element)
 
-    return node
+    return element
 ```
 
 **Unmount:**
-When an old node has no match in new tree:
+When an old element has no match in new tree:
 ```python
-def unmount_node(node: Element) -> None:
+def unmount_element(element: Element) -> None:
     # Recursively unmount children
-    for child in node.children:
-        unmount_node(child)
+    for child in element.children:
+        unmount_element(child)
 
     # Clean up state
-    del self._element_state[node.id]
+    del self._element_state[element.id]
 
     # Clean up callbacks
-    remove_callbacks_for_element(node.id)
+    remove_callbacks_for_element(element.id)
 ```
 
 **Component Replacement:**
@@ -1119,10 +1119,10 @@ When component type changes at same position:
 # New: Input at position 0
 
 # Unmount Button (different type, can't match)
-unmount_node(old_button_node)
+unmount_element(old_button_element)
 
 # Mount Input
-mount_node(new_input_node)
+mount_element(new_input_element)
 ```
 
 ---
@@ -1142,9 +1142,9 @@ The diff algorithm compares these trees and produces a patch describing changes.
 **Diff Strategy:**
 ```python
 def diff_tree(old: Element, new: Element) -> Patch | None:
-    # Same ID means potentially same node
+    # Same ID means potentially same element
     if old.id != new.id:
-        return Replace(new)  # Different node, full replace
+        return Replace(new)  # Different element, full replace
 
     if old.component != new.component:
         return Replace(new)  # Type changed, full replace
@@ -1159,13 +1159,13 @@ def diff_tree(old: Element, new: Element) -> Patch | None:
         return None  # No changes
 
     return Update(
-        node_id=new.id,
+        element_id=new.id,
         props=props_diff,
         children=children_patches
     )
 ```
 
-**Optimization:** Only walk tree where IDs changed or nodes are known dirty. Unchanged subtrees (same ID, not dirty) are skipped entirely.
+**Optimization:** Only walk tree where IDs changed or elements are known dirty. Unchanged subtrees (same ID, not dirty) are skipped entirely.
 
 ### Patch Generation
 
@@ -1173,20 +1173,20 @@ Patches are structured updates describing changes:
 
 **Patch Types:**
 
-1. **Update:** Modify existing node
+1. **Update:** Modify existing element
 ```python
 @dataclass
 class Update:
-    node_id: str                          # Which node to update
+    element_id: str                       # Which element to update
     props: dict[str, Any] | None = None   # Changed props only
     children: list[ChildPatch] | None = None  # Child changes
 ```
 
-2. **Replace:** Replace node entirely
+2. **Replace:** Replace element entirely
 ```python
 @dataclass
 class Replace:
-    node: Element  # New node tree
+    element: Element  # New element tree
 ```
 
 3. **Insert:** Add new child
@@ -1194,7 +1194,7 @@ class Replace:
 @dataclass
 class Insert:
     index: int         # Where to insert
-    node: Element  # What to insert
+    element: Element  # What to insert
 ```
 
 4. **Remove:** Delete child
@@ -1216,10 +1216,10 @@ class Move:
 ```python
 # Change button text and add child
 patch = Update(
-    node_id="el_42",
+    element_id="el_42",
     props={"text": "Updated"},
     children=[
-        Insert(index=1, node=new_child_node)
+        Insert(index=1, element=new_child_element)
     ]
 )
 ```
@@ -1234,8 +1234,8 @@ After initial render, send only changes:
 {
     "type": "patch",
     "updates": [
-        {"node_id": "el_42", "props": {"text": "New"}},
-        {"node_id": "el_50", "children": [...]}
+        {"element_id": "el_42", "props": {"text": "New"}},
+        {"element_id": "el_50", "children": [...]}
     ]
 }
 ```
@@ -1243,7 +1243,7 @@ After initial render, send only changes:
 **Benefits:**
 - Minimal bandwidth usage
 - Fast transmission
-- Efficient React reconciliation (only changed nodes)
+- Efficient React reconciliation (only changed elements)
 
 **2. Full Tree (fallback):**
 Send complete tree in certain cases:
@@ -1289,13 +1289,13 @@ Three component types map differently to React:
 
 **Serialized Format:**
 ```typescript
-interface SerializedNode {
+interface SerializedElement {
     kind: "react_component" | "jsx_element" | "text";  // Element kind
     type: string;    // Component or tag name to render
     name: string;    // Python component name (for debugging)
     key: string;     // User key or server-assigned ID
     props: Record<string, any>;
-    children: SerializedNode[];
+    children: SerializedElement[];
 }
 ```
 
@@ -1372,11 +1372,11 @@ Button(text="Click", on_click=handler, variant="primary")
 ```typescript
 import { Button } from "@blueprintjs/core";
 
-function renderNode(node: SerializedNode) {
-    if (node.type === "react") {
-        const Component = COMPONENT_MAP[node.name];  // Button
-        const props = transformProps(node.props);     // Handle callbacks
-        return <Component key={node.id} {...props} />;
+function renderElement(element: SerializedElement) {
+    if (element.type === "react") {
+        const Component = COMPONENT_MAP[element.name];  // Button
+        const props = transformProps(element.props);     // Handle callbacks
+        return <Component key={element.id} {...props} />;
     }
 }
 ```
@@ -1441,14 +1441,14 @@ h.Div(
 
 **Client Rendering:**
 ```typescript
-function renderNode(node: SerializedNode) {
-    if (node.type === "html") {
-        const tag = node.name;  // "div"
-        const props = transformProps(node.props);
-        const children = node.children?.map(renderNode);
+function renderElement(element: SerializedElement) {
+    if (element.type === "html") {
+        const tag = element.name;  // "div"
+        const props = transformProps(element.props);
+        const children = element.children?.map(renderElement);
 
         return React.createElement(tag, {
-            key: node.id,
+            key: element.id,
             ...props
         }, children);
     }
@@ -1478,9 +1478,9 @@ Button(text="Click", on_click=on_click)
 
 **Serialization:**
 ```python
-def serialize_element(node: Element) -> dict:
+def serialize_element(element: Element) -> dict:
     props = {}
-    for key, value in node.props.items():
+    for key, value in element.props.items():
         if callable(value):
             # Register callback, get ID
             callback_id = render_tree.register_callback(value)
@@ -1489,11 +1489,11 @@ def serialize_element(node: Element) -> dict:
             props[key] = value
 
     return {
-        "type": get_type(node.component),
-        "name": get_name(node.component),
-        "id": node.id,
+        "type": get_type(element.component),
+        "name": get_name(element.component),
+        "id": element.id,
         "props": props,
-        "children": [serialize_element(c) for c in node.children]
+        "children": [serialize_element(c) for c in element.children]
     }
 ```
 
@@ -1503,19 +1503,19 @@ class RenderTree:
     _callback_registry: dict[str, Callable]
 
     def register_callback(
-        self, func: Callable, node_id: str, prop_name: str
+        self, func: Callable, element_id: str, prop_name: str
     ) -> str:
-        # Deterministic ID based on node and prop name
-        callback_id = f"{node_id}:{prop_name}"
+        # Deterministic ID based on element and prop name
+        callback_id = f"{element_id}:{prop_name}"
         self._callback_registry[callback_id] = func
         return callback_id
 ```
 
-**Deterministic IDs:** Callback IDs are based on node ID and property name (e.g., `e5:on_click`). This ensures:
+**Deterministic IDs:** Callback IDs are based on element ID and property name (e.g., `e5:on_click`). This ensures:
 
 - Same callback location always gets same ID (stability)
 - Callbacks are automatically overwritten on re-render
-- Easy cleanup on unmount by node_id prefix
+- Easy cleanup on unmount by element_id prefix
 
 ### Event Serialization
 
@@ -1641,14 +1641,14 @@ Button(text="Save", on_click=on_save)
 The RenderTree serializes Elements to JSON-compatible dictionaries:
 
 ```python
-def serialize_element(node: Element) -> dict:
+def serialize_element(element: Element) -> dict:
     """Serialize an Element to JSON-compatible dict."""
     return {
-        "type": get_component_type(node.component),  # "functional"|"react"|"html"
-        "name": get_component_name(node.component),  # Component/tag name
-        "id": node.id,                                # Unique ID
-        "props": serialize_props(node.props),         # With callbacks → IDs
-        "children": [serialize_element(c) for c in node.children],
+        "type": get_component_type(element.component),  # "functional"|"react"|"html"
+        "name": get_component_name(element.component),  # Component/tag name
+        "id": element.id,                                # Unique ID
+        "props": serialize_props(element.props),         # With callbacks → IDs
+        "children": [serialize_element(c) for c in element.children],
     }
 ```
 
@@ -1667,7 +1667,7 @@ def get_component_type(component: IComponent) -> str:
 
 **Serialization Flow:**
 1. Walk tree depth-first
-2. For each node, serialize props (replace callbacks with IDs)
+2. For each element, serialize props (replace callbacks with IDs)
 3. Recursively serialize children
 4. Build nested dict structure
 
@@ -2059,8 +2059,8 @@ This section tracks which features from this design are implemented versus plann
 
 **Core Rendering:**
 
-- Element (tree nodes with props and child references)
-- ElementState (runtime state per node)
+- Element (tree elements with props and child references)
+- ElementState (runtime state per element)
 - RenderSession (orchestrates rendering, reconciliation, lifecycle)
 - Frame-based child collection during `with` blocks
 
@@ -2086,9 +2086,9 @@ This section tracks which features from this design are implemented versus plann
 
 **Callbacks:**
 
-- Deterministic callback IDs (`{node_id}:{prop_name}`)
+- Deterministic callback IDs (`{element_id}:{prop_name}`)
 - Callback registration during serialization
-- Per-node callback cleanup on unmount
+- Per-element callback cleanup on unmount
 
 **Serialization:**
 

@@ -3,7 +3,7 @@
 import pytest
 
 from trellis.core.rendering.active import ActiveRender
-from trellis.core.rendering.elements import ElementStore
+from trellis.core.rendering.element_store import ElementStore
 from trellis.core.rendering.frames import Frame, FrameStack
 from trellis.core.rendering.lifecycle import LifecycleTracker
 from trellis.core.rendering.patches import PatchCollector
@@ -14,7 +14,7 @@ class MockComponent:
     """Minimal component for testing."""
 
     name = "MockComponent"
-    _has_children_param = False
+    is_container = False
 
     def render(self):
         pass
@@ -165,7 +165,7 @@ class TestPatchCollector:
     def test_emit_and_get_all(self):
         collector = PatchCollector()
 
-        patch1 = AddPatch(parent_id="p1", children=["c1"], node={"key": "c1"})
+        patch1 = AddPatch(parent_id="p1", children=["c1"], element={"key": "c1"})
         patch2 = UpdatePatch(id="e1", props={"text": "hello"})
         patch3 = RemovePatch(id="e2")
 
@@ -181,7 +181,7 @@ class TestPatchCollector:
 
     def test_pop_all(self):
         collector = PatchCollector()
-        collector.emit(AddPatch(parent_id=None, children=[], node={}))
+        collector.emit(AddPatch(parent_id=None, children=[], element={}))
         collector.emit(RemovePatch(id="e1"))
 
         patches = collector.pop_all()
@@ -226,14 +226,14 @@ class TestActiveRender:
         assert isinstance(active.patches, PatchCollector)
         assert isinstance(active.lifecycle, LifecycleTracker)
         assert isinstance(active.old_elements, ElementStore)
-        assert active.current_node_id is None
+        assert active.current_element_id is None
         assert active.last_property_access is None
 
-    def test_current_node_id(self):
+    def test_current_element_id(self):
         active = ActiveRender()
 
-        active.current_node_id = "e1"
-        assert active.current_node_id == "e1"
+        active.current_element_id = "e1"
+        assert active.current_element_id == "e1"
 
     def test_last_property_access(self):
         active = ActiveRender()

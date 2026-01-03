@@ -36,7 +36,7 @@ class TestMessageToDict:
         msg = PatchMessage(
             patches=[
                 AddPatch(
-                    parent_id="root", children=["child1"], node={"id": "child1", "name": "Label"}
+                    parent_id="root", children=["child1"], element={"id": "child1", "name": "Label"}
                 ),
                 UpdatePatch(id="node1", props={"text": "hello"}, children=None),
                 RemovePatch(id="node2"),
@@ -54,7 +54,7 @@ class TestMessageToDict:
             "op": "add",
             "parent_id": "root",
             "children": ["child1"],
-            "node": {"id": "child1", "name": "Label"},
+            "element": {"id": "child1", "name": "Label"},
         }
         assert result["patches"][1] == {
             "op": "update",

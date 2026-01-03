@@ -63,7 +63,7 @@ def reconcile_children(
         return result
 
     if head > 0:
-        logger.debug("Head scan matched %d nodes", head)
+        logger.debug("Head scan matched %d elements", head)
 
     # Phase 2: Two-pointer scan from tail (IDs match)
     tail_matches: list[str] = []
@@ -85,7 +85,7 @@ def reconcile_children(
     tail_matches.reverse()
 
     if tail_matches:
-        logger.debug("Tail scan matched %d nodes", len(tail_matches))
+        logger.debug("Tail scan matched %d elements", len(tail_matches))
 
     # Phase 3: Process middle section with set-based matching
     middle_new_start = head
@@ -95,17 +95,17 @@ def reconcile_children(
         new_child_id = new_child_ids[i]
 
         if new_child_id in old_id_set and new_child_id not in matched_old_ids:
-            # Found matching old node by ID
+            # Found matching old element by ID
             matched_old_ids.add(new_child_id)
             result.matched.append(new_child_id)
         elif new_child_id not in old_id_set:
-            # No matching old node - it's new
+            # No matching old element - it's new
             result.added.append(new_child_id)
 
     # Add tail matches to matched list
     result.matched.extend(tail_matches)
 
-    # Phase 4: Find removed nodes (old nodes not matched)
+    # Phase 4: Find removed elements (old elements not matched)
     for old_id in old_child_ids:
         if old_id not in matched_old_ids:
             result.removed.append(old_id)

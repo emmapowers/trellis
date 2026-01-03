@@ -2,7 +2,7 @@
 
 import trellis.html as h
 from trellis.core.components.composition import component
-from trellis.platforms.common.serialization import parse_callback_id, serialize_node
+from trellis.platforms.common.serialization import parse_callback_id, serialize_element
 from trellis.widgets.basic import Button
 
 
@@ -41,7 +41,7 @@ class TestSerializeNode:
 
         # Get the WithProps child
         child = result.session.elements.get(result.root_element.child_ids[0])
-        child_serialized = serialize_node(child, result.session)
+        child_serialized = serialize_element(child, result.session)
 
         assert child_serialized["type"] == "CompositionComponent"
         assert child_serialized["name"] == "WithProps"
@@ -62,7 +62,7 @@ class TestSerializeNode:
         result = rendered(App)
 
         child = result.session.elements.get(result.root_element.child_ids[0])
-        child_serialized = serialize_node(child, result.session)
+        child_serialized = serialize_element(child, result.session)
 
         # Position-based IDs include user key with :key@ prefix
         # Format: /{parent_path}/:my-key@{component_id}
@@ -114,7 +114,7 @@ class TestSerializeNode:
         result = rendered(App)
 
         child = result.session.elements.get(result.root_element.child_ids[0])
-        child_serialized = serialize_node(child, result.session)
+        child_serialized = serialize_element(child, result.session)
 
         # Should have callback reference
         assert "__callback__" in child_serialized["props"]["on_click"]
@@ -149,7 +149,7 @@ class TestSerializeNode:
         result = rendered(App)
 
         child = result.session.elements.get(result.root_element.child_ids[0])
-        child_serialized = serialize_node(child, result.session)
+        child_serialized = serialize_element(child, result.session)
         props = child_serialized["props"]
 
         assert props["id"] == "test"
@@ -181,7 +181,7 @@ class TestSerializeNode:
         result = rendered(App)
 
         child = result.session.elements.get(result.root_element.child_ids[0])
-        child_serialized = serialize_node(child, result.session)
+        child_serialized = serialize_element(child, result.session)
 
         handlers = child_serialized["props"]["data_handlers"]
         assert len(handlers) == 2
@@ -208,7 +208,7 @@ class TestSerializeNode:
         result = rendered(App)
 
         child = result.session.elements.get(result.root_element.child_ids[0])
-        child_serialized = serialize_node(child, result.session)
+        child_serialized = serialize_element(child, result.session)
 
         id_a = child_serialized["props"]["onClick"]["__callback__"]
         id_b = child_serialized["props"]["onMouseEnter"]["__callback__"]

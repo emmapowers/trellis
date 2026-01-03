@@ -94,7 +94,7 @@ def MyButton(
 # ---------------------------------------------------------------------------
 # Example: Container Widget with Children
 # ---------------------------------------------------------------------------
-@react_component_base("Card", has_children=True)
+@react_component_base("Card", is_container=True)
 def Card(
     *,
     title: str | None = None,
@@ -104,7 +104,7 @@ def Card(
 ) -> Element:
     """Card container with optional title.
 
-    Setting `has_children=True` means this widget can contain child elements.
+    Setting `is_container=True` means this widget can contain child elements.
     Use it with a `with` block:
 
         with Card(title="User Info"):

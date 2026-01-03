@@ -3,7 +3,7 @@
 import pytest
 
 from trellis.core.components.composition import component
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
 
@@ -13,7 +13,7 @@ class TestContainerComponent:
         """Children created in with block are passed to component."""
 
         @component
-        def Column(children: list[Element]) -> None:
+        def Column(children: list[ChildRef]) -> None:
             for child in children:
                 child()
 
@@ -29,26 +29,26 @@ class TestContainerComponent:
 
         result = rendered(Parent)
 
-        root_node = result.session.elements.get(result.session.root_node_id)
-        assert root_node is not None
+        root_element = result.session.elements.get(result.session.root_element_id)
+        assert root_element is not None
         # Parent has Column as child
-        assert len(root_node.child_ids) == 1
-        column_node = result.session.elements.get(root_node.child_ids[0])
-        assert column_node is not None
-        assert column_node.component == Column
+        assert len(root_element.child_ids) == 1
+        column_element = result.session.elements.get(root_element.child_ids[0])
+        assert column_element is not None
+        assert column_element.component == Column
         # Column has two Child elements (mounted via child())
-        assert len(column_node.child_ids) == 2
+        assert len(column_element.child_ids) == 2
 
     def test_nested_containers(self, rendered) -> None:
         """Nested with blocks work correctly."""
 
         @component
-        def Column(children: list[Element]) -> None:
+        def Column(children: list[ChildRef]) -> None:
             for child in children:
                 child()
 
         @component
-        def Row(children: list[Element]) -> None:
+        def Row(children: list[ChildRef]) -> None:
             for child in children:
                 child()
 
@@ -64,22 +64,22 @@ class TestContainerComponent:
 
         result = rendered(Parent)
 
-        root_node = result.session.elements.get(result.session.root_node_id)
-        assert root_node is not None
-        column_node = result.session.elements.get(root_node.child_ids[0])
-        assert column_node is not None
-        assert column_node.component.name == "Column"
-        row_node = result.session.elements.get(column_node.child_ids[0])
-        assert row_node is not None
-        assert row_node.component.name == "Row"
-        assert len(row_node.child_ids) == 1
+        root_element = result.session.elements.get(result.session.root_element_id)
+        assert root_element is not None
+        column_element = result.session.elements.get(root_element.child_ids[0])
+        assert column_element is not None
+        assert column_element.component.name == "Column"
+        row_element = result.session.elements.get(column_element.child_ids[0])
+        assert row_element is not None
+        assert row_element.component.name == "Row"
+        assert len(row_element.child_ids) == 1
 
     def test_container_receives_children_list(self, rendered) -> None:
-        """Container component receives children as a list of descriptors."""
+        """Container component receives children as a list of ChildRefs."""
         received_children: list = []
 
         @component
-        def Column(children: list[Element]) -> None:
+        def Column(children: list[ChildRef]) -> None:
             received_children.extend(children)
             for child in children:
                 child()
@@ -98,7 +98,7 @@ class TestContainerComponent:
 
         assert len(received_children) == 2
         for child in received_children:
-            assert isinstance(child, Element)
+            assert isinstance(child, ChildRef)
 
     def test_component_without_children_param_raises_on_with(self) -> None:
         """Using with on a component without children param raises TypeError."""
@@ -120,7 +120,7 @@ class TestContainerComponent:
         """Can't pass children as prop AND use with block."""
 
         @component
-        def Column(children: list[Element]) -> None:
+        def Column(children: list[ChildRef]) -> None:
             for child in children:
                 child()
 
@@ -135,10 +135,10 @@ class TestContainerComponent:
 
     def test_empty_with_block(self, rendered) -> None:
         """Empty with block results in empty children list."""
-        received_children: list | None = None
+        received_children: list[ChildRef] | None = None
 
         @component
-        def Column(children: list[Element]) -> None:
+        def Column(children: list[ChildRef]) -> None:
             nonlocal received_children
             received_children = children
             for child in children:
@@ -154,10 +154,10 @@ class TestContainerComponent:
         assert received_children == []
 
     def test_child_call_mounts_element(self, rendered) -> None:
-        """Calling child() mounts the node in the container."""
+        """Calling child() mounts the element in the container."""
 
         @component
-        def Wrapper(children: list[Element]) -> None:
+        def Wrapper(children: list[ChildRef]) -> None:
             # Only mount first child
             if children:
                 children[0]()
@@ -175,9 +175,9 @@ class TestContainerComponent:
 
         result = rendered(Parent)
 
-        root_node = result.session.elements.get(result.session.root_node_id)
-        assert root_node is not None
-        wrapper = result.session.elements.get(root_node.child_ids[0])
+        root_element = result.session.elements.get(result.session.root_element_id)
+        assert root_element is not None
+        wrapper = result.session.elements.get(root_element.child_ids[0])
         assert wrapper is not None
         # Only one child mounted, even though 3 were collected
         assert len(wrapper.child_ids) == 1
@@ -186,7 +186,7 @@ class TestContainerComponent:
         """Container can mount children in different order."""
 
         @component
-        def Reverse(children: list[Element]) -> None:
+        def Reverse(children: list[ChildRef]) -> None:
             for child in reversed(children):
                 child()
 
@@ -203,14 +203,14 @@ class TestContainerComponent:
 
         result = rendered(Parent)
 
-        root_node = result.session.elements.get(result.session.root_node_id)
-        assert root_node is not None
-        reverse_node = result.session.elements.get(root_node.child_ids[0])
-        assert reverse_node is not None
+        root_element = result.session.elements.get(result.session.root_element_id)
+        assert root_element is not None
+        reverse_element = result.session.elements.get(root_element.child_ids[0])
+        assert reverse_element is not None
         # Children should be in reverse order
-        child0 = result.session.elements.get(reverse_node.child_ids[0])
-        child1 = result.session.elements.get(reverse_node.child_ids[1])
-        child2 = result.session.elements.get(reverse_node.child_ids[2])
+        child0 = result.session.elements.get(reverse_element.child_ids[0])
+        child1 = result.session.elements.get(reverse_element.child_ids[1])
+        child2 = result.session.elements.get(reverse_element.child_ids[2])
         assert child0 is not None and child0.properties["value"] == 3
         assert child1 is not None and child1.properties["value"] == 2
         assert child2 is not None and child2.properties["value"] == 1

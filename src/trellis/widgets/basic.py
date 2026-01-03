@@ -483,7 +483,7 @@ def Badge(
     ...
 
 
-@react_component_base("Tooltip", has_children=True)
+@react_component_base("Tooltip", is_container=True)
 def Tooltip(
     content: str = "",
     *,

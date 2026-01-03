@@ -7,7 +7,7 @@ from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.dirty_tracker import DirtyTracker
 from trellis.core.rendering.element import Element
 from trellis.core.rendering.element_state import ElementStateStore
-from trellis.core.rendering.elements import ElementStore
+from trellis.core.rendering.element_store import ElementStore
 from trellis.core.rendering.session import RenderSession
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ class _MockElementComponent:
     """Minimal component for creating test Element nodes."""
 
     name = "MockElement"
-    _has_children_param = False
+    is_container = False
 
     def render(self) -> None:
         pass
@@ -52,7 +52,7 @@ class TestRenderSession:
         session = RenderSession(root_component=noop_component)
 
         assert session.root_component is noop_component
-        assert session.root_node_id is None
+        assert session.root_element_id is None
         assert isinstance(session.elements, ElementStore)
         assert isinstance(session.states, ElementStateStore)
         assert isinstance(session.dirty, DirtyTracker)
@@ -77,17 +77,17 @@ class TestRenderSession:
         session.active = ActiveRender()
         assert not session.is_executing()
 
-        session.active.current_node_id = "e1"
+        session.active.current_element_id = "e1"
         assert session.is_executing()
 
-    def test_current_node_id(self, noop_component: "CompositionComponent") -> None:
+    def test_current_element_id(self, noop_component: "CompositionComponent") -> None:
         session = RenderSession(root_component=noop_component)
 
-        assert session.current_node_id is None
+        assert session.current_element_id is None
 
         session.active = ActiveRender()
-        session.active.current_node_id = "e1"
-        assert session.current_node_id == "e1"
+        session.active.current_element_id = "e1"
+        assert session.current_element_id == "e1"
 
     def test_get_callback_from_node_props(self, noop_component: "CompositionComponent") -> None:
         """get_callback looks up callbacks from node props."""

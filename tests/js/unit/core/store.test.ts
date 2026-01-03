@@ -30,7 +30,7 @@ describe("TrellisStore", () => {
   // Helper to set up initial tree via AddPatch (replaces setTree)
   function initTree(tree: SerializedElement): void {
     store.applyPatches([
-      { op: "add", parent_id: null, children: [tree.key], node: tree },
+      { op: "add", parent_id: null, children: [tree.key], element: tree },
     ]);
   }
 
@@ -191,7 +191,7 @@ describe("TrellisStore", () => {
         op: "add",
         parent_id: "root",
         children: ["e1"],
-        node: makeElement("e1", "Button", { text: "New" }),
+        element: makeElement("e1", "Button", { text: "New" }),
       };
       store.applyPatches([patch]);
 
@@ -204,7 +204,7 @@ describe("TrellisStore", () => {
         op: "add",
         parent_id: "root",
         children: ["e1", "e2"],
-        node: makeElement("e1", "Button"),
+        element: makeElement("e1", "Button"),
       };
       store.applyPatches([patch]);
 
@@ -221,7 +221,7 @@ describe("TrellisStore", () => {
         op: "add",
         parent_id: "root",
         children: ["e1"],
-        node: makeElement("e1", "Button"),
+        element: makeElement("e1", "Button"),
       };
       store.applyPatches([patch]);
 
@@ -237,7 +237,7 @@ describe("TrellisStore", () => {
         op: "add",
         parent_id: "root",
         children: ["container"],
-        node: makeElement("container", "Container", {}, [
+        element: makeElement("container", "Container", {}, [
           makeElement("child1", "Label", { text: "First" }),
           makeElement("child2", "Label", { text: "Second" }),
         ]),
@@ -333,7 +333,7 @@ describe("TrellisStore", () => {
       freshStore.subscribeGlobal(listener);
 
       freshStore.applyPatches([
-        { op: "add", parent_id: null, children: ["new"], node: makeElement("new", "NewApp") },
+        { op: "add", parent_id: null, children: ["new"], element: makeElement("new", "NewApp") },
       ]);
 
       expect(listener).toHaveBeenCalled();

@@ -1,7 +1,7 @@
-"""Frame stack for collecting child nodes during rendering.
+"""Frame stack for collecting child elements during rendering.
 
 FrameStack manages the stack of Frames used during component execution
-to collect child node IDs in `with` blocks.
+to collect child element IDs in `with` blocks.
 """
 
 from __future__ import annotations
@@ -36,15 +36,15 @@ def _escape_key(key: str) -> str:
 
 @dataclass
 class Frame:
-    """Scope that collects child node IDs during rendering.
+    """Scope that collects child element IDs during rendering.
 
     Used during component execution to collect children created in `with` blocks.
     Each `with` block pushes a new Frame onto the stack, and children created
     within have their IDs added to that frame.
 
     Attributes:
-        child_ids: IDs of child nodes collected in this frame
-        parent_id: ID of the parent node (for computing child position IDs)
+        child_ids: IDs of child elements collected in this frame
+        parent_id: ID of the parent element (for computing child position IDs)
         position: Counter for the next child's position index
     """
 
@@ -54,10 +54,10 @@ class Frame:
 
 
 class FrameStack:
-    """Stack of Frames for collecting child nodes during rendering.
+    """Stack of Frames for collecting child elements during rendering.
 
     Each `with` block on a container component pushes a new Frame.
-    Child nodes created within that scope are added to the current Frame.
+    Child elements created within that scope are added to the current Frame.
     When the `with` block exits, the Frame is popped and its child IDs
     are assigned to the container.
     """
@@ -68,12 +68,12 @@ class FrameStack:
         self._frames: list[Frame] = []
 
     def push(self, parent_id: str) -> Frame:
-        """Push a new frame for collecting child nodes.
+        """Push a new frame for collecting child elements.
 
         Called when entering a `with` block on a container component.
 
         Args:
-            parent_id: ID of the parent node (for computing child position IDs)
+            parent_id: ID of the parent element (for computing child position IDs)
 
         Returns:
             The new Frame
@@ -88,7 +88,7 @@ class FrameStack:
         Called when exiting a `with` block.
 
         Returns:
-            List of child node IDs collected in the frame
+            List of child element IDs collected in the frame
         """
         frame = self._frames.pop()
         return frame.child_ids
@@ -101,14 +101,14 @@ class FrameStack:
         """
         return self._frames[-1] if self._frames else None
 
-    def add_child(self, node_id: str) -> None:
-        """Add a child node ID to the current frame.
+    def add_child(self, element_id: str) -> None:
+        """Add a child element ID to the current frame.
 
         Args:
-            node_id: The child node's ID
+            element_id: The child element's ID
         """
         if self._frames:
-            self._frames[-1].child_ids.append(node_id)
+            self._frames[-1].child_ids.append(element_id)
 
     def has_active(self) -> bool:
         """Check if there's an active frame.
@@ -119,7 +119,7 @@ class FrameStack:
         return bool(self._frames)
 
     def next_child_id(self, component: Component, key: str | None) -> str:
-        """Get the next position-based ID for a child node.
+        """Get the next position-based ID for a child element.
 
         Position IDs encode tree position AND component identity:
         - First child: "{parent_id}/0@{id(component)}"
@@ -148,7 +148,7 @@ class FrameStack:
         return f"{parent_id}/{position}@{comp_id}"
 
     def root_id(self, component: Component) -> str:
-        """Get the root node ID (for no-frame case).
+        """Get the root element ID (for no-frame case).
 
         Args:
             component: The root component

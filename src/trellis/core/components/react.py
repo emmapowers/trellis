@@ -68,11 +68,11 @@ class ReactComponentBase(Component):
     """Base class for components with React implementations."""
 
     _element_name: tp.ClassVar[str] = ""
-    _has_children: tp.ClassVar[bool] = False
+    _is_container: tp.ClassVar[bool] = False
 
     @property
-    def _has_children_param(self) -> bool:
-        return self.__class__._has_children
+    def is_container(self) -> bool:
+        return self.__class__._is_container
 
     @property
     def element_kind(self) -> ElementKind:
@@ -97,7 +97,7 @@ class ReactComponentBase(Component):
 def react_component_base(
     element_name: str,
     *,
-    has_children: bool = False,
+    is_container: bool = False,
     element_class: type[Element] = Element,
 ) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]:
     """Decorator to create a ReactComponentBase from a function signature."""
@@ -108,7 +108,7 @@ def react_component_base(
         # Create a generated class with the function's name
         class _Generated(ReactComponentBase):
             _element_name = element_name
-            _has_children = has_children
+            _is_container = is_container
 
         # Create singleton instance with the element_class
         _singleton = _Generated(func.__name__, element_class=element_class)

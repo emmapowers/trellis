@@ -546,7 +546,7 @@ class TestMutableRerender:
         4. Bug: No patch produced because Mutable equality ignores value
         """
         from trellis.core.rendering.patches import RenderUpdatePatch
-        from trellis.platforms.common.serialization import serialize_node
+        from trellis.platforms.common.serialization import serialize_element
 
         @dataclass
         class State(Stateful):
@@ -573,7 +573,7 @@ class TestMutableRerender:
         # Get the checkbox's initial serialized value
         checkbox_node = capture.session.elements.get(checkbox_id[0])
         assert checkbox_node is not None
-        initial_serialized = serialize_node(checkbox_node, capture.session)
+        initial_serialized = serialize_element(checkbox_node, capture.session)
         assert initial_serialized["props"]["checked"]["value"] is False
 
         # Simulate user clicking checkbox - invoke the mutable callback
@@ -590,7 +590,7 @@ class TestMutableRerender:
         # Find the update patch for the checkbox
         checkbox_update = None
         for patch in update_patches:
-            if isinstance(patch, RenderUpdatePatch) and patch.node_id == checkbox_id[0]:
+            if isinstance(patch, RenderUpdatePatch) and patch.element_id == checkbox_id[0]:
                 checkbox_update = patch
                 break
 
@@ -609,7 +609,7 @@ class TestMutableRerender:
     ) -> None:
         """After mutable callback changes state, TextInput re-render should send update."""
         from trellis.core.rendering.patches import RenderUpdatePatch
-        from trellis.platforms.common.serialization import serialize_node
+        from trellis.platforms.common.serialization import serialize_element
 
         @dataclass
         class State(Stateful):
@@ -634,7 +634,7 @@ class TestMutableRerender:
 
         # Get initial serialized value
         input_node = capture.session.elements.get(input_id[0])
-        initial_serialized = serialize_node(input_node, capture.session)
+        initial_serialized = serialize_element(input_node, capture.session)
         assert initial_serialized["props"]["value"]["value"] == "initial"
 
         # Invoke mutable callback
@@ -649,7 +649,7 @@ class TestMutableRerender:
 
         input_update = None
         for patch in update_patches:
-            if isinstance(patch, RenderUpdatePatch) and patch.node_id == input_id[0]:
+            if isinstance(patch, RenderUpdatePatch) and patch.element_id == input_id[0]:
                 input_update = patch
                 break
 
@@ -667,7 +667,7 @@ class TestMutableRerender:
     ) -> None:
         """After mutable callback changes state, Slider re-render should send update."""
         from trellis.core.rendering.patches import RenderUpdatePatch
-        from trellis.platforms.common.serialization import serialize_node
+        from trellis.platforms.common.serialization import serialize_element
 
         @dataclass
         class State(Stateful):
@@ -692,7 +692,7 @@ class TestMutableRerender:
 
         # Get initial serialized value
         slider_node = capture.session.elements.get(slider_id[0])
-        initial_serialized = serialize_node(slider_node, capture.session)
+        initial_serialized = serialize_element(slider_node, capture.session)
         assert initial_serialized["props"]["value"]["value"] == 50.0
 
         # Invoke mutable callback
@@ -707,7 +707,7 @@ class TestMutableRerender:
 
         slider_update = None
         for patch in update_patches:
-            if isinstance(patch, RenderUpdatePatch) and patch.node_id == slider_id[0]:
+            if isinstance(patch, RenderUpdatePatch) and patch.element_id == slider_id[0]:
                 slider_update = patch
                 break
 

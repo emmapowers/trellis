@@ -1,10 +1,11 @@
 """Render pipeline for the Trellis UI framework."""
 
 from trellis.core.rendering.active import ActiveRender
+from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.dirty_tracker import DirtyTracker
 from trellis.core.rendering.element import Element, props_equal
 from trellis.core.rendering.element_state import ElementState, ElementStateStore
-from trellis.core.rendering.elements import ElementStore
+from trellis.core.rendering.element_store import ElementStore
 from trellis.core.rendering.frames import Frame, FrameStack
 from trellis.core.rendering.lifecycle import LifecycleTracker
 from trellis.core.rendering.patches import (
@@ -26,6 +27,7 @@ from trellis.core.rendering.traits import KeyTrait
 
 __all__ = [
     "ActiveRender",
+    "ChildRef",
     "DirtyTracker",
     "Element",
     "ElementState",

@@ -15,7 +15,7 @@ import msgspec
 
 
 class UpdatePatch(msgspec.Struct, tag="update", tag_field="op"):
-    """Update an existing node's props and/or children order."""
+    """Update an existing element's props and/or children order."""
 
     id: str
     props: dict[str, tp.Any] | None = None  # Changed props only
@@ -23,17 +23,17 @@ class UpdatePatch(msgspec.Struct, tag="update", tag_field="op"):
 
 
 class RemovePatch(msgspec.Struct, tag="remove", tag_field="op"):
-    """Remove a node from the tree."""
+    """Remove an element from the tree."""
 
     id: str
 
 
 class AddPatch(msgspec.Struct, tag="add", tag_field="op"):
-    """Add a new node to the tree."""
+    """Add a new element to the tree."""
 
     parent_id: str | None
     children: list[str]  # Parent's new children list
-    node: dict[str, tp.Any]  # Full subtree for the new node
+    element: dict[str, tp.Any]  # Full subtree for the new element
 
 
 Patch = UpdatePatch | RemovePatch | AddPatch

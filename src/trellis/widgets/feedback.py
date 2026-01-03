@@ -17,7 +17,7 @@ if tp.TYPE_CHECKING:
     from collections.abc import Callable
 
 
-@react_component_base("Collapsible", has_children=True)
+@react_component_base("Collapsible", is_container=True)
 def Collapsible(
     *,
     title: str = "",
@@ -47,7 +47,7 @@ def Collapsible(
     ...
 
 
-@react_component_base("Callout", has_children=True)
+@react_component_base("Callout", is_container=True)
 def Callout(
     *,
     title: str | None = None,

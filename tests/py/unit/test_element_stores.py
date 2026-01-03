@@ -5,14 +5,14 @@ from dataclasses import replace
 
 from trellis.core.rendering.element import Element
 from trellis.core.rendering.element_state import ElementState, ElementStateStore
-from trellis.core.rendering.elements import ElementStore
+from trellis.core.rendering.element_store import ElementStore
 
 
 class MockComponent:
     """Minimal component for testing."""
 
     name = "MockComponent"
-    _has_children_param = False
+    is_container = False
 
     def render(self):
         pass
