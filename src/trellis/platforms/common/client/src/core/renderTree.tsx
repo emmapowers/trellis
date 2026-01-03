@@ -87,6 +87,9 @@ function serializeEventArg(arg: unknown): unknown {
   return arg;
 }
 
+/** Event handler prop names that should call preventDefault before invoking callback. */
+const PREVENT_DEFAULT_HANDLERS = new Set(["onClick", "onSubmit"]);
+
 /**
  * Transform props, converting callback refs to handlers and mutable refs to Mutable objects.
  *
@@ -100,7 +103,13 @@ export function processProps(
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(props)) {
     if (isCallbackRef(value)) {
+      const shouldPreventDefault = PREVENT_DEFAULT_HANDLERS.has(key);
       result[key] = (...args: unknown[]) => {
+        // Prevent default browser behavior for interactive events
+        if (shouldPreventDefault && args[0] && typeof args[0] === "object") {
+          const event = args[0] as { preventDefault?: () => void };
+          event.preventDefault?.();
+        }
         // Serialize any event objects before sending
         const serializedArgs = args.map(serializeEventArg);
         onEvent(value.__callback__, serializedArgs);

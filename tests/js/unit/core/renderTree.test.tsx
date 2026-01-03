@@ -77,6 +77,63 @@ describe("processProps", () => {
     (result.on_hover as () => void)();
     expect(onEvent).toHaveBeenCalledWith("cb_2", []);
   });
+
+  it("calls preventDefault on onClick handlers", () => {
+    const onEvent = vi.fn();
+    const props = {
+      onClick: { __callback__: "cb_click" },
+    };
+
+    const result = processProps(props, onEvent);
+
+    const mockEvent = {
+      preventDefault: vi.fn(),
+      type: "click",
+    };
+
+    (result.onClick as (e: unknown) => void)(mockEvent);
+
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
+    expect(onEvent).toHaveBeenCalledWith("cb_click", [expect.anything()]);
+  });
+
+  it("calls preventDefault on onSubmit handlers", () => {
+    const onEvent = vi.fn();
+    const props = {
+      onSubmit: { __callback__: "cb_submit" },
+    };
+
+    const result = processProps(props, onEvent);
+
+    const mockEvent = {
+      preventDefault: vi.fn(),
+      type: "submit",
+    };
+
+    (result.onSubmit as (e: unknown) => void)(mockEvent);
+
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
+    expect(onEvent).toHaveBeenCalledWith("cb_submit", [expect.anything()]);
+  });
+
+  it("does not call preventDefault on other handlers", () => {
+    const onEvent = vi.fn();
+    const props = {
+      onChange: { __callback__: "cb_change" },
+    };
+
+    const result = processProps(props, onEvent);
+
+    const mockEvent = {
+      preventDefault: vi.fn(),
+      type: "change",
+    };
+
+    (result.onChange as (e: unknown) => void)(mockEvent);
+
+    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+    expect(onEvent).toHaveBeenCalledWith("cb_change", [expect.anything()]);
+  });
 });
 
 describe("renderNode", () => {

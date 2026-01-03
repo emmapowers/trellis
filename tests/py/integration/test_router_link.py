@@ -6,6 +6,7 @@ from tests.conftest import PatchCapture, find_element_by_type
 from trellis.core.callback_context import callback_context
 from trellis.core.components.composition import component
 from trellis.core.rendering.session import RenderSession
+from trellis.html.events import MouseEvent
 from trellis.platforms.common.serialization import parse_callback_id, serialize_node
 from trellis.routing import Link, RouterState
 
@@ -102,7 +103,8 @@ class TestLinkNavigation:
         cb_id = on_click_data["__callback__"]
 
         # Invoke the callback with callback_context (simulates handler behavior)
-        invoke_callback(capture.session, cb_id)
+        event = MouseEvent(type="click")
+        invoke_callback(capture.session, cb_id, event)
 
         # Verify navigation occurred
         assert router_state.path == "/about"
@@ -124,9 +126,37 @@ class TestLinkNavigation:
         cb_id = anchor.get("props", {}).get("onClick")["__callback__"]
 
         # Invoke the callback with callback_context
-        invoke_callback(capture.session, cb_id)
+        event = MouseEvent(type="click")
+        invoke_callback(capture.session, cb_id, event)
 
         assert router_state.history == ["/", "/users"]
+
+    def test_click_with_event_argument(self, capture_patches: type[PatchCapture]) -> None:
+        """Link onClick handler accepts event argument from browser.
+
+        The browser sends a MouseEvent when onClick fires. The handler must
+        accept this argument even if it doesn't use it.
+        """
+        router_state = RouterState(path="/")
+
+        @component
+        def App() -> None:
+            with router_state:
+                Link(to="/about")
+
+        capture = capture_patches(App)
+        capture.render()
+
+        tree = serialize_node(capture.session.root_element, capture.session)
+        anchor = find_element_by_type(tree, "a")
+        cb_id = anchor.get("props", {}).get("onClick")["__callback__"]
+
+        # Simulate browser sending a MouseEvent (this is what actually happens)
+        event = MouseEvent(type="click")
+        invoke_callback(capture.session, cb_id, event)
+
+        # Should navigate despite receiving event argument
+        assert router_state.path == "/about"
 
 
 class TestLinkWithChildren:

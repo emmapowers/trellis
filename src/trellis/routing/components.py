@@ -1,22 +1,93 @@
 """Router components for client-side routing."""
 
+from dataclasses import dataclass, field
+
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.rendering.element import Element
+from trellis.core.state.stateful import Stateful
 from trellis.html.links import A
 from trellis.routing.path_matching import match_path
 from trellis.routing.state import router
 
 
+@dataclass(kw_only=True)
+class CurrentRouteContext(Stateful):
+    """Marker context indicating we're inside a Routes container.
+
+    This is an implementation detail - not part of the public API.
+    """
+
+    def __init__(self) -> None:
+        """Initialize marker context."""
+        pass
+
+
+@component
+def Routes(*, children: list[Element] | None = None) -> None:
+    """Container for exclusive route matching.
+
+    Only the first Route child that matches will render. Subsequent
+    Route children are skipped even if they would match.
+
+    Usage:
+        ```python
+        @component
+        def App():
+            with RouterState():
+                with Routes():
+                    Route(pattern="/", content=HomePage)
+                    Route(pattern="/users", content=UsersPage)
+                    Route(pattern="*", content=NotFoundPage)
+        ```
+
+    Route components must be used inside a Routes container.
+    """
+    state = router()
+
+    with CurrentRouteContext():
+        if not children:
+            return
+
+        matched_content: CompositionComponent | None = None
+
+        # Iterate through Route children, find first match
+        for child in children:
+            # Call child() to keep Route elements in child_ids for re-renders
+            # (Route.execute() is a no-op when inside Routes context)
+            child()
+
+            # Read pattern and content from Route element's props
+            pattern = child.props.get("pattern")
+            content = child.props.get("content")
+
+            if pattern is None:
+                # Not a Route element - skip
+                continue
+
+            # Only match if we haven't found a match yet
+            if matched_content is None:
+                matched, params = match_path(pattern, state.path)
+                if matched:
+                    state.set_params(params)
+                    matched_content = content
+
+        # Render the matched content (if any)
+        if matched_content is not None:
+            matched_content()
+
+
 @component
 def Route(*, pattern: str, content: CompositionComponent | None = None) -> None:
-    """Conditionally render content when path matches pattern.
+    """Define a route pattern and its content for use inside Routes.
 
-    Route checks the current path from RouterState and renders its content
-    only when the pattern matches. Parameters extracted from the path are
-    made available via router().params.
+    Route is a declarative component that defines a pattern and content.
+    The actual matching logic is handled by the parent Routes container.
+
+    Route must be used inside a Routes container. If used outside,
+    a RuntimeError is raised.
 
     Args:
-        pattern: Route pattern to match (e.g., "/users/:id")
+        pattern: Route pattern to match (e.g., "/users/:id", "*" for fallback)
         content: Component to render when matched
 
     Example:
@@ -24,21 +95,21 @@ def Route(*, pattern: str, content: CompositionComponent | None = None) -> None:
         @component
         def App():
             with RouterState():
-                Route(pattern="/", content=HomePage)
-                Route(pattern="/users/:id", content=UserPage)
-                Route(pattern="*", content=NotFoundPage)
+                with Routes():
+                    Route(pattern="/", content=HomePage)
+                    Route(pattern="/users/:id", content=UserPage)
+                    Route(pattern="*", content=NotFoundPage)
         ```
     """
-    state = router()
-    matched, params = match_path(pattern, state.path)
-
-    if matched:
-        # Set extracted params on router state
-        state.set_params(params)
-
-        # Render the content component
-        if content is not None:
-            content()
+    # Check if we're inside a Routes container
+    ctx = CurrentRouteContext.from_context(default=None)
+    if ctx is None:
+        # Outside Routes - raise error
+        raise RuntimeError(
+            "Route must be used inside a Routes container. "
+            "Use 'with Routes(): Route(pattern=..., content=...)' pattern."
+        )
+    # Inside Routes - no-op (Routes handles matching logic via props)
 
 
 @component
@@ -64,8 +135,9 @@ def Link(*, to: str, text: str = "", children: list[Element] | None = None) -> N
         ```
     """
 
-    def handle_click() -> None:
+    def handle_click(_event: object) -> None:
         # router() works in callbacks via callback_context
+        # _event is the MouseEvent from the browser (unused)
         router().navigate(to)
 
     with A(text, href=to, onClick=handle_click):
