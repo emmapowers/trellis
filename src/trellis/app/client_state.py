@@ -45,36 +45,6 @@ class ThemeMode(StrEnum):
     DARK = auto()
 
 
-class DeviceType(StrEnum):
-    """Device type detected from user agent."""
-
-    UNKNOWN = auto()
-    WEB = auto()
-    DESKTOP = auto()
-    MOBILE = auto()
-
-
-class OperatingSystem(StrEnum):
-    """Operating system detected from user agent."""
-
-    UNKNOWN = auto()
-    MACOS = auto()
-    WINDOWS = auto()
-    LINUX = auto()
-    IOS = auto()
-    ANDROID = auto()
-
-
-class Browser(StrEnum):
-    """Browser detected from user agent."""
-
-    UNKNOWN = auto()
-    CHROME = auto()
-    FIREFOX = auto()
-    SAFARI = auto()
-    EDGE = auto()
-
-
 # =============================================================================
 # Theme tokens - CSS variable references for use in styles
 # =============================================================================
@@ -159,10 +129,7 @@ class ClientState(Stateful):
     theme_setting: ThemeMode = ThemeMode.SYSTEM
     system_theme: ThemeMode = ThemeMode.LIGHT
 
-    # Device info (set at connection time, typically not changed after)
-    device_type: DeviceType = DeviceType.UNKNOWN
-    os: OperatingSystem = OperatingSystem.UNKNOWN
-    browser: Browser = Browser.UNKNOWN
+    # needed to set the theme attribute
     root_element_id: str = ""
 
     # -------------------------------------------------------------------------

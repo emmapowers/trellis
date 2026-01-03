@@ -4,7 +4,7 @@ import dataclasses
 
 import pytest
 
-from trellis.app import Browser, ClientState, DeviceType, OperatingSystem, ThemeMode, ThemeTokens
+from trellis.app import ClientState, ThemeMode, ThemeTokens
 
 
 class TestClientStateTheme:
@@ -119,33 +119,6 @@ class TestThemeTokens:
         for field in dataclasses.fields(tokens):
             value = getattr(tokens, field.name)
             assert value.startswith("var(--trellis-"), f"{field.name} should be a CSS var"
-
-
-class TestClientStateDeviceInfo:
-    """Tests for device info fields on ClientState."""
-
-    def test_default_values(self) -> None:
-        """ClientState should have sensible defaults."""
-        state = ClientState()
-        assert state.theme_setting == ThemeMode.SYSTEM
-        assert state.system_theme == ThemeMode.LIGHT
-        assert state.device_type.value == "unknown"
-        assert state.os.value == "unknown"
-        assert state.browser.value == "unknown"
-        assert state.root_element_id == ""
-
-    def test_device_info_preserved(self) -> None:
-        """Device info fields should be preserved."""
-        state = ClientState(
-            device_type=DeviceType.WEB,
-            os=OperatingSystem.MACOS,
-            browser=Browser.CHROME,
-            root_element_id="my-app",
-        )
-        assert state.device_type == DeviceType.WEB
-        assert state.os == OperatingSystem.MACOS
-        assert state.browser == Browser.CHROME
-        assert state.root_element_id == "my-app"
 
 
 class TestClientStateOutsideRenderContext:

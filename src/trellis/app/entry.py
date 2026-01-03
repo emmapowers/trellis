@@ -30,6 +30,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from trellis.app.client_state import ClientState, ThemeMode
+from trellis.app.trellis_app import TrellisApp
+from trellis.core.components.base import Component
+from trellis.core.components.composition import CompositionComponent
 from trellis.platforms.common.base import Platform, PlatformArgumentError, PlatformType
 from trellis.utils.log_setup import setup_logging
 
@@ -414,10 +418,6 @@ class Trellis:
             A callback that takes (component, system_theme, theme_mode) and
             returns a wrapped Component ready for RenderSession.
         """
-        from trellis.app.client_state import ClientState, ThemeMode
-        from trellis.app.trellis_app import TrellisApp
-        from trellis.core.components.base import Component
-        from trellis.core.components.composition import CompositionComponent
 
         def wrapper(
             component: Component,
