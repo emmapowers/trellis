@@ -1061,3 +1061,340 @@ class TestPositionIdGeneration:
         assert id_a != id_b
         assert str(id(TypeA)) in id_a
         assert str(id(TypeB)) in id_b
+
+
+class TestConditionalRendering:
+    """Tests for conditional container children rendering.
+
+    With ChildRef:
+    - `child_ids` reflects RENDERED children (what's shown to frontend)
+    - `props["children"]` contains ChildRefs (stable references to collected children)
+
+    When a container hides children:
+    - child_ids becomes empty (nothing rendered)
+    - props["children"] still has ChildRefs (can render them later)
+    - Unmount hooks are called, ElementState is removed
+    - Element stays in session.elements (so ChildRef.element works)
+
+    When a container shows children again:
+    - Container calls ChildRef() to render them
+    - child_ids reflects rendered children again
+    - Mount hooks are called, new ElementState is created
+    """
+
+    def test_conditional_container_preserves_children_when_only_container_rerenders(
+        self,
+    ) -> None:
+        """Children are preserved when container re-renders without parent re-rendering."""
+        render_counts: dict[str, int] = {}
+
+        @dataclass
+        class VisibilityState(Stateful):
+            visible: bool = True
+
+        container_state: list[VisibilityState] = []
+
+        @component
+        def Child() -> None:
+            render_counts["child"] = render_counts.get("child", 0) + 1
+
+        @component
+        def ConditionalContainer(*, children: list | None = None) -> None:
+            state = VisibilityState()
+            container_state.append(state)
+            if state.visible and children:
+                for child in children:
+                    child()
+
+        @component
+        def App() -> None:
+            render_counts["app"] = render_counts.get("app", 0) + 1
+            with ConditionalContainer():
+                Child()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        assert render_counts.get("child", 0) == 1
+        assert render_counts.get("app", 0) == 1
+
+        container_id = ctx.root_element.child_ids[0]
+        container = ctx.elements.get(container_id)
+        assert container is not None
+        assert len(container.child_ids) == 1
+
+        # Hide children (only container re-renders)
+        container_state[-1].visible = False
+        render(ctx)
+
+        assert render_counts.get("app", 0) == 1  # App should not re-render
+        container = ctx.elements.get(container_id)
+        assert len(container.child_ids) == 0  # No children rendered when hidden
+
+        # Show again
+        container_state[-1].visible = True
+        render(ctx)
+
+        assert render_counts.get("app", 0) == 1  # App still should not re-render
+        container = ctx.elements.get(container_id)
+        assert len(container.child_ids) == 1  # Children rendered again
+        assert render_counts.get("child", 0) == 2  # Child re-renders when shown
+
+    def test_tab_container_preserves_unrendered_children(self) -> None:
+        """Tab container preserves all children even when only rendering one."""
+        render_counts: dict[str, int] = {}
+
+        @dataclass
+        class SelectionState(Stateful):
+            selected: int = 0
+
+        container_state: list[SelectionState] = []
+
+        @component
+        def ChildA() -> None:
+            render_counts["a"] = render_counts.get("a", 0) + 1
+
+        @component
+        def ChildB() -> None:
+            render_counts["b"] = render_counts.get("b", 0) + 1
+
+        @component
+        def ChildC() -> None:
+            render_counts["c"] = render_counts.get("c", 0) + 1
+
+        @component
+        def TabContainer(*, children: list | None = None) -> None:
+            state = SelectionState()
+            container_state.append(state)
+            if children and 0 <= state.selected < len(children):
+                children[state.selected]()
+
+        @component
+        def App() -> None:
+            render_counts["app"] = render_counts.get("app", 0) + 1
+            with TabContainer():
+                ChildA()
+                ChildB()
+                ChildC()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        assert render_counts == {"app": 1, "a": 1}
+
+        container_id = ctx.root_element.child_ids[0]
+        container = ctx.elements.get(container_id)
+        assert len(container.child_ids) == 1  # Only selected child rendered
+        assert len(container.props.get("children", [])) == 3  # All children collected
+
+        # Switch to ChildB
+        container_state[-1].selected = 1
+        render(ctx)
+
+        assert render_counts.get("app", 0) == 1  # App should not re-render
+        container = ctx.elements.get(container_id)
+        assert render_counts.get("b", 0) == 1  # ChildB renders when selected
+        assert len(container.child_ids) == 1
+
+    def test_nested_conditional_containers_with_internal_state(self) -> None:
+        """Nested conditional containers with internal state work correctly."""
+        render_counts: dict[str, int] = {}
+
+        @dataclass
+        class VisibilityState(Stateful):
+            visible: bool = True
+
+        outer_state: list[VisibilityState] = []
+
+        @component
+        def DeepChild() -> None:
+            render_counts["deep"] = render_counts.get("deep", 0) + 1
+
+        @component
+        def InnerContainer(*, children: list | None = None) -> None:
+            render_counts["inner"] = render_counts.get("inner", 0) + 1
+            if children:
+                for child in children:
+                    child()
+
+        @component
+        def OuterContainer(*, children: list | None = None) -> None:
+            state = VisibilityState()
+            outer_state.append(state)
+            render_counts["outer"] = render_counts.get("outer", 0) + 1
+            if state.visible and children:
+                for child in children:
+                    child()
+
+        @component
+        def App() -> None:
+            render_counts["app"] = render_counts.get("app", 0) + 1
+            with OuterContainer():
+                with InnerContainer():
+                    DeepChild()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        assert render_counts == {"app": 1, "outer": 1, "inner": 1, "deep": 1}
+
+        # Hide outer
+        outer_state[-1].visible = False
+        render(ctx)
+
+        assert render_counts.get("app", 0) == 1
+        assert render_counts.get("outer", 0) == 2
+
+        # Show outer again
+        outer_state[-1].visible = True
+        render(ctx)
+
+        assert render_counts.get("app", 0) == 1
+        assert render_counts.get("inner", 0) == 2
+        assert render_counts.get("deep", 0) == 2
+
+
+class TestElementRemovalStorage:
+    """Tests for Element and ElementState storage during unmount/removal.
+
+    Soft unmount (child hidden but still collected):
+    - Element stays in session.elements
+    - ElementState removed from session.states
+
+    Full removal (child no longer collected):
+    - Element removed from session.elements
+    - ElementState removed from session.states
+    """
+
+    def test_soft_unmount_preserves_element_removes_state(self) -> None:
+        """Hidden child: Element stays in storage, ElementState is removed."""
+
+        @dataclass
+        class VisibilityState(Stateful):
+            visible: bool = True
+
+        container_state: list[VisibilityState] = []
+
+        @component
+        def Child() -> None:
+            pass
+
+        @component
+        def Container(*, children: list | None = None) -> None:
+            state = VisibilityState()
+            container_state.append(state)
+            if state.visible and children:
+                for child in children:
+                    child()
+
+        @component
+        def App() -> None:
+            with Container():
+                Child()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        container_id = ctx.root_element.child_ids[0]
+        child_id = ctx.elements.get(container_id).child_ids[0]
+
+        # Verify child exists in both stores
+        assert ctx.elements.get(child_id) is not None
+        assert ctx.states.get(child_id) is not None
+
+        # Hide child (soft unmount)
+        container_state[-1].visible = False
+        render(ctx)
+
+        # Element stays (for ChildRef), ElementState removed
+        assert ctx.elements.get(child_id) is not None
+        assert ctx.states.get(child_id) is None
+
+    def test_full_removal_removes_element_and_state(self) -> None:
+        """Child no longer collected: both Element and ElementState removed."""
+        show_child = [True]
+
+        @component
+        def Child() -> None:
+            pass
+
+        @component
+        def App() -> None:
+            if show_child[0]:
+                Child()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        child_id = ctx.root_element.child_ids[0]
+
+        # Verify child exists
+        assert ctx.elements.get(child_id) is not None
+        assert ctx.states.get(child_id) is not None
+
+        # Remove child completely (full removal)
+        show_child[0] = False
+        ctx.dirty.mark(ctx.root_element.id)
+        render(ctx)
+
+        # Both Element and ElementState removed
+        assert ctx.elements.get(child_id) is None
+        assert ctx.states.get(child_id) is None
+
+    def test_soft_unmount_then_rerender_creates_new_state(self) -> None:
+        """Re-rendering a soft-unmounted child creates fresh ElementState."""
+
+        @dataclass
+        class VisibilityState(Stateful):
+            visible: bool = True
+
+        @dataclass
+        class ChildState(Stateful):
+            value: int = 0
+
+        container_state: list[VisibilityState] = []
+        child_state_instances: list[ChildState] = []
+
+        @component
+        def Child() -> None:
+            state = ChildState()
+            child_state_instances.append(state)
+
+        @component
+        def Container(*, children: list | None = None) -> None:
+            state = VisibilityState()
+            container_state.append(state)
+            if state.visible and children:
+                for child in children:
+                    child()
+
+        @component
+        def App() -> None:
+            with Container():
+                Child()
+
+        ctx = RenderSession(App)
+        render(ctx)
+
+        container_id = ctx.root_element.child_ids[0]
+        child_id = ctx.elements.get(container_id).child_ids[0]
+
+        # Modify child state
+        child_state_instances[-1].value = 42
+        assert len(child_state_instances) == 1
+
+        # Hide child
+        container_state[-1].visible = False
+        render(ctx)
+
+        assert ctx.states.get(child_id) is None
+
+        # Show child again
+        container_state[-1].visible = True
+        render(ctx)
+
+        # New ElementState created (new ChildState instance)
+        assert ctx.states.get(child_id) is not None
+        assert len(child_state_instances) == 2
+        # New state starts fresh (value=0), not preserved from before
+        assert child_state_instances[-1].value == 0

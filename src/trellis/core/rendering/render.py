@@ -146,12 +146,12 @@ def _render_impl(
         session.active = None
 
 
-def _execute_single_node(
+def _execute_single_element(
     session: RenderSession,
     node: Element,
     parent_id: str | None,
 ) -> Element:
-    """Execute a single node and collect its children."""
+    """Execute a single element and collect its children."""
     assert session.active is not None
     node_id = node.id
 
@@ -237,11 +237,11 @@ def _execute_tree(
     # Get old children for reconciliation
     old_child_ids = list(old_node.child_ids) if old_node else []
 
-    # Execute this node
-    executed_node = _execute_single_node(session, node, parent_id)
+    # Execute this element
+    executed_node = _execute_single_element(session, node, parent_id)
     new_child_ids = list(executed_node.child_ids)
 
-    # Clear dirty flag since we just rendered this node
+    # Clear dirty flag since we just rendered this element
     session.dirty.discard(node_id)
 
     # Emit UpdatePatch if props or children changed (for incremental re-renders)
@@ -273,11 +273,12 @@ def _execute_tree(
         for removed_id in result.removed:
             session.active.patches.emit(RenderRemovePatch(node_id=removed_id))
             if removed_id in collected_ids:
-                # Still collected, just hidden by container → soft unmount
-                _soft_unmount_node_tree(session, removed_id)
+                # Still collected, just hidden by container → unmount only
+                _unmount_element_tree(session, removed_id)
             else:
-                # Not collected anymore → full removal
-                _full_remove_node_tree(session, removed_id)
+                # Not collected anymore → unmount and remove from storage
+                _unmount_element_tree(session, removed_id)
+                _remove_element_tree(session, removed_id)
 
         # Build set of added IDs for quick lookup
         added_set = set(result.added)
@@ -310,26 +311,8 @@ def _execute_tree(
             )
 
 
-def _mount_node_tree(session: RenderSession, node_id: str) -> None:
-    """Mount a node and all its descendants."""
-    assert session.active is not None
-    state = session.states.get(node_id)
-    if state is None or state.mounted:
-        return
-
-    state.mounted = True
-    # Track mount hook (called after render completes)
-    session.active.lifecycle.track_mount(node_id)
-
-    # Mount children
-    node = session.elements.get(node_id)
-    if node:
-        for child_id in node.child_ids:
-            _mount_node_tree(session, child_id)
-
-
-def _soft_unmount_node_tree(session: RenderSession, node_id: str) -> None:
-    """Soft unmount: call hooks and mark unmounted, but keep Element in storage.
+def _unmount_element_tree(session: RenderSession, node_id: str) -> None:
+    """Unmount an element tree: call hooks and mark unmounted, but keep Element in storage.
 
     Used when a container hides a child but the child is still in props["children"].
     The Element stays in session.elements so ChildRef.element still works and the
@@ -352,29 +335,14 @@ def _soft_unmount_node_tree(session: RenderSession, node_id: str) -> None:
 
     if node:
         for child_id in node.child_ids:
-            _soft_unmount_node_tree(session, child_id)
+            _unmount_element_tree(session, child_id)
 
     # Track unmount hook (called after render completes)
     session.active.lifecycle.track_unmount(node_id)
 
     state.mounted = False
     session.dirty.discard(node_id)
-    # Note: Do NOT remove from session.elements - child can be rendered again
-
-
-def _full_remove_node_tree(session: RenderSession, node_id: str) -> None:
-    """Full removal: soft unmount + remove Element from storage.
-
-    Used when a parent re-renders and no longer collects this child in its
-    `with` block. The child and its descendants are fully removed.
-    """
-    assert session.active is not None
-
-    # First do soft unmount (handles hooks and state)
-    _soft_unmount_node_tree(session, node_id)
-
-    # Then remove the element and all descendants from storage
-    _remove_element_tree(session, node_id)
+    # Note: Do NOT remove from session.elements - element can be rendered again
 
 
 def _remove_element_tree(session: RenderSession, node_id: str) -> None:
@@ -384,17 +352,6 @@ def _remove_element_tree(session: RenderSession, node_id: str) -> None:
         for child_id in node.child_ids:
             _remove_element_tree(session, child_id)
     session.elements.remove(node_id)
-
-
-def _unmount_node_tree(session: RenderSession, node_id: str) -> None:
-    """Unmount a node and all its descendants.
-
-    DEPRECATED: Use _soft_unmount_node_tree or _full_remove_node_tree instead.
-    This function is kept for backward compatibility during transition.
-    """
-    # For now, this behaves like full removal to maintain existing behavior
-    # in code paths that haven't been updated yet
-    _full_remove_node_tree(session, node_id)
 
 
 def _call_mount_hooks(session: RenderSession, node_id: str) -> None:
