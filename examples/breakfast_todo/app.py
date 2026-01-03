@@ -39,7 +39,9 @@ def App() -> None:
                     )
 
                 # Input
-                with w.Column(padding=12, style={"borderBottom": f"1px solid {theme.border_default}"}):
+                with w.Column(
+                    padding=12, style={"borderBottom": f"1px solid {theme.border_default}"}
+                ):
                     TodoInput()
 
                 # List

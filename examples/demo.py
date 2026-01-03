@@ -77,9 +77,7 @@ def CounterControls(
             size="lg",
         )
 
-        with w.Column(
-            width=120, padding=Padding(x=32, y=16), style=STYLE_COUNT_DISPLAY
-        ):
+        with w.Column(width=120, padding=Padding(x=32, y=16), style=STYLE_COUNT_DISPLAY):
             w.Label(
                 text=str(count),
                 font_size=36,

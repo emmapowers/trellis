@@ -2,8 +2,8 @@
 
 from trellis import Margin, Padding, component
 from trellis import widgets as w
-from trellis.widgets import IconName, ThemeSwitcher
 from trellis.app import theme
+from trellis.widgets import IconName, ThemeSwitcher
 
 from .sections import (
     ActionsSection,
@@ -22,7 +22,6 @@ from .sections import (
     TypographySection,
 )
 from .state import ShowcaseState
-
 
 # Tab definitions: (id, label, icon, component)
 TABS = [
@@ -79,10 +78,10 @@ def App() -> None:
                         "flexShrink": "0",
                     },
                 ):
-                    for tab_id, label, icon, _ in TABS:
+                    for tab_id, label, _icon, _ in TABS:
                         is_active = state.active_tab == tab_id
 
-                        def set_tab(tid: str=tab_id) -> None:
+                        def set_tab(tid: str = tab_id) -> None:
                             state.active_tab = tid
 
                         w.Button(

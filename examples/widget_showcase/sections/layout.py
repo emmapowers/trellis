@@ -19,13 +19,17 @@ def RowLayout() -> None:
             w.Button(text="C", size="sm")
 
         w.Label(text="justify='center'")
-        with w.Row(gap=8, justify="center", padding=8, style={"backgroundColor": theme.bg_surface_raised}):
+        with w.Row(
+            gap=8, justify="center", padding=8, style={"backgroundColor": theme.bg_surface_raised}
+        ):
             w.Button(text="A", size="sm")
             w.Button(text="B", size="sm")
             w.Button(text="C", size="sm")
 
         w.Label(text="justify='between'")
-        with w.Row(gap=8, justify="between", padding=8, style={"backgroundColor": theme.bg_surface_raised}):
+        with w.Row(
+            gap=8, justify="between", padding=8, style={"backgroundColor": theme.bg_surface_raised}
+        ):
             w.Button(text="A", size="sm")
             w.Button(text="B", size="sm")
             w.Button(text="C", size="sm")

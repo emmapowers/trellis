@@ -12,7 +12,6 @@ from trellis import Height, Margin, Stateful, Trellis, async_main, callback, com
 from trellis import widgets as w
 from trellis.app import theme
 
-
 # =============================================================================
 # State
 # =============================================================================
