@@ -2,7 +2,8 @@
 
 from trellis import Margin, Padding, component
 from trellis import widgets as w
-from trellis.widgets import IconName
+from trellis.app import theme
+from trellis.widgets import IconName, ThemeSwitcher
 
 from .sections import (
     ActionsSection,
@@ -21,7 +22,6 @@ from .sections import (
     TypographySection,
 )
 from .state import ShowcaseState
-
 
 # Tab definitions: (id, label, icon, component)
 TABS = [
@@ -55,13 +55,14 @@ def App() -> None:
                 gap=12,
                 padding=Padding(x=24, y=16),
                 style={
-                    "borderBottom": "1px solid #e2e8f0",
-                    "backgroundColor": "#ffffff",
+                    "borderBottom": f"1px solid {theme.border_default}",
+                    "backgroundColor": theme.bg_surface,
                     "flexShrink": "0",
                 },
             ):
-                w.Icon(name=IconName.LAYOUT_DASHBOARD, size=24, color="#6366f1")
-                w.Heading(text="Trellis Widget Showcase", level=2)
+                w.Icon(name=IconName.LAYOUT_DASHBOARD, size=24, color=theme.accent_primary)
+                w.Heading(text="Trellis Widget Showcase", level=2, flex=1)
+                ThemeSwitcher()  # No props - uses ClientState from context
 
             # Main content with sidebar tabs
             with w.Row(gap=0, flex=1, style={"minHeight": "0", "alignItems": "stretch"}):
@@ -71,16 +72,16 @@ def App() -> None:
                     width=200,
                     padding=12,
                     style={
-                        "borderRight": "1px solid #e2e8f0",
-                        "backgroundColor": "#f8fafc",
+                        "borderRight": f"1px solid {theme.border_default}",
+                        "backgroundColor": theme.bg_page,
                         "overflow": "auto",
                         "flexShrink": "0",
                     },
                 ):
-                    for tab_id, label, icon, _ in TABS:
+                    for tab_id, label, _icon, _ in TABS:
                         is_active = state.active_tab == tab_id
 
-                        def set_tab(tid: str=tab_id) -> None:
+                        def set_tab(tid: str = tab_id) -> None:
                             state.active_tab = tid
 
                         w.Button(
@@ -103,7 +104,7 @@ def App() -> None:
                         if state.active_tab == tab_id:
                             # Section header
                             with w.Row(align="center", gap=8, margin=Margin(bottom=16)):
-                                w.Icon(name=icon, size=20, color="#6366f1")
+                                w.Icon(name=icon, size=20, color=theme.accent_primary)
                                 w.Heading(text=label, level=3)
 
                             # Section content in a card

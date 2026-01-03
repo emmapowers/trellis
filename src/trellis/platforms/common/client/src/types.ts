@@ -1,7 +1,8 @@
 /** Message types for WebSocket communication. */
 
 // Re-export core types for backward compatibility
-export { SerializedElement, CallbackRef, isCallbackRef } from "./core";
+export type { SerializedElement, CallbackRef } from "./core";
+export { isCallbackRef } from "./core";
 
 export const MessageType = {
   HELLO: "hello",
@@ -43,6 +44,8 @@ export type Patch = AddPatch | UpdatePatch | RemovePatch;
 export interface HelloMessage {
   type: typeof MessageType.HELLO;
   client_id: string;
+  system_theme: "light" | "dark"; // Detected from OS preference
+  theme_mode?: "system" | "light" | "dark"; // Host-controlled theme mode override
 }
 
 /** Debug configuration from the server. */

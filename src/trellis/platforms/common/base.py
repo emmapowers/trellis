@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from trellis.core.rendering.element import Element
+    from trellis.platforms.common.handler import AppWrapper
 
 
 class PlatformType(StrEnum):
@@ -64,12 +65,14 @@ class Platform(ABC):
     async def run(
         self,
         root_component: Callable[[], Element],
+        app_wrapper: AppWrapper,
         **kwargs: Any,
     ) -> None:
         """Start the platform and run until shutdown.
 
         Args:
             root_component: The root Trellis component to render
+            app_wrapper: Callback to wrap component with TrellisApp
             **kwargs: Platform-specific configuration (host, port, etc.)
         """
         ...

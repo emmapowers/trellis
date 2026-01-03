@@ -12,6 +12,7 @@ import inspect
 import logging
 import traceback
 import typing as tp
+from collections.abc import Callable
 from uuid import uuid4
 
 from trellis.core.components.base import Component
@@ -57,8 +58,14 @@ def _get_version() -> str:
 
 
 __all__ = [
+    "AppWrapper",
     "MessageHandler",
 ]
+
+
+# Type alias for the app wrapper callback
+# Takes (component, system_theme, theme_mode) and returns a wrapped component
+AppWrapper = Callable[[Component, str, str | None], Component]
 
 
 # =============================================================================
@@ -207,28 +214,34 @@ class MessageHandler:
             async def receive_message(self) -> Message:
                 return decode(await self.websocket.receive_bytes())
 
-        handler = WebSocketMessageHandler(root_component, websocket)
+        handler = WebSocketMessageHandler(root_component, app_wrapper, websocket)
         await handler.run()
     """
 
-    session: RenderSession
+    session: RenderSession | None
     session_id: str | None
     batch_delay: float
+    _root_component: Component
+    _app_wrapper: AppWrapper
     _background_tasks: set[asyncio.Task[tp.Any]]
     _render_task: asyncio.Task[None] | None
 
     def __init__(
         self,
         root_component: Component,
+        app_wrapper: AppWrapper,
         batch_delay: float = 1.0 / 30,
     ) -> None:
         """Create a new message handler.
 
         Args:
             root_component: The root Trellis component to render
+            app_wrapper: Callback to wrap the component (e.g., with TrellisApp)
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        self.session = RenderSession(root_component)
+        self._root_component = root_component
+        self._app_wrapper = app_wrapper
+        self.session = None  # Created in handle_hello after receiving theme info
         self.session_id = None
         self.batch_delay = batch_delay
         self._background_tasks = set()
@@ -238,8 +251,9 @@ class MessageHandler:
         """Handle hello handshake with client.
 
         Receives HelloMessage from client, generates session ID,
-        and sends HelloResponseMessage. All platforms use this
-        handshake for session initialization.
+        creates wrapped component with theme info, and sends
+        HelloResponseMessage. All platforms use this handshake for
+        session initialization.
 
         Returns:
             The generated session ID
@@ -252,6 +266,15 @@ class MessageHandler:
             raise ValueError(f"Expected HelloMessage, got {type(msg).__name__}")
 
         logger.debug("Hello from client_id=%s", msg.client_id)
+
+        # Wrap the component with theme data from the client
+        # The wrapper handles conversion to enums and TrellisApp setup
+        wrapped = self._app_wrapper(
+            self._root_component,
+            msg.system_theme,  # "light" or "dark"
+            msg.theme_mode,  # "system", "light", "dark", or None
+        )
+        self.session = RenderSession(wrapped)
 
         self.session_id = str(uuid4())
 
@@ -274,6 +297,7 @@ class MessageHandler:
         Returns:
             PatchMessage on success, ErrorMessage on exception
         """
+        assert self.session is not None, "handle_hello must be called before initial_render"
         try:
             render_patches = render(self.session)
             wire_patches = _serialize_patches(render_patches, self.session)
@@ -323,6 +347,7 @@ class MessageHandler:
         """
         from trellis.platforms.common.serialization import parse_callback_id
 
+        assert self.session is not None
         node_id, prop_name = parse_callback_id(callback_id)
         callback = self.session.get_callback(node_id, prop_name)
         if callback is None:
@@ -352,6 +377,7 @@ class MessageHandler:
         then checking if any nodes need re-rendering. If so, it renders
         and sends patches to the client.
         """
+        assert self.session is not None
         while True:
             # Wait for frame period (configured via batch_delay)
             await asyncio.sleep(self.batch_delay)

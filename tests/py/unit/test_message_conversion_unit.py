@@ -1,5 +1,6 @@
 """Unit tests for message conversion functions - dict to/from Message types."""
 
+import msgspec
 import pytest
 
 from trellis.platforms.common.messages import (
@@ -80,17 +81,17 @@ class TestDictToMessage:
     """Tests for _dict_to_message conversion."""
 
     def test_unknown_type_raises(self) -> None:
-        """_dict_to_message raises ValueError for unknown message type."""
+        """_dict_to_message raises ValidationError for unknown message type."""
         from trellis.platforms.browser.handler import _dict_to_message
 
-        with pytest.raises(ValueError, match="Unknown message type"):
+        with pytest.raises(msgspec.ValidationError):
             _dict_to_message({"type": "unknown_type"})
 
     def test_missing_callback_id_raises(self) -> None:
-        """_dict_to_message raises ValueError when event is missing callback_id."""
+        """_dict_to_message raises ValidationError when event is missing callback_id."""
         from trellis.platforms.browser.handler import _dict_to_message
 
-        with pytest.raises(ValueError, match="callback_id"):
+        with pytest.raises(msgspec.ValidationError):
             _dict_to_message({"type": "event", "args": []})
 
     def test_converts_hello(self) -> None:

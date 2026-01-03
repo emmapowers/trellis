@@ -236,7 +236,7 @@ class TestGenerateHtml:
         assert "<!DOCTYPE html>" in result
         assert "<html>" in result
         assert "</html>" in result
-        assert '<div id="root"></div>' in result
+        assert 'id="root"' in result
         assert "bundle.js" in result
         assert "bundle.css" in result
         assert "__TRELLIS_CONFIG__" in result

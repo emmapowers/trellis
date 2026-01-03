@@ -256,3 +256,36 @@ def render_to_tree(session: RenderSession) -> dict[str, tp.Any]:
 
     # Serialize the node to wire format for test assertions
     return serialize_node(first_patch.node, session)
+
+
+# =============================================================================
+# Handler Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def app_wrapper() -> tp.Callable[[tp.Any, str, str | None], CompositionComponent]:
+    """Simple app wrapper for tests that don't need full TrellisApp theming.
+
+    This provides a minimal wrapper that satisfies the AppWrapper signature
+    without pulling in the full TrellisApp infrastructure.
+
+    Usage:
+        def test_handler_behavior(app_wrapper):
+            handler = SomeHandler(component, app_wrapper)
+            # handler can be used without TrellisApp
+    """
+    from trellis.core.components.base import Component
+
+    def wrapper(
+        component: Component,
+        system_theme: str,
+        theme_mode: str | None,
+    ) -> CompositionComponent:
+        # Minimal wrapper - just wraps component without TrellisApp
+        def render_func() -> None:
+            component()
+
+        return CompositionComponent(name="TestRoot", render_func=render_func)
+
+    return wrapper

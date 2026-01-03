@@ -4,6 +4,7 @@ import typing as tp
 
 from trellis import component
 from trellis import widgets as w
+from trellis.app import theme
 
 from ..components import ExampleCard
 from ..example import example
@@ -18,8 +19,26 @@ STOCKS = [
         "change": 2.35,
         "change_pct": 0.96,
         "history": [
-            221, 218, 223, 220, 225, 222, 219, 226, 231, 228,
-            233, 229, 235, 232, 238, 241, 237, 244, 240, 248,
+            221,
+            218,
+            223,
+            220,
+            225,
+            222,
+            219,
+            226,
+            231,
+            228,
+            233,
+            229,
+            235,
+            232,
+            238,
+            241,
+            237,
+            244,
+            240,
+            248,
         ],
     },
     {
@@ -30,8 +49,26 @@ STOCKS = [
         "change": 0.45,
         "change_pct": 0.50,
         "history": [
-            65, 64, 67, 66, 69, 68, 71, 70, 73, 72,
-            75, 74, 78, 76, 80, 82, 85, 87, 90, 91,
+            65,
+            64,
+            67,
+            66,
+            69,
+            68,
+            71,
+            70,
+            73,
+            72,
+            75,
+            74,
+            78,
+            76,
+            80,
+            82,
+            85,
+            87,
+            90,
+            91,
         ],
     },
     {
@@ -42,8 +79,26 @@ STOCKS = [
         "change": -0.18,
         "change_pct": -0.29,
         "history": [
-            59, 60, 58, 61, 60, 62, 61, 63, 64, 62,
-            65, 64, 66, 65, 67, 66, 64, 63, 64, 63,
+            59,
+            60,
+            58,
+            61,
+            60,
+            62,
+            61,
+            63,
+            64,
+            62,
+            65,
+            64,
+            66,
+            65,
+            67,
+            66,
+            64,
+            63,
+            64,
+            63,
         ],
     },
     {
@@ -54,8 +109,26 @@ STOCKS = [
         "change": -3.10,
         "change_pct": -1.35,
         "history": [
-            186, 191, 188, 195, 192, 199, 204, 210, 215, 220,
-            225, 230, 235, 232, 228, 233, 229, 225, 228, 226,
+            186,
+            191,
+            188,
+            195,
+            192,
+            199,
+            204,
+            210,
+            215,
+            220,
+            225,
+            230,
+            235,
+            232,
+            228,
+            233,
+            229,
+            225,
+            228,
+            226,
         ],
     },
 ]
@@ -74,7 +147,7 @@ def PriceCell(*, row: dict[str, tp.Any]) -> None:
     change_pct = row["change_pct"]
     is_positive = change >= 0
 
-    color = "#16a34a" if is_positive else "#dc2626"
+    color = theme.success if is_positive else theme.error
     icon = w.IconName.TRENDING_UP if is_positive else w.IconName.TRENDING_DOWN
     sign = "+" if is_positive else ""
 
@@ -93,7 +166,7 @@ def HistoryCell(*, row: dict[str, tp.Any]) -> None:
     """Sparkline showing price history."""
     # history is always a non-empty list in STOCKS data
     history = row["history"]
-    color = "#16a34a" if history[-1] >= history[0] else "#dc2626"
+    color = theme.success if history[-1] >= history[0] else theme.error
     w.Sparkline(data=history, width=100, height=28, color=color)
 
 
@@ -112,13 +185,9 @@ def StockWatchlist() -> None:
         columns=[
             w.TableColumn(name="company", label="Company", width="180px"),
             w.TableColumn(name="ticker", label="Ticker", render=TickerCell),
-            w.TableColumn(
-                name="price", label="Price", align="right", render=PriceCell
-            ),
+            w.TableColumn(name="price", label="Price", align="right", render=PriceCell),
             w.TableColumn(name="history", label="History", render=HistoryCell),
-            w.TableColumn(
-                name="actions", label="Actions", align="right", render=ActionsCell
-            ),
+            w.TableColumn(name="actions", label="Actions", align="right", render=ActionsCell),
         ],
         data=STOCKS,
         striped=True,
@@ -223,10 +292,10 @@ def StatusCell(*, row: dict[str, tp.Any]) -> None:
     status = row["status"]
     if status == "Active":
         icon = w.IconName.CHECK_CIRCLE
-        color = "#16a34a"
+        color = theme.success
     else:
         icon = w.IconName.CLOCK
-        color = "#d97706"
+        color = theme.warning
     with w.Row(gap=4, align="center"):
         w.Icon(name=icon, size=14, color=color)
         w.Label(text=status, color=color)

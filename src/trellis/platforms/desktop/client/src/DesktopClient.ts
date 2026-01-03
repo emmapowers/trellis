@@ -91,9 +91,14 @@ export class DesktopClient implements TrellisClient {
       })
         .then(() => {
           // Send HelloMessage through the send command
+          const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+            .matches
+            ? "dark"
+            : "light";
           const hello: HelloMessage = {
             type: MessageType.HELLO,
             client_id: this.clientId,
+            system_theme: systemTheme,
           };
           this.send(hello);
         })

@@ -4,22 +4,32 @@ import asyncio
 import typing as tp
 from dataclasses import dataclass
 
-from trellis.core.components.composition import component
+from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.rendering.patches import RenderUpdatePatch
 from trellis.core.rendering.render import render
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.browser import BrowserMessageHandler
-from trellis.platforms.common.handler import MessageHandler
+from trellis.platforms.common.handler import AppWrapper
 from trellis.platforms.common.messages import (
     AddPatch,
     ErrorMessage,
     EventMessage,
+    HelloMessage,
     PatchMessage,
 )
 from trellis.widgets import Button, Label
 
 
-def get_initial_tree(handler: MessageHandler) -> dict[str, tp.Any]:
+def init_handler_for_test(handler: BrowserMessageHandler) -> None:
+    """Initialize handler by posting HelloMessage and calling handle_hello.
+
+    This simulates the production flow where handle_hello creates the session.
+    """
+    handler._inbox.put_nowait(HelloMessage(client_id="test", system_theme="light"))
+    asyncio.run(handler.handle_hello())
+
+
+def get_initial_tree(handler: BrowserMessageHandler) -> dict[str, tp.Any]:
     """Helper to get tree dict from initial render."""
     msg = handler.initial_render()
     assert isinstance(msg, PatchMessage)
@@ -29,17 +39,66 @@ def get_initial_tree(handler: MessageHandler) -> dict[str, tp.Any]:
     return patch.node
 
 
-class TestMessageHandler:
-    """Tests for MessageHandler base class."""
+# Components that are part of the TrellisApp wrapper infrastructure
+_WRAPPER_COMPONENT_TYPES = frozenset(
+    {
+        "CompositionComponent",  # Generic wrapper (TrellisRoot, TrellisApp, etc.)
+        "ThemeProvider",  # Theme provider
+        "ClientState",  # Client state context
+    }
+)
 
-    def test_initial_render_returns_patch_message(self) -> None:
+
+def find_app_children(tree: dict[str, tp.Any]) -> list[dict[str, tp.Any]]:
+    """Find the user's app children within the TrellisApp wrapper.
+
+    The tree structure is:
+    TrellisRoot -> TrellisApp -> ClientState -> ThemeProvider -> UserApp -> children
+
+    This helper navigates through wrapper components to find user content.
+    Wrapper components are identified by their type being in _WRAPPER_COMPONENT_TYPES.
+    """
+    if not tree:
+        return []
+
+    node = tree
+    # Walk down through wrapper components until we find user content
+    for _ in range(15):  # Safety limit - more than enough for any wrapper depth
+        children = node.get("children", [])
+        if not children:
+            return []
+
+        first = children[0]
+        node_type = first.get("type", "")
+
+        # If this is a wrapper component, continue navigating down
+        if node_type in _WRAPPER_COMPONENT_TYPES:
+            node = first
+            continue
+
+        # Found user content - return all children at this level
+        return children
+
+    # Hit safety limit - return empty to avoid infinite loops
+    return []
+
+
+class TestMessageHandler:
+    """Tests for MessageHandler base class.
+
+    Uses BrowserMessageHandler as a concrete implementation since MessageHandler
+    is abstract. Tests focus on core handler behavior shared by all platforms.
+    """
+
+    def test_initial_render_returns_patch_message(self, app_wrapper: AppWrapper) -> None:
         """initial_render() returns a PatchMessage with AddPatch."""
 
         @component
         def App() -> None:
             Label(text="Hello")
 
-        handler = MessageHandler(App)
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
         msg = handler.initial_render()
 
         assert isinstance(msg, PatchMessage)
@@ -47,9 +106,11 @@ class TestMessageHandler:
         assert isinstance(msg.patches[0], AddPatch)
         tree = msg.patches[0].node
         assert "children" in tree
-        assert tree["children"][0]["props"]["text"] == "Hello"
+        # Navigate through wrapper to find user content
+        app_children = find_app_children(tree)
+        assert app_children[0]["props"]["text"] == "Hello"
 
-    def test_handle_message_with_event(self) -> None:
+    def test_handle_message_with_event(self, app_wrapper: AppWrapper) -> None:
         """handle_message() invokes callback (rendering is batched separately)."""
         clicked = []
 
@@ -57,11 +118,13 @@ class TestMessageHandler:
         def App() -> None:
             Button(text="Click", on_click=lambda: clicked.append(True))
 
-        handler = MessageHandler(App)
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
         tree = get_initial_tree(handler)
 
-        # Get callback ID from tree
-        button = tree["children"][0]
+        # Get callback ID from tree (navigate through wrapper)
+        app_children = find_app_children(tree)
+        button = app_children[0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Send event message
@@ -73,14 +136,15 @@ class TestMessageHandler:
         assert response is None
         assert clicked == [True]
 
-    def test_handle_message_with_unknown_callback(self) -> None:
+    def test_handle_message_with_unknown_callback(self, app_wrapper: AppWrapper) -> None:
         """handle_message() returns ErrorMessage for unknown callback."""
 
         @component
         def App() -> None:
             Label(text="Hello")
 
-        handler = MessageHandler(App)
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
         handler.initial_render()
 
         event_msg = EventMessage(callback_id="unknown|callback", args=[])
@@ -91,7 +155,7 @@ class TestMessageHandler:
         assert response.context == "callback"
         assert "Callback not found: unknown|callback" in response.error
 
-    def test_handle_message_with_state_update(self) -> None:
+    def test_handle_message_with_state_update(self, app_wrapper: AppWrapper) -> None:
         """handle_message() marks nodes dirty, render() sends patches."""
 
         @dataclass(kw_only=True)
@@ -108,15 +172,17 @@ class TestMessageHandler:
             Label(text=str(state.count))
             Button(text="+", on_click=increment)
 
-        handler = MessageHandler(Counter)
+        handler = BrowserMessageHandler(Counter, app_wrapper)
+        init_handler_for_test(handler)
         tree = get_initial_tree(handler)
 
-        # Verify initial state
-        label = tree["children"][0]
+        # Verify initial state (navigate through wrapper)
+        app_children = find_app_children(tree)
+        label = app_children[0]
         assert label["props"]["text"] == "0"
 
         # Get callback and invoke
-        button = tree["children"][1]
+        button = app_children[1]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         event_msg = EventMessage(callback_id=cb_id, args=[])
@@ -126,6 +192,7 @@ class TestMessageHandler:
         assert response is None
 
         # Nodes should be dirty now
+        assert handler.session is not None
         assert handler.session.dirty.has_dirty()
 
         # Render should produce patches
@@ -139,7 +206,7 @@ class TestMessageHandler:
         props_patches = [p for p in update_patches if p.props and p.props.get("text") == "1"]
         assert len(props_patches) > 0
 
-    def test_handle_message_with_event_args(self) -> None:
+    def test_handle_message_with_event_args(self, app_wrapper: AppWrapper) -> None:
         """handle_message() converts event args to dataclasses."""
         received = []
 
@@ -147,10 +214,12 @@ class TestMessageHandler:
         def App() -> None:
             Button(text="Click", on_click=lambda e: received.append(e))
 
-        handler = MessageHandler(App)
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
         tree = get_initial_tree(handler)
 
-        button = tree["children"][0]
+        app_children = find_app_children(tree)
+        button = app_children[0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Send event with mouse event data
@@ -166,17 +235,19 @@ class TestMessageHandler:
         assert event.clientX == 100
         assert event.clientY == 200
 
-    def test_cleanup_clears_callbacks(self) -> None:
+    def test_cleanup_clears_callbacks(self, app_wrapper: AppWrapper) -> None:
         """cleanup() clears all registered callbacks."""
 
         @component
         def App() -> None:
             Button(text="Click", on_click=lambda: None)
 
-        handler = MessageHandler(App)
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
         handler.initial_render()
 
         # Callback should exist
+        assert handler.session is not None
         assert handler.session.get_callback is not None
 
         handler.cleanup()
@@ -189,7 +260,7 @@ class TestMessageHandler:
 class TestBrowserMessageHandler:
     """Tests for BrowserMessageHandler event handling."""
 
-    def test_post_event_adds_to_queue(self) -> None:
+    def test_post_event_adds_to_queue(self, app_wrapper: AppWrapper) -> None:
         """post_event() adds EventMessage to inbox.
 
         INTERNAL TEST: _inbox is the internal queue - no public API to inspect it.
@@ -199,7 +270,7 @@ class TestBrowserMessageHandler:
         def App() -> None:
             Label(text="Hello")
 
-        handler = BrowserMessageHandler(App)
+        handler = BrowserMessageHandler(App, app_wrapper)
 
         handler.post_event("test:callback", [1, 2, 3])
 
@@ -210,14 +281,14 @@ class TestBrowserMessageHandler:
         assert msg.callback_id == "test:callback"
         assert msg.args == [1, 2, 3]
 
-    def test_receive_message_gets_from_queue(self) -> None:
+    def test_receive_message_gets_from_queue(self, app_wrapper: AppWrapper) -> None:
         """receive_message() awaits message from inbox."""
 
         @component
         def App() -> None:
             Label(text="Hello")
 
-        handler = BrowserMessageHandler(App)
+        handler = BrowserMessageHandler(App, app_wrapper)
 
         # Post an event
         handler.post_event("test:callback", [])
@@ -227,7 +298,7 @@ class TestBrowserMessageHandler:
         assert isinstance(msg, EventMessage)
         assert msg.callback_id == "test:callback"
 
-    def test_send_message_calls_send_callback(self) -> None:
+    def test_send_message_calls_send_callback(self, app_wrapper: AppWrapper) -> None:
         """send_message() calls registered send callback with message dict."""
         received_messages: list[dict] = []
 
@@ -235,7 +306,7 @@ class TestBrowserMessageHandler:
         def App() -> None:
             Label(text="Hello")
 
-        handler = BrowserMessageHandler(App)
+        handler = BrowserMessageHandler(App, app_wrapper)
         handler.set_send_callback(lambda msg: received_messages.append(msg))
 
         msg = PatchMessage(patches=[])
@@ -245,20 +316,20 @@ class TestBrowserMessageHandler:
         assert received_messages[0]["type"] == "patch"
         assert received_messages[0]["patches"] == []
 
-    def test_send_message_without_callback_no_error(self) -> None:
+    def test_send_message_without_callback_no_error(self, app_wrapper: AppWrapper) -> None:
         """send_message() without callback doesn't raise."""
 
         @component
         def App() -> None:
             Label(text="Hello")
 
-        handler = BrowserMessageHandler(App)
+        handler = BrowserMessageHandler(App, app_wrapper)
         # No callback set
 
         msg = PatchMessage(patches=[])
         asyncio.run(handler.send_message(msg))  # Should not raise
 
-    def test_full_event_flow(self) -> None:
+    def test_full_event_flow(self, app_wrapper: AppWrapper) -> None:
         """Full flow: post_event -> handle_message -> patches via render loop."""
         clicked = []
 
@@ -266,11 +337,13 @@ class TestBrowserMessageHandler:
         def App() -> None:
             Button(text="Click", on_click=lambda: clicked.append(True))
 
-        handler = BrowserMessageHandler(App)
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
 
         # Get initial render
         tree = get_initial_tree(handler)
-        button = tree["children"][0]
+        app_children = find_app_children(tree)
+        button = app_children[0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Simulate JS posting event
@@ -292,7 +365,7 @@ class TestBrowserMessageHandler:
 class TestAsyncCallbackHandling:
     """Tests for async callback handling in MessageHandler."""
 
-    def test_async_callback_fires_and_forgets(self) -> None:
+    def test_async_callback_fires_and_forgets(self, app_wrapper: AppWrapper) -> None:
         """Async callbacks are scheduled without blocking."""
         started = []
         completed = []
@@ -306,10 +379,12 @@ class TestAsyncCallbackHandling:
         def App() -> None:
             Button(text="Async", on_click=async_handler)
 
-        handler = MessageHandler(App)
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
         tree = get_initial_tree(handler)
 
-        button = tree["children"][0]
+        app_children = find_app_children(tree)
+        button = app_children[0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         async def test() -> None:
@@ -332,7 +407,7 @@ class TestAsyncCallbackHandling:
 
         asyncio.run(test())
 
-    def test_background_tasks_tracked(self) -> None:
+    def test_background_tasks_tracked(self, app_wrapper: AppWrapper) -> None:
         """Background tasks are tracked to prevent GC.
 
         INTERNAL TEST: _background_tasks is internal - verifies GC prevention.
@@ -347,10 +422,12 @@ class TestAsyncCallbackHandling:
         def App() -> None:
             Button(text="Async", on_click=async_handler)
 
-        handler = MessageHandler(App)
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
         tree = get_initial_tree(handler)
 
-        button = tree["children"][0]
+        app_children = find_app_children(tree)
+        button = app_children[0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
         async def test() -> None:
@@ -366,5 +443,195 @@ class TestAsyncCallbackHandling:
             # Task should be removed after completion
             assert len(handler._background_tasks) == 0
             assert task_completed == [True]
+
+        asyncio.run(test())
+
+
+class TestHelloHandshake:
+    """Tests for hello handshake and session creation.
+
+    These tests verify that handle_hello() correctly passes theme information
+    to the app_wrapper and creates the session. The wrapper now encapsulates
+    ClientState creation, so we test the interface between handler and wrapper.
+    """
+
+    def test_handle_hello_creates_session(self, app_wrapper: AppWrapper) -> None:
+        """handle_hello should create the render session."""
+
+        @component
+        def App() -> None:
+            Label(text="test")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+
+        async def test() -> None:
+            hello_msg = HelloMessage(client_id="test", system_theme="light")
+            handler._inbox.put_nowait(hello_msg)
+
+            session_id = await handler.handle_hello()
+
+            # Session should be created
+            assert handler.session is not None
+            assert session_id is not None
+
+        asyncio.run(test())
+
+    def test_handle_hello_passes_dark_system_theme_to_wrapper(self) -> None:
+        """handle_hello should pass dark system theme to wrapper."""
+        captured: list[tuple[str, str | None]] = []
+
+        def tracking_wrapper(
+            comp: tp.Any, system_theme: str, theme_mode: str | None
+        ) -> CompositionComponent:
+            captured.append((system_theme, theme_mode))
+
+            def render_func() -> None:
+                comp()
+
+            return CompositionComponent(name="TestRoot", render_func=render_func)
+
+        @component
+        def App() -> None:
+            Label(text="test")
+
+        handler = BrowserMessageHandler(App, tracking_wrapper)
+
+        async def test() -> None:
+            hello_msg = HelloMessage(client_id="test", system_theme="dark")
+            handler._inbox.put_nowait(hello_msg)
+
+            await handler.handle_hello()
+
+            assert len(captured) == 1
+            assert captured[0][0] == "dark"
+
+        asyncio.run(test())
+
+    def test_handle_hello_passes_light_system_theme_to_wrapper(self) -> None:
+        """handle_hello should pass light system theme to wrapper."""
+        captured: list[tuple[str, str | None]] = []
+
+        def tracking_wrapper(
+            comp: tp.Any, system_theme: str, theme_mode: str | None
+        ) -> CompositionComponent:
+            captured.append((system_theme, theme_mode))
+
+            def render_func() -> None:
+                comp()
+
+            return CompositionComponent(name="TestRoot", render_func=render_func)
+
+        @component
+        def App() -> None:
+            Label(text="test")
+
+        handler = BrowserMessageHandler(App, tracking_wrapper)
+
+        async def test() -> None:
+            hello_msg = HelloMessage(client_id="test", system_theme="light")
+            handler._inbox.put_nowait(hello_msg)
+
+            await handler.handle_hello()
+
+            assert len(captured) == 1
+            assert captured[0][0] == "light"
+
+        asyncio.run(test())
+
+    def test_hello_message_default_system_theme(self) -> None:
+        """HelloMessage should default to light theme if not provided."""
+        msg = HelloMessage(client_id="test")
+        assert msg.system_theme == "light"
+
+    def test_handle_hello_passes_theme_mode_to_wrapper(self) -> None:
+        """handle_hello should pass theme_mode to wrapper."""
+        captured: list[tuple[str, str | None]] = []
+
+        def tracking_wrapper(
+            comp: tp.Any, system_theme: str, theme_mode: str | None
+        ) -> CompositionComponent:
+            captured.append((system_theme, theme_mode))
+
+            def render_func() -> None:
+                comp()
+
+            return CompositionComponent(name="TestRoot", render_func=render_func)
+
+        @component
+        def App() -> None:
+            Label(text="test")
+
+        handler = BrowserMessageHandler(App, tracking_wrapper)
+
+        async def test() -> None:
+            hello_msg = HelloMessage(client_id="test", system_theme="light", theme_mode="dark")
+            handler._inbox.put_nowait(hello_msg)
+
+            await handler.handle_hello()
+
+            assert len(captured) == 1
+            assert captured[0] == ("light", "dark")
+
+        asyncio.run(test())
+
+    def test_handle_hello_passes_system_theme_mode_to_wrapper(self) -> None:
+        """handle_hello should pass 'system' theme_mode to wrapper."""
+        captured: list[tuple[str, str | None]] = []
+
+        def tracking_wrapper(
+            comp: tp.Any, system_theme: str, theme_mode: str | None
+        ) -> CompositionComponent:
+            captured.append((system_theme, theme_mode))
+
+            def render_func() -> None:
+                comp()
+
+            return CompositionComponent(name="TestRoot", render_func=render_func)
+
+        @component
+        def App() -> None:
+            Label(text="test")
+
+        handler = BrowserMessageHandler(App, tracking_wrapper)
+
+        async def test() -> None:
+            hello_msg = HelloMessage(client_id="test", system_theme="dark", theme_mode="system")
+            handler._inbox.put_nowait(hello_msg)
+
+            await handler.handle_hello()
+
+            assert len(captured) == 1
+            assert captured[0] == ("dark", "system")
+
+        asyncio.run(test())
+
+    def test_handle_hello_passes_none_theme_mode_when_not_provided(self) -> None:
+        """handle_hello should pass None theme_mode when not in HelloMessage."""
+        captured: list[tuple[str, str | None]] = []
+
+        def tracking_wrapper(
+            comp: tp.Any, system_theme: str, theme_mode: str | None
+        ) -> CompositionComponent:
+            captured.append((system_theme, theme_mode))
+
+            def render_func() -> None:
+                comp()
+
+            return CompositionComponent(name="TestRoot", render_func=render_func)
+
+        @component
+        def App() -> None:
+            Label(text="test")
+
+        handler = BrowserMessageHandler(App, tracking_wrapper)
+
+        async def test() -> None:
+            hello_msg = HelloMessage(client_id="test", system_theme="dark")
+            handler._inbox.put_nowait(hello_msg)
+
+            await handler.handle_hello()
+
+            assert len(captured) == 1
+            assert captured[0] == ("dark", None)
 
         asyncio.run(test())

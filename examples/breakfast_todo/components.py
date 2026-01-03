@@ -2,6 +2,7 @@
 
 from trellis import Padding, component, mutable
 from trellis import widgets as w
+from trellis.app import theme
 
 from .state import FilterType, Todo, TodosState
 
@@ -44,7 +45,7 @@ def TodoItem(todo: Todo) -> None:
             flex=1,
             style={
                 "textDecoration": "line-through" if todo.completed else "none",
-                "color": "#94a3b8" if todo.completed else None,
+                "color": theme.text_muted if todo.completed else None,
             },
         )
 
@@ -65,7 +66,7 @@ def TodoList() -> None:
         if not state.visible_todos:
             w.Label(
                 text="No todos to show",
-                color="#94a3b8",
+                color=theme.text_muted,
                 padding=20,
                 text_align="center",
             )
@@ -82,7 +83,7 @@ def TodoFooter() -> None:
     with w.Row(gap=12, align="center", justify="between", padding=Padding(x=12, y=10)):
         # Item count
         count_text = f"{state.active_count} item{'s' if state.active_count != 1 else ''} left"
-        w.Label(text=count_text, color="#64748b", font_size=12)
+        w.Label(text=count_text, color=theme.text_secondary, font_size=12)
 
         # Filter buttons
         with w.Row(gap=4):

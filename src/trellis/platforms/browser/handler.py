@@ -13,10 +13,9 @@ from collections.abc import Callable
 import msgspec
 
 from trellis.core.components.base import Component
-from trellis.platforms.common.handler import MessageHandler
+from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.messages import (
     EventMessage,
-    HelloMessage,
     Message,
 )
 
@@ -40,15 +39,17 @@ class BrowserMessageHandler(MessageHandler):
     def __init__(
         self,
         root_component: Component,
+        app_wrapper: AppWrapper,
         batch_delay: float = 1.0 / 30,
     ) -> None:
         """Create a browser message handler.
 
         Args:
             root_component: The root Trellis component to render
+            app_wrapper: Callback to wrap component with TrellisApp
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        super().__init__(root_component, batch_delay=batch_delay)
+        super().__init__(root_component, app_wrapper, batch_delay=batch_delay)
         self._inbox = asyncio.Queue()
         self._send_callback = None
         # Default serializer just returns dict as-is (for tests)
@@ -121,17 +122,11 @@ def _message_to_dict(msg: Message) -> dict[str, tp.Any]:
 
 
 def _dict_to_message(msg_dict: dict[str, tp.Any]) -> Message:
-    """Convert a dict from JavaScript to a msgspec Message struct."""
-    msg_type = msg_dict.get("type")
+    """Convert a dict from JavaScript to a msgspec Message struct.
 
-    if msg_type == "hello":
-        return HelloMessage(client_id=msg_dict.get("client_id", ""))
-    if msg_type == "event":
-        callback_id = msg_dict.get("callback_id")
-        if callback_id is None:
-            raise ValueError("Event message missing required 'callback_id' field")
-        return EventMessage(
-            callback_id=callback_id,
-            args=msg_dict.get("args", []),
-        )
-    raise ValueError(f"Unknown message type: {msg_type}")
+    Uses msgspec.convert() with the Message union type, which automatically
+    dispatches to the correct struct based on the 'type' tag field.
+    This is symmetric with msgspec.to_builtins() used in _message_to_dict().
+    """
+    result: Message = msgspec.convert(msg_dict, Message)
+    return result

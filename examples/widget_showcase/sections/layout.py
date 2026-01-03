@@ -2,6 +2,7 @@
 
 from trellis import component
 from trellis import widgets as w
+from trellis.app import theme
 
 from ..components import ExampleCard
 from ..example import example
@@ -12,19 +13,23 @@ def RowLayout() -> None:
     """Horizontal flex container with justify options."""
     with w.Column(gap=8):
         w.Label(text="justify='start' (default)")
-        with w.Row(gap=8, padding=8, style={"backgroundColor": "#f1f5f9"}):
+        with w.Row(gap=8, padding=8, style={"backgroundColor": theme.bg_surface_raised}):
             w.Button(text="A", size="sm")
             w.Button(text="B", size="sm")
             w.Button(text="C", size="sm")
 
         w.Label(text="justify='center'")
-        with w.Row(gap=8, justify="center", padding=8, style={"backgroundColor": "#f1f5f9"}):
+        with w.Row(
+            gap=8, justify="center", padding=8, style={"backgroundColor": theme.bg_surface_raised}
+        ):
             w.Button(text="A", size="sm")
             w.Button(text="B", size="sm")
             w.Button(text="C", size="sm")
 
         w.Label(text="justify='between'")
-        with w.Row(gap=8, justify="between", padding=8, style={"backgroundColor": "#f1f5f9"}):
+        with w.Row(
+            gap=8, justify="between", padding=8, style={"backgroundColor": theme.bg_surface_raised}
+        ):
             w.Button(text="A", size="sm")
             w.Button(text="B", size="sm")
             w.Button(text="C", size="sm")
@@ -41,7 +46,7 @@ def ColumnLayout() -> None:
                 align="start",
                 padding=8,
                 height=100,
-                style={"backgroundColor": "#f1f5f9"},
+                style={"backgroundColor": theme.bg_surface_raised},
             ):
                 w.Button(text="A", size="sm")
                 w.Button(text="B", size="sm")
@@ -54,7 +59,7 @@ def ColumnLayout() -> None:
                 padding=8,
                 height=100,
                 width=120,
-                style={"backgroundColor": "#f1f5f9"},
+                style={"backgroundColor": theme.bg_surface_raised},
             ):
                 w.Button(text="A", size="sm")
                 w.Button(text="B", size="sm")
@@ -67,7 +72,7 @@ def ColumnLayout() -> None:
                 padding=8,
                 height=100,
                 width=120,
-                style={"backgroundColor": "#f1f5f9"},
+                style={"backgroundColor": theme.bg_surface_raised},
             ):
                 w.Button(text="A", size="sm")
                 w.Button(text="B", size="sm")
@@ -83,7 +88,7 @@ def LayoutDividers() -> None:
                 gap=12,
                 divider=True,
                 padding=8,
-                style={"backgroundColor": "#f1f5f9"},
+                style={"backgroundColor": theme.bg_surface_raised},
             ):
                 w.Label(text="Item 1")
                 w.Label(text="Item 2")
@@ -95,7 +100,7 @@ def LayoutDividers() -> None:
                 gap=8,
                 divider=True,
                 padding=8,
-                style={"backgroundColor": "#f1f5f9"},
+                style={"backgroundColor": theme.bg_surface_raised},
             ):
                 w.Label(text="Item 1")
                 w.Label(text="Item 2")

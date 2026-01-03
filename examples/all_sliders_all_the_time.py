@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from trellis import Height, Margin, Stateful, Trellis, async_main, callback, component, mutable
 from trellis import widgets as w
-
+from trellis.app import theme
 
 # =============================================================================
 # State
@@ -58,7 +58,7 @@ def ControlPanel() -> None:
         )
 
         with w.Row(gap=8, align="center", margin=Margin(bottom=8)):
-            w.Label(text="Num Sliders:", color="#64748b", width=100)
+            w.Label(text="Num Sliders:", color=theme.text_secondary, width=100)
             # Uses callback() for custom processing (clamping via set_num_sliders)
             w.NumberInput(
                 value=callback(state.num_sliders, handle_num_change),
@@ -67,7 +67,7 @@ def ControlPanel() -> None:
             )
 
         with w.Row(gap=8, align="center", margin=Margin(bottom=8)):
-            w.Label(text="Value:", color="#64748b", width=100)
+            w.Label(text="Value:", color=theme.text_secondary, width=100)
             w.NumberInput(
                 value=mutable(state.value),
                 width=80,
@@ -94,7 +94,7 @@ def SliderColumn() -> None:
                     w.Label(
                         text=f"#{i + 1}",
                         font_size=12,
-                        color="#64748b",
+                        color=theme.text_secondary,
                         width=50,
                         text_align="right",
                     )

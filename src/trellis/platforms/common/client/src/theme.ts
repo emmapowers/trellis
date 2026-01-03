@@ -1,76 +1,80 @@
 /**
  * Design tokens for Trellis widgets.
  *
- * Light theme optimized for data-dense desktop dashboards.
+ * Colors use CSS custom properties for light/dark mode support.
+ * Spacing, typography, and other values remain static.
  */
 
-// Color palette
+// Color palette - uses CSS variables for theme support
 export const colors = {
   // Backgrounds
   bg: {
-    page: "#f8fafc",
-    surface: "#ffffff",
-    surfaceRaised: "#f8fafc",
-    surfaceHover: "#f1f5f9",
-    input: "#ffffff",
+    page: "var(--trellis-bg-page)",
+    surface: "var(--trellis-bg-surface)",
+    surfaceRaised: "var(--trellis-bg-surface-raised)",
+    surfaceHover: "var(--trellis-bg-surface-hover)",
+    input: "var(--trellis-bg-input)",
+    interactive: "var(--trellis-bg-interactive)",
+    interactiveHover: "var(--trellis-bg-interactive-hover)",
   },
 
   // Borders
   border: {
-    default: "#e2e8f0",
-    subtle: "#f1f5f9",
-    strong: "#cbd5e1",
-    focus: "#6366f1",
+    default: "var(--trellis-border-default)",
+    subtle: "var(--trellis-border-subtle)",
+    strong: "var(--trellis-border-strong)",
+    focus: "var(--trellis-border-focus)",
   },
 
   // Text
   text: {
-    primary: "#0f172a",
-    secondary: "#64748b",
-    muted: "#94a3b8",
-    inverse: "#ffffff",
+    primary: "var(--trellis-text-primary)",
+    secondary: "var(--trellis-text-secondary)",
+    muted: "var(--trellis-text-muted)",
+    inverse: "var(--trellis-text-inverse)",
   },
 
   // Semantic colors
   semantic: {
-    success: "#16a34a",
-    successBg: "#f0fdf4",
-    successBorder: "#bbf7d0",
-    error: "#dc2626",
-    errorBg: "#fef2f2",
-    errorBorder: "#fecaca",
-    warning: "#d97706",
-    warningBg: "#fffbeb",
-    warningBorder: "#fde68a",
-    info: "#2563eb",
-    infoBg: "#eff6ff",
-    infoBorder: "#bfdbfe",
+    success: "var(--trellis-success)",
+    successBg: "var(--trellis-success-bg)",
+    successBorder: "var(--trellis-success-border)",
+    error: "var(--trellis-error)",
+    errorBg: "var(--trellis-error-bg)",
+    errorBorder: "var(--trellis-error-border)",
+    errorHover: "var(--trellis-error-hover)",
+    warning: "var(--trellis-warning)",
+    warningBg: "var(--trellis-warning-bg)",
+    warningBorder: "var(--trellis-warning-border)",
+    info: "var(--trellis-info)",
+    infoBg: "var(--trellis-info-bg)",
+    infoBorder: "var(--trellis-info-border)",
   },
 
   // Accent (indigo)
   accent: {
-    primary: "#6366f1",
-    primaryHover: "#4f46e5",
-    primaryActive: "#4338ca",
-    subtle: "#eef2ff",
+    primary: "var(--trellis-accent-primary)",
+    primaryHover: "var(--trellis-accent-primary-hover)",
+    primaryActive: "var(--trellis-accent-primary-active)",
+    subtle: "var(--trellis-accent-subtle)",
   },
 
   // Neutral scale (slate)
   neutral: {
-    50: "#f8fafc",
-    100: "#f1f5f9",
-    200: "#e2e8f0",
-    300: "#cbd5e1",
-    400: "#94a3b8",
-    500: "#64748b",
-    600: "#475569",
-    700: "#334155",
-    800: "#1e293b",
-    900: "#0f172a",
+    50: "var(--trellis-neutral-50)",
+    100: "var(--trellis-neutral-100)",
+    200: "var(--trellis-neutral-200)",
+    300: "var(--trellis-neutral-300)",
+    400: "var(--trellis-neutral-400)",
+    500: "var(--trellis-neutral-500)",
+    600: "var(--trellis-neutral-600)",
+    700: "var(--trellis-neutral-700)",
+    800: "var(--trellis-neutral-800)",
+    900: "var(--trellis-neutral-900)",
   },
 };
 
-// Spacing scale (compact)
+// Spacing scale (compact) - static values
 export const spacing = {
   xs: 4,
   sm: 6,
@@ -80,7 +84,7 @@ export const spacing = {
   xxl: 24,
 };
 
-// Border radius (smaller for compact look)
+// Border radius (smaller for compact look) - static values
 export const radius = {
   none: 0,
   sm: 4,
@@ -89,7 +93,7 @@ export const radius = {
   full: 9999,
 };
 
-// Typography
+// Typography - static values
 export const typography = {
   fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
   fontSize: {
@@ -117,23 +121,23 @@ export const typography = {
 // Input height (explicit to avoid cross-browser inconsistencies)
 export const inputHeight = 32;
 
-// Shadows (subtle for light theme)
+// Shadows - uses CSS variables for theme support
 export const shadows = {
   none: "none",
-  sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-  md: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)",
-  lg: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
+  sm: "var(--trellis-shadow-sm)",
+  md: "var(--trellis-shadow-md)",
+  lg: "var(--trellis-shadow-lg)",
 };
 
-// Focus ring style (reusable) - uses outline to avoid overlap with adjacent elements
+// Focus ring style (reusable) - uses CSS variable for color
 export const focusRing = {
-  outline: `2px solid ${colors.accent.primary}`,
+  outline: "2px solid var(--trellis-focus-ring-color)",
   outlineOffset: "-2px",
 };
 
 // Focus ring for dark/colored backgrounds - subtle double ring for contrast
 export const focusRingOnColor = {
-  outline: `1px solid rgba(255, 255, 255, 0.8)`,
+  outline: "1px solid rgba(255, 255, 255, 0.8)",
   outlineOffset: "-1px",
-  boxShadow: `0 0 0 2px ${colors.accent.primary}`,
+  boxShadow: "0 0 0 2px var(--trellis-focus-ring-color)",
 };

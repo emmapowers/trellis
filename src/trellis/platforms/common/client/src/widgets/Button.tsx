@@ -63,12 +63,12 @@ const variantStyles: Record<
   },
   secondary: {
     normal: {
-      backgroundColor: colors.neutral[100],
+      backgroundColor: colors.bg.interactive,
       color: colors.text.primary,
       boxShadow: shadows.sm,
     },
     hover: {
-      backgroundColor: colors.neutral[200],
+      backgroundColor: colors.bg.interactiveHover,
     },
   },
   outline: {
@@ -99,7 +99,7 @@ const variantStyles: Record<
       boxShadow: shadows.sm,
     },
     hover: {
-      backgroundColor: "#b91c1c",
+      backgroundColor: colors.semantic.errorHover,
     },
   },
 };

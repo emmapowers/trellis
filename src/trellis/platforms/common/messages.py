@@ -5,6 +5,7 @@ All platforms use the same message protocol including HelloMessage handshake.
 """
 
 import typing as tp
+from typing import Literal
 
 import msgspec
 
@@ -72,6 +73,8 @@ class HelloMessage(msgspec.Struct, tag="hello", tag_field="type"):
     """
 
     client_id: str
+    system_theme: Literal["light", "dark"] = "light"  # Detected from OS preference
+    theme_mode: Literal["system", "light", "dark"] | None = None  # Host-controlled override
 
 
 class DebugConfig(msgspec.Struct):

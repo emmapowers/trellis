@@ -1,33 +1,33 @@
 """Widget showcase sections - one component per category."""
 
+from .actions import ActionsSection
 from .buttons import ButtonsSection
-from .forms import FormInputsSection
-from .status import StatusSection
-from .tables import TableSection
-from .progress import ProgressSection
-from .tooltips import TooltipSection
-from .typography import TypographySection
-from .icons import IconsSection
 from .charts import ChartsSection
 from .data import DataDisplaySection
-from .navigation import NavigationSection
 from .feedback import FeedbackSection
-from .actions import ActionsSection
+from .forms import FormInputsSection
+from .icons import IconsSection
 from .layout import LayoutSection
+from .navigation import NavigationSection
+from .progress import ProgressSection
+from .status import StatusSection
+from .tables import TableSection
+from .tooltips import TooltipSection
+from .typography import TypographySection
 
 __all__ = [
+    "ActionsSection",
     "ButtonsSection",
-    "FormInputsSection",
-    "StatusSection",
-    "TableSection",
-    "ProgressSection",
-    "TooltipSection",
-    "TypographySection",
-    "IconsSection",
     "ChartsSection",
     "DataDisplaySection",
-    "NavigationSection",
     "FeedbackSection",
-    "ActionsSection",
+    "FormInputsSection",
+    "IconsSection",
     "LayoutSection",
+    "NavigationSection",
+    "ProgressSection",
+    "StatusSection",
+    "TableSection",
+    "TooltipSection",
+    "TypographySection",
 ]

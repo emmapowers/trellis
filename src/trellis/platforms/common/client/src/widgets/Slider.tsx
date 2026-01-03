@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { useSlider, useSliderThumb, useLocale } from "react-aria";
 import { useSliderState } from "react-stately";
 import { NumberFormatter } from "@internationalized/number";
-import { colors, focusRing } from "../theme";
+import { colors, focusRing, shadows } from "../theme";
 import { Mutable, unwrapMutable } from "../core/types";
 
 interface SliderProps {
@@ -29,7 +29,7 @@ const thumbStyles: React.CSSProperties = {
   borderRadius: "50%",
   background: colors.accent.primary,
   border: "2px solid white",
-  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+  boxShadow: shadows.md,
   cursor: "pointer",
 };
 

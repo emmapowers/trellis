@@ -15,6 +15,7 @@ export default defineConfig({
       // Use local node_modules for React (source files import react directly)
       "react": path.resolve(__dirname, "node_modules/react"),
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+      "react-aria": path.resolve(__dirname, "node_modules/react-aria"),
     },
   },
 });

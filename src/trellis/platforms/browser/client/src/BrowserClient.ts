@@ -85,12 +85,19 @@ export class BrowserClient implements TrellisClient {
    * Send HelloMessage to Python to initiate the handshake.
    *
    * Should be called after Python has started running (handler.run() is waiting).
+   *
+   * @param themeMode - Optional host-controlled theme mode override
    */
-  sendHello(): void {
+  sendHello(themeMode?: "system" | "light" | "dark"): void {
     this.handler.setConnectionState("connecting");
+    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
     const hello: HelloMessage = {
       type: MessageType.HELLO,
       client_id: this.clientId,
+      system_theme: systemTheme,
+      theme_mode: themeMode,
     };
     this.sendCallback?.(hello);
   }

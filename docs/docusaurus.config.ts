@@ -78,11 +78,6 @@ const config: Config = {
           }
 
           return {
-            resolve: {
-              alias: {
-                '@trellis/client': path.resolve(__dirname, '../src/trellis/client/src'),
-              },
-            },
             module: {
               rules: [
                 {

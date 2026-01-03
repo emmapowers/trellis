@@ -33,6 +33,7 @@ import { Slider } from "./Slider";
 import { StatusIndicator } from "./StatusIndicator";
 import { TableInner, CellSlot } from "./Table";
 import { TextInput } from "./TextInput";
+import { ThemeProvider } from "./ThemeProvider";
 import { Toolbar } from "./Toolbar";
 import { Tooltip } from "./Tooltip";
 
@@ -72,6 +73,7 @@ const widgetRegistry: Record<string, React.ComponentType<any>> = {
   Tabs,
   Tag,
   TextInput,
+  ThemeProvider,
   TimeSeriesChart,
   Toolbar,
   Tooltip,
@@ -126,6 +128,7 @@ export {
   Tabs,
   Tag,
   TextInput,
+  ThemeProvider,
   TimeSeriesChart,
   Toolbar,
   Tooltip,
