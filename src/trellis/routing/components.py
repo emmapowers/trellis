@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from trellis.core.components.composition import CompositionComponent, component
+from trellis.core.components.composition import component
 from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.state.stateful import Stateful
 from trellis.html.links import A
@@ -26,7 +26,7 @@ class CurrentRouteContext(Stateful):
 def Routes(*, children: list[ChildRef] | None = None) -> None:
     """Container for exclusive route matching.
 
-    Only the first Route child that matches will render. Subsequent
+    Only the first Route child that matches will be executed. Subsequent
     Route children are skipped even if they would match.
 
     Usage:
@@ -35,9 +35,12 @@ def Routes(*, children: list[ChildRef] | None = None) -> None:
         def App():
             with RouterState():
                 with Routes():
-                    Route(pattern="/", content=HomePage)
-                    Route(pattern="/users", content=UsersPage)
-                    Route(pattern="*", content=NotFoundPage)
+                    with Route(pattern="/"):
+                        HomePage()
+                    with Route(pattern="/users"):
+                        UsersPage()
+                    with Route(pattern="*"):
+                        NotFoundPage()
         ```
 
     Route components must be used inside a Routes container.
@@ -48,50 +51,38 @@ def Routes(*, children: list[ChildRef] | None = None) -> None:
         if not children:
             return
 
-        matched_content: CompositionComponent | None = None
-
-        # Iterate through Route children, find first match
+        # Find first matching Route and execute only that one
         for child in children:
-            # Call child() to keep Route elements in child_ids for re-renders
-            # (Route.execute() is a no-op when inside Routes context)
-            child()
-
-            # Read pattern and content from Route element's props
             element = child.element
             if element is None:
                 continue
-            pattern = element.props.get("pattern")
-            content = element.props.get("content")
 
+            pattern = element.props.get("pattern")
             if pattern is None:
                 # Not a Route element - skip
                 continue
 
-            # Only match if we haven't found a match yet
-            if matched_content is None:
-                matched, params = match_path(pattern, state.path)
-                if matched:
-                    state.set_params(params)
-                    matched_content = content
-
-        # Render the matched content (if any)
-        if matched_content is not None:
-            matched_content()
+            matched, params = match_path(pattern, state.path)
+            if matched:
+                state.set_params(params)
+                child()  # Execute only the matched Route
+                return  # Stop after first match
 
 
 @component
-def Route(*, pattern: str, content: CompositionComponent | None = None) -> None:
+def Route(*, pattern: str, children: list[ChildRef] | None = None) -> None:
     """Define a route pattern and its content for use inside Routes.
 
-    Route is a declarative component that defines a pattern and content.
-    The actual matching logic is handled by the parent Routes container.
+    Route is a container component that renders its children when matched.
+    The matching logic is handled by the parent Routes container, which
+    decides which Route to execute.
 
     Route must be used inside a Routes container. If used outside,
     a RuntimeError is raised.
 
     Args:
         pattern: Route pattern to match (e.g., "/users/:id", "*" for fallback)
-        content: Component to render when matched
+        children: Child elements to render when this route matches
 
     Example:
         ```python
@@ -99,9 +90,12 @@ def Route(*, pattern: str, content: CompositionComponent | None = None) -> None:
         def App():
             with RouterState():
                 with Routes():
-                    Route(pattern="/", content=HomePage)
-                    Route(pattern="/users/:id", content=UserPage)
-                    Route(pattern="*", content=NotFoundPage)
+                    with Route(pattern="/"):
+                        HomePage()
+                    with Route(pattern="/users/:id"):
+                        UserPage()
+                    with Route(pattern="*"):
+                        NotFoundPage()
         ```
     """
     # Check if we're inside a Routes container
@@ -110,9 +104,13 @@ def Route(*, pattern: str, content: CompositionComponent | None = None) -> None:
         # Outside Routes - raise error
         raise RuntimeError(
             "Route must be used inside a Routes container. "
-            "Use 'with Routes(): Route(pattern=..., content=...)' pattern."
+            "Use 'with Routes(): with Route(pattern=...): ...' pattern."
         )
-    # Inside Routes - no-op (Routes handles matching logic via props)
+
+    # Render children - if we're executing, Routes determined we match
+    if children:
+        for child in children:
+            child()
 
 
 @component

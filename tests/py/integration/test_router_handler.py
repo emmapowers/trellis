@@ -136,8 +136,10 @@ class TestInitialPathFromHelloMessage:
         def App() -> None:
             with RouterState():
                 with Routes():
-                    Route(pattern="/", content=HomePage)
-                    Route(pattern="/users", content=UsersPage)
+                    with Route(pattern="/"):
+                        HomePage()
+                    with Route(pattern="/users"):
+                        UsersPage()
 
         handler = MockMessageHandler(App)
         handler.queue_incoming(HelloMessage(client_id="test", path="/users"))
@@ -222,8 +224,10 @@ class TestUrlChangedMessage:
         def App() -> None:
             with router_state:
                 with Routes():
-                    Route(pattern="/", content=HomePage)
-                    Route(pattern="/about", content=AboutPage)
+                    with Route(pattern="/"):
+                        HomePage()
+                    with Route(pattern="/about"):
+                        AboutPage()
 
         handler = MockMessageHandler(App)
         handler.queue_incoming(HelloMessage(client_id="test", path="/"))
