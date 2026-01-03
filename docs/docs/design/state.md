@@ -44,7 +44,7 @@ def UserDisplay() -> None:
 **How it works:**
 
 1. `Stateful.__getattribute__` intercepts property access during render
-2. It records which component (by node ID) accessed which property
+2. It records which component (by element ID) accessed which property
 3. When `__setattr__` detects a property change, it marks dependent components as dirty
 4. On the next render cycle, only dirty components re-render
 
@@ -248,7 +248,7 @@ if isinstance(value, Mutable):
             value.value = new_val
         handler = setter
 
-    cb_id = ctx.register_callback(handler, node_id, f"{prop_name}:mutable")
+    cb_id = ctx.register_callback(handler, element_id, f"{prop_name}:mutable")
     return {
         "__mutable__": cb_id,
         "value": serialize(value.value),

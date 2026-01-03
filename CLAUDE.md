@@ -42,9 +42,9 @@ src/trellis/
 ## Key Concepts
 
 - **Element**: Immutable tree node representing a component invocation (component, props, key, children, id)
-- **ElementState**: Mutable runtime state for an Element, keyed by node.id (dirty flag, local_state, context)
-- **RenderSession**: Manages the render lifecycle and node tree; tracks dirty nodes, handles re-rendering
-- **Stateful**: Base class for reactive state; properties auto-track which nodes read them
+- **ElementState**: Mutable runtime state for an Element, keyed by element.id (dirty flag, local_state, context)
+- **RenderSession**: Manages the render lifecycle and element tree; tracks dirty elements, handles re-rendering
+- **Stateful**: Base class for reactive state; properties auto-track which elements read them
 - **FunctionalComponent**: Components created via `@component` decorator that use `with` syntax to collect children
 
 ## Import Style

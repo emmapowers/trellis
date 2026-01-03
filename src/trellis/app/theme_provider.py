@@ -16,7 +16,7 @@ from trellis.core.components.react import react_component_base
 from trellis.core.rendering.element import Element
 
 
-@react_component_base("ThemeProvider", has_children=True)
+@react_component_base("ThemeProvider", is_container=True)
 def ThemeProvider(
     *,
     theme_setting: Literal["system", "light", "dark"],

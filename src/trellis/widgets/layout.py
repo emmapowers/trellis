@@ -9,7 +9,7 @@ from trellis.core.components.style_props import Height, Margin, Padding, Width
 from trellis.core.rendering.element import Element
 
 
-@react_component_base("Column", has_children=True)
+@react_component_base("Column", is_container=True)
 def Column(
     *,
     gap: int | None = None,
@@ -58,7 +58,7 @@ def Column(
     ...
 
 
-@react_component_base("Row", has_children=True)
+@react_component_base("Row", is_container=True)
 def Row(
     *,
     gap: int | None = None,
@@ -103,7 +103,7 @@ def Row(
     ...
 
 
-@react_component_base("Card", has_children=True)
+@react_component_base("Card", is_container=True)
 def Card(
     *,
     padding: Padding | int | None = None,
