@@ -135,7 +135,7 @@ class TestContainerComponent:
 
     def test_empty_with_block(self, rendered) -> None:
         """Empty with block results in empty children list."""
-        received_children: list | None = None
+        received_children: list[ChildRef] | None = None
 
         @component
         def Column(children: list[ChildRef]) -> None:

@@ -48,6 +48,6 @@ def ThemeProvider(
         key: Optional key for reconciliation.
 
     Returns:
-        An ElementNode for the ThemeProvider component.
+        An Element for the ThemeProvider component.
     """
     ...

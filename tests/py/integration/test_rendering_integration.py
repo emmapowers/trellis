@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import pytest
 
 from trellis.core.components.composition import CompositionComponent, component
+from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession, get_active_session, set_active_session
 from trellis.core.state.stateful import Stateful
@@ -1099,7 +1100,7 @@ class TestConditionalRendering:
             render_counts["child"] = render_counts.get("child", 0) + 1
 
         @component
-        def ConditionalContainer(*, children: list | None = None) -> None:
+        def ConditionalContainer(*, children: list[ChildRef] | None = None) -> None:
             state = VisibilityState()
             container_state.append(state)
             if state.visible and children:
@@ -1163,7 +1164,7 @@ class TestConditionalRendering:
             render_counts["c"] = render_counts.get("c", 0) + 1
 
         @component
-        def TabContainer(*, children: list | None = None) -> None:
+        def TabContainer(*, children: list[ChildRef] | None = None) -> None:
             state = SelectionState()
             container_state.append(state)
             if children and 0 <= state.selected < len(children):
@@ -1211,14 +1212,14 @@ class TestConditionalRendering:
             render_counts["deep"] = render_counts.get("deep", 0) + 1
 
         @component
-        def InnerContainer(*, children: list | None = None) -> None:
+        def InnerContainer(*, children: list[ChildRef] | None = None) -> None:
             render_counts["inner"] = render_counts.get("inner", 0) + 1
             if children:
                 for child in children:
                     child()
 
         @component
-        def OuterContainer(*, children: list | None = None) -> None:
+        def OuterContainer(*, children: list[ChildRef] | None = None) -> None:
             state = VisibilityState()
             outer_state.append(state)
             render_counts["outer"] = render_counts.get("outer", 0) + 1
@@ -1280,7 +1281,7 @@ class TestElementRemovalStorage:
             pass
 
         @component
-        def Container(*, children: list | None = None) -> None:
+        def Container(*, children: list[ChildRef] | None = None) -> None:
             state = VisibilityState()
             container_state.append(state)
             if state.visible and children:
@@ -1361,7 +1362,7 @@ class TestElementRemovalStorage:
             child_state_instances.append(state)
 
         @component
-        def Container(*, children: list | None = None) -> None:
+        def Container(*, children: list[ChildRef] | None = None) -> None:
             state = VisibilityState()
             container_state.append(state)
             if state.visible and children:

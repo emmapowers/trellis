@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from tests.conftest import PatchCapture
 from trellis.core.components.composition import component
+from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.state.stateful import Stateful
 
 
@@ -366,7 +367,7 @@ class TestDirtyMarkingBehavior:
             render_counts["child"] += 1
 
         @component
-        def Container(children: list | None = None) -> None:
+        def Container(children: list[ChildRef] | None = None) -> None:
             render_counts["container"] += 1
             children_received.append(len(children) if children else 0)
             for child in children or []:
