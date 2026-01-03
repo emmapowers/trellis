@@ -21,7 +21,7 @@ from trellis.platforms.common.messages import (
     PatchMessage,
     UrlChanged,
 )
-from trellis.routing import Link, Route, RouterState, router
+from trellis.routing import Link, Route, RouterState, Routes, router
 from trellis.widgets import Button, Label
 
 
@@ -122,8 +122,9 @@ class TestInitialPathFromHelloMessage:
         @component
         def App() -> None:
             with RouterState():
-                Route(pattern="/", content=HomePage)
-                Route(pattern="/users", content=UsersPage)
+                with Routes():
+                    Route(pattern="/", content=HomePage)
+                    Route(pattern="/users", content=UsersPage)
 
         handler = MockMessageHandler(App)
         handler.queue_incoming(HelloMessage(client_id="test", path="/users"))
@@ -207,8 +208,9 @@ class TestUrlChangedMessage:
         @component
         def App() -> None:
             with router_state:
-                Route(pattern="/", content=HomePage)
-                Route(pattern="/about", content=AboutPage)
+                with Routes():
+                    Route(pattern="/", content=HomePage)
+                    Route(pattern="/about", content=AboutPage)
 
         handler = MockMessageHandler(App)
         handler.queue_incoming(HelloMessage(client_id="test", path="/"))
@@ -378,7 +380,10 @@ class TestHistoryMessagesFromRouterState:
             anchor = link_comp["children"][0]
             cb_id = anchor["props"]["onClick"]["__callback__"]
 
-            await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
+            # Pass click event - handler converts dict with "type" to MouseEvent
+            await handler.handle_message(
+                EventMessage(callback_id=cb_id, args=[{"type": "click"}])
+            )
 
         asyncio.run(test())
 

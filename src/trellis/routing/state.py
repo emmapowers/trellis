@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 
 from trellis.core.rendering.session import get_active_session
 from trellis.core.state.stateful import Stateful
+from trellis.routing.errors import RouteParamConflictError
 
 
 @dataclass(kw_only=True)
@@ -108,7 +109,13 @@ class RouterState(Stateful):
 
         Since _path is a private field, Stateful's automatic dirty marking
         doesn't trigger. We manually notify watchers of the 'path' property.
+
+        Also clears params since they're path-specific. Routes will
+        re-populate them during the next render.
         """
+        # Clear params - they're only valid for the current path
+        self._params = {}
+
         try:
             deps = object.__getattribute__(self, "_state_props")
         except AttributeError:
@@ -186,14 +193,25 @@ class RouterState(Stateful):
         self._notify_path_change()
 
     def set_params(self, params: dict[str, str]) -> None:
-        """Set route parameters.
+        """Set route parameters, detecting conflicts.
 
         Called internally by Route component when path matches.
+        Merges new params with existing ones, raising an error
+        if a key already exists with a different value.
 
         Args:
             params: The extracted route parameters
+
+        Raises:
+            RouteParamConflictError: If a param key exists with different value
         """
-        self._params = dict(params)
+        for key, value in params.items():
+            if key in self._params and self._params[key] != value:
+                raise RouteParamConflictError(
+                    f"Route param '{key}' conflict: "
+                    f"already '{self._params[key]}', attempting to set '{value}'"
+                )
+        self._params.update(params)
 
     def set_query(self, query: dict[str, str]) -> None:
         """Set query string parameters.

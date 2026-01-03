@@ -92,6 +92,40 @@ class TestRouterStateParams:
         params["id"] = "456"  # Mutate the copy
         assert state.params == {"id": "123"}  # Original unchanged
 
+    def test_set_params_merges_new_keys(self) -> None:
+        """set_params adds new keys to existing params."""
+        from trellis.routing.errors import RouteParamConflictError  # noqa: F401
+
+        state = RouterState()
+        state.set_params({"id": "123"})
+        state.set_params({"tab": "settings"})
+        assert state.params == {"id": "123", "tab": "settings"}
+
+    def test_set_params_allows_same_value(self) -> None:
+        """set_params allows setting same key with same value (idempotent)."""
+        state = RouterState()
+        state.set_params({"id": "123"})
+        state.set_params({"id": "123"})  # Same value - no error
+        assert state.params == {"id": "123"}
+
+    def test_set_params_raises_on_conflict(self) -> None:
+        """set_params raises RouteParamConflictError on value conflict."""
+        from trellis.routing.errors import RouteParamConflictError
+
+        state = RouterState()
+        state.set_params({"id": "123"})
+        with pytest.raises(RouteParamConflictError, match="id"):
+            state.set_params({"id": "456"})  # Different value
+
+    def test_set_params_error_message_includes_values(self) -> None:
+        """Error message shows both conflicting values."""
+        from trellis.routing.errors import RouteParamConflictError
+
+        state = RouterState()
+        state.set_params({"userId": "alice"})
+        with pytest.raises(RouteParamConflictError, match="alice.*bob|bob.*alice"):
+            state.set_params({"userId": "bob"})
+
 
 class TestRouterStateQuery:
     """Test RouterState query handling."""
@@ -185,6 +219,41 @@ class TestRouterStateCanNavigate:
         state.navigate("/users")
         state.go_back()
         assert state.can_go_forward is True
+
+
+class TestRouterStateParamClearing:
+    """Test params clearing on path change."""
+
+    def test_navigate_clears_params(self) -> None:
+        """navigate() clears params before path change."""
+        state = RouterState()
+        state.set_params({"id": "123"})
+        state.navigate("/other")
+        assert state.params == {}
+
+    def test_go_back_clears_params(self) -> None:
+        """go_back() clears params."""
+        state = RouterState()
+        state.navigate("/users/123")
+        state.set_params({"id": "123"})
+        state.go_back()
+        assert state.params == {}
+
+    def test_go_forward_clears_params(self) -> None:
+        """go_forward() clears params."""
+        state = RouterState()
+        state.navigate("/users/123")
+        state.set_params({"id": "123"})
+        state.go_back()
+        state.go_forward()
+        assert state.params == {}
+
+    def test_update_path_from_url_clears_params(self) -> None:
+        """_update_path_from_url() clears params."""
+        state = RouterState()
+        state.set_params({"id": "123"})
+        state._update_path_from_url("/other")
+        assert state.params == {}
 
 
 class TestRouterFunction:

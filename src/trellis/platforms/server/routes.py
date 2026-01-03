@@ -7,15 +7,34 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from jinja2 import Environment, FileSystemLoader
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 router = APIRouter()
 
 # Jinja2 environment for HTML templates
 _TEMPLATE_DIR = Path(__file__).parent / "client" / "src"
-_jinja_env = Environment(loader=FileSystemLoader(_TEMPLATE_DIR), autoescape=False)
+_jinja_env = Environment(loader=FileSystemLoader(_TEMPLATE_DIR), autoescape=True)
+
+
+def register_spa_fallback(app: FastAPI) -> None:
+    """Register 404 handler that serves SPA HTML for client-side routing.
+
+    This allows users to refresh on any client-side route (e.g., /about,
+    /users/123) and get the SPA, which then handles routing on the client.
+
+    Args:
+        app: The FastAPI application to register the handler on.
+    """
+
+    @app.exception_handler(404)
+    async def spa_fallback_handler(
+        request: Request, exc: StarletteHTTPException
+    ) -> HTMLResponse:
+        """Return SPA HTML for 404s to support client-side routing."""
+        return HTMLResponse(content=get_index_html(), status_code=200)
 
 
 def get_index_html(static_path: str = "/static", title: str = "Trellis App") -> str:
