@@ -34,7 +34,7 @@ from trellis.platforms.common.base import Platform
 
 # Jinja2 environment for HTML templates
 _TEMPLATE_DIR = Path(__file__).parent / "client" / "src"
-_jinja_env = Environment(loader=FileSystemLoader(_TEMPLATE_DIR), autoescape=False)
+_jinja_env = Environment(loader=FileSystemLoader(_TEMPLATE_DIR), autoescape=True)
 
 __all__ = ["BrowserServePlatform"]
 
