@@ -7,7 +7,7 @@ from trellis.core.callback_context import callback_context
 from trellis.core.components.composition import component
 from trellis.core.rendering.session import RenderSession
 from trellis.html.events import MouseEvent
-from trellis.platforms.common.serialization import parse_callback_id, serialize_node
+from trellis.platforms.common.serialization import parse_callback_id, serialize_element
 from trellis.routing import Link, RouterState
 
 
@@ -17,10 +17,10 @@ def invoke_callback(session: RenderSession, cb_id: str, *args: tp.Any) -> None:
     This simulates how MessageHandler invokes callbacks, providing
     the callback context needed for from_context() to work.
     """
-    node_id, prop_name = parse_callback_id(cb_id)
-    callback = session.get_callback(node_id, prop_name)
+    element_id, prop_name = parse_callback_id(cb_id)
+    callback = session.get_callback(element_id, prop_name)
     assert callback is not None, f"Callback {cb_id} not found"
-    with callback_context(session, node_id):
+    with callback_context(session, element_id):
         callback(*args)
 
 
@@ -39,7 +39,7 @@ class TestLinkRendering:
         capture.render()
 
         # Find the anchor element in the tree
-        tree = serialize_node(capture.session.root_element, capture.session)
+        tree = serialize_element(capture.session.root_element, capture.session)
         anchor_found = find_element_by_type(tree, "a")
         assert anchor_found, "Link should render an anchor element"
 
@@ -54,7 +54,7 @@ class TestLinkRendering:
         capture = capture_patches(App)
         capture.render()
 
-        tree = serialize_node(capture.session.root_element, capture.session)
+        tree = serialize_element(capture.session.root_element, capture.session)
         anchor = find_element_by_type(tree, "a")
         assert anchor is not None
         assert anchor.get("props", {}).get("href") == "/users"
@@ -70,7 +70,7 @@ class TestLinkRendering:
         capture = capture_patches(App)
         capture.render()
 
-        tree = serialize_node(capture.session.root_element, capture.session)
+        tree = serialize_element(capture.session.root_element, capture.session)
         anchor = find_element_by_type(tree, "a")
         assert anchor is not None
         # Text is stored in _text prop for hybrid elements
@@ -93,7 +93,7 @@ class TestLinkNavigation:
         capture.render()
 
         # Find the anchor and get its onClick handler
-        tree = serialize_node(capture.session.root_element, capture.session)
+        tree = serialize_element(capture.session.root_element, capture.session)
         anchor = find_element_by_type(tree, "a")
         assert anchor is not None
 
@@ -121,7 +121,7 @@ class TestLinkNavigation:
         capture = capture_patches(App)
         capture.render()
 
-        tree = serialize_node(capture.session.root_element, capture.session)
+        tree = serialize_element(capture.session.root_element, capture.session)
         anchor = find_element_by_type(tree, "a")
         cb_id = anchor.get("props", {}).get("onClick")["__callback__"]
 
@@ -147,7 +147,7 @@ class TestLinkNavigation:
         capture = capture_patches(App)
         capture.render()
 
-        tree = serialize_node(capture.session.root_element, capture.session)
+        tree = serialize_element(capture.session.root_element, capture.session)
         anchor = find_element_by_type(tree, "a")
         cb_id = anchor.get("props", {}).get("onClick")["__callback__"]
 

@@ -5,7 +5,6 @@ as specified in the router implementation plan.
 """
 
 
-
 class TestRoutingExportsFromMainPackage:
     """Test that routing components are exported from trellis package."""
 

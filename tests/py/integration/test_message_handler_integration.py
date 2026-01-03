@@ -667,9 +667,10 @@ class TestCallbackContextIntegration:
         init_handler_for_test(handler)
         tree = get_initial_tree(handler)
 
-        # Find the button and get callback ID (navigate through wrappers)
-        app_children = find_app_children(tree)
-        child = app_children[0]
+        # Navigate tree: TestRoot -> App -> Child -> Button
+        # With simple app_wrapper, structure is direct nesting
+        app = tree["children"][0]
+        child = app["children"][0]
         button = child["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
@@ -707,8 +708,10 @@ class TestCallbackContextIntegration:
         init_handler_for_test(handler)
         tree = get_initial_tree(handler)
 
-        app_children = find_app_children(tree)
-        child = app_children[0]
+        # Navigate tree: TestRoot -> App -> Child -> Button
+        # With simple app_wrapper, structure is direct nesting
+        app = tree["children"][0]
+        child = app["children"][0]
         button = child["children"][0]
         cb_id = button["props"]["on_click"]["__callback__"]
 
