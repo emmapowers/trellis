@@ -123,7 +123,7 @@ class TestRouterStateParams:
 
         state = RouterState()
         state.set_params({"userId": "alice"})
-        with pytest.raises(RouteParamConflictError, match="alice.*bob|bob.*alice"):
+        with pytest.raises(RouteParamConflictError, match=r"alice.*bob|bob.*alice"):
             state.set_params({"userId": "bob"})
 
 

@@ -374,12 +374,15 @@ class MessageHandler:
         Returns:
             RouterState instance or None if not found
         """
+        if self.session is None:
+            return None
+
         # Import here to avoid circular imports
         from trellis.routing.state import RouterState
 
         # Search through element states for RouterState in context
-        for node_id in self.session.states._state:
-            state = self.session.states.get(node_id)
+        for element_id in self.session.states._state:
+            state = self.session.states.get(element_id)
             if state is not None and RouterState in state.context:
                 return state.context[RouterState]
         return None
@@ -433,8 +436,9 @@ class MessageHandler:
         from trellis.platforms.common.serialization import parse_callback_id
 
         assert self.session is not None
+        session = self.session  # Local var for closure capture
         element_id, prop_name = parse_callback_id(callback_id)
-        callback = self.session.get_callback(element_id, prop_name)
+        callback = session.get_callback(element_id, prop_name)
         if callback is None:
             raise KeyError(f"Callback not found: {callback_id}")
 
@@ -444,7 +448,7 @@ class MessageHandler:
         if inspect.iscoroutinefunction(callback):
             # Async: wrap to provide callback context
             async def run_async_with_context() -> None:
-                with callback_context(self.session, element_id):
+                with callback_context(session, element_id):
                     await callback(*processed_args, **kwargs)
 
             logger.debug("Callback %s is async, scheduled as task", callback_id)
@@ -453,7 +457,7 @@ class MessageHandler:
             task.add_done_callback(self._background_tasks.discard)
         else:
             # Sync: call with callback context
-            with callback_context(self.session, element_id):
+            with callback_context(session, element_id):
                 callback(*processed_args, **kwargs)
 
     # -------------------------------------------------------------------------

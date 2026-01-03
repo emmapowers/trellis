@@ -1,9 +1,9 @@
 """Router components for client-side routing."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from trellis.core.components.composition import CompositionComponent, component
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.state.stateful import Stateful
 from trellis.html.links import A
 from trellis.routing.path_matching import match_path
@@ -23,7 +23,7 @@ class CurrentRouteContext(Stateful):
 
 
 @component
-def Routes(*, children: list[Element] | None = None) -> None:
+def Routes(*, children: list[ChildRef] | None = None) -> None:
     """Container for exclusive route matching.
 
     Only the first Route child that matches will render. Subsequent
@@ -57,8 +57,11 @@ def Routes(*, children: list[Element] | None = None) -> None:
             child()
 
             # Read pattern and content from Route element's props
-            pattern = child.props.get("pattern")
-            content = child.props.get("content")
+            element = child.element
+            if element is None:
+                continue
+            pattern = element.props.get("pattern")
+            content = element.props.get("content")
 
             if pattern is None:
                 # Not a Route element - skip
@@ -113,7 +116,7 @@ def Route(*, pattern: str, content: CompositionComponent | None = None) -> None:
 
 
 @component
-def Link(*, to: str, text: str = "", children: list[Element] | None = None) -> None:
+def Link(*, to: str, text: str = "", children: list[ChildRef] | None = None) -> None:
     """Navigation link that uses client-side routing.
 
     Renders an anchor element that navigates without full page reload.

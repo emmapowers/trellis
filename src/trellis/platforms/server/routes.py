@@ -5,12 +5,15 @@ WebSocket handling is in handler.py.
 
 from __future__ import annotations
 
+import typing as tp
 from pathlib import Path
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from jinja2 import Environment, FileSystemLoader
-from starlette.exceptions import HTTPException as StarletteHTTPException
+
+if tp.TYPE_CHECKING:
+    from starlette.exceptions import HTTPException as StarletteHTTPException
 
 router = APIRouter()
 
@@ -30,9 +33,7 @@ def register_spa_fallback(app: FastAPI) -> None:
     """
 
     @app.exception_handler(404)
-    async def spa_fallback_handler(
-        request: Request, exc: StarletteHTTPException
-    ) -> HTMLResponse:
+    async def spa_fallback_handler(request: Request, exc: StarletteHTTPException) -> HTMLResponse:
         """Return SPA HTML for 404s to support client-side routing."""
         return HTMLResponse(content=get_index_html(), status_code=200)
 

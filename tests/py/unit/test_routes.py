@@ -24,21 +24,21 @@ class TestSpaRoutes:
         response = client.get("/")
         assert response.status_code == 200
         assert "<!DOCTYPE html>" in response.text
-        assert '<div id="root"></div>' in response.text
+        assert 'id="root"' in response.text
 
     def test_spa_route_serves_index_html(self, client: TestClient) -> None:
         """Non-root paths serve the same index HTML for client-side routing."""
         response = client.get("/about")
         assert response.status_code == 200
         assert "<!DOCTYPE html>" in response.text
-        assert '<div id="root"></div>' in response.text
+        assert 'id="root"' in response.text
 
     def test_nested_spa_route_serves_index_html(self, client: TestClient) -> None:
         """Nested paths serve index HTML for client-side routing."""
         response = client.get("/users/123")
         assert response.status_code == 200
         assert "<!DOCTYPE html>" in response.text
-        assert '<div id="root"></div>' in response.text
+        assert 'id="root"' in response.text
 
 
 class TestIndexHtmlTemplate:

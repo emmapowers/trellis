@@ -9,8 +9,8 @@ Tests that MessageHandler properly integrates with RouterState:
 import asyncio
 import typing as tp
 
-from trellis.core.components.composition import component
-from trellis.platforms.common.handler import MessageHandler
+from trellis.core.components.composition import CompositionComponent, component
+from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.messages import (
     AddPatch,
     HelloMessage,
@@ -25,11 +25,24 @@ from trellis.routing import Link, Route, RouterState, Routes, router
 from trellis.widgets import Button, Label
 
 
+def simple_app_wrapper(
+    comp: tp.Any, system_theme: str, theme_mode: str | None
+) -> CompositionComponent:
+    """Simple app wrapper for testing without full TrellisApp."""
+
+    def render_func() -> None:
+        comp()
+
+    return CompositionComponent(name="TestRoot", render_func=render_func)
+
+
 class MockMessageHandler(MessageHandler):
     """MessageHandler with mocked transport for testing."""
 
-    def __init__(self, root_component: tp.Any) -> None:
-        super().__init__(root_component)
+    def __init__(
+        self, root_component: tp.Any, app_wrapper: AppWrapper = simple_app_wrapper
+    ) -> None:
+        super().__init__(root_component, app_wrapper)
         self.sent_messages: list[Message] = []
         self.incoming_messages: list[Message] = []
         self._message_index = 0
@@ -259,11 +272,12 @@ class TestHistoryMessagesFromRouterState:
 
             # Get the button callback
             from trellis.platforms.common.messages import EventMessage
-            from trellis.platforms.common.serialization import serialize_node
+            from trellis.platforms.common.serialization import serialize_element
 
-            tree = serialize_node(handler.session.root_element, handler.session)
-            # RouterState is context provider only, Button is direct child
-            button = tree["children"][0]
+            tree = serialize_element(handler.session.root_element, handler.session)
+            # Navigate: TestRoot -> App -> Button
+            app = tree["children"][0]
+            button = app["children"][0]
             cb_id = button["props"]["on_click"]["__callback__"]
 
             # Invoke callback
@@ -300,11 +314,12 @@ class TestHistoryMessagesFromRouterState:
             handler.sent_messages.clear()
 
             from trellis.platforms.common.messages import EventMessage
-            from trellis.platforms.common.serialization import serialize_node
+            from trellis.platforms.common.serialization import serialize_element
 
-            tree = serialize_node(handler.session.root_element, handler.session)
-            # RouterState is context provider only, Button is direct child
-            button = tree["children"][0]
+            tree = serialize_element(handler.session.root_element, handler.session)
+            # Navigate: TestRoot -> App -> Button
+            app = tree["children"][0]
+            button = app["children"][0]
             cb_id = button["props"]["on_click"]["__callback__"]
 
             await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
@@ -339,11 +354,12 @@ class TestHistoryMessagesFromRouterState:
             handler.sent_messages.clear()
 
             from trellis.platforms.common.messages import EventMessage
-            from trellis.platforms.common.serialization import serialize_node
+            from trellis.platforms.common.serialization import serialize_element
 
-            tree = serialize_node(handler.session.root_element, handler.session)
-            # RouterState is context provider only, Button is direct child
-            button = tree["children"][0]
+            tree = serialize_element(handler.session.root_element, handler.session)
+            # Navigate: TestRoot -> App -> Button
+            app = tree["children"][0]
+            button = app["children"][0]
             cb_id = button["props"]["on_click"]["__callback__"]
 
             await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
@@ -372,18 +388,17 @@ class TestHistoryMessagesFromRouterState:
             handler.sent_messages.clear()
 
             from trellis.platforms.common.messages import EventMessage
-            from trellis.platforms.common.serialization import serialize_node
+            from trellis.platforms.common.serialization import serialize_element
 
-            tree = serialize_node(handler.session.root_element, handler.session)
-            # Link component renders anchor as its child
-            link_comp = tree["children"][0]
+            tree = serialize_element(handler.session.root_element, handler.session)
+            # Navigate: TestRoot -> App -> Link -> Anchor
+            app = tree["children"][0]
+            link_comp = app["children"][0]
             anchor = link_comp["children"][0]
             cb_id = anchor["props"]["onClick"]["__callback__"]
 
             # Pass click event - handler converts dict with "type" to MouseEvent
-            await handler.handle_message(
-                EventMessage(callback_id=cb_id, args=[{"type": "click"}])
-            )
+            await handler.handle_message(EventMessage(callback_id=cb_id, args=[{"type": "click"}]))
 
         asyncio.run(test())
 
@@ -418,11 +433,12 @@ class TestNoHistoryMessageWhenNoNavigation:
             handler.sent_messages.clear()
 
             from trellis.platforms.common.messages import EventMessage
-            from trellis.platforms.common.serialization import serialize_node
+            from trellis.platforms.common.serialization import serialize_element
 
-            tree = serialize_node(handler.session.root_element, handler.session)
-            # RouterState is context provider only, Button is direct child
-            button = tree["children"][0]
+            tree = serialize_element(handler.session.root_element, handler.session)
+            # Navigate: TestRoot -> App -> Button
+            app = tree["children"][0]
+            button = app["children"][0]
             cb_id = button["props"]["on_click"]["__callback__"]
 
             await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
@@ -459,11 +475,12 @@ class TestNoHistoryMessageWhenNoNavigation:
             handler.sent_messages.clear()
 
             from trellis.platforms.common.messages import EventMessage
-            from trellis.platforms.common.serialization import serialize_node
+            from trellis.platforms.common.serialization import serialize_element
 
-            tree = serialize_node(handler.session.root_element, handler.session)
-            # RouterState is context provider only, Button is direct child
-            button = tree["children"][0]
+            tree = serialize_element(handler.session.root_element, handler.session)
+            # Navigate: TestRoot -> App -> Button
+            app = tree["children"][0]
+            button = app["children"][0]
             cb_id = button["props"]["on_click"]["__callback__"]
 
             await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))

@@ -45,13 +45,13 @@ def NavHeader() -> None:
                 text="Back",
                 on_click=lambda: state.go_back(),
                 disabled=not state.can_go_back,
-                small=True,
+                size="sm",
             )
             w.Button(
                 text="Forward",
                 on_click=lambda: state.go_forward(),
                 disabled=not state.can_go_forward,
-                small=True,
+                size="sm",
             )
 
         # Current path display
@@ -108,21 +108,16 @@ USERS = {
 @component
 def UsersPage() -> None:
     """Users list page."""
-    state = router()
-
     with w.Column(gap=12):
         w.Label(text="Users", font_size=24, font_weight=600)
 
         # User list
         for user_id, user in USERS.items():
-            with w.Card(
-                padding=12,
-                style={"cursor": "pointer"},
-                on_click=lambda uid=user_id: state.navigate(f"/users/{uid}"),
-            ):
-                with w.Row(gap=12, align="center"):
-                    w.Label(text=user["name"], font_weight=500)
-                    w.Label(text=user["role"], color="#666", font_size=12)
+            with Link(to=f"/users/{user_id}"):
+                with w.Card(padding=12, style={"cursor": "pointer"}):
+                    with w.Row(gap=12, align="center"):
+                        w.Label(text=user["name"], font_weight=500)
+                        w.Label(text=user["role"], color="#666", font_size=12)
 
 
 @component
