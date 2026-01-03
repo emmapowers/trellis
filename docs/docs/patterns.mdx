@@ -257,6 +257,24 @@ for item in items:
 
 The `i=item` creates a new binding for each iteration.
 
+### Keys for List Items
+
+When rendering dynamic lists, use `.key()` to help Trellis track items across renders:
+
+```python
+@component
+def ItemList(items: list[str]) -> None:
+    for item in items:
+        with h.Div().key(item):  # Key by the item's unique identifier
+            h.Span(item)
+            Button(text="Remove", on_click=lambda i=item: remove(i))
+```
+
+Keys are important because:
+- They help Trellis match elements when items are reordered, added, or removed
+- Without keys, Trellis uses position, which can cause incorrect state preservation
+- Keys should be stable and unique within the list (IDs, not indices)
+
 ## Component Composition
 
 Break complex UIs into smaller components:

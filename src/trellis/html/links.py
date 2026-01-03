@@ -27,7 +27,6 @@ def Img(
     className: str | None = None,
     style: Style | None = None,
     onClick: MouseHandler | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An image element."""
@@ -45,7 +44,6 @@ def _A(
     className: str | None = None,
     style: Style | None = None,
     onClick: MouseHandler | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An anchor (link) element."""
@@ -61,7 +59,6 @@ def A(
     className: str | None = None,
     style: Style | None = None,
     onClick: MouseHandler | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An anchor (link) element.
@@ -80,6 +77,5 @@ def A(
         className=className,
         style=style,
         onClick=onClick,
-        key=key,
         **props,
     )

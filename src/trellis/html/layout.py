@@ -33,7 +33,6 @@ def Div(
     onClick: MouseHandler | None = None,
     onMouseEnter: MouseHandler | None = None,
     onMouseLeave: MouseHandler | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A div container element."""
@@ -48,7 +47,6 @@ def _Span(
     style: Style | None = None,
     id: str | None = None,
     onClick: MouseHandler | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An inline span element."""
@@ -62,7 +60,6 @@ def Span(
     style: Style | None = None,
     id: str | None = None,
     onClick: MouseHandler | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An inline span element."""
@@ -72,7 +69,6 @@ def Span(
         style=style,
         id=id,
         onClick=onClick,
-        key=key,
         **props,
     )
 
@@ -83,7 +79,6 @@ def Section(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A section element for grouping content."""
@@ -96,7 +91,6 @@ def Article(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An article element for self-contained content."""
@@ -109,7 +103,6 @@ def Header(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A header element."""
@@ -122,7 +115,6 @@ def Footer(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A footer element."""
@@ -135,7 +127,6 @@ def Nav(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A navigation element."""
@@ -148,7 +139,6 @@ def Main(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A main content element."""
@@ -161,7 +151,6 @@ def Aside(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An aside element for tangential content."""

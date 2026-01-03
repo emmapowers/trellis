@@ -23,7 +23,6 @@ def Ul(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An unordered list element."""
@@ -37,7 +36,6 @@ def Ol(
     style: Style | None = None,
     id: str | None = None,
     start: int | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An ordered list element."""
@@ -51,7 +49,6 @@ def _Li(
     _text: str | None = None,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A list item element."""
@@ -63,7 +60,6 @@ def Li(
     *,
     className: str | None = None,
     style: Style | None = None,
-    key: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A list item element.
@@ -77,6 +73,5 @@ def Li(
         _text=text if text else None,
         className=className,
         style=style,
-        key=key,
         **props,
     )

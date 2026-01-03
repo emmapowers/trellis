@@ -6,6 +6,7 @@ import inspect
 import typing as tp
 
 from trellis.core.components.base import Component, ElementKind
+from trellis.core.rendering.element import Element
 
 __all__ = ["CompositionComponent", "RenderFunc", "component"]
 
@@ -23,8 +24,13 @@ class CompositionComponent(Component):
     render_func: RenderFunc
     _children_param: bool
 
-    def __init__(self, name: str, render_func: RenderFunc) -> None:
-        super().__init__(name)
+    def __init__(
+        self,
+        name: str,
+        render_func: RenderFunc,
+        element_class: type[Element] = Element,
+    ) -> None:
+        super().__init__(name, element_class=element_class)
         self.render_func = render_func
         # Inspect the render function to determine if it accepts children
         sig = inspect.signature(render_func)
@@ -47,6 +53,38 @@ class CompositionComponent(Component):
         self.render_func(**props)
 
 
-def component(render_func: RenderFunc) -> CompositionComponent:
-    """Decorator to create a component from a render function."""
-    return CompositionComponent(render_func.__name__, render_func)
+@tp.overload
+def component(render_func: RenderFunc) -> CompositionComponent: ...
+
+
+@tp.overload
+def component(
+    render_func: None = None,
+    *,
+    element_class: type[Element] = Element,
+) -> tp.Callable[[RenderFunc], CompositionComponent]: ...
+
+
+def component(
+    render_func: RenderFunc | None = None,
+    *,
+    element_class: type[Element] = Element,
+) -> CompositionComponent | tp.Callable[[RenderFunc], CompositionComponent]:
+    """Decorator to create a component from a render function.
+
+    Can be used with or without parentheses:
+        @component
+        def MyWidget(): ...
+
+        @component(element_class=CustomElement)
+        def MyWidget(): ...
+    """
+    if render_func is not None:
+        # Called without parentheses: @component
+        return CompositionComponent(render_func.__name__, render_func, element_class)
+
+    # Called with parentheses: @component(element_class=X)
+    def decorator(func: RenderFunc) -> CompositionComponent:
+        return CompositionComponent(func.__name__, func, element_class)
+
+    return decorator

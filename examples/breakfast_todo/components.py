@@ -72,7 +72,7 @@ def TodoList() -> None:
             )
         else:
             for todo in state.visible_todos:
-                TodoItem(todo=todo, key=str(todo.id))
+                TodoItem(todo=todo).key(str(todo.id))
 
 
 @component

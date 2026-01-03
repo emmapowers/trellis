@@ -36,7 +36,7 @@ def _make_descriptor(
         component=comp,
         _session_ref=_get_dummy_session_ref(make_component),
         render_count=0,
-        key=key,
+        _key=key,
         props=props or {},
     )
 
@@ -49,7 +49,7 @@ class TestElement:
         node = _make_descriptor(make_component, comp)
 
         assert node.component == comp
-        assert node.key is None
+        assert node._key is None
         assert node.props == {}
         assert node.child_ids == []
         assert node.id == ""
@@ -60,7 +60,7 @@ class TestElement:
         comp = make_component("Test")
         node = _make_descriptor(make_component, comp, key="my-key")
 
-        assert node.key == "my-key"
+        assert node._key == "my-key"
 
     def test_element_node_with_properties(
         self, make_component: "tp.Callable[[str], CompositionComponent]"

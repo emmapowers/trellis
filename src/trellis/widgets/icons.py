@@ -385,7 +385,6 @@ def Icon(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Render a Lucide icon.
 

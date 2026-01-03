@@ -26,9 +26,11 @@ class Component(ABC):
     """Abstract base class for all Trellis components."""
 
     name: str
+    element_class: type[Element]
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, element_class: type[Element] = Element) -> None:
         self.name = name
+        self.element_class = element_class
 
     @property
     @abstractmethod
@@ -96,12 +98,12 @@ class Component(ABC):
             # reconciliation (old vs new child_ids would be identical).
             if self._has_children_param:
                 logger.debug("Creating new node for container %s (preserving snapshot)", self.name)
-                node = Element(
+                node = self.element_class(
                     component=self,
                     _session_ref=weakref.ref(session),
                     render_count=session.render_count,
                     props=props,
-                    key=key,
+                    _key=key,
                     id=position_id,
                     child_ids=[],  # Will be populated by __exit__
                 )
@@ -118,12 +120,12 @@ class Component(ABC):
             return old_node
 
         # Create new node
-        node = Element(
+        node = self.element_class(
             component=self,
             _session_ref=weakref.ref(session),
             render_count=session.render_count,
             props=props,
-            key=key,
+            _key=key,
             id=position_id,
         )
 

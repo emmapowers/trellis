@@ -90,7 +90,7 @@ def SliderColumn() -> None:
     ):
         with w.Column(gap=4):
             for i in range(state.num_sliders):
-                with w.Row(gap=8, align="center", key=f"slider-row-{i}"):
+                with w.Row(gap=8, align="center").key(f"slider-row-{i}"):
                     w.Label(
                         text=f"#{i + 1}",
                         font_size=12,
@@ -103,9 +103,8 @@ def SliderColumn() -> None:
                         min=1,
                         max=100,
                         step=1,
-                        key=f"slider-{i}",
                         style={"flex": "1"},
-                    )
+                    ).key(f"slider-{i}")
                     w.Label(
                         text=str(int(state.value)),
                         font_size=13,

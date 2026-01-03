@@ -22,6 +22,7 @@ from trellis.core.rendering.session import (
     is_render_active,
     set_active_session,
 )
+from trellis.core.rendering.traits import KeyTrait
 
 __all__ = [
     "ActiveRender",
@@ -32,6 +33,7 @@ __all__ = [
     "ElementStore",
     "Frame",
     "FrameStack",
+    "KeyTrait",
     "LifecycleTracker",
     "PatchCollector",
     "RenderAddPatch",

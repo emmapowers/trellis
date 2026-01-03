@@ -56,6 +56,19 @@ Use it like this:
 UserCard(name="Alice", email="alice@example.com")
 ```
 
+### Traits
+
+Elements support fluent method chaining for configuration. The most common trait is `.key()`, which sets a reconciliation key:
+
+```python
+@component
+def ItemList(items: list[str]) -> None:
+    for item in items:
+        h.Div(item).key(item)  # Key helps Trellis track items across renders
+```
+
+Keys are important when rendering dynamic lists—they help Trellis match elements across renders, preserving state and avoiding unnecessary DOM updates.
+
 ## State
 
 State holds data that changes over time. Define state as a dataclass that inherits from `Stateful`:

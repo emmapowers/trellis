@@ -25,7 +25,6 @@ def Menu(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Menu container for menu items.
 
@@ -36,7 +35,6 @@ def Menu(
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
-        key: Unique key for reconciliation
     """
     ...
 
@@ -53,7 +51,6 @@ def MenuItem(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Individual menu item.
 
@@ -67,7 +64,6 @@ def MenuItem(
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
-        key: Unique key for reconciliation
     """
     ...
 
@@ -76,13 +72,11 @@ def MenuItem(
 def MenuDivider(
     *,
     margin: Margin | None = None,
-    key: str | None = None,
 ) -> Element:
     """Horizontal divider between menu items.
 
     Args:
         margin: Margin around the divider (Margin dataclass).
-        key: Unique key for reconciliation
     """
     ...
 
@@ -98,7 +92,6 @@ def Toolbar(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Toolbar container for action buttons with keyboard navigation.
 
@@ -111,6 +104,5 @@ def Toolbar(
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
-        key: Unique key for reconciliation
     """
     ...

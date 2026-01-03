@@ -29,7 +29,6 @@ def Collapsible(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Collapsible content section.
 
@@ -62,7 +61,6 @@ def Callout(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Prominent status message or alert.
 

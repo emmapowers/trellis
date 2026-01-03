@@ -105,7 +105,6 @@ def _get_row_key(
 def CellSlot(
     *,
     slot: str,
-    key: str | None = None,
 ) -> Element:
     """Marker component for custom cell content.
 
@@ -125,7 +124,6 @@ def _TableInner(
     bordered: bool = False,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Internal React table component.
 
@@ -149,7 +147,6 @@ def Table(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> None:
     """Data table widget with custom cell rendering support.
 
@@ -258,7 +255,6 @@ def Table(
         bordered=bordered,
         class_name=class_name,
         style=combined_style if combined_style else None,
-        key=key,
     ):
         # Generate cell slots for columns with custom renderers
         for row_index, row in enumerate(data):
@@ -267,5 +263,5 @@ def Table(
                 if col.render is not None:
                     # Escape colons in row key to prevent collision
                     slot_id = f"{_escape_slot_key_part(row_key)}:{col.name}"
-                    with CellSlot(slot=slot_id, key=slot_id):
+                    with CellSlot(slot=slot_id).key(slot_id):
                         col.render(row=row)

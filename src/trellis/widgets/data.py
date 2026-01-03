@@ -31,7 +31,6 @@ def Stat(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Display a key metric with label, value, and optional trend.
 
@@ -64,7 +63,6 @@ def Tag(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-    key: str | None = None,
 ) -> Element:
     """Display a tag/chip label.
 
