@@ -26,8 +26,10 @@ class TestRoutesExclusiveMatching:
         def App() -> None:
             with RouterState(path="/"):
                 with Routes():
-                    Route(pattern="/", content=Home)
-                    Route(pattern="*", content=Fallback)
+                    with Route(pattern="/"):
+                        Home()
+                    with Route(pattern="*"):
+                        Fallback()
 
         capture = capture_patches(App)
         capture.render()
@@ -51,8 +53,10 @@ class TestRoutesExclusiveMatching:
         def App() -> None:
             with RouterState(path="/unknown"):
                 with Routes():
-                    Route(pattern="/", content=Home)
-                    Route(pattern="*", content=Fallback)
+                    with Route(pattern="/"):
+                        Home()
+                    with Route(pattern="*"):
+                        Fallback()
 
         capture = capture_patches(App)
         capture.render()
@@ -79,9 +83,12 @@ class TestRoutesExclusiveMatching:
         def App() -> None:
             with RouterState(path="/users"):
                 with Routes():
-                    Route(pattern="/users", content=Users)
-                    Route(pattern="/users/:id", content=UserDetail)
-                    Route(pattern="*", content=Fallback)
+                    with Route(pattern="/users"):
+                        Users()
+                    with Route(pattern="/users/:id"):
+                        UserDetail()
+                    with Route(pattern="*"):
+                        Fallback()
 
         capture = capture_patches(App)
         capture.render()
@@ -102,11 +109,17 @@ class TestRoutesParams:
             captured_params.update(router().params)
 
         @component
+        def Fallback() -> None:
+            pass
+
+        @component
         def App() -> None:
             with RouterState(path="/users/123"):
                 with Routes():
-                    Route(pattern="/users/:id", content=UserPage)
-                    Route(pattern="*", content=lambda: None)
+                    with Route(pattern="/users/:id"):
+                        UserPage()
+                    with Route(pattern="*"):
+                        Fallback()
 
         capture = capture_patches(App)
         capture.render()
@@ -122,11 +135,17 @@ class TestRoutesParams:
             captured_params.update(router().params)
 
         @component
+        def PageRoute() -> None:
+            pass
+
+        @component
         def App() -> None:
             with RouterState(path="/"):
                 with Routes():
-                    Route(pattern="/", content=Home)
-                    Route(pattern="/:page", content=lambda: None)
+                    with Route(pattern="/"):
+                        Home()
+                    with Route(pattern="/:page"):
+                        PageRoute()
 
         capture = capture_patches(App)
         capture.render()
@@ -155,8 +174,10 @@ class TestRoutesReactivity:
         def App() -> None:
             with router_state:
                 with Routes():
-                    Route(pattern="/", content=Home)
-                    Route(pattern="/about", content=About)
+                    with Route(pattern="/"):
+                        Home()
+                    with Route(pattern="/about"):
+                        About()
 
         capture = capture_patches(App)
         capture.render()
@@ -182,7 +203,8 @@ class TestRouteWithoutRoutes:
         def App() -> None:
             with RouterState(path="/"):
                 # No Routes container - should raise
-                Route(pattern="/", content=Home)
+                with Route(pattern="/"):
+                    Home()
 
         capture = capture_patches(App)
 
@@ -211,8 +233,10 @@ class TestRoutesParamConflict:
         def App() -> None:
             with RouterState(path="/users/123"):
                 with Routes():
-                    Route(pattern="/users/:id", content=Content1)
-                    Route(pattern="/users/:userId", content=Content2)
+                    with Route(pattern="/users/:id"):
+                        Content1()
+                    with Route(pattern="/users/:userId"):
+                        Content2()
 
         capture = capture_patches(App)
         capture.render()  # Should not raise - second route is skipped

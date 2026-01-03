@@ -1,6 +1,5 @@
 """Integration tests for Route component."""
 
-import pytest
 
 from tests.conftest import PatchCapture
 from trellis.core.components.composition import component
@@ -22,7 +21,8 @@ class TestRouteMatching:
         def App() -> None:
             with RouterState(path="/users"):
                 with Routes():
-                    Route(pattern="/users", content=MatchedContent)
+                    with Route(pattern="/users"):
+                        MatchedContent()
 
         capture = capture_patches(App)
         capture.render()
@@ -43,7 +43,8 @@ class TestRouteMatching:
         def App() -> None:
             with RouterState(path="/other"):
                 with Routes():
-                    Route(pattern="/users", content=NotMatched)
+                    with Route(pattern="/users"):
+                        NotMatched()
 
         capture = capture_patches(App)
         capture.render()
@@ -62,7 +63,8 @@ class TestRouteMatching:
         def App() -> None:
             with RouterState(path="/any/random/path"):
                 with Routes():
-                    Route(pattern="*", content=Fallback)
+                    with Route(pattern="*"):
+                        Fallback()
 
         capture = capture_patches(App)
         capture.render()
@@ -85,7 +87,8 @@ class TestRouteParams:
         def App() -> None:
             with RouterState(path="/users/123"):
                 with Routes():
-                    Route(pattern="/users/:id", content=UserPage)
+                    with Route(pattern="/users/:id"):
+                        UserPage()
 
         capture = capture_patches(App)
         capture.render()
@@ -104,7 +107,8 @@ class TestRouteParams:
         def App() -> None:
             with RouterState(path="/users/42/posts/99"):
                 with Routes():
-                    Route(pattern="/users/:userId/posts/:postId", content=PostPage)
+                    with Route(pattern="/users/:userId/posts/:postId"):
+                        PostPage()
 
         capture = capture_patches(App)
         capture.render()
@@ -115,10 +119,6 @@ class TestRouteParams:
 class TestRouteReactivity:
     """Tests for Route component reactivity to path changes."""
 
-    @pytest.mark.skip(
-        reason="Known bug: container children prop includes internally-created elements. "
-        "See docs/planning/conditional-children-issue.md for details."
-    )
     def test_rerenders_on_path_change(self, capture_patches: type[PatchCapture]) -> None:
         """Route re-renders when RouterState path changes."""
         render_count = [0]
@@ -132,7 +132,8 @@ class TestRouteReactivity:
         def App() -> None:
             with router_state:
                 with Routes():
-                    Route(pattern="/", content=HomePage)
+                    with Route(pattern="/"):
+                        HomePage()
 
         capture = capture_patches(App)
         capture.render()
@@ -164,8 +165,10 @@ class TestRouteReactivity:
         def App() -> None:
             with router_state:
                 with Routes():
-                    Route(pattern="/", content=HomePage)
-                    Route(pattern="/users", content=UsersPage)
+                    with Route(pattern="/"):
+                        HomePage()
+                    with Route(pattern="/users"):
+                        UsersPage()
 
         capture = capture_patches(App)
         capture.render()
@@ -200,9 +203,12 @@ class TestMultipleRoutes:
         def App() -> None:
             with RouterState(path="/users"):
                 with Routes():
-                    Route(pattern="/", content=Home)
-                    Route(pattern="/users", content=Users)
-                    Route(pattern="/settings", content=Settings)
+                    with Route(pattern="/"):
+                        Home()
+                    with Route(pattern="/users"):
+                        Users()
+                    with Route(pattern="/settings"):
+                        Settings()
 
         capture = capture_patches(App)
         capture.render()

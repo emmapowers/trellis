@@ -16,11 +16,16 @@ def App() -> None:
             # Route content - Routes ensures only first match renders
             with w.Card(padding=20, style={"marginTop": "20px"}):
                 with Routes():
-                    Route(pattern="/", content=HomePage)
-                    Route(pattern="/about", content=AboutPage)
-                    Route(pattern="/users", content=UsersPage)
-                    Route(pattern="/users/:id", content=UserDetailPage)
-                    Route(pattern="*", content=NotFoundPage)
+                    with Route(pattern="/"):
+                        HomePage()
+                    with Route(pattern="/about"):
+                        AboutPage()
+                    with Route(pattern="/users"):
+                        UsersPage()
+                    with Route(pattern="/users/:id"):
+                        UserDetailPage()
+                    with Route(pattern="*"):
+                        NotFoundPage()
 
 
 @component
