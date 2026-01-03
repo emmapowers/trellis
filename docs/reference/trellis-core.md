@@ -98,7 +98,7 @@ Created via `@component` decorator. Wraps a render function.
 
 ```python
 @component
-def MyComponent(label: str, children: list[Element] = []):
+def MyComponent(label: str, children: list[ChildRef] = []):
     with Column():
         Label(text=label)
         for child in children:
@@ -279,6 +279,7 @@ Hooks can safely modify state because `is_render_active()` returns False (sessio
 | `rendering/frames.py` | Frame stack for children |
 | `rendering/patches.py` | Patch types |
 | `rendering/lifecycle.py` | Mount/unmount tracking |
+| `rendering/child_ref.py` | ChildRef for stable child references |
 | `components/base.py` | Component base, placement logic |
 | `components/composition.py` | @component decorator |
 | `components/react.py` | ReactComponentBase |

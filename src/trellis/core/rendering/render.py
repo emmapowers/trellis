@@ -183,7 +183,19 @@ def _execute_single_node(
     # Get props including children if component accepts them
     props = node.props.copy()
     if node.component._has_children_param:
-        props["children"] = session.elements.get_children(node)
+        # Use existing children (ChildRefs) if present, otherwise build from child_ids.
+        # ChildRefs are stable references created when the parent's `with` block executed.
+        # We only rebuild from child_ids for initial render or when parent re-renders.
+        if "children" not in props:
+            # Fallback: create ChildRefs from child_ids (for backward compatibility
+            # and cases where children weren't collected via `with` block)
+            from trellis.core.rendering.child_ref import ChildRef
+
+            props["children"] = [
+                ChildRef(id=cid, _session_ref=node._session_ref)
+                for cid in node.child_ids
+                if session.elements.get(cid) is not None
+            ]
 
     # Set up execution context
     old_node_id = session.active.current_node_id
@@ -266,9 +278,21 @@ def _execute_tree(
         )
 
         # Process removals first
+        # Check if child is still collected (in props["children"]) but just not rendered
+        from trellis.core.rendering.child_ref import ChildRef
+
+        collected_ids = {
+            c.id for c in executed_node.props.get("children", []) if isinstance(c, ChildRef)
+        }
+
         for removed_id in result.removed:
             session.active.patches.emit(RenderRemovePatch(node_id=removed_id))
-            _unmount_node_tree(session, removed_id)
+            if removed_id in collected_ids:
+                # Still collected, just hidden by container → soft unmount
+                _soft_unmount_node_tree(session, removed_id)
+            else:
+                # Not collected anymore → full removal
+                _full_remove_node_tree(session, removed_id)
 
         # Build set of added IDs for quick lookup
         added_set = set(result.added)
@@ -319,8 +343,13 @@ def _mount_node_tree(session: RenderSession, node_id: str) -> None:
             _mount_node_tree(session, child_id)
 
 
-def _unmount_node_tree(session: RenderSession, node_id: str) -> None:
-    """Unmount a node and all its descendants."""
+def _soft_unmount_node_tree(session: RenderSession, node_id: str) -> None:
+    """Soft unmount: call hooks and mark unmounted, but keep Element in storage.
+
+    Used when a container hides a child but the child is still in props["children"].
+    The Element stays in session.elements so ChildRef.element still works and the
+    child can be rendered again later.
+    """
     assert session.active is not None
     state = session.states.get(node_id)
     if state is None or not state.mounted:
@@ -331,28 +360,56 @@ def _unmount_node_tree(session: RenderSession, node_id: str) -> None:
     child_count = len(node.child_ids) if node else 0
 
     logger.debug(
-        "Unmounting subtree at %s (%d descendants)",
+        "Soft unmounting subtree at %s (%d descendants)",
         node_id,
         child_count,
     )
 
     if node:
         for child_id in node.child_ids:
-            _unmount_node_tree(session, child_id)
+            _soft_unmount_node_tree(session, child_id)
 
     # Track unmount hook (called after render completes)
-    # State cleanup is deferred to _process_pending_hooks so hooks can access local_state
     session.active.lifecycle.track_unmount(node_id)
-
-    # Note: RemovePatch is emitted in _execute_tree before calling
-    # _unmount_node_tree, so we don't need to track removed IDs here.
-
-    # Remove node from storage so it can be garbage collected.
-    # This allows WeakSet-based dependency tracking to clean up references.
-    session.elements.remove(node_id)
 
     state.mounted = False
     session.dirty.discard(node_id)
+    # Note: Do NOT remove from session.elements - child can be rendered again
+
+
+def _full_remove_node_tree(session: RenderSession, node_id: str) -> None:
+    """Full removal: soft unmount + remove Element from storage.
+
+    Used when a parent re-renders and no longer collects this child in its
+    `with` block. The child and its descendants are fully removed.
+    """
+    assert session.active is not None
+
+    # First do soft unmount (handles hooks and state)
+    _soft_unmount_node_tree(session, node_id)
+
+    # Then remove the element and all descendants from storage
+    _remove_element_tree(session, node_id)
+
+
+def _remove_element_tree(session: RenderSession, node_id: str) -> None:
+    """Remove an element and all its descendants from storage."""
+    node = session.elements.get(node_id)
+    if node:
+        for child_id in node.child_ids:
+            _remove_element_tree(session, child_id)
+    session.elements.remove(node_id)
+
+
+def _unmount_node_tree(session: RenderSession, node_id: str) -> None:
+    """Unmount a node and all its descendants.
+
+    DEPRECATED: Use _soft_unmount_node_tree or _full_remove_node_tree instead.
+    This function is kept for backward compatibility during transition.
+    """
+    # For now, this behaves like full removal to maintain existing behavior
+    # in code paths that haven't been updated yet
+    _full_remove_node_tree(session, node_id)
 
 
 def _call_mount_hooks(session: RenderSession, node_id: str) -> None:

@@ -88,7 +88,9 @@ class Element(KeyTrait):
         exc_val: BaseException | None,
         exc_tb: tp.Any,
     ) -> None:
-        """Exit the `with` block, storing child_ids for later execution."""
+        """Exit the `with` block, storing ChildRefs in props["children"]."""
+        from trellis.core.rendering.child_ref import ChildRef
+
         session = get_active_session()
         if session is None or session.active is None:
             return
@@ -105,30 +107,16 @@ class Element(KeyTrait):
             len(child_ids),
         )
 
-        # Store collected child IDs as input for execute()
+        # Store collected child IDs (for initial render/reconciliation)
         self.child_ids = list(child_ids)
 
-        # Re-store node with child_ids set (execution happens later in _execute_tree)
-        session.elements.store(self)
+        # Create ChildRefs for the container to use during execution.
+        # These are stable references that survive container re-renders.
+        children = [ChildRef(id=cid, _session_ref=self._session_ref) for cid in child_ids]
+        self.props["children"] = children
 
-    def __call__(self) -> None:
-        """Mount this node at the current position."""
-        session = get_active_session()
-        if (
-            session is not None
-            and session.active is not None
-            and session.active.frames.has_active()
-        ):
-            # Inside a `with` block - just add to pending children
-            session.active.frames.add_child(self.id)
-        elif session is not None:
-            # Inside render context but outside any component execution frame
-            raise RuntimeError(
-                "Cannot call child() outside component execution. "
-                "Ensure you're inside a component function or with block."
-            )
-        else:
-            raise RuntimeError("Cannot mount node outside of render context")
+        # Re-store node with child_ids and children props set
+        session.elements.store(self)
 
 
 def props_equal(old_props: dict[str, tp.Any], new_props: dict[str, tp.Any]) -> bool:

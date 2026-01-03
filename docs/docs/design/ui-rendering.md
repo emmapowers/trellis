@@ -197,7 +197,7 @@ def UserCard(user: User, on_delete: Callable[[str], None]) -> None:
 
 **Children and context blocks:**
 
-When components are called inside a `with` block, they are collected as children and passed to the parent component. The parent component receives these as `Element` objects and controls where they appear in the tree by calling them.
+When components are called inside a `with` block, they are collected as children and passed to the parent component. The parent component receives these as `ChildRef` objects (stable references) and controls where they appear in the tree by calling them.
 
 ```python
 @component
@@ -208,7 +208,7 @@ def MyApp():
         WidgetC()
 
 @component
-def Column(children: list[Element]):
+def Column(children: list[ChildRef]):
     with h.Div(style={"display": "flex", "flexDirection": "column"}):
         for child in children:
             child()  # Position child here in the tree
