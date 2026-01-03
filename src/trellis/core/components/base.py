@@ -45,7 +45,7 @@ class Component(ABC):
         ...
 
     @property
-    def _has_children_param(self) -> bool:
+    def is_container(self) -> bool:
         """Whether this component accepts children via `with` block."""
         return False
 
@@ -96,7 +96,7 @@ class Component(ABC):
             # The old_elements snapshot shares element references, so modifying
             # old_element.child_ids in __exit__ would corrupt the snapshot and break
             # reconciliation (old vs new child_ids would be identical).
-            if self._has_children_param:
+            if self.is_container:
                 logger.debug(
                     "Creating new element for container %s (preserving snapshot)", self.name
                 )

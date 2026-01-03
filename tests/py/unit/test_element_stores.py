@@ -12,7 +12,7 @@ class MockComponent:
     """Minimal component for testing."""
 
     name = "MockComponent"
-    _has_children_param = False
+    is_container = False
 
     def render(self):
         pass

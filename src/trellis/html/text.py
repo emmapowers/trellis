@@ -38,7 +38,7 @@ class TextNode(Component):
     """
 
     @property
-    def _has_children_param(self) -> bool:
+    def is_container(self) -> bool:
         """Text nodes don't accept children."""
         return False
 

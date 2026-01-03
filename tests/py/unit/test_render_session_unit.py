@@ -18,7 +18,7 @@ class _MockElementComponent:
     """Minimal component for creating test Element nodes."""
 
     name = "MockElement"
-    _has_children_param = False
+    is_container = False
 
     def render(self) -> None:
         pass

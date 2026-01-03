@@ -58,7 +58,7 @@ class HtmlElement(Component):
     _is_container: tp.ClassVar[bool] = False
 
     @property
-    def _has_children_param(self) -> bool:
+    def is_container(self) -> bool:
         """Whether this element accepts children via with block."""
         return self.__class__._is_container
 

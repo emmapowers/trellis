@@ -66,7 +66,7 @@ class Element(KeyTrait):
             )
 
         # Validate that the component accepts children
-        if not self.component._has_children_param:
+        if not self.component.is_container:
             raise TypeError(
                 f"Component '{self.component.name}' cannot be used with 'with' statement: "
                 f"it does not accept children"

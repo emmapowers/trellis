@@ -127,8 +127,8 @@ class TestReactComponentBaseSubclass:
 
         assert ContainerWidget._has_children is True
 
-    def test_has_children_param_property(self) -> None:
-        """_has_children_param property reads from class variable."""
+    def testis_container_property(self) -> None:
+        """is_container property reads from class variable."""
 
         @dataclass(kw_only=True)
         class Container(ReactComponentBase):
@@ -141,8 +141,8 @@ class TestReactComponentBaseSubclass:
             name: str = "Leaf"
             _element_name = "Leaf"
 
-        assert Container()._has_children_param is True
-        assert Leaf()._has_children_param is False
+        assert Container().is_container is True
+        assert Leaf().is_container is False
 
 
 class TestReactComponentBaseDecorator:
@@ -184,7 +184,7 @@ class TestReactComponentBaseDecorator:
         def LeafWidget() -> Element: ...
 
         # Access the underlying component
-        assert LeafWidget._component._has_children_param is False
+        assert LeafWidget._component.is_container is False
 
     def test_decorator_has_children_true(self) -> None:
         """Decorator can create container components."""
@@ -192,7 +192,7 @@ class TestReactComponentBaseDecorator:
         @react_component_base("ContainerWidget", has_children=True)
         def ContainerWidget() -> Element: ...
 
-        assert ContainerWidget._component._has_children_param is True
+        assert ContainerWidget._component.is_container is True
 
     def test_decorator_exposes_component(self) -> None:
         """Decorated function exposes _component for introspection."""

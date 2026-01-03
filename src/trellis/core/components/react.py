@@ -71,7 +71,7 @@ class ReactComponentBase(Component):
     _has_children: tp.ClassVar[bool] = False
 
     @property
-    def _has_children_param(self) -> bool:
+    def is_container(self) -> bool:
         return self.__class__._has_children
 
     @property
