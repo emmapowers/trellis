@@ -10,11 +10,12 @@ from ..example import example
 
 @example("Toolbar")
 def ToolbarExample() -> None:
-    """Grouped action buttons."""
+    """Grouped action buttons with icons."""
     with w.Toolbar():
-        w.Button(text="New", variant="primary", size="sm")
-        w.Button(text="Edit", variant="secondary", size="sm")
-        w.Button(text="Delete", variant="danger", size="sm")
+        w.Button(icon=IconName.PLUS, variant="primary", size="sm")
+        w.Button(icon=IconName.EDIT, variant="secondary", size="sm")
+        w.Button(icon=IconName.COPY, variant="secondary", size="sm")
+        w.Button(icon=IconName.TRASH, variant="danger", size="sm")
 
 
 @example("Menu")
