@@ -16,8 +16,28 @@ def App() -> None:
 
             # Main content
             with w.Column(flex=1, padding=Padding(x=24, y=20), style={"overflow": "auto"}):
-                # Breadcrumb navigation
-                BreadcrumbNav()
+                with w.Row(gap=0):
+                    # History controls
+                    w.Button(
+                        text="",
+                        icon=IconName.CHEVRON_LEFT,
+                        on_click=lambda: router().go_back(),
+                        disabled=not router().can_go_back,
+                        variant="ghost",
+                        size="sm",
+                        style={"width": "16px", "padding": "0px"},
+                    )
+                    w.Button(
+                        text="",
+                        icon=IconName.CHEVRON_RIGHT,
+                        on_click=lambda: router().go_forward(),
+                        disabled=not router().can_go_forward,
+                        variant="ghost",
+                        size="sm",
+                        style={"width": "16px", "padding": "0px", "marginRight": "4px"},
+                    )
+                    # Breadcrumb navigation
+                    BreadcrumbNav()
 
                 # Route content
                 with w.Card(padding=24, margin=Margin(top=16)):
@@ -62,25 +82,6 @@ def Header() -> None:
 
         # Spacer
         w.Row(flex=1)
-
-        # History controls
-        with w.Row(gap=4):
-            w.Button(
-                text="",
-                icon=IconName.ARROW_LEFT,
-                on_click=lambda: state.go_back(),
-                disabled=not state.can_go_back,
-                variant="ghost",
-                size="sm",
-            )
-            w.Button(
-                text="",
-                icon=IconName.ARROW_RIGHT,
-                on_click=lambda: state.go_forward(),
-                disabled=not state.can_go_forward,
-                variant="ghost",
-                size="sm",
-            )
 
         # Theme switcher
         ThemeSwitcher()
