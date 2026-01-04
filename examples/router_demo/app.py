@@ -1,105 +1,196 @@
 """Router demo application."""
 
-from trellis import Link, Padding, Route, RouterState, Routes, component, router
-from trellis import html as h
+from trellis import Link, Margin, Padding, Route, RouterState, Routes, component, router
 from trellis import widgets as w
+from trellis.app import theme
+from trellis.widgets import IconName, ThemeSwitcher
 
 
 @component
 def App() -> None:
     """Main application with routing setup."""
     with RouterState():
-        with w.Column(padding=Padding(x=20, y=20)):
-            # Navigation header
-            NavHeader()
+        with w.Column(gap=0, style={"height": "100vh"}):
+            # Header
+            Header()
 
-            # Route content - Routes ensures only first match renders
-            with w.Card(padding=20, style={"marginTop": "20px"}):
-                with Routes():
-                    with Route(pattern="/"):
-                        HomePage()
-                    with Route(pattern="/about"):
-                        AboutPage()
-                    with Route(pattern="/users"):
-                        UsersPage()
-                    with Route(pattern="/users/:id"):
-                        UserDetailPage()
-                    with Route(pattern="*"):
-                        NotFoundPage()
+            # Main content
+            with w.Column(flex=1, padding=Padding(x=24, y=20), style={"overflow": "auto"}):
+                # Breadcrumb navigation
+                BreadcrumbNav()
+
+                # Route content
+                with w.Card(padding=24, margin=Margin(top=16)):
+                    with Routes():
+                        with Route(pattern="/"):
+                            HomePage()
+                        with Route(pattern="/about"):
+                            AboutPage()
+                        with Route(pattern="/users"):
+                            UsersPage()
+                        with Route(pattern="/users/:id"):
+                            UserDetailPage()
+                        with Route(pattern="*"):
+                            NotFoundPage()
 
 
 @component
-def NavHeader() -> None:
-    """Navigation header with links and history controls."""
+def Header() -> None:
+    """Application header with navigation and controls."""
     state = router()
 
-    with w.Row(gap=20, align="center"):
+    with w.Row(
+        align="center",
+        gap=16,
+        padding=Padding(x=24, y=12),
+        style={
+            "borderBottom": f"1px solid {theme.border_default}",
+            "backgroundColor": theme.bg_surface,
+            "flexShrink": "0",
+        },
+    ):
+        # Logo/title
+        with w.Row(align="center", gap=8):
+            w.Icon(name=IconName.COMPASS, size=24, color=theme.accent_primary)
+            w.Heading(text="Router Demo", level=3)
+
         # Navigation links
-        with h.Nav():
-            with w.Row(gap=15):
-                Link(to="/", text="Home")
-                Link(to="/about", text="About")
-                Link(to="/users", text="Users")
+        with w.Row(gap=4):
+            NavLink(to="/", text="Home", icon=IconName.HOME)
+            NavLink(to="/about", text="About", icon=IconName.INFO)
+            NavLink(to="/users", text="Users", icon=IconName.USERS)
 
         # Spacer
-        h.Div(style={"flex": "1"})
+        w.Row(flex=1)
 
         # History controls
-        with w.Row(gap=8):
+        with w.Row(gap=4):
             w.Button(
-                text="Back",
+                text="",
+                icon=IconName.ARROW_LEFT,
                 on_click=lambda: state.go_back(),
                 disabled=not state.can_go_back,
+                variant="ghost",
                 size="sm",
             )
             w.Button(
-                text="Forward",
+                text="",
+                icon=IconName.ARROW_RIGHT,
                 on_click=lambda: state.go_forward(),
                 disabled=not state.can_go_forward,
+                variant="ghost",
                 size="sm",
             )
 
-        # Current path display
-        w.Label(text=f"Path: {state.path}", color="#666", font_size=12)
+        # Theme switcher
+        ThemeSwitcher()
+
+
+@component
+def NavLink(to: str, text: str, icon: IconName) -> None:
+    """Navigation link button."""
+    state = router()
+    is_active = state.path == to or (to != "/" and state.path.startswith(to))
+
+    with Link(to=to):
+        w.Button(
+            text=text,
+            icon=icon,
+            variant="primary" if is_active else "ghost",
+            size="sm",
+        )
+
+
+@component
+def BreadcrumbNav() -> None:
+    """Breadcrumb showing current navigation path."""
+    state = router()
+
+    # Build breadcrumb items from path
+    items = [{"label": "Home"}]
+    if state.path != "/":
+        parts = state.path.strip("/").split("/")
+        for part in parts:
+            # Capitalize and handle IDs
+            if part.isdigit():
+                items.append({"label": f"User {part}"})
+            else:
+                items.append({"label": part.capitalize()})
+
+    def on_breadcrumb_click(index: int) -> None:
+        if index == 0:
+            state.navigate("/")
+        else:
+            # Navigate to the path up to this segment
+            parts = state.path.strip("/").split("/")
+            new_path = "/" + "/".join(parts[:index])
+            state.navigate(new_path)
+
+    w.Breadcrumb(items=items, on_click=on_breadcrumb_click)
 
 
 @component
 def HomePage() -> None:
     """Home page content."""
-    with w.Column(gap=12):
-        w.Label(text="Welcome Home", font_size=24, font_weight=600)
+    with w.Column(gap=16):
+        with w.Row(align="center", gap=12):
+            w.Icon(name=IconName.HOME, size=28, color=theme.accent_primary)
+            w.Heading(text="Welcome Home", level=2)
+
         w.Label(
-            text="This is a demo of client-side routing in Trellis.",
-            color="#666",
-        )
-        w.Label(
-            text="Use the navigation links above, or click a user below:",
-            color="#666",
+            text="This demo showcases client-side routing in Trellis with URL parameters, "
+            "browser history integration, and reactive navigation.",
+            color=theme.text_secondary,
         )
 
-        # Quick user links
-        with w.Row(gap=10, style={"marginTop": "10px"}):
-            Link(to="/users/1", text="User 1")
-            Link(to="/users/2", text="User 2")
-            Link(to="/users/3", text="User 3")
-            Link(to="/nonexistent", text="404 Test")
+        w.Divider()
+
+        w.Label(text="Quick Links", bold=True)
+        with w.Row(gap=8, margin=Margin(top=4)):
+            with Link(to="/users/1"):
+                w.Button(text="Alice", icon=IconName.USER, variant="outline", size="sm")
+            with Link(to="/users/2"):
+                w.Button(text="Bob", icon=IconName.USER, variant="outline", size="sm")
+            with Link(to="/users/3"):
+                w.Button(text="Carol", icon=IconName.USER, variant="outline", size="sm")
+            with Link(to="/nonexistent"):
+                w.Button(
+                    text="404 Test",
+                    icon=IconName.ALERT_TRIANGLE,
+                    variant="ghost",
+                    size="sm",
+                )
 
 
 @component
 def AboutPage() -> None:
     """About page content."""
-    with w.Column(gap=12):
-        w.Label(text="About", font_size=24, font_weight=600)
+    with w.Column(gap=16):
+        with w.Row(align="center", gap=12):
+            w.Icon(name=IconName.INFO, size=28, color=theme.accent_primary)
+            w.Heading(text="About", level=2)
+
         w.Label(
-            text="Trellis Router provides client-side navigation without page reloads.",
-            color="#666",
+            text="Trellis Router provides seamless client-side navigation without page reloads.",
+            color=theme.text_secondary,
         )
-        with w.Column(gap=4, style={"marginTop": "10px"}):
-            w.Label(text="Features:", font_weight=500)
-            w.Label(text="- Path-based routing with pattern matching", color="#666")
-            w.Label(text="- URL parameters (/users/:id)", color="#666")
-            w.Label(text="- Browser history integration", color="#666")
-            w.Label(text="- Reactive state updates", color="#666")
+
+        w.Divider()
+
+        w.Label(text="Features", bold=True)
+        with w.Column(gap=8, margin=Margin(top=8)):
+            FeatureItem(icon=IconName.COMPASS, text="Path-based routing with pattern matching")
+            FeatureItem(icon=IconName.CODE, text="URL parameters (/users/:id)")
+            FeatureItem(icon=IconName.CLOCK, text="Browser history integration")
+            FeatureItem(icon=IconName.REFRESH_CW, text="Reactive state updates")
+
+
+@component
+def FeatureItem(icon: IconName, text: str) -> None:
+    """Single feature list item."""
+    with w.Row(gap=8, align="center"):
+        w.Icon(name=icon, size=16, color=theme.text_secondary)
+        w.Label(text=text, color=theme.text_secondary)
 
 
 # Sample user data
@@ -109,20 +200,39 @@ USERS = {
     "3": {"name": "Carol Williams", "email": "carol@example.com", "role": "Designer"},
 }
 
+ROLE_VARIANTS = {
+    "Admin": "error",
+    "Developer": "info",
+    "Designer": "success",
+}
+
 
 @component
 def UsersPage() -> None:
     """Users list page."""
-    with w.Column(gap=12):
-        w.Label(text="Users", font_size=24, font_weight=600)
+    with w.Column(gap=16):
+        with w.Row(align="center", gap=12):
+            w.Icon(name=IconName.USERS, size=28, color=theme.accent_primary)
+            w.Heading(text="Users", level=2)
 
-        # User list
-        for user_id, user in USERS.items():
-            with Link(to=f"/users/{user_id}"):
-                with w.Card(padding=12, style={"cursor": "pointer"}):
-                    with w.Row(gap=12, align="center"):
-                        w.Label(text=user["name"], font_weight=500)
-                        w.Label(text=user["role"], color="#666", font_size=12)
+        with w.Column(gap=8):
+            for user_id, user in USERS.items():
+                UserCard(user_id=user_id, user=user)
+
+
+@component
+def UserCard(user_id: str, user: dict) -> None:
+    """Clickable user card."""
+    with Link(to=f"/users/{user_id}"):
+        with w.Card(
+            padding=16,
+            style={"cursor": "pointer", "transition": "box-shadow 0.15s ease"},
+        ):
+            with w.Row(gap=12, align="center"):
+                w.Icon(name=IconName.USER, size=20, color=theme.text_secondary)
+                w.Label(text=user["name"], bold=True, flex=1)
+                w.Badge(text=user["role"], variant=ROLE_VARIANTS.get(user["role"], "default"))
+                w.Icon(name=IconName.CHEVRON_RIGHT, size=16, color=theme.text_secondary)
 
 
 @component
@@ -132,27 +242,48 @@ def UserDetailPage() -> None:
     user_id = state.params.get("id", "")
     user = USERS.get(user_id)
 
-    with w.Column(gap=12):
+    with w.Column(gap=16):
         if user:
-            w.Label(text=user["name"], font_size=24, font_weight=600)
+            with w.Row(align="center", gap=12):
+                w.Icon(name=IconName.USER, size=28, color=theme.accent_primary)
+                w.Heading(text=user["name"], level=2)
+                w.Badge(text=user["role"], variant=ROLE_VARIANTS.get(user["role"], "default"))
 
-            with w.Column(gap=8, style={"marginTop": "10px"}):
-                with w.Row(gap=8):
-                    w.Label(text="Email:", font_weight=500)
-                    w.Label(text=user["email"], color="#666")
-                with w.Row(gap=8):
-                    w.Label(text="Role:", font_weight=500)
-                    w.Label(text=user["role"], color="#666")
-                with w.Row(gap=8):
-                    w.Label(text="ID:", font_weight=500)
-                    w.Label(text=user_id, color="#666")
+            w.Divider()
 
-            with w.Row(style={"marginTop": "20px"}):
-                Link(to="/users", text="Back to Users")
+            with w.Column(gap=12):
+                DetailRow(label="Email", value=user["email"], icon=IconName.MAIL)
+                DetailRow(label="Role", value=user["role"], icon=IconName.TAG)
+                DetailRow(label="ID", value=user_id, icon=IconName.HASH)
+
+            with w.Row(margin=Margin(top=8)):
+                with Link(to="/users"):
+                    w.Button(
+                        text="Back to Users",
+                        icon=IconName.ARROW_LEFT,
+                        variant="outline",
+                    )
         else:
-            w.Label(text="User Not Found", font_size=24, font_weight=600, color="#e53e3e")
-            w.Label(text=f"No user with ID: {user_id}", color="#666")
-            Link(to="/users", text="Back to Users")
+            with w.Column(gap=12, align="center"):
+                w.Icon(name=IconName.USER_X, size=48, color=theme.error)
+                w.Heading(text="User Not Found", level=3, color=theme.error)
+                w.Label(text=f"No user with ID: {user_id}", color=theme.text_secondary)
+
+                with Link(to="/users"):
+                    w.Button(
+                        text="Back to Users",
+                        icon=IconName.ARROW_LEFT,
+                        variant="outline",
+                    )
+
+
+@component
+def DetailRow(label: str, value: str, icon: IconName) -> None:
+    """User detail row with icon."""
+    with w.Row(gap=12, align="center"):
+        w.Icon(name=icon, size=16, color=theme.text_secondary)
+        w.Label(text=label, bold=True, style={"width": "80px"})
+        w.Label(text=value, color=theme.text_secondary)
 
 
 @component
@@ -160,10 +291,15 @@ def NotFoundPage() -> None:
     """404 page for unmatched routes."""
     state = router()
 
-    with w.Column(gap=12, align="center"):
-        w.Label(text="404", font_size=48, font_weight=700, color="#e53e3e")
-        w.Label(text="Page Not Found", font_size=24, font_weight=600)
-        w.Label(text=f'The path "{state.path}" does not exist.', color="#666")
+    with w.Column(gap=16, align="center"):
+        w.Icon(name=IconName.ALERT_CIRCLE, size=64, color=theme.error)
+        w.Heading(text="404", level=1, color=theme.error)
+        w.Heading(text="Page Not Found", level=3)
+        w.Label(text=f'The path "{state.path}" does not exist.', color=theme.text_secondary)
 
-        with w.Row(style={"marginTop": "20px"}):
-            w.Button(text="Go Home", on_click=lambda: state.navigate("/"))
+        with w.Row(margin=Margin(top=8)):
+            w.Button(
+                text="Go Home",
+                icon=IconName.HOME,
+                on_click=lambda: state.navigate("/"),
+            )
