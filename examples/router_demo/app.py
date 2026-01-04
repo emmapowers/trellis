@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from trellis import Margin, Padding, Route, RouterState, Routes, component, router
+from trellis import Margin, Padding, Route, Routes, component, router
 from trellis import html as h
 from trellis import widgets as w
 from trellis.app import theme
