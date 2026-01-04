@@ -1,12 +1,16 @@
 import React, { useRef } from "react";
 import { useButton } from "react-aria";
 import { colors, radius, typography, shadows, focusRing, focusRingOnColor } from "../theme";
+import { Icon } from "./Icon";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
+type IconPosition = "left" | "right";
 
 interface ButtonProps {
   text?: string;
+  icon?: string;
+  icon_position?: IconPosition;
   on_click?: () => void;
   disabled?: boolean;
   variant?: ButtonVariant;
@@ -109,8 +113,17 @@ const disabledStyles: React.CSSProperties = {
   cursor: "not-allowed",
 };
 
+// Icon sizes that harmonize with button sizes
+const iconSizes: Record<ButtonSize, number> = {
+  sm: 14,
+  md: 16,
+  lg: 18,
+};
+
 export function Button({
   text = "",
+  icon,
+  icon_position = "left",
   on_click,
   disabled = false,
   variant = "primary",
@@ -150,6 +163,33 @@ export function Button({
     ...style,
   };
 
+  // Determine icon color based on variant
+  const iconColor =
+    variant === "primary" || variant === "danger"
+      ? colors.text.inverse
+      : variant === "ghost"
+        ? isHovered || isPressed
+          ? colors.text.primary
+          : colors.text.secondary
+        : colors.text.primary;
+
+  const iconSize = iconSizes[size] || iconSizes.md;
+  const hasText = text.length > 0;
+  const gap = hasText ? (size === "sm" ? 4 : size === "lg" ? 8 : 6) : 0;
+
+  const iconElement = icon ? (
+    <Icon
+      name={icon}
+      size={iconSize}
+      color={disabled ? undefined : iconColor}
+      style={{
+        marginRight: icon_position === "left" && hasText ? gap : 0,
+        marginLeft: icon_position === "right" && hasText ? gap : 0,
+        opacity: disabled ? 0.5 : 1,
+      }}
+    />
+  ) : null;
+
   return (
     <button
       {...buttonProps}
@@ -170,7 +210,9 @@ export function Button({
         setIsFocusVisible(false);
       }}
     >
+      {icon_position === "left" && iconElement}
       {text}
+      {icon_position === "right" && iconElement}
     </button>
   );
 }
