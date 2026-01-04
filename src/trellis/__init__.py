@@ -53,7 +53,7 @@ from trellis.core import (
     render,
     set_active_session,
 )
-from trellis.routing import Link, Route, RouterState, Routes, router
+from trellis.routing import Route, RouterState, Routes, router
 from trellis.utils import async_main
 
 __version__ = "0.1.0"
@@ -70,7 +70,6 @@ __all__ = [
     "FrameStack",
     "Height",
     "LifecycleTracker",
-    "Link",
     "Margin",
     "Mutable",
     "Padding",

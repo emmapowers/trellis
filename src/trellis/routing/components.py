@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from trellis.core.components.composition import component
 from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.state.stateful import Stateful
-from trellis.html.links import A
 from trellis.routing.path_matching import match_path
 from trellis.routing.state import router
 
@@ -111,37 +110,3 @@ def Route(*, pattern: str, children: list[ChildRef] | None = None) -> None:
     if children:
         for child in children:
             child()
-
-
-@component
-def Link(*, to: str, text: str = "", children: list[ChildRef] | None = None) -> None:
-    """Navigation link that uses client-side routing.
-
-    Renders an anchor element that navigates without full page reload.
-    Click handler calls router().navigate() to update RouterState.
-
-    Args:
-        to: Path to navigate to when clicked
-        text: Text content for the link (optional)
-        children: Child elements to render inside link (optional)
-
-    Example:
-        ```python
-        Link(to="/", text="Home")
-        Link(to="/users/123", text="User Profile")
-
-        # With children
-        with Link(to="/about"):
-            h.Span("About Us")
-        ```
-    """
-
-    def handle_click(_event: object) -> None:
-        # router() works in callbacks via callback_context
-        # _event is the MouseEvent from the browser (unused)
-        router().navigate(to)
-
-    with A(text, href=to, onClick=handle_click):
-        if children:
-            for child in children:
-                child()

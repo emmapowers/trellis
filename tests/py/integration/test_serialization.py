@@ -113,12 +113,15 @@ class TestSerializeNode:
 
         result = rendered(App)
 
-        child = result.session.elements.get(result.root_element.child_ids[0])
-        child_serialized = serialize_element(child, result.session)
+        # Button is a composition component wrapping _Button.
+        # Navigate: App -> Button (composition) -> _Button (react with props)
+        button_wrapper = result.session.elements.get(result.root_element.child_ids[0])
+        button_element = result.session.elements.get(button_wrapper.child_ids[0])
+        button_serialized = serialize_element(button_element, result.session)
 
         # Should have callback reference
-        assert "__callback__" in child_serialized["props"]["on_click"]
-        cb_id = child_serialized["props"]["on_click"]["__callback__"]
+        assert "__callback__" in button_serialized["props"]["on_click"]
+        cb_id = button_serialized["props"]["on_click"]["__callback__"]
 
         # Should be able to look up and invoke the callback
         # parse_callback_id returns (node_id, prop_name)
