@@ -23,7 +23,7 @@ import {
 } from "../../../common/client/src/ClientMessageHandler";
 import { TrellisClient } from "../../../common/client/src/TrellisClient";
 import { TrellisStore } from "../../../common/client/src/core";
-import { RouterManager } from "../../../common/client/src/RouterManager";
+import { RouterManager, RoutingMode } from "../../../common/client/src/RouterManager";
 
 export type { ConnectionState };
 
@@ -53,9 +53,9 @@ export class DesktopClient implements TrellisClient {
   constructor(callbacks: DesktopClientCallbacks = {}, store?: TrellisStore) {
     this.clientId = crypto.randomUUID();
 
-    // Create router manager for embedded mode (desktop has no URL bar)
+    // Create router manager for Embedded mode (desktop has no URL bar)
     this.routerManager = new RouterManager({
-      embedded: true,
+      mode: RoutingMode.Embedded,
       sendMessage: (msg: UrlChangedMessage) => this.send(msg),
       initialPath: "/",
     });

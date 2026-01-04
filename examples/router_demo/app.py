@@ -12,49 +12,48 @@ from trellis.widgets import IconName, ThemeSwitcher
 @component
 def App() -> None:
     """Main application with routing setup."""
-    with RouterState():
-        with w.Column(gap=0, style={"height": "100vh"}):
-            # Header
-            Header()
+    with w.Column(gap=0, style={"height": "100vh"}):
+        # Header
+        Header()
 
-            # Main content
-            with w.Column(flex=1, padding=Padding(x=24, y=20), style={"overflow": "auto"}):
-                with w.Row(gap=0):
-                    # History controls
-                    w.Button(
-                        text="",
-                        icon=IconName.CHEVRON_LEFT,
-                        on_click=lambda: router().go_back(),
-                        disabled=not router().can_go_back,
-                        variant="ghost",
-                        size="sm",
-                        style={"width": "16px", "padding": "0px"},
-                    )
-                    w.Button(
-                        text="",
-                        icon=IconName.CHEVRON_RIGHT,
-                        on_click=lambda: router().go_forward(),
-                        disabled=not router().can_go_forward,
-                        variant="ghost",
-                        size="sm",
-                        style={"width": "16px", "padding": "0px", "marginRight": "4px"},
-                    )
-                    # Breadcrumb navigation
-                    BreadcrumbNav()
+        # Main content
+        with w.Column(flex=1, padding=Padding(x=24, y=20), style={"overflow": "auto"}):
+            with w.Row(gap=0):
+                # History controls
+                w.Button(
+                    text="",
+                    icon=IconName.CHEVRON_LEFT,
+                    on_click=lambda: router().go_back(),
+                    disabled=not router().can_go_back,
+                    variant="ghost",
+                    size="sm",
+                    style={"width": "16px", "padding": "0px"},
+                )
+                w.Button(
+                    text="",
+                    icon=IconName.CHEVRON_RIGHT,
+                    on_click=lambda: router().go_forward(),
+                    disabled=not router().can_go_forward,
+                    variant="ghost",
+                    size="sm",
+                    style={"width": "16px", "padding": "0px", "marginRight": "4px"},
+                )
+                # Breadcrumb navigation
+                BreadcrumbNav()
 
-                # Route content
-                with w.Card(padding=24, margin=Margin(top=16)):
-                    with Routes():
-                        with Route(pattern="/"):
-                            HomePage()
-                        with Route(pattern="/about"):
-                            AboutPage()
-                        with Route(pattern="/users"):
-                            UsersPage()
-                        with Route(pattern="/users/:id"):
-                            UserDetailPage()
-                        with Route(pattern="*"):
-                            NotFoundPage()
+            # Route content
+            with w.Card(padding=24, margin=Margin(top=16)):
+                with Routes():
+                    with Route(pattern="/"):
+                        HomePage()
+                    with Route(pattern="/about"):
+                        AboutPage()
+                    with Route(pattern="/users"):
+                        UsersPage()
+                    with Route(pattern="/users/:id"):
+                        UserDetailPage()
+                    with Route(pattern="*"):
+                        NotFoundPage()
 
 
 @component

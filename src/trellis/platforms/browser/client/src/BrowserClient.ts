@@ -23,15 +23,20 @@ import {
   ConnectionState,
 } from "../../../common/client/src/ClientMessageHandler";
 import { TrellisStore } from "../../../common/client/src/core";
-import { RouterManager } from "../../../common/client/src/RouterManager";
+import { RouterManager, RoutingMode } from "../../../common/client/src/RouterManager";
 
 export type { ConnectionState };
 
 export interface BrowserClientCallbacks extends ClientMessageHandlerCallbacks {}
 
 export interface BrowserClientOptions {
-  /** If true, use internal history instead of browser history API */
-  embedded?: boolean;
+  /**
+   * Routing mode for URL handling.
+   * - HashUrl (default): Uses hash-based URLs (#/path) for browser platform
+   * - Standard: Uses pathname-based URLs (requires server-side routing support)
+   * - Embedded: Internal history only, no URL changes
+   */
+  routingMode?: RoutingMode;
 }
 
 type SendCallback = (msg: Record<string, unknown>) => void;
@@ -64,9 +69,9 @@ export class BrowserClient implements TrellisClient {
   ) {
     this.clientId = crypto.randomUUID();
 
-    // Create router manager with configured embedded mode
+    // Create router manager with configured routing mode (defaults to HashUrl for browser)
     this.routerManager = new RouterManager({
-      embedded: options.embedded ?? false,
+      mode: options.routingMode ?? RoutingMode.HashUrl,
       sendMessage: (msg: UrlChangedMessage) => this.sendCallback?.(msg),
     });
 
@@ -126,7 +131,7 @@ export class BrowserClient implements TrellisClient {
       client_id: this.clientId,
       system_theme: systemTheme,
       theme_mode: themeMode,
-      path: window.location.pathname,
+      path: this.routerManager.getCurrentPath(),
     };
     this.sendCallback?.(hello);
   }

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi, Mock } from "vitest";
-import { RouterManager } from "@common/RouterManager";
+import { RouterManager, RoutingMode } from "@common/RouterManager";
 import { MessageType, UrlChangedMessage } from "@common/types";
 
 describe("RouterManager", () => {
@@ -52,11 +52,11 @@ describe("RouterManager", () => {
     vi.clearAllMocks();
   });
 
-  describe("standalone mode", () => {
+  describe("standard mode", () => {
     let manager: RouterManager;
 
     beforeEach(() => {
-      manager = new RouterManager({ embedded: false, sendMessage });
+      manager = new RouterManager({ mode: RoutingMode.Standard, sendMessage });
     });
 
     afterEach(() => {
@@ -139,7 +139,10 @@ describe("RouterManager", () => {
           configurable: true,
         });
 
-        const newManager = new RouterManager({ embedded: false, sendMessage });
+        const newManager = new RouterManager({
+          mode: RoutingMode.Standard,
+          sendMessage,
+        });
         expect(newManager.getCurrentPath()).toBe("/initial");
         newManager.destroy();
       });
@@ -150,7 +153,7 @@ describe("RouterManager", () => {
     let manager: RouterManager;
 
     beforeEach(() => {
-      manager = new RouterManager({ embedded: true, sendMessage });
+      manager = new RouterManager({ mode: RoutingMode.Embedded, sendMessage });
     });
 
     afterEach(() => {
@@ -272,7 +275,7 @@ describe("RouterManager", () => {
     describe("initial path", () => {
       it("uses provided initial path", () => {
         const newManager = new RouterManager({
-          embedded: true,
+          mode: RoutingMode.Embedded,
           sendMessage,
           initialPath: "/start",
         });
@@ -302,8 +305,11 @@ describe("RouterManager", () => {
   });
 
   describe("destroy", () => {
-    it("removes popstate listener in standalone mode", () => {
-      const manager = new RouterManager({ embedded: false, sendMessage });
+    it("removes popstate listener in standard mode", () => {
+      const manager = new RouterManager({
+        mode: RoutingMode.Standard,
+        sendMessage,
+      });
       manager.destroy();
 
       // After destroy, popstate should not trigger sendMessage
@@ -318,6 +324,185 @@ describe("RouterManager", () => {
       window.dispatchEvent(event);
 
       expect(sendMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("hash URL mode", () => {
+    let manager: RouterManager;
+
+    beforeEach(() => {
+      // Set up hash in location mock
+      Object.defineProperty(window, "location", {
+        value: { pathname: "/", hash: "" },
+        writable: true,
+        configurable: true,
+      });
+    });
+
+    afterEach(() => {
+      manager?.destroy();
+    });
+
+    describe("initial path", () => {
+      it("reads initial path from window.location.hash", () => {
+        Object.defineProperty(window, "location", {
+          value: { pathname: "/", hash: "#/users/123" },
+          writable: true,
+          configurable: true,
+        });
+
+        manager = new RouterManager({
+          mode: RoutingMode.HashUrl,
+          sendMessage,
+        });
+        expect(manager.getCurrentPath()).toBe("/users/123");
+      });
+
+      it("defaults to / when hash is empty", () => {
+        Object.defineProperty(window, "location", {
+          value: { pathname: "/", hash: "" },
+          writable: true,
+          configurable: true,
+        });
+
+        manager = new RouterManager({
+          mode: RoutingMode.HashUrl,
+          sendMessage,
+        });
+        expect(manager.getCurrentPath()).toBe("/");
+      });
+
+      it("defaults to / when hash is just #", () => {
+        Object.defineProperty(window, "location", {
+          value: { pathname: "/", hash: "#" },
+          writable: true,
+          configurable: true,
+        });
+
+        manager = new RouterManager({
+          mode: RoutingMode.HashUrl,
+          sendMessage,
+        });
+        expect(manager.getCurrentPath()).toBe("/");
+      });
+    });
+
+    describe("pushState", () => {
+      beforeEach(() => {
+        manager = new RouterManager({
+          mode: RoutingMode.HashUrl,
+          sendMessage,
+        });
+      });
+
+      it("updates window.location.hash", () => {
+        manager.pushState("/users");
+
+        expect(window.location.hash).toBe("#/users");
+      });
+
+      it("does not call window.history.pushState", () => {
+        manager.pushState("/users");
+
+        expect(window.history.pushState).not.toHaveBeenCalled();
+      });
+
+      it("updates internal path", () => {
+        manager.pushState("/users");
+
+        expect(manager.getCurrentPath()).toBe("/users");
+      });
+    });
+
+    describe("hashchange handling", () => {
+      beforeEach(() => {
+        manager = new RouterManager({
+          mode: RoutingMode.HashUrl,
+          sendMessage,
+        });
+      });
+
+      it("sends UrlChanged message on hashchange", () => {
+        // Simulate hashchange event
+        Object.defineProperty(window, "location", {
+          value: { pathname: "/", hash: "#/about" },
+          writable: true,
+          configurable: true,
+        });
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+
+        expect(sendMessage).toHaveBeenCalledWith({
+          type: MessageType.URL_CHANGED,
+          path: "/about",
+        } satisfies UrlChangedMessage);
+      });
+
+      it("updates internal path on hashchange", () => {
+        Object.defineProperty(window, "location", {
+          value: { pathname: "/", hash: "#/about" },
+          writable: true,
+          configurable: true,
+        });
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+
+        expect(manager.getCurrentPath()).toBe("/about");
+      });
+
+      it("does not respond to popstate events", () => {
+        const event = new PopStateEvent("popstate", {
+          state: { path: "/about" },
+        });
+        Object.defineProperty(window, "location", {
+          value: { pathname: "/about", hash: "" },
+          writable: true,
+          configurable: true,
+        });
+        window.dispatchEvent(event);
+
+        // Should not send message from popstate
+        expect(sendMessage).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("back and forward", () => {
+      beforeEach(() => {
+        manager = new RouterManager({
+          mode: RoutingMode.HashUrl,
+          sendMessage,
+        });
+      });
+
+      it("calls window.history.back for back()", () => {
+        manager.back();
+
+        expect(window.history.back).toHaveBeenCalled();
+      });
+
+      it("calls window.history.forward for forward()", () => {
+        manager.forward();
+
+        expect(window.history.forward).toHaveBeenCalled();
+      });
+    });
+
+    describe("destroy", () => {
+      it("removes hashchange listener", () => {
+        manager = new RouterManager({
+          mode: RoutingMode.HashUrl,
+          sendMessage,
+        });
+        manager.destroy();
+
+        // After destroy, hashchange should not trigger sendMessage
+        Object.defineProperty(window, "location", {
+          value: { pathname: "/", hash: "#/about" },
+          writable: true,
+          configurable: true,
+        });
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+
+        expect(sendMessage).not.toHaveBeenCalled();
+      });
     });
   });
 });
