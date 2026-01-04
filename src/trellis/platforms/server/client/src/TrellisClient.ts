@@ -22,7 +22,7 @@ import {
 import { TrellisClient } from "../../../common/client/src/TrellisClient";
 import { TrellisStore } from "../../../common/client/src/core";
 import { debugLog } from "../../../common/client/src/debug";
-import { RouterManager } from "../../../common/client/src/RouterManager";
+import { RouterManager, RoutingMode } from "../../../common/client/src/RouterManager";
 
 export type { ConnectionState };
 
@@ -45,9 +45,9 @@ export class ServerTrellisClient implements TrellisClient {
   constructor(callbacks: TrellisClientCallbacks = {}, store?: TrellisStore) {
     this.clientId = crypto.randomUUID();
 
-    // Create router manager for standalone mode
+    // Create router manager for Standard mode (pathname-based URLs with server routing)
     this.routerManager = new RouterManager({
-      embedded: false,
+      mode: RoutingMode.Standard,
       sendMessage: (msg: UrlChangedMessage) => this.send(msg),
     });
 

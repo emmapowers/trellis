@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi, Mock } from "vitest";
 import { BrowserClient } from "@browser/BrowserClient";
+import { RoutingMode } from "@common/RouterManager";
 
 describe("BrowserClient", () => {
   let originalHistory: History;
@@ -26,9 +27,9 @@ describe("BrowserClient", () => {
       configurable: true,
     });
 
-    // Mock location
+    // Mock location with hash support
     Object.defineProperty(window, "location", {
-      value: { pathname: "/" },
+      value: { pathname: "/", hash: "" },
       writable: true,
       configurable: true,
     });
@@ -49,16 +50,31 @@ describe("BrowserClient", () => {
     vi.clearAllMocks();
   });
 
-  describe("embedded mode", () => {
-    it("defaults to standalone mode (uses window.history)", () => {
+  describe("routing mode", () => {
+    it("defaults to HashUrl mode (uses window.location.hash)", () => {
       const client = new BrowserClient();
 
       // Set up send callback so navigation works
       client.setSendCallback(() => {});
 
-      // In standalone mode, pushState should call window.history.pushState
-      // We need to trigger a history push via the handler callback
-      // The router callbacks are set up in the constructor
+      // In HashUrl mode, pushState should update hash, not call pushState
+      // @ts-expect-error - accessing private property for testing
+      client.routerManager.pushState("/users");
+
+      expect(mockPushState).not.toHaveBeenCalled();
+      expect(window.location.hash).toBe("#/users");
+
+      client.disconnect();
+    });
+
+    it("uses Standard mode when routingMode=Standard", () => {
+      const client = new BrowserClient({}, undefined, {
+        routingMode: RoutingMode.Standard,
+      });
+
+      // Set up send callback so navigation works
+      client.setSendCallback(() => {});
+
       // @ts-expect-error - accessing private property for testing
       client.routerManager.pushState("/users");
 
@@ -71,17 +87,36 @@ describe("BrowserClient", () => {
       client.disconnect();
     });
 
-    it("uses embedded mode when embedded=true (does not use window.history)", () => {
-      const client = new BrowserClient({}, undefined, { embedded: true });
+    it("uses Embedded mode when routingMode=Embedded", () => {
+      const client = new BrowserClient({}, undefined, {
+        routingMode: RoutingMode.Embedded,
+      });
 
       // Set up send callback so navigation works
       client.setSendCallback(() => {});
 
-      // In embedded mode, pushState should NOT call window.history.pushState
+      // In Embedded mode, pushState should NOT call window.history.pushState
       // @ts-expect-error - accessing private property for testing
       client.routerManager.pushState("/users");
 
       expect(mockPushState).not.toHaveBeenCalled();
+      expect(window.location.hash).toBe(""); // Hash should not be updated either
+
+      client.disconnect();
+    });
+
+    it("reads initial path from hash in HashUrl mode", () => {
+      Object.defineProperty(window, "location", {
+        value: { pathname: "/", hash: "#/users/123" },
+        writable: true,
+        configurable: true,
+      });
+
+      const client = new BrowserClient();
+      client.setSendCallback(() => {});
+
+      // @ts-expect-error - accessing private property for testing
+      expect(client.routerManager.getCurrentPath()).toBe("/users/123");
 
       client.disconnect();
     });
