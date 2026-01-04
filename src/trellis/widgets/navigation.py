@@ -8,10 +8,13 @@ from __future__ import annotations
 import typing as tp
 from typing import Literal
 
+from trellis.core.components.composition import component
 from trellis.core.components.react import react_component_base
 from trellis.core.components.style_props import Height, Margin, Padding, Width
 from trellis.core.rendering.element import Element
 from trellis.core.state.mutable import Mutable
+from trellis.html.links import A
+from trellis.widgets.basic import Label
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -107,27 +110,71 @@ def Tree(
     ...
 
 
-@react_component_base("Breadcrumb")
-def Breadcrumb(
+@react_component_base("BreadcrumbContainer", is_container=True)
+def _BreadcrumbContainer(
     *,
-    items: list[dict[str, str]] | None = None,
     separator: str = "/",
-    on_click: Callable[[int], None] | None = None,
     margin: Margin | None = None,
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
 ) -> Element:
-    """Navigation breadcrumb trail.
+    """Container that renders breadcrumb children with separators.
+
+    This is the React-rendered container that handles layout and separators.
+    Children are native Trellis elements (A for links, Label for current page).
+    """
+    ...
+
+
+@component
+def Breadcrumb(
+    *,
+    items: list[dict[str, str]] | None = None,
+    separator: str = "/",
+    margin: Margin | None = None,
+    flex: int | None = None,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+) -> None:
+    """Navigation breadcrumb trail with router-integrated links.
+
+    Each breadcrumb item with an href becomes a native html.A element that
+    automatically uses client-side router navigation for relative URLs.
+    The last item (or items without href) renders as a Label.
 
     Args:
         items: Breadcrumb items as [{label, href?}, ...]
         separator: Separator character between items
-        on_click: Callback when item is clicked (receives index)
         margin: Margin around the breadcrumb (Margin dataclass).
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
-        key: Unique key for reconciliation
+
+    Example:
+        Breadcrumb(items=[
+            {"label": "Home", "href": "/"},
+            {"label": "Products", "href": "/products"},
+            {"label": "Widget"},  # Current page, no link
+        ])
     """
-    ...
+    items_list = items or []
+
+    with _BreadcrumbContainer(
+        separator=separator,
+        margin=margin,
+        flex=flex,
+        class_name=class_name,
+        style=style,
+    ):
+        for i, item in enumerate(items_list):
+            is_last = i == len(items_list) - 1
+            label = item.get("label", "")
+            href = item.get("href")
+
+            # Last item or items without href are labels (current page)
+            if is_last or href is None:
+                Label(text=label)
+            else:
+                # Items with href become native anchors with router integration
+                A(label, href=href)

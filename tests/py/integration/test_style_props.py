@@ -3,7 +3,7 @@
 from trellis.core.components.composition import component
 from trellis.core.components.react import _merge_style_props
 from trellis.core.components.style_props import Height, Margin, Padding, Width
-from trellis.widgets import Button, Card, Column, Label
+from trellis.widgets import Card, Column, Label, Slider
 
 
 class TestMargin:
@@ -272,17 +272,17 @@ class TestWidgetIntegration:
         card = result.session.elements.get(result.root_element.child_ids[0])
         assert card.properties["style"] == {"width": "320px"}
 
-    def test_button_with_width_string(self, rendered) -> None:
-        """Button accepts width string."""
+    def test_slider_with_width_string(self, rendered) -> None:
+        """Slider accepts width string."""
 
         @component
         def App() -> None:
-            Button(text="Test", width="100%")
+            Slider(width="100%")
 
         result = rendered(App)
 
-        button = result.session.elements.get(result.root_element.child_ids[0])
-        assert button.properties["style"] == {"width": "100%"}
+        slider = result.session.elements.get(result.root_element.child_ids[0])
+        assert slider.properties["style"] == {"width": "100%"}
 
     def test_style_props_merge_with_existing_style(self, rendered) -> None:
         """Style props merge with existing style dict."""

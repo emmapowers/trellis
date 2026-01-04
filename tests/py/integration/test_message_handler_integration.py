@@ -49,6 +49,17 @@ _WRAPPER_COMPONENT_TYPES = frozenset(
 )
 
 
+def get_button_element(tree_node: dict) -> dict:
+    """Get the actual _Button react element from a Button composition wrapper.
+
+    Button is a composition component that wraps _Button. This helper
+    navigates to the inner _Button element which has the actual props.
+    """
+    if tree_node.get("name") == "Button" and tree_node.get("type") == "CompositionComponent":
+        return tree_node["children"][0]
+    return tree_node
+
+
 def find_app_children(tree: dict[str, tp.Any]) -> list[dict[str, tp.Any]]:
     """Find the user's app children within the TrellisApp wrapper.
 
@@ -124,7 +135,7 @@ class TestMessageHandler:
 
         # Get callback ID from tree (navigate through wrapper)
         app_children = find_app_children(tree)
-        button = app_children[0]
+        button = get_button_element(app_children[0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Send event message
@@ -182,7 +193,7 @@ class TestMessageHandler:
         assert label["props"]["text"] == "0"
 
         # Get callback and invoke
-        button = app_children[1]
+        button = get_button_element(app_children[1])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         event_msg = EventMessage(callback_id=cb_id, args=[])
@@ -219,7 +230,7 @@ class TestMessageHandler:
         tree = get_initial_tree(handler)
 
         app_children = find_app_children(tree)
-        button = app_children[0]
+        button = get_button_element(app_children[0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Send event with mouse event data
@@ -343,7 +354,7 @@ class TestBrowserMessageHandler:
         # Get initial render
         tree = get_initial_tree(handler)
         app_children = find_app_children(tree)
-        button = app_children[0]
+        button = get_button_element(app_children[0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Simulate JS posting event
@@ -384,7 +395,7 @@ class TestAsyncCallbackHandling:
         tree = get_initial_tree(handler)
 
         app_children = find_app_children(tree)
-        button = app_children[0]
+        button = get_button_element(app_children[0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         async def test() -> None:
@@ -427,7 +438,7 @@ class TestAsyncCallbackHandling:
         tree = get_initial_tree(handler)
 
         app_children = find_app_children(tree)
-        button = app_children[0]
+        button = get_button_element(app_children[0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         async def test() -> None:
@@ -671,7 +682,7 @@ class TestCallbackContextIntegration:
         # With simple app_wrapper, structure is direct nesting
         app = tree["children"][0]
         child = app["children"][0]
-        button = child["children"][0]
+        button = get_button_element(child["children"][0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Invoke callback via handle_message
@@ -712,7 +723,7 @@ class TestCallbackContextIntegration:
         # With simple app_wrapper, structure is direct nesting
         app = tree["children"][0]
         child = app["children"][0]
-        button = child["children"][0]
+        button = get_button_element(child["children"][0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         async def test() -> None:
@@ -750,7 +761,7 @@ class TestCallbackContextIntegration:
         tree = get_initial_tree(handler)
 
         app_children = find_app_children(tree)
-        button = app_children[0]
+        button = get_button_element(app_children[0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         event_msg = EventMessage(callback_id=cb_id, args=[])
@@ -784,7 +795,7 @@ class TestCallbackContextIntegration:
         tree = get_initial_tree(handler)
 
         app_children = find_app_children(tree)
-        button = app_children[0]
+        button = get_button_element(app_children[0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         event_msg = EventMessage(callback_id=cb_id, args=[])

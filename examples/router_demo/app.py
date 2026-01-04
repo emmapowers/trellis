@@ -1,6 +1,9 @@
 """Router demo application."""
 
-from trellis import Link, Margin, Padding, Route, RouterState, Routes, component, router
+from typing import Literal
+
+from trellis import Margin, Padding, Route, RouterState, Routes, component, router
+from trellis import html as h
 from trellis import widgets as w
 from trellis.app import theme
 from trellis.widgets import IconName, ThemeSwitcher
@@ -57,8 +60,6 @@ def App() -> None:
 @component
 def Header() -> None:
     """Application header with navigation and controls."""
-    state = router()
-
     with w.Row(
         align="center",
         gap=16,
@@ -93,41 +94,43 @@ def NavLink(to: str, text: str, icon: IconName) -> None:
     state = router()
     is_active = state.path == to or (to != "/" and state.path.startswith(to))
 
-    with Link(to=to):
-        w.Button(
-            text=text,
-            icon=icon,
-            variant="primary" if is_active else "ghost",
-            size="sm",
-        )
+    w.Button(
+        text=text,
+        icon=icon,
+        href=to,
+        variant="primary" if is_active else "ghost",
+        size="sm",
+    )
 
 
 @component
 def BreadcrumbNav() -> None:
-    """Breadcrumb showing current navigation path."""
+    """Breadcrumb showing current navigation path.
+
+    Uses native Trellis anchor elements that integrate with the router
+    for client-side navigation without page reloads.
+    """
     state = router()
 
     # Build breadcrumb items from path
-    items = [{"label": "Home"}]
+    # Items with href use html.A which auto-routes for relative URLs
+    items: list[dict[str, str]] = [{"label": "Home", "href": "/"}]
     if state.path != "/":
         parts = state.path.strip("/").split("/")
-        for part in parts:
-            # Capitalize and handle IDs
+        for i, part in enumerate(parts):
+            # Build href by joining all parts up to current index
+            href = "/" + "/".join(parts[: i + 1])
+            # Capitalize and handle numeric IDs (like user IDs)
             if part.isdigit():
-                items.append({"label": f"User {part}"})
+                items.append({"label": f"User {part}", "href": href})
             else:
-                items.append({"label": part.capitalize()})
+                items.append({"label": part.capitalize(), "href": href})
 
-    def on_breadcrumb_click(index: int) -> None:
-        if index == 0:
-            state.navigate("/")
-        else:
-            # Navigate to the path up to this segment
-            parts = state.path.strip("/").split("/")
-            new_path = "/" + "/".join(parts[:index])
-            state.navigate(new_path)
+    # Last item has no href (current page) - rendered as Label not link
+    if items:
+        items[-1] = {"label": items[-1]["label"]}  # Remove href from last item
 
-    w.Breadcrumb(items=items, on_click=on_breadcrumb_click)
+    w.Breadcrumb(items=items)
 
 
 @component
@@ -148,19 +151,20 @@ def HomePage() -> None:
 
         w.Label(text="Quick Links", bold=True)
         with w.Row(gap=8, margin=Margin(top=4)):
-            with Link(to="/users/1"):
-                w.Button(text="Alice", icon=IconName.USER, variant="outline", size="sm")
-            with Link(to="/users/2"):
-                w.Button(text="Bob", icon=IconName.USER, variant="outline", size="sm")
-            with Link(to="/users/3"):
-                w.Button(text="Carol", icon=IconName.USER, variant="outline", size="sm")
-            with Link(to="/nonexistent"):
-                w.Button(
-                    text="404 Test",
-                    icon=IconName.ALERT_TRIANGLE,
-                    variant="ghost",
-                    size="sm",
-                )
+            w.Button(
+                text="Alice", icon=IconName.USER, variant="outline", size="sm", href="/users/1"
+            )
+            w.Button(text="Bob", icon=IconName.USER, variant="outline", size="sm", href="/users/2")
+            w.Button(
+                text="Carol", icon=IconName.USER, variant="outline", size="sm", href="/users/3"
+            )
+            w.Button(
+                text="404 Test",
+                icon=IconName.ALERT_TRIANGLE,
+                variant="ghost",
+                size="sm",
+                href="/nonexistent",
+            )
 
 
 @component
@@ -195,13 +199,13 @@ def FeatureItem(icon: IconName, text: str) -> None:
 
 
 # Sample user data
-USERS = {
+USERS: dict[str, dict[str, str]] = {
     "1": {"name": "Alice Johnson", "email": "alice@example.com", "role": "Admin"},
     "2": {"name": "Bob Smith", "email": "bob@example.com", "role": "Developer"},
     "3": {"name": "Carol Williams", "email": "carol@example.com", "role": "Designer"},
 }
 
-ROLE_VARIANTS = {
+ROLE_VARIANTS: dict[str, Literal["default", "success", "error", "warning", "info"]] = {
     "Admin": "error",
     "Developer": "info",
     "Designer": "success",
@@ -222,9 +226,9 @@ def UsersPage() -> None:
 
 
 @component
-def UserCard(user_id: str, user: dict) -> None:
+def UserCard(user_id: str, user: dict[str, str]) -> None:
     """Clickable user card."""
-    with Link(to=f"/users/{user_id}"):
+    with h.A(href=f"/users/{user_id}"):
         with w.Card(
             padding=16,
             style={"cursor": "pointer", "transition": "box-shadow 0.15s ease"},
@@ -258,24 +262,24 @@ def UserDetailPage() -> None:
                 DetailRow(label="ID", value=user_id, icon=IconName.HASH)
 
             with w.Row(margin=Margin(top=8)):
-                with Link(to="/users"):
-                    w.Button(
-                        text="Back to Users",
-                        icon=IconName.ARROW_LEFT,
-                        variant="outline",
-                    )
+                w.Button(
+                    text="Back to Users",
+                    icon=IconName.ARROW_LEFT,
+                    variant="outline",
+                    href="/users",
+                )
         else:
             with w.Column(gap=12, align="center"):
                 w.Icon(name=IconName.USER_X, size=48, color=theme.error)
                 w.Heading(text="User Not Found", level=3, color=theme.error)
                 w.Label(text=f"No user with ID: {user_id}", color=theme.text_secondary)
 
-                with Link(to="/users"):
-                    w.Button(
-                        text="Back to Users",
-                        icon=IconName.ARROW_LEFT,
-                        variant="outline",
-                    )
+                w.Button(
+                    text="Back to Users",
+                    icon=IconName.ARROW_LEFT,
+                    variant="outline",
+                    href="/users",
+                )
 
 
 @component
@@ -302,5 +306,5 @@ def NotFoundPage() -> None:
             w.Button(
                 text="Go Home",
                 icon=IconName.HOME,
-                on_click=lambda: state.navigate("/"),
+                href="/",
             )
