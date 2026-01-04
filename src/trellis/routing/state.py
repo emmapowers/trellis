@@ -105,12 +105,15 @@ class RouterState(Stateful):
         return self._history_index < len(self._history) - 1
 
     def _notify_path_change(self) -> None:
-        """Mark nodes that read 'path' as dirty for re-render.
+        """Mark nodes that read router state as dirty for re-render.
 
         Since _path is a private field, Stateful's automatic dirty marking
         doesn't trigger. We manually notify watchers of the 'path' property.
 
-        Also clears params since they're path-specific. Routes will
+        Also notifies watchers of 'can_go_back' and 'can_go_forward' since
+        these computed properties depend on history state.
+
+        Clears params since they're path-specific. Routes will
         re-populate them during the next render.
         """
         # Clear params - they're only valid for the current path
@@ -121,12 +124,14 @@ class RouterState(Stateful):
         except AttributeError:
             return  # Not initialized yet
 
-        if "path" in deps:
-            state_info = deps["path"]
-            for node in state_info.watchers:
-                node_session = node._session_ref()
-                if node_session is not None:
-                    node_session.dirty.mark(node.id)
+        # Notify watchers of path and history-related properties
+        for prop in ("path", "can_go_back", "can_go_forward"):
+            if prop in deps:
+                state_info = deps[prop]
+                for node in state_info.watchers:
+                    node_session = node._session_ref()
+                    if node_session is not None:
+                        node_session.dirty.mark(node.id)
 
     def navigate(self, path: str) -> None:
         """Navigate to a new path.
