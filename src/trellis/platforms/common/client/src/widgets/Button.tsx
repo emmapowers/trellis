@@ -133,6 +133,9 @@ export function Button({
   style,
 }: ButtonProps): React.ReactElement {
   const ref = useRef<HTMLButtonElement>(null);
+  // Always call useButton (hooks must be unconditional), but only use its
+  // props when we have a click handler. Without a handler, we render a plain
+  // button so clicks bubble to parent elements (e.g., Button inside Link).
   const { buttonProps, isPressed } = useButton(
     {
       // Wrap on_click to avoid passing the PressEvent, which contains
@@ -152,11 +155,14 @@ export function Button({
   const needsContrastFocusRing = variant === "primary" || variant === "danger";
   const activeFocusRing = needsContrastFocusRing ? focusRingOnColor : focusRing;
 
+  // isPressed only works when using React Aria's buttonProps
+  const showPressed = on_click ? isPressed : false;
+
   const computedStyle: React.CSSProperties = {
     ...baseStyles,
     ...sizeStyle,
     ...variantStyle.normal,
-    ...((isHovered || isPressed) && !disabled ? variantStyle.hover : {}),
+    ...((isHovered || showPressed) && !disabled ? variantStyle.hover : {}),
     ...(disabled ? disabledStyles : {}),
     ...(full_width ? { width: "100%" } : {}),
     ...(isFocusVisible ? activeFocusRing : {}),
@@ -168,7 +174,7 @@ export function Button({
     variant === "primary" || variant === "danger"
       ? colors.text.inverse
       : variant === "ghost"
-        ? isHovered || isPressed
+        ? isHovered || showPressed
           ? colors.text.primary
           : colors.text.secondary
         : colors.text.primary;
@@ -190,23 +196,25 @@ export function Button({
     />
   ) : null;
 
+  // Only spread React Aria's buttonProps when we have a click handler.
+  // Without it, render a plain button so clicks bubble to parent elements.
   return (
     <button
-      {...buttonProps}
+      {...(on_click ? buttonProps : { disabled })}
       ref={ref}
       className={className}
       style={computedStyle}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onFocus={(e) => {
-        buttonProps.onFocus?.(e);
+        if (on_click) buttonProps.onFocus?.(e);
         // Check if focus came from keyboard (not mouse)
         if (e.target.matches(":focus-visible")) {
           setIsFocusVisible(true);
         }
       }}
       onBlur={(e) => {
-        buttonProps.onBlur?.(e);
+        if (on_click) buttonProps.onBlur?.(e);
         setIsFocusVisible(false);
       }}
     >

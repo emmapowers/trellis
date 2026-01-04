@@ -17,6 +17,7 @@ export default defineConfig({
       "react": path.resolve(__dirname, "node_modules/react"),
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
       "react-aria": path.resolve(__dirname, "node_modules/react-aria"),
+      "lucide-react": path.resolve(__dirname, "node_modules/lucide-react"),
     },
   },
 });
