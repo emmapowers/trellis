@@ -608,3 +608,259 @@ class TestStateDependencyTracking:
         # doesn't register because it doesn't read state.value
         watcher_ids = {node.id for node in state._state_props["value"].watchers}
         assert node_id not in watcher_ids
+
+
+class TestLifecycleHooksWithContext:
+    """Tests for from_context() working in on_mount and on_unmount hooks."""
+
+    def test_from_context_works_in_on_mount(self, capture_patches: "type[PatchCapture]") -> None:
+        """from_context() retrieves state in on_mount hook."""
+
+        @dataclass(kw_only=True)
+        class AppState(Stateful):
+            value: str = ""
+
+        retrieved_values: list[str] = []
+
+        @dataclass(kw_only=True)
+        class ChildState(Stateful):
+            def on_mount(self) -> None:
+                # This should work - from_context() in on_mount
+                state = AppState.from_context()
+                retrieved_values.append(state.value)
+
+        @component
+        def App() -> None:
+            with AppState(value="mounted"):
+                Child()
+
+        @component
+        def Child() -> None:
+            ChildState()
+
+        capture = capture_patches(App)
+        capture.render()
+
+        # on_mount should have been called and from_context should have worked
+        assert retrieved_values == ["mounted"]
+
+    def test_from_context_works_in_on_unmount(self, capture_patches: "type[PatchCapture]") -> None:
+        """from_context() retrieves state in on_unmount hook."""
+
+        @dataclass(kw_only=True)
+        class AppState(Stateful):
+            value: str = ""
+
+        retrieved_values: list[str] = []
+        show_child = [True]
+
+        @dataclass(kw_only=True)
+        class ChildState(Stateful):
+            def on_unmount(self) -> None:
+                # This should work - from_context() in on_unmount
+                state = AppState.from_context()
+                retrieved_values.append(state.value)
+
+        @component
+        def App() -> None:
+            with AppState(value="unmounting"):
+                if show_child[0]:
+                    Child()
+
+        @component
+        def Child() -> None:
+            ChildState()
+
+        capture = capture_patches(App)
+        capture.render()
+
+        # Initially, nothing should be in retrieved_values
+        assert retrieved_values == []
+
+        # Unmount the child
+        show_child[0] = False
+        capture.session.dirty.mark(capture.session.root_element.id)
+        capture.render()
+
+        # on_unmount should have been called and from_context should have worked
+        assert retrieved_values == ["unmounting"]
+
+    def test_from_context_returns_default_in_mount_when_not_in_context(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """from_context(default=None) returns None in on_mount when state not found."""
+
+        @dataclass(kw_only=True)
+        class MissingState(Stateful):
+            pass
+
+        results: list = []
+
+        @dataclass(kw_only=True)
+        class ChildState(Stateful):
+            def on_mount(self) -> None:
+                state = MissingState.from_context(default=None)
+                results.append(state)
+
+        @component
+        def App() -> None:
+            ChildState()
+
+        capture = capture_patches(App)
+        capture.render()
+
+        assert results == [None]
+
+
+class TestAsyncLifecycleHooks:
+    """Tests for async on_mount and on_unmount hooks."""
+
+    def test_async_on_mount_is_called(self, capture_patches: "type[PatchCapture]") -> None:
+        """Async on_mount hooks are called and complete."""
+        import asyncio
+
+        completed: list[str] = []
+        done_event = asyncio.Event()
+
+        @dataclass(kw_only=True)
+        class AsyncMountState(Stateful):
+            async def on_mount(self) -> None:
+                completed.append("mount")
+                done_event.set()
+
+        @component
+        def App() -> None:
+            AsyncMountState()
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+            await asyncio.wait_for(done_event.wait(), timeout=1.0)
+            assert completed == ["mount"]
+
+        asyncio.run(test())
+
+    def test_async_on_unmount_is_called(self, capture_patches: "type[PatchCapture]") -> None:
+        """Async on_unmount hooks are called and complete."""
+        import asyncio
+
+        completed: list[str] = []
+        done_event = asyncio.Event()
+        show_child = [True]
+
+        @dataclass(kw_only=True)
+        class AsyncUnmountState(Stateful):
+            async def on_unmount(self) -> None:
+                completed.append("unmount")
+                done_event.set()
+
+        @component
+        def App() -> None:
+            if show_child[0]:
+                Child()
+
+        @component
+        def Child() -> None:
+            AsyncUnmountState()
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+            assert completed == []
+
+            # Unmount the child
+            show_child[0] = False
+            capture.session.dirty.mark(capture.session.root_element.id)
+            capture.render()
+
+            await asyncio.wait_for(done_event.wait(), timeout=1.0)
+            assert completed == ["unmount"]
+
+        asyncio.run(test())
+
+    def test_async_on_mount_with_from_context(self, capture_patches: "type[PatchCapture]") -> None:
+        """Async on_mount can use from_context()."""
+        import asyncio
+
+        retrieved_values: list[str] = []
+        done_event = asyncio.Event()
+
+        @dataclass(kw_only=True)
+        class AppState(Stateful):
+            value: str = ""
+
+        @dataclass(kw_only=True)
+        class AsyncChildState(Stateful):
+            async def on_mount(self) -> None:
+                state = AppState.from_context()
+                retrieved_values.append(state.value)
+                done_event.set()
+
+        @component
+        def App() -> None:
+            with AppState(value="async-mounted"):
+                Child()
+
+        @component
+        def Child() -> None:
+            AsyncChildState()
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+            await asyncio.wait_for(done_event.wait(), timeout=1.0)
+
+        asyncio.run(test())
+
+        assert retrieved_values == ["async-mounted"]
+
+    def test_background_tasks_tracked_on_session(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """Background tasks from async hooks are tracked on session.
+
+        INTERNAL TEST: _background_tasks is internal - verifies GC prevention.
+        """
+        import asyncio
+
+        completed: list[str] = []
+        proceed_event = asyncio.Event()
+        done_event = asyncio.Event()
+
+        @dataclass(kw_only=True)
+        class AsyncState(Stateful):
+            async def on_mount(self) -> None:
+                await proceed_event.wait()
+                completed.append("done")
+                done_event.set()
+
+        @component
+        def App() -> None:
+            AsyncState()
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+
+            # Give task a chance to start
+            await asyncio.sleep(0)
+
+            # Task should be tracked
+            assert len(capture.session._background_tasks) == 1
+
+            # Let task complete
+            proceed_event.set()
+            await asyncio.wait_for(done_event.wait(), timeout=1.0)
+
+            # Give done callback a chance to run
+            await asyncio.sleep(0)
+
+            # Task should be removed after completion
+            assert len(capture.session._background_tasks) == 0
+            assert completed == ["done"]
+
+        asyncio.run(test())

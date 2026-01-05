@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import typing as tp
 
+from trellis.core.components.composition import component
 from trellis.core.components.react import react_component_base
 from trellis.core.components.style_props import Margin, Padding, Width
 from trellis.core.rendering.element import Element
 from trellis.core.state.mutable import Mutable
+from trellis.html.links import A
+from trellis.widgets.icons import IconName
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -59,10 +62,13 @@ def Label(
     ...
 
 
-@react_component_base("Button")
+@component
 def Button(
     text: str = "",
     *,
+    icon: IconName | str | None = None,
+    icon_position: tp.Literal["left", "right"] = "left",
+    href: str | None = None,
     on_click: Callable[[], None] | None = None,
     disabled: bool = False,
     variant: tp.Literal["primary", "secondary", "outline", "ghost", "danger"] = "primary",
@@ -72,11 +78,14 @@ def Button(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Clickable button widget with modern styling.
 
     Args:
         text: The button label text.
+        icon: Optional icon to display in the button (IconName enum or string).
+        icon_position: Position of the icon relative to text ("left" or "right").
+            Defaults to "left".
         on_click: Callback invoked when the button is clicked.
         disabled: Whether the button is disabled.
         variant: Button style variant. One of:
@@ -99,8 +108,60 @@ def Button(
         Button(text="Save", on_click=save_handler, variant="primary")
         Button(text="Cancel", on_click=cancel_handler, variant="secondary")
         Button(text="Delete", on_click=delete_handler, variant="danger")
+        Button(text="Add Item", icon=IconName.PLUS, on_click=add_handler)
+        Button(icon=IconName.SETTINGS, variant="ghost")  # Icon-only button
     """
-    ...
+    if on_click is not None and href is not None:
+        raise ValueError("Button cannot have both on_click and href set.")
+    if href is not None:
+        with A(href=href):
+            _Button(
+                text=text,
+                icon=icon,
+                icon_position=icon_position,
+                on_click=None,
+                disabled=disabled,
+                variant=variant,
+                size=size,
+                full_width=full_width,
+                margin=margin,
+                flex=flex,
+                class_name=class_name,
+                style=style,
+            )
+    else:
+        _Button(
+            text=text,
+            icon=icon,
+            icon_position=icon_position,
+            on_click=on_click,
+            disabled=disabled,
+            variant=variant,
+            size=size,
+            full_width=full_width,
+            margin=margin,
+            flex=flex,
+            class_name=class_name,
+            style=style,
+        )
+
+
+@react_component_base("Button")
+def _Button(
+    text: str = "",
+    *,
+    icon: IconName | str | None = None,
+    icon_position: tp.Literal["left", "right"] = "left",
+    on_click: Callable[[], None] | None = None,
+    disabled: bool = False,
+    variant: tp.Literal["primary", "secondary", "outline", "ghost", "danger"] = "primary",
+    size: tp.Literal["sm", "md", "lg"] = "md",
+    full_width: bool = False,
+    margin: Margin | None = None,
+    flex: int | None = None,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+) -> Element: ...
 
 
 @react_component_base("Slider")

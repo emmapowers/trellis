@@ -11,6 +11,7 @@ from typing import Literal, cast
 from trellis.app.client_state import ClientState, ThemeMode
 from trellis.app.theme_provider import ThemeProvider
 from trellis.core.components.composition import component
+from trellis.routing.state import RouterState
 
 
 @component
@@ -50,7 +51,7 @@ def TrellisApp(
     theme_setting_str = cast("Literal['system', 'light', 'dark']", client_state.theme_setting.value)
     theme_str = cast("Literal['light', 'dark']", client_state.theme.value)
 
-    with client_state:  # Provide to descendants via context
+    with client_state, RouterState():  # Provide to descendants via context
         with ThemeProvider(
             theme_setting=theme_setting_str,
             theme=theme_str,

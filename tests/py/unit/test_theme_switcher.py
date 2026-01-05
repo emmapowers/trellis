@@ -30,18 +30,15 @@ class TestGetIconForMode:
 
     def test_system_mode_shows_monitor_icon(self) -> None:
         """System mode should show monitor icon."""
-        icon, tooltip = _get_icon_for_mode(ThemeMode.SYSTEM)
+        icon = _get_icon_for_mode(ThemeMode.SYSTEM)
         assert icon == IconName.MONITOR
-        assert "System" in tooltip
 
     def test_light_mode_shows_sun_icon(self) -> None:
         """Light mode should show sun icon."""
-        icon, tooltip = _get_icon_for_mode(ThemeMode.LIGHT)
+        icon = _get_icon_for_mode(ThemeMode.LIGHT)
         assert icon == IconName.SUN
-        assert "Light" in tooltip
 
     def test_dark_mode_shows_moon_icon(self) -> None:
         """Dark mode should show moon icon."""
-        icon, tooltip = _get_icon_for_mode(ThemeMode.DARK)
+        icon = _get_icon_for_mode(ThemeMode.DARK)
         assert icon == IconName.MOON
-        assert "Dark" in tooltip

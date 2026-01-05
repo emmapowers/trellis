@@ -30,6 +30,18 @@ def get_callback_from_id(ctx: RenderSession, cb_id: str):
     return ctx.get_callback(node_id, prop_name)
 
 
+def get_button_element(tree_node: dict) -> dict:
+    """Get the actual _Button react element from a Button composition wrapper.
+
+    Button is a composition component that wraps _Button. This helper
+    navigates to the inner _Button element which has the actual props.
+    """
+    # If this is the Button composition component, get its child (_Button)
+    if tree_node.get("name") == "Button" and tree_node.get("type") == "CompositionComponent":
+        return tree_node["children"][0]
+    return tree_node
+
+
 class TestCallbackInvocation:
     """Tests for callback lookup and invocation."""
 
@@ -50,7 +62,7 @@ class TestCallbackInvocation:
         # Get callback ID from serialized tree
         assert capture.session.root_element is not None
         tree = serialize_element(capture.session.root_element, capture.session)
-        button = tree["children"][0]
+        button = get_button_element(tree["children"][0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Simulate event handling
@@ -76,7 +88,7 @@ class TestCallbackInvocation:
 
         assert capture.session.root_element is not None
         tree = serialize_element(capture.session.root_element, capture.session)
-        button = tree["children"][0]
+        button = get_button_element(tree["children"][0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         callback = get_callback_from_id(capture.session, cb_id)
@@ -122,7 +134,7 @@ class TestStateUpdateOnEvent:
         assert label["props"]["text"] == "0"
 
         # Get callback and invoke it
-        button = tree["children"][1]
+        button = get_button_element(tree["children"][1])
         cb_id = button["props"]["on_click"]["__callback__"]
         callback = get_callback_from_id(capture.session, cb_id)
         assert callback is not None
@@ -165,7 +177,7 @@ class TestStateUpdateOnEvent:
         # Increment twice
         for _ in range(2):
             tree = serialize_element(capture.session.root_element, capture.session)
-            inc_button = tree["children"][2]
+            inc_button = get_button_element(tree["children"][2])
             cb_id = inc_button["props"]["on_click"]["__callback__"]
             callback = get_callback_from_id(capture.session, cb_id)
             assert callback is not None
@@ -178,7 +190,7 @@ class TestStateUpdateOnEvent:
 
         # Decrement once
         tree = serialize_element(capture.session.root_element, capture.session)
-        dec_button = tree["children"][0]
+        dec_button = get_button_element(tree["children"][0])
         cb_id = dec_button["props"]["on_click"]["__callback__"]
         callback = get_callback_from_id(capture.session, cb_id)
         assert callback is not None
@@ -215,7 +227,7 @@ class TestDisabledStateOnBoundary:
 
         assert capture.session.root_element is not None
         tree = serialize_element(capture.session.root_element, capture.session)
-        dec_button = tree["children"][0]
+        dec_button = get_button_element(tree["children"][0])
 
         # Button should be disabled at count=1
         assert dec_button["props"]["disabled"] is True
@@ -242,7 +254,7 @@ class TestDisabledStateOnBoundary:
 
         assert capture.session.root_element is not None
         tree = serialize_element(capture.session.root_element, capture.session)
-        inc_button = tree["children"][1]
+        inc_button = get_button_element(tree["children"][1])
 
         # Button should be disabled at count=10
         assert inc_button["props"]["disabled"] is True
@@ -273,8 +285,8 @@ class TestDisabledStateOnBoundary:
 
         assert capture.session.root_element is not None
         tree = serialize_element(capture.session.root_element, capture.session)
-        dec_button = tree["children"][0]
-        inc_button = tree["children"][2]
+        dec_button = get_button_element(tree["children"][0])
+        inc_button = get_button_element(tree["children"][2])
 
         # Both buttons should be enabled at count=5
         assert dec_button["props"]["disabled"] is False
@@ -306,7 +318,7 @@ class TestDisabledStateOnBoundary:
 
         # Initially enabled at count=2
         tree = serialize_element(capture.session.root_element, capture.session)
-        dec_button = tree["children"][0]
+        dec_button = get_button_element(tree["children"][0])
         assert dec_button["props"]["disabled"] is False
 
         # Decrement to 1
@@ -318,7 +330,7 @@ class TestDisabledStateOnBoundary:
 
         # Now should be disabled at count=1
         tree = serialize_element(capture.session.root_element, capture.session)
-        dec_button = tree["children"][0]
+        dec_button = get_button_element(tree["children"][0])
         assert dec_button["props"]["disabled"] is True
         label = tree["children"][1]
         assert label["props"]["text"] == "1"
@@ -552,7 +564,7 @@ class TestAsyncCallbackExecution:
 
         assert capture.session.root_element is not None
         tree = serialize_element(capture.session.root_element, capture.session)
-        button = tree["children"][0]
+        button = get_button_element(tree["children"][0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         callback = get_callback_from_id(capture.session, cb_id)
@@ -584,7 +596,7 @@ class TestCallbackErrorHandling:
 
         assert capture.session.root_element is not None
         tree = serialize_element(capture.session.root_element, capture.session)
-        button = tree["children"][0]
+        button = get_button_element(tree["children"][0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         callback = get_callback_from_id(capture.session, cb_id)
@@ -613,8 +625,8 @@ class TestCallbackErrorHandling:
 
         assert capture.session.root_element is not None
         tree = serialize_element(capture.session.root_element, capture.session)
-        btn_a = tree["children"][0]
-        btn_b = tree["children"][1]
+        btn_a = get_button_element(tree["children"][0])
+        btn_b = get_button_element(tree["children"][1])
         cb_id_a = btn_a["props"]["on_click"]["__callback__"]
         cb_id_b = btn_b["props"]["on_click"]["__callback__"]
 

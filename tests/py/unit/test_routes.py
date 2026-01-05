@@ -1,5 +1,45 @@
 """Tests for server platform routes."""
 
+import pytest
+from fastapi.testclient import TestClient
+
+
+class TestSpaRoutes:
+    """Tests for SPA fallback routing via 404 exception handler."""
+
+    @pytest.fixture
+    def client(self) -> TestClient:
+        """Create test client with routes and SPA fallback handler."""
+        from fastapi import FastAPI
+
+        from trellis.platforms.server.routes import register_spa_fallback, router
+
+        app = FastAPI()
+        app.include_router(router)
+        register_spa_fallback(app)
+        return TestClient(app)
+
+    def test_root_serves_index_html(self, client: TestClient) -> None:
+        """Root path serves index HTML."""
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "<!DOCTYPE html>" in response.text
+        assert 'id="root"' in response.text
+
+    def test_spa_route_serves_index_html(self, client: TestClient) -> None:
+        """Non-root paths serve the same index HTML for client-side routing."""
+        response = client.get("/about")
+        assert response.status_code == 200
+        assert "<!DOCTYPE html>" in response.text
+        assert 'id="root"' in response.text
+
+    def test_nested_spa_route_serves_index_html(self, client: TestClient) -> None:
+        """Nested paths serve index HTML for client-side routing."""
+        response = client.get("/users/123")
+        assert response.status_code == 200
+        assert "<!DOCTYPE html>" in response.text
+        assert 'id="root"' in response.text
+
 
 class TestIndexHtmlTemplate:
     """Tests for index.html Jinja2 template."""

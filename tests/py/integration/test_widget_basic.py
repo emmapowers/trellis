@@ -188,9 +188,14 @@ class TestWidgetSerialization:
 
         serialized = serialize_element(result.root_element, result.session)
 
-        button_data = serialized["children"][0]
-        assert button_data["type"] == "Button"
-        assert "__callback__" in button_data["props"]["on_click"]
+        # Button is a composition component wrapping _Button
+        button_wrapper = serialized["children"][0]
+        assert button_wrapper["type"] == "CompositionComponent"
+        assert button_wrapper["name"] == "Button"
+        # The inner _Button has the actual props
+        inner_button = button_wrapper["children"][0]
+        assert inner_button["type"] == "Button"
+        assert "__callback__" in inner_button["props"]["on_click"]
 
     def test_serialize_nested_layout(self, rendered) -> None:
         """Nested layout serializes with structure."""

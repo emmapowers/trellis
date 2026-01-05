@@ -15,6 +15,7 @@ import {
   MessageType,
   HelloMessage,
   EventMessage,
+  UrlChangedMessage,
 } from "../../../common/client/src/types";
 import {
   ClientMessageHandler,
@@ -22,10 +23,21 @@ import {
   ConnectionState,
 } from "../../../common/client/src/ClientMessageHandler";
 import { TrellisStore } from "../../../common/client/src/core";
+import { RouterManager, RoutingMode } from "../../../common/client/src/RouterManager";
 
 export type { ConnectionState };
 
 export interface BrowserClientCallbacks extends ClientMessageHandlerCallbacks {}
+
+export interface BrowserClientOptions {
+  /**
+   * Routing mode for URL handling.
+   * - HashUrl (default): Uses hash-based URLs (#/path) for browser platform
+   * - Standard: Uses pathname-based URLs (requires server-side routing support)
+   * - Embedded: Internal history only, no URL changes
+   */
+  routingMode?: RoutingMode;
+}
 
 type SendCallback = (msg: Record<string, unknown>) => void;
 
@@ -40,6 +52,7 @@ type SendCallback = (msg: Record<string, unknown>) => void;
 export class BrowserClient implements TrellisClient {
   private clientId: string;
   private handler: ClientMessageHandler;
+  private routerManager: RouterManager;
   private sendCallback: SendCallback | null = null;
 
   /**
@@ -47,10 +60,30 @@ export class BrowserClient implements TrellisClient {
    *
    * @param callbacks - Optional callbacks for connection events
    * @param store - Optional store instance (defaults to singleton)
+   * @param options - Optional client options
    */
-  constructor(callbacks: BrowserClientCallbacks = {}, store?: TrellisStore) {
+  constructor(
+    callbacks: BrowserClientCallbacks = {},
+    store?: TrellisStore,
+    options: BrowserClientOptions = {}
+  ) {
     this.clientId = crypto.randomUUID();
-    this.handler = new ClientMessageHandler(callbacks, store);
+
+    // Create router manager with configured routing mode (defaults to HashUrl for browser)
+    this.routerManager = new RouterManager({
+      mode: options.routingMode ?? RoutingMode.HashUrl,
+      sendMessage: (msg: UrlChangedMessage) => this.sendCallback?.(msg),
+    });
+
+    // Merge router callbacks with user callbacks
+    const handlerCallbacks: ClientMessageHandlerCallbacks = {
+      ...callbacks,
+      onHistoryPush: (path: string) => this.routerManager.pushState(path),
+      onHistoryBack: () => this.routerManager.back(),
+      onHistoryForward: () => this.routerManager.forward(),
+    };
+
+    this.handler = new ClientMessageHandler(handlerCallbacks, store);
   }
 
   getConnectionState(): ConnectionState {
@@ -98,6 +131,7 @@ export class BrowserClient implements TrellisClient {
       client_id: this.clientId,
       system_theme: systemTheme,
       theme_mode: themeMode,
+      path: this.routerManager.getCurrentPath(),
     };
     this.sendCallback?.(hello);
   }
@@ -114,6 +148,7 @@ export class BrowserClient implements TrellisClient {
 
   disconnect(): void {
     this.sendCallback = null;
+    this.routerManager.destroy();
     this.handler.setConnectionState("disconnected");
   }
 }

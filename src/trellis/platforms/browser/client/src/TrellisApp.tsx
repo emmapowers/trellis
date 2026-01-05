@@ -29,6 +29,8 @@ export interface TrellisAppProps {
   main?: string;
   /** Custom trellis wheel URL (optional, tries several paths by default) */
   trellisWheelUrl?: string;
+  /** If true, use internal history instead of browser history API */
+  embedded?: boolean;
   /** Callback when loading status changes */
   onStatusChange?: (status: string) => void;
   /** Custom loading component */
@@ -128,6 +130,7 @@ export function TrellisApp({
   source,
   main,
   trellisWheelUrl,
+  embedded = false,
   onStatusChange,
   loadingComponent,
   errorComponent,
@@ -142,18 +145,22 @@ export function TrellisApp({
   // Track the initial themeMode to include in HELLO message
   const initialThemeModeRef = useRef(themeMode);
 
-  // Create client with callbacks
+  // Create client with callbacks and embedded mode
   const client = useMemo(
     () =>
-      new BrowserClient({
-        onConnected: () => {
-          setState({ status: "connected" });
+      new BrowserClient(
+        {
+          onConnected: () => {
+            setState({ status: "connected" });
+          },
+          onError: (error) => {
+            setState({ status: "error", message: error });
+          },
         },
-        onError: (error) => {
-          setState({ status: "error", message: error });
-        },
-      }),
-    []
+        undefined,
+        { embedded }
+      ),
+    [embedded]
   );
 
   useEffect(() => {

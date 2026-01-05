@@ -16,6 +16,9 @@ export interface ClientMessageHandlerCallbacks {
   onConnectionStateChange?: (state: ConnectionState) => void;
   onConnected?: (response: HelloResponseMessage) => void;
   onError?: (error: string, context: "render" | "callback") => void;
+  onHistoryPush?: (path: string) => void;
+  onHistoryBack?: () => void;
+  onHistoryForward?: () => void;
 }
 
 export class ClientMessageHandler {
@@ -69,6 +72,21 @@ export class ClientMessageHandler {
       case MessageType.ERROR:
         console.error(`Trellis ${msg.context} error:`, msg.error);
         this.callbacks.onError?.(msg.error, msg.context);
+        break;
+
+      case MessageType.HISTORY_PUSH:
+        debugLog("messages", `HISTORY_PUSH: ${msg.path}`);
+        this.callbacks.onHistoryPush?.(msg.path);
+        break;
+
+      case MessageType.HISTORY_BACK:
+        debugLog("messages", "HISTORY_BACK");
+        this.callbacks.onHistoryBack?.();
+        break;
+
+      case MessageType.HISTORY_FORWARD:
+        debugLog("messages", "HISTORY_FORWARD");
+        this.callbacks.onHistoryForward?.();
         break;
     }
   }

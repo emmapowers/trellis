@@ -41,6 +41,17 @@ def _make_test_wrapper() -> AppWrapper:
     return wrapper
 
 
+def get_button_element(tree_node: dict) -> dict:
+    """Get the actual _Button react element from a Button composition wrapper.
+
+    Button is a composition component that wraps _Button. This helper
+    navigates to the inner _Button element which has the actual props.
+    """
+    if tree_node.get("name") == "Button" and tree_node.get("type") == "CompositionComponent":
+        return tree_node["children"][0]
+    return tree_node
+
+
 def _init_handler_for_test(handler: BrowserMessageHandler) -> None:
     """Initialize handler by posting HelloMessage and calling handle_hello.
 
@@ -60,12 +71,20 @@ def get_initial_tree(handler: MessageHandler) -> dict[str, tp.Any]:
     return patch.element
 
 
-# Components that are part of the TrellisApp wrapper infrastructure
+# Names of infrastructure wrapper components that we navigate through
+_WRAPPER_COMPONENT_NAMES = frozenset(
+    {
+        "TrellisRoot",
+        "TrellisApp",
+        "TestRoot",
+    }
+)
+
+# Types that are always wrappers (not CompositionComponent - that's too generic)
 _WRAPPER_COMPONENT_TYPES = frozenset(
     {
-        "CompositionComponent",  # Generic wrapper (TrellisRoot, TrellisApp, etc.)
-        "ThemeProvider",  # Theme provider
-        "ClientState",  # Client state context
+        "ThemeProvider",
+        "ClientState",
     }
 )
 
@@ -77,7 +96,8 @@ def find_app_children(tree: dict[str, tp.Any]) -> list[dict[str, tp.Any]]:
     TrellisRoot -> TrellisApp -> ClientState -> ThemeProvider -> UserApp -> children
 
     This helper navigates through wrapper components to find user content.
-    Wrapper components are identified by their type being in _WRAPPER_COMPONENT_TYPES.
+    Infrastructure wrappers are identified by specific names or types.
+    Returns the children of the user's root component.
     """
     if not tree:
         return []
@@ -91,14 +111,15 @@ def find_app_children(tree: dict[str, tp.Any]) -> list[dict[str, tp.Any]]:
 
         first = children[0]
         node_type = first.get("type", "")
+        node_name = first.get("name", "")
 
-        # If this is a wrapper component, continue navigating down
-        if node_type in _WRAPPER_COMPONENT_TYPES:
+        # If this is an infrastructure wrapper, continue navigating down
+        if node_type in _WRAPPER_COMPONENT_TYPES or node_name in _WRAPPER_COMPONENT_NAMES:
             node = first
             continue
 
-        # Found user content - return all children at this level
-        return children
+        # Found user's root component - return its children
+        return first.get("children", [])
 
     # Hit safety limit - return empty to avoid infinite loops
     return []
@@ -160,7 +181,7 @@ class TestRenderLoop:
             initial = next(m for m in sent_messages if isinstance(m, PatchMessage))
             tree = initial.patches[0].element
             app_children = find_app_children(tree)
-            button = app_children[1]
+            button = get_button_element(app_children[1])
             cb_id = button["props"]["on_click"]["__callback__"]
 
             # Send event to trigger state change
@@ -230,7 +251,7 @@ class TestRenderLoop:
             initial = next(m for m in sent_messages if isinstance(m, PatchMessage))
             tree = initial.patches[0].element
             app_children = find_app_children(tree)
-            button = app_children[1]
+            button = get_button_element(app_children[1])
             cb_id = button["props"]["on_click"]["__callback__"]
 
             handler.post(EventMessage(callback_id=cb_id, args=[]))
@@ -322,7 +343,7 @@ class TestPatchComputation:
         app_children = find_app_children(tree)
         middle = app_children[1]
         deep_leaf = middle["children"][1]
-        button = deep_leaf["children"][1]
+        button = get_button_element(deep_leaf["children"][1])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Trigger state change
@@ -367,7 +388,8 @@ class TestPatchComputation:
         assert [label["props"]["text"] for label in labels] == ["a", "b", "c"]
 
         # Get reverse callback
-        button = next(c for c in app_children if c["name"] == "Button")
+        button_wrapper = next(c for c in app_children if c["name"] == "Button")
+        button = get_button_element(button_wrapper)
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Reverse the list
@@ -407,7 +429,7 @@ class TestPatchComputation:
         static_label_id = static_label.get("key")
 
         # Trigger a state change
-        button = app_children[2]
+        button = get_button_element(app_children[2])
         cb_id = button["props"]["on_click"]["__callback__"]
         asyncio.run(handler.handle_message(EventMessage(callback_id=cb_id, args=[])))
 
@@ -475,7 +497,7 @@ class TestPatchComputation:
         assert tab1_content["name"] == "Tab1Content"
 
         # Get the switch button callback
-        button = app_children[0]
+        button = get_button_element(app_children[0])
         cb_id = button["props"]["on_click"]["__callback__"]
 
         # Switch tabs

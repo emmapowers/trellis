@@ -67,10 +67,12 @@ class TestElementNameProperty:
             result.session.elements.get(result.root_element.child_ids[0]).component.element_name
             == "Label"
         )
-        assert (
-            result.session.elements.get(result.root_element.child_ids[1]).component.element_name
-            == "Button"
-        )
+        # Button is a composition component wrapping _Button
+        button_wrapper = result.session.elements.get(result.root_element.child_ids[1])
+        assert button_wrapper.component.element_name == "CompositionComponent"
+        # The inner _Button has element_name "Button"
+        inner_button = result.session.elements.get(button_wrapper.child_ids[0])
+        assert inner_button.component.element_name == "Button"
         assert (
             result.session.elements.get(result.root_element.child_ids[2]).component.element_name
             == "Column"
@@ -270,7 +272,11 @@ class TestReactComponentBaseSerialization:
         assert label["type"] == "Label"
         assert label["name"] == "Label"
 
-        # Button is ReactComponentBase
-        button = column["children"][1]
-        assert button["type"] == "Button"
-        assert button["name"] == "Button"
+        # Button is a composition component wrapping _Button
+        button_wrapper = column["children"][1]
+        assert button_wrapper["type"] == "CompositionComponent"
+        assert button_wrapper["name"] == "Button"
+        # The inner _Button is the actual ReactComponentBase
+        inner_button = button_wrapper["children"][0]
+        assert inner_button["type"] == "Button"
+        assert inner_button["name"] == "_Button"

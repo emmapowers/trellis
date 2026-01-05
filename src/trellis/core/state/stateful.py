@@ -57,6 +57,7 @@ from types import TracebackType
 if tp.TYPE_CHECKING:
     from trellis.core.rendering.element import Element
 
+from trellis.core.callback_context import get_callback_node_id, get_callback_session
 from trellis.core.rendering.session import get_active_session, is_render_active
 from trellis.core.state.conversion import convert_to_tracked
 from trellis.core.state.mutable import record_property_access
@@ -323,12 +324,18 @@ class Stateful:
             if dirty_elements:
                 logger.debug("Marking dirty: %s", dirty_elements)
 
-    def on_mount(self) -> None:
-        """Called after owning element mounts. Override for initialization."""
+    def on_mount(self) -> None | tp.Coroutine[tp.Any, tp.Any, None]:
+        """Called after owning element mounts. Override for initialization.
+
+        Can be sync or async. Async hooks are scheduled as background tasks.
+        """
         pass
 
-    def on_unmount(self) -> None:
-        """Called before owning element unmounts. Override for cleanup."""
+    def on_unmount(self) -> None | tp.Coroutine[tp.Any, tp.Any, None]:
+        """Called before owning element unmounts. Override for cleanup.
+
+        Can be sync or async. Async hooks are scheduled as background tasks.
+        """
         pass
 
     # -------------------------------------------------------------------------
@@ -401,8 +408,8 @@ class Stateful:
     def from_context(cls, *, default: tp.Self | None | _Missing = _MISSING) -> tp.Self | None:
         """Retrieve the nearest ancestor instance of this state type.
 
-        Walks up the element tree looking for context. Must be called during
-        component execution within a render context.
+        Walks up the element tree looking for context. Can be called during
+        component execution (render context) or within callback_context.
 
         Example:
             ```python
@@ -427,21 +434,29 @@ class Stateful:
             The nearest ancestor instance of this type, or default if not found
 
         Raises:
-            RuntimeError: If called outside of a render context
+            RuntimeError: If called outside of both render context and callback context
             LookupError: If no instance of this type is in the context stack
                 and no default was provided
         """
+        # Try render context first
         session = get_active_session()
-        if session is None or not session.is_executing():
-            raise RuntimeError(
-                f"Cannot call {cls.__name__}.from_context() outside of render context. "
-                f"Context API is only available within component execution."
-            )
+        if session is not None and session.is_executing():
+            element_id: str | None = session.current_element_id
+        else:
+            # Try callback context
+            callback_element_id = get_callback_node_id()
+            if callback_element_id is not None:
+                session = get_callback_session()
+                element_id = callback_element_id
+            else:
+                raise RuntimeError(
+                    f"Cannot call {cls.__name__}.from_context() outside of render context. "
+                    f"Context API is only available within component execution or callback context."
+                )
 
         logger.debug("Looking up %s context", cls.__name__)
 
         # Walk up the parent_id chain with cycle detection
-        element_id: str | None = session.current_element_id
         visited: set[str] = set()
         while element_id is not None:
             if element_id in visited:
