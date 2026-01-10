@@ -33,21 +33,30 @@ class TestEnsureEsbuild:
 
 
 class TestEnsurePackages:
-    def test_downloads_core_packages(self) -> None:
-        """Downloads core npm packages from registry."""
-        from trellis.bundler import CORE_PACKAGES, PACKAGES_DIR, ensure_packages
+    def test_installs_packages_with_bun(self) -> None:
+        """Installs packages using Bun and creates node_modules."""
+        from trellis.bundler import PACKAGES, ensure_packages
 
         result = ensure_packages()
 
-        assert result == PACKAGES_DIR
-        for name in CORE_PACKAGES:
+        # Result should be a node_modules directory
+        assert result.name == "node_modules"
+        assert result.exists()
+
+        # Check that direct dependencies are installed
+        for name in PACKAGES:
             if name.startswith("@"):
                 scope, pkg = name.split("/", 1)
-                pkg_dir = PACKAGES_DIR / scope / pkg
+                pkg_dir = result / scope / pkg
             else:
-                pkg_dir = PACKAGES_DIR / name
+                pkg_dir = result / name
             assert pkg_dir.exists(), f"Package {name} not found"
             assert (pkg_dir / "package.json").exists()
+
+        # Check that a lockfile was created (in parent workspace dir)
+        workspace = result.parent
+        assert (workspace / "bun.lock").exists()
+        assert (workspace / "package.json").exists()
 
 
 class TestServerPlatformBundle:

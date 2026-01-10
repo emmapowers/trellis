@@ -15,7 +15,7 @@ from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
 from pytauri_wheel.lib import builder_factory, context_factory
 from rich.console import Console
 
-from trellis.bundler import CORE_PACKAGES, DESKTOP_PACKAGES, BundleConfig, build_bundle
+from trellis.bundler import DESKTOP_PACKAGES, PACKAGES, BundleConfig, build_bundle
 from trellis.platforms.common.base import Platform
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
 from trellis.utils.hot_reload import get_or_create_hot_reload
@@ -105,7 +105,7 @@ class DesktopPlatform(Platform):
             name="desktop",
             src_dir=client_dir / "src",
             dist_dir=dist_dir,
-            packages={**CORE_PACKAGES, **DESKTOP_PACKAGES},
+            packages={**PACKAGES, **DESKTOP_PACKAGES},
             static_files={"index.html": client_dir / "src" / "index.html"},
             extra_outputs=[index_path],
         )

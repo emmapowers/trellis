@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
-from trellis.bundler import CORE_PACKAGES, BundleConfig, build_bundle
+from trellis.bundler import PACKAGES, BundleConfig, build_bundle
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform
 
@@ -200,7 +200,7 @@ class BrowserServePlatform(Platform):
             name="browser",
             src_dir=src_dir,
             dist_dir=dist_dir,
-            packages={**CORE_PACKAGES, **BROWSER_PACKAGES},
+            packages={**PACKAGES, **BROWSER_PACKAGES},
             static_files={"index.html": src_dir / "index.html"},
             extra_outputs=[index_path],
             worker_entries={"pyodide": src_dir / "pyodide.worker.ts"},

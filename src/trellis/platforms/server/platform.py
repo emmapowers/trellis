@@ -17,7 +17,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 
-from trellis.bundler import CORE_PACKAGES, BundleConfig, build_bundle
+from trellis.bundler import PACKAGES, BundleConfig, build_bundle
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform
 from trellis.platforms.server.handler import router as ws_router
@@ -68,7 +68,7 @@ class ServerPlatform(Platform):
             name="server",
             src_dir=Path(__file__).parent / "client" / "src",
             dist_dir=Path(__file__).parent / "client" / "dist",
-            packages=CORE_PACKAGES,
+            packages=PACKAGES,
         )
 
         build_bundle(config, common_src_dir, force, extra_packages)
