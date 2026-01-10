@@ -1,6 +1,7 @@
 """Client bundler using esbuild + npm registry."""
 
 from .build import BundleConfig, build_bundle
+from .bun import ensure_bun, get_bun_platform
 from .esbuild import ensure_esbuild, get_platform
 from .packages import (
     CORE_PACKAGES,
@@ -10,6 +11,7 @@ from .packages import (
 )
 from .utils import (
     BIN_DIR,
+    BUN_VERSION,
     CACHE_DIR,
     ESBUILD_VERSION,
     PACKAGES_DIR,
@@ -23,6 +25,7 @@ _fetch_npm_package = fetch_npm_package
 
 __all__ = [
     "BIN_DIR",
+    "BUN_VERSION",
     "CACHE_DIR",
     "CORE_PACKAGES",
     "DESKTOP_PACKAGES",
@@ -33,9 +36,11 @@ __all__ = [
     "_get_platform",
     "_safe_extract",
     "build_bundle",
+    "ensure_bun",
     "ensure_esbuild",
     "ensure_packages",
     "fetch_npm_package",
+    "get_bun_platform",
     "get_platform",
     "safe_extract",
 ]
