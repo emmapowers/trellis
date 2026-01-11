@@ -8,6 +8,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from tests.helpers import requires_pytauri
 from trellis.bundler import get_project_workspace
 
 
@@ -81,13 +82,10 @@ class TestServerPlatformBundle:
 
 
 class TestDesktopPlatformBundle:
+    @requires_pytauri
     def test_builds_bundle_and_copies_html(self) -> None:
         """Builds desktop bundle and copies static index.html."""
-        pytest = __import__("pytest")
-        try:
-            from trellis.platforms.desktop.platform import DesktopPlatform
-        except ImportError:
-            pytest.skip("pytauri not installed")
+        from trellis.platforms.desktop.platform import DesktopPlatform
 
         # Bundle is now in the cache workspace
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
@@ -157,14 +155,9 @@ class TestBundleBuildCli:
         if mtime_before is not None:
             assert browser_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"
 
+    @requires_pytauri
     def test_bundle_build_desktop_succeeds(self) -> None:
         """Running `trellis bundle build --platform desktop --force` succeeds."""
-        pytest = __import__("pytest")
-        try:
-            import pytauri  # noqa: F401
-        except ImportError:
-            pytest.skip("pytauri not installed")
-
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
         entry_point = platforms_dir / "desktop" / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)

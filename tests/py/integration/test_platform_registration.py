@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
-# Import all platforms once at module level to trigger registrations
-# This avoids issues with Python's import caching
-from trellis.platforms import browser, common, desktop, server  # noqa: F401
+from tests.helpers import HAS_PYTAURI, requires_pytauri
+
+# Import platforms that don't require pytauri
+from trellis.platforms import browser, common, server  # noqa: F401
+
+# Desktop requires pytauri which isn't available in CI
+if HAS_PYTAURI:
+    from trellis.platforms import desktop  # noqa: F401
 
 
 class TestPlatformRegistration:
@@ -52,6 +57,7 @@ class TestPlatformRegistration:
         module_names = [m.name for m in collected.modules]
         assert "trellis-server" in module_names
 
+    @requires_pytauri
     def test_desktop_registers_with_tauri_packages(self) -> None:
         """Importing desktop platform registers trellis-desktop with Tauri packages."""
         from trellis.bundler import registry
@@ -78,4 +84,6 @@ class TestPlatformRegistration:
 
         # Should not raise on collect (no version conflicts)
         collected = registry.collect()
-        assert len(collected.modules) == 4
+        # 4 modules with pytauri (desktop), 3 without
+        expected_count = 4 if HAS_PYTAURI else 3
+        assert len(collected.modules) == expected_count
