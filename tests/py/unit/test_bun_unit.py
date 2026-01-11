@@ -239,3 +239,47 @@ class TestEnsureBun:
         # No .zip files should remain
         zip_files = list(tmp_path.glob("*.zip"))
         assert len(zip_files) == 0
+
+    def test_rejects_zip_with_path_traversal(self, tmp_path: Path) -> None:
+        """Rejects ZIP files containing path traversal attacks."""
+        from trellis.bundler.bun import ensure_bun
+
+        # Create ZIP with malicious path
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w") as zf:
+            zf.writestr("../../../etc/malicious", "bad content")
+        zip_content = zip_buffer.getvalue()
+
+        mock_response = MagicMock()
+        mock_response.iter_bytes.return_value = [zip_content]
+        mock_response.__enter__ = MagicMock(return_value=mock_response)
+        mock_response.__exit__ = MagicMock(return_value=False)
+
+        with patch("trellis.bundler.bun.BIN_DIR", tmp_path):
+            with patch("trellis.bundler.bun.BUN_VERSION", "1.0.0"):
+                with patch("trellis.bundler.bun.get_bun_platform", return_value="darwin-aarch64"):
+                    with patch("httpx.stream", return_value=mock_response):
+                        with pytest.raises(ValueError, match="path traversal"):
+                            ensure_bun()
+
+    def test_raises_if_binary_missing_after_extraction(self, tmp_path: Path) -> None:
+        """Raises RuntimeError if binary is missing after extraction."""
+        from trellis.bundler.bun import ensure_bun
+
+        # Create ZIP that doesn't contain the expected binary path
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w") as zf:
+            zf.writestr("wrong-folder/bun", "fake bun")
+        zip_content = zip_buffer.getvalue()
+
+        mock_response = MagicMock()
+        mock_response.iter_bytes.return_value = [zip_content]
+        mock_response.__enter__ = MagicMock(return_value=mock_response)
+        mock_response.__exit__ = MagicMock(return_value=False)
+
+        with patch("trellis.bundler.bun.BIN_DIR", tmp_path):
+            with patch("trellis.bundler.bun.BUN_VERSION", "1.0.0"):
+                with patch("trellis.bundler.bun.get_bun_platform", return_value="darwin-aarch64"):
+                    with patch("httpx.stream", return_value=mock_response):
+                        with pytest.raises(RuntimeError, match="missing after extraction"):
+                            ensure_bun()

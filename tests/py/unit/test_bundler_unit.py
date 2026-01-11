@@ -147,6 +147,40 @@ class TestSafeExtract:
             with pytest.raises(ValueError, match="path traversal"):
                 _safe_extract(tar, tmp_path)
 
+    def test_safe_extract_rejects_symlinks(self, tmp_path: Path) -> None:
+        """Rejects symlink entries to prevent link-based escapes."""
+        from trellis.bundler import _safe_extract
+
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            # Add a symlink pointing outside destination
+            info = tarfile.TarInfo(name="package/link")
+            info.type = tarfile.SYMTYPE
+            info.linkname = "/etc/passwd"
+            tar.addfile(info)
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            with pytest.raises(ValueError, match="link entry"):
+                _safe_extract(tar, tmp_path)
+
+    def test_safe_extract_rejects_hardlinks(self, tmp_path: Path) -> None:
+        """Rejects hardlink entries to prevent link-based escapes."""
+        from trellis.bundler import _safe_extract
+
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            # Add a hardlink
+            info = tarfile.TarInfo(name="package/hardlink")
+            info.type = tarfile.LNKTYPE
+            info.linkname = "package/original"
+            tar.addfile(info)
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            with pytest.raises(ValueError, match="link entry"):
+                _safe_extract(tar, tmp_path)
+
 
 class TestIsRebuildNeeded:
     """Tests for incremental build checking."""

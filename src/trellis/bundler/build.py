@@ -232,6 +232,7 @@ def build_from_registry(
     for module in collected.modules:
         for output_name, src_path in module.static_files.items():
             dst_path = dist_dir / output_name
+            dst_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src_path, dst_path)
 
     # Write snippets hash for incremental builds

@@ -38,17 +38,17 @@ def get_watch_paths(entry_point: Path, collected: CollectedModules) -> set[Path]
     Returns:
         Set of paths to watch
     """
-    paths: set[Path] = {entry_point}
+    paths: set[Path] = {entry_point.resolve()}
 
     for module in collected.modules:
         # Add module source files
         if module._base_path:
             for file_path in module.files:
-                paths.add(module._base_path / file_path)
+                paths.add((module._base_path / file_path).resolve())
 
         # Add static file sources
         for src_path in module.static_files.values():
-            paths.add(src_path)
+            paths.add(src_path.resolve())
 
     return paths
 

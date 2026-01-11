@@ -8,11 +8,14 @@ and generate the bundle.
 from __future__ import annotations
 
 import inspect
+import logging
 from dataclasses import dataclass, field
 from enum import StrEnum, auto
 from pathlib import Path
 
 from wcmatch import glob as wcglob
+
+logger = logging.getLogger(__name__)
 
 # Supported source file types for bundling
 SUPPORTED_SOURCE_TYPES: frozenset[str] = frozenset({".ts", ".tsx", ".css", ".js", ".jsx"})
@@ -225,6 +228,12 @@ class ModuleRegistry:
             base_path = Path(caller_file).parent.resolve()
         else:
             base_path = None
+            if files and any(_is_glob_pattern(f) for f in files):
+                logger.warning(
+                    "Frame introspection unavailable for module %r; "
+                    "glob patterns in 'files' will not be expanded",
+                    name,
+                )
 
         # Convert export tuples to ModuleExport objects
         module_exports = []

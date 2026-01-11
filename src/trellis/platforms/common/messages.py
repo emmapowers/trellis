@@ -148,7 +148,7 @@ class ReloadMessage(msgspec.Struct, tag="reload", tag_field="type"):
     the bundle. Client should reload the page to pick up changes.
     """
 
-    pass
+    ...
 
 
 # Union type for all messages - used by MessageHandler

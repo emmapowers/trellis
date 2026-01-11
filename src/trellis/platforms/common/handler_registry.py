@@ -7,6 +7,7 @@ Used by watch mode to send reload messages when the bundle is rebuilt.
 from __future__ import annotations
 
 import logging
+import threading
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
@@ -31,12 +32,15 @@ class HandlerRegistry:
     """
 
     _handlers: set[MessageSender]
+    _lock: threading.Lock
 
     def __init__(self) -> None:
         self._handlers = set()
+        self._lock = threading.Lock()
 
     def __len__(self) -> int:
-        return len(self._handlers)
+        with self._lock:
+            return len(self._handlers)
 
     def register(self, handler: MessageSender) -> None:
         """Register a handler to receive broadcasts.
@@ -44,8 +48,10 @@ class HandlerRegistry:
         Args:
             handler: Handler with send_message method
         """
-        self._handlers.add(handler)
-        logger.debug("Handler registered, total: %d", len(self._handlers))
+        with self._lock:
+            self._handlers.add(handler)
+            count = len(self._handlers)
+        logger.debug("Handler registered, total: %d", count)
 
     def unregister(self, handler: MessageSender) -> None:
         """Unregister a handler.
@@ -55,8 +61,10 @@ class HandlerRegistry:
         Args:
             handler: Handler to remove
         """
-        self._handlers.discard(handler)
-        logger.debug("Handler unregistered, total: %d", len(self._handlers))
+        with self._lock:
+            self._handlers.discard(handler)
+            count = len(self._handlers)
+        logger.debug("Handler unregistered, total: %d", count)
 
     async def broadcast(self, msg: Message) -> None:
         """Broadcast a message to all registered handlers.
@@ -66,12 +74,15 @@ class HandlerRegistry:
         Args:
             msg: Message to send to all handlers
         """
-        if not self._handlers:
+        with self._lock:
+            handlers = list(self._handlers)
+
+        if not handlers:
             return
 
-        logger.debug("Broadcasting %s to %d handlers", type(msg).__name__, len(self._handlers))
+        logger.debug("Broadcasting %s to %d handlers", type(msg).__name__, len(handlers))
 
-        for handler in list(self._handlers):  # Copy to avoid mutation during iteration
+        for handler in handlers:
             try:
                 await handler.send_message(msg)
             except Exception:

@@ -65,15 +65,25 @@ def ensure_bun() -> Path:
     BIN_DIR.mkdir(parents=True, exist_ok=True)
     zip_path = BIN_DIR / f"bun-{plat}-{BUN_VERSION}.zip"
 
-    with httpx.stream("GET", url, follow_redirects=True) as r:
+    timeout = httpx.Timeout(60.0, connect=10.0)
+    with httpx.stream("GET", url, follow_redirects=True, timeout=timeout) as r:
         r.raise_for_status()
         with open(zip_path, "wb") as f:
             f.writelines(r.iter_bytes())
 
     extract_dir.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(zip_path, "r") as zf:
+        # Validate paths to prevent zip-slip attacks
+        for member in zf.infolist():
+            member_path = (extract_dir / member.filename).resolve()
+            if not member_path.is_relative_to(extract_dir.resolve()):
+                raise ValueError(f"Zip contains path traversal: {member.filename}")
         zf.extractall(extract_dir)
 
     zip_path.unlink()
+
+    if not binary_path.exists():
+        raise RuntimeError(f"Bun binary missing after extraction: {binary_path}")
+
     binary_path.chmod(0o755)
     return binary_path

@@ -27,6 +27,9 @@ def safe_extract(tar: tarfile.TarFile, dest: Path) -> None:
     """
     dest = dest.resolve()
     for member in tar.getmembers():
+        # Reject symlinks and hardlinks to prevent link-based escapes
+        if member.issym() or member.islnk():
+            raise ValueError(f"Tarball contains link entry: {member.name}")
         member_path = (dest / member.name).resolve()
         if not member_path.is_relative_to(dest):
             raise ValueError(f"Tarball contains path traversal: {member.name}")
