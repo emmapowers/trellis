@@ -267,6 +267,16 @@ class _WatchThread:
 
         # Import watch module lazily to avoid loading watchfiles in browser
         from trellis.bundler.watch import watch_and_rebuild
+        from trellis.platforms.common.handler_registry import get_global_registry
+        from trellis.platforms.common.messages import ReloadMessage
+
+        def on_rebuild() -> None:
+            """Broadcast reload message to all connected clients."""
+            registry = get_global_registry()
+            if len(registry) > 0:
+                # Schedule broadcast on the watch thread's event loop
+                # This is safe because we're already in the watch thread
+                asyncio.create_task(registry.broadcast(ReloadMessage()))
 
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
@@ -276,6 +286,7 @@ class _WatchThread:
                     self._config.registry,
                     self._config.entry_point,
                     self._config.workspace,
+                    on_rebuild=on_rebuild,
                 )
             )
             self._loop.run_forever()

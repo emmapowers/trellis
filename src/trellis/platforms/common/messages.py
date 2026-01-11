@@ -141,6 +141,16 @@ class UrlChanged(msgspec.Struct, tag="url_changed", tag_field="type"):
     path: str
 
 
+class ReloadMessage(msgspec.Struct, tag="reload", tag_field="type"):
+    """Reload message sent when bundle is rebuilt.
+
+    Sent by the server when watch mode detects changes and rebuilds
+    the bundle. Client should reload the page to pick up changes.
+    """
+
+    pass
+
+
 # Union type for all messages - used by MessageHandler
 Message = (
     HelloMessage
@@ -152,4 +162,5 @@ Message = (
     | HistoryBack
     | HistoryForward
     | UrlChanged
+    | ReloadMessage
 )

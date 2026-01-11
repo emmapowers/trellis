@@ -7,6 +7,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from trellis.core.components.base import Component
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
+from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.common.messages import Message
 
 router = APIRouter()
@@ -78,9 +79,14 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
         top_component, app_wrapper, websocket, batch_delay=batch_delay
     )
 
+    # Register handler for broadcast (e.g., reload messages)
+    registry = get_global_registry()
+    registry.register(handler)
+
     try:
         await handler.run()
     except WebSocketDisconnect:
         pass
     finally:
+        registry.unregister(handler)
         handler.cleanup()

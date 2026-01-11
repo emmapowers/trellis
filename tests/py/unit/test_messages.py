@@ -8,6 +8,7 @@ from trellis.platforms.common.messages import (
     HelloResponseMessage,
     Message,
     PatchMessage,
+    ReloadMessage,
 )
 
 
@@ -48,6 +49,36 @@ class TestEventMessage:
         raw = msgspec.msgpack.decode(encoded)
         assert raw["type"] == "event"
         assert raw["callback_id"] == "cb_1"
+
+
+class TestReloadMessage:
+    """Tests for ReloadMessage serialization."""
+
+    def test_reload_message_creation(self) -> None:
+        """ReloadMessage can be created with no arguments."""
+        msg = ReloadMessage()
+        assert msg is not None
+
+    def test_reload_message_msgpack_roundtrip(self) -> None:
+        """ReloadMessage survives msgpack encode/decode."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ReloadMessage()
+        encoded = encoder.encode(original)
+        decoded = decoder.decode(encoded)
+
+        assert isinstance(decoded, ReloadMessage)
+
+    def test_reload_message_has_type_tag(self) -> None:
+        """ReloadMessage includes type tag for dispatch."""
+        encoder = msgspec.msgpack.Encoder()
+        msg = ReloadMessage()
+        encoded = encoder.encode(msg)
+
+        # Decode as raw dict to check structure
+        raw = msgspec.msgpack.decode(encoded)
+        assert raw["type"] == "reload"
 
 
 class TestMessageUnion:
@@ -109,8 +140,19 @@ class TestMessageUnion:
             HelloResponseMessage(session_id="s1", server_version="1.0"),
             PatchMessage(patches=[]),
             EventMessage(callback_id="cb_1"),
+            ReloadMessage(),
         ]
 
         for original in messages:
             decoded = decoder.decode(encoder.encode(original))
             assert type(decoded) is type(original)
+
+    def test_decode_reload_message(self) -> None:
+        """ReloadMessage decodes correctly from union."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ReloadMessage()
+        decoded = decoder.decode(encoder.encode(original))
+
+        assert isinstance(decoded, ReloadMessage)

@@ -17,6 +17,7 @@ from rich.console import Console
 
 from trellis.bundler import build_from_registry, get_project_workspace, registry
 from trellis.platforms.common.base import Platform, WatchConfig
+from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
 from trellis.utils.hot_reload import get_or_create_hot_reload
 
@@ -124,6 +125,8 @@ class DesktopPlatform(Platform):
                 channel,
                 batch_delay=self._batch_delay,
             )
+            # Register handler for broadcast (e.g., reload messages)
+            get_global_registry().register(self._handler)
             self._handler_task = asyncio.create_task(self._handler.run())
             return "ok"
 

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -73,6 +74,7 @@ async def watch_and_rebuild(
     registry: ModuleRegistry,
     entry_point: Path,
     workspace: Path,
+    on_rebuild: Callable[[], None] | None = None,
 ) -> None:
     """Watch source files and rebuild when they change.
 
@@ -83,6 +85,7 @@ async def watch_and_rebuild(
         registry: Module registry with registered modules
         entry_point: Path to entry point file
         workspace: Workspace directory for staging and output
+        on_rebuild: Optional callback invoked after successful rebuild
     """
     # Import watchfiles here to avoid loading it when not needed
     # (especially important for browser platform)
@@ -117,6 +120,10 @@ async def watch_and_rebuild(
                     force=True,
                 )
                 logger.info("Bundle rebuilt successfully")
+
+                # Notify caller of successful rebuild
+                if on_rebuild is not None:
+                    on_rebuild()
             except Exception:
                 logger.exception("Bundle rebuild failed")
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import MagicMock
 
 from trellis.bundler.registry import CollectedModules, Module
 
@@ -170,3 +171,27 @@ class TestGetWatchDirectories:
         # Should have entry_point parent and module_dir
         assert isinstance(directories, set)
         assert module_dir in directories
+
+
+class TestOnRebuildCallback:
+    """Tests for on_rebuild callback in watch_and_rebuild."""
+
+    def test_on_rebuild_signature(self) -> None:
+        """watch_and_rebuild accepts an on_rebuild callback parameter."""
+        from trellis.bundler.watch import watch_and_rebuild
+        import inspect
+
+        sig = inspect.signature(watch_and_rebuild)
+        params = list(sig.parameters.keys())
+
+        assert "on_rebuild" in params
+
+    def test_on_rebuild_default_is_none(self) -> None:
+        """on_rebuild parameter defaults to None."""
+        from trellis.bundler.watch import watch_and_rebuild
+        import inspect
+
+        sig = inspect.signature(watch_and_rebuild)
+        param = sig.parameters["on_rebuild"]
+
+        assert param.default is None
