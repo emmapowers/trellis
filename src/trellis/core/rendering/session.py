@@ -6,6 +6,7 @@ import contextvars
 import re
 import threading
 import typing as tp
+import weakref
 from dataclasses import dataclass, field
 
 from trellis.core.rendering.dirty_tracker import DirtyTracker
@@ -19,7 +20,9 @@ if tp.TYPE_CHECKING:
 
 __all__ = [
     "RenderSession",
+    "SessionRegistry",
     "get_active_session",
+    "get_session_registry",
     "is_render_active",
     "set_active_session",
 ]
@@ -144,3 +147,82 @@ def _resolve_prop_path(props: dict[str, tp.Any], path: str) -> tp.Any:
         pos += match.end()
 
     return value
+
+
+class SessionRegistry:
+    """Registry of active RenderSession instances.
+
+    Uses weak references to automatically remove sessions when they are
+    garbage collected (e.g., when a WebSocket connection closes).
+
+    Note: RenderSession is a dataclass and unhashable, so we can't use
+    WeakSet directly. Instead we use a dict keyed by id() with weakref values.
+    """
+
+    def __init__(self) -> None:
+        # Dict mapping id(session) -> weakref.ref(session)
+        self._sessions: dict[int, weakref.ref[RenderSession]] = {}
+        self._lock = threading.Lock()
+
+    def _cleanup_dead_refs(self) -> None:
+        """Remove any dead weak references from the registry."""
+        dead_ids = [sid for sid, ref in self._sessions.items() if ref() is None]
+        for sid in dead_ids:
+            del self._sessions[sid]
+
+    def register(self, session: RenderSession) -> None:
+        """Register a session.
+
+        Args:
+            session: The RenderSession to register
+        """
+        with self._lock:
+            self._cleanup_dead_refs()
+            self._sessions[id(session)] = weakref.ref(session)
+
+    def unregister(self, session: RenderSession) -> None:
+        """Unregister a session.
+
+        Args:
+            session: The RenderSession to unregister
+        """
+        with self._lock:
+            self._sessions.pop(id(session), None)
+
+    def __iter__(self) -> tp.Iterator[RenderSession]:
+        """Iterate over registered sessions.
+
+        Returns a snapshot of live sessions to avoid issues with concurrent
+        modification during iteration. Dead references are skipped.
+        """
+        with self._lock:
+            self._cleanup_dead_refs()
+            # Dereference and filter out any None values
+            sessions: list[RenderSession] = []
+            for ref in self._sessions.values():
+                session = ref()
+                if session is not None:
+                    sessions.append(session)
+            return iter(sessions)
+
+    def __len__(self) -> int:
+        """Return the number of registered sessions."""
+        with self._lock:
+            self._cleanup_dead_refs()
+            return len(self._sessions)
+
+
+# Global singleton instance
+_session_registry: SessionRegistry | None = None
+
+
+def get_session_registry() -> SessionRegistry:
+    """Get the global SessionRegistry instance, creating it if needed.
+
+    Returns:
+        The global SessionRegistry instance
+    """
+    global _session_registry
+    if _session_registry is None:
+        _session_registry = SessionRegistry()
+    return _session_registry

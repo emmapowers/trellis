@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -23,6 +24,7 @@ from trellis.platforms.server.handler import router as ws_router
 from trellis.platforms.server.middleware import RequestLoggingMiddleware
 from trellis.platforms.server.routes import create_static_dir
 from trellis.platforms.server.routes import router as http_router
+from trellis.utils.hot_reload import get_or_create_hot_reload
 
 _console = Console()
 
@@ -96,10 +98,6 @@ class ServerPlatform(Platform):
         """
         # Start hot reload if enabled
         if hot_reload:
-            import asyncio
-
-            from trellis.utils.hot_reload import get_or_create_hot_reload
-
             hr = get_or_create_hot_reload(asyncio.get_running_loop())
             hr.start()
 

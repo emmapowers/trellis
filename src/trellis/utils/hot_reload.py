@@ -8,19 +8,18 @@ from __future__ import annotations
 
 import asyncio
 import sys
-import threading
 import typing as tp
-import weakref
 from pathlib import Path
 
+from trellis.core.rendering.session import get_session_registry
 from trellis.utils.logger import logger
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering.session import RenderSession
+    from jurigged.codetools import CodeFile
+    from jurigged.live import Watcher
 
 __all__ = [
     "HotReload",
-    "SessionRegistry",
     "get_hot_reload",
     "get_or_create_hot_reload",
     "is_user_module",
@@ -75,69 +74,6 @@ def is_user_module(filename: str | None) -> bool:
     return True
 
 
-class SessionRegistry:
-    """Registry of active RenderSession instances for hot reload.
-
-    Uses weak references to automatically remove sessions when they are
-    garbage collected (e.g., when a WebSocket connection closes).
-
-    Note: RenderSession is a dataclass and unhashable, so we can't use
-    WeakSet directly. Instead we use a dict keyed by id() with weakref values.
-    """
-
-    def __init__(self) -> None:
-        # Dict mapping id(session) -> weakref.ref(session)
-        self._sessions: dict[int, weakref.ref[RenderSession]] = {}
-        self._lock = threading.Lock()
-
-    def _cleanup_dead_refs(self) -> None:
-        """Remove any dead weak references from the registry."""
-        dead_ids = [sid for sid, ref in self._sessions.items() if ref() is None]
-        for sid in dead_ids:
-            del self._sessions[sid]
-
-    def register(self, session: RenderSession) -> None:
-        """Register a session for hot reload notifications.
-
-        Args:
-            session: The RenderSession to register
-        """
-        with self._lock:
-            self._cleanup_dead_refs()
-            self._sessions[id(session)] = weakref.ref(session)
-
-    def unregister(self, session: RenderSession) -> None:
-        """Unregister a session from hot reload notifications.
-
-        Args:
-            session: The RenderSession to unregister
-        """
-        with self._lock:
-            self._sessions.pop(id(session), None)
-
-    def __iter__(self) -> tp.Iterator[RenderSession]:
-        """Iterate over registered sessions.
-
-        Returns a snapshot of live sessions to avoid issues with concurrent
-        modification during iteration. Dead references are skipped.
-        """
-        with self._lock:
-            self._cleanup_dead_refs()
-            # Dereference and filter out any None values
-            sessions: list[RenderSession] = []
-            for ref in self._sessions.values():
-                session = ref()
-                if session is not None:
-                    sessions.append(session)
-            return iter(sessions)
-
-    def __len__(self) -> int:
-        """Return the number of registered sessions."""
-        with self._lock:
-            self._cleanup_dead_refs()
-            return len(self._sessions)
-
-
 # Global singleton instance
 _hot_reload: HotReload | None = None
 
@@ -156,10 +92,18 @@ class HotReload:
             loop: The asyncio event loop to use for marshaling callbacks.
                   If None, callbacks run directly on the watchdog thread.
         """
-        self.sessions = SessionRegistry()
-        self._watcher: tp.Any = None  # jurigged.live.Watcher
+        self._watcher: Watcher | None = None
         self._loop = loop
         self._started = False
+
+    @property
+    def sessions(self) -> tp.Any:
+        """Get the global session registry.
+
+        This property provides backwards compatibility for code that
+        accesses hot_reload.sessions directly.
+        """
+        return get_session_registry()
 
     def start(self) -> None:
         """Start watching for file changes.
@@ -176,8 +120,8 @@ class HotReload:
         # Register existing modules and install import sniffer for new ones
         registry.auto_register(filter=is_user_module)
 
-        # Suppress Jurigged's built-in logging
-        registry.set_logger(lambda x: None)
+        # Forward Jurigged's logging to our logger at debug level
+        registry.set_logger(logger.debug)
 
         # Create watcher and register postrun hook
         self._watcher = Watcher(registry, debounce=0.05)
@@ -185,7 +129,7 @@ class HotReload:
         self._watcher.start()
 
         self._started = True
-        logger.info("Hot reload started")
+        logger.debug("Hot reload started")
 
     def stop(self) -> None:
         """Stop watching for file changes."""
@@ -194,7 +138,7 @@ class HotReload:
             self._watcher = None
         self._started = False
 
-    def _on_reload(self, path: str, codefile: tp.Any) -> None:
+    def _on_reload(self, path: str, codefile: CodeFile) -> None:
         """Handle file reload event from Jurigged.
 
         This is called from the watchdog thread, so we marshal to the
@@ -204,7 +148,7 @@ class HotReload:
             path: Path to the reloaded file
             codefile: Jurigged CodeFile object
         """
-        logger.info("Hot reload: %s", path)
+        logger.debug("Hot reload: %s", path)
 
         if self._loop is not None:
             # Marshal to asyncio event loop
@@ -223,7 +167,8 @@ class HotReload:
         3. Without marking all elements dirty, children with unchanged props
            would be reused without re-executing their updated code
         """
-        for session in self.sessions:
+        registry = get_session_registry()
+        for session in registry:
             for element_id in session.elements:
                 session.dirty.mark(element_id)
 

@@ -18,6 +18,7 @@ from rich.console import Console
 from trellis.bundler import CORE_PACKAGES, DESKTOP_PACKAGES, BundleConfig, build_bundle
 from trellis.platforms.common.base import Platform
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
+from trellis.utils.hot_reload import get_or_create_hot_reload
 
 if TYPE_CHECKING:
     from trellis.core.components.base import Component
@@ -185,8 +186,6 @@ class DesktopPlatform(Platform):
         with start_blocking_portal("asyncio") as portal:
             # Start hot reload with the portal's event loop (not the main thread's loop)
             if hot_reload:
-                from trellis.utils.hot_reload import get_or_create_hot_reload
-
                 # portal.call runs the function in the portal's async context
                 loop = portal.call(asyncio.get_running_loop)
                 hr = get_or_create_hot_reload(loop)
