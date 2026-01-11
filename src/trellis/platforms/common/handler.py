@@ -23,7 +23,7 @@ from trellis.core.rendering.patches import (
     RenderUpdatePatch,
 )
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, get_session_registry
 from trellis.html.events import get_event_class
 from trellis.platforms.common.messages import (
     AddPatch,
@@ -275,6 +275,9 @@ class MessageHandler:
             msg.theme_mode,  # "system", "light", "dark", or None
         )
         self.session = RenderSession(wrapped)
+
+        # Register session with global registry (used by hot reload and other features)
+        get_session_registry().register(self.session)
 
         self.session_id = str(uuid4())
 

@@ -18,6 +18,7 @@ from rich.console import Console
 from trellis.bundler import CORE_PACKAGES, DESKTOP_PACKAGES, BundleConfig, build_bundle
 from trellis.platforms.common.base import Platform
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
+from trellis.utils.hot_reload import get_or_create_hot_reload
 
 if TYPE_CHECKING:
     from trellis.core.components.base import Component
@@ -151,6 +152,7 @@ class DesktopPlatform(Platform):
         window_width: int = 1024,
         window_height: int = 768,
         batch_delay: float = 1.0 / 30,
+        hot_reload: bool = True,
         **_kwargs: Any,
     ) -> None:
         """Start PyTauri desktop application.
@@ -162,6 +164,7 @@ class DesktopPlatform(Platform):
             window_width: Initial window width in pixels
             window_height: Initial window height in pixels
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
+            hot_reload: Enable hot reload (default True)
         """
         # Store root component and config for handler access
         self._root_component = root_component  # type: ignore[assignment]
@@ -181,6 +184,13 @@ class DesktopPlatform(Platform):
         # allowing async command handlers to run while PyTauri blocks the main thread.
         # The portal bridges sync PyTauri commands to async Trellis handlers.
         with start_blocking_portal("asyncio") as portal:
+            # Start hot reload with the portal's event loop (not the main thread's loop)
+            if hot_reload:
+                # portal.call runs the function in the portal's async context
+                loop = portal.call(asyncio.get_running_loop)
+                hr = get_or_create_hot_reload(loop)
+                hr.start()
+
             app = builder_factory().build(
                 context=context_factory(config_dir),
                 invoke_handler=commands.generate_handler(portal),

@@ -132,7 +132,7 @@ pip install "trellis[desktop] @ git+https://github.com/emmapowers/trellis.git"
 | ✅ | Bidirectional binding (`mutable()`) |
 | ✅ | Partial updates (diff patches) |
 | ❌ | Routing |
-| ❌ | Live reload |
+| ✅ | Hot reload |
 
 ## Development
 
