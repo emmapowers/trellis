@@ -1,8 +1,133 @@
 """Integration tests for Route component."""
 
+import pytest
+
 from tests.conftest import PatchCapture
 from trellis.core.components.composition import component
 from trellis.routing import Route, RouterState, Routes, router
+from trellis.routing.state import CurrentRouteContext
+
+
+class TestCurrentRouteContext:
+    """Tests for CurrentRouteContext state."""
+
+    def test_provides_pattern_to_descendants(self, capture_patches: type[PatchCapture]) -> None:
+        """CurrentRouteContext provides pattern to descendant components."""
+        captured_pattern: list[str] = []
+
+        @component
+        def Child() -> None:
+            ctx = CurrentRouteContext.from_context()
+            captured_pattern.append(ctx.pattern)
+
+        @component
+        def App() -> None:
+            with CurrentRouteContext(pattern="/users/:id"):
+                Child()
+
+        capture = capture_patches(App)
+        capture.render()
+
+        assert captured_pattern == ["/users/:id"]
+
+
+class TestOnDemandParams:
+    """Tests for on-demand params computation from CurrentRouteContext."""
+
+    def test_params_computed_from_context_pattern(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """router().params computes params from CurrentRouteContext pattern."""
+        captured_params: dict[str, str] = {}
+
+        @component
+        def Child() -> None:
+            captured_params.update(router().params)
+
+        @component
+        def App() -> None:
+            with RouterState(path="/users/42"):
+                with CurrentRouteContext(pattern="/users/:id"):
+                    Child()
+
+        capture = capture_patches(App)
+        capture.render()
+
+        assert captured_params == {"id": "42"}
+
+    def test_params_raises_outside_route_context(self, capture_patches: type[PatchCapture]) -> None:
+        """router().params raises RuntimeError when outside Route context."""
+
+        @component
+        def Child() -> None:
+            _ = router().params  # Should raise - no Route context
+
+        @component
+        def App() -> None:
+            with RouterState(path="/users/42"):
+                Child()  # No Route wrapper
+
+        capture = capture_patches(App)
+        with pytest.raises(RuntimeError, match=r"outside of a Route context"):
+            capture.render()
+
+
+class TestOnDemandQuery:
+    """Tests for on-demand query params computation from path."""
+
+    def test_query_parsed_from_path(self, capture_patches: type[PatchCapture]) -> None:
+        """router().query parses query string from path."""
+        captured_query: dict[str, str] = {}
+
+        @component
+        def Child() -> None:
+            captured_query.update(router().query)
+
+        @component
+        def App() -> None:
+            with RouterState(path="/users?page=1&sort=name"):
+                Child()
+
+        capture = capture_patches(App)
+        capture.render()
+
+        assert captured_query == {"page": "1", "sort": "name"}
+
+    def test_query_empty_when_no_query_string(self, capture_patches: type[PatchCapture]) -> None:
+        """router().query returns empty dict when path has no query string."""
+        captured_query: dict[str, str] = {}
+
+        @component
+        def Child() -> None:
+            captured_query.update(router().query)
+
+        @component
+        def App() -> None:
+            with RouterState(path="/users"):
+                Child()
+
+        capture = capture_patches(App)
+        capture.render()
+
+        assert captured_query == {}
+
+    def test_query_handles_url_encoding(self, capture_patches: type[PatchCapture]) -> None:
+        """router().query properly decodes URL-encoded values."""
+        captured_query: dict[str, str] = {}
+
+        @component
+        def Child() -> None:
+            captured_query.update(router().query)
+
+        @component
+        def App() -> None:
+            with RouterState(path="/search?q=hello%20world"):
+                Child()
+
+        capture = capture_patches(App)
+        capture.render()
+
+        assert captured_query == {"q": "hello world"}
 
 
 class TestRouteMatching:

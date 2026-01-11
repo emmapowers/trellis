@@ -2,10 +2,35 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from urllib.parse import parse_qsl
 
 from trellis.core.rendering.session import get_active_session
 from trellis.core.state.stateful import Stateful
-from trellis.routing.errors import RouteParamConflictError
+from trellis.routing.path_matching import match_path
+
+
+@dataclass(kw_only=True)
+class RoutesContext(Stateful):
+    """Marker context provided by Routes container.
+
+    Used by Route to verify it's inside a Routes container.
+    This is an implementation detail - not part of the public API.
+    """
+
+    pass
+
+
+@dataclass(kw_only=True)
+class CurrentRouteContext(Stateful):
+    """Context storing the matched route pattern for param computation.
+
+    Provided by Route component when it renders. Child components
+    can use this to compute params on-demand via router().params.
+
+    This is an implementation detail - not part of the public API.
+    """
+
+    pattern: str = ""
 
 
 @dataclass(kw_only=True)
@@ -41,8 +66,6 @@ class RouterState(Stateful):
 
     # Private state fields (not exposed in __init__)
     _path: str = field(default="/", init=False)
-    _params: dict[str, str] = field(default_factory=dict, init=False)
-    _query: dict[str, str] = field(default_factory=dict, init=False)
     _history: list[str] = field(default_factory=list, init=False)
     _history_index: int = field(default=0, init=False)
 
@@ -66,8 +89,6 @@ class RouterState(Stateful):
                 path = "/"
 
         self._path = path
-        self._params = {}
-        self._query = {}
         self._history = [path]
         self._history_index = 0
         self._on_navigate = None
@@ -81,13 +102,34 @@ class RouterState(Stateful):
 
     @property
     def params(self) -> dict[str, str]:
-        """Route parameters extracted from path. Returns a copy."""
-        return dict(self._params)
+        """Route parameters computed on-demand from path and matched pattern.
+
+        Uses the pattern from CurrentRouteContext (set by Route) to extract
+        parameters from the current path. Returns empty dict if outside
+        a matched route context.
+        """
+        ctx = CurrentRouteContext.from_context(default=None)
+        if ctx is None:
+            raise RuntimeError("router().params called outside of a Route context")
+        if not ctx.pattern:
+            return {}
+        # Strip query string before matching
+        path = self._path.split("?", 1)[0] if "?" in self._path else self._path
+        _, params = match_path(ctx.pattern, path)
+        return params
 
     @property
     def query(self) -> dict[str, str]:
-        """Query string parameters. Returns a copy."""
-        return dict(self._query)
+        """Query string parameters parsed on-demand from current path.
+
+        Parses the query string portion of the path (after '?') and returns
+        parameters as a dict. URL-encoded values are properly decoded.
+        Returns empty dict if no query string present.
+        """
+        if "?" not in self._path:
+            return {}
+        query_string = self._path.split("?", 1)[1]
+        return dict(parse_qsl(query_string))
 
     @property
     def history(self) -> list[str]:
@@ -103,35 +145,6 @@ class RouterState(Stateful):
     def can_go_forward(self) -> bool:
         """Whether forward navigation is possible."""
         return self._history_index < len(self._history) - 1
-
-    def _notify_path_change(self) -> None:
-        """Mark nodes that read router state as dirty for re-render.
-
-        Since _path is a private field, Stateful's automatic dirty marking
-        doesn't trigger. We manually notify watchers of the 'path' property.
-
-        Also notifies watchers of 'can_go_back' and 'can_go_forward' since
-        these computed properties depend on history state.
-
-        Clears params since they're path-specific. Routes will
-        re-populate them during the next render.
-        """
-        # Clear params - they're only valid for the current path
-        self._params = {}
-
-        try:
-            deps = object.__getattribute__(self, "_state_props")
-        except AttributeError:
-            return  # Not initialized yet
-
-        # Notify watchers of path and history-related properties
-        for prop in ("path", "can_go_back", "can_go_forward"):
-            if prop in deps:
-                state_info = deps[prop]
-                for node in state_info.watchers:
-                    node_session = node._session_ref()
-                    if node_session is not None:
-                        node_session.dirty.mark(node.id)
 
     def navigate(self, path: str) -> None:
         """Navigate to a new path.
@@ -149,7 +162,6 @@ class RouterState(Stateful):
         self._history.append(path)
         self._history_index = len(self._history) - 1
         self._path = path
-        self._notify_path_change()
 
         # Notify handler to update browser history
         if self._on_navigate is not None:
@@ -164,7 +176,6 @@ class RouterState(Stateful):
             return
         self._history_index -= 1
         self._path = self._history[self._history_index]
-        self._notify_path_change()
 
         # Notify handler to update browser history
         if self._on_go_back is not None:
@@ -179,7 +190,6 @@ class RouterState(Stateful):
             return
         self._history_index += 1
         self._path = self._history[self._history_index]
-        self._notify_path_change()
 
         # Notify handler to update browser history
         if self._on_go_forward is not None:
@@ -195,36 +205,6 @@ class RouterState(Stateful):
             path: The new path from browser URL
         """
         self._path = path
-        self._notify_path_change()
-
-    def set_params(self, params: dict[str, str]) -> None:
-        """Set route parameters, detecting conflicts.
-
-        Called internally by Route component when path matches.
-        Merges new params with existing ones, raising an error
-        if a key already exists with a different value.
-
-        Args:
-            params: The extracted route parameters
-
-        Raises:
-            RouteParamConflictError: If a param key exists with different value
-        """
-        for key, value in params.items():
-            if key in self._params and self._params[key] != value:
-                raise RouteParamConflictError(
-                    f"Route param '{key}' conflict: "
-                    f"already '{self._params[key]}', attempting to set '{value}'"
-                )
-        self._params.update(params)
-
-    def set_query(self, query: dict[str, str]) -> None:
-        """Set query string parameters.
-
-        Args:
-            query: The query parameters
-        """
-        self._query = dict(query)
 
 
 def router() -> RouterState:

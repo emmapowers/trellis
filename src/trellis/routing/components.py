@@ -1,24 +1,9 @@
 """Router components for client-side routing."""
 
-from dataclasses import dataclass
-
 from trellis.core.components.composition import component
 from trellis.core.rendering.child_ref import ChildRef
-from trellis.core.state.stateful import Stateful
 from trellis.routing.path_matching import match_path
-from trellis.routing.state import router
-
-
-@dataclass(kw_only=True)
-class CurrentRouteContext(Stateful):
-    """Marker context indicating we're inside a Routes container.
-
-    This is an implementation detail - not part of the public API.
-    """
-
-    def __init__(self) -> None:
-        """Initialize marker context."""
-        pass
+from trellis.routing.state import CurrentRouteContext, RoutesContext, router
 
 
 @component
@@ -46,10 +31,14 @@ def Routes(*, children: list[ChildRef] | None = None) -> None:
     """
     state = router()
 
-    with CurrentRouteContext():
-        if not children:
-            return
+    if not children:
+        return
 
+    # Strip query string for route matching (query is handled separately)
+    path = state.path.split("?", 1)[0] if "?" in state.path else state.path
+
+    # Provide marker context so Route can verify it's inside Routes
+    with RoutesContext():
         # Find first matching Route and execute only that one
         for child in children:
             element = child.element
@@ -61,10 +50,9 @@ def Routes(*, children: list[ChildRef] | None = None) -> None:
                 # Not a Route element - skip
                 continue
 
-            matched, params = match_path(pattern, state.path)
+            matched, _ = match_path(pattern, path)
             if matched:
-                state.set_params(params)
-                child()  # Execute only the matched Route
+                child()  # Execute the matched Route (it provides its own context)
                 return  # Stop after first match
 
 
@@ -78,6 +66,10 @@ def Route(*, pattern: str, children: list[ChildRef] | None = None) -> None:
 
     Route must be used inside a Routes container. If used outside,
     a RuntimeError is raised.
+
+    Each Route provides its own CurrentRouteContext with its pattern,
+    enabling router().params to compute parameters correctly. This context
+    is cached per-Route element, so switching routes uses the correct pattern.
 
     Args:
         pattern: Route pattern to match (e.g., "/users/:id", "*" for fallback)
@@ -98,15 +90,15 @@ def Route(*, pattern: str, children: list[ChildRef] | None = None) -> None:
         ```
     """
     # Check if we're inside a Routes container
-    ctx = CurrentRouteContext.from_context(default=None)
-    if ctx is None:
-        # Outside Routes - raise error
+    if RoutesContext.from_context(default=None) is None:
         raise RuntimeError(
             "Route must be used inside a Routes container. "
             "Use 'with Routes(): with Route(pattern=...): ...' pattern."
         )
 
-    # Render children - if we're executing, Routes determined we match
-    if children:
-        for child in children:
-            child()
+    # Provide context for on-demand param computation
+    # Each Route has its own cached context, so pattern is always correct
+    with CurrentRouteContext(pattern=pattern):
+        if children:
+            for child in children:
+                child()
