@@ -210,6 +210,8 @@ class BrowserServePlatform(Platform):
         self,
         root_component: Callable[[], Element],
         app_wrapper: AppWrapper,
+        *,
+        hot_reload: bool = True,
         **kwargs: Any,
     ) -> None:
         """Build and serve static files for browser testing.
@@ -219,6 +221,11 @@ class BrowserServePlatform(Platform):
         Note: app_wrapper is accepted for signature compatibility but not used
         here - the actual handler runs in Pyodide and receives its own wrapper.
         """
+        if hot_reload:
+            _console.print(
+                "  [yellow]⚠[/yellow]  [dim]Hot reload not supported for browser platform[/dim]"
+            )
+            _console.print()
         # Detect the actual entry point (not the component location)
         entry_path, module_name = _detect_entry_point()
 

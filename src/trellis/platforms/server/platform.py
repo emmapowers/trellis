@@ -80,6 +80,7 @@ class ServerPlatform(Platform):
         port: int | None = None,
         static_dir: Path | None = None,
         batch_delay: float = 1.0 / 30,
+        hot_reload: bool = True,
         **_kwargs: Any,  # Ignore other platform args
     ) -> None:
         """Start FastAPI server with WebSocket support.
@@ -91,7 +92,17 @@ class ServerPlatform(Platform):
             port: Port to bind to (auto-find if None)
             static_dir: Custom static files directory
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
+            hot_reload: Enable hot reload (default True)
         """
+        # Start hot reload if enabled
+        if hot_reload:
+            import asyncio
+
+            from trellis.utils.hot_reload import get_or_create_hot_reload
+
+            hr = get_or_create_hot_reload(asyncio.get_running_loop())
+            hr.start()
+
         # Create FastAPI app
         app = FastAPI()
 

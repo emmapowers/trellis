@@ -276,6 +276,13 @@ class MessageHandler:
         )
         self.session = RenderSession(wrapped)
 
+        # Register session with hot reload if active
+        from trellis.utils.hot_reload import get_hot_reload
+
+        hot_reload = get_hot_reload()
+        if hot_reload:
+            hot_reload.sessions.register(self.session)
+
         self.session_id = str(uuid4())
 
         # Include debug config if debug logging is enabled

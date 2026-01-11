@@ -28,6 +28,7 @@ dependencies = [
     "httpx>=0.27",
     "click>=8.0",
     "jinja2>=3.1",
+    "jurigged>=0.6.0",
 ]
 
 [project.optional-dependencies]
@@ -130,6 +131,11 @@ disable_error_code = ["empty-body"]
 # Desktop platform has optional pytauri dependency
 [[tool.mypy.overrides]]
 module = ["pytauri", "pytauri.*", "pytauri_wheel", "pytauri_wheel.*"]
+ignore_missing_imports = true
+
+# Jurigged for hot reload (no type stubs)
+[[tool.mypy.overrides]]
+module = ["jurigged", "jurigged.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
