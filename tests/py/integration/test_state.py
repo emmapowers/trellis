@@ -864,3 +864,78 @@ class TestAsyncLifecycleHooks:
             assert completed == ["done"]
 
         asyncio.run(test())
+
+
+class TestAttributeTracking:
+    """Tests for type-annotation-based attribute tracking."""
+
+    def test_only_annotated_attributes_tracked(self, rendered: "type[RenderResult]") -> None:
+        """Only attributes with type annotations in subclasses are tracked."""
+
+        @dataclass(kw_only=True)
+        class MyState(Stateful):
+            annotated: str = ""
+
+        state = MyState()
+        state.annotated = "value"
+        # Add non-annotated attribute dynamically
+        state.unannotated = "dynamic"  # type: ignore[attr-defined]
+
+        @component
+        def MyComponent() -> None:
+            _ = state.annotated
+            _ = state.unannotated  # type: ignore[attr-defined]
+
+        result = rendered(MyComponent)
+
+        # INTERNAL TEST: annotated attribute should be tracked
+        assert "annotated" in state._state_props
+        # Non-annotated attribute should NOT be tracked
+        assert "unannotated" not in state._state_props
+        assert result.root_element is not None
+
+    def test_private_annotated_attributes_tracked(self, rendered: "type[RenderResult]") -> None:
+        """Private attributes with type annotations ARE tracked."""
+
+        @dataclass(kw_only=True)
+        class MyState(Stateful):
+            _private: str = ""  # Private but annotated
+
+        state = MyState()
+        state._private = "secret"
+
+        @component
+        def MyComponent() -> None:
+            _ = state._private
+
+        result = rendered(MyComponent)
+
+        # INTERNAL TEST: private annotated attribute should be tracked
+        assert "_private" in state._state_props
+        assert len(state._state_props["_private"].watchers) == 1
+        assert result.root_element is not None
+
+    def test_stateful_internal_attrs_not_tracked(self, rendered: "type[RenderResult]") -> None:
+        """Internal Stateful attributes (_state_props, _initialized) are NOT tracked."""
+
+        @dataclass(kw_only=True)
+        class MyState(Stateful):
+            value: str = ""
+
+        state = MyState()
+        state.value = "test"
+
+        @component
+        def MyComponent() -> None:
+            _ = state.value
+            # These are internal Stateful attrs, not tracked
+            _ = state._initialized
+            _ = state._state_props
+
+        result = rendered(MyComponent)
+
+        # INTERNAL TEST: only user-defined annotated attrs should be tracked
+        assert "value" in state._state_props
+        assert "_initialized" not in state._state_props
+        assert "_state_props" not in state._state_props
+        assert result.root_element is not None

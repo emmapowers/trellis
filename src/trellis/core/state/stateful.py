@@ -7,6 +7,8 @@ properties and trigger re-renders when those properties change.
 Key Features:
     - **Fine-grained reactivity**: Only components that read a specific property
       re-render when that property changes
+    - **Annotation-based tracking**: Only attributes with type annotations are
+      tracked for reactivity. Private attributes (``_foo``) ARE tracked if annotated.
     - **Component-local caching**: State instances are cached per-component,
       similar to React hooks
     - **Context API**: Share state with descendants via `with state:` blocks
@@ -73,6 +75,22 @@ class _Missing:
 
 
 _MISSING = _Missing()
+
+
+def _is_tracked_attribute(cls: type, name: str) -> bool:
+    """Check if attribute should be tracked for reactivity.
+
+    Returns True if the attribute has a type annotation defined in a
+    subclass of Stateful. This includes private attributes (_foo) if
+    annotated. Internal Stateful attributes are excluded because they're
+    defined on the base class.
+    """
+    for klass in cls.__mro__:
+        if klass is Stateful or klass is object:
+            continue
+        if name in getattr(klass, "__annotations__", {}):
+            return True
+    return False
 
 
 @dataclass(kw_only=True)
@@ -187,7 +205,9 @@ class Stateful:
         1. Dependency registration - so state changes trigger re-renders
         2. Property recording - so mutable() can capture the reference
 
-        Private attributes (starting with '_') and callables are not tracked.
+        Only type-annotated attributes in subclasses are tracked. Private
+        attributes (``_foo``) ARE tracked if they have type annotations.
+        Callables (methods) are never tracked.
 
         Args:
             name: The attribute name to access
@@ -197,12 +217,12 @@ class Stateful:
         """
         value = object.__getattribute__(self, name)
 
-        # Skip internal attributes - no tracking
-        if name.startswith("_"):
-            return value
-
         # Skip callables - methods shouldn't be tracked
         if callable(value):
+            return value
+
+        # Only track type-annotated attributes in subclasses
+        if not _is_tracked_attribute(type(self), name):
             return value
 
         # Get render session
@@ -244,8 +264,12 @@ class Stateful:
     def __setattr__(self, name: str, value: tp.Any) -> None:
         """Set an attribute, marking dependent elements as dirty.
 
-        When a public attribute is modified, all elements that previously
+        When a type-annotated attribute is modified, all elements that previously
         read that attribute are marked dirty and will re-render.
+
+        Only type-annotated attributes in subclasses trigger reactivity. Private
+        attributes (``_foo``) ARE tracked if they have type annotations.
+        Non-annotated attributes can be set but won't trigger re-renders.
 
         Plain list/dict/set values are auto-converted to TrackedList/Dict/Set
         for reactive collection tracking.
@@ -258,8 +282,8 @@ class Stateful:
             RuntimeError: If called during component rendering. State changes
                 must happen outside render (in callbacks, hooks, timers, etc.)
         """
-        # Skip internal attributes - no dirty marking needed
-        if name.startswith("_"):
+        # Only track type-annotated attributes in subclasses
+        if not _is_tracked_attribute(type(self), name):
             object.__setattr__(self, name, value)
             return
 
