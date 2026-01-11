@@ -169,8 +169,10 @@ class HotReload:
         """
         registry = get_session_registry()
         for session in registry:
-            for element_id in session.elements:
-                session.dirty.mark(element_id)
+            # Hold session lock to prevent concurrent render() from modifying elements
+            with session.lock:
+                for element_id in session.elements:
+                    session.dirty.mark(element_id)
 
 
 def get_hot_reload() -> HotReload | None:
