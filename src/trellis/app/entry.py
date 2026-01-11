@@ -245,6 +245,7 @@ class _WatchThread:
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
+        self._background_tasks: set[asyncio.Task[None]] = set()
 
     def start(self) -> None:
         """Start the watch thread."""
@@ -276,7 +277,10 @@ class _WatchThread:
             if len(registry) > 0:
                 # Schedule broadcast on the watch thread's event loop
                 # This is safe because we're already in the watch thread
-                asyncio.create_task(registry.broadcast(ReloadMessage()))
+                # Task reference stored to prevent garbage collection during execution
+                task = asyncio.create_task(registry.broadcast(ReloadMessage()))
+                self._background_tasks.add(task)
+                task.add_done_callback(self._background_tasks.discard)
 
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)

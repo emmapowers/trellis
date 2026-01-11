@@ -1,6 +1,6 @@
 """Client bundler using esbuild + Bun package management."""
 
-from .build import build_from_registry
+from .build import TYPESCRIPT_VERSION, build_from_registry
 from .bun import ensure_bun, get_bun_platform
 from .esbuild import ensure_esbuild, get_platform
 from .packages import (
@@ -48,6 +48,7 @@ __all__ = [
     "ESBUILD_VERSION",
     "PACKAGES",
     "SUPPORTED_SOURCE_TYPES",
+    "TYPESCRIPT_VERSION",
     "CollectedModules",
     "ExportKind",
     "Module",

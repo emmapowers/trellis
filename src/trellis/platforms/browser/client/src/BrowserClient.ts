@@ -38,7 +38,7 @@ export interface BrowserClientOptions {
   routingMode?: RoutingMode;
 }
 
-type SendCallback = (msg: Record<string, unknown>) => void;
+type SendCallback = (msg: HelloMessage | EventMessage | UrlChangedMessage) => void;
 
 /**
  * Browser client using Web Worker for communication with Python.

@@ -56,7 +56,6 @@ function App() {
     <TrellisApp
       source={config.source}
       main={config.main}
-      workerUrl={config.workerUrl}
       trellisWheelUrl={config.trellisWheelUrl}
       routingMode={routingMode}
     />

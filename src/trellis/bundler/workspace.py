@@ -67,6 +67,10 @@ def stage_workspace(
         entry_point: Entry point file to copy
     """
     staged_dir = workspace / "staged"
+
+    # Clean out old staged files to avoid stale modules from previous builds
+    if staged_dir.exists():
+        shutil.rmtree(staged_dir)
     staged_dir.mkdir(parents=True, exist_ok=True)
 
     # Stage each module

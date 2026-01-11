@@ -58,9 +58,10 @@ function TabButton({
   icon?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const { tabProps } = useTab({ key: item.key }, state, ref);
-  const isSelected = state.selectedKey === item.key;
-  const isDisabled = state.disabledKeys.has(item.key);
+  const itemKey = item.key as string | number;
+  const { tabProps } = useTab({ key: itemKey }, state, ref);
+  const isSelected = state.selectedKey === itemKey;
+  const isDisabled = state.disabledKeys.has(itemKey);
   const [isFocusVisible, setIsFocusVisible] = React.useState(false);
 
   const config = sizeConfig[size];
@@ -234,8 +235,7 @@ export function Tabs({
       selectedKey: selected,
       onSelectionChange: (key) => setValue?.(key as string),
       disabledKeys: tabData.filter((t) => t.disabled).map((t) => t.id),
-      children: tabData.map((tab) => <Item key={tab.id}>{tab.label}</Item>),
-    },
+    } as Parameters<typeof useTabList>[0],
     state,
     ref
   );

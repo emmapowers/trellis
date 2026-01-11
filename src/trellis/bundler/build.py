@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import shutil
 import subprocess
@@ -10,12 +11,18 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from .bun import ensure_bun
 from .esbuild import ensure_esbuild
 from .packages import ensure_packages
 from .workspace import stage_workspace
 
 if TYPE_CHECKING:
     from .registry import CollectedModules, ModuleRegistry
+
+logger = logging.getLogger(__name__)
+
+# TypeScript version for type-checking (build-time dependency)
+TYPESCRIPT_VERSION = "5.7.3"
 
 
 def is_rebuild_needed(inputs: Iterable[Path], outputs: Iterable[Path]) -> bool:
@@ -93,6 +100,7 @@ def build_from_registry(
     workspace: Path,
     *,
     force: bool = False,
+    typecheck: bool = True,
 ) -> None:
     """Build a bundle using the module registry.
 
@@ -100,6 +108,7 @@ def build_from_registry(
     - Collects all registered modules
     - Stages files into a workspace
     - Generates _registry.ts wiring file
+    - Optionally runs tsc for type-checking
     - Runs esbuild with path aliases for @trellis/ imports
 
     Args:
@@ -107,6 +116,7 @@ def build_from_registry(
         entry_point: Path to entry point file (e.g., app.tsx or main.tsx)
         workspace: Workspace directory for staging and output
         force: Force rebuild even if up to date
+        typecheck: Run TypeScript type-checking before bundling (default True)
     """
     dist_dir = workspace / "dist"
     bundle_path = dist_dir / "bundle.js"
@@ -136,15 +146,39 @@ def build_from_registry(
     # Stage workspace (copies files, writes snippets, generates _registry.ts)
     stage_workspace(workspace, collected, entry_point)
 
+    # Add typescript to packages if type-checking is enabled
+    packages = dict(collected.packages)
+    if typecheck:
+        packages["typescript"] = TYPESCRIPT_VERSION
+
     # Ensure dependencies
     esbuild = ensure_esbuild()
-    node_modules = ensure_packages(collected.packages)
-
-    dist_dir.mkdir(parents=True, exist_ok=True)
+    node_modules = ensure_packages(packages)
 
     # Use NODE_PATH env var to resolve from our cached packages
     env = os.environ.copy()
     env["NODE_PATH"] = str(node_modules)
+
+    # Symlink node_modules into workspace for tsc type resolution
+    workspace_node_modules = workspace / "node_modules"
+    if workspace_node_modules.is_symlink():
+        workspace_node_modules.unlink()
+    if not workspace_node_modules.exists():
+        workspace_node_modules.symlink_to(node_modules)
+
+    # Run TypeScript type-checking before bundling
+    if typecheck:
+        bun = ensure_bun()
+        tsc_result = subprocess.run(
+            [str(bun), "x", "tsc", "--noEmit"],
+            check=False,
+            cwd=workspace,
+            env=env,
+        )
+        if tsc_result.returncode != 0:
+            logger.warning("TypeScript type-checking failed (see errors above)")
+
+    dist_dir.mkdir(parents=True, exist_ok=True)
 
     # Build worker entries first (as IIFE, imported as text by main bundle)
     # Worker bundle is placed next to the worker source file so relative imports work

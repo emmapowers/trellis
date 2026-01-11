@@ -189,7 +189,7 @@ export function TrellisApp({
         // 2. Wire up message passing between client and worker
         // Worker -> Client: Python sends HELLO_RESPONSE, RENDER, ERROR
         worker.onMessage((msg) => {
-          client.handleMessage(msg as Message);
+          client.handleMessage(msg as unknown as Message);
         });
 
         // Client -> Worker: JS sends HELLO, EVENT

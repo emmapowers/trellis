@@ -14,6 +14,8 @@ from .utils import CACHE_DIR
 PACKAGES = {
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "@types/react": "18.3.23",
+    "@types/react-dom": "18.3.7",
     "@msgpack/msgpack": "3.0.0",
     # Icons
     "lucide-react": "0.468.0",

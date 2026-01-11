@@ -9,6 +9,7 @@
 
 // Import worker code as text (built by bundler with --loader:.worker-bundle=text)
 import WORKER_CODE from "./pyodide.worker-bundle";
+import type { HelloMessage, EventMessage } from "@trellis/trellis-core/client/src/types";
 
 // === Types ===
 
@@ -22,7 +23,7 @@ export type PythonSource =
 type WorkerInMessage =
   | { type: "init"; trellisWheelUrl?: string; pageOrigin: string }
   | { type: "run"; source: PythonSource; main?: string }
-  | { type: "message"; payload: Record<string, unknown> };
+  | { type: "message"; payload: HelloMessage | EventMessage };
 
 /** Messages from worker to main thread */
 type WorkerOutMessage =
@@ -153,7 +154,7 @@ export class PyodideWorker {
   /**
    * Send a message to Python (HELLO, EVENT).
    */
-  sendMessage(msg: Record<string, unknown>): void {
+  sendMessage(msg: HelloMessage | EventMessage): void {
     if (!this.worker) {
       console.warn("PyodideWorker: No worker, cannot send message");
       return;

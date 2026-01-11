@@ -48,7 +48,7 @@ export function isMutableRef(value: unknown): value is MutableRef {
 }
 
 /** Event handler function type - called when a callback is triggered. */
-export type EventHandler = (callbackId: string, args?: unknown[]) => void;
+export type EventHandler = (callbackId: string, args: unknown[]) => void;
 
 /**
  * Client-side Mutable wrapper for two-way data binding.

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock
 
 from trellis.bundler.registry import CollectedModules, Module
 
@@ -178,8 +177,9 @@ class TestOnRebuildCallback:
 
     def test_on_rebuild_signature(self) -> None:
         """watch_and_rebuild accepts an on_rebuild callback parameter."""
-        from trellis.bundler.watch import watch_and_rebuild
         import inspect
+
+        from trellis.bundler.watch import watch_and_rebuild
 
         sig = inspect.signature(watch_and_rebuild)
         params = list(sig.parameters.keys())
@@ -188,8 +188,9 @@ class TestOnRebuildCallback:
 
     def test_on_rebuild_default_is_none(self) -> None:
         """on_rebuild parameter defaults to None."""
-        from trellis.bundler.watch import watch_and_rebuild
         import inspect
+
+        from trellis.bundler.watch import watch_and_rebuild
 
         sig = inspect.signature(watch_and_rebuild)
         param = sig.parameters["on_rebuild"]
