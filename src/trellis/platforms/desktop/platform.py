@@ -16,7 +16,7 @@ from pytauri_wheel.lib import builder_factory, context_factory
 from rich.console import Console
 
 from trellis.bundler import build_from_registry, get_project_workspace, registry
-from trellis.platforms.common.base import Platform
+from trellis.platforms.common.base import Platform, WatchConfig
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
 from trellis.utils.hot_reload import get_or_create_hot_reload
 
@@ -101,6 +101,15 @@ class DesktopPlatform(Platform):
 
         build_from_registry(registry, entry_point, workspace, force=force)
 
+    def get_watch_config(self) -> WatchConfig:
+        """Get configuration for watch mode."""
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        return WatchConfig(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=get_project_workspace(entry_point),
+        )
+
     def _create_commands(self) -> Commands:
         """Create PyTauri commands with access to platform state via closure."""
         commands = Commands()
@@ -165,8 +174,14 @@ class DesktopPlatform(Platform):
 
         _print_startup_banner(window_title)
 
-        # Load Tauri configuration
+        # Load Tauri configuration with workspace dist path
         config_dir = Path(__file__).parent / "config"
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
+        dist_path = str(workspace / "dist")
+
+        # Override frontendDist to point to the workspace cache
+        config_override = {"build": {"frontendDist": dist_path}}
 
         # PyTauri runs its own event loop on main thread (app.run_return).
         # start_blocking_portal creates an asyncio event loop in a background thread,
@@ -181,7 +196,7 @@ class DesktopPlatform(Platform):
                 hr.start()
 
             app = builder_factory().build(
-                context=context_factory(config_dir),
+                context=context_factory(config_dir, tauri_config=config_override),
                 invoke_handler=commands.generate_handler(portal),
             )
 

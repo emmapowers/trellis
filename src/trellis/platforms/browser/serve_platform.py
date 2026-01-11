@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 from trellis.bundler import build_from_registry, get_project_workspace, registry
 from trellis.platforms.common import find_available_port
-from trellis.platforms.common.base import Platform
+from trellis.platforms.common.base import Platform, WatchConfig
 
 # Jinja2 environment for HTML templates
 _TEMPLATE_DIR = Path(__file__).parent / "client" / "src"
@@ -191,6 +191,15 @@ class BrowserServePlatform(Platform):
         workspace = get_project_workspace(entry_point)
 
         build_from_registry(registry, entry_point, workspace, force=force)
+
+    def get_watch_config(self) -> WatchConfig:
+        """Get configuration for watch mode."""
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        return WatchConfig(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=get_project_workspace(entry_point),
+        )
 
     async def run(
         self,

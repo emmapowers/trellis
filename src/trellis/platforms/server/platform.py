@@ -19,7 +19,7 @@ from rich.console import Console
 
 from trellis.bundler import build_from_registry, get_project_workspace, registry
 from trellis.platforms.common import find_available_port
-from trellis.platforms.common.base import Platform
+from trellis.platforms.common.base import Platform, WatchConfig
 from trellis.platforms.server.handler import router as ws_router
 from trellis.platforms.server.middleware import RequestLoggingMiddleware
 from trellis.platforms.server.routes import create_static_dir, register_spa_fallback
@@ -63,6 +63,15 @@ class ServerPlatform(Platform):
         workspace = get_project_workspace(entry_point)
 
         build_from_registry(registry, entry_point, workspace, force=force)
+
+    def get_watch_config(self) -> WatchConfig:
+        """Get configuration for watch mode."""
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        return WatchConfig(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=get_project_workspace(entry_point),
+        )
 
     async def run(
         self,

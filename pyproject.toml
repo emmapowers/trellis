@@ -30,6 +30,7 @@ dependencies = [
     "jinja2>=3.1",
     "jurigged>=0.6.0",
     "wcmatch>=10.0",
+    "watchfiles>=1.0",
 ]
 
 [project.optional-dependencies]
