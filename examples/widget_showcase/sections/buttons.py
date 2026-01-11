@@ -57,6 +57,19 @@ def ButtonDisabled() -> None:
         w.Button(text="Disabled", icon=IconName.SAVE, variant="secondary", disabled=True)
 
 
+@example("Link Buttons")
+def ButtonLinks() -> None:
+    """Buttons that act as links with href."""
+    with w.Row(gap=8):
+        w.Button(text="Go to Icons", href="/icons", icon=IconName.LINK, variant="outline")
+        w.Button(
+            text="Visit Google",
+            href="https://google.com",
+            icon=IconName.SHARE,
+            variant="secondary",
+        )
+
+
 @component
 def ButtonsSection() -> None:
     """Showcase all button variants and sizes."""
@@ -66,3 +79,4 @@ def ButtonsSection() -> None:
         ExampleCard(example=ButtonWithIcons)
         ExampleCard(example=ButtonIconOnly)
         ExampleCard(example=ButtonDisabled)
+        ExampleCard(example=ButtonLinks)
