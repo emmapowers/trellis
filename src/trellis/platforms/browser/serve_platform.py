@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
-from trellis.bundler import PACKAGES, BundleConfig, build_bundle
+from trellis.bundler import build_from_registry, get_project_workspace, registry
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform
 
@@ -184,29 +184,13 @@ class BrowserServePlatform(Platform):
     ) -> None:
         """Build the browser client bundle if needed.
 
-        Output: platforms/browser/client/dist/bundle.js + index.html
-
-        The pyodide worker is built separately and inlined into the main bundle
-        via the worker_entries config (imported as text).
+        Uses the registry-based build system. The bundle is stored in a
+        cache workspace.
         """
-        platforms_dir = Path(__file__).parent.parent
-        common_src_dir = platforms_dir / "common" / "client" / "src"
-        client_dir = Path(__file__).parent / "client"
-        src_dir = client_dir / "src"
-        dist_dir = client_dir / "dist"
-        index_path = dist_dir / "index.html"
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
 
-        config = BundleConfig(
-            name="browser",
-            src_dir=src_dir,
-            dist_dir=dist_dir,
-            packages={**PACKAGES, **BROWSER_PACKAGES},
-            static_files={"index.html": src_dir / "index.html"},
-            extra_outputs=[index_path],
-            worker_entries={"pyodide": src_dir / "pyodide.worker.ts"},
-        )
-
-        build_bundle(config, common_src_dir, force, extra_packages)
+        build_from_registry(registry, entry_point, workspace, force=force)
 
     async def run(
         self,
@@ -234,9 +218,10 @@ class BrowserServePlatform(Platform):
         # Check if source is part of a package (has __init__.py)
         package_dir = _find_package_root(entry_path)
 
-        # Get paths
-        client_dir = Path(__file__).parent / "client"
-        dist_dir = client_dir / "dist"
+        # Get paths from workspace
+        platform_entry = Path(__file__).parent / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(platform_entry)
+        dist_dir = workspace / "dist"
         bundle_path = dist_dir / "bundle.js"
 
         # Ensure bundle exists (worker is inlined)

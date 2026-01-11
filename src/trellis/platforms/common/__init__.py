@@ -1,5 +1,7 @@
 """Common utilities shared across platforms."""
 
+# Register trellis-core module with the bundler
+from trellis.platforms.common import _register as _  # noqa: F401
 from trellis.platforms.common.base import Platform, PlatformArgumentError, PlatformType
 from trellis.platforms.common.handler import MessageHandler
 from trellis.platforms.common.messages import (

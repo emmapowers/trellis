@@ -5,10 +5,14 @@
 (Symbol as any).dispose ??= Symbol("Symbol.dispose");
 (Symbol as any).asyncDispose ??= Symbol("Symbol.asyncDispose");
 
-import "../../../common/client/src/theme.css"; // Theme CSS variables
+// Initialize widget registry before any rendering
+import { initRegistry } from "@trellis/_registry";
+initRegistry();
+
+import "@trellis/trellis-core/client/src/theme.css"; // Theme CSS variables
 
 // Set up shared console (filtering, etc.) before other imports
-import { addConsoleHandler } from "../../../common/client/src/console";
+import { addConsoleHandler } from "@trellis/trellis-core/client/src/console";
 import { pyInvoke } from "tauri-plugin-pytauri-api";
 
 // Forward console messages to Python stdout
@@ -35,8 +39,8 @@ addConsoleHandler((level, args) => {
 
 import React, { useEffect, useState, useMemo } from "react";
 import { createRoot } from "react-dom/client";
-import { DesktopClient, ConnectionState } from "./DesktopClient";
-import { TrellisRoot } from "../../../common/client/src/TrellisRoot";
+import { DesktopClient, ConnectionState } from "@trellis/trellis-desktop/client/src/DesktopClient";
+import { TrellisRoot } from "@trellis/trellis-core/client/src/TrellisRoot";
 
 function App() {
   const [connectionState, setConnectionState] =

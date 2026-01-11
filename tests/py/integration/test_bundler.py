@@ -8,6 +8,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from trellis.bundler import get_project_workspace
+
 
 class TestEnsureEsbuild:
     def test_downloads_esbuild_binary(self) -> None:
@@ -64,9 +66,11 @@ class TestServerPlatformBundle:
         """Builds client bundle successfully via ServerPlatform."""
         from trellis.platforms.server.platform import ServerPlatform
 
-        # Bundle is now at platforms/server/client/dist/
+        # Bundle is now in the cache workspace
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        bundle_path = platforms_dir / "server" / "client" / "dist" / "bundle.js"
+        entry_point = platforms_dir / "server" / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
+        bundle_path = workspace / "dist" / "bundle.js"
 
         # Force rebuild
         platform = ServerPlatform()
@@ -85,9 +89,11 @@ class TestDesktopPlatformBundle:
         except ImportError:
             pytest.skip("pytauri not installed")
 
-        # Bundle is at platforms/desktop/client/dist/
+        # Bundle is now in the cache workspace
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        dist_dir = platforms_dir / "desktop" / "client" / "dist"
+        entry_point = platforms_dir / "desktop" / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
+        dist_dir = workspace / "dist"
         bundle_path = dist_dir / "bundle.js"
         index_path = dist_dir / "index.html"
 
@@ -110,7 +116,9 @@ class TestBundleBuildCli:
     def test_bundle_build_server_succeeds(self) -> None:
         """Running `trellis bundle build --platform server --force` succeeds."""
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        server_bundle = platforms_dir / "server" / "client" / "dist" / "bundle.js"
+        entry_point = platforms_dir / "server" / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
+        server_bundle = workspace / "dist" / "bundle.js"
 
         mtime_before = server_bundle.stat().st_mtime if server_bundle.exists() else None
 
@@ -130,7 +138,9 @@ class TestBundleBuildCli:
     def test_bundle_build_browser_succeeds(self) -> None:
         """Running `trellis bundle build --platform browser --force` succeeds."""
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        browser_bundle = platforms_dir / "browser" / "client" / "dist" / "bundle.js"
+        entry_point = platforms_dir / "browser" / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
+        browser_bundle = workspace / "dist" / "bundle.js"
 
         mtime_before = browser_bundle.stat().st_mtime if browser_bundle.exists() else None
 
@@ -156,7 +166,9 @@ class TestBundleBuildCli:
             pytest.skip("pytauri not installed")
 
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        desktop_bundle = platforms_dir / "desktop" / "client" / "dist" / "bundle.js"
+        entry_point = platforms_dir / "desktop" / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
+        desktop_bundle = workspace / "dist" / "bundle.js"
 
         mtime_before = desktop_bundle.stat().st_mtime if desktop_bundle.exists() else None
 

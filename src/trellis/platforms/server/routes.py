@@ -12,6 +12,8 @@ from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from jinja2 import Environment, FileSystemLoader
 
+from trellis.bundler import get_project_workspace
+
 if tp.TYPE_CHECKING:
     from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -61,8 +63,13 @@ async def index() -> str:
 
 
 def create_static_dir() -> Path:
-    """Get or create the static files directory for server platform."""
-    # Static files are in platforms/server/client/dist/
-    static_dir = Path(__file__).parent / "client" / "dist"
+    """Get or create the static files directory for server platform.
+
+    Returns the dist directory in the workspace cache, which contains
+    the bundled JS and CSS files.
+    """
+    entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+    workspace = get_project_workspace(entry_point)
+    static_dir = workspace / "dist"
     static_dir.mkdir(parents=True, exist_ok=True)
     return static_dir

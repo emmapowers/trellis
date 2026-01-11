@@ -15,7 +15,7 @@ from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
 from pytauri_wheel.lib import builder_factory, context_factory
 from rich.console import Console
 
-from trellis.bundler import DESKTOP_PACKAGES, PACKAGES, BundleConfig, build_bundle
+from trellis.bundler import build_from_registry, get_project_workspace, registry
 from trellis.platforms.common.base import Platform
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
 from trellis.utils.hot_reload import get_or_create_hot_reload
@@ -93,24 +93,13 @@ class DesktopPlatform(Platform):
     ) -> None:
         """Build the desktop client bundle if needed.
 
-        Output: platforms/desktop/client/dist/bundle.js + index.html
+        Uses the registry-based build system. The bundle is stored in a
+        cache workspace.
         """
-        platforms_dir = Path(__file__).parent.parent
-        common_src_dir = platforms_dir / "common" / "client" / "src"
-        client_dir = Path(__file__).parent / "client"
-        dist_dir = client_dir / "dist"
-        index_path = dist_dir / "index.html"
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
 
-        config = BundleConfig(
-            name="desktop",
-            src_dir=client_dir / "src",
-            dist_dir=dist_dir,
-            packages={**PACKAGES, **DESKTOP_PACKAGES},
-            static_files={"index.html": client_dir / "src" / "index.html"},
-            extra_outputs=[index_path],
-        )
-
-        build_bundle(config, common_src_dir, force, extra_packages)
+        build_from_registry(registry, entry_point, workspace, force=force)
 
     def _create_commands(self) -> Commands:
         """Create PyTauri commands with access to platform state via closure."""

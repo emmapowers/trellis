@@ -5,7 +5,7 @@ from __future__ import annotations
 import io
 import tarfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -148,79 +148,199 @@ class TestSafeExtract:
                 _safe_extract(tar, tmp_path)
 
 
-class TestBundleConfig:
-    """Tests for BundleConfig dataclass."""
+class TestIsRebuildNeeded:
+    """Tests for incremental build checking."""
 
-    def test_static_files_default_is_none(self) -> None:
-        """static_files defaults to None."""
-        from trellis.bundler import BundleConfig
+    def test_rebuild_needed_when_output_missing(self, tmp_path: Path) -> None:
+        """Rebuild is needed when output files don't exist."""
+        from trellis.bundler.build import is_rebuild_needed
 
-        config = BundleConfig(
-            name="test",
-            src_dir=Path("/src"),
-            dist_dir=Path("/dist"),
-            packages={},
-        )
-        assert config.static_files is None
+        input_file = tmp_path / "input.ts"
+        input_file.write_text("const x = 1;")
+        output_file = tmp_path / "bundle.js"
+        # output doesn't exist
 
-    def test_static_files_can_be_set(self) -> None:
-        """static_files can be configured as dict."""
-        from trellis.bundler import BundleConfig
+        assert is_rebuild_needed([input_file], [output_file]) is True
 
-        config = BundleConfig(
-            name="test",
-            src_dir=Path("/src"),
-            dist_dir=Path("/dist"),
-            packages={},
-            static_files={"index.html": Path("/src/index.html")},
-        )
-        assert config.static_files == {"index.html": Path("/src/index.html")}
+    def test_rebuild_not_needed_when_output_newer(self, tmp_path: Path) -> None:
+        """Rebuild not needed when output is newer than all inputs."""
+        import time
+
+        from trellis.bundler.build import is_rebuild_needed
+
+        input_file = tmp_path / "input.ts"
+        input_file.write_text("const x = 1;")
+
+        time.sleep(0.01)  # Ensure different mtime
+
+        output_file = tmp_path / "bundle.js"
+        output_file.write_text("bundled")
+
+        assert is_rebuild_needed([input_file], [output_file]) is False
+
+    def test_rebuild_needed_when_input_newer(self, tmp_path: Path) -> None:
+        """Rebuild is needed when any input is newer than output."""
+        import time
+
+        from trellis.bundler.build import is_rebuild_needed
+
+        output_file = tmp_path / "bundle.js"
+        output_file.write_text("bundled")
+
+        time.sleep(0.01)  # Ensure different mtime
+
+        input_file = tmp_path / "input.ts"
+        input_file.write_text("const x = 1;")
+
+        assert is_rebuild_needed([input_file], [output_file]) is True
+
+    def test_rebuild_needed_when_any_input_newer(self, tmp_path: Path) -> None:
+        """Rebuild is needed when any one input is newer than output."""
+        import time
+
+        from trellis.bundler.build import is_rebuild_needed
+
+        # Create inputs first
+        input1 = tmp_path / "input1.ts"
+        input1.write_text("const x = 1;")
+
+        time.sleep(0.01)
+
+        # Create output
+        output_file = tmp_path / "bundle.js"
+        output_file.write_text("bundled")
+
+        time.sleep(0.01)
+
+        # Create second input after output
+        input2 = tmp_path / "input2.ts"
+        input2.write_text("const y = 2;")
+
+        assert is_rebuild_needed([input1, input2], [output_file]) is True
+
+    def test_rebuild_checks_all_outputs(self, tmp_path: Path) -> None:
+        """Rebuild is needed if any output is missing."""
+        import time
+
+        from trellis.bundler.build import is_rebuild_needed
+
+        input_file = tmp_path / "input.ts"
+        input_file.write_text("const x = 1;")
+
+        time.sleep(0.01)
+
+        output_js = tmp_path / "bundle.js"
+        output_js.write_text("bundled")
+        output_css = tmp_path / "bundle.css"
+        # css doesn't exist
+
+        assert is_rebuild_needed([input_file], [output_js, output_css]) is True
+
+    def test_rebuild_not_needed_with_empty_inputs(self, tmp_path: Path) -> None:
+        """No rebuild needed if no inputs (edge case)."""
+        from trellis.bundler.build import is_rebuild_needed
+
+        output_file = tmp_path / "bundle.js"
+        output_file.write_text("bundled")
+
+        assert is_rebuild_needed([], [output_file]) is False
 
 
-class TestBuildBundleStaticFiles:
-    """Tests for static file copying in build_bundle."""
+class TestComputeSnippetsHash:
+    """Tests for snippet hash computation."""
 
-    def test_copies_static_files_to_dist(self, tmp_path: Path) -> None:
-        """Static files are copied to dist directory."""
-        from trellis.bundler import BundleConfig, build_bundle
+    def test_consistent_hash_for_same_snippets(self) -> None:
+        """Same snippets produce same hash."""
+        from trellis.bundler.build import compute_snippets_hash
+        from trellis.bundler.registry import CollectedModules, Module
 
-        # Set up directories
-        src_dir = tmp_path / "src"
-        src_dir.mkdir()
-        dist_dir = tmp_path / "dist"
-        common_dir = tmp_path / "common"
-        common_dir.mkdir()
+        module = Module(name="test", snippets={"helper.ts": "export const x = 1;"})
+        collected = CollectedModules(modules=[module], packages={})
 
-        # Create source static file
-        static_src = src_dir / "index.html"
-        static_src.write_text("<html>test</html>")
+        hash1 = compute_snippets_hash(collected)
+        hash2 = compute_snippets_hash(collected)
 
-        # Create minimal TypeScript file
-        (src_dir / "main.tsx").write_text("export {}")
+        assert hash1 == hash2
+        assert len(hash1) == 64  # SHA-256 hex digest
 
-        config = BundleConfig(
-            name="test",
-            src_dir=src_dir,
-            dist_dir=dist_dir,
-            packages={},
-            static_files={"index.html": static_src},
-        )
+    def test_different_hash_for_different_content(self) -> None:
+        """Different snippet content produces different hash."""
+        from trellis.bundler.build import compute_snippets_hash
+        from trellis.bundler.registry import CollectedModules, Module
 
-        # Mock esbuild and package fetching to avoid network
-        with patch("trellis.bundler.ensure_esbuild") as mock_esbuild:
-            with patch("trellis.bundler.ensure_packages") as mock_packages:
-                with patch("subprocess.run") as mock_run:
-                    mock_esbuild.return_value = Path("/fake/esbuild")
-                    mock_packages.return_value = Path("/fake/node_modules")
-                    mock_run.return_value = MagicMock(returncode=0)
+        module1 = Module(name="test", snippets={"helper.ts": "export const x = 1;"})
+        collected1 = CollectedModules(modules=[module1], packages={})
 
-                    # Create the bundle.js that esbuild would create
-                    dist_dir.mkdir(parents=True, exist_ok=True)
-                    (dist_dir / "bundle.js").write_text("// bundle")
+        module2 = Module(name="test", snippets={"helper.ts": "export const x = 2;"})
+        collected2 = CollectedModules(modules=[module2], packages={})
 
-                    build_bundle(config, common_dir, force=True)
+        assert compute_snippets_hash(collected1) != compute_snippets_hash(collected2)
 
-        # Verify static file was copied
-        copied_file = dist_dir / "index.html"
-        assert copied_file.exists()
-        assert copied_file.read_text() == "<html>test</html>"
+    def test_different_hash_for_different_filename(self) -> None:
+        """Different snippet filename produces different hash."""
+        from trellis.bundler.build import compute_snippets_hash
+        from trellis.bundler.registry import CollectedModules, Module
+
+        module1 = Module(name="test", snippets={"a.ts": "code"})
+        collected1 = CollectedModules(modules=[module1], packages={})
+
+        module2 = Module(name="test", snippets={"b.ts": "code"})
+        collected2 = CollectedModules(modules=[module2], packages={})
+
+        assert compute_snippets_hash(collected1) != compute_snippets_hash(collected2)
+
+    def test_empty_snippets_returns_consistent_hash(self) -> None:
+        """Empty snippets produce consistent hash."""
+        from trellis.bundler.build import compute_snippets_hash
+        from trellis.bundler.registry import CollectedModules, Module
+
+        module = Module(name="test", snippets={})
+        collected = CollectedModules(modules=[module], packages={})
+
+        hash1 = compute_snippets_hash(collected)
+        hash2 = compute_snippets_hash(collected)
+
+        assert hash1 == hash2
+
+    def test_hash_is_order_independent(self) -> None:
+        """Hash is same regardless of module/snippet order."""
+        from trellis.bundler.build import compute_snippets_hash
+        from trellis.bundler.registry import CollectedModules, Module
+
+        # Different order of modules
+        mod_a = Module(name="aaa", snippets={"x.ts": "a"})
+        mod_b = Module(name="bbb", snippets={"y.ts": "b"})
+
+        collected1 = CollectedModules(modules=[mod_a, mod_b], packages={})
+        collected2 = CollectedModules(modules=[mod_b, mod_a], packages={})
+
+        assert compute_snippets_hash(collected1) == compute_snippets_hash(collected2)
+
+
+class TestSnippetsHashFile:
+    """Tests for snippet hash file integration."""
+
+    def test_snippets_changed_triggers_rebuild(self, tmp_path: Path) -> None:
+        """Changed snippets trigger rebuild even if files unchanged."""
+        from trellis.bundler.build import compute_snippets_hash, snippets_changed
+        from trellis.bundler.registry import CollectedModules, Module
+
+        hash_file = tmp_path / ".snippets-hash"
+
+        module = Module(name="test", snippets={"helper.ts": "export const x = 1;"})
+        collected = CollectedModules(modules=[module], packages={})
+
+        # First time - no hash file exists
+        assert snippets_changed(collected, hash_file) is True
+
+        # Write hash file
+        hash_file.write_text(compute_snippets_hash(collected))
+
+        # Same snippets - no change
+        assert snippets_changed(collected, hash_file) is False
+
+        # Different snippets - change detected
+        module2 = Module(name="test", snippets={"helper.ts": "export const x = 2;"})
+        collected2 = CollectedModules(modules=[module2], packages={})
+
+        assert snippets_changed(collected2, hash_file) is True

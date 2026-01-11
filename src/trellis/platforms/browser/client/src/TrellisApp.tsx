@@ -9,16 +9,16 @@
  */
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { BrowserClient, ConnectionState } from "./BrowserClient";
+import { BrowserClient, ConnectionState } from "@trellis/trellis-browser/client/src/BrowserClient";
 import {
   TrellisContext,
   HostThemeModeContext,
-} from "../../../common/client/src/TrellisContext";
-import { Message } from "../../../common/client/src/types";
-import { TreeRenderer } from "../../../common/client/src/TreeRenderer";
-import { useRootId } from "../../../common/client/src/core";
-import { PyodideWorker, type PythonSource } from "./PyodideWorker";
-import { RoutingMode } from "../../../common/client/src/RouterManager";
+} from "@trellis/trellis-core/client/src/TrellisContext";
+import { Message } from "@trellis/trellis-core/client/src/types";
+import { TreeRenderer } from "@trellis/trellis-core/client/src/TreeRenderer";
+import { useRootId } from "@trellis/trellis-core/client/src/core";
+import { PyodideWorker, type PythonSource } from "@trellis/trellis-browser/client/src/PyodideWorker";
+import { RoutingMode } from "@trellis/trellis-core/client/src/RouterManager";
 
 // Re-export types for external use
 export type { PythonSource };

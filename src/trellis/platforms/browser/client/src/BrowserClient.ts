@@ -12,17 +12,17 @@
 import {
   BaseTrellisClient,
   ConnectionState,
-} from "../../../common/client/src/TrellisClient";
+} from "@trellis/trellis-core/client/src/TrellisClient";
 import {
   Message,
   MessageType,
   HelloMessage,
   EventMessage,
   UrlChangedMessage,
-} from "../../../common/client/src/types";
-import { ClientMessageHandlerCallbacks } from "../../../common/client/src/ClientMessageHandler";
-import { TrellisStore } from "../../../common/client/src/core";
-import { RoutingMode } from "../../../common/client/src/RouterManager";
+} from "@trellis/trellis-core/client/src/types";
+import { ClientMessageHandlerCallbacks } from "@trellis/trellis-core/client/src/ClientMessageHandler";
+import { TrellisStore } from "@trellis/trellis-core/client/src/core";
+import { RoutingMode } from "@trellis/trellis-core/client/src/RouterManager";
 
 export type { ConnectionState };
 
