@@ -90,6 +90,7 @@ def A(
     className: str | None = None,
     style: Style | None = None,
     onClick: MouseHandler | None = None,
+    use_router: bool = True,
     **props: tp.Any,
 ) -> Element:
     """An anchor (link) element.
@@ -114,11 +115,13 @@ def A(
         className: CSS class name
         style: Inline styles
         onClick: Custom click handler (overrides auto-routing for relative URLs)
+        use_router: Whether to use client-side router for relative URLs (default True).
+            Set to False to force browser navigation for relative URLs.
         **props: Additional HTML attributes
     """
     # For relative URLs without custom onClick, add router navigation
     effective_onclick = onClick
-    if href and onClick is None and _is_relative_url(href):
+    if href and onClick is None and use_router and _is_relative_url(href):
         # Capture href in closure for the async callback
         nav_href = href
 

@@ -183,3 +183,22 @@ class TestAnchorAutoRouting:
         invoke_callback(capture.session, cb_id, event)
 
         assert router_state.path == "/users"
+
+    def test_use_router_false_no_onclick(self, capture_patches: type[PatchCapture]) -> None:
+        """A with use_router=False does NOT get auto onClick even for relative URLs."""
+
+        @component
+        def App() -> None:
+            with RouterState():
+                A("About", href="/about", use_router=False)
+
+        capture = capture_patches(App)
+        capture.render()
+
+        tree = serialize_element(capture.session.root_element, capture.session)
+        anchor = find_element_by_type(tree, "a")
+        assert anchor is not None
+
+        # Should NOT have onClick handler - browser handles navigation
+        on_click_data = anchor.get("props", {}).get("onClick")
+        assert on_click_data is None, "A with use_router=False should not have auto onClick"

@@ -219,7 +219,9 @@ def Breadcrumb(
                         )
 
                     # Content: link for navigable items, span for current page
-                    if is_last or href is None:
+                    # Only last item gets "current page" styling (bold, primary color)
+                    # All other items use link-like styling regardless of href
+                    if is_last:
                         Span(
                             label,
                             style={
@@ -227,12 +229,20 @@ def Breadcrumb(
                                 "fontWeight": "500",
                             },
                         )
-                    else:
+                    elif href:
                         A(
                             label,
                             href=href,
                             style={
                                 "color": "var(--text-secondary, #6b7280)",
                                 "textDecoration": "none",
+                            },
+                        )
+                    else:
+                        # No href but not last - span with link-like styling
+                        Span(
+                            label,
+                            style={
+                                "color": "var(--text-secondary, #6b7280)",
                             },
                         )
