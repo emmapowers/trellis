@@ -70,3 +70,23 @@ class TestIsRelativeUrl:
     def test_empty_string_is_relative(self) -> None:
         """Empty string is considered relative."""
         assert _is_relative_url("") is True
+
+    def test_fragment_only_is_not_relative(self) -> None:
+        """Fragment-only URLs (#section) should use browser navigation.
+
+        These scroll to an element on the current page and shouldn't
+        go through the router.
+        """
+        assert _is_relative_url("#section") is False
+        assert _is_relative_url("#top") is False
+        assert _is_relative_url("#") is False
+
+    def test_query_only_is_not_relative(self) -> None:
+        """Query-only URLs (?foo=bar) should use browser navigation.
+
+        These modify query params on the current page and shouldn't
+        go through the router.
+        """
+        assert _is_relative_url("?search=test") is False
+        assert _is_relative_url("?page=1&sort=name") is False
+        assert _is_relative_url("?") is False

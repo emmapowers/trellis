@@ -25,6 +25,9 @@ def _is_relative_url(href: str) -> bool:
     Absolute URLs (http://, https://, //) and special schemes (mailto:, tel:, etc.)
     should use browser navigation.
 
+    Fragment-only (#section) and query-only (?foo=bar) URLs also bypass the router
+    since they modify the current page rather than navigating to a new route.
+
     Args:
         href: The URL to check
 
@@ -42,6 +45,8 @@ def _is_relative_url(href: str) -> bool:
             "javascript:",
             "data:",
             "file:",
+            "#",  # Fragment-only: scroll to element
+            "?",  # Query-only: modify query params on current page
         )
     ):
         return False
