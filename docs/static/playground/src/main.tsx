@@ -8,6 +8,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import { TrellisApp } from "../../../../src/trellis/platforms/browser/client/src/TrellisApp";
+import { RoutingMode } from "../../../../src/trellis/platforms/common/client/src/RouterManager";
 import "../../../../src/trellis/platforms/common/client/src/theme.css";
 
 // Monaco types (loaded from CDN)
@@ -293,6 +294,7 @@ function Playground(): React.ReactElement {
     <TrellisApp
       key={runId}
       source={{ type: "code", code: wrappedCode }}
+      routingMode={RoutingMode.Embedded}
       errorComponent={(msg) => {
         setError(msg);
         return null;

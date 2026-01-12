@@ -46,8 +46,8 @@ function App() {
     );
   }
 
-  // Convert routingMode string to embedded boolean for TrellisApp
-  const embedded = config.routingMode === RoutingMode.Embedded;
+  // Parse routing mode from config string
+  const routingMode = config.routingMode as RoutingMode | undefined;
 
   return (
     <TrellisApp
@@ -55,7 +55,7 @@ function App() {
       main={config.main}
       workerUrl={config.workerUrl}
       trellisWheelUrl={config.trellisWheelUrl}
-      embedded={embedded}
+      routingMode={routingMode}
     />
   );
 }

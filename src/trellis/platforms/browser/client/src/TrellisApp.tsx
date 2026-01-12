@@ -20,8 +20,9 @@ import { useRootId } from "../../../common/client/src/core";
 import { PyodideWorker, type PythonSource } from "./PyodideWorker";
 import { RoutingMode } from "../../../common/client/src/RouterManager";
 
-// Re-export PythonSource for external use
+// Re-export types for external use
 export type { PythonSource };
+export { RoutingMode };
 
 export interface TrellisAppProps {
   /** Source of the Python code */
@@ -30,8 +31,8 @@ export interface TrellisAppProps {
   main?: string;
   /** Custom trellis wheel URL (optional, tries several paths by default) */
   trellisWheelUrl?: string;
-  /** If true, use internal history instead of browser history API */
-  embedded?: boolean;
+  /** Routing mode for URL handling. Defaults to HashUrl. */
+  routingMode?: RoutingMode;
   /** Callback when loading status changes */
   onStatusChange?: (status: string) => void;
   /** Custom loading component */
@@ -131,7 +132,7 @@ export function TrellisApp({
   source,
   main,
   trellisWheelUrl,
-  embedded = false,
+  routingMode = RoutingMode.HashUrl,
   onStatusChange,
   loadingComponent,
   errorComponent,
@@ -159,9 +160,9 @@ export function TrellisApp({
           },
         },
         undefined,
-        { routingMode: embedded ? RoutingMode.Embedded : RoutingMode.HashUrl }
+        { routingMode }
       ),
-    [embedded]
+    [routingMode]
   );
 
   useEffect(() => {
