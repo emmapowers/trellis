@@ -52,4 +52,4 @@ def ThemeSwitcher() -> None:
         next_mode = _get_next_mode(client_state.theme_setting)
         client_state.set_mode(next_mode)
 
-    w.Button(icon=icon, variant="ghost", size="sm", on_click=handle_click)
+    w.Button(icon=icon, variant="outline", size="sm", on_click=handle_click)

@@ -23,7 +23,7 @@
     <script>
         window.__TRELLIS_CONFIG__ = {
             source: {{ source_json | safe }},
-            embedded: {{ 'true' if embedded else 'false' }}
+            routingMode: "{{ routing_mode }}"
         };
     </script>
     {% endif %}

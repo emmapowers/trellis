@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Badge } from "./Badge";
-import { Breadcrumb, BreadcrumbContainer } from "./Breadcrumb";
+import { Breadcrumb } from "./Breadcrumb";
 import { Button } from "./Button";
 import { Callout } from "./Callout";
 import { Card } from "./Card";
@@ -43,7 +43,6 @@ const widgetRegistry: Record<string, React.ComponentType<any>> = {
   Badge,
   BarChart,
   Breadcrumb,
-  BreadcrumbContainer,
   Button,
   Callout,
   Card,
@@ -99,7 +98,6 @@ export {
   Badge,
   BarChart,
   Breadcrumb,
-  BreadcrumbContainer,
   Button,
   Callout,
   Card,

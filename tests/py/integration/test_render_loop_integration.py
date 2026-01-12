@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 import pytest
 
+from tests.conftest import get_button_element
 from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.rendering.patches import RenderAddPatch, RenderRemovePatch, RenderUpdatePatch
@@ -39,17 +40,6 @@ def _make_test_wrapper() -> AppWrapper:
         return CompositionComponent(name="TestRoot", render_func=render_func)
 
     return wrapper
-
-
-def get_button_element(tree_node: dict) -> dict:
-    """Get the actual _Button react element from a Button composition wrapper.
-
-    Button is a composition component that wraps _Button. This helper
-    navigates to the inner _Button element which has the actual props.
-    """
-    if tree_node.get("name") == "Button" and tree_node.get("type") == "CompositionComponent":
-        return tree_node["children"][0]
-    return tree_node
 
 
 def _init_handler_for_test(handler: BrowserMessageHandler) -> None:

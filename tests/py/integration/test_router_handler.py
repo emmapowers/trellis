@@ -262,8 +262,8 @@ class TestHistoryMessagesFromRouterState:
         def App() -> None:
             with router_state:
 
-                def handle_click() -> None:
-                    router().navigate("/new-page")
+                async def handle_click() -> None:
+                    await router().navigate("/new-page")
 
                 Button(text="Navigate", on_click=handle_click)
 
@@ -299,15 +299,19 @@ class TestHistoryMessagesFromRouterState:
     def test_go_back_sends_history_back(self) -> None:
         """RouterState.go_back() sends HistoryBack message to client."""
         router_state = RouterState(path="/")
-        router_state.navigate("/page1")
-        router_state.navigate("/page2")
+
+        async def setup_history() -> None:
+            await router_state.navigate("/page1")
+            await router_state.navigate("/page2")
+
+        asyncio.run(setup_history())
 
         @component
         def App() -> None:
             with router_state:
 
-                def handle_click() -> None:
-                    router().go_back()
+                async def handle_click() -> None:
+                    await router().go_back()
 
                 Button(text="Back", on_click=handle_click)
 
@@ -340,15 +344,19 @@ class TestHistoryMessagesFromRouterState:
     def test_go_forward_sends_history_forward(self) -> None:
         """RouterState.go_forward() sends HistoryForward message to client."""
         router_state = RouterState(path="/")
-        router_state.navigate("/page1")
-        router_state.go_back()  # Now can go forward
+
+        async def setup_history() -> None:
+            await router_state.navigate("/page1")
+            await router_state.go_back()  # Now can go forward
+
+        asyncio.run(setup_history())
 
         @component
         def App() -> None:
             with router_state:
 
-                def handle_click() -> None:
-                    router().go_forward()
+                async def handle_click() -> None:
+                    await router().go_forward()
 
                 Button(text="Forward", on_click=handle_click)
 
@@ -426,8 +434,8 @@ class TestNoHistoryMessageWhenNoNavigation:
         def App() -> None:
             with router_state:
 
-                def handle_click() -> None:
-                    router().go_back()  # Should do nothing - at start
+                async def handle_click() -> None:
+                    await router().go_back()  # Should do nothing - at start
 
                 Button(text="Back", on_click=handle_click)
 
@@ -469,8 +477,8 @@ class TestNoHistoryMessageWhenNoNavigation:
         def App() -> None:
             with router_state:
 
-                def handle_click() -> None:
-                    router().go_forward()  # Should do nothing - at end
+                async def handle_click() -> None:
+                    await router().go_forward()  # Should do nothing - at end
 
                 Button(text="Forward", on_click=handle_click)
 

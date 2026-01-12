@@ -44,7 +44,7 @@ _callback_ctx: contextvars.ContextVar[_CallbackContext | None] = contextvars.Con
 
 @contextmanager
 def callback_context(session: RenderSession, node_id: str) -> tp.Generator[None]:
-    """Set up callback context with session lock.
+    """Set up callback context.
 
     This context manager should be used when invoking callbacks or hooks
     to provide access to session state. It acquires the session lock to

@@ -9,7 +9,10 @@
  * coordinates the handshake.
  */
 
-import { TrellisClient } from "../../../common/client/src/TrellisClient";
+import {
+  BaseTrellisClient,
+  ConnectionState,
+} from "../../../common/client/src/TrellisClient";
 import {
   Message,
   MessageType,
@@ -17,13 +20,9 @@ import {
   EventMessage,
   UrlChangedMessage,
 } from "../../../common/client/src/types";
-import {
-  ClientMessageHandler,
-  ClientMessageHandlerCallbacks,
-  ConnectionState,
-} from "../../../common/client/src/ClientMessageHandler";
+import { ClientMessageHandlerCallbacks } from "../../../common/client/src/ClientMessageHandler";
 import { TrellisStore } from "../../../common/client/src/core";
-import { RouterManager, RoutingMode } from "../../../common/client/src/RouterManager";
+import { RoutingMode } from "../../../common/client/src/RouterManager";
 
 export type { ConnectionState };
 
@@ -49,10 +48,7 @@ type SendCallback = (msg: Record<string, unknown>) => void;
  * - Receives HelloResponseMessage, RenderMessage, ErrorMessage
  * - Sends EventMessage for user interactions
  */
-export class BrowserClient implements TrellisClient {
-  private clientId: string;
-  private handler: ClientMessageHandler;
-  private routerManager: RouterManager;
+export class BrowserClient extends BaseTrellisClient {
   private sendCallback: SendCallback | null = null;
 
   /**
@@ -67,35 +63,11 @@ export class BrowserClient implements TrellisClient {
     store?: TrellisStore,
     options: BrowserClientOptions = {}
   ) {
-    this.clientId = crypto.randomUUID();
-
-    // Create router manager with configured routing mode (defaults to HashUrl for browser)
-    this.routerManager = new RouterManager({
-      mode: options.routingMode ?? RoutingMode.HashUrl,
-      sendMessage: (msg: UrlChangedMessage) => this.sendCallback?.(msg),
-    });
-
-    // Merge router callbacks with user callbacks
-    const handlerCallbacks: ClientMessageHandlerCallbacks = {
-      ...callbacks,
-      onHistoryPush: (path: string) => this.routerManager.pushState(path),
-      onHistoryBack: () => this.routerManager.back(),
-      onHistoryForward: () => this.routerManager.forward(),
-    };
-
-    this.handler = new ClientMessageHandler(handlerCallbacks, store);
+    super(options.routingMode ?? RoutingMode.HashUrl, callbacks, store);
   }
 
-  getConnectionState(): ConnectionState {
-    return this.handler.getConnectionState();
-  }
-
-  getSessionId(): string | null {
-    return this.handler.getSessionId();
-  }
-
-  getServerVersion(): string | null {
-    return this.handler.getServerVersion();
+  protected sendUrlChange(msg: UrlChangedMessage): void {
+    this.sendCallback?.(msg);
   }
 
   /**
@@ -131,7 +103,7 @@ export class BrowserClient implements TrellisClient {
       client_id: this.clientId,
       system_theme: systemTheme,
       theme_mode: themeMode,
-      path: this.routerManager.getCurrentPath(),
+      path: this.getCurrentPath(),
     };
     this.sendCallback?.(hello);
   }
@@ -148,7 +120,7 @@ export class BrowserClient implements TrellisClient {
 
   disconnect(): void {
     this.sendCallback = null;
-    this.routerManager.destroy();
+    this.destroyRouter();
     this.handler.setConnectionState("disconnected");
   }
 }

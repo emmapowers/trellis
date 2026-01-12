@@ -45,11 +45,16 @@ def Routes(*, children: list[ChildRef] | None = None) -> None:
             if element is None:
                 continue
 
-            pattern = element.props.get("pattern")
-            if pattern is None:
-                # Not a Route element - skip
-                continue
+            # Validate that children are Route components
+            if element.component is not Route:
+                comp_name = element.component.name
+                raise TypeError(
+                    f"Routes children must be Route components, got {comp_name}. "
+                    "Use 'with Route(pattern=...): ...' for each route."
+                )
 
+            pattern = element.props.get("pattern", "")
+            assert isinstance(pattern, str), "Route pattern must be a string"
             matched, _ = match_path(pattern, path)
             if matched:
                 child()  # Execute the matched Route (it provides its own context)

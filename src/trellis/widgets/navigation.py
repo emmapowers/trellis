@@ -13,11 +13,17 @@ from trellis.core.components.react import react_component_base
 from trellis.core.components.style_props import Height, Margin, Padding, Width
 from trellis.core.rendering.element import Element
 from trellis.core.state.mutable import Mutable
+from trellis.html.layout import Nav, Span
 from trellis.html.links import A
-from trellis.widgets.basic import Label
+from trellis.html.lists import Li, Ol
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
+
+# Typography settings for server-side rendered components
+_FONT_FAMILY = (
+    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+)
 
 
 @react_component_base("Tabs", is_container=True)
@@ -110,23 +116,6 @@ def Tree(
     ...
 
 
-@react_component_base("BreadcrumbContainer", is_container=True)
-def _BreadcrumbContainer(
-    *,
-    separator: str = "/",
-    margin: Margin | None = None,
-    flex: int | None = None,
-    class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
-) -> Element:
-    """Container that renders breadcrumb children with separators.
-
-    This is the React-rendered container that handles layout and separators.
-    Children are native Trellis elements (A for links, Label for current page).
-    """
-    ...
-
-
 @component
 def Breadcrumb(
     *,
@@ -141,11 +130,11 @@ def Breadcrumb(
 
     Each breadcrumb item with an href becomes a native html.A element that
     automatically uses client-side router navigation for relative URLs.
-    The last item (or items without href) renders as a Label.
+    The last item (or items without href) renders as plain text.
 
     Args:
         items: Breadcrumb items as [{label, href?}, ...]
-        separator: Separator character between items
+        separator: Separator character between items ("/" renders as chevron)
         margin: Margin around the breadcrumb (Margin dataclass).
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
@@ -160,21 +149,90 @@ def Breadcrumb(
     """
     items_list = items or []
 
-    with _BreadcrumbContainer(
-        separator=separator,
-        margin=margin,
-        flex=flex,
-        class_name=class_name,
-        style=style,
-    ):
-        for i, item in enumerate(items_list):
-            is_last = i == len(items_list) - 1
-            label = item.get("label", "")
-            href = item.get("href")
+    # Build nav styles
+    nav_style: dict[str, tp.Any] = {
+        "display": "flex",
+        "alignItems": "center",
+        "fontFamily": _FONT_FAMILY,
+        "fontSize": "0.875rem",
+        "lineHeight": "1.5",
+    }
+    if margin:
+        if margin.top:
+            nav_style["marginTop"] = f"{margin.top}px"
+        if margin.right:
+            nav_style["marginRight"] = f"{margin.right}px"
+        if margin.bottom:
+            nav_style["marginBottom"] = f"{margin.bottom}px"
+        if margin.left:
+            nav_style["marginLeft"] = f"{margin.left}px"
+    if flex is not None:
+        nav_style["flex"] = flex
+    if style:
+        nav_style.update(style)
 
-            # Last item or items without href are labels (current page)
-            if is_last or href is None:
-                Label(text=label)
-            else:
-                # Items with href become native anchors with router integration
-                A(label, href=href)
+    # Use chevron character when separator is "/"
+    # U+203A SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
+    sep_char = "\u203a" if separator == "/" else separator
+
+    with Nav(
+        className=class_name or "",
+        style=nav_style,
+        role="navigation",
+        **{"aria-label": "Breadcrumb"},
+    ):
+        with Ol(
+            style={
+                "display": "flex",
+                "alignItems": "center",
+                "gap": "4px",
+                "listStyle": "none",
+                "margin": "0",
+                "padding": "0",
+            }
+        ):
+            for i, item in enumerate(items_list):
+                is_last = i == len(items_list) - 1
+                label = item.get("label", "")
+                href = item.get("href")
+
+                with Li(
+                    style={
+                        "display": "flex",
+                        "alignItems": "center",
+                        "gap": "4px",
+                    }
+                ):
+                    # Separator before non-first items
+                    if i > 0:
+                        # aria-hidden passed as kwarg for accessibility
+                        aria_props: dict[str, tp.Any] = {"aria-hidden": "true"}
+                        Span(
+                            sep_char,
+                            style={
+                                "color": "var(--text-muted, #6b7280)",
+                                "userSelect": "none",
+                                "display": "flex",
+                                "alignItems": "center",
+                            },
+                            **aria_props,
+                        )
+
+                    # Content: link for navigable items, span for current page
+                    if is_last or href is None:
+                        Span(
+                            label,
+                            style={
+                                "color": "var(--text-primary, #1f2937)",
+                                "fontWeight": "500",
+                            },
+                        )
+                    else:
+                        A(
+                            label,
+                            href=href,
+                            style={
+                                "color": "var(--text-secondary, #6b7280)",
+                                "textDecoration": "none",
+                            },
+                        )

@@ -18,6 +18,7 @@ import { Message } from "../../../common/client/src/types";
 import { TreeRenderer } from "../../../common/client/src/TreeRenderer";
 import { useRootId } from "../../../common/client/src/core";
 import { PyodideWorker, type PythonSource } from "./PyodideWorker";
+import { RoutingMode } from "../../../common/client/src/RouterManager";
 
 // Re-export PythonSource for external use
 export type { PythonSource };
@@ -145,7 +146,7 @@ export function TrellisApp({
   // Track the initial themeMode to include in HELLO message
   const initialThemeModeRef = useRef(themeMode);
 
-  // Create client with callbacks and embedded mode
+  // Create client with callbacks and routing mode
   const client = useMemo(
     () =>
       new BrowserClient(
@@ -158,7 +159,7 @@ export function TrellisApp({
           },
         },
         undefined,
-        { embedded }
+        { routingMode: embedded ? RoutingMode.Embedded : RoutingMode.HashUrl }
       ),
     [embedded]
   );

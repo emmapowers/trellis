@@ -282,34 +282,36 @@ class TestGenerateHtml:
         script_section = result.split("<script>")[1].split("</script>")[0]
         assert "</script>" not in script_section
 
-    def test_includes_embedded_false_by_default(self) -> None:
-        """embedded defaults to false in config."""
+    def test_includes_routing_mode_hash_url_by_default(self) -> None:
+        """routing_mode defaults to hash_url in config."""
         from trellis.platforms.browser.serve_platform import _generate_html
 
         source = {"type": "code", "code": "# test"}
 
         result = _generate_html(source)
 
-        # embedded should be in the config
-        assert "embedded" in result
-        assert "embedded: false" in result
+        # routingMode should be in the config with hash_url default
+        assert "routingMode" in result
+        assert '"hash_url"' in result
 
-    def test_includes_embedded_true_when_specified(self) -> None:
-        """embedded can be set to true."""
+    def test_includes_routing_mode_embedded_when_specified(self) -> None:
+        """routing_mode can be set to embedded."""
         from trellis.platforms.browser.serve_platform import _generate_html
+        from trellis.routing import RoutingMode
 
         source = {"type": "code", "code": "# test"}
 
-        result = _generate_html(source, embedded=True)
+        result = _generate_html(source, routing_mode=RoutingMode.EMBEDDED)
 
-        assert "embedded: true" in result
+        assert '"embedded"' in result
 
-    def test_includes_embedded_false_when_specified(self) -> None:
-        """embedded can be set to false."""
+    def test_includes_routing_mode_standard_when_specified(self) -> None:
+        """routing_mode can be set to standard."""
         from trellis.platforms.browser.serve_platform import _generate_html
+        from trellis.routing import RoutingMode
 
         source = {"type": "code", "code": "# test"}
 
-        result = _generate_html(source, embedded=False)
+        result = _generate_html(source, routing_mode=RoutingMode.STANDARD)
 
-        assert "embedded: false" in result
+        assert '"standard"' in result

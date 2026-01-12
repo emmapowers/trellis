@@ -21,7 +21,7 @@ Example:
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 __all__ = [
@@ -148,18 +148,18 @@ class ChangeEvent(BaseEvent):
 # Handler type aliases
 # =============================================================================
 
-# Simple handler (no event data) - for backwards compatibility
-EventHandler = Callable[[], None]
+# Simple handler (no event data) - sync or async
+EventHandler = Callable[[], None] | Callable[[], Awaitable[None]]
 
-# Typed handlers that receive event data
-MouseEventHandler = Callable[[MouseEvent], None]
-KeyboardEventHandler = Callable[[KeyboardEvent], None]
-FocusEventHandler = Callable[[FocusEvent], None]
-FormEventHandler = Callable[[FormEvent], None]
-InputEventHandler = Callable[[InputEvent], None]
-ChangeEventHandler = Callable[[ChangeEvent], None]
+# Typed handlers that receive event data - sync or async
+MouseEventHandler = Callable[[MouseEvent], None] | Callable[[MouseEvent], Awaitable[None]]
+KeyboardEventHandler = Callable[[KeyboardEvent], None] | Callable[[KeyboardEvent], Awaitable[None]]
+FocusEventHandler = Callable[[FocusEvent], None] | Callable[[FocusEvent], Awaitable[None]]
+FormEventHandler = Callable[[FormEvent], None] | Callable[[FormEvent], Awaitable[None]]
+InputEventHandler = Callable[[InputEvent], None] | Callable[[InputEvent], Awaitable[None]]
+ChangeEventHandler = Callable[[ChangeEvent], None] | Callable[[ChangeEvent], Awaitable[None]]
 
-# Union type for any mouse event handler (simple or typed)
+# Union type for any event handler (simple or typed, sync or async)
 MouseHandler = EventHandler | MouseEventHandler
 KeyboardHandler = EventHandler | KeyboardEventHandler
 FocusHandler = EventHandler | FocusEventHandler

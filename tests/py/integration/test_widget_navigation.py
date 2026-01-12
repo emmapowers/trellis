@@ -146,7 +146,7 @@ class TestNavigationWidgets:
         assert expansions == [("1", True)]
 
     def test_breadcrumb_with_items(self, rendered) -> None:
-        """Breadcrumb generates native elements for items."""
+        """Breadcrumb generates native HTML elements for items."""
 
         @component
         def App() -> None:
@@ -161,10 +161,13 @@ class TestNavigationWidgets:
         breadcrumb = result.session.elements.get(result.root_element.child_ids[0])
         assert breadcrumb.component.name == "Breadcrumb"
 
-        # Contains a BreadcrumbContainer with separator prop
-        container = result.session.elements.get(breadcrumb.child_ids[0])
-        assert container.component.name == "_BreadcrumbContainer"
-        assert container.properties["separator"] == ">"
+        # Contains a Nav element
+        nav = result.session.elements.get(breadcrumb.child_ids[0])
+        assert nav.component.name == "Nav"
 
-        # Container has 3 children (all Labels since no hrefs provided)
-        assert len(container.child_ids) == 3
+        # Nav contains Ol element
+        ol = result.session.elements.get(nav.child_ids[0])
+        assert ol.component.name == "Ol"
+
+        # Ol has 3 children (li elements for each breadcrumb item)
+        assert len(ol.child_ids) == 3

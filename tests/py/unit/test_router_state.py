@@ -1,5 +1,7 @@
 """Tests for RouterState class."""
 
+import asyncio
+
 import pytest
 
 from trellis.routing.state import RouterState, router
@@ -41,62 +43,75 @@ class TestRouterStateNavigate:
 
     def test_navigate_updates_path(self) -> None:
         state = RouterState()
-        state.navigate("/users")
+        asyncio.run(state.navigate("/users"))
         assert state.path == "/users"
 
     def test_navigate_adds_to_history(self) -> None:
         state = RouterState()
-        state.navigate("/users")
+        asyncio.run(state.navigate("/users"))
         assert state.history == ["/", "/users"]
 
     def test_navigate_increments_history_index(self) -> None:
         state = RouterState()
-        state.navigate("/users")
+        asyncio.run(state.navigate("/users"))
         # INTERNAL TEST: Verify history index for navigation logic
         assert state._history_index == 1
 
     def test_navigate_multiple_times(self) -> None:
-        state = RouterState()
-        state.navigate("/users")
-        state.navigate("/users/123")
-        state.navigate("/settings")
-        assert state.path == "/settings"
-        assert state.history == ["/", "/users", "/users/123", "/settings"]
+        async def run() -> None:
+            state = RouterState()
+            await state.navigate("/users")
+            await state.navigate("/users/123")
+            await state.navigate("/settings")
+            assert state.path == "/settings"
+            assert state.history == ["/", "/users", "/users/123", "/settings"]
+
+        asyncio.run(run())
 
     def test_navigate_clears_forward_history(self) -> None:
         """When navigating after going back, forward history is discarded."""
-        state = RouterState()
-        state.navigate("/a")
-        state.navigate("/b")
-        state.navigate("/c")
-        state.go_back()
-        state.go_back()
-        # Now at /a, with /b and /c as forward history
-        state.navigate("/d")
-        # Forward history (/b, /c) should be gone
-        assert state.history == ["/", "/a", "/d"]
-        assert state.path == "/d"
+
+        async def run() -> None:
+            state = RouterState()
+            await state.navigate("/a")
+            await state.navigate("/b")
+            await state.navigate("/c")
+            await state.go_back()
+            await state.go_back()
+            # Now at /a, with /b and /c as forward history
+            await state.navigate("/d")
+            # Forward history (/b, /c) should be gone
+            assert state.history == ["/", "/a", "/d"]
+            assert state.path == "/d"
+
+        asyncio.run(run())
 
 
 class TestRouterStateGoBack:
     """Test RouterState.go_back() method."""
 
     def test_go_back_updates_path(self) -> None:
-        state = RouterState()
-        state.navigate("/users")
-        state.go_back()
-        assert state.path == "/"
+        async def run() -> None:
+            state = RouterState()
+            await state.navigate("/users")
+            await state.go_back()
+            assert state.path == "/"
+
+        asyncio.run(run())
 
     def test_go_back_decrements_history_index(self) -> None:
-        state = RouterState()
-        state.navigate("/users")
-        state.go_back()
-        # INTERNAL TEST: Verify history index for navigation logic
-        assert state._history_index == 0
+        async def run() -> None:
+            state = RouterState()
+            await state.navigate("/users")
+            await state.go_back()
+            # INTERNAL TEST: Verify history index for navigation logic
+            assert state._history_index == 0
+
+        asyncio.run(run())
 
     def test_go_back_does_nothing_at_start(self) -> None:
         state = RouterState()
-        state.go_back()  # Should not raise
+        asyncio.run(state.go_back())  # Should not raise
         assert state.path == "/"
         assert state._history_index == 0
 
@@ -105,26 +120,35 @@ class TestRouterStateGoForward:
     """Test RouterState.go_forward() method."""
 
     def test_go_forward_updates_path(self) -> None:
-        state = RouterState()
-        state.navigate("/users")
-        state.go_back()
-        state.go_forward()
-        assert state.path == "/users"
+        async def run() -> None:
+            state = RouterState()
+            await state.navigate("/users")
+            await state.go_back()
+            await state.go_forward()
+            assert state.path == "/users"
+
+        asyncio.run(run())
 
     def test_go_forward_increments_history_index(self) -> None:
-        state = RouterState()
-        state.navigate("/users")
-        state.go_back()
-        state.go_forward()
-        # INTERNAL TEST: Verify history index for navigation logic
-        assert state._history_index == 1
+        async def run() -> None:
+            state = RouterState()
+            await state.navigate("/users")
+            await state.go_back()
+            await state.go_forward()
+            # INTERNAL TEST: Verify history index for navigation logic
+            assert state._history_index == 1
+
+        asyncio.run(run())
 
     def test_go_forward_does_nothing_at_end(self) -> None:
-        state = RouterState()
-        state.navigate("/users")
-        state.go_forward()  # Should not raise
-        assert state.path == "/users"
-        assert state._history_index == 1
+        async def run() -> None:
+            state = RouterState()
+            await state.navigate("/users")
+            await state.go_forward()  # Should not raise
+            assert state.path == "/users"
+            assert state._history_index == 1
+
+        asyncio.run(run())
 
 
 class TestRouterStateCanNavigate:
@@ -136,7 +160,7 @@ class TestRouterStateCanNavigate:
 
     def test_can_go_back_after_navigate(self) -> None:
         state = RouterState()
-        state.navigate("/users")
+        asyncio.run(state.navigate("/users"))
         assert state.can_go_back is True
 
     def test_cannot_go_forward_initially(self) -> None:
@@ -145,14 +169,17 @@ class TestRouterStateCanNavigate:
 
     def test_cannot_go_forward_at_end(self) -> None:
         state = RouterState()
-        state.navigate("/users")
+        asyncio.run(state.navigate("/users"))
         assert state.can_go_forward is False
 
     def test_can_go_forward_after_back(self) -> None:
-        state = RouterState()
-        state.navigate("/users")
-        state.go_back()
-        assert state.can_go_forward is True
+        async def run() -> None:
+            state = RouterState()
+            await state.navigate("/users")
+            await state.go_back()
+            assert state.can_go_forward is True
+
+        asyncio.run(run())
 
 
 class TestRouterFunction:

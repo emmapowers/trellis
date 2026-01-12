@@ -277,6 +277,23 @@ def render_to_tree(session: RenderSession) -> dict[str, tp.Any]:
     return serialize_element(first_patch.element, session)
 
 
+def get_button_element(tree_node: dict[str, tp.Any]) -> dict[str, tp.Any]:
+    """Get the actual _Button react element from a Button composition wrapper.
+
+    Button is a composition component that wraps _Button. This helper
+    navigates to the inner _Button element which has the actual props.
+
+    Args:
+        tree_node: Serialized Button element from render tree
+
+    Returns:
+        The inner _Button element dict with actual props
+    """
+    if tree_node.get("name") == "Button" and tree_node.get("type") == "CompositionComponent":
+        return tree_node["children"][0]
+    return tree_node
+
+
 # =============================================================================
 # Handler Fixtures
 # =============================================================================

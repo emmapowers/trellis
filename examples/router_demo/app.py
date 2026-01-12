@@ -20,10 +20,16 @@ def App() -> None:
         with w.Column(flex=1, padding=Padding(x=24, y=20), style={"overflow": "auto"}):
             with w.Row(gap=0):
                 # History controls
+                async def go_back() -> None:
+                    await router().go_back()
+
+                async def go_forward() -> None:
+                    await router().go_forward()
+
                 w.Button(
                     text="",
                     icon=IconName.CHEVRON_LEFT,
-                    on_click=lambda: router().go_back(),
+                    on_click=go_back,
                     disabled=not router().can_go_back,
                     variant="ghost",
                     size="sm",
@@ -32,7 +38,7 @@ def App() -> None:
                 w.Button(
                     text="",
                     icon=IconName.CHEVRON_RIGHT,
-                    on_click=lambda: router().go_forward(),
+                    on_click=go_forward,
                     disabled=not router().can_go_forward,
                     variant="ghost",
                     size="sm",

@@ -1,5 +1,7 @@
 """Integration tests for Route component."""
 
+import asyncio
+
 import pytest
 
 from tests.conftest import PatchCapture
@@ -264,11 +266,11 @@ class TestRouteReactivity:
         assert render_count[0] == 1
 
         # Navigate to different path - HomePage should not render
-        router_state.navigate("/other")
+        asyncio.run(router_state.navigate("/other"))
         capture.render()
 
         # Navigate back - HomePage should render again
-        router_state.navigate("/")
+        asyncio.run(router_state.navigate("/"))
         capture.render()
         assert render_count[0] == 2
 
@@ -299,7 +301,7 @@ class TestRouteReactivity:
         assert rendered == ["home"]
 
         rendered.clear()
-        router_state.navigate("/users")
+        asyncio.run(router_state.navigate("/users"))
         capture.render()
         assert rendered == ["users"]
 

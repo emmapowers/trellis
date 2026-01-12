@@ -4,6 +4,7 @@ import asyncio
 import typing as tp
 from dataclasses import dataclass
 
+from tests.conftest import get_button_element
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.rendering.patches import RenderUpdatePatch
 from trellis.core.rendering.render import render
@@ -47,17 +48,6 @@ _WRAPPER_COMPONENT_TYPES = frozenset(
         "ClientState",  # Client state context
     }
 )
-
-
-def get_button_element(tree_node: dict) -> dict:
-    """Get the actual _Button react element from a Button composition wrapper.
-
-    Button is a composition component that wraps _Button. This helper
-    navigates to the inner _Button element which has the actual props.
-    """
-    if tree_node.get("name") == "Button" and tree_node.get("type") == "CompositionComponent":
-        return tree_node["children"][0]
-    return tree_node
 
 
 def find_app_children(tree: dict[str, tp.Any]) -> list[dict[str, tp.Any]]:

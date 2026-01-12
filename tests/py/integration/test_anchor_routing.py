@@ -1,5 +1,7 @@
 """Integration tests for A element auto-routing with relative URLs."""
 
+import asyncio
+import inspect
 import typing as tp
 
 from tests.conftest import PatchCapture, find_element_by_type
@@ -13,12 +15,18 @@ from trellis.routing import RouterState
 
 
 def invoke_callback(session: RenderSession, cb_id: str, *args: tp.Any) -> None:
-    """Invoke a callback with proper callback_context."""
+    """Invoke a callback with proper callback_context.
+
+    Handles both sync and async callbacks.
+    """
     element_id, prop_name = parse_callback_id(cb_id)
     callback = session.get_callback(element_id, prop_name)
     assert callback is not None, f"Callback {cb_id} not found"
     with callback_context(session, element_id):
-        callback(*args)
+        result = callback(*args)
+        # Handle async callbacks
+        if inspect.iscoroutine(result):
+            asyncio.run(result)
 
 
 class TestAnchorAutoRouting:

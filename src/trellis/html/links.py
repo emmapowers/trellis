@@ -22,16 +22,28 @@ def _is_relative_url(href: str) -> bool:
     """Check if a URL is relative (no host/protocol).
 
     Relative URLs should use client-side router navigation.
-    Absolute URLs (http://, https://, //) should use browser navigation.
+    Absolute URLs (http://, https://, //) and special schemes (mailto:, tel:, etc.)
+    should use browser navigation.
 
     Args:
         href: The URL to check
 
     Returns:
-        True if the URL is relative (should use router), False if absolute
+        True if the URL is relative (should use router), False if absolute or special scheme
     """
-    # Absolute URLs have a protocol or are protocol-relative
-    if href.startswith(("http://", "https://", "//")):
+    # Absolute URLs, protocol-relative URLs, and special schemes should bypass router
+    if href.startswith(
+        (
+            "http://",
+            "https://",
+            "//",
+            "mailto:",
+            "tel:",
+            "javascript:",
+            "data:",
+            "file:",
+        )
+    ):
         return False
     return True
 
@@ -108,11 +120,11 @@ def A(
     # For relative URLs without custom onClick, add router navigation
     effective_onclick = onClick
     if href and onClick is None and _is_relative_url(href):
-        # Capture href in closure for the callback
+        # Capture href in closure for the async callback
         nav_href = href
 
-        def router_click(_event: object) -> None:
-            router().navigate(nav_href)
+        async def router_click(_event: object) -> None:
+            await router().navigate(nav_href)
 
         effective_onclick = router_click
 

@@ -1,6 +1,6 @@
 """Router state management."""
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from urllib.parse import parse_qsl
 
@@ -69,10 +69,10 @@ class RouterState(Stateful):
     _history: list[str] = field(default_factory=list, init=False)
     _history_index: int = field(default=0, init=False)
 
-    # Callbacks for notifying handler about navigation (set by handler)
-    _on_navigate: Callable[[str], None] | None = field(default=None, init=False)
-    _on_go_back: Callable[[], None] | None = field(default=None, init=False)
-    _on_go_forward: Callable[[], None] | None = field(default=None, init=False)
+    # Async callbacks for notifying handler about navigation (set by handler)
+    _on_navigate: Callable[[str], Awaitable[None]] | None = field(default=None, init=False)
+    _on_go_back: Callable[[], Awaitable[None]] | None = field(default=None, init=False)
+    _on_go_forward: Callable[[], Awaitable[None]] | None = field(default=None, init=False)
 
     def __init__(self, *, path: str | None = None) -> None:
         """Initialize with starting path.
@@ -146,7 +146,7 @@ class RouterState(Stateful):
         """Whether forward navigation is possible."""
         return self._history_index < len(self._history) - 1
 
-    def navigate(self, path: str) -> None:
+    async def navigate(self, path: str) -> None:
         """Navigate to a new path.
 
         Adds the path to history and updates current path. If navigating
@@ -165,9 +165,9 @@ class RouterState(Stateful):
 
         # Notify handler to update browser history
         if self._on_navigate is not None:
-            self._on_navigate(path)
+            await self._on_navigate(path)
 
-    def go_back(self) -> None:
+    async def go_back(self) -> None:
         """Navigate back in history.
 
         Does nothing if already at the beginning of history.
@@ -179,9 +179,9 @@ class RouterState(Stateful):
 
         # Notify handler to update browser history
         if self._on_go_back is not None:
-            self._on_go_back()
+            await self._on_go_back()
 
-    def go_forward(self) -> None:
+    async def go_forward(self) -> None:
         """Navigate forward in history.
 
         Does nothing if already at the end of history.
@@ -193,7 +193,7 @@ class RouterState(Stateful):
 
         # Notify handler to update browser history
         if self._on_go_forward is not None:
-            self._on_go_forward()
+            await self._on_go_forward()
 
     def _update_path_from_url(self, path: str) -> None:
         """Update path from browser URL change (popstate).

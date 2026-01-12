@@ -45,8 +45,10 @@ from trellis.platforms.common.messages import (
 )
 from trellis.platforms.common.serialization import (
     _serialize_props,
+    parse_callback_id,
     serialize_element,
 )
+from trellis.routing.state import RouterState
 from trellis.utils.debug import get_enabled_categories
 
 logger = logging.getLogger(__name__)
@@ -371,14 +373,15 @@ class MessageHandler:
     def _find_router_state(self) -> tp.Any:
         """Find RouterState instance in session's element states.
 
+        Note: While this search is technically O(N) in the number of elements,
+        RouterState is typically placed on the root TrellisApp element, so in
+        practice it completes in O(1) as it's found immediately.
+
         Returns:
             RouterState instance or None if not found
         """
         if self.session is None:
             return None
-
-        # Import here to avoid circular imports
-        from trellis.routing.state import RouterState
 
         # Search through element states for RouterState in context
         for element_id in self.session.states._state:
@@ -388,36 +391,19 @@ class MessageHandler:
         return None
 
     def _setup_router_callbacks(self) -> None:
-        """Set up callbacks on RouterState to send history messages."""
+        """Set up async callbacks on RouterState to send history messages."""
         router_state = self._find_router_state()
         if router_state is None:
             return
 
-        async def send_history_push(path: str) -> None:
+        async def on_navigate(path: str) -> None:
             await self.send_message(HistoryPush(path=path))
 
-        async def send_history_back() -> None:
+        async def on_go_back() -> None:
             await self.send_message(HistoryBack())
 
-        async def send_history_forward() -> None:
+        async def on_go_forward() -> None:
             await self.send_message(HistoryForward())
-
-        # Wrap async functions for sync callback interface
-        # Store tasks in _background_tasks to prevent GC
-        def on_navigate(path: str) -> None:
-            task = asyncio.create_task(send_history_push(path))
-            self._background_tasks.add(task)
-            task.add_done_callback(self._background_tasks.discard)
-
-        def on_go_back() -> None:
-            task = asyncio.create_task(send_history_back())
-            self._background_tasks.add(task)
-            task.add_done_callback(self._background_tasks.discard)
-
-        def on_go_forward() -> None:
-            task = asyncio.create_task(send_history_forward())
-            self._background_tasks.add(task)
-            task.add_done_callback(self._background_tasks.discard)
 
         router_state._on_navigate = on_navigate
         router_state._on_go_back = on_go_back
@@ -433,8 +419,6 @@ class MessageHandler:
         Raises:
             KeyError: If callback not found
         """
-        from trellis.platforms.common.serialization import parse_callback_id
-
         assert self.session is not None
         session = self.session  # Local var for closure capture
         element_id, prop_name = parse_callback_id(callback_id)

@@ -22,6 +22,8 @@ from starlette.responses import HTMLResponse
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
+from trellis.routing.enums import RoutingMode
+
 if TYPE_CHECKING:
     from starlette.requests import Request
 
@@ -279,9 +281,9 @@ class BrowserServePlatform(Platform):
                 # Single file mode
                 source = {"type": "code", "code": entry_path.read_text()}
 
-            # Get embedded mode from kwargs (default False)
-            embedded: bool = bool(kwargs.get("embedded", False))
-            html_content = _generate_html(source, embedded=embedded)
+            # Get routing mode from kwargs (default HASH_URL for browser)
+            routing_mode = kwargs.get("routing_mode", RoutingMode.HASH_URL)
+            html_content = _generate_html(source, routing_mode=routing_mode)
             (temp_path / "index.html").write_text(html_content)
 
             # Create Starlette app
@@ -314,7 +316,11 @@ class BrowserServePlatform(Platform):
             await server.serve()
 
 
-def _generate_html(source: dict[str, Any], *, embedded: bool = False) -> str:
+def _generate_html(
+    source: dict[str, Any],
+    *,
+    routing_mode: RoutingMode = RoutingMode.HASH_URL,
+) -> str:
     """Generate the HTML page with embedded source config.
 
     Uses the index.html jinja2 template from the browser client.
@@ -323,11 +329,11 @@ def _generate_html(source: dict[str, Any], *, embedded: bool = False) -> str:
         source: Source config dict, e.g.:
             - {"type": "code", "code": "..."}
             - {"type": "module", "files": {...}, "moduleName": "..."}
-        embedded: If True, use internal history instead of browser history API.
+        routing_mode: How the router handles browser history and URLs.
     """
     # JSON-encode the source config for embedding in JavaScript
     # Escape </ to prevent script tag injection (e.g., </script> in code)
     source_json = json.dumps(source).replace("</", r"<\/")
 
     template = _jinja_env.get_template("index.html")
-    return template.render(source_json=source_json, embedded=embedded)
+    return template.render(source_json=source_json, routing_mode=routing_mode.value)

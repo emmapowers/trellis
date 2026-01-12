@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from tests.conftest import PatchCapture
+from tests.conftest import PatchCapture, get_button_element
 from trellis.core.components.composition import component
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
@@ -28,18 +28,6 @@ def get_callback_from_id(ctx: RenderSession, cb_id: str):
     """Helper to get callback using the new two-arg API."""
     node_id, prop_name = parse_callback_id(cb_id)
     return ctx.get_callback(node_id, prop_name)
-
-
-def get_button_element(tree_node: dict) -> dict:
-    """Get the actual _Button react element from a Button composition wrapper.
-
-    Button is a composition component that wraps _Button. This helper
-    navigates to the inner _Button element which has the actual props.
-    """
-    # If this is the Button composition component, get its child (_Button)
-    if tree_node.get("name") == "Button" and tree_node.get("type") == "CompositionComponent":
-        return tree_node["children"][0]
-    return tree_node
 
 
 class TestCallbackInvocation:

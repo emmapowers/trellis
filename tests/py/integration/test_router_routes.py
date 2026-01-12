@@ -1,5 +1,7 @@
 """Integration tests for Routes container component."""
 
+import asyncio
+
 import pytest
 
 from tests.conftest import PatchCapture
@@ -184,7 +186,7 @@ class TestRoutesReactivity:
         assert rendered == ["home"]
 
         rendered.clear()
-        router_state.navigate("/about")
+        asyncio.run(router_state.navigate("/about"))
         capture.render()
         assert rendered == ["about"]
 
@@ -262,3 +264,39 @@ class TestEmptyRoutes:
         capture.render()  # Should not raise
 
         assert rendered == ["app"]
+
+
+class TestRoutesValidation:
+    """Tests for Routes child validation."""
+
+    def test_non_route_child_raises_type_error(self, capture_patches: type[PatchCapture]) -> None:
+        """Routes raises TypeError when child is not a Route component."""
+        from trellis.widgets.basic import Label
+
+        @component
+        def App() -> None:
+            with RouterState(path="/"):
+                with Routes():
+                    Label(text="Not a route")  # Should raise
+
+        capture = capture_patches(App)
+
+        with pytest.raises(TypeError, match="Routes children must be Route components"):
+            capture.render()
+
+    def test_non_route_child_error_includes_component_name(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """Error message includes the name of the invalid component."""
+        from trellis.widgets.basic import Label
+
+        @component
+        def App() -> None:
+            with RouterState(path="/"):
+                with Routes():
+                    Label(text="Invalid")
+
+        capture = capture_patches(App)
+
+        with pytest.raises(TypeError, match="Label"):
+            capture.render()
