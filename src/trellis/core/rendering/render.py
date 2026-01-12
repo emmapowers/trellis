@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
+import inspect
 import logging
 import time
+import typing as tp
 
+from trellis.core.callback_context import callback_context
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.element import Element, props_equal
@@ -368,10 +372,27 @@ def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
 
     for _, stateful in items:
         if hasattr(stateful, "on_mount"):
-            try:
-                stateful.on_mount()
-            except Exception as e:
-                logging.exception(f"Error in Stateful.on_mount: {e}")
+            hook = stateful.on_mount
+            if inspect.iscoroutinefunction(hook):
+                # Async hook: schedule as background task
+                # Capture hook in default arg to avoid closure over loop variable
+                async def run_async_hook(h: tp.Any = hook) -> None:
+                    try:
+                        with callback_context(session, element_id):
+                            await h()
+                    except Exception:
+                        logging.exception("Error in async Stateful.on_mount")
+
+                task = asyncio.create_task(run_async_hook())
+                session._background_tasks.add(task)
+                task.add_done_callback(session._background_tasks.discard)
+            else:
+                # Sync hook: call directly
+                try:
+                    with callback_context(session, element_id):
+                        hook()
+                except Exception:
+                    logging.exception("Error in Stateful.on_mount")
 
 
 def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
@@ -388,10 +409,27 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
 
     for _, stateful in items:
         if hasattr(stateful, "on_unmount"):
-            try:
-                stateful.on_unmount()
-            except Exception as e:
-                logging.exception(f"Error in Stateful.on_unmount: {e}")
+            hook = stateful.on_unmount
+            if inspect.iscoroutinefunction(hook):
+                # Async hook: schedule as background task
+                # Capture hook in default arg to avoid closure over loop variable
+                async def run_async_hook(h: tp.Any = hook) -> None:
+                    try:
+                        with callback_context(session, element_id):
+                            await h()
+                    except Exception:
+                        logging.exception("Error in async Stateful.on_unmount")
+
+                task = asyncio.create_task(run_async_hook())
+                session._background_tasks.add(task)
+                task.add_done_callback(session._background_tasks.discard)
+            else:
+                # Sync hook: call directly
+                try:
+                    with callback_context(session, element_id):
+                        hook()
+                except Exception:
+                    logging.exception("Error in Stateful.on_unmount")
 
 
 def _process_pending_hooks(

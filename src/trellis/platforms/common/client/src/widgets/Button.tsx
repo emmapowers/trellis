@@ -1,12 +1,16 @@
 import React, { useRef } from "react";
 import { useButton } from "react-aria";
 import { colors, radius, typography, shadows, focusRing, focusRingOnColor } from "../theme";
+import { Icon } from "./Icon";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
+type IconPosition = "left" | "right";
 
 interface ButtonProps {
   text?: string;
+  icon?: string;
+  icon_position?: IconPosition;
   on_click?: () => void;
   disabled?: boolean;
   variant?: ButtonVariant;
@@ -109,8 +113,17 @@ const disabledStyles: React.CSSProperties = {
   cursor: "not-allowed",
 };
 
+// Icon sizes that harmonize with button sizes
+const iconSizes: Record<ButtonSize, number> = {
+  sm: 14,
+  md: 16,
+  lg: 18,
+};
+
 export function Button({
   text = "",
+  icon,
+  icon_position = "left",
   on_click,
   disabled = false,
   variant = "primary",
@@ -139,38 +152,72 @@ export function Button({
   const needsContrastFocusRing = variant === "primary" || variant === "danger";
   const activeFocusRing = needsContrastFocusRing ? focusRingOnColor : focusRing;
 
+  // isPressed only works when using React Aria's buttonProps
+  const showPressed = on_click ? isPressed : false;
+
   const computedStyle: React.CSSProperties = {
     ...baseStyles,
     ...sizeStyle,
     ...variantStyle.normal,
-    ...((isHovered || isPressed) && !disabled ? variantStyle.hover : {}),
+    ...((isHovered || showPressed) && !disabled ? variantStyle.hover : {}),
     ...(disabled ? disabledStyles : {}),
     ...(full_width ? { width: "100%" } : {}),
     ...(isFocusVisible ? activeFocusRing : {}),
     ...style,
   };
 
+  // Determine icon color based on variant
+  const iconColor =
+    variant === "primary" || variant === "danger"
+      ? colors.text.inverse
+      : variant === "ghost"
+        ? isHovered || showPressed
+          ? colors.text.primary
+          : colors.text.secondary
+        : colors.text.primary;
+
+  const iconSize = iconSizes[size] || iconSizes.md;
+  const hasText = text.length > 0;
+  const gap = hasText ? (size === "sm" ? 4 : size === "lg" ? 8 : 6) : 0;
+
+  const iconElement = icon ? (
+    <Icon
+      name={icon}
+      size={iconSize}
+      color={disabled ? undefined : iconColor}
+      style={{
+        marginRight: icon_position === "left" && hasText ? gap : 0,
+        marginLeft: icon_position === "right" && hasText ? gap : 0,
+        opacity: disabled ? 0.5 : 1,
+      }}
+    />
+  ) : null;
+
+  // Only spread React Aria's buttonProps when we have a click handler.
+  // Without it, render a plain button so clicks bubble to parent elements.
   return (
     <button
-      {...buttonProps}
+      {...(on_click ? buttonProps : { disabled })}
       ref={ref}
       className={className}
       style={computedStyle}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onFocus={(e) => {
-        buttonProps.onFocus?.(e);
+        if (on_click) buttonProps.onFocus?.(e);
         // Check if focus came from keyboard (not mouse)
         if (e.target.matches(":focus-visible")) {
           setIsFocusVisible(true);
         }
       }}
       onBlur={(e) => {
-        buttonProps.onBlur?.(e);
+        if (on_click) buttonProps.onBlur?.(e);
         setIsFocusVisible(false);
       }}
     >
+      {icon_position === "left" && iconElement}
       {text}
+      {icon_position === "right" && iconElement}
     </button>
   );
 }

@@ -53,6 +53,7 @@ from trellis.core import (
     render,
     set_active_session,
 )
+from trellis.routing import Route, RouterState, Routes, router
 from trellis.utils import async_main
 
 __version__ = "0.1.0"
@@ -79,6 +80,9 @@ __all__ = [
     "RenderRemovePatch",
     "RenderSession",
     "RenderUpdatePatch",
+    "Route",
+    "RouterState",
+    "Routes",
     "Stateful",
     "TrackedDict",
     "TrackedList",
@@ -96,5 +100,6 @@ __all__ = [
     "react_component_base",
     "reconcile_children",
     "render",
+    "router",
     "set_active_session",
 ]

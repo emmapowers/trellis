@@ -77,6 +77,207 @@ describe("processProps", () => {
     (result.on_hover as () => void)();
     expect(onEvent).toHaveBeenCalledWith("cb_2", []);
   });
+
+  it("calls preventDefault on onClick handlers", () => {
+    const onEvent = vi.fn();
+    const props = {
+      onClick: { __callback__: "cb_click" },
+    };
+
+    const result = processProps(props, onEvent);
+
+    const mockEvent = {
+      preventDefault: vi.fn(),
+      type: "click",
+    };
+
+    (result.onClick as (e: unknown) => void)(mockEvent);
+
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
+    expect(onEvent).toHaveBeenCalledWith("cb_click", [expect.anything()]);
+  });
+
+  it("calls preventDefault on onSubmit handlers", () => {
+    const onEvent = vi.fn();
+    const props = {
+      onSubmit: { __callback__: "cb_submit" },
+    };
+
+    const result = processProps(props, onEvent);
+
+    const mockEvent = {
+      preventDefault: vi.fn(),
+      type: "submit",
+    };
+
+    (result.onSubmit as (e: unknown) => void)(mockEvent);
+
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
+    expect(onEvent).toHaveBeenCalledWith("cb_submit", [expect.anything()]);
+  });
+
+  it("does not call preventDefault on other handlers", () => {
+    const onEvent = vi.fn();
+    const props = {
+      onChange: { __callback__: "cb_change" },
+    };
+
+    const result = processProps(props, onEvent);
+
+    const mockEvent = {
+      preventDefault: vi.fn(),
+      type: "change",
+    };
+
+    (result.onChange as (e: unknown) => void)(mockEvent);
+
+    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+    expect(onEvent).toHaveBeenCalledWith("cb_change", [expect.anything()]);
+  });
+
+  describe("anchor click handling", () => {
+    // These tests verify that modifier-key clicks on anchors don't call
+    // preventDefault, allowing the browser to handle opening in new tabs.
+    // The shouldLetBrowserHandleClick function checks currentTarget.
+
+    const createMouseEvent = (
+      target: EventTarget,
+      options: {
+        button?: number;
+        metaKey?: boolean;
+        ctrlKey?: boolean;
+        shiftKey?: boolean;
+        altKey?: boolean;
+      } = {}
+    ) => {
+      const nativeEvent = new MouseEvent("click", {
+        button: options.button ?? 0,
+        metaKey: options.metaKey ?? false,
+        ctrlKey: options.ctrlKey ?? false,
+        shiftKey: options.shiftKey ?? false,
+        altKey: options.altKey ?? false,
+        bubbles: true,
+      });
+
+      // Create a mock SyntheticEvent-like object
+      return {
+        type: "click",
+        nativeEvent,
+        currentTarget: target,
+        preventDefault: vi.fn(),
+        timeStamp: Date.now(),
+      };
+    };
+
+    it("lets browser handle middle-click on anchor with href", () => {
+      const onEvent = vi.fn();
+      const props = { onClick: { __callback__: "cb_click" } };
+      const result = processProps(props, onEvent);
+
+      const anchor = document.createElement("a");
+      anchor.href = "https://example.com";
+      const mockEvent = createMouseEvent(anchor, { button: 1 });
+
+      (result.onClick as (e: unknown) => void)(mockEvent);
+
+      // Should NOT call preventDefault - let browser open in new tab
+      expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+      // Should NOT call onEvent - browser handles navigation
+      expect(onEvent).not.toHaveBeenCalled();
+    });
+
+    it("lets browser handle Cmd/Meta+click on anchor with href", () => {
+      const onEvent = vi.fn();
+      const props = { onClick: { __callback__: "cb_click" } };
+      const result = processProps(props, onEvent);
+
+      const anchor = document.createElement("a");
+      anchor.href = "https://example.com";
+      const mockEvent = createMouseEvent(anchor, { metaKey: true });
+
+      (result.onClick as (e: unknown) => void)(mockEvent);
+
+      expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+      expect(onEvent).not.toHaveBeenCalled();
+    });
+
+    it("lets browser handle Ctrl+click on anchor with href", () => {
+      const onEvent = vi.fn();
+      const props = { onClick: { __callback__: "cb_click" } };
+      const result = processProps(props, onEvent);
+
+      const anchor = document.createElement("a");
+      anchor.href = "https://example.com";
+      const mockEvent = createMouseEvent(anchor, { ctrlKey: true });
+
+      (result.onClick as (e: unknown) => void)(mockEvent);
+
+      expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+      expect(onEvent).not.toHaveBeenCalled();
+    });
+
+    it("lets browser handle Shift+click on anchor with href", () => {
+      const onEvent = vi.fn();
+      const props = { onClick: { __callback__: "cb_click" } };
+      const result = processProps(props, onEvent);
+
+      const anchor = document.createElement("a");
+      anchor.href = "https://example.com";
+      const mockEvent = createMouseEvent(anchor, { shiftKey: true });
+
+      (result.onClick as (e: unknown) => void)(mockEvent);
+
+      expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+      expect(onEvent).not.toHaveBeenCalled();
+    });
+
+    it("calls preventDefault on regular click on anchor with href", () => {
+      const onEvent = vi.fn();
+      const props = { onClick: { __callback__: "cb_click" } };
+      const result = processProps(props, onEvent);
+
+      const anchor = document.createElement("a");
+      anchor.href = "https://example.com";
+      const mockEvent = createMouseEvent(anchor, {});
+
+      (result.onClick as (e: unknown) => void)(mockEvent);
+
+      // Regular click should preventDefault and call handler
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(onEvent).toHaveBeenCalledWith("cb_click", [expect.anything()]);
+    });
+
+    it("calls preventDefault on click on anchor without href", () => {
+      const onEvent = vi.fn();
+      const props = { onClick: { __callback__: "cb_click" } };
+      const result = processProps(props, onEvent);
+
+      const anchor = document.createElement("a");
+      // No href set
+      const mockEvent = createMouseEvent(anchor, { metaKey: true });
+
+      (result.onClick as (e: unknown) => void)(mockEvent);
+
+      // Even with modifier key, anchor without href should call handler
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(onEvent).toHaveBeenCalledWith("cb_click", [expect.anything()]);
+    });
+
+    it("calls preventDefault on click on non-anchor element", () => {
+      const onEvent = vi.fn();
+      const props = { onClick: { __callback__: "cb_click" } };
+      const result = processProps(props, onEvent);
+
+      const button = document.createElement("button");
+      const mockEvent = createMouseEvent(button, { metaKey: true });
+
+      (result.onClick as (e: unknown) => void)(mockEvent);
+
+      // Non-anchor elements always call preventDefault
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(onEvent).toHaveBeenCalledWith("cb_click", [expect.anything()]);
+    });
+  });
 });
 
 describe("renderNode", () => {

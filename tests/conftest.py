@@ -229,6 +229,25 @@ def mock_stateful() -> tp.Callable[..., Stateful]:
 # =============================================================================
 
 
+def find_element_by_type(node: dict[str, tp.Any], elem_type: str) -> dict[str, tp.Any] | None:
+    """Recursively find an element by type (HTML tag) in a serialized tree.
+
+    Args:
+        node: Serialized element tree (from serialize_node)
+        elem_type: HTML tag to find (e.g., "a", "div", "button")
+
+    Returns:
+        The matching element dict, or None if not found
+    """
+    if node.get("type") == elem_type:
+        return node
+    for child in node.get("children", []):
+        result = find_element_by_type(child, elem_type)
+        if result:
+            return result
+    return None
+
+
 def render_to_tree(session: RenderSession) -> dict[str, tp.Any]:
     """Render and return the serialized tree dict.
 
@@ -256,6 +275,25 @@ def render_to_tree(session: RenderSession) -> dict[str, tp.Any]:
 
     # Serialize the element to wire format for test assertions
     return serialize_element(first_patch.element, session)
+
+
+def get_button_element(tree_node: dict[str, tp.Any]) -> dict[str, tp.Any]:
+    """Get the actual _Button react element from a Button composition wrapper.
+
+    Button is a composition component that wraps _Button. This helper
+    navigates to the inner _Button element which has the actual props.
+
+    Args:
+        tree_node: Serialized Button element from render tree
+
+    Returns:
+        The inner _Button element dict with actual props
+    """
+    if tree_node.get("name") == "Button" and tree_node.get("type") == "CompositionComponent":
+        children = tree_node.get("children", [])
+        if children:
+            return children[0]
+    return tree_node
 
 
 # =============================================================================

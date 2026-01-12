@@ -18,9 +18,11 @@ import { Message } from "../../../common/client/src/types";
 import { TreeRenderer } from "../../../common/client/src/TreeRenderer";
 import { useRootId } from "../../../common/client/src/core";
 import { PyodideWorker, type PythonSource } from "./PyodideWorker";
+import { RoutingMode } from "../../../common/client/src/RouterManager";
 
-// Re-export PythonSource for external use
+// Re-export types for external use
 export type { PythonSource };
+export { RoutingMode };
 
 export interface TrellisAppProps {
   /** Source of the Python code */
@@ -29,6 +31,8 @@ export interface TrellisAppProps {
   main?: string;
   /** Custom trellis wheel URL (optional, tries several paths by default) */
   trellisWheelUrl?: string;
+  /** Routing mode for URL handling. Defaults to HashUrl. */
+  routingMode?: RoutingMode;
   /** Callback when loading status changes */
   onStatusChange?: (status: string) => void;
   /** Custom loading component */
@@ -128,6 +132,7 @@ export function TrellisApp({
   source,
   main,
   trellisWheelUrl,
+  routingMode = RoutingMode.HashUrl,
   onStatusChange,
   loadingComponent,
   errorComponent,
@@ -142,18 +147,22 @@ export function TrellisApp({
   // Track the initial themeMode to include in HELLO message
   const initialThemeModeRef = useRef(themeMode);
 
-  // Create client with callbacks
+  // Create client with callbacks and routing mode
   const client = useMemo(
     () =>
-      new BrowserClient({
-        onConnected: () => {
-          setState({ status: "connected" });
+      new BrowserClient(
+        {
+          onConnected: () => {
+            setState({ status: "connected" });
+          },
+          onError: (error) => {
+            setState({ status: "error", message: error });
+          },
         },
-        onError: (error) => {
-          setState({ status: "error", message: error });
-        },
-      }),
-    []
+        undefined,
+        { routingMode }
+      ),
+    [routingMode]
   );
 
   useEffect(() => {

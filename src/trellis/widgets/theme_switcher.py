@@ -6,33 +6,32 @@ A single button that cycles through theme modes on click.
 from __future__ import annotations
 
 from trellis import component
-from trellis import html as h
 from trellis import widgets as w
-from trellis.app import ClientState, ThemeMode, theme
+from trellis.app import ClientState, ThemeMode
 from trellis.widgets.icons import IconName
 
 # Mode cycle order and display info
 _MODES = [
-    (ThemeMode.SYSTEM, IconName.MONITOR, "System theme"),
-    (ThemeMode.LIGHT, IconName.SUN, "Light theme"),
-    (ThemeMode.DARK, IconName.MOON, "Dark theme"),
+    (ThemeMode.SYSTEM, IconName.MONITOR),
+    (ThemeMode.LIGHT, IconName.SUN),
+    (ThemeMode.DARK, IconName.MOON),
 ]
 
 
 def _get_next_mode(current: ThemeMode) -> ThemeMode:
     """Get the next mode in the cycle."""
-    for i, (mode, _, _) in enumerate(_MODES):
+    for i, (mode, _) in enumerate(_MODES):
         if mode == current:
             return _MODES[(i + 1) % len(_MODES)][0]
     return ThemeMode.SYSTEM
 
 
-def _get_icon_for_mode(mode: ThemeMode) -> tuple[IconName, str]:
-    """Get the icon and tooltip for a mode."""
-    for m, icon, tooltip in _MODES:
+def _get_icon_for_mode(mode: ThemeMode) -> IconName:
+    """Get the icon for a mode."""
+    for m, icon in _MODES:
         if m == mode:
-            return icon, tooltip
-    return IconName.MONITOR, "System theme"
+            return icon
+    return IconName.MONITOR
 
 
 @component
@@ -47,27 +46,10 @@ def ThemeSwitcher() -> None:
     - Moon icon = Dark mode
     """
     client_state = ClientState.from_context()
+    icon = _get_icon_for_mode(client_state.theme_setting)
 
-    icon, tooltip = _get_icon_for_mode(client_state.theme_setting)
-
-    def handle_click(*_args: object) -> None:
+    def handle_click() -> None:
         next_mode = _get_next_mode(client_state.theme_setting)
         client_state.set_mode(next_mode)
 
-    with h.Div(
-        onClick=handle_click,
-        style={
-            "display": "flex",
-            "alignItems": "center",
-            "justifyContent": "center",
-            "width": "32px",
-            "height": "32px",
-            "borderRadius": "6px",
-            "cursor": "pointer",
-            "transition": "all 0.15s ease",
-            "backgroundColor": theme.bg_surface_hover,
-            "color": theme.text_secondary,
-        },
-        title=tooltip,
-    ):
-        w.Icon(name=icon, size=16)
+    w.Button(icon=icon, variant="outline", size="sm", on_click=handle_click)

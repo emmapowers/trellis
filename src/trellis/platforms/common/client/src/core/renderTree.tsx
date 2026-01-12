@@ -87,6 +87,36 @@ function serializeEventArg(arg: unknown): unknown {
   return arg;
 }
 
+/** Event handler prop names that should call preventDefault before invoking callback. */
+const PREVENT_DEFAULT_HANDLERS = new Set(["onClick", "onSubmit"]);
+
+/**
+ * Check if a click event should be handled by the browser instead of our handler.
+ * This allows Cmd+click (Mac) / Ctrl+click (Win/Linux) to open links in new tabs.
+ */
+function shouldLetBrowserHandleClick(event: unknown): boolean {
+  if (!event || typeof event !== "object") return false;
+
+  const syntheticEvent = event as React.MouseEvent;
+  const nativeEvent = syntheticEvent.nativeEvent;
+
+  // Only applies to mouse events
+  if (!(nativeEvent instanceof MouseEvent)) return false;
+
+  // Check if clicking on an anchor with href
+  const target = syntheticEvent.currentTarget;
+  if (!(target instanceof HTMLAnchorElement) || !target.href) return false;
+
+  // Middle-click (button 1) opens in new tab
+  if (nativeEvent.button === 1) return true;
+
+  // Modifier keys: Cmd (Mac), Ctrl (Win/Linux), Shift (new window), Alt
+  const { metaKey, ctrlKey, shiftKey, altKey } = nativeEvent;
+  if (metaKey || ctrlKey || shiftKey || altKey) return true;
+
+  return false;
+}
+
 /**
  * Transform props, converting callback refs to handlers and mutable refs to Mutable objects.
  *
@@ -100,7 +130,21 @@ export function processProps(
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(props)) {
     if (isCallbackRef(value)) {
+      const shouldPreventDefault = PREVENT_DEFAULT_HANDLERS.has(key);
       result[key] = (...args: unknown[]) => {
+        // For anchor clicks with modifier keys or middle-click, let browser handle.
+        // This allows Cmd+click / Ctrl+click to open in new tab.
+        // Note: This check is here because anchor tags use native DOM nodes (not
+        // React components), so we handle their click behavior at the prop level.
+        if (key === "onClick" && shouldLetBrowserHandleClick(args[0])) {
+          return;
+        }
+
+        // Prevent default browser behavior for interactive events
+        if (shouldPreventDefault && args[0] && typeof args[0] === "object") {
+          const event = args[0] as { preventDefault?: () => void };
+          event.preventDefault?.();
+        }
         // Serialize any event objects before sending
         const serializedArgs = args.map(serializeEventArg);
         onEvent(value.__callback__, serializedArgs);

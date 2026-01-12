@@ -9,23 +9,34 @@
  * coordinates the handshake.
  */
 
-import { TrellisClient } from "../../../common/client/src/TrellisClient";
+import {
+  BaseTrellisClient,
+  ConnectionState,
+} from "../../../common/client/src/TrellisClient";
 import {
   Message,
   MessageType,
   HelloMessage,
   EventMessage,
+  UrlChangedMessage,
 } from "../../../common/client/src/types";
-import {
-  ClientMessageHandler,
-  ClientMessageHandlerCallbacks,
-  ConnectionState,
-} from "../../../common/client/src/ClientMessageHandler";
+import { ClientMessageHandlerCallbacks } from "../../../common/client/src/ClientMessageHandler";
 import { TrellisStore } from "../../../common/client/src/core";
+import { RoutingMode } from "../../../common/client/src/RouterManager";
 
 export type { ConnectionState };
 
 export interface BrowserClientCallbacks extends ClientMessageHandlerCallbacks {}
+
+export interface BrowserClientOptions {
+  /**
+   * Routing mode for URL handling.
+   * - HashUrl (default): Uses hash-based URLs (#/path) for browser platform
+   * - Standard: Uses pathname-based URLs (requires server-side routing support)
+   * - Embedded: Internal history only, no URL changes
+   */
+  routingMode?: RoutingMode;
+}
 
 type SendCallback = (msg: Record<string, unknown>) => void;
 
@@ -37,9 +48,7 @@ type SendCallback = (msg: Record<string, unknown>) => void;
  * - Receives HelloResponseMessage, RenderMessage, ErrorMessage
  * - Sends EventMessage for user interactions
  */
-export class BrowserClient implements TrellisClient {
-  private clientId: string;
-  private handler: ClientMessageHandler;
+export class BrowserClient extends BaseTrellisClient {
   private sendCallback: SendCallback | null = null;
 
   /**
@@ -47,22 +56,18 @@ export class BrowserClient implements TrellisClient {
    *
    * @param callbacks - Optional callbacks for connection events
    * @param store - Optional store instance (defaults to singleton)
+   * @param options - Optional client options
    */
-  constructor(callbacks: BrowserClientCallbacks = {}, store?: TrellisStore) {
-    this.clientId = crypto.randomUUID();
-    this.handler = new ClientMessageHandler(callbacks, store);
+  constructor(
+    callbacks: BrowserClientCallbacks = {},
+    store?: TrellisStore,
+    options: BrowserClientOptions = {}
+  ) {
+    super(options.routingMode ?? RoutingMode.HashUrl, callbacks, store);
   }
 
-  getConnectionState(): ConnectionState {
-    return this.handler.getConnectionState();
-  }
-
-  getSessionId(): string | null {
-    return this.handler.getSessionId();
-  }
-
-  getServerVersion(): string | null {
-    return this.handler.getServerVersion();
+  protected sendUrlChange(msg: UrlChangedMessage): void {
+    this.sendCallback?.(msg);
   }
 
   /**
@@ -98,6 +103,7 @@ export class BrowserClient implements TrellisClient {
       client_id: this.clientId,
       system_theme: systemTheme,
       theme_mode: themeMode,
+      path: this.getCurrentPath(),
     };
     this.sendCallback?.(hello);
   }
@@ -114,6 +120,7 @@ export class BrowserClient implements TrellisClient {
 
   disconnect(): void {
     this.sendCallback = null;
+    this.destroyRouter();
     this.handler.setConnectionState("disconnected");
   }
 }

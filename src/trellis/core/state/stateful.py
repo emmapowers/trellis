@@ -7,6 +7,8 @@ properties and trigger re-renders when those properties change.
 Key Features:
     - **Fine-grained reactivity**: Only components that read a specific property
       re-render when that property changes
+    - **Annotation-based tracking**: Only attributes with type annotations are
+      tracked for reactivity. Private attributes (``_foo``) ARE tracked if annotated.
     - **Component-local caching**: State instances are cached per-component,
       similar to React hooks
     - **Context API**: Share state with descendants via `with state:` blocks
@@ -57,6 +59,7 @@ from types import TracebackType
 if tp.TYPE_CHECKING:
     from trellis.core.rendering.element import Element
 
+from trellis.core.callback_context import get_callback_node_id, get_callback_session
 from trellis.core.rendering.session import get_active_session, is_render_active
 from trellis.core.state.conversion import convert_to_tracked
 from trellis.core.state.mutable import record_property_access
@@ -72,6 +75,22 @@ class _Missing:
 
 
 _MISSING = _Missing()
+
+
+def _is_tracked_attribute(cls: type, name: str) -> bool:
+    """Check if attribute should be tracked for reactivity.
+
+    Returns True if the attribute has a type annotation defined in a
+    subclass of Stateful. This includes private attributes (_foo) if
+    annotated. Internal Stateful attributes are excluded because they're
+    defined on the base class.
+    """
+    for klass in cls.__mro__:
+        if klass is Stateful or klass is object:
+            continue
+        if name in getattr(klass, "__annotations__", {}):
+            return True
+    return False
 
 
 @dataclass(kw_only=True)
@@ -186,7 +205,9 @@ class Stateful:
         1. Dependency registration - so state changes trigger re-renders
         2. Property recording - so mutable() can capture the reference
 
-        Private attributes (starting with '_') and callables are not tracked.
+        Only type-annotated attributes in subclasses are tracked. Private
+        attributes (``_foo``) ARE tracked if they have type annotations.
+        Callables (methods) are never tracked.
 
         Args:
             name: The attribute name to access
@@ -196,12 +217,12 @@ class Stateful:
         """
         value = object.__getattribute__(self, name)
 
-        # Skip internal attributes - no tracking
-        if name.startswith("_"):
-            return value
-
         # Skip callables - methods shouldn't be tracked
         if callable(value):
+            return value
+
+        # Only track type-annotated attributes in subclasses
+        if not _is_tracked_attribute(type(self), name):
             return value
 
         # Get render session
@@ -243,8 +264,12 @@ class Stateful:
     def __setattr__(self, name: str, value: tp.Any) -> None:
         """Set an attribute, marking dependent elements as dirty.
 
-        When a public attribute is modified, all elements that previously
+        When a type-annotated attribute is modified, all elements that previously
         read that attribute are marked dirty and will re-render.
+
+        Only type-annotated attributes in subclasses trigger reactivity. Private
+        attributes (``_foo``) ARE tracked if they have type annotations.
+        Non-annotated attributes can be set but won't trigger re-renders.
 
         Plain list/dict/set values are auto-converted to TrackedList/Dict/Set
         for reactive collection tracking.
@@ -257,8 +282,8 @@ class Stateful:
             RuntimeError: If called during component rendering. State changes
                 must happen outside render (in callbacks, hooks, timers, etc.)
         """
-        # Skip internal attributes - no dirty marking needed
-        if name.startswith("_"):
+        # Only track type-annotated attributes in subclasses
+        if not _is_tracked_attribute(type(self), name):
             object.__setattr__(self, name, value)
             return
 
@@ -323,12 +348,18 @@ class Stateful:
             if dirty_elements:
                 logger.debug("Marking dirty: %s", dirty_elements)
 
-    def on_mount(self) -> None:
-        """Called after owning element mounts. Override for initialization."""
+    def on_mount(self) -> None | tp.Coroutine[tp.Any, tp.Any, None]:
+        """Called after owning element mounts. Override for initialization.
+
+        Can be sync or async. Async hooks are scheduled as background tasks.
+        """
         pass
 
-    def on_unmount(self) -> None:
-        """Called before owning element unmounts. Override for cleanup."""
+    def on_unmount(self) -> None | tp.Coroutine[tp.Any, tp.Any, None]:
+        """Called before owning element unmounts. Override for cleanup.
+
+        Can be sync or async. Async hooks are scheduled as background tasks.
+        """
         pass
 
     # -------------------------------------------------------------------------
@@ -401,8 +432,8 @@ class Stateful:
     def from_context(cls, *, default: tp.Self | None | _Missing = _MISSING) -> tp.Self | None:
         """Retrieve the nearest ancestor instance of this state type.
 
-        Walks up the element tree looking for context. Must be called during
-        component execution within a render context.
+        Walks up the element tree looking for context. Can be called during
+        component execution (render context) or within callback_context.
 
         Example:
             ```python
@@ -427,21 +458,29 @@ class Stateful:
             The nearest ancestor instance of this type, or default if not found
 
         Raises:
-            RuntimeError: If called outside of a render context
+            RuntimeError: If called outside of both render context and callback context
             LookupError: If no instance of this type is in the context stack
                 and no default was provided
         """
+        # Try render context first
         session = get_active_session()
-        if session is None or not session.is_executing():
-            raise RuntimeError(
-                f"Cannot call {cls.__name__}.from_context() outside of render context. "
-                f"Context API is only available within component execution."
-            )
+        if session is not None and session.is_executing():
+            element_id: str | None = session.current_element_id
+        else:
+            # Try callback context
+            callback_element_id = get_callback_node_id()
+            if callback_element_id is not None:
+                session = get_callback_session()
+                element_id = callback_element_id
+            else:
+                raise RuntimeError(
+                    f"Cannot call {cls.__name__}.from_context() outside of render context. "
+                    f"Context API is only available within component execution or callback context."
+                )
 
         logger.debug("Looking up %s context", cls.__name__)
 
         # Walk up the parent_id chain with cycle detection
-        element_id: str | None = session.current_element_id
         visited: set[str] = set()
         while element_id is not None:
             if element_id in visited:

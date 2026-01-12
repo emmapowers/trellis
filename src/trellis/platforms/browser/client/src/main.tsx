@@ -10,6 +10,7 @@ import "../../../common/client/src/console"; // Set up console filtering
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { TrellisApp, PythonSource } from "./TrellisApp";
+import { RoutingMode } from "../../../common/client/src/RouterManager";
 
 declare global {
   interface Window {
@@ -18,6 +19,7 @@ declare global {
       main?: string;
       workerUrl: string;
       trellisWheelUrl?: string;
+      routingMode?: string;
     };
   }
 }
@@ -44,12 +46,16 @@ function App() {
     );
   }
 
+  // Parse routing mode from config string
+  const routingMode = config.routingMode as RoutingMode | undefined;
+
   return (
     <TrellisApp
       source={config.source}
       main={config.main}
       workerUrl={config.workerUrl}
       trellisWheelUrl={config.trellisWheelUrl}
+      routingMode={routingMode}
     />
   );
 }

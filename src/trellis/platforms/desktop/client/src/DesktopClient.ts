@@ -14,14 +14,15 @@ import {
   HelloMessage,
   HelloResponseMessage,
   EventMessage,
+  UrlChangedMessage,
 } from "../../../common/client/src/types";
+import { ClientMessageHandlerCallbacks } from "../../../common/client/src/ClientMessageHandler";
 import {
-  ClientMessageHandler,
-  ClientMessageHandlerCallbacks,
+  BaseTrellisClient,
   ConnectionState,
-} from "../../../common/client/src/ClientMessageHandler";
-import { TrellisClient } from "../../../common/client/src/TrellisClient";
+} from "../../../common/client/src/TrellisClient";
 import { TrellisStore } from "../../../common/client/src/core";
+import { RoutingMode } from "../../../common/client/src/RouterManager";
 
 export type { ConnectionState };
 
@@ -34,10 +35,8 @@ export interface DesktopClientCallbacks extends ClientMessageHandlerCallbacks {}
  * objects (HelloMessage, EventMessage) and receives identical responses
  * (HelloResponseMessage, RenderMessage).
  */
-export class DesktopClient implements TrellisClient {
+export class DesktopClient extends BaseTrellisClient {
   private channel: Channel<ArrayBuffer> | null = null;
-  private clientId: string;
-  private handler: ClientMessageHandler;
   private connectResolver: ((response: HelloResponseMessage) => void) | null =
     null;
 
@@ -48,20 +47,11 @@ export class DesktopClient implements TrellisClient {
    * @param store - Optional store instance (defaults to singleton)
    */
   constructor(callbacks: DesktopClientCallbacks = {}, store?: TrellisStore) {
-    this.clientId = crypto.randomUUID();
-    this.handler = new ClientMessageHandler(callbacks, store);
+    super(RoutingMode.Embedded, callbacks, store, "/");
   }
 
-  getConnectionState(): ConnectionState {
-    return this.handler.getConnectionState();
-  }
-
-  getSessionId(): string | null {
-    return this.handler.getSessionId();
-  }
-
-  getServerVersion(): string | null {
-    return this.handler.getServerVersion();
+  protected sendUrlChange(msg: UrlChangedMessage): void {
+    this.send(msg);
   }
 
   async connect(): Promise<HelloResponseMessage> {
@@ -99,6 +89,7 @@ export class DesktopClient implements TrellisClient {
             type: MessageType.HELLO,
             client_id: this.clientId,
             system_theme: systemTheme,
+            path: this.routerManager.getCurrentPath(),
           };
           this.send(hello);
         })
@@ -131,6 +122,7 @@ export class DesktopClient implements TrellisClient {
 
   disconnect(): void {
     this.channel = null;
+    this.destroyRouter();
     this.handler.setConnectionState("disconnected");
   }
 }

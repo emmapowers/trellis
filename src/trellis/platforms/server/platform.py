@@ -22,7 +22,7 @@ from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform
 from trellis.platforms.server.handler import router as ws_router
 from trellis.platforms.server.middleware import RequestLoggingMiddleware
-from trellis.platforms.server.routes import create_static_dir
+from trellis.platforms.server.routes import create_static_dir, register_spa_fallback
 from trellis.platforms.server.routes import router as http_router
 from trellis.utils.hot_reload import get_or_create_hot_reload
 
@@ -120,6 +120,9 @@ class ServerPlatform(Platform):
         static = static_dir or create_static_dir()
         if static.exists():
             app.mount("/static", StaticFiles(directory=static), name="static")
+
+        # Register SPA fallback for client-side routing (must be after static files)
+        register_spa_fallback(app)
 
         # Find available port if not specified
         if port is None:

@@ -12,24 +12,23 @@ import {
   HelloMessage,
   HelloResponseMessage,
   EventMessage,
+  UrlChangedMessage,
 } from "../../../common/client/src/types";
+import { ClientMessageHandlerCallbacks } from "../../../common/client/src/ClientMessageHandler";
 import {
-  ClientMessageHandler,
-  ClientMessageHandlerCallbacks,
+  BaseTrellisClient,
   ConnectionState,
-} from "../../../common/client/src/ClientMessageHandler";
-import { TrellisClient } from "../../../common/client/src/TrellisClient";
+} from "../../../common/client/src/TrellisClient";
 import { TrellisStore } from "../../../common/client/src/core";
 import { debugLog } from "../../../common/client/src/debug";
+import { RoutingMode } from "../../../common/client/src/RouterManager";
 
 export type { ConnectionState };
 
 export interface TrellisClientCallbacks extends ClientMessageHandlerCallbacks {}
 
-export class ServerTrellisClient implements TrellisClient {
+export class ServerTrellisClient extends BaseTrellisClient {
   private ws: WebSocket | null = null;
-  private clientId: string;
-  private handler: ClientMessageHandler;
   private connectResolver: ((response: HelloResponseMessage) => void) | null =
     null;
 
@@ -40,20 +39,11 @@ export class ServerTrellisClient implements TrellisClient {
    * @param store - Optional store instance (defaults to singleton)
    */
   constructor(callbacks: TrellisClientCallbacks = {}, store?: TrellisStore) {
-    this.clientId = crypto.randomUUID();
-    this.handler = new ClientMessageHandler(callbacks, store);
+    super(RoutingMode.Standard, callbacks, store);
   }
 
-  getConnectionState(): ConnectionState {
-    return this.handler.getConnectionState();
-  }
-
-  getSessionId(): string | null {
-    return this.handler.getSessionId();
-  }
-
-  getServerVersion(): string | null {
-    return this.handler.getServerVersion();
+  protected sendUrlChange(msg: UrlChangedMessage): void {
+    this.send(msg);
   }
 
   async connect(): Promise<HelloResponseMessage> {
@@ -77,6 +67,7 @@ export class ServerTrellisClient implements TrellisClient {
           type: MessageType.HELLO,
           client_id: this.clientId,
           system_theme: systemTheme,
+          path: window.location.pathname,
         };
         this.send(hello);
       };
@@ -128,6 +119,7 @@ export class ServerTrellisClient implements TrellisClient {
       this.ws.close();
       this.ws = null;
     }
+    this.destroyRouter();
     this.handler.setConnectionState("disconnected");
   }
 }

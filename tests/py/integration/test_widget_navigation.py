@@ -146,7 +146,7 @@ class TestNavigationWidgets:
         assert expansions == [("1", True)]
 
     def test_breadcrumb_with_items(self, rendered) -> None:
-        """Breadcrumb stores items and separator props."""
+        """Breadcrumb generates native HTML elements for items."""
 
         @component
         def App() -> None:
@@ -157,24 +157,17 @@ class TestNavigationWidgets:
 
         result = rendered(App)
 
+        # Breadcrumb is a composition component
         breadcrumb = result.session.elements.get(result.root_element.child_ids[0])
         assert breadcrumb.component.name == "Breadcrumb"
-        assert len(breadcrumb.properties["items"]) == 3
-        assert breadcrumb.properties["separator"] == ">"
 
-    def test_breadcrumb_with_callback(self, rendered) -> None:
-        """Breadcrumb captures on_click callback."""
-        clicks: list[int] = []
+        # Contains a Nav element
+        nav = result.session.elements.get(breadcrumb.child_ids[0])
+        assert nav.component.name == "Nav"
 
-        @component
-        def App() -> None:
-            Breadcrumb(
-                items=[{"label": "Home"}, {"label": "Page"}],
-                on_click=lambda idx: clicks.append(idx),
-            )
+        # Nav contains Ol element
+        ol = result.session.elements.get(nav.child_ids[0])
+        assert ol.component.name == "Ol"
 
-        result = rendered(App)
-
-        breadcrumb = result.session.elements.get(result.root_element.child_ids[0])
-        breadcrumb.properties["on_click"](0)
-        assert clicks == [0]
+        # Ol has 3 children (li elements for each breadcrumb item)
+        assert len(ol.child_ids) == 3
