@@ -158,13 +158,13 @@ def Breadcrumb(
         "lineHeight": "1.5",
     }
     if margin:
-        if margin.top:
+        if margin.top is not None:
             nav_style["marginTop"] = f"{margin.top}px"
-        if margin.right:
+        if margin.right is not None:
             nav_style["marginRight"] = f"{margin.right}px"
-        if margin.bottom:
+        if margin.bottom is not None:
             nav_style["marginBottom"] = f"{margin.bottom}px"
-        if margin.left:
+        if margin.left is not None:
             nav_style["marginLeft"] = f"{margin.left}px"
     if flex is not None:
         nav_style["flex"] = flex
