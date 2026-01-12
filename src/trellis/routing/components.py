@@ -72,10 +72,6 @@ def Route(*, pattern: str, children: list[ChildRef] | None = None) -> None:
     Route must be used inside a Routes container. If used outside,
     a RuntimeError is raised.
 
-    Each Route provides its own CurrentRouteContext with its pattern,
-    enabling router().params to compute parameters correctly. This context
-    is cached per-Route element, so switching routes uses the correct pattern.
-
     Args:
         pattern: Route pattern to match (e.g., "/users/:id", "*" for fallback)
         children: Child elements to render when this route matches
