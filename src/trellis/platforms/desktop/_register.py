@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from trellis.bundler import DESKTOP_PACKAGES, registry
+from trellis.bundler import registry
 
 _CLIENT_SRC = Path(__file__).parent / "client" / "src"
 
@@ -11,7 +11,10 @@ _CLIENT_SRC = Path(__file__).parent / "client" / "src"
 # Also includes index.html as a static file for the dist output
 registry.register(
     "trellis-desktop",
-    packages=DESKTOP_PACKAGES,
+    packages={
+        "@tauri-apps/api": "2.8.0",
+        "tauri-plugin-pytauri-api": "0.8.0",
+    },
     files=["client/src/**/*.{ts,tsx,css}"],
     static_files={"index.html": _CLIENT_SRC / "index.html"},
 )

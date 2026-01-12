@@ -1,6 +1,7 @@
 """Trellis CLI utilities."""
 
 import asyncio
+from pathlib import Path
 
 import click
 
@@ -24,7 +25,18 @@ def bundle() -> None:
     default="all",
     help="Platform to build bundle for",
 )
-def build(force: bool, watch: bool, platform: str) -> None:
+@click.option(
+    "--dest",
+    type=click.Path(path_type=Path),
+    default=None,
+    help="Output directory for build artifacts (default: cache directory)",
+)
+@click.option(
+    "--library",
+    is_flag=True,
+    help="Build as library with exports (vs app that renders to DOM)",
+)
+def build(force: bool, watch: bool, platform: str, dest: Path | None, library: bool) -> None:
     """Build platform bundles."""
     from trellis.platforms.common.base import WatchConfig
 
@@ -35,21 +47,21 @@ def build(force: bool, watch: bool, platform: str) -> None:
         from trellis.platforms.server.platform import ServerPlatform
 
         server = ServerPlatform()
-        server.bundle(force=force)
+        server.bundle(force=force, dest=dest, library=library)
         platforms.append(("server", server.get_watch_config()))
 
     if platform in ("desktop", "all"):
         from trellis.platforms.desktop.platform import DesktopPlatform
 
         desktop = DesktopPlatform()
-        desktop.bundle(force=force)
+        desktop.bundle(force=force, dest=dest, library=library)
         platforms.append(("desktop", desktop.get_watch_config()))
 
     if platform in ("browser", "all"):
         from trellis.platforms.browser.serve_platform import BrowserServePlatform
 
         browser = BrowserServePlatform()
-        browser.bundle(force=force)
+        browser.bundle(force=force, dest=dest, library=library)
         platforms.append(("browser", browser.get_watch_config()))
 
     # Start watch mode if enabled

@@ -12,7 +12,7 @@ from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from jinja2 import Environment, FileSystemLoader
 
-from trellis.bundler import get_project_workspace
+from trellis.bundler.workspace import get_project_workspace
 
 if tp.TYPE_CHECKING:
     from starlette.exceptions import HTTPException as StarletteHTTPException

@@ -1,18 +1,86 @@
-import React, { useState, useCallback, lazy, Suspense } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import CodeBlock from "@theme/CodeBlock";
 import BrowserOnly from "@docusaurus/BrowserOnly";
 import { useColorMode } from "@docusaurus/theme-common";
 import styles from "./styles.module.css";
-import { ShadowDomWrapper } from "./ShadowDomWrapper";
-
-// Lazy load TrellisApp to avoid SSR issues with Web Workers
-const TrellisApp = lazy(
-  () => import("../../../../src/trellis/platforms/browser/client/src/TrellisApp")
-);
+import type { TrellisInstance, TrellisAppProps } from "../../../static/trellis";
 
 interface TrellisDemoProps {
   code: string;
   title?: string;
+}
+
+interface TrellisMountProps {
+  source: TrellisAppProps["source"];
+  themeMode: "light" | "dark";
+  onStatusChange?: (status: string) => void;
+  onError?: (error: string) => void;
+}
+
+/**
+ * Component that mounts TrellisApp using the library's mount() API.
+ *
+ * The mount() API creates a shadow DOM for CSS isolation and sets up
+ * event forwarding for React Aria compatibility automatically.
+ */
+function TrellisMount({
+  source,
+  themeMode,
+  onStatusChange,
+  onError,
+}: TrellisMountProps): React.ReactElement {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const instanceRef = useRef<TrellisInstance | null>(null);
+
+  // Mount on first render
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    let mounted = true;
+
+    async function setup() {
+      if (!containerRef.current || !mounted) return;
+
+      try {
+        const lib = await import("../../../static/trellis");
+        if (!mounted || !containerRef.current) return;
+
+        instanceRef.current = lib.mount(containerRef.current, {
+          source,
+          themeMode,
+          onStatusChange,
+          // Path is /trellis/trellis/ because:
+          // - Docusaurus baseUrl is /trellis/
+          // - CSS is in static/trellis/index.css
+          cssUrl: "/trellis/trellis/index.css",
+          errorComponent: onError
+            ? (msg: string) => {
+                onError(msg);
+                return null;
+              }
+            : undefined,
+        });
+      } catch (e) {
+        console.error("[TrellisMount] Failed to load library:", e);
+        onError?.((e as Error).message);
+      }
+    }
+
+    setup();
+
+    return () => {
+      mounted = false;
+      instanceRef.current?.unmount();
+      instanceRef.current = null;
+    };
+  }, []); // Run once on mount
+
+  // Update theme when it changes
+  useEffect(() => {
+    instanceRef.current?.update({ themeMode });
+  }, [themeMode]);
+
+  return <div ref={containerRef} className={styles.trellisHost} />;
 }
 
 /**
@@ -98,20 +166,13 @@ export default function TrellisDemo({
             ) : (
               <BrowserOnly fallback={<div>Loading...</div>}>
                 {() => (
-                  <Suspense fallback={<div>Loading demo...</div>}>
-                    <ShadowDomWrapper initialTheme={colorMode}>
-                      <TrellisApp
-                        key={runId}
-                        source={{ type: "code", code: wrappedCode }}
-                        onStatusChange={setStatus}
-                        themeMode={colorMode}
-                        errorComponent={(msg) => {
-                          setError(msg);
-                          return null;
-                        }}
-                      />
-                    </ShadowDomWrapper>
-                  </Suspense>
+                  <TrellisMount
+                    key={runId}
+                    source={{ type: "code", code: wrappedCode }}
+                    themeMode={colorMode}
+                    onStatusChange={setStatus}
+                    onError={setError}
+                  />
                 )}
               </BrowserOnly>
             )}

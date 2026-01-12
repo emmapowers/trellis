@@ -17,7 +17,9 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 
-from trellis.bundler import build_from_registry, get_project_workspace, registry
+from trellis.bundler import registry
+from trellis.bundler.build import build_from_registry
+from trellis.bundler.workspace import get_project_workspace
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform, WatchConfig
 from trellis.platforms.server.handler import router as ws_router
@@ -53,16 +55,18 @@ class ServerPlatform(Platform):
         self,
         force: bool = False,
         extra_packages: dict[str, str] | None = None,
+        dest: Path | None = None,
+        library: bool = False,
     ) -> None:
         """Build the server client bundle if needed.
 
         Uses the registry-based build system. The bundle is stored in a
-        cache workspace and served via /static/.
+        cache workspace (or dest if specified) and served via /static/.
         """
         entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)
 
-        build_from_registry(registry, entry_point, workspace, force=force)
+        build_from_registry(registry, entry_point, workspace, force=force, output_dir=dest)
 
     def get_watch_config(self) -> WatchConfig:
         """Get configuration for watch mode."""

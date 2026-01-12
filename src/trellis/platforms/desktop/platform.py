@@ -15,7 +15,9 @@ from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
 from pytauri_wheel.lib import builder_factory, context_factory
 from rich.console import Console
 
-from trellis.bundler import build_from_registry, get_project_workspace, registry
+from trellis.bundler import registry
+from trellis.bundler.build import build_from_registry
+from trellis.bundler.workspace import get_project_workspace
 from trellis.platforms.common.base import Platform, WatchConfig
 from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
@@ -91,16 +93,18 @@ class DesktopPlatform(Platform):
         self,
         force: bool = False,
         extra_packages: dict[str, str] | None = None,
+        dest: Path | None = None,
+        library: bool = False,
     ) -> None:
         """Build the desktop client bundle if needed.
 
         Uses the registry-based build system. The bundle is stored in a
-        cache workspace.
+        cache workspace (or dest if specified).
         """
         entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)
 
-        build_from_registry(registry, entry_point, workspace, force=force)
+        build_from_registry(registry, entry_point, workspace, force=force, output_dir=dest)
 
     def get_watch_config(self) -> WatchConfig:
         """Get configuration for watch mode."""

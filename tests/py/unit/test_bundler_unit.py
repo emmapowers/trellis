@@ -13,7 +13,7 @@ import pytest
 class TestGetPlatform:
     def test_darwin_arm64(self) -> None:
         """Returns darwin-arm64 for macOS ARM."""
-        from trellis.bundler import _get_platform
+        from trellis.bundler.esbuild import get_platform as _get_platform
 
         with patch("platform.system", return_value="Darwin"):
             with patch("platform.machine", return_value="arm64"):
@@ -21,7 +21,7 @@ class TestGetPlatform:
 
     def test_darwin_x64(self) -> None:
         """Returns darwin-x64 for macOS Intel."""
-        from trellis.bundler import _get_platform
+        from trellis.bundler.esbuild import get_platform as _get_platform
 
         with patch("platform.system", return_value="Darwin"):
             with patch("platform.machine", return_value="x86_64"):
@@ -29,7 +29,7 @@ class TestGetPlatform:
 
     def test_linux_x64(self) -> None:
         """Returns linux-x64 for Linux x86_64."""
-        from trellis.bundler import _get_platform
+        from trellis.bundler.esbuild import get_platform as _get_platform
 
         with patch("platform.system", return_value="Linux"):
             with patch("platform.machine", return_value="x86_64"):
@@ -37,7 +37,7 @@ class TestGetPlatform:
 
     def test_linux_arm64(self) -> None:
         """Returns linux-arm64 for Linux aarch64."""
-        from trellis.bundler import _get_platform
+        from trellis.bundler.esbuild import get_platform as _get_platform
 
         with patch("platform.system", return_value="Linux"):
             with patch("platform.machine", return_value="aarch64"):
@@ -45,7 +45,7 @@ class TestGetPlatform:
 
     def test_windows_x64(self) -> None:
         """Returns win32-x64 for Windows x64."""
-        from trellis.bundler import _get_platform
+        from trellis.bundler.esbuild import get_platform as _get_platform
 
         with patch("platform.system", return_value="Windows"):
             with patch("platform.machine", return_value="AMD64"):
@@ -53,7 +53,7 @@ class TestGetPlatform:
 
     def test_unsupported_os(self) -> None:
         """Raises RuntimeError for unsupported OS."""
-        from trellis.bundler import _get_platform
+        from trellis.bundler.esbuild import get_platform as _get_platform
 
         with patch("platform.system", return_value="FreeBSD"):
             with patch("platform.machine", return_value="x86_64"):
@@ -62,7 +62,7 @@ class TestGetPlatform:
 
     def test_unsupported_arch(self) -> None:
         """Raises RuntimeError for unsupported architecture."""
-        from trellis.bundler import _get_platform
+        from trellis.bundler.esbuild import get_platform as _get_platform
 
         with patch("platform.system", return_value="Linux"):
             with patch("platform.machine", return_value="riscv64"):
@@ -75,7 +75,7 @@ class TestSafeExtract:
 
     def test_safe_extract_normal_paths(self, tmp_path: Path) -> None:
         """Normal paths extract successfully."""
-        from trellis.bundler import _safe_extract
+        from trellis.bundler.utils import safe_extract as _safe_extract
 
         # Create a tarball with normal paths
         tar_buffer = io.BytesIO()
@@ -101,7 +101,7 @@ class TestSafeExtract:
 
     def test_safe_extract_rejects_parent_traversal(self, tmp_path: Path) -> None:
         """Rejects paths with parent directory traversal."""
-        from trellis.bundler import _safe_extract
+        from trellis.bundler.utils import safe_extract as _safe_extract
 
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
@@ -117,7 +117,7 @@ class TestSafeExtract:
 
     def test_safe_extract_rejects_hidden_traversal(self, tmp_path: Path) -> None:
         """Rejects paths with hidden traversal in middle of path."""
-        from trellis.bundler import _safe_extract
+        from trellis.bundler.utils import safe_extract as _safe_extract
 
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
@@ -133,7 +133,7 @@ class TestSafeExtract:
 
     def test_safe_extract_rejects_absolute_paths(self, tmp_path: Path) -> None:
         """Rejects absolute paths that escape destination."""
-        from trellis.bundler import _safe_extract
+        from trellis.bundler.utils import safe_extract as _safe_extract
 
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
@@ -149,7 +149,7 @@ class TestSafeExtract:
 
     def test_safe_extract_rejects_symlinks(self, tmp_path: Path) -> None:
         """Rejects symlink entries to prevent link-based escapes."""
-        from trellis.bundler import _safe_extract
+        from trellis.bundler.utils import safe_extract as _safe_extract
 
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
@@ -166,7 +166,7 @@ class TestSafeExtract:
 
     def test_safe_extract_rejects_hardlinks(self, tmp_path: Path) -> None:
         """Rejects hardlink entries to prevent link-based escapes."""
-        from trellis.bundler import _safe_extract
+        from trellis.bundler.utils import safe_extract as _safe_extract
 
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:

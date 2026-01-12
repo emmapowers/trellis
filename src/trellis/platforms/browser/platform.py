@@ -7,6 +7,7 @@ For the CLI server that serves browser apps, see serve_platform.py.
 from __future__ import annotations
 
 from collections.abc import Callable
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -33,6 +34,8 @@ class BrowserPlatform(Platform):
         self,
         force: bool = False,
         extra_packages: dict[str, str] | None = None,
+        dest: Path | None = None,
+        library: bool = False,
     ) -> None:
         """No-op in Pyodide - bundling is done before loading.
 

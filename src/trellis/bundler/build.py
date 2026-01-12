@@ -101,6 +101,8 @@ def build_from_registry(
     *,
     force: bool = False,
     typecheck: bool = True,
+    output_dir: Path | None = None,
+    library: bool = False,
 ) -> None:
     """Build a bundle using the module registry.
 
@@ -117,10 +119,14 @@ def build_from_registry(
         workspace: Workspace directory for staging and output
         force: Force rebuild even if up to date
         typecheck: Run TypeScript type-checking before bundling (default True)
+        output_dir: Custom output directory for bundle files (default: workspace/dist)
+        library: Build as library with exports and declarations (default False)
     """
-    dist_dir = workspace / "dist"
-    bundle_path = dist_dir / "bundle.js"
-    css_path = dist_dir / "bundle.css"
+    dist_dir = output_dir or (workspace / "dist")
+    # Library mode outputs index.js, app mode outputs bundle.js
+    output_name = "index" if library else "bundle"
+    bundle_path = dist_dir / f"{output_name}.js"
+    css_path = dist_dir / f"{output_name}.css"
     staged_dir = workspace / "staged"
     snippets_hash_file = workspace / ".snippets-hash"
 
@@ -167,8 +173,8 @@ def build_from_registry(
         workspace_node_modules.symlink_to(node_modules)
 
     # Run TypeScript type-checking before bundling
+    bun = ensure_bun()
     if typecheck:
-        bun = ensure_bun()
         tsc_result = subprocess.run(
             [str(bun), "x", "tsc", "--noEmit"],
             check=False,
@@ -177,6 +183,34 @@ def build_from_registry(
         )
         if tsc_result.returncode != 0:
             logger.warning("TypeScript type-checking failed (see errors above)")
+
+    # Generate declarations for library mode
+    if library:
+        dist_dir.mkdir(parents=True, exist_ok=True)
+        # Use absolute path for outDir since we run from workspace directory
+        abs_dist_dir = dist_dir.resolve()
+        decl_result = subprocess.run(
+            [
+                str(bun),
+                "x",
+                "tsc",
+                "--emitDeclarationOnly",
+                "--declaration",
+                "--outDir",
+                str(abs_dist_dir),
+            ],
+            check=False,
+            cwd=workspace,
+            env=env,
+        )
+        if decl_result.returncode != 0:
+            logger.warning("Declaration generation failed (see errors above)")
+        else:
+            # Rename entry.d.ts to index.d.ts to match bundle name
+            entry_decl = abs_dist_dir / "entry.d.ts"
+            index_decl = abs_dist_dir / "index.d.ts"
+            if entry_decl.exists():
+                entry_decl.rename(index_decl)
 
     dist_dir.mkdir(parents=True, exist_ok=True)
 
@@ -208,7 +242,7 @@ def build_from_registry(
         str(workspace / "entry.tsx"),
         "--bundle",
         f"--outdir={dist_dir}",
-        "--entry-names=bundle",
+        f"--entry-names={output_name}",
         "--format=esm",
         "--platform=browser",
         "--target=es2022",
@@ -217,6 +251,10 @@ def build_from_registry(
         "--loader:.ts=ts",
         "--loader:.worker-bundle=text",
     ]
+
+    # Note: In library mode, we intentionally bundle React rather than
+    # externalizing it. The mount() API uses the bundled React instance,
+    # avoiding version conflicts with the host application's React.
 
     # Add alias for each module
     cmd.extend(

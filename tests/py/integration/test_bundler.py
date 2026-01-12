@@ -9,20 +9,16 @@ import subprocess
 from pathlib import Path
 
 from tests.helpers import requires_pytauri
-from trellis.bundler import get_project_workspace
+from trellis.bundler.workspace import get_project_workspace
 
 
 class TestEnsureEsbuild:
     def test_downloads_esbuild_binary(self) -> None:
         """Downloads esbuild binary from npm registry."""
-        from trellis.bundler import (
-            BIN_DIR,
-            ESBUILD_VERSION,
-            _get_platform,
-            ensure_esbuild,
-        )
+        from trellis.bundler.esbuild import ensure_esbuild, get_platform
+        from trellis.bundler.utils import BIN_DIR, ESBUILD_VERSION
 
-        plat = _get_platform()
+        plat = get_platform()
         binary_name = "esbuild.exe" if plat.startswith("win32") else "esbuild"
         expected_path = (
             BIN_DIR / f"esbuild-{ESBUILD_VERSION}-{plat}" / "package" / "bin" / binary_name
@@ -38,16 +34,21 @@ class TestEnsureEsbuild:
 class TestEnsurePackages:
     def test_installs_packages_with_bun(self) -> None:
         """Installs packages using Bun and creates node_modules."""
-        from trellis.bundler import PACKAGES, ensure_packages
+        from trellis.bundler import registry
+        from trellis.bundler.packages import ensure_packages
 
-        result = ensure_packages()
+        # Get packages from registry (common platform registers them)
+        collected = registry.collect()
+        packages = collected.packages
+
+        result = ensure_packages(packages)
 
         # Result should be a node_modules directory
         assert result.name == "node_modules"
         assert result.exists()
 
         # Check that direct dependencies are installed
-        for name in PACKAGES:
+        for name in packages:
             if name.startswith("@"):
                 scope, pkg = name.split("/", 1)
                 pkg_dir = result / scope / pkg
@@ -177,3 +178,30 @@ class TestBundleBuildCli:
         assert desktop_bundle.stat().st_size > 0
         if mtime_before is not None:
             assert desktop_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"
+
+    def test_bundle_build_with_dest_option(self, tmp_path: Path) -> None:
+        """Running `trellis bundle build --dest <path>` outputs to specified directory."""
+        dest_dir = tmp_path / "custom_output"
+
+        result = subprocess.run(
+            [
+                "trellis",
+                "bundle",
+                "build",
+                "--platform",
+                "server",
+                "--force",
+                "--dest",
+                str(dest_dir),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert result.returncode == 0, f"Bundle build failed:\n{result.stderr}"
+
+        # Bundle should be directly in dest_dir
+        bundle_path = dest_dir / "bundle.js"
+        assert bundle_path.exists(), f"Bundle not found at {bundle_path}"
+        assert bundle_path.stat().st_size > 0

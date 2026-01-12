@@ -10,31 +10,6 @@ from pathlib import Path
 from .bun import ensure_bun
 from .utils import CACHE_DIR
 
-# Direct dependencies only - Bun resolves transitive deps automatically
-PACKAGES = {
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "@types/react": "18.3.23",
-    "@types/react-dom": "18.3.7",
-    "@msgpack/msgpack": "3.0.0",
-    # Icons
-    "lucide-react": "0.468.0",
-    # Charts
-    "uplot": "1.6.31",
-    "recharts": "3.6.0",
-    # React Aria (accessibility) - umbrella packages handle sub-dependencies
-    "react-aria": "3.35.0",
-    "react-stately": "3.33.0",
-    # Internationalization
-    "@internationalized/date": "3.5.6",
-}
-
-# Additional packages for desktop platform (PyTauri)
-DESKTOP_PACKAGES = {
-    "@tauri-apps/api": "2.8.0",
-    "tauri-plugin-pytauri-api": "0.8.0",
-}
-
 
 def generate_package_json(packages: dict[str, str]) -> dict[str, object]:
     """Generate a package.json dict from packages.
@@ -70,7 +45,7 @@ def get_packages_hash(packages: dict[str, str]) -> str:
     return hashlib.sha256(content.encode()).hexdigest()[:16]
 
 
-def ensure_packages(packages: dict[str, str] | None = None) -> Path:
+def ensure_packages(packages: dict[str, str]) -> Path:
     """Install packages using Bun and return node_modules path.
 
     Creates a workspace directory keyed by a hash of the packages.
@@ -78,12 +53,10 @@ def ensure_packages(packages: dict[str, str] | None = None) -> Path:
 
     Args:
         packages: Dict mapping package names to versions.
-                  Defaults to PACKAGES if not provided.
 
     Returns:
         Path to the node_modules directory
     """
-    packages = packages or PACKAGES
     pkg_hash = get_packages_hash(packages)
 
     workspace = CACHE_DIR / "workspaces" / pkg_hash

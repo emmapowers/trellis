@@ -30,7 +30,9 @@ if TYPE_CHECKING:
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
-from trellis.bundler import build_from_registry, get_project_workspace, registry
+from trellis.bundler import registry
+from trellis.bundler.build import build_from_registry
+from trellis.bundler.workspace import get_project_workspace
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform, WatchConfig
 
@@ -181,16 +183,29 @@ class BrowserServePlatform(Platform):
         self,
         force: bool = False,
         extra_packages: dict[str, str] | None = None,
+        dest: Path | None = None,
+        library: bool = False,
     ) -> None:
         """Build the browser client bundle if needed.
 
         Uses the registry-based build system. The bundle is stored in a
-        cache workspace.
+        cache workspace (or dest if specified).
+
+        Args:
+            force: Force rebuild even if sources unchanged
+            extra_packages: Additional npm packages beyond platform defaults
+            dest: Custom output directory (default: cache directory)
+            library: If True, build as library exporting TrellisApp (uses index.ts).
+                     If False, build as app that renders to DOM (uses main.tsx).
         """
-        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        # Use index.ts for library mode, main.tsx for app mode
+        entry_name = "index.ts" if library else "main.tsx"
+        entry_point = Path(__file__).parent / "client" / "src" / entry_name
         workspace = get_project_workspace(entry_point)
 
-        build_from_registry(registry, entry_point, workspace, force=force)
+        build_from_registry(
+            registry, entry_point, workspace, force=force, output_dir=dest, library=library
+        )
 
     def get_watch_config(self) -> WatchConfig:
         """Get configuration for watch mode."""

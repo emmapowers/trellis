@@ -240,21 +240,3 @@ class TestEnsurePackages:
                 assert "install" in cmd
                 # Should run in workspace directory
                 assert kwargs.get("cwd") is not None
-
-    def test_uses_default_packages_if_none_provided(self, tmp_path: Path) -> None:
-        """Uses PACKAGES constant if no packages argument provided."""
-        from trellis.bundler.packages import PACKAGES, ensure_packages
-
-        with patch("trellis.bundler.packages.CACHE_DIR", tmp_path):
-            with patch("trellis.bundler.packages.get_packages_hash") as mock_hash:
-                mock_hash.return_value = "default123"
-
-                ws = tmp_path / "workspaces" / "default123"
-                ws.mkdir(parents=True)
-                (ws / "bun.lock").touch()
-                (ws / "node_modules").mkdir()
-
-                ensure_packages()
-
-                # Should have been called with PACKAGES
-                mock_hash.assert_called_once_with(PACKAGES)
