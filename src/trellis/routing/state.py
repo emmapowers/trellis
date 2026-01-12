@@ -33,7 +33,7 @@ class CurrentRouteContext(Stateful):
     pattern: str = ""
 
 
-@dataclass(kw_only=True)
+@dataclass()
 class RouterState(Stateful):
     """Reactive router state for client-side routing.
 
@@ -64,15 +64,15 @@ class RouterState(Stateful):
         can_go_forward: Whether forward navigation is possible
     """
 
-    # Private state fields (not exposed in __init__)
-    _path: str = field(default="/", init=False)
-    _history: list[str] = field(default_factory=list, init=False)
-    _history_index: int = field(default=0, init=False)
+    # Private state fields - initialized in custom __init__
+    _path: str = field(default="/")
+    _history: list[str] = field(default_factory=list)
+    _history_index: int = field(default=0)
 
     # Async callbacks for notifying handler about navigation (set by handler)
-    _on_navigate: Callable[[str], Awaitable[None]] | None = field(default=None, init=False)
-    _on_go_back: Callable[[], Awaitable[None]] | None = field(default=None, init=False)
-    _on_go_forward: Callable[[], Awaitable[None]] | None = field(default=None, init=False)
+    _on_navigate: Callable[[str], Awaitable[None]] | None = field(default=None)
+    _on_go_back: Callable[[], Awaitable[None]] | None = field(default=None)
+    _on_go_forward: Callable[[], Awaitable[None]] | None = field(default=None)
 
     def __init__(self, *, path: str | None = None) -> None:
         """Initialize with starting path.

@@ -101,8 +101,7 @@ def A(
     For absolute URLs, uses normal browser navigation.
 
     Can be used as text-only or as a container:
-        h.A("Click here", href="/path")  # Text only, uses router
-        h.A("External", href="https://example.com")  # Uses browser navigation
+        h.A("Click here", href="/path")  # Text only
         with h.A(href="/path"):          # Container with children
             h.Img(src="icon.png")
             h.Span("Link text")

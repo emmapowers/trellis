@@ -133,9 +133,6 @@ export function Button({
   style,
 }: ButtonProps): React.ReactElement {
   const ref = useRef<HTMLButtonElement>(null);
-  // Always call useButton (hooks must be unconditional), but only use its
-  // props when we have a click handler. Without a handler, we render a plain
-  // button so clicks bubble to parent elements (e.g., Button inside Link).
   const { buttonProps, isPressed } = useButton(
     {
       // Wrap on_click to avoid passing the PressEvent, which contains

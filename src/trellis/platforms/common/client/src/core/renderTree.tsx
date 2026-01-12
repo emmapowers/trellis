@@ -132,8 +132,10 @@ export function processProps(
     if (isCallbackRef(value)) {
       const shouldPreventDefault = PREVENT_DEFAULT_HANDLERS.has(key);
       result[key] = (...args: unknown[]) => {
-        // For anchor clicks with modifier keys or middle-click, let browser handle
-        // This allows Cmd+click / Ctrl+click to open in new tab
+        // For anchor clicks with modifier keys or middle-click, let browser handle.
+        // This allows Cmd+click / Ctrl+click to open in new tab.
+        // Note: This check is here because anchor tags use native DOM nodes (not
+        // React components), so we handle their click behavior at the prop level.
         if (key === "onClick" && shouldLetBrowserHandleClick(args[0])) {
           return;
         }

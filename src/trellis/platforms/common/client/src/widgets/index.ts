@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Badge } from "./Badge";
-import { Breadcrumb } from "./Breadcrumb";
 import { Button } from "./Button";
 import { Callout } from "./Callout";
 import { Card } from "./Card";
@@ -42,7 +41,6 @@ const widgetRegistry: Record<string, React.ComponentType<any>> = {
   AreaChart,
   Badge,
   BarChart,
-  Breadcrumb,
   Button,
   Callout,
   Card,
@@ -97,7 +95,6 @@ export {
   AreaChart,
   Badge,
   BarChart,
-  Breadcrumb,
   Button,
   Callout,
   Card,

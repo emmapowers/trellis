@@ -290,7 +290,9 @@ def get_button_element(tree_node: dict[str, tp.Any]) -> dict[str, tp.Any]:
         The inner _Button element dict with actual props
     """
     if tree_node.get("name") == "Button" and tree_node.get("type") == "CompositionComponent":
-        return tree_node["children"][0]
+        children = tree_node.get("children", [])
+        if children:
+            return children[0]
     return tree_node
 
 

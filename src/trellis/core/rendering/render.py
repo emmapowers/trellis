@@ -377,8 +377,11 @@ def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
                 # Async hook: schedule as background task
                 # Capture hook in default arg to avoid closure over loop variable
                 async def run_async_hook(h: tp.Any = hook) -> None:
-                    with callback_context(session, element_id):
-                        await h()
+                    try:
+                        with callback_context(session, element_id):
+                            await h()
+                    except Exception:
+                        logging.exception("Error in async Stateful.on_mount")
 
                 task = asyncio.create_task(run_async_hook())
                 session._background_tasks.add(task)
@@ -388,8 +391,8 @@ def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
                 try:
                     with callback_context(session, element_id):
                         hook()
-                except Exception as e:
-                    logging.exception(f"Error in Stateful.on_mount: {e}")
+                except Exception:
+                    logging.exception("Error in Stateful.on_mount")
 
 
 def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
@@ -411,8 +414,11 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
                 # Async hook: schedule as background task
                 # Capture hook in default arg to avoid closure over loop variable
                 async def run_async_hook(h: tp.Any = hook) -> None:
-                    with callback_context(session, element_id):
-                        await h()
+                    try:
+                        with callback_context(session, element_id):
+                            await h()
+                    except Exception:
+                        logging.exception("Error in async Stateful.on_unmount")
 
                 task = asyncio.create_task(run_async_hook())
                 session._background_tasks.add(task)
@@ -422,8 +428,8 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
                 try:
                     with callback_context(session, element_id):
                         hook()
-                except Exception as e:
-                    logging.exception(f"Error in Stateful.on_unmount: {e}")
+                except Exception:
+                    logging.exception("Error in Stateful.on_unmount")
 
 
 def _process_pending_hooks(
