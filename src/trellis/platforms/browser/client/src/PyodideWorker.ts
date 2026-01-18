@@ -8,8 +8,9 @@
  */
 
 // Import worker code as text (built by bundler with --loader:.worker-bundle=text)
-import WORKER_CODE from "./pyodide.worker-bundle";
-import type { HelloMessage, EventMessage } from "@trellis/trellis-core/client/src/types";
+// Uses @trellis alias so esbuild can resolve the pre-built worker bundle
+import WORKER_CODE from "@trellis/browser/pyodide.worker-bundle";
+import type { HelloMessage, EventMessage, UrlChangedMessage } from "@trellis/trellis-core/client/src/types";
 
 // === Types ===
 
@@ -23,7 +24,7 @@ export type PythonSource =
 type WorkerInMessage =
   | { type: "init"; trellisWheelUrl?: string; pageOrigin: string }
   | { type: "run"; source: PythonSource; main?: string }
-  | { type: "message"; payload: HelloMessage | EventMessage };
+  | { type: "message"; payload: HelloMessage | EventMessage | UrlChangedMessage };
 
 /** Messages from worker to main thread */
 type WorkerOutMessage =
@@ -152,9 +153,9 @@ export class PyodideWorker {
   }
 
   /**
-   * Send a message to Python (HELLO, EVENT).
+   * Send a message to Python (HELLO, EVENT, URL_CHANGED).
    */
-  sendMessage(msg: HelloMessage | EventMessage): void {
+  sendMessage(msg: HelloMessage | EventMessage | UrlChangedMessage): void {
     if (!this.worker) {
       console.warn("PyodideWorker: No worker, cannot send message");
       return;

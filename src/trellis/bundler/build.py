@@ -4,17 +4,17 @@ from __future__ import annotations
 
 import logging
 import os
-import shutil
-import subprocess
 from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .packages import ensure_packages, get_bin
-from .workspace import write_registry_ts
+from trellis.bundler.steps import BuildContext
+
+from .registry import SUPPORTED_SOURCE_TYPES
 
 if TYPE_CHECKING:
-    from .registry import ModuleRegistry
+    from trellis.bundler.registry import CollectedModules, ModuleRegistry
+    from trellis.bundler.steps import BuildStep
 
 logger = logging.getLogger(__name__)
 
@@ -54,114 +54,74 @@ def is_rebuild_needed(inputs: Iterable[Path], outputs: Iterable[Path]) -> bool:
     return False
 
 
-def build_from_registry(
+def _collect_input_files(entry_point: Path, collected: CollectedModules) -> list[Path]:
+    """Collect all input files for cache checking.
+
+    Args:
+        entry_point: Main entry point file
+        collected: Collected modules from registry
+
+    Returns:
+        List of input file paths
+    """
+    inputs = [entry_point]
+
+    # Add source files from all modules with base paths
+    for module in collected.modules:
+        if module._base_path and module._base_path.exists():
+            # Add all source files in module directory
+            for ext in SUPPORTED_SOURCE_TYPES:
+                inputs.extend(module._base_path.rglob(f"*{ext}"))
+
+    return inputs
+
+
+def build(
     registry: ModuleRegistry,
     entry_point: Path,
     workspace: Path,
+    steps: list[BuildStep],
     *,
     force: bool = False,
-    typecheck: bool = True,
     output_dir: Path | None = None,
-    library: bool = False,
 ) -> None:
-    """Build a bundle using the module registry.
-
-    This function:
-    - Collects all registered modules
-    - Generates _registry.ts wiring file
-    - Optionally runs tsc for type-checking
-    - Runs esbuild with path aliases pointing directly to source files
+    """Run a build pipeline with the given steps.
 
     Args:
         registry: Module registry with registered modules
-        entry_point: Path to entry point file (e.g., app.tsx or main.tsx)
-        workspace: Workspace directory for generated files and output
+        entry_point: Path to entry point file (e.g., main.tsx)
+        workspace: Workspace directory for generated files
+        steps: List of build steps to execute in order
         force: Force rebuild even if up to date
-        typecheck: Run TypeScript type-checking before bundling (default True)
-        output_dir: Custom output directory for bundle files (default: workspace/dist)
-        library: Build as library with exports and declarations (default False)
+        output_dir: Custom output directory (default: workspace/dist)
     """
-    dist_dir = output_dir or (workspace / "dist")
-    # Library mode outputs index.js, app mode outputs bundle.js
-    output_name = "index" if library else "bundle"
-    bundle_path = dist_dir / f"{output_name}.js"
-    css_path = dist_dir / f"{output_name}.css"
 
-    # Collect registered modules (need this for input file list)
     collected = registry.collect()
+    dist_dir = output_dir or (workspace / "dist")
 
-    # Check if rebuild needed
+    # Check if rebuild is needed (skip if outputs up to date)
     if not force:
-        # Collect all input files: entry point, module files, and static files
-        input_files: list[Path] = [entry_point]
-        for module in collected.modules:
-            if module._base_path:
-                input_files.extend(module._base_path / f for f in module.files)
-            input_files.extend(module.static_files.values())
+        inputs = _collect_input_files(entry_point, collected)
+        # esbuild produces bundle.js and optionally bundle.css when CSS is imported.
+        # We only check bundle.js for cache invalidation since it's always produced.
+        outputs = [dist_dir / "bundle.js"]
 
-        outputs = [bundle_path, css_path]
-        if not is_rebuild_needed(input_files, outputs):
+        if not is_rebuild_needed(inputs, outputs):
+            logger.debug("Skipping build: outputs up to date")
             return
-
-    # Generate _registry.ts wiring file
-    registry_path = write_registry_ts(workspace, collected)
-
-    # Ensure dependencies (installed directly in workspace)
-    packages = dict(collected.packages)
-    ensure_packages(packages, workspace)
-    node_modules = workspace / "node_modules"
-    esbuild = get_bin(node_modules, "esbuild")
-
-    # Use NODE_PATH env var to resolve from our packages
-    env = os.environ.copy()
-    env["NODE_PATH"] = str(node_modules)
-
-    # Note: Type-checking is currently disabled since we removed workspace staging.
-    # The tsc needs a tsconfig.json to work, which we no longer generate.
-    # TODO: Re-enable type-checking by using root tsconfig.json
-
-    # Generate declarations for library mode
-    if library:
-        dist_dir.mkdir(parents=True, exist_ok=True)
-        # Skip declaration generation for now - needs tsconfig setup
-        pass
 
     dist_dir.mkdir(parents=True, exist_ok=True)
 
-    # Build main bundle with esbuild aliases pointing to source files
-    cmd = [
-        str(esbuild),
-        str(entry_point),
-        "--bundle",
-        f"--outdir={dist_dir}",
-        f"--entry-names={output_name}",
-        "--format=esm",
-        "--platform=browser",
-        "--target=es2022",
-        "--jsx=automatic",
-        "--loader:.tsx=tsx",
-        "--loader:.ts=ts",
-    ]
-
-    # Note: In library mode, we intentionally bundle React rather than
-    # externalizing it. The mount() API uses the bundled React instance,
-    # avoiding version conflicts with the host application's React.
-
-    # Add alias for each module - point directly to source paths
-    cmd.extend(
-        f"--alias:@trellis/{module.name}={module._base_path}"
-        for module in collected.modules
-        if module._base_path
+    # Create build context with system environment so subprocess tools can find node
+    ctx = BuildContext(
+        registry=registry,
+        entry_point=entry_point,
+        workspace=workspace,
+        collected=collected,
+        dist_dir=dist_dir,
+        env=os.environ.copy(),
     )
 
-    # Add alias for generated _registry
-    cmd.append(f"--alias:@trellis/_registry={registry_path}")
-
-    subprocess.run(cmd, check=True, env=env)
-
-    # Copy static files to dist
-    for module in collected.modules:
-        for static_name, src_path in module.static_files.items():
-            dst_path = dist_dir / static_name
-            dst_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src_path, dst_path)
+    for step in steps:
+        logger.debug("Running step: %s", step.name)
+        step.run(ctx)

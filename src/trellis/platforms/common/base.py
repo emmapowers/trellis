@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from trellis.bundler.registry import ModuleRegistry
+    from trellis.bundler.steps import BuildStep
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
@@ -42,6 +43,9 @@ class WatchConfig:
 
     workspace: Path
     """Workspace directory for staging and output."""
+
+    steps: list[BuildStep]
+    """Build steps to execute on rebuild."""
 
 
 class Platform(ABC):

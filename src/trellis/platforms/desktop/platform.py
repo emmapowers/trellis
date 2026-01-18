@@ -15,8 +15,15 @@ from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
 from pytauri_wheel.lib import builder_factory, context_factory
 from rich.console import Console
 
-from trellis.bundler import registry
-from trellis.bundler.build import build_from_registry
+from trellis.bundler import (
+    BuildStep,
+    BundleBuildStep,
+    PackageInstallStep,
+    RegistryGenerationStep,
+    StaticFileCopyStep,
+    build,
+    registry,
+)
 from trellis.bundler.workspace import get_project_workspace
 from trellis.platforms.common.base import Platform, WatchConfig
 from trellis.platforms.common.handler_registry import get_global_registry
@@ -89,6 +96,15 @@ class DesktopPlatform(Platform):
     def name(self) -> str:
         return "desktop"
 
+    def _get_build_steps(self) -> list[BuildStep]:
+        """Get build steps for this platform."""
+        return [
+            PackageInstallStep(),
+            RegistryGenerationStep(),
+            BundleBuildStep(output_name="bundle"),
+            StaticFileCopyStep(),
+        ]
+
     def bundle(
         self,
         force: bool = False,
@@ -104,7 +120,14 @@ class DesktopPlatform(Platform):
         entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)
 
-        build_from_registry(registry, entry_point, workspace, force=force, output_dir=dest)
+        build(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            steps=self._get_build_steps(),
+            force=force,
+            output_dir=dest,
+        )
 
     def get_watch_config(self) -> WatchConfig:
         """Get configuration for watch mode."""
@@ -113,6 +136,7 @@ class DesktopPlatform(Platform):
             registry=registry,
             entry_point=entry_point,
             workspace=get_project_workspace(entry_point),
+            steps=self._get_build_steps(),
         )
 
     def _create_commands(self) -> Commands:

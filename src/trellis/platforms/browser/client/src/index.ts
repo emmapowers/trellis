@@ -21,6 +21,7 @@
  *   instance.unmount();
  */
 
+import { initRegistry } from "@trellis/_registry";
 import React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { TrellisApp } from "@trellis/trellis-browser/client/src/TrellisApp";
@@ -81,6 +82,9 @@ export function mount(
   container: HTMLElement,
   options: MountOptions
 ): TrellisInstance {
+  // Initialize widget registry before rendering
+  initRegistry();
+
   const { cssUrl, ...props } = options;
 
   // Create shadow DOM for isolation

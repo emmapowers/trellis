@@ -76,7 +76,12 @@ def build(force: bool, watch: bool, platform: str, dest: Path | None, library: b
                     click.echo(f"Watching {name} bundle for changes...")
                     tasks.append(
                         asyncio.create_task(
-                            watch_and_rebuild(config.registry, config.entry_point, config.workspace)
+                            watch_and_rebuild(
+                                config.registry,
+                                config.entry_point,
+                                config.workspace,
+                                config.steps,
+                            )
                         )
                     )
             if tasks:

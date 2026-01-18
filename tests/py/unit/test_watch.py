@@ -153,8 +153,19 @@ class TestGetWatchDirectories:
         assert module_dir in directories
 
 
-class TestOnRebuildCallback:
-    """Tests for on_rebuild callback in watch_and_rebuild."""
+class TestWatchAndRebuildSignature:
+    """Tests for watch_and_rebuild function signature."""
+
+    def test_accepts_steps_parameter(self) -> None:
+        """watch_and_rebuild accepts a steps parameter."""
+        import inspect
+
+        from trellis.bundler.watch import watch_and_rebuild
+
+        sig = inspect.signature(watch_and_rebuild)
+        params = list(sig.parameters.keys())
+
+        assert "steps" in params
 
     def test_on_rebuild_signature(self) -> None:
         """watch_and_rebuild accepts an on_rebuild callback parameter."""

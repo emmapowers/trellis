@@ -290,6 +290,7 @@ class _WatchThread:
                     self._config.registry,
                     self._config.entry_point,
                     self._config.workspace,
+                    self._config.steps,
                     on_rebuild=on_rebuild,
                 )
             )

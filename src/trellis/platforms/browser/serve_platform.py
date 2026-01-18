@@ -30,9 +30,19 @@ if TYPE_CHECKING:
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
-from trellis.bundler import registry
-from trellis.bundler.build import build_from_registry
+from trellis.bundler import (
+    BuildStep,
+    BundleBuildStep,
+    DeclarationStep,
+    PackageInstallStep,
+    RegistryGenerationStep,
+    StaticFileCopyStep,
+    TsconfigStep,
+    build,
+    registry,
+)
 from trellis.bundler.workspace import get_project_workspace
+from trellis.platforms.browser.build_steps import PyodideWorkerBuildStep
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform, WatchConfig
 
@@ -179,6 +189,20 @@ class BrowserServePlatform(Platform):
     def name(self) -> str:
         return "browser-serve"
 
+    def _get_build_steps(self, *, output_name: str = "bundle") -> list[BuildStep]:
+        """Get build steps for this platform.
+
+        Args:
+            output_name: Name for output files (default "bundle")
+        """
+        return [
+            PackageInstallStep(),
+            RegistryGenerationStep(),
+            PyodideWorkerBuildStep(),
+            BundleBuildStep(output_name=output_name),
+            StaticFileCopyStep(),
+        ]
+
     def bundle(
         self,
         force: bool = False,
@@ -203,8 +227,30 @@ class BrowserServePlatform(Platform):
         entry_point = Path(__file__).parent / "client" / "src" / entry_name
         workspace = get_project_workspace(entry_point)
 
-        build_from_registry(
-            registry, entry_point, workspace, force=force, output_dir=dest, library=library
+        # Determine output name based on mode
+        output_name = "index" if library else "bundle"
+
+        if library:
+            # Library mode adds type generation steps
+            steps: list[BuildStep] = [
+                PackageInstallStep(),
+                RegistryGenerationStep(),
+                TsconfigStep(),
+                PyodideWorkerBuildStep(),
+                BundleBuildStep(output_name=output_name),
+                DeclarationStep(),
+                StaticFileCopyStep(),
+            ]
+        else:
+            steps = self._get_build_steps(output_name=output_name)
+
+        build(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            steps=steps,
+            force=force,
+            output_dir=dest,
         )
 
     def get_watch_config(self) -> WatchConfig:
@@ -214,6 +260,7 @@ class BrowserServePlatform(Platform):
             registry=registry,
             entry_point=entry_point,
             workspace=get_project_workspace(entry_point),
+            steps=self._get_build_steps(),
         )
 
     async def run(

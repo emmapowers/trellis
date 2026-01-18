@@ -17,8 +17,15 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 
-from trellis.bundler import registry
-from trellis.bundler.build import build_from_registry
+from trellis.bundler import (
+    BuildStep,
+    BundleBuildStep,
+    PackageInstallStep,
+    RegistryGenerationStep,
+    StaticFileCopyStep,
+    build,
+    registry,
+)
 from trellis.bundler.workspace import get_project_workspace
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform, WatchConfig
@@ -51,6 +58,15 @@ class ServerPlatform(Platform):
     def name(self) -> str:
         return "server"
 
+    def _get_build_steps(self) -> list[BuildStep]:
+        """Get build steps for this platform."""
+        return [
+            PackageInstallStep(),
+            RegistryGenerationStep(),
+            BundleBuildStep(output_name="bundle"),
+            StaticFileCopyStep(),
+        ]
+
     def bundle(
         self,
         force: bool = False,
@@ -66,7 +82,14 @@ class ServerPlatform(Platform):
         entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)
 
-        build_from_registry(registry, entry_point, workspace, force=force, output_dir=dest)
+        build(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            steps=self._get_build_steps(),
+            force=force,
+            output_dir=dest,
+        )
 
     def get_watch_config(self) -> WatchConfig:
         """Get configuration for watch mode."""
@@ -75,6 +98,7 @@ class ServerPlatform(Platform):
             registry=registry,
             entry_point=entry_point,
             workspace=get_project_workspace(entry_point),
+            steps=self._get_build_steps(),
         )
 
     async def run(

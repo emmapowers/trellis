@@ -15,8 +15,11 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from .build import build
+
 if TYPE_CHECKING:
     from .registry import CollectedModules, ModuleRegistry
+    from .steps import BuildStep
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +77,7 @@ async def watch_and_rebuild(
     registry: ModuleRegistry,
     entry_point: Path,
     workspace: Path,
+    steps: list[BuildStep],
     on_rebuild: Callable[[], None] | None = None,
 ) -> None:
     """Watch source files and rebuild when they change.
@@ -85,13 +89,12 @@ async def watch_and_rebuild(
         registry: Module registry with registered modules
         entry_point: Path to entry point file
         workspace: Workspace directory for staging and output
+        steps: Build steps to execute on rebuild
         on_rebuild: Optional callback invoked after successful rebuild
     """
     # Import watchfiles here to avoid loading it when not needed
-    # (especially important for browser platform)
+    # (especially important for browser platform where it's unavailable)
     import watchfiles
-
-    from .build import build_from_registry
 
     # Get collected modules for watch paths
     collected = registry.collect()
@@ -113,10 +116,11 @@ async def watch_and_rebuild(
 
             try:
                 # Force rebuild
-                build_from_registry(
+                build(
                     registry=registry,
                     entry_point=entry_point,
                     workspace=workspace,
+                    steps=steps,
                     force=True,
                 )
                 logger.info("Bundle rebuilt successfully")
@@ -132,6 +136,7 @@ def start_watch_task(
     registry: ModuleRegistry,
     entry_point: Path,
     workspace: Path,
+    steps: list[BuildStep],
 ) -> asyncio.Task[None]:
     """Start a background task to watch and rebuild.
 
@@ -141,11 +146,12 @@ def start_watch_task(
         registry: Module registry with registered modules
         entry_point: Path to entry point file
         workspace: Workspace directory for staging and output
+        steps: Build steps to execute on rebuild
 
     Returns:
         Asyncio task running the watch loop
     """
     return asyncio.create_task(
-        watch_and_rebuild(registry, entry_point, workspace),
+        watch_and_rebuild(registry, entry_point, workspace, steps),
         name="bundle-watcher",
     )
