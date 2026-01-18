@@ -67,25 +67,6 @@ class TestGetWatchPaths:
 
         assert static_file in paths
 
-    def test_excludes_snippets(self, tmp_path: Path) -> None:
-        """Snippets are not included in watch paths (they're inline code)."""
-        from trellis.bundler.watch import get_watch_paths
-
-        entry_point = tmp_path / "app.tsx"
-        entry_point.write_text("// entry")
-
-        module = Module(
-            name="my-module",
-            snippets={"helper.ts": "export const x = 1;"},
-        )
-        collected = CollectedModules(modules=[module], packages={})
-
-        paths = get_watch_paths(entry_point, collected)
-
-        # Only entry point should be in paths
-        assert len(paths) == 1
-        assert entry_point in paths
-
     def test_skips_module_without_base_path(self, tmp_path: Path) -> None:
         """Modules without _base_path are skipped for file watching."""
         from trellis.bundler.watch import get_watch_paths

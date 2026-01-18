@@ -70,13 +70,6 @@ class TestModule:
         module = Module(name="my-module")
         assert module.files == []
 
-    def test_snippets_defaults_to_empty(self) -> None:
-        """snippets defaults to empty dict."""
-        from trellis.bundler.registry import Module
-
-        module = Module(name="my-module")
-        assert module.snippets == {}
-
     def test_static_files_defaults_to_empty(self) -> None:
         """static_files defaults to empty dict."""
         from trellis.bundler.registry import Module
@@ -113,7 +106,6 @@ class TestModule:
             name="my-module",
             packages={"react": "18.2.0"},
             files=["Widget.tsx"],
-            snippets={"Helper.tsx": "export const Helper = () => null;"},
             static_files={"icon.png": Path("/path/to/icon.png")},
             exports=[ModuleExport("Widget", ExportKind.component, "Widget.tsx")],
             worker_entries={"service": "service-worker.ts"},
@@ -122,7 +114,6 @@ class TestModule:
         assert module.name == "my-module"
         assert module.packages == {"react": "18.2.0"}
         assert module.files == ["Widget.tsx"]
-        assert module.snippets == {"Helper.tsx": "export const Helper = () => null;"}
         assert module.static_files == {"icon.png": Path("/path/to/icon.png")}
         assert len(module.exports) == 1
         assert module.exports[0].name == "Widget"

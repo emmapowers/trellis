@@ -160,9 +160,6 @@ class Module:
     files: list[str] = field(default_factory=list)
     """Files to copy (paths relative to registering Python file)."""
 
-    snippets: dict[str, str] = field(default_factory=dict)
-    """Inline code snippets (filename -> code)."""
-
     static_files: dict[str, Path] = field(default_factory=dict)
     """Static files to copy (output name -> source path)."""
 
@@ -199,7 +196,6 @@ class ModuleRegistry:
         *,
         packages: dict[str, str] | None = None,
         files: list[str] | None = None,
-        snippets: dict[str, str] | None = None,
         static_files: dict[str, Path] | None = None,
         exports: list[tuple[str, ExportKind, str]] | None = None,
         worker_entries: dict[str, str] | None = None,
@@ -210,7 +206,6 @@ class ModuleRegistry:
             name: Unique module name
             packages: NPM packages (name -> version)
             files: Files to copy (paths relative to calling Python file)
-            snippets: Inline code (filename -> code)
             static_files: Static files (output name -> source path)
             exports: Exports as (name, kind, source) tuples
             worker_entries: Worker entry points (name -> relative path)
@@ -258,7 +253,6 @@ class ModuleRegistry:
             name=name,
             packages=packages or {},
             files=expanded_files,
-            snippets=snippets or {},
             static_files=expanded_static,
             exports=module_exports,
             worker_entries=worker_entries or {},

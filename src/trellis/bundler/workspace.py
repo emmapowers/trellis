@@ -1,14 +1,12 @@
-"""Workspace staging and code generation for bundle building.
+"""Workspace utilities and code generation for bundle building.
 
-Stages registered modules into a project-specific workspace and generates
-the _registry.ts wiring file that connects everything together.
+Provides workspace management and generates the _registry.ts wiring file
+that connects all registered modules together.
 """
 
 from __future__ import annotations
 
 import hashlib
-import json
-import shutil
 from pathlib import Path
 
 from .registry import CollectedModules, ExportKind
@@ -46,63 +44,23 @@ def get_project_workspace(entry_point: Path) -> Path:
     return workspace
 
 
-def stage_workspace(
-    workspace: Path,
-    collected: CollectedModules,
-    entry_point: Path,
-) -> None:
-    """Stage all modules into a workspace directory.
+def write_registry_ts(workspace: Path, collected: CollectedModules) -> Path:
+    """Generate and write the _registry.ts wiring file.
 
-    Creates the following structure:
-        workspace/
-            staged/
-                module-name/
-                    ... files and snippets
-            entry.tsx
-            _registry.ts
+    Creates the workspace directory if needed and writes _registry.ts.
 
     Args:
-        workspace: Root workspace directory
-        collected: Collected modules to stage
-        entry_point: Entry point file to copy
+        workspace: Workspace directory to write to
+        collected: Collected modules with exports to register
+
+    Returns:
+        Path to the written _registry.ts file
     """
-    staged_dir = workspace / "staged"
-
-    # Clean out old staged files to avoid stale modules from previous builds
-    if staged_dir.exists():
-        shutil.rmtree(staged_dir)
-    staged_dir.mkdir(parents=True, exist_ok=True)
-
-    # Stage each module
-    for module in collected.modules:
-        module_dir = staged_dir / module.name
-        module_dir.mkdir(parents=True, exist_ok=True)
-
-        # Copy files from module's base path
-        if module._base_path:
-            for file_path in module.files:
-                src = module._base_path / file_path
-                dst = module_dir / file_path
-                dst.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src, dst)
-
-        # Write snippets as files
-        for filename, code in module.snippets.items():
-            dst = module_dir / filename
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            dst.write_text(code)
-
-    # Copy entry point to workspace root
-    workspace_entry = workspace / "entry.tsx"
-    shutil.copy2(entry_point, workspace_entry)
-
-    # Generate and write _registry.ts
+    workspace.mkdir(parents=True, exist_ok=True)
+    registry_path = workspace / "_registry.ts"
     registry_code = generate_registry_ts(collected)
-    (staged_dir / "_registry.ts").write_text(registry_code)
-
-    # Generate and write tsconfig.json
-    tsconfig = generate_tsconfig(collected)
-    (workspace / "tsconfig.json").write_text(tsconfig)
+    registry_path.write_text(registry_code)
+    return registry_path
 
 
 def generate_registry_ts(collected: CollectedModules) -> str:
@@ -183,37 +141,3 @@ def generate_registry_ts(collected: CollectedModules) -> str:
     lines.append("")
 
     return "\n".join(lines)
-
-
-def generate_tsconfig(collected: CollectedModules) -> str:
-    """Generate tsconfig.json with path aliases for IDE support.
-
-    Args:
-        collected: Collected modules
-
-    Returns:
-        JSON string for tsconfig.json
-    """
-    paths: dict[str, list[str]] = {
-        "@trellis/_registry": ["./staged/_registry.ts"],
-    }
-
-    for module in collected.modules:
-        paths[f"@trellis/{module.name}/*"] = [f"./staged/{module.name}/*"]
-
-    config = {
-        "compilerOptions": {
-            "target": "ES2022",
-            "module": "ESNext",
-            "moduleResolution": "bundler",
-            "jsx": "react-jsx",
-            "strict": True,
-            "esModuleInterop": True,
-            "skipLibCheck": True,
-            "baseUrl": ".",
-            "paths": paths,
-        },
-        "include": ["staged/**/*", "entry.tsx"],
-    }
-
-    return json.dumps(config, indent=2) + "\n"
