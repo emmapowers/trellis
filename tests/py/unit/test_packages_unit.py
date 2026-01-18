@@ -59,192 +59,179 @@ class TestGeneratePackageJson:
         assert result["dependencies"]["@tauri-apps/api"] == "2.8.0"
 
 
-class TestGetPackagesHash:
-    """Tests for get_packages_hash function."""
-
-    def test_same_packages_same_hash(self) -> None:
-        """Identical packages produce identical hash."""
-        from trellis.bundler.packages import get_packages_hash
-
-        packages = {"react": "18.3.1", "react-dom": "18.3.1"}
-
-        hash1 = get_packages_hash(packages)
-        hash2 = get_packages_hash(packages)
-
-        assert hash1 == hash2
-
-    def test_different_packages_different_hash(self) -> None:
-        """Different packages produce different hash."""
-        from trellis.bundler.packages import get_packages_hash
-
-        hash1 = get_packages_hash({"react": "18.3.1"})
-        hash2 = get_packages_hash({"react": "18.3.0"})
-
-        assert hash1 != hash2
-
-    def test_order_independent(self) -> None:
-        """Package order doesn't affect hash."""
-        from trellis.bundler.packages import get_packages_hash
-
-        # Different insertion order, same content
-        packages1 = {"a": "1.0.0", "b": "2.0.0"}
-        packages2 = {"b": "2.0.0", "a": "1.0.0"}
-
-        assert get_packages_hash(packages1) == get_packages_hash(packages2)
-
-    def test_returns_hex_string(self) -> None:
-        """Returns a valid hex string."""
-        from trellis.bundler.packages import get_packages_hash
-
-        result = get_packages_hash({"react": "18.3.1"})
-
-        assert isinstance(result, str)
-        # Should be valid hex (no exception)
-        int(result, 16)
-
-
 class TestEnsurePackages:
     """Tests for ensure_packages function using Bun."""
 
-    def test_returns_node_modules_path(self, tmp_path: Path) -> None:
-        """Returns path to node_modules directory."""
+    def test_requires_workspace_parameter(self, tmp_path: Path) -> None:
+        """ensure_packages requires a workspace parameter."""
         from trellis.bundler.packages import ensure_packages
 
         workspace = tmp_path / "workspace"
-        node_modules = workspace / "node_modules"
-        node_modules.mkdir(parents=True)
+        workspace.mkdir()
 
-        with patch("trellis.bundler.packages.CACHE_DIR", tmp_path):
-            with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
-                with patch("subprocess.run") as mock_run:
-                    mock_bun.return_value = Path("/fake/bun")
-                    mock_run.return_value = MagicMock(returncode=0)
+        with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
+            mock_bun.return_value = tmp_path / "bun"
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0)
 
-                    # Pre-create the workspace structure
-                    with patch(
-                        "trellis.bundler.packages.get_packages_hash",
-                        return_value="abc123",
-                    ):
-                        ws = tmp_path / "workspaces" / "abc123"
-                        ws.mkdir(parents=True)
-                        (ws / "node_modules").mkdir()
-                        (ws / "bun.lock").touch()
+                # Should accept workspace parameter and return None
+                result = ensure_packages({"react": "18.3.1"}, workspace)
 
-                        result = ensure_packages({"react": "18.3.1"})
+                assert result is None
 
-        assert result.name == "node_modules"
-
-    def test_skips_install_if_lockfile_exists(self, tmp_path: Path) -> None:
-        """Skips bun install if bun.lock already exists."""
+    def test_installs_in_provided_workspace(self, tmp_path: Path) -> None:
+        """Installs packages directly in the provided workspace."""
         from trellis.bundler.packages import ensure_packages
 
-        with patch("trellis.bundler.packages.CACHE_DIR", tmp_path):
-            with patch("trellis.bundler.packages.get_packages_hash", return_value="cached123"):
-                # Pre-create cached workspace with lockfile
-                ws = tmp_path / "workspaces" / "cached123"
-                ws.mkdir(parents=True)
-                (ws / "bun.lock").touch()
-                (ws / "node_modules").mkdir()
+        workspace = tmp_path / "my_workspace"
+        workspace.mkdir()
 
-                with patch("subprocess.run") as mock_run:
-                    ensure_packages({"react": "18.3.1"})
+        with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
+            mock_bun.return_value = tmp_path / "bun"
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0)
 
-                # Should NOT have called subprocess (bun install)
-                mock_run.assert_not_called()
+                ensure_packages({"react": "18.3.1"}, workspace)
 
-    def test_runs_bun_install_if_no_lockfile(self, tmp_path: Path) -> None:
+                # Should run bun install in the provided workspace
+                call_kwargs = mock_run.call_args[1]
+                assert call_kwargs["cwd"] == workspace
+
+    def test_returns_none(self, tmp_path: Path) -> None:
+        """Returns None (caller constructs node_modules path from workspace)."""
+        from trellis.bundler.packages import ensure_packages
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
+            mock_bun.return_value = tmp_path / "bun"
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0)
+
+                result = ensure_packages({"react": "18.3.1"}, workspace)
+
+        assert result is None
+
+    def test_skips_install_if_package_json_unchanged(self, tmp_path: Path) -> None:
+        """Skips bun install if package.json already has same content."""
+        from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        packages = {"react": "18.3.1"}
+        all_packages = {**SYSTEM_PACKAGES, **packages}
+
+        # Pre-create package.json with same content
+        pkg_json = {
+            "name": "trellis-client",
+            "private": True,
+            "dependencies": all_packages,
+        }
+        (workspace / "package.json").write_text(json.dumps(pkg_json, indent=2))
+        (workspace / "bun.lock").touch()
+        (workspace / "node_modules").mkdir()
+
+        with patch("subprocess.run") as mock_run:
+            ensure_packages(packages, workspace)
+
+        # Should NOT have called subprocess (bun install)
+        mock_run.assert_not_called()
+
+    def test_runs_install_if_package_json_differs(self, tmp_path: Path) -> None:
+        """Runs bun install if package.json has different content."""
+        from trellis.bundler.packages import ensure_packages
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        # Pre-create package.json with different content
+        (workspace / "package.json").write_text('{"dependencies": {"old": "1.0.0"}}')
+        (workspace / "bun.lock").touch()
+        (workspace / "node_modules").mkdir()
+
+        with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
+            mock_bun.return_value = tmp_path / "bun"
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0)
+
+                ensure_packages({"react": "18.3.1"}, workspace)
+
+        # Should have called bun install
+        mock_run.assert_called_once()
+
+    def test_runs_install_if_no_lockfile(self, tmp_path: Path) -> None:
         """Runs bun install if no bun.lock exists."""
         from trellis.bundler.packages import ensure_packages
 
-        with patch("trellis.bundler.packages.CACHE_DIR", tmp_path):
-            with patch("trellis.bundler.packages.get_packages_hash", return_value="new123"):
-                with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
-                    mock_bun.return_value = tmp_path / "bun"
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
 
-                    with patch("subprocess.run") as mock_run:
-                        mock_run.return_value = MagicMock(returncode=0)
+        with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
+            mock_bun.return_value = tmp_path / "bun"
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0)
 
-                        # Create node_modules that bun install would create
-                        ws = tmp_path / "workspaces" / "new123"
+                ensure_packages({"react": "18.3.1"}, workspace)
 
-                        def create_node_modules(*args, **kwargs):
-                            ws.mkdir(parents=True, exist_ok=True)
-                            (ws / "node_modules").mkdir(exist_ok=True)
-                            (ws / "bun.lock").touch()
-                            return MagicMock(returncode=0)
-
-                        mock_run.side_effect = create_node_modules
-
-                        ensure_packages({"react": "18.3.1"})
-
-                # Should have called bun install
-                mock_run.assert_called_once()
-                call_args = mock_run.call_args
-                cmd = call_args[0][0]
-                assert "install" in cmd
+        # Should have called bun install
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args
+        cmd = call_args[0][0]
+        assert "install" in cmd
 
     def test_writes_package_json_before_install(self, tmp_path: Path) -> None:
         """Writes package.json to workspace before running bun install."""
         from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages
 
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
         packages = {"react": "18.3.1", "lodash": "4.17.21"}
         expected_packages = {**SYSTEM_PACKAGES, **packages}
 
-        with patch("trellis.bundler.packages.CACHE_DIR", tmp_path):
-            with patch("trellis.bundler.packages.get_packages_hash", return_value="write123"):
-                with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
-                    mock_bun.return_value = tmp_path / "bun"
+        with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
+            mock_bun.return_value = tmp_path / "bun"
 
-                    with patch("subprocess.run") as mock_run:
-                        ws = tmp_path / "workspaces" / "write123"
+            with patch("subprocess.run") as mock_run:
 
-                        def create_artifacts(*args, **kwargs):
-                            # Verify package.json was written before install
-                            pkg_json = ws / "package.json"
-                            assert pkg_json.exists(), "package.json should exist before bun install"
-                            content = json.loads(pkg_json.read_text())
-                            # Should include both user packages and SYSTEM_PACKAGES
-                            assert content["dependencies"] == expected_packages
-                            (ws / "node_modules").mkdir(exist_ok=True)
-                            (ws / "bun.lock").touch()
-                            return MagicMock(returncode=0)
+                def verify_package_json(*args, **kwargs):
+                    # Verify package.json was written before install
+                    pkg_json = workspace / "package.json"
+                    assert pkg_json.exists(), "package.json should exist before bun install"
+                    content = json.loads(pkg_json.read_text())
+                    # Should include both user packages and SYSTEM_PACKAGES
+                    assert content["dependencies"] == expected_packages
+                    return MagicMock(returncode=0)
 
-                        mock_run.side_effect = create_artifacts
+                mock_run.side_effect = verify_package_json
 
-                        ensure_packages(packages)
+                ensure_packages(packages, workspace)
 
     def test_uses_correct_bun_command(self, tmp_path: Path) -> None:
         """Runs bun install with correct arguments."""
         from trellis.bundler.packages import ensure_packages
 
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
         bun_path = tmp_path / "bin" / "bun"
 
-        with patch("trellis.bundler.packages.CACHE_DIR", tmp_path):
-            with patch("trellis.bundler.packages.get_packages_hash", return_value="cmd123"):
-                with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
-                    mock_bun.return_value = bun_path
+        with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
+            mock_bun.return_value = bun_path
 
-                    with patch("subprocess.run") as mock_run:
-                        ws = tmp_path / "workspaces" / "cmd123"
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0)
 
-                        def create_artifacts(*args, **kwargs):
-                            ws.mkdir(parents=True, exist_ok=True)
-                            (ws / "node_modules").mkdir(exist_ok=True)
-                            (ws / "bun.lock").touch()
-                            return MagicMock(returncode=0)
+                ensure_packages({"react": "18.3.1"}, workspace)
 
-                        mock_run.side_effect = create_artifacts
+            call_args = mock_run.call_args
+            cmd = call_args[0][0]
+            kwargs = call_args[1]
 
-                        ensure_packages({"react": "18.3.1"})
-
-                call_args = mock_run.call_args
-                cmd = call_args[0][0]
-                kwargs = call_args[1]
-
-                assert cmd[0] == str(bun_path)
-                assert "install" in cmd
-                # Should run in workspace directory
-                assert kwargs.get("cwd") is not None
+            assert cmd[0] == str(bun_path)
+            assert "install" in cmd
+            assert kwargs["cwd"] == workspace
 
 
 class TestSystemPackages:
@@ -275,30 +262,27 @@ class TestSystemPackages:
         """ensure_packages automatically includes SYSTEM_PACKAGES."""
         from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages
 
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
         user_packages = {"react": "18.3.1"}
 
-        with patch("trellis.bundler.packages.CACHE_DIR", tmp_path):
-            with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
-                mock_bun.return_value = tmp_path / "bun"
+        with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
+            mock_bun.return_value = tmp_path / "bun"
 
-                written_packages: dict[str, str] = {}
+            written_packages: dict[str, str] = {}
 
-                def capture_and_create(*args, **kwargs):
-                    # Read the package.json that was written
-                    ws = kwargs.get("cwd")
-                    if ws:
-                        pkg_json = Path(ws) / "package.json"
-                        if pkg_json.exists():
-                            content = json.loads(pkg_json.read_text())
-                            written_packages.update(content.get("dependencies", {}))
-                    # Create artifacts
-                    Path(ws).mkdir(parents=True, exist_ok=True)
-                    (Path(ws) / "node_modules").mkdir(exist_ok=True)
-                    (Path(ws) / "bun.lock").touch()
-                    return MagicMock(returncode=0)
+            def capture_and_create(*args, **kwargs):
+                # Read the package.json that was written
+                ws = kwargs.get("cwd")
+                if ws:
+                    pkg_json = Path(ws) / "package.json"
+                    if pkg_json.exists():
+                        content = json.loads(pkg_json.read_text())
+                        written_packages.update(content.get("dependencies", {}))
+                return MagicMock(returncode=0)
 
-                with patch("subprocess.run", side_effect=capture_and_create):
-                    ensure_packages(user_packages)
+            with patch("subprocess.run", side_effect=capture_and_create):
+                ensure_packages(user_packages, workspace)
 
         # Should include both user packages and system packages
         assert "react" in written_packages

@@ -106,21 +106,15 @@ def build_from_registry(
     # Generate _registry.ts wiring file
     registry_path = write_registry_ts(workspace, collected)
 
-    # Ensure dependencies
+    # Ensure dependencies (installed directly in workspace)
     packages = dict(collected.packages)
-    node_modules = ensure_packages(packages)
+    ensure_packages(packages, workspace)
+    node_modules = workspace / "node_modules"
     esbuild = get_bin(node_modules, "esbuild")
 
-    # Use NODE_PATH env var to resolve from our cached packages
+    # Use NODE_PATH env var to resolve from our packages
     env = os.environ.copy()
     env["NODE_PATH"] = str(node_modules)
-
-    # Symlink node_modules into workspace for tsc type resolution
-    workspace_node_modules = workspace / "node_modules"
-    if workspace_node_modules.is_symlink():
-        workspace_node_modules.unlink()
-    if not workspace_node_modules.exists():
-        workspace_node_modules.symlink_to(node_modules)
 
     # Note: Type-checking is currently disabled since we removed workspace staging.
     # The tsc needs a tsconfig.json to work, which we no longer generate.

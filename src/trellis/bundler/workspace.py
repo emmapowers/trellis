@@ -10,6 +10,7 @@ import hashlib
 from pathlib import Path
 
 from .registry import CollectedModules, ExportKind
+from .utils import find_project_root
 
 
 def get_project_hash(entry_point: Path) -> str:
@@ -28,8 +29,9 @@ def get_project_hash(entry_point: Path) -> str:
 def get_project_workspace(entry_point: Path) -> Path:
     """Get the workspace directory for a project.
 
-    The workspace is a cache directory identified by a hash of the entry point path.
-    This ensures each project gets its own isolated build workspace.
+    The workspace is in a .trellis directory at the project root,
+    identified by a hash of the entry point path. This ensures each
+    entry point gets its own isolated build workspace.
 
     Args:
         entry_point: Path to the project's entry point file
@@ -37,9 +39,9 @@ def get_project_workspace(entry_point: Path) -> Path:
     Returns:
         Path to the project's workspace directory (created if needed)
     """
-    cache_dir = Path.home() / ".cache" / "trellis" / "projects"
+    project_root = find_project_root(entry_point)
     project_hash = get_project_hash(entry_point)
-    workspace = cache_dir / project_hash
+    workspace = project_root / ".trellis" / project_hash
     workspace.mkdir(parents=True, exist_ok=True)
     return workspace
 
