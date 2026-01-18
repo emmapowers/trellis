@@ -14,26 +14,28 @@ from tests.helpers import requires_pytauri
 from trellis.bundler.workspace import get_project_workspace
 
 
-class TestEnsureEsbuild:
-    def test_downloads_esbuild_binary(self) -> None:
-        """Downloads esbuild binary from npm registry."""
-        from trellis.bundler.esbuild import ensure_esbuild, get_platform
-        from trellis.bundler.utils import BIN_DIR, ESBUILD_VERSION
-
-        plat = get_platform()
-        binary_name = "esbuild.exe" if plat.startswith("win32") else "esbuild"
-        expected_path = (
-            BIN_DIR / f"esbuild-{ESBUILD_VERSION}-{plat}" / "package" / "bin" / binary_name
-        )
-
-        result = ensure_esbuild()
-
-        assert result.exists()
-        assert result == expected_path
-        assert result.stat().st_mode & 0o111  # Is executable
-
-
 class TestEnsurePackages:
+    def test_installs_system_packages_including_esbuild(self) -> None:
+        """SYSTEM_PACKAGES (esbuild, typescript) are automatically installed."""
+        from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages, get_bin
+
+        # Empty user packages - only system packages will be installed
+        node_modules = ensure_packages({})
+
+        # esbuild binary should be accessible
+        esbuild = get_bin(node_modules, "esbuild")
+        assert esbuild.exists(), f"esbuild binary not found at {esbuild}"
+        assert esbuild.stat().st_mode & 0o111, "esbuild should be executable"
+
+        # tsc binary should be accessible
+        tsc = get_bin(node_modules, "tsc")
+        assert tsc.exists(), f"tsc binary not found at {tsc}"
+
+        # All system packages should be in node_modules
+        for pkg in SYSTEM_PACKAGES:
+            pkg_dir = node_modules / pkg
+            assert pkg_dir.exists(), f"System package {pkg} not found"
+
     def test_installs_packages_with_bun(self) -> None:
         """Installs packages using Bun and creates node_modules."""
         from trellis.bundler import registry

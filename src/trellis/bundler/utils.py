@@ -5,7 +5,6 @@ from __future__ import annotations
 import tarfile
 from pathlib import Path
 
-ESBUILD_VERSION = "0.27.2"
 BUN_VERSION = "1.3.5"
 CACHE_DIR = Path.home() / ".cache" / "trellis"
 BIN_DIR = CACHE_DIR / "bin"

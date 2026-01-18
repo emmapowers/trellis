@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from trellis.bundler.packages import SYSTEM_PACKAGES
 from trellis.bundler.registry import ModuleRegistry
 
 
@@ -16,14 +17,14 @@ class TestRegistryBuildBundle:
     @pytest.fixture
     def mock_esbuild_env(self):
         """Mock esbuild and package fetching."""
-        with patch("trellis.bundler.build.ensure_esbuild") as mock_esbuild:
-            with patch("trellis.bundler.build.ensure_packages") as mock_packages:
+        with patch("trellis.bundler.build.ensure_packages") as mock_packages:
+            with patch("trellis.bundler.build.get_bin") as mock_get_bin:
                 with patch("subprocess.run") as mock_run:
-                    mock_esbuild.return_value = Path("/fake/esbuild")
                     mock_packages.return_value = Path("/fake/node_modules")
+                    mock_get_bin.return_value = Path("/fake/esbuild")
                     mock_run.return_value = MagicMock(returncode=0)
                     yield {
-                        "esbuild": mock_esbuild,
+                        "get_bin": mock_get_bin,
                         "packages": mock_packages,
                         "run": mock_run,
                     }
@@ -241,14 +242,14 @@ class TestTypescriptTypeChecking:
     @pytest.fixture
     def mock_build_env(self):
         """Mock esbuild, tsc, and package fetching."""
-        with patch("trellis.bundler.build.ensure_esbuild") as mock_esbuild:
-            with patch("trellis.bundler.build.ensure_packages") as mock_packages:
+        with patch("trellis.bundler.build.ensure_packages") as mock_packages:
+            with patch("trellis.bundler.build.get_bin") as mock_get_bin:
                 with patch("subprocess.run") as mock_run:
-                    mock_esbuild.return_value = Path("/fake/esbuild")
                     mock_packages.return_value = Path("/fake/node_modules")
+                    mock_get_bin.return_value = Path("/fake/esbuild")
                     mock_run.return_value = MagicMock(returncode=0)
                     yield {
-                        "esbuild": mock_esbuild,
+                        "get_bin": mock_get_bin,
                         "packages": mock_packages,
                         "run": mock_run,
                     }
@@ -369,35 +370,8 @@ class TestTypescriptTypeChecking:
 
         assert "TypeScript type-checking failed" in caplog.text
 
-    def test_includes_typescript_in_packages(self, tmp_path: Path, mock_build_env) -> None:
-        """build_from_registry includes typescript package when typecheck=True."""
-        from trellis.bundler.build import build_from_registry
-
-        entry_point = tmp_path / "app.tsx"
-        entry_point.write_text("// entry")
-
-        registry = ModuleRegistry()
-        registry.register("test-module", packages={"react": "18.2.0"})
-
-        workspace = tmp_path / "workspace"
-
-        def create_outputs(cmd, *args, **kwargs):
-            dist = workspace / "dist"
-            dist.mkdir(parents=True, exist_ok=True)
-            (dist / "bundle.js").write_text("// bundle")
-            (dist / "bundle.css").write_text("/* css */")
-            return MagicMock(returncode=0)
-
-        mock_build_env["run"].side_effect = create_outputs
-
-        build_from_registry(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            force=True,
-        )
-
-        # Check that ensure_packages was called with typescript
-        call_args = mock_build_env["packages"].call_args
-        packages = call_args[0][0]
-        assert "typescript" in packages
+    def test_typescript_included_via_system_packages(self) -> None:
+        """TypeScript is included via SYSTEM_PACKAGES (always installed)."""
+        # Verify typescript is in SYSTEM_PACKAGES (build.py no longer passes it explicitly)
+        assert "typescript" in SYSTEM_PACKAGES
+        assert "esbuild" in SYSTEM_PACKAGES

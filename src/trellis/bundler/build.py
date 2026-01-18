@@ -10,17 +10,13 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .esbuild import ensure_esbuild
-from .packages import ensure_packages
+from .packages import ensure_packages, get_bin
 from .workspace import write_registry_ts
 
 if TYPE_CHECKING:
     from .registry import ModuleRegistry
 
 logger = logging.getLogger(__name__)
-
-# TypeScript version for type-checking (build-time dependency)
-TYPESCRIPT_VERSION = "5.7.3"
 
 
 def is_rebuild_needed(inputs: Iterable[Path], outputs: Iterable[Path]) -> bool:
@@ -110,14 +106,10 @@ def build_from_registry(
     # Generate _registry.ts wiring file
     registry_path = write_registry_ts(workspace, collected)
 
-    # Add typescript to packages if type-checking is enabled
-    packages = dict(collected.packages)
-    if typecheck:
-        packages["typescript"] = TYPESCRIPT_VERSION
-
     # Ensure dependencies
-    esbuild = ensure_esbuild()
+    packages = dict(collected.packages)
     node_modules = ensure_packages(packages)
+    esbuild = get_bin(node_modules, "esbuild")
 
     # Use NODE_PATH env var to resolve from our cached packages
     env = os.environ.copy()

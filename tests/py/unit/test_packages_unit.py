@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestGeneratePackageJson:
@@ -182,9 +185,10 @@ class TestEnsurePackages:
 
     def test_writes_package_json_before_install(self, tmp_path: Path) -> None:
         """Writes package.json to workspace before running bun install."""
-        from trellis.bundler.packages import ensure_packages
+        from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages
 
         packages = {"react": "18.3.1", "lodash": "4.17.21"}
+        expected_packages = {**SYSTEM_PACKAGES, **packages}
 
         with patch("trellis.bundler.packages.CACHE_DIR", tmp_path):
             with patch("trellis.bundler.packages.get_packages_hash", return_value="write123"):
@@ -199,7 +203,8 @@ class TestEnsurePackages:
                             pkg_json = ws / "package.json"
                             assert pkg_json.exists(), "package.json should exist before bun install"
                             content = json.loads(pkg_json.read_text())
-                            assert content["dependencies"] == packages
+                            # Should include both user packages and SYSTEM_PACKAGES
+                            assert content["dependencies"] == expected_packages
                             (ws / "node_modules").mkdir(exist_ok=True)
                             (ws / "bun.lock").touch()
                             return MagicMock(returncode=0)
@@ -240,3 +245,100 @@ class TestEnsurePackages:
                 assert "install" in cmd
                 # Should run in workspace directory
                 assert kwargs.get("cwd") is not None
+
+
+class TestSystemPackages:
+    """Tests for SYSTEM_PACKAGES constant."""
+
+    def test_system_packages_exists(self) -> None:
+        """SYSTEM_PACKAGES constant is defined."""
+        from trellis.bundler.packages import SYSTEM_PACKAGES
+
+        assert isinstance(SYSTEM_PACKAGES, dict)
+
+    def test_system_packages_includes_esbuild(self) -> None:
+        """SYSTEM_PACKAGES includes esbuild."""
+        from trellis.bundler.packages import SYSTEM_PACKAGES
+
+        assert "esbuild" in SYSTEM_PACKAGES
+        # Version should be a string like "0.27.2"
+        assert isinstance(SYSTEM_PACKAGES["esbuild"], str)
+
+    def test_system_packages_includes_typescript(self) -> None:
+        """SYSTEM_PACKAGES includes typescript."""
+        from trellis.bundler.packages import SYSTEM_PACKAGES
+
+        assert "typescript" in SYSTEM_PACKAGES
+        assert isinstance(SYSTEM_PACKAGES["typescript"], str)
+
+    def test_ensure_packages_includes_system_packages(self, tmp_path: Path) -> None:
+        """ensure_packages automatically includes SYSTEM_PACKAGES."""
+        from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages
+
+        user_packages = {"react": "18.3.1"}
+
+        with patch("trellis.bundler.packages.CACHE_DIR", tmp_path):
+            with patch("trellis.bundler.packages.ensure_bun") as mock_bun:
+                mock_bun.return_value = tmp_path / "bun"
+
+                written_packages: dict[str, str] = {}
+
+                def capture_and_create(*args, **kwargs):
+                    # Read the package.json that was written
+                    ws = kwargs.get("cwd")
+                    if ws:
+                        pkg_json = Path(ws) / "package.json"
+                        if pkg_json.exists():
+                            content = json.loads(pkg_json.read_text())
+                            written_packages.update(content.get("dependencies", {}))
+                    # Create artifacts
+                    Path(ws).mkdir(parents=True, exist_ok=True)
+                    (Path(ws) / "node_modules").mkdir(exist_ok=True)
+                    (Path(ws) / "bun.lock").touch()
+                    return MagicMock(returncode=0)
+
+                with patch("subprocess.run", side_effect=capture_and_create):
+                    ensure_packages(user_packages)
+
+        # Should include both user packages and system packages
+        assert "react" in written_packages
+        for pkg in SYSTEM_PACKAGES:
+            assert pkg in written_packages, f"SYSTEM_PACKAGES[{pkg}] missing"
+
+
+class TestGetBin:
+    """Tests for get_bin() function to locate bun-installed binaries."""
+
+    def test_get_bin_returns_path_to_binary(self, tmp_path: Path) -> None:
+        """get_bin returns path to binary in node_modules/.bin/."""
+        from trellis.bundler.packages import get_bin
+
+        node_modules = tmp_path / "node_modules"
+        node_modules.mkdir()
+        bin_dir = node_modules / ".bin"
+        bin_dir.mkdir()
+
+        result = get_bin(node_modules, "esbuild")
+
+        assert result == node_modules / ".bin" / "esbuild"
+
+    def test_get_bin_works_for_any_tool(self, tmp_path: Path) -> None:
+        """get_bin works for any tool name (tsc, esbuild, etc)."""
+        from trellis.bundler.packages import get_bin
+
+        node_modules = tmp_path / "node_modules"
+
+        assert get_bin(node_modules, "tsc") == node_modules / ".bin" / "tsc"
+        assert get_bin(node_modules, "esbuild") == node_modules / ".bin" / "esbuild"
+        assert get_bin(node_modules, "prettier") == node_modules / ".bin" / "prettier"
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows uses .cmd extension")
+    def test_get_bin_unix_path(self, tmp_path: Path) -> None:
+        """On Unix, get_bin returns path without extension."""
+        from trellis.bundler.packages import get_bin
+
+        node_modules = tmp_path / "node_modules"
+        result = get_bin(node_modules, "tsc")
+
+        assert result.name == "tsc"
+        assert ".cmd" not in str(result)

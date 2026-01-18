@@ -10,6 +10,25 @@ from pathlib import Path
 from .bun import ensure_bun
 from .utils import CACHE_DIR
 
+# System packages always installed with every build
+SYSTEM_PACKAGES: dict[str, str] = {
+    "esbuild": "0.27.2",
+    "typescript": "5.7.3",
+}
+
+
+def get_bin(node_modules: Path, name: str) -> Path:
+    """Get path to a binary installed in node_modules.
+
+    Args:
+        node_modules: Path to node_modules directory
+        name: Name of the binary (e.g., "esbuild", "tsc")
+
+    Returns:
+        Path to the binary in node_modules/.bin/
+    """
+    return node_modules / ".bin" / name
+
 
 def generate_package_json(packages: dict[str, str]) -> dict[str, object]:
     """Generate a package.json dict from packages.
@@ -57,7 +76,9 @@ def ensure_packages(packages: dict[str, str]) -> Path:
     Returns:
         Path to the node_modules directory
     """
-    pkg_hash = get_packages_hash(packages)
+    # Merge system packages with user packages (user can override versions)
+    all_packages = {**SYSTEM_PACKAGES, **packages}
+    pkg_hash = get_packages_hash(all_packages)
 
     workspace = CACHE_DIR / "workspaces" / pkg_hash
     lockfile = workspace / "bun.lock"
@@ -71,7 +92,7 @@ def ensure_packages(packages: dict[str, str]) -> Path:
     workspace.mkdir(parents=True, exist_ok=True)
 
     # Write package.json
-    pkg_json = generate_package_json(packages)
+    pkg_json = generate_package_json(all_packages)
     pkg_json_path = workspace / "package.json"
     pkg_json_path.write_text(json.dumps(pkg_json, indent=2))
 
