@@ -15,8 +15,11 @@ from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
 from pytauri_wheel.lib import builder_factory, context_factory
 from rich.console import Console
 
-from trellis.bundler import CORE_PACKAGES, DESKTOP_PACKAGES, BundleConfig, build_bundle
-from trellis.platforms.common.base import Platform
+from trellis.bundler import registry
+from trellis.bundler.build import build_from_registry
+from trellis.bundler.workspace import get_project_workspace
+from trellis.platforms.common.base import Platform, WatchConfig
+from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
 from trellis.utils.hot_reload import get_or_create_hot_reload
 
@@ -90,27 +93,27 @@ class DesktopPlatform(Platform):
         self,
         force: bool = False,
         extra_packages: dict[str, str] | None = None,
+        dest: Path | None = None,
+        library: bool = False,
     ) -> None:
         """Build the desktop client bundle if needed.
 
-        Output: platforms/desktop/client/dist/bundle.js + index.html
+        Uses the registry-based build system. The bundle is stored in a
+        cache workspace (or dest if specified).
         """
-        platforms_dir = Path(__file__).parent.parent
-        common_src_dir = platforms_dir / "common" / "client" / "src"
-        client_dir = Path(__file__).parent / "client"
-        dist_dir = client_dir / "dist"
-        index_path = dist_dir / "index.html"
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
 
-        config = BundleConfig(
-            name="desktop",
-            src_dir=client_dir / "src",
-            dist_dir=dist_dir,
-            packages={**CORE_PACKAGES, **DESKTOP_PACKAGES},
-            static_files={"index.html": client_dir / "src" / "index.html"},
-            extra_outputs=[index_path],
+        build_from_registry(registry, entry_point, workspace, force=force, output_dir=dest)
+
+    def get_watch_config(self) -> WatchConfig:
+        """Get configuration for watch mode."""
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        return WatchConfig(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=get_project_workspace(entry_point),
         )
-
-        build_bundle(config, common_src_dir, force, extra_packages)
 
     def _create_commands(self) -> Commands:
         """Create PyTauri commands with access to platform state via closure."""
@@ -126,6 +129,8 @@ class DesktopPlatform(Platform):
                 channel,
                 batch_delay=self._batch_delay,
             )
+            # Register handler for broadcast (e.g., reload messages)
+            get_global_registry().register(self._handler)
             self._handler_task = asyncio.create_task(self._handler.run())
             return "ok"
 
@@ -176,8 +181,14 @@ class DesktopPlatform(Platform):
 
         _print_startup_banner(window_title)
 
-        # Load Tauri configuration
+        # Load Tauri configuration with workspace dist path
         config_dir = Path(__file__).parent / "config"
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
+        dist_path = str(workspace / "dist")
+
+        # Override frontendDist to point to the workspace cache
+        config_override = {"build": {"frontendDist": dist_path}}
 
         # PyTauri runs its own event loop on main thread (app.run_return).
         # start_blocking_portal creates an asyncio event loop in a background thread,
@@ -192,7 +203,7 @@ class DesktopPlatform(Platform):
                 hr.start()
 
             app = builder_factory().build(
-                context=context_factory(config_dir),
+                context=context_factory(config_dir, tauri_config=config_override),
                 invoke_handler=commands.generate_handler(portal),
             )
 

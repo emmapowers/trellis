@@ -8,10 +8,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from dataclasses import dataclass
 from enum import StrEnum, auto
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from trellis.bundler.registry import ModuleRegistry
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
@@ -22,6 +25,23 @@ class PlatformType(StrEnum):
     SERVER = auto()
     DESKTOP = auto()
     BROWSER = auto()
+
+
+@dataclass
+class WatchConfig:
+    """Configuration for watch mode.
+
+    Returned by platforms that support automatic rebuilding on file changes.
+    """
+
+    registry: ModuleRegistry
+    """Module registry with registered modules."""
+
+    entry_point: Path
+    """Path to the entry point file."""
+
+    workspace: Path
+    """Workspace directory for staging and output."""
 
 
 class Platform(ABC):
@@ -52,12 +72,16 @@ class Platform(ABC):
         self,
         force: bool = False,
         extra_packages: dict[str, str] | None = None,
+        dest: Path | None = None,
+        library: bool = False,
     ) -> None:
         """Build the client bundle for this platform.
 
         Args:
             force: Force rebuild even if sources unchanged
             extra_packages: Additional npm packages beyond platform defaults
+            dest: Custom output directory (default: cache directory)
+            library: Build as library with exports (vs app that renders to DOM)
         """
         ...
 
@@ -77,6 +101,17 @@ class Platform(ABC):
         """
         ...
 
+    def get_watch_config(self) -> WatchConfig | None:
+        """Get configuration for watch mode.
+
+        Override in platforms that support automatic rebuilding on file changes.
+        Returns None by default (watch not supported).
+
+        Returns:
+            WatchConfig if watch is supported, None otherwise
+        """
+        return None
+
 
 class PlatformArgumentError(Exception):
     """Raised when a platform-specific argument is used with wrong platform."""
@@ -88,4 +123,5 @@ __all__ = [
     "Platform",
     "PlatformArgumentError",
     "PlatformType",
+    "WatchConfig",
 ]

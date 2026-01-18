@@ -14,6 +14,7 @@ export const MessageType = {
   HISTORY_BACK: "history_back",
   HISTORY_FORWARD: "history_forward",
   URL_CHANGED: "url_changed",
+  RELOAD: "reload",
 } as const;
 
 // ============================================================================
@@ -109,6 +110,11 @@ export interface UrlChangedMessage {
   path: string;
 }
 
+/** Reload message sent when bundle is rebuilt. */
+export interface ReloadMessage {
+  type: typeof MessageType.RELOAD;
+}
+
 export type Message =
   | HelloMessage
   | HelloResponseMessage
@@ -118,4 +124,5 @@ export type Message =
   | HistoryPushMessage
   | HistoryBackMessage
   | HistoryForwardMessage
-  | UrlChangedMessage;
+  | UrlChangedMessage
+  | ReloadMessage;

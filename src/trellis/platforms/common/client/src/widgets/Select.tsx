@@ -77,7 +77,7 @@ function ListBox({
   onClose,
 }: {
   state: ReturnType<typeof useSelectState>;
-  listBoxRef: React.RefObject<HTMLUListElement | null>;
+  listBoxRef: React.RefObject<HTMLUListElement>;
   onClose: () => void;
 }) {
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -123,7 +123,7 @@ function ListBox({
 
 function Option({ item, state }: { item: { key: React.Key; rendered: React.ReactNode }; state: ReturnType<typeof useSelectState> }) {
   const ref = useRef<HTMLLIElement>(null);
-  const { optionProps, isSelected, isFocused } = useOption({ key: item.key }, state, ref);
+  const { optionProps, isSelected, isFocused } = useOption({ key: item.key as string | number }, state, ref);
   const [isHovered, setIsHovered] = React.useState(false);
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLLIElement>) => {
@@ -190,8 +190,7 @@ export function Select({
       selectedKey: value,
       onSelectionChange: (key) => setValue?.(key as string),
       isDisabled: disabled,
-      children: items.map((item) => <Item key={item.key}>{item.label}</Item>),
-    },
+    } as Parameters<typeof useSelect>[0],
     state,
     triggerRef
   );

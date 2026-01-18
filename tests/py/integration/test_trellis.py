@@ -1,11 +1,11 @@
 """Tests for Trellis unified entry point."""
 
 import sys
-from importlib.util import find_spec
 from unittest.mock import patch
 
 import pytest
 
+from tests.helpers import requires_pytauri
 from trellis.app.entry import (
     Trellis,
     _detect_platform,
@@ -13,12 +13,6 @@ from trellis.app.entry import (
     _TrellisArgs,
 )
 from trellis.platforms.common.base import PlatformArgumentError, PlatformType
-
-# Skip marker for tests that require pytauri (desktop platform)
-requires_pytauri = pytest.mark.skipif(
-    find_spec("pytauri") is None,
-    reason="pytauri not installed",
-)
 
 
 class TestTrellisArgs:

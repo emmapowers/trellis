@@ -1,7 +1,7 @@
 # Makefile for trellis build artifacts
 # Use with pixi: pixi run make <target>
 
-.PHONY: all clean wheel bundles server-bundle desktop-bundle browser-bundle \
+.PHONY: all clean wheel bundles server-bundle desktop-bundle browser-bundle browser-lib \
         api-docs example-pages playground docs
 
 # Directories
@@ -13,6 +13,7 @@ DESKTOP_DIST := $(PLATFORMS)/desktop/client/dist
 BROWSER_DIST := $(PLATFORMS)/browser/client/dist
 DOCS := docs
 DOCS_STATIC := $(DOCS)/static
+TRELLIS_LIB := $(DOCS_STATIC)/trellis
 
 # Source file patterns
 PY_SOURCES := $(shell find $(SRC) -name '*.py')
@@ -48,13 +49,21 @@ desktop-bundle: $(DESKTOP_DIST)/bundle.js
 browser-bundle: $(BROWSER_DIST)/bundle.js
 
 $(SERVER_DIST)/bundle.js: $(TS_SOURCES)
-	trellis bundle build --platform server
+	trellis bundle build --platform server --dest $(SERVER_DIST)
 
 $(DESKTOP_DIST)/bundle.js: $(TS_SOURCES)
-	trellis bundle build --platform desktop
+	trellis bundle build --platform desktop --dest $(DESKTOP_DIST)
 
 $(BROWSER_DIST)/bundle.js: $(TS_SOURCES)
-	trellis bundle build --platform browser
+	trellis bundle build --platform browser --dest $(BROWSER_DIST)
+
+#------------------------------------------------------------------------------
+# Browser library bundle (for playground and TrellisDemo)
+#------------------------------------------------------------------------------
+browser-lib: $(TRELLIS_LIB)/index.js
+
+$(TRELLIS_LIB)/index.js: $(TS_SOURCES)
+	trellis bundle build --platform browser --dest $(TRELLIS_LIB) --library
 
 #------------------------------------------------------------------------------
 # API documentation
@@ -93,7 +102,7 @@ $(DOCS_STATIC)/playground/node_modules: $(DOCS_STATIC)/playground/package.json
 	cd $(DOCS_STATIC)/playground && npm install
 	@touch $@
 
-$(DOCS_STATIC)/playground/dist/playground.js: $(BROWSER_DIST)/bundle.js dist/.wheel-built $(PLAYGROUND_SOURCES) $(DOCS_STATIC)/playground/node_modules
+$(DOCS_STATIC)/playground/dist/playground.js: $(TRELLIS_LIB)/index.js dist/.wheel-built $(PLAYGROUND_SOURCES) $(DOCS_STATIC)/playground/node_modules
 	cd $(DOCS_STATIC)/playground && npm run build
 
 #------------------------------------------------------------------------------
@@ -111,5 +120,6 @@ clean:
 	rm -f $(SERVER_DIST)/bundle.js $(SERVER_DIST)/bundle.css
 	rm -f $(DESKTOP_DIST)/bundle.js $(DESKTOP_DIST)/bundle.css
 	rm -f $(BROWSER_DIST)/bundle.js $(BROWSER_DIST)/bundle.css
+	rm -rf $(TRELLIS_LIB)
 	rm -rf $(DOCS_STATIC)/playground/dist
 	rm -rf $(DOCS)/build

@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "NODE_PATH=./node_modules esbuild src/main.tsx --bundle --outfile=dist/playground.js --format=esm --platform=browser --target=es2022 --jsx=automatic --loader:.tsx=tsx --loader:.ts=ts --loader:.worker-bundle=text --alias:decimal.js-light=decimal.js-light/decimal.mjs",
-    "watch": "NODE_PATH=./node_modules esbuild src/main.tsx --bundle --outfile=dist/playground.js --format=esm --platform=browser --target=es2022 --jsx=automatic --loader:.tsx=tsx --loader:.ts=ts --loader:.worker-bundle=text --alias:decimal.js-light=decimal.js-light/decimal.mjs --watch"
+    "build": "esbuild src/main.tsx --bundle --outfile=dist/playground.js --format=esm --platform=browser --target=es2022 --jsx=automatic --loader:.tsx=tsx --loader:.ts=ts --alias:decimal.js-light=decimal.js-light/decimal.mjs",
+    "watch": "esbuild src/main.tsx --bundle --outfile=dist/playground.js --format=esm --platform=browser --target=es2022 --jsx=automatic --loader:.tsx=tsx --loader:.ts=ts --alias:decimal.js-light=decimal.js-light/decimal.mjs --watch"
   },
   "dependencies": {
     "react": "^18.3.1",

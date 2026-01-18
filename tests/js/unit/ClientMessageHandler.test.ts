@@ -13,6 +13,7 @@ import {
   HistoryPushMessage,
   HistoryBackMessage,
   HistoryForwardMessage,
+  ReloadMessage,
 } from "@common/types";
 
 // Mock the store
@@ -201,6 +202,29 @@ describe("ClientMessageHandler", () => {
       handler.handleMessage(historyForward);
 
       expect(callbacks.onHistoryForward).toHaveBeenCalled();
+    });
+  });
+
+  describe("handleMessage - RELOAD", () => {
+    let locationReloadSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      // Mock window.location.reload
+      locationReloadSpy = vi.fn();
+      Object.defineProperty(window, "location", {
+        value: { reload: locationReloadSpy },
+        writable: true,
+      });
+    });
+
+    it("calls window.location.reload", () => {
+      const reloadMessage: ReloadMessage = {
+        type: MessageType.RELOAD,
+      };
+
+      handler.handleMessage(reloadMessage);
+
+      expect(locationReloadSpy).toHaveBeenCalled();
     });
   });
 

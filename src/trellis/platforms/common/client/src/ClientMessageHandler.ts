@@ -88,6 +88,11 @@ export class ClientMessageHandler {
         debugLog("messages", "HISTORY_FORWARD");
         this.callbacks.onHistoryForward?.();
         break;
+
+      case MessageType.RELOAD:
+        debugLog("messages", "Reload requested, refreshing page");
+        window.location.reload();
+        break;
     }
   }
 

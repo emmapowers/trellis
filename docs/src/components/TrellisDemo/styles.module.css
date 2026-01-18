@@ -95,3 +95,8 @@
   font-size: 0.875rem;
   white-space: pre-wrap;
 }
+
+/* Host element for shadow DOM mount */
+.trellisHost {
+  min-height: 60px;
+}

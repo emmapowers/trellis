@@ -8,18 +8,17 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from tests.helpers import requires_pytauri
+from trellis.bundler.workspace import get_project_workspace
+
 
 class TestEnsureEsbuild:
     def test_downloads_esbuild_binary(self) -> None:
         """Downloads esbuild binary from npm registry."""
-        from trellis.bundler import (
-            BIN_DIR,
-            ESBUILD_VERSION,
-            _get_platform,
-            ensure_esbuild,
-        )
+        from trellis.bundler.esbuild import ensure_esbuild, get_platform
+        from trellis.bundler.utils import BIN_DIR, ESBUILD_VERSION
 
-        plat = _get_platform()
+        plat = get_platform()
         binary_name = "esbuild.exe" if plat.startswith("win32") else "esbuild"
         expected_path = (
             BIN_DIR / f"esbuild-{ESBUILD_VERSION}-{plat}" / "package" / "bin" / binary_name
@@ -33,21 +32,35 @@ class TestEnsureEsbuild:
 
 
 class TestEnsurePackages:
-    def test_downloads_core_packages(self) -> None:
-        """Downloads core npm packages from registry."""
-        from trellis.bundler import CORE_PACKAGES, PACKAGES_DIR, ensure_packages
+    def test_installs_packages_with_bun(self) -> None:
+        """Installs packages using Bun and creates node_modules."""
+        from trellis.bundler import registry
+        from trellis.bundler.packages import ensure_packages
 
-        result = ensure_packages()
+        # Get packages from registry (common platform registers them)
+        collected = registry.collect()
+        packages = collected.packages
 
-        assert result == PACKAGES_DIR
-        for name in CORE_PACKAGES:
+        result = ensure_packages(packages)
+
+        # Result should be a node_modules directory
+        assert result.name == "node_modules"
+        assert result.exists()
+
+        # Check that direct dependencies are installed
+        for name in packages:
             if name.startswith("@"):
                 scope, pkg = name.split("/", 1)
-                pkg_dir = PACKAGES_DIR / scope / pkg
+                pkg_dir = result / scope / pkg
             else:
-                pkg_dir = PACKAGES_DIR / name
+                pkg_dir = result / name
             assert pkg_dir.exists(), f"Package {name} not found"
             assert (pkg_dir / "package.json").exists()
+
+        # Check that a lockfile was created (in parent workspace dir)
+        workspace = result.parent
+        assert (workspace / "bun.lock").exists()
+        assert (workspace / "package.json").exists()
 
 
 class TestServerPlatformBundle:
@@ -55,9 +68,11 @@ class TestServerPlatformBundle:
         """Builds client bundle successfully via ServerPlatform."""
         from trellis.platforms.server.platform import ServerPlatform
 
-        # Bundle is now at platforms/server/client/dist/
+        # Bundle is now in the cache workspace
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        bundle_path = platforms_dir / "server" / "client" / "dist" / "bundle.js"
+        entry_point = platforms_dir / "server" / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
+        bundle_path = workspace / "dist" / "bundle.js"
 
         # Force rebuild
         platform = ServerPlatform()
@@ -68,17 +83,16 @@ class TestServerPlatformBundle:
 
 
 class TestDesktopPlatformBundle:
+    @requires_pytauri
     def test_builds_bundle_and_copies_html(self) -> None:
         """Builds desktop bundle and copies static index.html."""
-        pytest = __import__("pytest")
-        try:
-            from trellis.platforms.desktop.platform import DesktopPlatform
-        except ImportError:
-            pytest.skip("pytauri not installed")
+        from trellis.platforms.desktop.platform import DesktopPlatform
 
-        # Bundle is at platforms/desktop/client/dist/
+        # Bundle is now in the cache workspace
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        dist_dir = platforms_dir / "desktop" / "client" / "dist"
+        entry_point = platforms_dir / "desktop" / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
+        dist_dir = workspace / "dist"
         bundle_path = dist_dir / "bundle.js"
         index_path = dist_dir / "index.html"
 
@@ -101,7 +115,9 @@ class TestBundleBuildCli:
     def test_bundle_build_server_succeeds(self) -> None:
         """Running `trellis bundle build --platform server --force` succeeds."""
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        server_bundle = platforms_dir / "server" / "client" / "dist" / "bundle.js"
+        entry_point = platforms_dir / "server" / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
+        server_bundle = workspace / "dist" / "bundle.js"
 
         mtime_before = server_bundle.stat().st_mtime if server_bundle.exists() else None
 
@@ -121,7 +137,9 @@ class TestBundleBuildCli:
     def test_bundle_build_browser_succeeds(self) -> None:
         """Running `trellis bundle build --platform browser --force` succeeds."""
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        browser_bundle = platforms_dir / "browser" / "client" / "dist" / "bundle.js"
+        entry_point = platforms_dir / "browser" / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
+        browser_bundle = workspace / "dist" / "bundle.js"
 
         mtime_before = browser_bundle.stat().st_mtime if browser_bundle.exists() else None
 
@@ -138,16 +156,13 @@ class TestBundleBuildCli:
         if mtime_before is not None:
             assert browser_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"
 
+    @requires_pytauri
     def test_bundle_build_desktop_succeeds(self) -> None:
         """Running `trellis bundle build --platform desktop --force` succeeds."""
-        pytest = __import__("pytest")
-        try:
-            import pytauri  # noqa: F401
-        except ImportError:
-            pytest.skip("pytauri not installed")
-
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        desktop_bundle = platforms_dir / "desktop" / "client" / "dist" / "bundle.js"
+        entry_point = platforms_dir / "desktop" / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
+        desktop_bundle = workspace / "dist" / "bundle.js"
 
         mtime_before = desktop_bundle.stat().st_mtime if desktop_bundle.exists() else None
 
@@ -163,3 +178,30 @@ class TestBundleBuildCli:
         assert desktop_bundle.stat().st_size > 0
         if mtime_before is not None:
             assert desktop_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"
+
+    def test_bundle_build_with_dest_option(self, tmp_path: Path) -> None:
+        """Running `trellis bundle build --dest <path>` outputs to specified directory."""
+        dest_dir = tmp_path / "custom_output"
+
+        result = subprocess.run(
+            [
+                "trellis",
+                "bundle",
+                "build",
+                "--platform",
+                "server",
+                "--force",
+                "--dest",
+                str(dest_dir),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert result.returncode == 0, f"Bundle build failed:\n{result.stderr}"
+
+        # Bundle should be directly in dest_dir
+        bundle_path = dest_dir / "bundle.js"
+        assert bundle_path.exists(), f"Bundle not found at {bundle_path}"
+        assert bundle_path.stat().st_size > 0

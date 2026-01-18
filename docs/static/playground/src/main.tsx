@@ -2,14 +2,12 @@
  * Trellis Playground
  *
  * A browser-based playground for experimenting with Trellis UI components.
- * Uses TrellisApp for Pyodide/React integration.
+ * Uses the Trellis library's mount() API for React isolation and shadow DOM.
  */
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createRoot } from "react-dom/client";
-import { TrellisApp } from "../../../../src/trellis/platforms/browser/client/src/TrellisApp";
-import { RoutingMode } from "../../../../src/trellis/platforms/common/client/src/RouterManager";
-import "../../../../src/trellis/platforms/common/client/src/theme.css";
+import type { TrellisInstance } from "../../trellis";
 
 // Monaco types (loaded from CDN)
 declare const require: {
@@ -126,11 +124,6 @@ function applyTheme(mode: ThemeMode): void {
   const resolved = resolveTheme(mode);
   // Apply to body (playground UI)
   document.body.dataset.theme = resolved;
-  // Apply to preview container (Trellis components)
-  const preview = document.getElementById("preview");
-  if (preview) {
-    preview.dataset.theme = resolved;
-  }
   // Update theme toggle button icon
   const toggleBtn = document.getElementById("theme-toggle");
   if (toggleBtn) {
@@ -151,6 +144,8 @@ function Playground(): React.ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [editorReady, setEditorReady] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemeMode>("system");
+  // Track resolved theme separately so it updates on system preference changes
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(getSystemTheme);
   const editorRef = useRef<MonacoEditor | null>(null);
 
   // Initialize Monaco editor
@@ -245,6 +240,7 @@ function Playground(): React.ReactElement {
   useEffect(() => {
     applyTheme(themeMode);
     const resolved = resolveTheme(themeMode);
+    setResolvedTheme(resolved);
     if (editorReady) {
       monaco.editor.setTheme(resolved === "dark" ? "vs-dark" : "vs-light");
     }
@@ -256,9 +252,11 @@ function Playground(): React.ReactElement {
     const handleChange = () => {
       // Re-apply theme when system preference changes (will only matter if in "system" mode)
       if (themeMode === "system") {
+        const newTheme = getSystemTheme();
         applyTheme("system");
+        setResolvedTheme(newTheme);
         if (editorReady) {
-          monaco.editor.setTheme(getSystemTheme() === "dark" ? "vs-dark" : "vs-light");
+          monaco.editor.setTheme(newTheme === "dark" ? "vs-dark" : "vs-light");
         }
       }
     };
@@ -291,16 +289,76 @@ function Playground(): React.ReactElement {
   const wrappedCode = wrapWithBoilerplate(code);
 
   return (
-    <TrellisApp
+    <TrellisMount
       key={runId}
-      source={{ type: "code", code: wrappedCode }}
-      routingMode={RoutingMode.Embedded}
-      errorComponent={(msg) => {
-        setError(msg);
-        return null;
-      }}
+      code={wrappedCode}
+      themeMode={resolvedTheme}
+      onError={setError}
     />
   );
+}
+
+/**
+ * Component that mounts TrellisApp using the library's mount() API.
+ *
+ * The mount() API creates a shadow DOM for CSS isolation and sets up
+ * event forwarding for React Aria compatibility automatically.
+ */
+function TrellisMount({
+  code,
+  themeMode,
+  onError,
+}: {
+  code: string;
+  themeMode: "light" | "dark";
+  onError: (error: string) => void;
+}): React.ReactElement {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const instanceRef = useRef<TrellisInstance | null>(null);
+
+  // Mount on first render only (component is keyed by runId, so remounts on code change)
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    let mounted = true;
+
+    async function setup() {
+      if (!containerRef.current || !mounted) return;
+
+      try {
+        const lib = await import("../../trellis");
+        if (!mounted || !containerRef.current) return;
+
+        instanceRef.current = lib.mount(containerRef.current, {
+          source: { type: "code", code },
+          themeMode,
+          cssUrl: "../trellis/index.css",
+          errorComponent: (msg: string) => {
+            onError(msg);
+            return null;
+          },
+        });
+      } catch (e) {
+        console.error("[TrellisMount] Failed to load library:", e);
+        onError((e as Error).message);
+      }
+    }
+
+    setup();
+
+    return () => {
+      mounted = false;
+      instanceRef.current?.unmount();
+      instanceRef.current = null;
+    };
+  }, []); // Run once on mount
+
+  // Update theme when it changes
+  useEffect(() => {
+    instanceRef.current?.update({ themeMode });
+  }, [themeMode]);
+
+  return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
 }
 
 // Mount the playground

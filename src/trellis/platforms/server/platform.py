@@ -17,9 +17,11 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 
-from trellis.bundler import CORE_PACKAGES, BundleConfig, build_bundle
+from trellis.bundler import registry
+from trellis.bundler.build import build_from_registry
+from trellis.bundler.workspace import get_project_workspace
 from trellis.platforms.common import find_available_port
-from trellis.platforms.common.base import Platform
+from trellis.platforms.common.base import Platform, WatchConfig
 from trellis.platforms.server.handler import router as ws_router
 from trellis.platforms.server.middleware import RequestLoggingMiddleware
 from trellis.platforms.server.routes import create_static_dir, register_spa_fallback
@@ -53,25 +55,27 @@ class ServerPlatform(Platform):
         self,
         force: bool = False,
         extra_packages: dict[str, str] | None = None,
+        dest: Path | None = None,
+        library: bool = False,
     ) -> None:
         """Build the server client bundle if needed.
 
-        Output: platforms/server/client/dist/bundle.js
-
-        The server platform serves this bundle via /static/bundle.js and returns
-        HTML dynamically from routes.py (no generated index.html needed).
+        Uses the registry-based build system. The bundle is stored in a
+        cache workspace (or dest if specified) and served via /static/.
         """
-        platforms_dir = Path(__file__).parent.parent
-        common_src_dir = platforms_dir / "common" / "client" / "src"
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
 
-        config = BundleConfig(
-            name="server",
-            src_dir=Path(__file__).parent / "client" / "src",
-            dist_dir=Path(__file__).parent / "client" / "dist",
-            packages=CORE_PACKAGES,
+        build_from_registry(registry, entry_point, workspace, force=force, output_dir=dest)
+
+    def get_watch_config(self) -> WatchConfig:
+        """Get configuration for watch mode."""
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        return WatchConfig(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=get_project_workspace(entry_point),
         )
-
-        build_bundle(config, common_src_dir, force, extra_packages)
 
     async def run(
         self,

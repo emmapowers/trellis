@@ -113,7 +113,7 @@ export function TimeSeriesChart({
     opts.width = containerWidth;
 
     // Create new chart
-    chartRef.current = new uPlot(opts, data, containerRef.current);
+    chartRef.current = new uPlot(opts, data as uPlot.AlignedData, containerRef.current);
 
     return () => {
       if (chartRef.current) {

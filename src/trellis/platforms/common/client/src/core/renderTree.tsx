@@ -75,7 +75,7 @@ function serializeEventArg(arg: unknown): unknown {
       return {
         ...base,
         value: target.value ?? "",
-        checked: target.checked ?? false,
+        checked: "checked" in target ? target.checked : false,
       };
     }
 

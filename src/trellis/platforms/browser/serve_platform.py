@@ -30,9 +30,11 @@ if TYPE_CHECKING:
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
-from trellis.bundler import CORE_PACKAGES, BundleConfig, build_bundle
+from trellis.bundler import registry
+from trellis.bundler.build import build_from_registry
+from trellis.bundler.workspace import get_project_workspace
 from trellis.platforms.common import find_available_port
-from trellis.platforms.common.base import Platform
+from trellis.platforms.common.base import Platform, WatchConfig
 
 # Jinja2 environment for HTML templates
 _TEMPLATE_DIR = Path(__file__).parent / "client" / "src"
@@ -181,32 +183,38 @@ class BrowserServePlatform(Platform):
         self,
         force: bool = False,
         extra_packages: dict[str, str] | None = None,
+        dest: Path | None = None,
+        library: bool = False,
     ) -> None:
         """Build the browser client bundle if needed.
 
-        Output: platforms/browser/client/dist/bundle.js + index.html
+        Uses the registry-based build system. The bundle is stored in a
+        cache workspace (or dest if specified).
 
-        The pyodide worker is built separately and inlined into the main bundle
-        via the worker_entries config (imported as text).
+        Args:
+            force: Force rebuild even if sources unchanged
+            extra_packages: Additional npm packages beyond platform defaults
+            dest: Custom output directory (default: cache directory)
+            library: If True, build as library exporting TrellisApp (uses index.ts).
+                     If False, build as app that renders to DOM (uses main.tsx).
         """
-        platforms_dir = Path(__file__).parent.parent
-        common_src_dir = platforms_dir / "common" / "client" / "src"
-        client_dir = Path(__file__).parent / "client"
-        src_dir = client_dir / "src"
-        dist_dir = client_dir / "dist"
-        index_path = dist_dir / "index.html"
+        # Use index.ts for library mode, main.tsx for app mode
+        entry_name = "index.ts" if library else "main.tsx"
+        entry_point = Path(__file__).parent / "client" / "src" / entry_name
+        workspace = get_project_workspace(entry_point)
 
-        config = BundleConfig(
-            name="browser",
-            src_dir=src_dir,
-            dist_dir=dist_dir,
-            packages={**CORE_PACKAGES, **BROWSER_PACKAGES},
-            static_files={"index.html": src_dir / "index.html"},
-            extra_outputs=[index_path],
-            worker_entries={"pyodide": src_dir / "pyodide.worker.ts"},
+        build_from_registry(
+            registry, entry_point, workspace, force=force, output_dir=dest, library=library
         )
 
-        build_bundle(config, common_src_dir, force, extra_packages)
+    def get_watch_config(self) -> WatchConfig:
+        """Get configuration for watch mode."""
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        return WatchConfig(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=get_project_workspace(entry_point),
+        )
 
     async def run(
         self,
@@ -234,9 +242,10 @@ class BrowserServePlatform(Platform):
         # Check if source is part of a package (has __init__.py)
         package_dir = _find_package_root(entry_path)
 
-        # Get paths
-        client_dir = Path(__file__).parent / "client"
-        dist_dir = client_dir / "dist"
+        # Get paths from workspace
+        platform_entry = Path(__file__).parent / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(platform_entry)
+        dist_dir = workspace / "dist"
         bundle_path = dist_dir / "bundle.js"
 
         # Ensure bundle exists (worker is inlined)

@@ -37,7 +37,7 @@ export function Icon({
   style,
 }: IconProps): React.ReactElement | null {
   const pascalName = toPascalCase(name);
-  const IconComponent = (LucideIcons as Record<string, React.ComponentType<LucideIcons.LucideProps>>)[pascalName];
+  const IconComponent = (LucideIcons as unknown as Record<string, React.ComponentType<LucideIcons.LucideProps>>)[pascalName];
 
   if (!IconComponent) {
     console.warn(`Unknown icon: ${name} (looked up as ${pascalName})`);

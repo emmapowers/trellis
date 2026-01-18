@@ -12,6 +12,8 @@ Usage:
     # TrellisApp registers the bridge, then executes user code
 """
 
+# Register trellis-browser module with the bundler
+from trellis.platforms.browser import _register as _  # noqa: F401
 from trellis.platforms.browser.handler import BrowserMessageHandler
 from trellis.platforms.browser.platform import BrowserPlatform
 
