@@ -37,17 +37,16 @@ class TestPlatformRegistration:
         assert "react" in collected.packages
         assert "react-dom" in collected.packages
 
-    def test_trellis_core_has_widget_files(self) -> None:
-        """trellis-core module includes widget TypeScript files."""
+    def test_trellis_core_has_base_path(self) -> None:
+        """trellis-core module has base_path set for source resolution."""
         from trellis.bundler import registry
 
         collected = registry.collect()
         core = next(m for m in collected.modules if m.name == "trellis-core")
 
-        # Should have widget files
-        widget_files = [f for f in core.files if "widgets/" in f]
-        assert len(widget_files) > 0
-        assert any("Button" in f for f in widget_files)
+        # Should have base_path set (used by bundler to resolve source files)
+        assert core._base_path is not None
+        assert core._base_path.exists()
 
     def test_server_registers_trellis_server(self) -> None:
         """Importing server platform registers trellis-server module."""
@@ -68,15 +67,13 @@ class TestPlatformRegistration:
         # Desktop should have Tauri packages
         assert "@tauri-apps/api" in desktop_module.packages
 
-    def test_browser_registers_with_worker(self) -> None:
-        """Importing browser platform registers trellis-browser with worker entry."""
+    def test_browser_registers_trellis_browser(self) -> None:
+        """Importing browser platform registers trellis-browser module."""
         from trellis.bundler import registry
 
         collected = registry.collect()
-        browser_module = next(m for m in collected.modules if m.name == "trellis-browser")
-
-        # Browser should have pyodide worker
-        assert "pyodide" in browser_module.worker_entries
+        module_names = [m.name for m in collected.modules]
+        assert "trellis-browser" in module_names
 
     def test_all_platforms_no_package_conflicts(self) -> None:
         """All platforms can be imported without package version conflicts."""

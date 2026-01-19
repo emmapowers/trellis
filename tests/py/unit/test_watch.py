@@ -23,8 +23,8 @@ class TestGetWatchPaths:
 
         assert entry_point in paths
 
-    def test_includes_module_files(self, tmp_path: Path) -> None:
-        """Watch paths include all module source files."""
+    def test_includes_module_base_directory(self, tmp_path: Path) -> None:
+        """Watch paths include module base directories."""
         from trellis.bundler.watch import get_watch_paths
 
         entry_point = tmp_path / "app.tsx"
@@ -37,15 +37,14 @@ class TestGetWatchPaths:
 
         module = Module(
             name="my-module",
-            files=["Widget.tsx", "utils.ts"],
             _base_path=module_dir,
         )
         collected = CollectedModules(modules=[module], packages={})
 
         paths = get_watch_paths(entry_point, collected)
 
-        assert module_dir / "Widget.tsx" in paths
-        assert module_dir / "utils.ts" in paths
+        # Should watch the module directory, not individual files
+        assert module_dir in paths
 
     def test_includes_static_files(self, tmp_path: Path) -> None:
         """Watch paths include static file sources."""
@@ -68,7 +67,7 @@ class TestGetWatchPaths:
         assert static_file in paths
 
     def test_skips_module_without_base_path(self, tmp_path: Path) -> None:
-        """Modules without _base_path are skipped for file watching."""
+        """Modules without _base_path are skipped for directory watching."""
         from trellis.bundler.watch import get_watch_paths
 
         entry_point = tmp_path / "app.tsx"
@@ -76,14 +75,13 @@ class TestGetWatchPaths:
 
         module = Module(
             name="my-module",
-            files=["Widget.tsx"],  # Files without base path can't be resolved
             _base_path=None,
         )
         collected = CollectedModules(modules=[module], packages={})
 
         paths = get_watch_paths(entry_point, collected)
 
-        # Should just have entry point, no module files
+        # Should just have entry point, no module directory
         assert len(paths) == 1
 
     def test_returns_set_of_paths(self, tmp_path: Path) -> None:
@@ -103,8 +101,8 @@ class TestGetWatchPaths:
 class TestGetWatchDirectories:
     """Tests for collecting directories to watch."""
 
-    def test_returns_parent_directories(self, tmp_path: Path) -> None:
-        """Watch directories are parent directories of watch paths."""
+    def test_returns_directories_directly_for_module_paths(self, tmp_path: Path) -> None:
+        """Watch directories include module base paths directly."""
         from trellis.bundler.watch import get_watch_directories
 
         entry_point = tmp_path / "src" / "app.tsx"
@@ -117,18 +115,18 @@ class TestGetWatchDirectories:
 
         module = Module(
             name="my-module",
-            files=["Widget.tsx"],
             _base_path=module_dir,
         )
         collected = CollectedModules(modules=[module], packages={})
 
         directories = get_watch_directories(entry_point, collected)
 
+        # Entry point's parent (it's a file) and module_dir (it's a directory)
         assert entry_point.parent in directories
         assert module_dir in directories
 
     def test_deduplicates_directories(self, tmp_path: Path) -> None:
-        """Multiple files in same directory result in one directory."""
+        """Multiple modules with same base result in one directory."""
         from trellis.bundler.watch import get_watch_directories
 
         entry_point = tmp_path / "app.tsx"
@@ -139,16 +137,14 @@ class TestGetWatchDirectories:
         (module_dir / "a.tsx").write_text("// a")
         (module_dir / "b.tsx").write_text("// b")
 
-        module = Module(
-            name="my-module",
-            files=["a.tsx", "b.tsx"],
-            _base_path=module_dir,
-        )
-        collected = CollectedModules(modules=[module], packages={})
+        # Two modules pointing to the same directory
+        module1 = Module(name="module-a", _base_path=module_dir)
+        module2 = Module(name="module-b", _base_path=module_dir)
+        collected = CollectedModules(modules=[module1, module2], packages={})
 
         directories = get_watch_directories(entry_point, collected)
 
-        # Should have entry_point parent and module_dir
+        # Should deduplicate directories
         assert isinstance(directories, set)
         assert module_dir in directories
 

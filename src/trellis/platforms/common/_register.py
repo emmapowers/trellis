@@ -19,5 +19,4 @@ registry.register(
         "react-stately": "3.33.0",
         "@internationalized/date": "3.5.6",
     },
-    files=["client/src/**/*.{ts,tsx,css}"],
 )

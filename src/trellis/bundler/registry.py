@@ -1,8 +1,8 @@
 """Module registry for bundle building.
 
-Modules register themselves at import time, declaring packages, files, snippets,
-and exports. At build time, the registry is collected and used to stage files
-and generate the bundle.
+Modules register themselves at import time, declaring packages, static files,
+and exports. At build time, the registry is collected and used to generate
+the bundle.
 """
 
 from __future__ import annotations
@@ -13,82 +13,10 @@ from dataclasses import dataclass, field
 from enum import StrEnum, auto
 from pathlib import Path
 
-from wcmatch import glob as wcglob
-
 logger = logging.getLogger(__name__)
 
 # Supported source file types for bundling
 SUPPORTED_SOURCE_TYPES: frozenset[str] = frozenset({".ts", ".tsx", ".css", ".js", ".jsx"})
-
-
-def _is_glob_pattern(path: str) -> bool:
-    """Check if a path contains glob pattern characters."""
-    return any(c in path for c in "*?[{")
-
-
-def _make_source_glob(directory: str) -> str:
-    """Create a glob pattern for source files in a directory."""
-    extensions = ",".join(ext.lstrip(".") for ext in sorted(SUPPORTED_SOURCE_TYPES))
-    return f"{directory}/**/*.{{{extensions}}}"
-
-
-def _validate_source_files(files: list[str]) -> None:
-    """Validate that all files have supported source types.
-
-    Args:
-        files: List of file paths to validate
-
-    Raises:
-        ValueError: If any file has an unsupported extension
-    """
-    for file_path in files:
-        ext = Path(file_path).suffix.lower()
-        if ext and ext not in SUPPORTED_SOURCE_TYPES:
-            raise ValueError(
-                f"Unsupported source file type '{ext}' in '{file_path}'. "
-                f"Supported types: {', '.join(sorted(SUPPORTED_SOURCE_TYPES))}"
-            )
-
-
-def _expand_globs(base_path: Path, patterns: list[str]) -> list[str]:
-    """Expand glob patterns relative to base_path.
-
-    Uses wcmatch for extended glob support including brace expansion.
-    For example: "src/**/*.{ts,tsx,css}" expands to all .ts, .tsx, and .css files.
-
-    Directories are expanded to include all supported source types:
-    - "src" becomes "src/**/*.{css,js,jsx,ts,tsx}"
-
-    Args:
-        base_path: Directory to glob from
-        patterns: List of paths, glob patterns, or directories
-
-    Returns:
-        List of expanded file paths (relative to base_path)
-
-    Raises:
-        ValueError: If any expanded file has an unsupported extension
-    """
-    result: list[str] = []
-    for pattern in patterns:
-        full_path = base_path / pattern
-        expanded_pattern = pattern
-        if full_path.is_dir():
-            # Directory - expand to all supported source types
-            expanded_pattern = _make_source_glob(pattern)
-
-        if _is_glob_pattern(expanded_pattern):
-            # Expand glob pattern using wcmatch (supports brace expansion)
-            flags = wcglob.BRACE | wcglob.GLOBSTAR
-            matched = wcglob.glob(expanded_pattern, root_dir=base_path, flags=flags)
-            result.extend(match for match in matched if (base_path / match).is_file())
-        else:
-            # Literal path - keep as-is
-            result.append(pattern)
-
-    # Validate all files have supported extensions
-    _validate_source_files(result)
-    return result
 
 
 def _expand_static_files(static_files: dict[str, Path]) -> dict[str, Path]:
@@ -157,17 +85,11 @@ class Module:
     packages: dict[str, str] = field(default_factory=dict)
     """NPM packages required by this module (name -> version)."""
 
-    files: list[str] = field(default_factory=list)
-    """Files to copy (paths relative to registering Python file)."""
-
     static_files: dict[str, Path] = field(default_factory=dict)
     """Static files to copy (output name -> source path)."""
 
     exports: list[ModuleExport] = field(default_factory=list)
     """Exports from this module."""
-
-    worker_entries: dict[str, str] = field(default_factory=dict)
-    """Worker entry points (name -> relative path)."""
 
     _base_path: Path | None = None
     """Base path for resolving relative file paths. Set during registration."""
@@ -195,20 +117,16 @@ class ModuleRegistry:
         name: str,
         *,
         packages: dict[str, str] | None = None,
-        files: list[str] | None = None,
         static_files: dict[str, Path] | None = None,
         exports: list[tuple[str, ExportKind, str]] | None = None,
-        worker_entries: dict[str, str] | None = None,
     ) -> None:
         """Register a module.
 
         Args:
             name: Unique module name
             packages: NPM packages (name -> version)
-            files: Files to copy (paths relative to calling Python file)
             static_files: Static files (output name -> source path)
             exports: Exports as (name, kind, source) tuples
-            worker_entries: Worker entry points (name -> relative path)
 
         Raises:
             ValueError: If module name is already registered
@@ -223,26 +141,12 @@ class ModuleRegistry:
             base_path = Path(caller_file).parent.resolve()
         else:
             base_path = None
-            if files and any(_is_glob_pattern(f) for f in files):
-                logger.warning(
-                    "Frame introspection unavailable for module %r; "
-                    "glob patterns in 'files' will not be expanded",
-                    name,
-                )
 
         # Convert export tuples to ModuleExport objects
         module_exports = []
         if exports:
             for export_name, kind, source in exports:
                 module_exports.append(ModuleExport(name=export_name, kind=kind, source=source))
-
-        # Expand glob patterns in files
-        expanded_files: list[str] = []
-        if files:
-            if base_path is not None:
-                expanded_files = _expand_globs(base_path, files)
-            else:
-                expanded_files = files
 
         # Expand directories in static_files
         expanded_static: dict[str, Path] = {}
@@ -252,10 +156,8 @@ class ModuleRegistry:
         module = Module(
             name=name,
             packages=packages or {},
-            files=expanded_files,
             static_files=expanded_static,
             exports=module_exports,
-            worker_entries=worker_entries or {},
             _base_path=base_path,
         )
         self._modules[name] = module

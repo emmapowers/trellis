@@ -15,6 +15,5 @@ registry.register(
         "@tauri-apps/api": "2.8.0",
         "tauri-plugin-pytauri-api": "0.8.0",
     },
-    files=["client/src/**/*.{ts,tsx,css}"],
     static_files={"index.html": _CLIENT_SRC / "index.html"},
 )

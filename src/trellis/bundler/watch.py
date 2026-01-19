@@ -25,14 +25,12 @@ logger = logging.getLogger(__name__)
 
 
 def get_watch_paths(entry_point: Path, collected: CollectedModules) -> set[Path]:
-    """Get all file paths that should trigger a rebuild when changed.
+    """Get all paths that should trigger a rebuild when changed.
 
     This includes:
     - The entry point file
-    - All module source files
+    - All module base directories (for source file changes)
     - All static file sources
-
-    Snippets are NOT included since they are inline code, not files.
 
     Args:
         entry_point: Path to the entry point file
@@ -44,10 +42,9 @@ def get_watch_paths(entry_point: Path, collected: CollectedModules) -> set[Path]
     paths: set[Path] = {entry_point.resolve()}
 
     for module in collected.modules:
-        # Add module source files
+        # Watch module base directory for any source changes
         if module._base_path:
-            for file_path in module.files:
-                paths.add((module._base_path / file_path).resolve())
+            paths.add(module._base_path.resolve())
 
         # Add static file sources
         for src_path in module.static_files.values():
@@ -59,8 +56,8 @@ def get_watch_paths(entry_point: Path, collected: CollectedModules) -> set[Path]
 def get_watch_directories(entry_point: Path, collected: CollectedModules) -> set[Path]:
     """Get directories to watch for file changes.
 
-    Returns parent directories of all watchable files. This is useful for
-    file watchers that work at the directory level.
+    Returns directories that should be passed to file watchers. For directories
+    in watch_paths, returns them directly. For files, returns their parent.
 
     Args:
         entry_point: Path to the entry point file
@@ -70,7 +67,40 @@ def get_watch_directories(entry_point: Path, collected: CollectedModules) -> set
         Set of directories to watch
     """
     paths = get_watch_paths(entry_point, collected)
-    return {p.parent for p in paths}
+    dirs: set[Path] = set()
+    for p in paths:
+        if p.is_dir():
+            dirs.add(p)
+        else:
+            dirs.add(p.parent)
+    return dirs
+
+
+def _is_path_relevant(changed_path: Path, watch_paths: set[Path]) -> bool:
+    """Check if a changed path is relevant to our watched paths.
+
+    A path is relevant if:
+    - It's directly in watch_paths, OR
+    - It's under a directory in watch_paths
+
+    Args:
+        changed_path: Path that changed
+        watch_paths: Set of paths we're watching (files and directories)
+
+    Returns:
+        True if the change is relevant
+    """
+    if changed_path in watch_paths:
+        return True
+    # Check if path is under any watched directory
+    for watch_path in watch_paths:
+        if watch_path.is_dir():
+            try:
+                changed_path.relative_to(watch_path)
+                return True
+            except ValueError:
+                pass
+    return False
 
 
 async def watch_and_rebuild(
@@ -101,13 +131,15 @@ async def watch_and_rebuild(
     watch_dirs = get_watch_directories(entry_point, collected)
     watch_paths = get_watch_paths(entry_point, collected)
 
-    logger.info("Watch mode enabled, monitoring %d files", len(watch_paths))
+    logger.info("Watch mode enabled, monitoring %d paths", len(watch_paths))
 
     # Watch the directories
     async for changes in watchfiles.awatch(*watch_dirs):
-        # Filter to only changes in our watched files
+        # Filter to only changes in our watched paths (files or under watched directories)
         relevant_changes = [
-            (change_type, path) for change_type, path in changes if Path(path) in watch_paths
+            (change_type, path)
+            for change_type, path in changes
+            if _is_path_relevant(Path(path), watch_paths)
         ]
 
         if relevant_changes:
