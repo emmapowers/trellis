@@ -61,6 +61,12 @@ from trellis import html as h
 - Widgets are accessed via `w.Button`, `w.Label`, `w.Column`, etc.
 - HTML elements are accessed via `h.Div`, `h.Span`, `h.P`, etc.
 
+## Style
+
+- snake_case variables, functions, modules, variables, etc...
+- PascalCase objects
+- MyEnum.UPPER_CASE enums
+
 ## Commands
 
 - `pixi run cleanup` - Format and lint with auto-fix
