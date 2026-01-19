@@ -142,6 +142,8 @@ async function initializePyodide(
   const micropip = pyodide.pyimport("micropip");
   await micropip.install("rich");
   await micropip.install("wcmatch");
+  await micropip.install("httpx");
+  await micropip.install("jinja2");
 
   postStatus("Installing Trellis...");
   await installTrellisWheel(pyodide, trellisWheelUrl, pageOrigin);

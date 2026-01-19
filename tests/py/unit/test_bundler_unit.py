@@ -7,11 +7,13 @@ import json
 import tarfile
 import time
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
 from trellis.bundler.build import _collect_input_files, is_rebuild_needed
 from trellis.bundler.metafile import get_metafile_path, read_metafile
+from trellis.bundler.steps import BuildContext, IndexHtmlRenderStep
 from trellis.bundler.utils import safe_extract as _safe_extract
 from trellis.bundler.watch import get_watch_paths
 
@@ -362,3 +364,137 @@ class TestGetWatchPaths:
 
         with pytest.raises(FileNotFoundError):
             get_watch_paths(workspace)
+
+
+class TestBuildContext:
+    """Tests for BuildContext dataclass."""
+
+    def test_has_template_context_default(self, tmp_path: Path) -> None:
+        """BuildContext has template_context field with empty dict default."""
+        mock_registry = MagicMock()
+        mock_collected = MagicMock()
+
+        ctx = BuildContext(
+            registry=mock_registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=mock_collected,
+            dist_dir=tmp_path / "dist",
+        )
+
+        assert ctx.template_context == {}
+
+    def test_template_context_can_be_set(self, tmp_path: Path) -> None:
+        """BuildContext template_context can be set with custom values."""
+        mock_registry = MagicMock()
+        mock_collected = MagicMock()
+
+        ctx = BuildContext(
+            registry=mock_registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=mock_collected,
+            dist_dir=tmp_path / "dist",
+            template_context={"source_json": '{"type": "code"}'},
+        )
+
+        assert ctx.template_context["source_json"] == '{"type": "code"}'
+
+    def test_has_python_entry_point_default_none(self, tmp_path: Path) -> None:
+        """BuildContext has python_entry_point field defaulting to None."""
+        mock_registry = MagicMock()
+        mock_collected = MagicMock()
+
+        ctx = BuildContext(
+            registry=mock_registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=mock_collected,
+            dist_dir=tmp_path / "dist",
+        )
+
+        assert ctx.python_entry_point is None
+
+    def test_python_entry_point_can_be_set(self, tmp_path: Path) -> None:
+        """BuildContext python_entry_point can be set to a Path."""
+        mock_registry = MagicMock()
+        mock_collected = MagicMock()
+        app_path = tmp_path / "app.py"
+
+        ctx = BuildContext(
+            registry=mock_registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=mock_collected,
+            dist_dir=tmp_path / "dist",
+            python_entry_point=app_path,
+        )
+
+        assert ctx.python_entry_point == app_path
+
+
+class TestIndexHtmlRenderStep:
+    """Tests for IndexHtmlRenderStep template context handling."""
+
+    def _make_context(self, tmp_path: Path, **kwargs) -> BuildContext:
+        """Create a BuildContext for testing."""
+        mock_registry = MagicMock()
+        mock_collected = MagicMock()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir(parents=True, exist_ok=True)
+        return BuildContext(
+            registry=mock_registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=mock_collected,
+            dist_dir=dist_dir,
+            **kwargs,
+        )
+
+    def test_merges_template_context(self, tmp_path: Path) -> None:
+        """Step merges BuildContext.template_context with constructor context."""
+        # Create template (use |safe for JSON since it's embedded in JS, not displayed as HTML)
+        template = tmp_path / "index.html.j2"
+        template.write_text("source={{ source_json|safe }}, custom={{ custom_var }}")
+
+        # Set up context with template_context containing source_json
+        ctx = self._make_context(
+            tmp_path,
+            template_context={"source_json": '{"type": "code"}'},
+        )
+
+        step = IndexHtmlRenderStep(template, context={"custom_var": "hello"})
+        step.run(ctx)
+
+        output = (ctx.dist_dir / "index.html").read_text()
+        assert 'source={"type": "code"}' in output
+        assert "custom=hello" in output
+
+    def test_constructor_context_overrides_template_context(self, tmp_path: Path) -> None:
+        """Constructor context takes precedence over BuildContext.template_context."""
+        template = tmp_path / "index.html.j2"
+        template.write_text("value={{ shared_key }}")
+
+        ctx = self._make_context(
+            tmp_path,
+            template_context={"shared_key": "from_build_context"},
+        )
+
+        # Constructor context should override
+        step = IndexHtmlRenderStep(template, context={"shared_key": "from_constructor"})
+        step.run(ctx)
+
+        output = (ctx.dist_dir / "index.html").read_text()
+        assert "value=from_constructor" in output
+
+    def test_works_with_empty_contexts(self, tmp_path: Path) -> None:
+        """Step works when both contexts are empty."""
+        template = tmp_path / "index.html.j2"
+        template.write_text("<html>static content</html>")
+
+        ctx = self._make_context(tmp_path)
+        step = IndexHtmlRenderStep(template)
+        step.run(ctx)
+
+        output = (ctx.dist_dir / "index.html").read_text()
+        assert "static content" in output

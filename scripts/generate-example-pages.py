@@ -2,8 +2,8 @@
 """Generate example pages for documentation.
 
 Discovers examples in the examples/ folder and generates standalone HTML pages
-that can be served as static files. Each example gets its own folder with an
-index.html that embeds the source code and links to shared bundle assets.
+by calling the trellis CLI. Each example gets its own folder with an index.html
+and bundled assets.
 
 Also generates MDX stubs for Docusaurus sidebar navigation.
 """
@@ -11,12 +11,9 @@ Also generates MDX stubs for Docusaurus sidebar navigation.
 from __future__ import annotations
 
 import json
-import shutil
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-
-from jinja2 import Environment, FileSystemLoader
 
 # Paths
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -25,11 +22,6 @@ DOCS_STATIC_DIR = PROJECT_ROOT / "docs" / "static"
 DOCS_EXAMPLES_DIR = DOCS_STATIC_DIR / "examples"
 DOCS_SRC_DIR = PROJECT_ROOT / "docs" / "src"
 GENERATED_SIDEBAR_FILE = DOCS_SRC_DIR / "generated-examples-sidebar.json"
-BROWSER_CLIENT_DIST = PROJECT_ROOT / "src" / "trellis" / "platforms" / "browser" / "client" / "dist"
-BROWSER_CLIENT_SRC = PROJECT_ROOT / "src" / "trellis" / "platforms" / "browser" / "client" / "src"
-
-# Jinja2 environment for HTML template
-_jinja_env = Environment(loader=FileSystemLoader(BROWSER_CLIENT_SRC), autoescape=False)
 
 
 @dataclass
@@ -39,7 +31,8 @@ class Example:
     name: str  # URL-friendly name (e.g., "widget-showcase")
     title: str  # Display title (e.g., "Widget Showcase")
     description: str  # Short description
-    source: dict[str, Any]  # Source config for __TRELLIS_CONFIG__
+    entry_path: Path  # Path to Python entry point
+    module_name: str | None = None  # Module name for packages (None for single files)
 
 
 def slugify(name: str) -> str:
@@ -62,28 +55,6 @@ def extract_docstring(code: str) -> str:
         return docstring.split("\n")[0] if docstring else ""
     except SyntaxError:
         return ""
-
-
-def collect_package_files(package_dir: Path) -> dict[str, str]:
-    """Collect all Python files in a package directory.
-
-    Args:
-        package_dir: Root directory of the package
-
-    Returns:
-        Dict mapping relative paths to file contents
-    """
-    files: dict[str, str] = {}
-
-    for py_file in package_dir.rglob("*.py"):
-        # Skip __pycache__
-        if "__pycache__" in py_file.parts:
-            continue
-        # Get path relative to package parent (so package name is included)
-        rel_path = py_file.relative_to(package_dir.parent)
-        files[str(rel_path)] = py_file.read_text()
-
-    return files
 
 
 def discover_examples() -> list[Example]:
@@ -111,20 +82,21 @@ def discover_examples() -> list[Example]:
                     name=name,
                     title=title,
                     description=description,
-                    source={"type": "code", "code": code},
+                    entry_path=item,
                 )
             )
 
         elif item.is_dir() and (item / "__main__.py").exists():
             # Package example
-            files = collect_package_files(item)
             module_name = item.name  # e.g., "breakfast_todo"
             name = slugify(item.name)
             title = titleize(item.name)
+            entry_path = item / "__main__.py"
 
             # Try to extract description from __init__.py or __main__.py
-            init_code = files.get(f"{module_name}/__init__.py", "")
-            main_code = files.get(f"{module_name}/__main__.py", "")
+            init_file = item / "__init__.py"
+            init_code = init_file.read_text() if init_file.exists() else ""
+            main_code = entry_path.read_text()
             description = extract_docstring(init_code) or extract_docstring(main_code)
 
             examples.append(
@@ -132,32 +104,35 @@ def discover_examples() -> list[Example]:
                     name=name,
                     title=title,
                     description=description,
-                    source={"type": "module", "files": files, "moduleName": module_name},
+                    entry_path=entry_path,
+                    module_name=module_name,
                 )
             )
 
     return examples
 
 
-def generate_html(source: dict[str, Any], title: str) -> str:
-    """Generate the HTML page with embedded source config.
+def generate_example_page(example: Example) -> None:
+    """Generate an example page by calling the trellis CLI.
 
     Args:
-        source: Source config dict for __TRELLIS_CONFIG__
-        title: Page title
-
-    Returns:
-        Generated HTML content
+        example: Example to generate page for
     """
-    # JSON-encode the source config for embedding in JavaScript
-    # Escape </ to prevent script tag injection (e.g., </script> in code)
-    source_json = json.dumps(source).replace("</", r"<\/")
+    example_dir = DOCS_EXAMPLES_DIR / example.name
 
-    template = _jinja_env.get_template("index.html")
-    return template.render(
-        source_json=source_json,
-        title=f"{title} | Trellis",
-        asset_prefix="../",
+    subprocess.run(
+        [
+            "trellis",
+            "bundle",
+            "build",
+            "--platform",
+            "browser",
+            "--app",
+            str(example.entry_path),
+            "--dest",
+            str(example_dir),
+        ],
+        check=True,
     )
 
 
@@ -183,44 +158,16 @@ def generate_sidebar_items(examples: list[Example]) -> list[dict]:
     ]
 
 
-def copy_shared_assets() -> None:
-    """Copy bundle.js and bundle.css to the examples directory."""
-    DOCS_EXAMPLES_DIR.mkdir(parents=True, exist_ok=True)
-
-    bundle_js = BROWSER_CLIENT_DIST / "bundle.js"
-    bundle_css = BROWSER_CLIENT_DIST / "bundle.css"
-
-    if not bundle_js.exists():
-        raise RuntimeError(
-            f"Browser bundle not found at {bundle_js}. "
-            "Run 'trellis bundle build --platform browser' first."
-        )
-
-    shutil.copy(bundle_js, DOCS_EXAMPLES_DIR / "bundle.js")
-    if bundle_css.exists():
-        shutil.copy(bundle_css, DOCS_EXAMPLES_DIR / "bundle.css")
-    else:
-        # Create empty CSS file if it doesn't exist
-        (DOCS_EXAMPLES_DIR / "bundle.css").touch()
-
-
 def main() -> None:
     """Main entry point."""
     print("Discovering examples...")
     examples = discover_examples()
     print(f"Found {len(examples)} examples: {[e.name for e in examples]}")
 
-    print("Copying shared assets...")
-    copy_shared_assets()
-
     print("Generating example pages...")
     for example in examples:
-        example_dir = DOCS_EXAMPLES_DIR / example.name
-        example_dir.mkdir(parents=True, exist_ok=True)
-
-        html = generate_html(example.source, example.title)
-        (example_dir / "index.html").write_text(html)
-        print(f"  Generated {example.name}/index.html")
+        print(f"  Building {example.name}...")
+        generate_example_page(example)
 
     print("Generating sidebar configuration...")
     sidebar_items = generate_sidebar_items(examples)

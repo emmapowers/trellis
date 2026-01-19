@@ -38,7 +38,15 @@ def bundle() -> None:
     is_flag=True,
     help="Build as library with exports (vs app that renders to DOM)",
 )
-def build(force: bool, watch: bool, platform: str, dest: Path | None, library: bool) -> None:
+@click.option(
+    "--app",
+    type=click.Path(exists=True, path_type=Path),
+    default=None,
+    help="Python app entry point for browser platform (embeds source in bundle)",
+)
+def build(
+    force: bool, watch: bool, platform: str, dest: Path | None, library: bool, app: Path | None
+) -> None:
     """Build platform bundles."""
     # Collect platforms to build
     platforms: list[tuple[str, WatchConfig | None]] = []
@@ -61,7 +69,7 @@ def build(force: bool, watch: bool, platform: str, dest: Path | None, library: b
         from trellis.platforms.browser.serve_platform import BrowserServePlatform  # noqa: PLC0415
 
         browser = BrowserServePlatform()
-        browser.bundle(force=force, dest=dest, library=library)
+        browser.bundle(force=force, dest=dest, library=library, python_entry_point=app)
         platforms.append(("browser", browser.get_watch_config()))
 
     # Start watch mode if enabled

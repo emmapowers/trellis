@@ -13,7 +13,7 @@ import subprocess
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from trellis.bundler.metafile import get_metafile_path
 from trellis.bundler.packages import ensure_packages, get_bin
@@ -36,9 +36,11 @@ class BuildContext:
         collected: Collected modules from registry
         dist_dir: Output directory for bundle files
         app_static_dir: Optional app-level static files directory
+        python_entry_point: Optional Python app entry point for browser bundling
         esbuild_args: Additional esbuild arguments (steps can append)
         env: Environment variables for subprocess calls (steps can modify)
         generated_files: Map of generated file names to paths (steps set these)
+        template_context: Template variables for IndexHtmlRenderStep (steps can add)
         node_modules: Path to node_modules directory (set by PackageInstallStep)
     """
 
@@ -49,11 +51,13 @@ class BuildContext:
     collected: CollectedModules
     dist_dir: Path
     app_static_dir: Path | None = None
+    python_entry_point: Path | None = None
 
     # Mutable state (steps can modify)
     esbuild_args: list[str] = field(default_factory=list)
     env: dict[str, str] = field(default_factory=dict)
     generated_files: dict[str, Path] = field(default_factory=dict)
+    template_context: dict[str, Any] = field(default_factory=dict)
 
     # Step outputs
     node_modules: Path | None = None
@@ -314,12 +318,15 @@ class StaticFileCopyStep(BuildStep):
 class IndexHtmlRenderStep(BuildStep):
     """Render index.html.j2 template to dist directory.
 
+    Merges BuildContext.template_context with constructor context to build
+    the final template variables. Constructor context takes precedence.
+
     Args:
         template_path: Path to the Jinja2 template file
         context: Template context variables (defaults to empty dict)
     """
 
-    def __init__(self, template_path: Path, context: dict[str, str] | None = None) -> None:
+    def __init__(self, template_path: Path, context: dict[str, Any] | None = None) -> None:
         self._template_path = template_path
         self._context = context or {}
 
@@ -331,12 +338,15 @@ class IndexHtmlRenderStep(BuildStep):
         # Lazy import jinja2 to avoid import overhead when not used
         from jinja2 import Environment, FileSystemLoader  # noqa: PLC0415
 
+        # Merge contexts: BuildContext.template_context first, then constructor (overrides)
+        merged_context = {**ctx.template_context, **self._context}
+
         template_dir = self._template_path.parent
         template_name = self._template_path.name
 
         env = Environment(loader=FileSystemLoader(template_dir), autoescape=True)
         template = env.get_template(template_name)
-        html_content = template.render(**self._context)
+        html_content = template.render(**merged_context)
 
         output_path = ctx.dist_dir / "index.html"
         output_path.write_text(html_content)
