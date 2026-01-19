@@ -16,11 +16,11 @@ class TestModuleExport:
 
         export = ModuleExport(
             name="Button",
-            kind=ExportKind.component,
+            kind=ExportKind.Component,
             source="widgets/Button.tsx",
         )
         assert export.name == "Button"
-        assert export.kind == ExportKind.component
+        assert export.kind == ExportKind.Component
         assert export.source == "widgets/Button.tsx"
 
 
@@ -70,7 +70,7 @@ class TestModule:
             name="my-module",
             packages={"react": "18.2.0"},
             static_files={"icon.png": Path("/path/to/icon.png")},
-            exports=[ModuleExport("Widget", ExportKind.component, "Widget.tsx")],
+            exports=[ModuleExport("Widget", ExportKind.Component, "Widget.tsx")],
             _base_path=Path("/some/path"),
         )
         assert module.name == "my-module"

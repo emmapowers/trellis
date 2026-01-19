@@ -205,7 +205,7 @@ class TestWriteRegistryTs:
                 Module(
                     name="widgets",
                     exports=[
-                        ModuleExport("Button", ExportKind.component, "Button.tsx"),
+                        ModuleExport("Button", ExportKind.Component, "Button.tsx"),
                     ],
                 ),
             ],
@@ -259,8 +259,8 @@ class TestGenerateRegistryTs:
                 Module(
                     name="my-widgets",
                     exports=[
-                        ModuleExport("Button", ExportKind.component, "Button.tsx"),
-                        ModuleExport("Card", ExportKind.component, "Card.tsx"),
+                        ModuleExport("Button", ExportKind.Component, "Button.tsx"),
+                        ModuleExport("Card", ExportKind.Component, "Card.tsx"),
                     ],
                 ),
             ],
@@ -281,7 +281,7 @@ class TestGenerateRegistryTs:
                 Module(
                     name="my-widgets",
                     exports=[
-                        ModuleExport("Button", ExportKind.component, "Button.tsx"),
+                        ModuleExport("Button", ExportKind.Component, "Button.tsx"),
                     ],
                 ),
             ],
@@ -301,7 +301,7 @@ class TestGenerateRegistryTs:
                 Module(
                     name="utils",
                     exports=[
-                        ModuleExport("formatDate", ExportKind.function, "format.ts"),
+                        ModuleExport("formatDate", ExportKind.Function, "format.ts"),
                     ],
                 ),
             ],
@@ -322,7 +322,7 @@ class TestGenerateRegistryTs:
                 Module(
                     name="setup",
                     exports=[
-                        ModuleExport("polyfills", ExportKind.initializer, "polyfills.ts"),
+                        ModuleExport("polyfills", ExportKind.Initializer, "polyfills.ts"),
                     ],
                 ),
             ],
@@ -343,7 +343,7 @@ class TestGenerateRegistryTs:
                 Module(
                     name="widgets",
                     exports=[
-                        ModuleExport("Button", ExportKind.component, "Button.tsx"),
+                        ModuleExport("Button", ExportKind.Component, "Button.tsx"),
                     ],
                 ),
             ],
@@ -365,7 +365,7 @@ class TestGenerateRegistryTs:
                 Module(
                     name="widgets",
                     exports=[
-                        ModuleExport("Button", ExportKind.component, "Button.tsx"),
+                        ModuleExport("Button", ExportKind.Component, "Button.tsx"),
                     ],
                 ),
             ],
@@ -385,7 +385,7 @@ class TestGenerateRegistryTs:
                 Module(
                     name="my-theme",
                     exports=[
-                        ModuleExport("styles", ExportKind.stylesheet, "theme.css"),
+                        ModuleExport("styles", ExportKind.Stylesheet, "theme.css"),
                     ],
                 ),
             ],
