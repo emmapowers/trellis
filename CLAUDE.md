@@ -6,20 +6,16 @@ Reactive UI framework for Python with fine-grained state tracking.
 
 `App()` starts a web server hosting static files, a WebSocket endpoint, and a `/` route. When `/` is hit, a render occurs and a page is sent with React and bundled components. The page connects via WebSocket for updates. User actions or server-side I/O trigger re-renders, sending diffs over WebSocket to update the UI.
 
-## Tech Stack
+### Tech Stack
 
 **Python (3.13)**
 - FastAPI — Async web framework with WebSocket support
-- msgspec — Fast serialization/validation (Pydantic alternative)
-- watchfiles — Hot reload during development
 - pytest — Testing
 
 **JavaScript/TypeScript**
-- esbuild — Fast bundling (pip-installable)
+- bun - javascript runtime, package installation
+- esbuild — Fast bundling
 - React — UI framework
-- Blueprint — Desktop-first component library (Palantir)
-- uPlot — High-performance time-series charts
-- Recharts — General-purpose charts
 - Vitest — Testing
 - Playwright — E2E testing
 
@@ -27,27 +23,36 @@ Reactive UI framework for Python with fine-grained state tracking.
 
 ```
 src/trellis/
-├── core/
-│   ├── rendering.py         # Element, ElementState, RenderSession
-│   ├── reconcile.py         # Tree reconciliation algorithm
-│   ├── serialization.py     # Element tree serialization
-│   ├── base_component.py    # Component base class
-│   ├── functional_component.py  # @component decorator
-│   ├── react_component.py   # ReactComponent base for widgets
-│   └── state.py             # Stateful base class, automatic dependency tracking
-└── utils/
-    └── lock_helper.py       # @with_lock decorator
+├── core/           # Rendering engine, state tracking, component system
+├── app/            # Application entry point, theme provider
+├── bundler/        # esbuild bundling, package management, workspace generation
+├── html/           # HTML element components (Div, Span, etc.)
+├── widgets/        # UI components (Button, Table, Charts, etc.)
+├── routing/        # Client-side routing
+├── platforms/      # Platform implementations
+│   ├── common/     # Shared message handling, client TypeScript
+│   ├── server/     # FastAPI WebSocket server
+│   ├── browser/    # Pyodide/WebAssembly runtime
+│   └── desktop/    # Tauri desktop app
+└── utils/          # Logging, hot reload, helpers
 ```
 
 ## Key Concepts
 
-- **Element**: Immutable tree node representing a component invocation (component, props, key, children, id)
+- **Element**: Tree node representing a component invocation (component, props, key, children, id)
 - **ElementState**: Mutable runtime state for an Element, keyed by element.id (dirty flag, local_state, context)
 - **RenderSession**: Manages the render lifecycle and element tree; tracks dirty elements, handles re-rendering
 - **Stateful**: Base class for reactive state; properties auto-track which elements read them
-- **FunctionalComponent**: Components created via `@component` decorator that use `with` syntax to collect children
 
-## Import Style
+## Style
+
+- snake_case variables, functions, modules, variables, etc...
+- PascalCase objects
+- MyEnum.UPPER_CASE enums
+- use absolute imports
+- place imports at the top of the file unless there is a compelling reason not to. Imports mid file add complexity, so avoid them unless they are really needed, and add a comment to explain why.
+
+### Import Style
 
 Canonical import style for Trellis applications:
 
@@ -61,13 +66,6 @@ from trellis import html as h
 - Widgets are accessed via `w.Button`, `w.Label`, `w.Column`, etc.
 - HTML elements are accessed via `h.Div`, `h.Span`, `h.P`, etc.
 
-## Style
-
-- snake_case variables, functions, modules, variables, etc...
-- PascalCase objects
-- MyEnum.UPPER_CASE enums
-- use absolute imports
-
 ## Commands
 
 - `pixi run cleanup` - Format and lint with auto-fix
@@ -75,6 +73,7 @@ from trellis import html as h
 - `pixi run mypy` - Check for type errors
 - `pixi run test` - Run tests
 - `pixi run ci` - Full CI checks
+- `pixi run showcase` - Run widget showcase
 - `trellis bundle build` - Build platform bundles (server + desktop)
 - `trellis bundle build --force` - Force rebuild even if sources unchanged
 - `trellis bundle build --platform server` - Build only server bundle
@@ -88,6 +87,7 @@ Since trellis is installed in editable mode, pyproject.toml dependencies are als
 
 ## Documentation and Usage
 
+- **docs/reference/** for API and best practice reference
 - **docs/docs/** for usage and design docs
 - **examples/** for examples
 

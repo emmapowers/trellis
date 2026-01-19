@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
+from trellis.platforms.browser.handler import BrowserMessageHandler
 from trellis.platforms.common.base import Platform
 
 __all__ = ["BrowserPlatform"]
@@ -60,12 +61,13 @@ class BrowserPlatform(Platform):
             app_wrapper: Callback to wrap component with TrellisApp
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        # Import the bridge module (registered by JavaScript)
-        import js  # type: ignore[import-not-found]
-        import trellis_browser_bridge as bridge  # type: ignore[import-not-found]
-        from pyodide.ffi import create_proxy, to_js  # type: ignore[import-not-found]
-
-        from trellis.platforms.browser.handler import BrowserMessageHandler
+        # Pyodide-only imports - these modules only exist inside the Pyodide runtime
+        import js  # type: ignore[import-not-found]  # noqa: PLC0415
+        import trellis_browser_bridge as bridge  # type: ignore[import-not-found]  # noqa: PLC0415
+        from pyodide.ffi import (  # type: ignore[import-not-found]  # noqa: PLC0415
+            create_proxy,
+            to_js,
+        )
 
         # Pyodide serializer: convert Python dict to JS object
         def pyodide_serializer(msg_dict: dict[str, Any]) -> Any:

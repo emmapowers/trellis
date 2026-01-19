@@ -5,6 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from trellis.bundler.registry import CollectedModules, ExportKind, Module, ModuleExport
+from trellis.bundler.utils import find_project_root
+from trellis.bundler.workspace import (
+    generate_registry_ts,
+    get_project_hash,
+    get_project_workspace,
+    write_registry_ts,
+)
 
 
 class TestFindProjectRoot:
@@ -12,8 +19,6 @@ class TestFindProjectRoot:
 
     def test_finds_pyproject_toml(self, tmp_path: Path) -> None:
         """Finds project root by pyproject.toml presence."""
-        from trellis.bundler.utils import find_project_root
-
         # Create pyproject.toml in project root
         (tmp_path / "pyproject.toml").touch()
         # Create nested entry point
@@ -28,8 +33,6 @@ class TestFindProjectRoot:
 
     def test_finds_git_directory(self, tmp_path: Path) -> None:
         """Finds project root by .git directory presence."""
-        from trellis.bundler.utils import find_project_root
-
         # Create .git directory in project root
         (tmp_path / ".git").mkdir()
         # Create nested entry point
@@ -44,8 +47,6 @@ class TestFindProjectRoot:
 
     def test_finds_git_file_for_worktrees(self, tmp_path: Path) -> None:
         """Finds project root by .git file presence (git worktree case)."""
-        from trellis.bundler.utils import find_project_root
-
         # Create .git file (not directory) like in worktrees
         (tmp_path / ".git").write_text("gitdir: /some/path/.git/worktrees/foo")
         # Create entry point
@@ -58,8 +59,6 @@ class TestFindProjectRoot:
 
     def test_pyproject_toml_takes_priority_over_git(self, tmp_path: Path) -> None:
         """pyproject.toml is preferred over .git when both exist at different levels."""
-        from trellis.bundler.utils import find_project_root
-
         # Create .git in parent
         parent = tmp_path / "parent"
         parent.mkdir()
@@ -81,8 +80,6 @@ class TestFindProjectRoot:
 
     def test_fallback_to_entry_point_parent(self, tmp_path: Path) -> None:
         """Falls back to entry point parent when no markers found."""
-        from trellis.bundler.utils import find_project_root
-
         # Create entry point with no project markers above
         subdir = tmp_path / "isolated"
         subdir.mkdir()
@@ -95,8 +92,6 @@ class TestFindProjectRoot:
 
     def test_handles_entry_point_in_root(self, tmp_path: Path) -> None:
         """Works when entry point is directly in project root."""
-        from trellis.bundler.utils import find_project_root
-
         (tmp_path / "pyproject.toml").touch()
         entry_point = tmp_path / "app.py"
         entry_point.touch()
@@ -111,8 +106,6 @@ class TestGetProjectHash:
 
     def test_consistent_hash_for_same_path(self) -> None:
         """Same path always produces same hash."""
-        from trellis.bundler.workspace import get_project_hash
-
         path = Path("/some/project/app.py")
         hash1 = get_project_hash(path)
         hash2 = get_project_hash(path)
@@ -120,8 +113,6 @@ class TestGetProjectHash:
 
     def test_different_hash_for_different_paths(self) -> None:
         """Different paths produce different hashes."""
-        from trellis.bundler.workspace import get_project_hash
-
         hash1 = get_project_hash(Path("/project1/app.py"))
         hash2 = get_project_hash(Path("/project2/app.py"))
         assert hash1 != hash2
@@ -132,8 +123,6 @@ class TestGetProjectWorkspace:
 
     def test_returns_project_local_trellis_directory(self, tmp_path: Path) -> None:
         """Workspace is under .trellis in project root, not global cache."""
-        from trellis.bundler.workspace import get_project_workspace
-
         # Create project with pyproject.toml
         (tmp_path / "pyproject.toml").touch()
         entry_point = tmp_path / "app.py"
@@ -147,8 +136,6 @@ class TestGetProjectWorkspace:
 
     def test_creates_trellis_directory_if_needed(self, tmp_path: Path) -> None:
         """Creates .trellis directory and workspace if they don't exist."""
-        from trellis.bundler.workspace import get_project_workspace
-
         (tmp_path / "pyproject.toml").touch()
         entry_point = tmp_path / "app.py"
         entry_point.touch()
@@ -160,8 +147,6 @@ class TestGetProjectWorkspace:
 
     def test_uses_project_hash_for_workspace_name(self, tmp_path: Path) -> None:
         """Workspace subdirectory is named by project hash."""
-        from trellis.bundler.workspace import get_project_hash, get_project_workspace
-
         (tmp_path / "pyproject.toml").touch()
         entry_point = tmp_path / "app.py"
         entry_point.touch()
@@ -173,8 +158,6 @@ class TestGetProjectWorkspace:
 
     def test_different_entry_points_get_different_workspaces(self, tmp_path: Path) -> None:
         """Different entry points get separate workspace directories."""
-        from trellis.bundler.workspace import get_project_workspace
-
         (tmp_path / "pyproject.toml").touch()
 
         entry1 = tmp_path / "app1.py"
@@ -195,8 +178,6 @@ class TestWriteRegistryTs:
 
     def test_writes_registry_file(self, tmp_path: Path) -> None:
         """Writes _registry.ts file to workspace directory."""
-        from trellis.bundler.workspace import write_registry_ts
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -222,8 +203,6 @@ class TestWriteRegistryTs:
 
     def test_returns_path_to_file(self, tmp_path: Path) -> None:
         """Returns the path to the written file."""
-        from trellis.bundler.workspace import write_registry_ts
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -236,8 +215,6 @@ class TestWriteRegistryTs:
 
     def test_creates_workspace_if_needed(self, tmp_path: Path) -> None:
         """Creates workspace directory if it doesn't exist."""
-        from trellis.bundler.workspace import write_registry_ts
-
         workspace = tmp_path / "new_workspace"
         collected = CollectedModules(modules=[], packages={})
 
@@ -252,8 +229,6 @@ class TestGenerateRegistryTs:
 
     def test_imports_components(self) -> None:
         """Generates import statements for component exports."""
-        from trellis.bundler.workspace import generate_registry_ts
-
         collected = CollectedModules(
             modules=[
                 Module(
@@ -274,8 +249,6 @@ class TestGenerateRegistryTs:
 
     def test_registers_components(self) -> None:
         """Generates registerWidget calls for component exports."""
-        from trellis.bundler.workspace import generate_registry_ts
-
         collected = CollectedModules(
             modules=[
                 Module(
@@ -294,8 +267,6 @@ class TestGenerateRegistryTs:
 
     def test_exports_functions(self) -> None:
         """Re-exports function exports."""
-        from trellis.bundler.workspace import generate_registry_ts
-
         collected = CollectedModules(
             modules=[
                 Module(
@@ -315,8 +286,6 @@ class TestGenerateRegistryTs:
 
     def test_imports_initializers(self) -> None:
         """Generates import statements for initializer exports (side-effect imports)."""
-        from trellis.bundler.workspace import generate_registry_ts
-
         collected = CollectedModules(
             modules=[
                 Module(
@@ -336,8 +305,6 @@ class TestGenerateRegistryTs:
 
     def test_includes_registerWidget_import(self) -> None:
         """Includes import for registerWidget when there are components."""
-        from trellis.bundler.workspace import generate_registry_ts
-
         collected = CollectedModules(
             modules=[
                 Module(
@@ -358,8 +325,6 @@ class TestGenerateRegistryTs:
 
     def test_exports_initRegistry_function(self) -> None:
         """Exports an initRegistry function that registers all components."""
-        from trellis.bundler.workspace import generate_registry_ts
-
         collected = CollectedModules(
             modules=[
                 Module(
@@ -378,8 +343,6 @@ class TestGenerateRegistryTs:
 
     def test_imports_stylesheets(self) -> None:
         """Generates import statements for stylesheet exports (keeps .css extension)."""
-        from trellis.bundler.workspace import generate_registry_ts
-
         collected = CollectedModules(
             modules=[
                 Module(

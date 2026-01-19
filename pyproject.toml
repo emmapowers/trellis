@@ -87,6 +87,7 @@ select = [
     "PT",     # flake8-pytest-style
     "ISC",    # flake8-implicit-str-concat
     "ICN",    # flake8-import-conventions
+    "TID",    # flake8-tidy-imports
 ]
 ignore = [
     "E501",     # line too long (black handles this)
@@ -98,10 +99,12 @@ ignore = [
     "F403",     # star imports - used intentionally in __init__.py
     "SLF001",   # private member access - needed for descriptor protocol
     "PLW0603",  # global statement - needed for render context
-    "PLC0415",  # import not at top level - needed to avoid circular imports
     "UP046",    # generic class style - defer to later cleanup
     "UP047",    # generic function style - defer to later cleanup
 ]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = [
@@ -111,6 +114,10 @@ ignore = [
     "RUF005",   # list concatenation is clearer than spread in tests
     "RUF001",   # Unicode characters intentional (e.g. × for close button)
     "RUF012",   # Stateful classes intentionally use mutable defaults
+    "TID252",   # relative imports in test helpers
+]
+"examples/**" = [
+    "TID252",   # relative imports in examples are fine
 ]
 
 [tool.mypy]

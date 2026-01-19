@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 import io
+import json
 import tarfile
+import time
 from pathlib import Path
 
 import pytest
+
+from trellis.bundler.build import _collect_input_files, is_rebuild_needed
+from trellis.bundler.metafile import get_metafile_path, read_metafile
+from trellis.bundler.utils import safe_extract as _safe_extract
+from trellis.bundler.watch import get_watch_paths
 
 
 class TestSafeExtract:
@@ -14,8 +21,6 @@ class TestSafeExtract:
 
     def test_safe_extract_normal_paths(self, tmp_path: Path) -> None:
         """Normal paths extract successfully."""
-        from trellis.bundler.utils import safe_extract as _safe_extract
-
         # Create a tarball with normal paths
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
@@ -40,8 +45,6 @@ class TestSafeExtract:
 
     def test_safe_extract_rejects_parent_traversal(self, tmp_path: Path) -> None:
         """Rejects paths with parent directory traversal."""
-        from trellis.bundler.utils import safe_extract as _safe_extract
-
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
             data = b"malicious"
@@ -56,8 +59,6 @@ class TestSafeExtract:
 
     def test_safe_extract_rejects_hidden_traversal(self, tmp_path: Path) -> None:
         """Rejects paths with hidden traversal in middle of path."""
-        from trellis.bundler.utils import safe_extract as _safe_extract
-
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
             data = b"malicious"
@@ -72,8 +73,6 @@ class TestSafeExtract:
 
     def test_safe_extract_rejects_absolute_paths(self, tmp_path: Path) -> None:
         """Rejects absolute paths that escape destination."""
-        from trellis.bundler.utils import safe_extract as _safe_extract
-
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
             data = b"malicious"
@@ -88,8 +87,6 @@ class TestSafeExtract:
 
     def test_safe_extract_rejects_symlinks(self, tmp_path: Path) -> None:
         """Rejects symlink entries to prevent link-based escapes."""
-        from trellis.bundler.utils import safe_extract as _safe_extract
-
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
             # Add a symlink pointing outside destination
@@ -105,8 +102,6 @@ class TestSafeExtract:
 
     def test_safe_extract_rejects_hardlinks(self, tmp_path: Path) -> None:
         """Rejects hardlink entries to prevent link-based escapes."""
-        from trellis.bundler.utils import safe_extract as _safe_extract
-
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
             # Add a hardlink
@@ -126,8 +121,6 @@ class TestIsRebuildNeeded:
 
     def test_rebuild_needed_when_output_missing(self, tmp_path: Path) -> None:
         """Rebuild is needed when output files don't exist."""
-        from trellis.bundler.build import is_rebuild_needed
-
         input_file = tmp_path / "input.ts"
         input_file.write_text("const x = 1;")
         output_file = tmp_path / "bundle.js"
@@ -137,10 +130,6 @@ class TestIsRebuildNeeded:
 
     def test_rebuild_not_needed_when_output_newer(self, tmp_path: Path) -> None:
         """Rebuild not needed when output is newer than all inputs."""
-        import time
-
-        from trellis.bundler.build import is_rebuild_needed
-
         input_file = tmp_path / "input.ts"
         input_file.write_text("const x = 1;")
 
@@ -153,10 +142,6 @@ class TestIsRebuildNeeded:
 
     def test_rebuild_needed_when_input_newer(self, tmp_path: Path) -> None:
         """Rebuild is needed when any input is newer than output."""
-        import time
-
-        from trellis.bundler.build import is_rebuild_needed
-
         output_file = tmp_path / "bundle.js"
         output_file.write_text("bundled")
 
@@ -169,10 +154,6 @@ class TestIsRebuildNeeded:
 
     def test_rebuild_needed_when_any_input_newer(self, tmp_path: Path) -> None:
         """Rebuild is needed when any one input is newer than output."""
-        import time
-
-        from trellis.bundler.build import is_rebuild_needed
-
         # Create inputs first
         input1 = tmp_path / "input1.ts"
         input1.write_text("const x = 1;")
@@ -193,10 +174,6 @@ class TestIsRebuildNeeded:
 
     def test_rebuild_checks_all_outputs(self, tmp_path: Path) -> None:
         """Rebuild is needed if any output is missing."""
-        import time
-
-        from trellis.bundler.build import is_rebuild_needed
-
         input_file = tmp_path / "input.ts"
         input_file.write_text("const x = 1;")
 
@@ -211,8 +188,6 @@ class TestIsRebuildNeeded:
 
     def test_rebuild_not_needed_with_empty_inputs(self, tmp_path: Path) -> None:
         """No rebuild needed if no inputs (edge case)."""
-        from trellis.bundler.build import is_rebuild_needed
-
         output_file = tmp_path / "bundle.js"
         output_file.write_text("bundled")
 
@@ -224,8 +199,6 @@ class TestMetafile:
 
     def test_get_metafile_path_returns_workspace_path(self, tmp_path: Path) -> None:
         """get_metafile_path returns metafile.json in workspace."""
-        from trellis.bundler.metafile import get_metafile_path
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -234,10 +207,6 @@ class TestMetafile:
 
     def test_read_metafile_parses_inputs(self, tmp_path: Path) -> None:
         """read_metafile extracts input paths from metafile."""
-        import json
-
-        from trellis.bundler.metafile import read_metafile
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -268,10 +237,6 @@ class TestMetafile:
 
     def test_read_metafile_parses_outputs(self, tmp_path: Path) -> None:
         """read_metafile extracts output paths from metafile."""
-        import json
-
-        from trellis.bundler.metafile import read_metafile
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -292,8 +257,6 @@ class TestMetafile:
 
     def test_read_metafile_raises_on_missing(self, tmp_path: Path) -> None:
         """read_metafile raises FileNotFoundError when metafile doesn't exist."""
-        from trellis.bundler.metafile import read_metafile
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
         # No metafile.json created
@@ -303,8 +266,6 @@ class TestMetafile:
 
     def test_read_metafile_raises_on_invalid_json(self, tmp_path: Path) -> None:
         """read_metafile raises ValueError when metafile is invalid JSON."""
-        from trellis.bundler.metafile import read_metafile
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
         (workspace / "metafile.json").write_text("not valid json")
@@ -314,10 +275,6 @@ class TestMetafile:
 
     def test_read_metafile_filters_node_modules(self, tmp_path: Path) -> None:
         """read_metafile excludes node_modules from inputs."""
-        import json
-
-        from trellis.bundler.metafile import read_metafile
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -342,10 +299,6 @@ class TestCollectInputFiles:
 
     def test_returns_metafile_inputs(self, tmp_path: Path) -> None:
         """_collect_input_files returns inputs from metafile."""
-        import json
-
-        from trellis.bundler.build import _collect_input_files
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -367,8 +320,6 @@ class TestCollectInputFiles:
 
     def test_raises_when_metafile_missing(self, tmp_path: Path) -> None:
         """_collect_input_files raises FileNotFoundError when metafile doesn't exist."""
-        from trellis.bundler.build import _collect_input_files
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
         # No metafile.json
@@ -382,10 +333,6 @@ class TestGetWatchPaths:
 
     def test_returns_metafile_inputs(self, tmp_path: Path) -> None:
         """get_watch_paths returns inputs from metafile as resolved paths."""
-        import json
-
-        from trellis.bundler.watch import get_watch_paths
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -409,8 +356,6 @@ class TestGetWatchPaths:
 
     def test_raises_when_metafile_missing(self, tmp_path: Path) -> None:
         """get_watch_paths raises FileNotFoundError when metafile doesn't exist."""
-        from trellis.bundler.watch import get_watch_paths
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
         # No metafile.json

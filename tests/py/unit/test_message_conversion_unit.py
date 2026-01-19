@@ -3,10 +3,12 @@
 import msgspec
 import pytest
 
+from trellis.platforms.browser.handler import _dict_to_message, _message_to_dict
 from trellis.platforms.common.messages import (
     AddPatch,
     ErrorMessage,
     EventMessage,
+    HelloMessage,
     PatchMessage,
     RemovePatch,
     UpdatePatch,
@@ -18,8 +20,6 @@ class TestMessageToDict:
 
     def test_converts_patch_message(self) -> None:
         """_message_to_dict converts PatchMessage to dict with type field."""
-        from trellis.platforms.browser.handler import _message_to_dict
-
         msg = PatchMessage(patches=[])
         result = _message_to_dict(msg)
 
@@ -31,8 +31,6 @@ class TestMessageToDict:
         This is required for postMessage which can only clone plain objects,
         not msgspec Struct instances.
         """
-        from trellis.platforms.browser.handler import _message_to_dict
-
         msg = PatchMessage(
             patches=[
                 AddPatch(
@@ -69,8 +67,6 @@ class TestMessageToDict:
 
     def test_converts_error_message(self) -> None:
         """_message_to_dict converts ErrorMessage to dict with type field."""
-        from trellis.platforms.browser.handler import _message_to_dict
-
         msg = ErrorMessage(error="test error", context="callback")
         result = _message_to_dict(msg)
 
@@ -82,23 +78,16 @@ class TestDictToMessage:
 
     def test_unknown_type_raises(self) -> None:
         """_dict_to_message raises ValidationError for unknown message type."""
-        from trellis.platforms.browser.handler import _dict_to_message
-
         with pytest.raises(msgspec.ValidationError):
             _dict_to_message({"type": "unknown_type"})
 
     def test_missing_callback_id_raises(self) -> None:
         """_dict_to_message raises ValidationError when event is missing callback_id."""
-        from trellis.platforms.browser.handler import _dict_to_message
-
         with pytest.raises(msgspec.ValidationError):
             _dict_to_message({"type": "event", "args": []})
 
     def test_converts_hello(self) -> None:
         """_dict_to_message converts hello message dict to HelloMessage."""
-        from trellis.platforms.browser.handler import _dict_to_message
-        from trellis.platforms.common.messages import HelloMessage
-
         result = _dict_to_message({"type": "hello", "client_id": "test-123"})
 
         assert isinstance(result, HelloMessage)
@@ -106,8 +95,6 @@ class TestDictToMessage:
 
     def test_converts_event(self) -> None:
         """_dict_to_message converts event message dict to EventMessage."""
-        from trellis.platforms.browser.handler import _dict_to_message
-
         result = _dict_to_message({"type": "event", "callback_id": "cb-1", "args": [1, 2]})
 
         assert isinstance(result, EventMessage)

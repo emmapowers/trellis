@@ -114,8 +114,8 @@ class HotReload:
         if self._started:
             return
 
-        from jurigged.live import Watcher
-        from jurigged.register import registry
+        from jurigged.live import Watcher  # noqa: PLC0415
+        from jurigged.register import registry  # noqa: PLC0415
 
         # Register existing modules and install import sniffer for new ones
         registry.auto_register(filter=is_user_module)

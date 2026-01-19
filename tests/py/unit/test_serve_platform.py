@@ -2,7 +2,19 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from trellis.platforms.browser.serve_platform import (
+    _collect_package_files,
+    _detect_entry_point,
+    _find_package_root,
+    _generate_html,
+)
+from trellis.routing import RoutingMode
 
 
 class TestFindPackageRoot:
@@ -10,8 +22,6 @@ class TestFindPackageRoot:
 
     def test_not_in_package_returns_none(self, tmp_path: Path) -> None:
         """Returns None when source is not in a package."""
-        from trellis.platforms.browser.serve_platform import _find_package_root
-
         # Create a standalone Python file (no __init__.py)
         source_file = tmp_path / "standalone.py"
         source_file.write_text("# standalone")
@@ -21,8 +31,6 @@ class TestFindPackageRoot:
 
     def test_single_level_package(self, tmp_path: Path) -> None:
         """Returns package directory for single-level package."""
-        from trellis.platforms.browser.serve_platform import _find_package_root
-
         # Create a package: mypackage/__init__.py, mypackage/app.py
         pkg_dir = tmp_path / "mypackage"
         pkg_dir.mkdir()
@@ -35,8 +43,6 @@ class TestFindPackageRoot:
 
     def test_nested_packages_returns_topmost(self, tmp_path: Path) -> None:
         """Returns topmost package directory for nested packages."""
-        from trellis.platforms.browser.serve_platform import _find_package_root
-
         # Create nested packages: outer/inner/module.py
         outer = tmp_path / "outer"
         inner = outer / "inner"
@@ -51,8 +57,6 @@ class TestFindPackageRoot:
 
     def test_source_in_init_file(self, tmp_path: Path) -> None:
         """Works when source is the __init__.py itself."""
-        from trellis.platforms.browser.serve_platform import _find_package_root
-
         pkg_dir = tmp_path / "mypackage"
         pkg_dir.mkdir()
         source_file = pkg_dir / "__init__.py"
@@ -67,8 +71,6 @@ class TestCollectPackageFiles:
 
     def test_collects_all_py_files(self, tmp_path: Path) -> None:
         """Collects all .py files in package."""
-        from trellis.platforms.browser.serve_platform import _collect_package_files
-
         pkg_dir = tmp_path / "mypackage"
         pkg_dir.mkdir()
         (pkg_dir / "__init__.py").write_text("# init")
@@ -85,8 +87,6 @@ class TestCollectPackageFiles:
 
     def test_includes_nested_subdirectories(self, tmp_path: Path) -> None:
         """Includes files from nested subdirectories."""
-        from trellis.platforms.browser.serve_platform import _collect_package_files
-
         pkg_dir = tmp_path / "mypackage"
         subpkg = pkg_dir / "sub"
         subpkg.mkdir(parents=True)
@@ -103,8 +103,6 @@ class TestCollectPackageFiles:
 
     def test_ignores_non_py_files(self, tmp_path: Path) -> None:
         """Ignores non-.py files."""
-        from trellis.platforms.browser.serve_platform import _collect_package_files
-
         pkg_dir = tmp_path / "mypackage"
         pkg_dir.mkdir()
         (pkg_dir / "__init__.py").write_text("")
@@ -122,11 +120,6 @@ class TestDetectEntryPoint:
 
     def test_returns_main_file_path(self) -> None:
         """Returns the __main__ module's file path."""
-        import sys
-        from unittest.mock import MagicMock, patch
-
-        from trellis.platforms.browser.serve_platform import _detect_entry_point
-
         # Mock __main__ module
         mock_main = MagicMock()
         mock_main.__file__ = "/path/to/script.py"
@@ -140,11 +133,6 @@ class TestDetectEntryPoint:
 
     def test_returns_module_name_when_run_as_module(self) -> None:
         """Returns module name when run with python -m."""
-        import sys
-        from unittest.mock import MagicMock, patch
-
-        from trellis.platforms.browser.serve_platform import _detect_entry_point
-
         # Mock __main__ module run as "python -m mypackage.module"
         mock_spec = MagicMock()
         mock_spec.name = "mypackage.module"
@@ -161,13 +149,6 @@ class TestDetectEntryPoint:
 
     def test_raises_when_main_not_found(self) -> None:
         """Raises RuntimeError when __main__ is not in sys.modules."""
-        import sys
-        from unittest.mock import patch
-
-        import pytest
-
-        from trellis.platforms.browser.serve_platform import _detect_entry_point
-
         # Remove __main__ from modules
         with patch.dict(sys.modules, {"__main__": None}):
             with pytest.raises(RuntimeError, match="__main__ not found"):
@@ -175,13 +156,6 @@ class TestDetectEntryPoint:
 
     def test_raises_when_file_not_set(self) -> None:
         """Raises RuntimeError when __main__.__file__ is None."""
-        import sys
-        from unittest.mock import MagicMock, patch
-
-        import pytest
-
-        from trellis.platforms.browser.serve_platform import _detect_entry_point
-
         mock_main = MagicMock()
         mock_main.__file__ = None
 
@@ -195,8 +169,6 @@ class TestGenerateHtml:
 
     def test_module_source_contains_files_json(self) -> None:
         """Generated HTML contains the files as JSON for module source."""
-        from trellis.platforms.browser.serve_platform import _generate_html
-
         source = {
             "type": "module",
             "files": {
@@ -215,8 +187,6 @@ class TestGenerateHtml:
 
     def test_code_source_contains_code(self) -> None:
         """Generated HTML contains the code for code source."""
-        from trellis.platforms.browser.serve_platform import _generate_html
-
         source = {"type": "code", "code": "print('hello')"}
 
         result = _generate_html(source)
@@ -227,8 +197,6 @@ class TestGenerateHtml:
 
     def test_valid_html_structure(self) -> None:
         """Generated HTML has valid structure."""
-        from trellis.platforms.browser.serve_platform import _generate_html
-
         source = {"type": "code", "code": "# test"}
 
         result = _generate_html(source)
@@ -243,8 +211,6 @@ class TestGenerateHtml:
 
     def test_escapes_special_characters(self) -> None:
         """Properly escapes special characters in code."""
-        from trellis.platforms.browser.serve_platform import _generate_html
-
         source = {
             "type": "module",
             "files": {
@@ -265,8 +231,6 @@ class TestGenerateHtml:
 
     def test_escapes_script_tags_in_code(self) -> None:
         """Code containing </script> is escaped to prevent HTML injection."""
-        from trellis.platforms.browser.serve_platform import _generate_html
-
         # Code that tries to break out of the script context
         source = {
             "type": "code",
@@ -284,8 +248,6 @@ class TestGenerateHtml:
 
     def test_includes_routing_mode_hash_url_by_default(self) -> None:
         """routing_mode defaults to hash_url in config."""
-        from trellis.platforms.browser.serve_platform import _generate_html
-
         source = {"type": "code", "code": "# test"}
 
         result = _generate_html(source)
@@ -296,9 +258,6 @@ class TestGenerateHtml:
 
     def test_includes_routing_mode_embedded_when_specified(self) -> None:
         """routing_mode can be set to embedded."""
-        from trellis.platforms.browser.serve_platform import _generate_html
-        from trellis.routing import RoutingMode
-
         source = {"type": "code", "code": "# test"}
 
         result = _generate_html(source, routing_mode=RoutingMode.EMBEDDED)
@@ -307,9 +266,6 @@ class TestGenerateHtml:
 
     def test_includes_routing_mode_standard_when_specified(self) -> None:
         """routing_mode can be set to standard."""
-        from trellis.platforms.browser.serve_platform import _generate_html
-        from trellis.routing import RoutingMode
-
         source = {"type": "code", "code": "# test"}
 
         result = _generate_html(source, routing_mode=RoutingMode.STANDARD)

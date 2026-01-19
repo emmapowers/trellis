@@ -5,6 +5,8 @@ from pathlib import Path
 
 import click
 
+from trellis.platforms.common.base import WatchConfig
+
 
 @click.group()
 def trellis() -> None:
@@ -38,27 +40,25 @@ def bundle() -> None:
 )
 def build(force: bool, watch: bool, platform: str, dest: Path | None, library: bool) -> None:
     """Build platform bundles."""
-    from trellis.platforms.common.base import WatchConfig
-
     # Collect platforms to build
     platforms: list[tuple[str, WatchConfig | None]] = []
 
     if platform in ("server", "all"):
-        from trellis.platforms.server.platform import ServerPlatform
+        from trellis.platforms.server.platform import ServerPlatform  # noqa: PLC0415
 
         server = ServerPlatform()
         server.bundle(force=force, dest=dest, library=library)
         platforms.append(("server", server.get_watch_config()))
 
     if platform in ("desktop", "all"):
-        from trellis.platforms.desktop.platform import DesktopPlatform
+        from trellis.platforms.desktop.platform import DesktopPlatform  # noqa: PLC0415
 
         desktop = DesktopPlatform()
         desktop.bundle(force=force, dest=dest, library=library)
         platforms.append(("desktop", desktop.get_watch_config()))
 
     if platform in ("browser", "all"):
-        from trellis.platforms.browser.serve_platform import BrowserServePlatform
+        from trellis.platforms.browser.serve_platform import BrowserServePlatform  # noqa: PLC0415
 
         browser = BrowserServePlatform()
         browser.bundle(force=force, dest=dest, library=library)
@@ -66,7 +66,7 @@ def build(force: bool, watch: bool, platform: str, dest: Path | None, library: b
 
     # Start watch mode if enabled
     if watch:
-        from trellis.bundler.watch import watch_and_rebuild
+        from trellis.bundler.watch import watch_and_rebuild  # noqa: PLC0415
 
         async def watch_all() -> None:
             """Watch all platforms concurrently."""

@@ -3,15 +3,24 @@
 import concurrent.futures
 import logging
 import threading
+import time
 from dataclasses import dataclass
 
 import pytest
 
+from trellis import html as h
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.rendering.child_ref import ChildRef
+from trellis.core.rendering.frames import _escape_key
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession, get_active_session, set_active_session
+from trellis.core.rendering.session import (
+    RenderSession,
+    get_active_session,
+    is_render_active,
+    set_active_session,
+)
 from trellis.core.state.stateful import Stateful
+from trellis.widgets import Button, Column, Label, Row
 
 
 def make_component(name: str) -> CompositionComponent:
@@ -297,8 +306,6 @@ class TestThreadSafeStateUpdates:
         This tests that dirty.mark() blocks when called from another thread
         while a render is in progress on the same RenderSession.
         """
-        import time
-
         events: list[str] = []
         state_holder: list[Stateful] = []
         render_count = [0]
@@ -565,9 +572,6 @@ class TestBuiltinWidgetsReconciliation:
 
     def test_remove_widget_from_middle_of_list(self) -> None:
         """Removing a widget from the middle exercises type-based matching."""
-        from trellis import html as h
-        from trellis.widgets import Button, Row
-
         items_ref = [["a", "b", "c", "d"]]
 
         @component
@@ -595,8 +599,6 @@ class TestBuiltinWidgetsReconciliation:
 
     def test_html_elements_in_dynamic_list(self) -> None:
         """HTML elements (via @html_element) should be hashable for reconciliation."""
-        from trellis import html as h
-
         items_ref = [["item1", "item2", "item3"]]
 
         @component
@@ -619,8 +621,6 @@ class TestBuiltinWidgetsReconciliation:
 
     def test_widgets_in_dynamic_list(self) -> None:
         """Widgets (via @react_component_base) should be hashable for reconciliation."""
-        from trellis.widgets import Button, Column, Label, Row
-
         items_ref = [[1, 2, 3, 4, 5]]
 
         @component
@@ -647,8 +647,6 @@ class TestBuiltinWidgetsReconciliation:
 
     def test_mixed_widgets_and_components_in_list(self) -> None:
         """Mix of @component and @react_component_base in dynamic list."""
-        from trellis.widgets import Button
-
         items_ref = [["a", "b", "c"]]
 
         @component
@@ -678,8 +676,6 @@ class TestEscapeKey:
 
     def test_no_special_chars(self) -> None:
         """Keys without special chars pass through unchanged."""
-        from trellis.core.rendering.frames import _escape_key
-
         assert _escape_key("simple") == "simple"
         assert _escape_key("with-dash") == "with-dash"
         assert _escape_key("with_underscore") == "with_underscore"
@@ -688,36 +684,26 @@ class TestEscapeKey:
 
     def test_escape_colon(self) -> None:
         """Colon is escaped."""
-        from trellis.core.rendering.frames import _escape_key
-
         assert _escape_key("my:key") == "my%3Akey"
         assert _escape_key("a:b:c") == "a%3Ab%3Ac"
 
     def test_escape_at(self) -> None:
         """At sign is escaped."""
-        from trellis.core.rendering.frames import _escape_key
-
         assert _escape_key("item@home") == "item%40home"
         assert _escape_key("user@domain") == "user%40domain"
 
     def test_escape_slash(self) -> None:
         """Slash is escaped."""
-        from trellis.core.rendering.frames import _escape_key
-
         assert _escape_key("row/5") == "row%2F5"
         assert _escape_key("path/to/item") == "path%2Fto%2Fitem"
 
     def test_escape_percent(self) -> None:
         """Percent must be escaped first to avoid double-encoding."""
-        from trellis.core.rendering.frames import _escape_key
-
         assert _escape_key("100%") == "100%25"
         assert _escape_key("%done") == "%25done"
 
     def test_multiple_special_chars(self) -> None:
         """All special characters are escaped in a single key."""
-        from trellis.core.rendering.frames import _escape_key
-
         assert _escape_key("a:b@c/d%e") == "a%3Ab%40c%2Fd%25e"
         # Percent first, then others
         assert _escape_key("%:@/") == "%25%3A%40%2F"
@@ -736,8 +722,6 @@ class TestIsRenderActiveSemantics:
 
     def test_is_render_active_true_during_component_execution(self) -> None:
         """is_render_active() returns True during component execution."""
-        from trellis.core.rendering.session import is_render_active
-
         values_during_execution: list[bool] = []
 
         @component
@@ -752,8 +736,6 @@ class TestIsRenderActiveSemantics:
 
     def test_is_render_active_false_during_hooks(self) -> None:
         """is_render_active() returns False during lifecycle hooks."""
-        from trellis.core.rendering.session import is_render_active
-
         values_during_mount: list[bool] = []
 
         @dataclass
@@ -777,8 +759,6 @@ class TestIsRenderActiveSemantics:
         This is the implementation requirement: hooks must run after
         session.active is cleared, not just after current_element_id is None.
         """
-        from trellis.core.rendering.session import get_active_session
-
         active_values: list[bool] = []
 
         @dataclass

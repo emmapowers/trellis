@@ -22,7 +22,7 @@ from trellis.bundler.workspace import write_registry_ts
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from .registry import CollectedModules, ModuleRegistry
+    from trellis.bundler.registry import CollectedModules, ModuleRegistry
 
 
 @dataclass

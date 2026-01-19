@@ -11,14 +11,16 @@ from pathlib import Path
 import pytest
 
 from tests.helpers import requires_pytauri
+from trellis.bundler import registry
+from trellis.bundler.metafile import get_metafile_path, read_metafile
+from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages, get_bin
 from trellis.bundler.workspace import get_project_workspace
+from trellis.platforms.server.platform import ServerPlatform
 
 
 class TestEnsurePackages:
     def test_installs_system_packages_including_esbuild(self, tmp_path: Path) -> None:
         """SYSTEM_PACKAGES (esbuild, typescript) are automatically installed."""
-        from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages, get_bin
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -42,9 +44,6 @@ class TestEnsurePackages:
 
     def test_installs_packages_with_bun(self, tmp_path: Path) -> None:
         """Installs packages using Bun and creates node_modules."""
-        from trellis.bundler import registry
-        from trellis.bundler.packages import ensure_packages
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -76,8 +75,6 @@ class TestEnsurePackages:
 class TestServerPlatformBundle:
     def test_builds_bundle(self) -> None:
         """Builds client bundle successfully via ServerPlatform."""
-        from trellis.platforms.server.platform import ServerPlatform
-
         # Bundle is now in the cache workspace
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
         entry_point = platforms_dir / "server" / "client" / "src" / "main.tsx"
@@ -93,9 +90,6 @@ class TestServerPlatformBundle:
 
     def test_generates_metafile(self) -> None:
         """Build generates metafile.json with input/output information."""
-        from trellis.bundler.metafile import get_metafile_path, read_metafile
-        from trellis.platforms.server.platform import ServerPlatform
-
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
         entry_point = platforms_dir / "server" / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)
@@ -128,7 +122,8 @@ class TestDesktopPlatformBundle:
     @requires_pytauri
     def test_builds_bundle_and_copies_html(self) -> None:
         """Builds desktop bundle and copies static index.html."""
-        from trellis.platforms.desktop.platform import DesktopPlatform
+        # Desktop import requires pytauri which isn't available in CI
+        from trellis.platforms.desktop.platform import DesktopPlatform  # noqa: PLC0415
 
         # Bundle is now in the cache workspace
         platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"

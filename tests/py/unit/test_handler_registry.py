@@ -6,7 +6,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from trellis.platforms.common.handler_registry import HandlerRegistry
+from trellis.platforms.common.handler_registry import (
+    HandlerRegistry,
+    get_global_registry,
+)
 from trellis.platforms.common.messages import ReloadMessage
 
 
@@ -113,8 +116,6 @@ class TestGlobalHandlerRegistry:
 
     def test_get_global_registry_returns_same_instance(self) -> None:
         """get_global_registry returns singleton instance."""
-        from trellis.platforms.common.handler_registry import get_global_registry
-
         registry1 = get_global_registry()
         registry2 = get_global_registry()
 

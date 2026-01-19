@@ -6,6 +6,8 @@ current design philosophy is permissive - most invalid values are
 passed to the React client without validation.
 """
 
+import pytest
+
 from trellis.core.components.composition import component
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
@@ -234,8 +236,6 @@ class TestButtonEdgeCases:
         render(ctx)
 
         button = ctx.elements.get(ctx.root_element.child_ids[0])
-
-        import pytest
 
         with pytest.raises(ValueError, match="Callback failed"):
             button.properties["on_click"]()

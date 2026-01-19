@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from tests.helpers import HAS_PYTAURI, requires_pytauri
+from trellis.bundler import registry
 
 # Import platforms that don't require pytauri
 from trellis.platforms import browser, common, server  # noqa: F401
@@ -22,16 +23,12 @@ class TestPlatformRegistration:
 
     def test_common_registers_trellis_core(self) -> None:
         """Importing common platform registers trellis-core module."""
-        from trellis.bundler import registry
-
         collected = registry.collect()
         module_names = [m.name for m in collected.modules]
         assert "trellis-core" in module_names
 
     def test_trellis_core_has_packages(self) -> None:
         """trellis-core module includes NPM packages."""
-        from trellis.bundler import registry
-
         collected = registry.collect()
         # Should have core packages like react
         assert "react" in collected.packages
@@ -39,8 +36,6 @@ class TestPlatformRegistration:
 
     def test_trellis_core_has_base_path(self) -> None:
         """trellis-core module has base_path set for source resolution."""
-        from trellis.bundler import registry
-
         collected = registry.collect()
         core = next(m for m in collected.modules if m.name == "trellis-core")
 
@@ -50,8 +45,6 @@ class TestPlatformRegistration:
 
     def test_server_registers_trellis_server(self) -> None:
         """Importing server platform registers trellis-server module."""
-        from trellis.bundler import registry
-
         collected = registry.collect()
         module_names = [m.name for m in collected.modules]
         assert "trellis-server" in module_names
@@ -59,8 +52,6 @@ class TestPlatformRegistration:
     @requires_pytauri
     def test_desktop_registers_with_tauri_packages(self) -> None:
         """Importing desktop platform registers trellis-desktop with Tauri packages."""
-        from trellis.bundler import registry
-
         collected = registry.collect()
         desktop_module = next(m for m in collected.modules if m.name == "trellis-desktop")
 
@@ -69,16 +60,12 @@ class TestPlatformRegistration:
 
     def test_browser_registers_trellis_browser(self) -> None:
         """Importing browser platform registers trellis-browser module."""
-        from trellis.bundler import registry
-
         collected = registry.collect()
         module_names = [m.name for m in collected.modules]
         assert "trellis-browser" in module_names
 
     def test_all_platforms_no_package_conflicts(self) -> None:
         """All platforms can be imported without package version conflicts."""
-        from trellis.bundler import registry
-
         # Should not raise on collect (no version conflicts)
         collected = registry.collect()
         # 4 modules with pytauri (desktop), 3 without

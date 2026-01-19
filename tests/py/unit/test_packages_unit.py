@@ -9,14 +9,19 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from trellis.bundler.packages import (
+    SYSTEM_PACKAGES,
+    ensure_packages,
+    generate_package_json,
+    get_bin,
+)
+
 
 class TestGeneratePackageJson:
     """Tests for generate_package_json function."""
 
     def test_creates_valid_json_structure(self) -> None:
         """Returns a valid package.json dict structure."""
-        from trellis.bundler.packages import generate_package_json
-
         packages = {"react": "18.3.1", "react-dom": "18.3.1"}
         result = generate_package_json(packages)
 
@@ -26,8 +31,6 @@ class TestGeneratePackageJson:
 
     def test_includes_all_packages_as_dependencies(self) -> None:
         """All packages appear in dependencies with correct versions."""
-        from trellis.bundler.packages import generate_package_json
-
         packages = {
             "react": "18.3.1",
             "react-dom": "18.3.1",
@@ -39,16 +42,12 @@ class TestGeneratePackageJson:
 
     def test_empty_packages_creates_empty_dependencies(self) -> None:
         """Empty packages dict creates empty dependencies."""
-        from trellis.bundler.packages import generate_package_json
-
         result = generate_package_json({})
 
         assert result["dependencies"] == {}
 
     def test_scoped_packages_handled_correctly(self) -> None:
         """Scoped packages like @scope/name are handled."""
-        from trellis.bundler.packages import generate_package_json
-
         packages = {
             "@react-aria/button": "3.10.0",
             "@tauri-apps/api": "2.8.0",
@@ -64,8 +63,6 @@ class TestEnsurePackages:
 
     def test_requires_workspace_parameter(self, tmp_path: Path) -> None:
         """ensure_packages requires a workspace parameter."""
-        from trellis.bundler.packages import ensure_packages
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -81,8 +78,6 @@ class TestEnsurePackages:
 
     def test_installs_in_provided_workspace(self, tmp_path: Path) -> None:
         """Installs packages directly in the provided workspace."""
-        from trellis.bundler.packages import ensure_packages
-
         workspace = tmp_path / "my_workspace"
         workspace.mkdir()
 
@@ -99,8 +94,6 @@ class TestEnsurePackages:
 
     def test_returns_none(self, tmp_path: Path) -> None:
         """Returns None (caller constructs node_modules path from workspace)."""
-        from trellis.bundler.packages import ensure_packages
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -115,8 +108,6 @@ class TestEnsurePackages:
 
     def test_skips_install_if_package_json_unchanged(self, tmp_path: Path) -> None:
         """Skips bun install if package.json already has same content."""
-        from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -141,8 +132,6 @@ class TestEnsurePackages:
 
     def test_runs_install_if_package_json_differs(self, tmp_path: Path) -> None:
         """Runs bun install if package.json has different content."""
-        from trellis.bundler.packages import ensure_packages
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -163,8 +152,6 @@ class TestEnsurePackages:
 
     def test_runs_install_if_no_lockfile(self, tmp_path: Path) -> None:
         """Runs bun install if no bun.lock exists."""
-        from trellis.bundler.packages import ensure_packages
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -183,8 +170,6 @@ class TestEnsurePackages:
 
     def test_writes_package_json_before_install(self, tmp_path: Path) -> None:
         """Writes package.json to workspace before running bun install."""
-        from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
@@ -211,8 +196,6 @@ class TestEnsurePackages:
 
     def test_uses_correct_bun_command(self, tmp_path: Path) -> None:
         """Runs bun install with correct arguments."""
-        from trellis.bundler.packages import ensure_packages
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
         bun_path = tmp_path / "bin" / "bun"
@@ -239,29 +222,21 @@ class TestSystemPackages:
 
     def test_system_packages_exists(self) -> None:
         """SYSTEM_PACKAGES constant is defined."""
-        from trellis.bundler.packages import SYSTEM_PACKAGES
-
         assert isinstance(SYSTEM_PACKAGES, dict)
 
     def test_system_packages_includes_esbuild(self) -> None:
         """SYSTEM_PACKAGES includes esbuild."""
-        from trellis.bundler.packages import SYSTEM_PACKAGES
-
         assert "esbuild" in SYSTEM_PACKAGES
         # Version should be a string like "0.27.2"
         assert isinstance(SYSTEM_PACKAGES["esbuild"], str)
 
     def test_system_packages_includes_typescript(self) -> None:
         """SYSTEM_PACKAGES includes typescript."""
-        from trellis.bundler.packages import SYSTEM_PACKAGES
-
         assert "typescript" in SYSTEM_PACKAGES
         assert isinstance(SYSTEM_PACKAGES["typescript"], str)
 
     def test_ensure_packages_includes_system_packages(self, tmp_path: Path) -> None:
         """ensure_packages automatically includes SYSTEM_PACKAGES."""
-        from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages
-
         workspace = tmp_path / "workspace"
         workspace.mkdir()
         user_packages = {"react": "18.3.1"}
@@ -295,8 +270,6 @@ class TestGetBin:
 
     def test_get_bin_returns_path_to_binary(self, tmp_path: Path) -> None:
         """get_bin returns path to binary in node_modules/.bin/."""
-        from trellis.bundler.packages import get_bin
-
         node_modules = tmp_path / "node_modules"
         node_modules.mkdir()
         bin_dir = node_modules / ".bin"
@@ -308,8 +281,6 @@ class TestGetBin:
 
     def test_get_bin_works_for_any_tool(self, tmp_path: Path) -> None:
         """get_bin works for any tool name (tsc, esbuild, etc)."""
-        from trellis.bundler.packages import get_bin
-
         node_modules = tmp_path / "node_modules"
 
         assert get_bin(node_modules, "tsc") == node_modules / ".bin" / "tsc"
@@ -319,8 +290,6 @@ class TestGetBin:
     @pytest.mark.skipif(sys.platform == "win32", reason="Windows uses .cmd extension")
     def test_get_bin_unix_path(self, tmp_path: Path) -> None:
         """On Unix, get_bin returns path without extension."""
-        from trellis.bundler.packages import get_bin
-
         node_modules = tmp_path / "node_modules"
         result = get_bin(node_modules, "tsc")
 

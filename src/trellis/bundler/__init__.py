@@ -1,7 +1,7 @@
 """Client bundler using esbuild + Bun package management."""
 
-from .build import build
-from .registry import (
+from trellis.bundler.build import build
+from trellis.bundler.registry import (
     SUPPORTED_SOURCE_TYPES,
     CollectedModules,
     ExportKind,
@@ -10,7 +10,7 @@ from .registry import (
     ModuleRegistry,
     registry,
 )
-from .steps import (
+from trellis.bundler.steps import (
     BuildContext,
     BuildStep,
     BundleBuildStep,

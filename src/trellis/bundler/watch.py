@@ -14,12 +14,12 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .build import build
-from .metafile import read_metafile
+from trellis.bundler.build import build
+from trellis.bundler.metafile import read_metafile
 
 if TYPE_CHECKING:
-    from .registry import ModuleRegistry
-    from .steps import BuildStep
+    from trellis.bundler.registry import ModuleRegistry
+    from trellis.bundler.steps import BuildStep
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ async def watch_and_rebuild(
     """
     # Import watchfiles here to avoid loading it when not needed
     # (especially important for browser platform where it's unavailable)
-    import watchfiles
+    import watchfiles  # noqa: PLC0415
 
     # Get watch paths from metafile (requires build to have run first)
     watch_paths = get_watch_paths(workspace)

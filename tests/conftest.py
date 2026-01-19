@@ -8,9 +8,10 @@ from unittest.mock import Mock
 
 import pytest
 
+from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent
 from trellis.core.rendering.element import Element
-from trellis.core.rendering.patches import RenderPatch
+from trellis.core.rendering.patches import RenderAddPatch, RenderPatch
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
@@ -130,9 +131,7 @@ class PatchCapture:
 
     def render_dirty(self) -> list[RenderPatch]:
         """Re-render dirty nodes and capture patches."""
-        from trellis.core.rendering.render import render_dirty
-
-        patches = render_dirty(self.session)
+        patches = render(self.session)
         self.all_patches.append(patches)
         return patches
 
@@ -263,8 +262,6 @@ def render_to_tree(session: RenderSession) -> dict[str, tp.Any]:
     Raises:
         ValueError: If render() doesn't return a RenderAddPatch with the tree
     """
-    from trellis.core.rendering.patches import RenderAddPatch
-
     patches = render(session)
     if not patches:
         raise ValueError("render() returned no patches")
@@ -313,7 +310,6 @@ def app_wrapper() -> tp.Callable[[tp.Any, str, str | None], CompositionComponent
             handler = SomeHandler(component, app_wrapper)
             # handler can be used without TrellisApp
     """
-    from trellis.core.components.base import Component
 
     def wrapper(
         component: Component,

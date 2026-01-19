@@ -6,22 +6,24 @@ import socket
 
 import pytest
 
+from trellis.platforms.common.ports import (
+    DEFAULT_PORT_END,
+    DEFAULT_PORT_START,
+    find_available_port,
+)
+
 
 class TestFindAvailablePort:
     """Tests for find_available_port function."""
 
     def test_returns_port_in_range(self) -> None:
         """Returns a port within the specified range."""
-        from trellis.platforms.common.ports import find_available_port
-
         port = find_available_port(start=9000, end=9010)
 
         assert 9000 <= port < 9010
 
     def test_returns_first_available(self) -> None:
         """Returns the first available port when others are busy."""
-        from trellis.platforms.common.ports import find_available_port
-
         # Bind the first port
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -37,8 +39,6 @@ class TestFindAvailablePort:
 
     def test_raises_when_all_ports_busy(self) -> None:
         """Raises RuntimeError when all ports in range are busy."""
-        from trellis.platforms.common.ports import find_available_port
-
         # Bind all ports in a small range
         sockets = []
         for p in range(9200, 9203):
@@ -57,20 +57,12 @@ class TestFindAvailablePort:
 
     def test_respects_host_parameter(self) -> None:
         """Binds to the specified host address."""
-        from trellis.platforms.common.ports import find_available_port
-
         # Default host is 127.0.0.1, should work
         port = find_available_port(start=9300, end=9310, host="127.0.0.1")
         assert 9300 <= port < 9310
 
     def test_uses_default_range(self) -> None:
         """Uses default range when not specified."""
-        from trellis.platforms.common.ports import (
-            DEFAULT_PORT_END,
-            DEFAULT_PORT_START,
-            find_available_port,
-        )
-
         port = find_available_port()
 
         assert DEFAULT_PORT_START <= port < DEFAULT_PORT_END

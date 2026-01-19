@@ -6,7 +6,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from .bun import ensure_bun
+from trellis.bundler.bun import ensure_bun
 
 # System packages always installed with every build
 SYSTEM_PACKAGES: dict[str, str] = {

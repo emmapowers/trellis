@@ -26,7 +26,9 @@ CLI arguments:
 from __future__ import annotations
 
 import argparse
+import asyncio
 import sys
+import threading
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -37,6 +39,7 @@ from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent
 from trellis.platforms.common.base import Platform, PlatformArgumentError, PlatformType, WatchConfig
 from trellis.routing.enums import RoutingMode
+from trellis.utils.debug import configure_debug, list_categories, parse_categories
 from trellis.utils.log_setup import setup_logging
 
 if TYPE_CHECKING:
@@ -195,8 +198,6 @@ def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
 
     # Handle debug argument
     if args.debug is not None:
-        from trellis.utils.debug import configure_debug, list_categories, parse_categories
-
         if args.debug == "":
             # -d with no value: list categories and exit
             print(list_categories())
@@ -229,8 +230,6 @@ def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
 
 def _is_pyodide() -> bool:
     """Check if we're running inside Pyodide."""
-    import sys
-
     return "pyodide" in sys.modules or hasattr(sys, "pyodide")
 
 
@@ -238,9 +237,6 @@ class _WatchThread:
     """Background thread for watching files and rebuilding bundles."""
 
     def __init__(self, config: WatchConfig) -> None:
-        import asyncio
-        import threading
-
         self._config = config
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
@@ -249,8 +245,6 @@ class _WatchThread:
 
     def start(self) -> None:
         """Start the watch thread."""
-        import threading
-
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
@@ -264,12 +258,10 @@ class _WatchThread:
 
     def _run(self) -> None:
         """Run the watch loop in a new event loop."""
-        import asyncio
-
         # Import watch module lazily to avoid loading watchfiles in browser
-        from trellis.bundler.watch import watch_and_rebuild
-        from trellis.platforms.common.handler_registry import get_global_registry
-        from trellis.platforms.common.messages import ReloadMessage
+        from trellis.bundler.watch import watch_and_rebuild  # noqa: PLC0415
+        from trellis.platforms.common.handler_registry import get_global_registry  # noqa: PLC0415
+        from trellis.platforms.common.messages import ReloadMessage  # noqa: PLC0415
 
         def on_rebuild() -> None:
             """Broadcast reload message to all connected clients."""
@@ -313,11 +305,11 @@ def _get_platform(platform_type: PlatformType) -> Platform:
         ValueError: If platform type is unknown
     """
     if platform_type == PlatformType.SERVER:
-        from trellis.platforms.server import ServerPlatform
+        from trellis.platforms.server import ServerPlatform  # noqa: PLC0415
 
         return ServerPlatform()
     if platform_type == PlatformType.DESKTOP:
-        from trellis.platforms.desktop import DesktopPlatform
+        from trellis.platforms.desktop import DesktopPlatform  # noqa: PLC0415
 
         return DesktopPlatform()
     if platform_type == PlatformType.BROWSER:
@@ -327,10 +319,10 @@ def _get_platform(platform_type: PlatformType) -> Platform:
         # - BrowserServePlatform: Runs on CLI side. Serves static files (bundle.js,
         #   wheel, HTML with embedded source) via HTTP for the browser to load.
         if _is_pyodide():
-            from trellis.platforms.browser import BrowserPlatform
+            from trellis.platforms.browser import BrowserPlatform  # noqa: PLC0415
 
             return BrowserPlatform()
-        from trellis.platforms.browser.serve_platform import BrowserServePlatform
+        from trellis.platforms.browser.serve_platform import BrowserServePlatform  # noqa: PLC0415
 
         return BrowserServePlatform()
     raise ValueError(f"Unknown platform: {platform_type}")

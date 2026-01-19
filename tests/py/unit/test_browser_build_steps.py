@@ -9,6 +9,7 @@ import pytest
 
 from trellis.bundler.registry import ModuleRegistry
 from trellis.bundler.steps import BuildContext
+from trellis.platforms.browser.build_steps import PyodideWorkerBuildStep
 
 
 class TestPyodideWorkerBuildStep:
@@ -46,15 +47,11 @@ class TestPyodideWorkerBuildStep:
 
     def test_has_name_pyodide_worker_build(self) -> None:
         """PyodideWorkerBuildStep.name is 'pyodide-worker-build'."""
-        from trellis.platforms.browser.build_steps import PyodideWorkerBuildStep
-
         step = PyodideWorkerBuildStep()
         assert step.name == "pyodide-worker-build"
 
     def test_builds_worker_as_iife(self, build_context: BuildContext) -> None:
         """PyodideWorkerBuildStep builds pyodide worker as IIFE format."""
-        from trellis.platforms.browser.build_steps import PyodideWorkerBuildStep
-
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
 
@@ -67,8 +64,6 @@ class TestPyodideWorkerBuildStep:
 
     def test_outputs_worker_bundle_file(self, build_context: BuildContext) -> None:
         """PyodideWorkerBuildStep writes output as pyodide.worker-bundle."""
-        from trellis.platforms.browser.build_steps import PyodideWorkerBuildStep
-
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
 
@@ -81,8 +76,6 @@ class TestPyodideWorkerBuildStep:
 
     def test_adds_worker_bundle_loader(self, build_context: BuildContext) -> None:
         """PyodideWorkerBuildStep adds --loader:.worker-bundle=text to ctx.esbuild_args."""
-        from trellis.platforms.browser.build_steps import PyodideWorkerBuildStep
-
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
 
@@ -93,8 +86,6 @@ class TestPyodideWorkerBuildStep:
 
     def test_adds_worker_alias(self, build_context: BuildContext) -> None:
         """PyodideWorkerBuildStep adds alias for @trellis/browser/pyodide.worker-bundle."""
-        from trellis.platforms.browser.build_steps import PyodideWorkerBuildStep
-
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
 
@@ -110,8 +101,6 @@ class TestPyodideWorkerBuildStep:
 
     def test_raises_without_node_modules(self, build_context: BuildContext) -> None:
         """PyodideWorkerBuildStep raises RuntimeError if node_modules not set."""
-        from trellis.platforms.browser.build_steps import PyodideWorkerBuildStep
-
         build_context.node_modules = None
 
         step = PyodideWorkerBuildStep()

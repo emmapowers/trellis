@@ -5,11 +5,13 @@ from dataclasses import dataclass
 import pytest
 
 from tests.conftest import PatchCapture, render_to_tree
+from trellis import widgets as w
 from trellis.core.components.composition import component
+from trellis.core.rendering.patches import RenderUpdatePatch
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.mutable import Mutable, callback, mutable
 from trellis.core.state.stateful import Stateful
-from trellis.platforms.common.serialization import parse_callback_id
+from trellis.platforms.common.serialization import parse_callback_id, serialize_element
 
 
 def get_callback_from_id(ctx: RenderSession, cb_id: str):
@@ -142,8 +144,6 @@ class TestMutableSerialization:
 
         @component
         def TestComponent() -> None:
-            from trellis import widgets as w
-
             state = State()
             w.TextInput(value=mutable(state.text))
 
@@ -171,8 +171,6 @@ class TestMutableSerialization:
 
         @component
         def TestComponent() -> None:
-            from trellis import widgets as w
-
             state = State()
             state_ref.append(state)
             w.TextInput(value=mutable(state.text))
@@ -207,8 +205,6 @@ class TestMutableWidgets:
 
         @component
         def TestComponent() -> None:
-            from trellis import widgets as w
-
             state = State()
             state_ref.append(state)
             w.NumberInput(value=mutable(state.count))
@@ -239,8 +235,6 @@ class TestMutableWidgets:
 
         @component
         def TestComponent() -> None:
-            from trellis import widgets as w
-
             state = State()
             state_ref.append(state)
             w.Checkbox(checked=mutable(state.enabled), label="Test")
@@ -271,8 +265,6 @@ class TestMutableWidgets:
 
         @component
         def TestComponent() -> None:
-            from trellis import widgets as w
-
             state = State()
             state_ref.append(state)
             w.Select(
@@ -306,8 +298,6 @@ class TestMutableWidgets:
 
         @component
         def TestComponent() -> None:
-            from trellis import widgets as w
-
             state = State()
             state_ref.append(state)
             w.Slider(value=mutable(state.volume), min=0, max=100)
@@ -329,7 +319,6 @@ class TestMutableWidgets:
 
     def test_tabs_with_mutable(self) -> None:
         """Tabs accepts mutable selected and updates state."""
-        from trellis import widgets as w
 
         @dataclass
         class State(Stateful):
@@ -364,7 +353,6 @@ class TestMutableWidgets:
 
     def test_collapsible_with_mutable(self) -> None:
         """Collapsible accepts mutable expanded and updates state."""
-        from trellis import widgets as w
 
         @dataclass
         class State(Stateful):
@@ -468,8 +456,6 @@ class TestCallbackFunction:
 
         @component
         def TestComponent() -> None:
-            from trellis import widgets as w
-
             state = State()
             w.TextInput(value=callback(state.text, custom_handler))
 
@@ -506,8 +492,6 @@ class TestCallbackFunction:
 
         @component
         def TestComponent() -> None:
-            from trellis import widgets as w
-
             state = State()
             state_ref.append(state)
             w.TextInput(value=callback(state.name, state.set_name))
@@ -545,8 +529,6 @@ class TestMutableRerender:
         3. Re-render: Should produce UpdatePatch with checked=True
         4. Bug: No patch produced because Mutable equality ignores value
         """
-        from trellis.core.rendering.patches import RenderUpdatePatch
-        from trellis.platforms.common.serialization import serialize_element
 
         @dataclass
         class State(Stateful):
@@ -557,8 +539,6 @@ class TestMutableRerender:
 
         @component
         def TestComponent() -> None:
-            from trellis import widgets as w
-
             state = State()
             state_ref.append(state)
             node = w.Checkbox(checked=mutable(state.checked), label="Test")
@@ -608,8 +588,6 @@ class TestMutableRerender:
         self, capture_patches: "type[PatchCapture]"
     ) -> None:
         """After mutable callback changes state, TextInput re-render should send update."""
-        from trellis.core.rendering.patches import RenderUpdatePatch
-        from trellis.platforms.common.serialization import serialize_element
 
         @dataclass
         class State(Stateful):
@@ -620,8 +598,6 @@ class TestMutableRerender:
 
         @component
         def TestComponent() -> None:
-            from trellis import widgets as w
-
             state = State()
             state_ref.append(state)
             node = w.TextInput(value=mutable(state.text))
@@ -666,8 +642,6 @@ class TestMutableRerender:
         self, capture_patches: "type[PatchCapture]"
     ) -> None:
         """After mutable callback changes state, Slider re-render should send update."""
-        from trellis.core.rendering.patches import RenderUpdatePatch
-        from trellis.platforms.common.serialization import serialize_element
 
         @dataclass
         class State(Stateful):
@@ -678,8 +652,6 @@ class TestMutableRerender:
 
         @component
         def TestComponent() -> None:
-            from trellis import widgets as w
-
             state = State()
             state_ref.append(state)
             node = w.Slider(value=mutable(state.value), min=0, max=100)

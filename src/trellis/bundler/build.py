@@ -8,9 +8,8 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from trellis.bundler.metafile import read_metafile
 from trellis.bundler.steps import BuildContext
-
-from .metafile import read_metafile
 
 if TYPE_CHECKING:
     from trellis.bundler.registry import ModuleRegistry

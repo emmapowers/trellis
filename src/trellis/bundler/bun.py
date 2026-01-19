@@ -8,7 +8,7 @@ from pathlib import Path
 
 import httpx
 
-from .utils import BIN_DIR, BUN_VERSION
+from trellis.bundler.utils import BIN_DIR, BUN_VERSION
 
 
 def get_bun_platform() -> str:

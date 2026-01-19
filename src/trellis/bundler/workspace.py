@@ -11,8 +11,8 @@ from pathlib import Path
 
 from jinja2 import Template
 
-from .registry import CollectedModules, ExportKind
-from .utils import find_project_root
+from trellis.bundler.registry import CollectedModules, ExportKind
+from trellis.bundler.utils import find_project_root
 
 # Template for generating _registry.ts
 _REGISTRY_TS_TEMPLATE = Template(

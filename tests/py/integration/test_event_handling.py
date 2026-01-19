@@ -1,5 +1,6 @@
 """Tests for event handling and callback invocation."""
 
+import asyncio
 import inspect
 from dataclasses import dataclass
 
@@ -535,8 +536,6 @@ class TestAsyncCallbackExecution:
 
     def test_async_callback_invocation(self, capture_patches: "type[PatchCapture]") -> None:
         """Async callback can be invoked and returns awaitable."""
-        import asyncio
-
         result_holder: list[str] = []
 
         async def async_handler() -> None:

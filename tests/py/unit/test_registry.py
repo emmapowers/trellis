@@ -2,9 +2,20 @@
 
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 
 import pytest
+
+from trellis.bundler.registry import (
+    SUPPORTED_SOURCE_TYPES,
+    CollectedModules,
+    ExportKind,
+    Module,
+    ModuleExport,
+    ModuleRegistry,
+    registry,
+)
 
 
 class TestModuleExport:
@@ -12,8 +23,6 @@ class TestModuleExport:
 
     def test_creation(self) -> None:
         """ModuleExport can be created with required fields."""
-        from trellis.bundler.registry import ExportKind, ModuleExport
-
         export = ModuleExport(
             name="Button",
             kind=ExportKind.COMPONENT,
@@ -29,43 +38,31 @@ class TestModule:
 
     def test_creation_with_required_fields(self) -> None:
         """Module can be created with just name."""
-        from trellis.bundler.registry import Module
-
         module = Module(name="my-module")
         assert module.name == "my-module"
 
     def test_packages_defaults_to_empty(self) -> None:
         """packages defaults to empty dict."""
-        from trellis.bundler.registry import Module
-
         module = Module(name="my-module")
         assert module.packages == {}
 
     def test_static_files_defaults_to_empty(self) -> None:
         """static_files defaults to empty dict."""
-        from trellis.bundler.registry import Module
-
         module = Module(name="my-module")
         assert module.static_files == {}
 
     def test_exports_defaults_to_empty(self) -> None:
         """exports defaults to empty list."""
-        from trellis.bundler.registry import Module
-
         module = Module(name="my-module")
         assert module.exports == []
 
     def test_base_path_defaults_to_none(self) -> None:
         """_base_path defaults to None."""
-        from trellis.bundler.registry import Module
-
         module = Module(name="my-module")
         assert module._base_path is None
 
     def test_creation_with_all_fields(self) -> None:
         """Module can be created with all fields populated."""
-        from trellis.bundler.registry import ExportKind, Module, ModuleExport
-
         module = Module(
             name="my-module",
             packages={"react": "18.2.0"},
@@ -86,8 +83,6 @@ class TestModuleRegistry:
 
     def test_register_stores_module(self) -> None:
         """register() stores module in registry."""
-        from trellis.bundler.registry import ModuleRegistry
-
         registry = ModuleRegistry()
         registry.register("my-module", packages={"react": "18.2.0"})
 
@@ -98,8 +93,6 @@ class TestModuleRegistry:
 
     def test_register_resolves_paths_relative_to_caller(self, tmp_path: Path) -> None:
         """register() resolves base_path relative to calling file."""
-        from trellis.bundler.registry import ModuleRegistry
-
         registry = ModuleRegistry()
 
         # Create a temporary module that registers itself
@@ -117,8 +110,6 @@ def register_module(registry):
         )
 
         # Execute the registration from that module's context
-        import importlib.util
-
         spec = importlib.util.spec_from_file_location("register", module_file)
         assert spec is not None
         assert spec.loader is not None
@@ -133,8 +124,6 @@ def register_module(registry):
 
     def test_register_errors_on_duplicate_name(self) -> None:
         """register() raises error if module name already registered."""
-        from trellis.bundler.registry import ModuleRegistry
-
         registry = ModuleRegistry()
         registry.register("my-module")
 
@@ -143,8 +132,6 @@ def register_module(registry):
 
     def test_collect_returns_all_modules(self) -> None:
         """collect() returns all registered modules."""
-        from trellis.bundler.registry import ModuleRegistry
-
         registry = ModuleRegistry()
         registry.register("module-a")
         registry.register("module-b")
@@ -156,8 +143,6 @@ def register_module(registry):
 
     def test_collect_merges_packages(self) -> None:
         """collect() merges packages from all modules."""
-        from trellis.bundler.registry import ModuleRegistry
-
         registry = ModuleRegistry()
         registry.register("module-a", packages={"react": "18.2.0"})
         registry.register("module-b", packages={"lodash": "4.17.21"})
@@ -172,8 +157,6 @@ def register_module(registry):
 
     def test_collect_allows_same_package_same_version(self) -> None:
         """collect() allows same package with same version across modules."""
-        from trellis.bundler.registry import ModuleRegistry
-
         registry = ModuleRegistry()
         registry.register("module-a", packages={"react": "18.2.0"})
         registry.register("module-b", packages={"react": "18.2.0"})
@@ -183,8 +166,6 @@ def register_module(registry):
 
     def test_collect_errors_on_package_version_conflict(self) -> None:
         """collect() raises error if same package has different versions."""
-        from trellis.bundler.registry import ModuleRegistry
-
         registry = ModuleRegistry()
         registry.register("module-a", packages={"react": "18.2.0"})
         registry.register("module-b", packages={"react": "17.0.0"})
@@ -194,8 +175,6 @@ def register_module(registry):
 
     def test_clear_removes_all_modules(self) -> None:
         """clear() removes all registered modules."""
-        from trellis.bundler.registry import ModuleRegistry
-
         registry = ModuleRegistry()
         registry.register("module-a")
         registry.register("module-b")
@@ -210,8 +189,6 @@ class TestCollectedModules:
 
     def test_creation(self) -> None:
         """CollectedModules can be created with modules and packages."""
-        from trellis.bundler.registry import CollectedModules, Module
-
         modules = [Module(name="mod-a"), Module(name="mod-b")]
         packages = {"react": "18.2.0"}
 
@@ -226,16 +203,16 @@ class TestGlobalRegistry:
     def test_global_registry_exists(self) -> None:
         """Module exposes a global registry singleton."""
         # Should be a ModuleRegistry instance
-        from trellis.bundler.registry import ModuleRegistry, registry
-
         assert isinstance(registry, ModuleRegistry)
 
     def test_global_registry_is_singleton(self) -> None:
         """Multiple imports return same registry instance."""
-        from trellis.bundler.registry import registry as reg1
-        from trellis.bundler.registry import registry as reg2
+        # Verify that the registry accessed via the package is the same singleton
+        # Note: trellis.bundler.registry (the attribute) is the ModuleRegistry instance,
+        # not the module, because __init__.py re-exports it
+        import trellis.bundler  # noqa: PLC0415
 
-        assert reg1 is reg2
+        assert trellis.bundler.registry is registry
 
 
 class TestSourceFileTypes:
@@ -243,8 +220,6 @@ class TestSourceFileTypes:
 
     def test_supported_source_types_constant_exists(self) -> None:
         """SUPPORTED_SOURCE_TYPES constant is exported."""
-        from trellis.bundler.registry import SUPPORTED_SOURCE_TYPES
-
         assert isinstance(SUPPORTED_SOURCE_TYPES, frozenset)
         assert ".ts" in SUPPORTED_SOURCE_TYPES
         assert ".tsx" in SUPPORTED_SOURCE_TYPES
@@ -256,8 +231,6 @@ class TestStaticFilesDirectory:
 
     def test_static_files_directory_expands_excluding_source_types(self, tmp_path: Path) -> None:
         """Directory in static_files includes all files EXCEPT source types."""
-
-        from trellis.bundler.registry import ModuleRegistry
 
         assets_dir = tmp_path / "assets"
         assets_dir.mkdir()
@@ -278,8 +251,6 @@ def register_module(registry):
         )
 
         registry = ModuleRegistry()
-        import importlib.util
-
         spec = importlib.util.spec_from_file_location("register", module_file)
         assert spec is not None and spec.loader is not None
         mod = importlib.util.module_from_spec(spec)
@@ -297,8 +268,6 @@ def register_module(registry):
     def test_static_files_single_file_still_works(self, tmp_path: Path) -> None:
         """Single file path in static_files still works as before."""
 
-        from trellis.bundler.registry import ModuleRegistry
-
         (tmp_path / "index.html").write_text("<html/>")
 
         module_file = tmp_path / "register.py"
@@ -313,8 +282,6 @@ def register_module(registry):
         )
 
         registry = ModuleRegistry()
-        import importlib.util
-
         spec = importlib.util.spec_from_file_location("register", module_file)
         assert spec is not None and spec.loader is not None
         mod = importlib.util.module_from_spec(spec)
@@ -328,8 +295,6 @@ def register_module(registry):
 
     def test_static_files_nested_directory(self, tmp_path: Path) -> None:
         """Nested directory in static_files expands correctly."""
-
-        from trellis.bundler.registry import ModuleRegistry
 
         public_dir = tmp_path / "public"
         images_dir = public_dir / "images"
@@ -349,8 +314,6 @@ def register_module(registry):
         )
 
         registry = ModuleRegistry()
-        import importlib.util
-
         spec = importlib.util.spec_from_file_location("register", module_file)
         assert spec is not None and spec.loader is not None
         mod = importlib.util.module_from_spec(spec)

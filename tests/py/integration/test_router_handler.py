@@ -10,10 +10,12 @@ import asyncio
 import typing as tp
 
 from trellis.core.components.composition import CompositionComponent, component
+from trellis.core.rendering.render import render
 from trellis.html.links import A
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.messages import (
     AddPatch,
+    EventMessage,
     HelloMessage,
     HistoryBack,
     HistoryForward,
@@ -22,6 +24,7 @@ from trellis.platforms.common.messages import (
     PatchMessage,
     UrlChanged,
 )
+from trellis.platforms.common.serialization import serialize_element
 from trellis.routing import Route, RouterState, Routes, router
 from trellis.widgets import Button, Label
 
@@ -241,8 +244,6 @@ class TestUrlChangedMessage:
             await handler.handle_message(UrlChanged(path="/about"))
 
             # Force re-render to see route changes
-            from trellis.core.rendering.render import render
-
             render(handler.session)
 
         asyncio.run(test())
@@ -276,9 +277,6 @@ class TestHistoryMessagesFromRouterState:
             handler.sent_messages.clear()
 
             # Get the button callback
-            from trellis.platforms.common.messages import EventMessage
-            from trellis.platforms.common.serialization import serialize_element
-
             tree = serialize_element(handler.session.root_element, handler.session)
             # Navigate: TestRoot -> App -> Button (composition) -> _Button (react)
             app = tree["children"][0]
@@ -323,9 +321,6 @@ class TestHistoryMessagesFromRouterState:
             handler.initial_render()
             handler.sent_messages.clear()
 
-            from trellis.platforms.common.messages import EventMessage
-            from trellis.platforms.common.serialization import serialize_element
-
             tree = serialize_element(handler.session.root_element, handler.session)
             # Navigate: TestRoot -> App -> Button (composition) -> _Button (react)
             app = tree["children"][0]
@@ -368,9 +363,6 @@ class TestHistoryMessagesFromRouterState:
             handler.initial_render()
             handler.sent_messages.clear()
 
-            from trellis.platforms.common.messages import EventMessage
-            from trellis.platforms.common.serialization import serialize_element
-
             tree = serialize_element(handler.session.root_element, handler.session)
             # Navigate: TestRoot -> App -> Button (composition) -> _Button (react)
             app = tree["children"][0]
@@ -402,9 +394,6 @@ class TestHistoryMessagesFromRouterState:
             await handler.handle_hello()
             handler.initial_render()
             handler.sent_messages.clear()
-
-            from trellis.platforms.common.messages import EventMessage
-            from trellis.platforms.common.serialization import serialize_element
 
             tree = serialize_element(handler.session.root_element, handler.session)
             # Navigate: TestRoot -> App -> Anchor
@@ -447,9 +436,6 @@ class TestNoHistoryMessageWhenNoNavigation:
             handler.initial_render()
             handler.sent_messages.clear()
 
-            from trellis.platforms.common.messages import EventMessage
-            from trellis.platforms.common.serialization import serialize_element
-
             tree = serialize_element(handler.session.root_element, handler.session)
             # Navigate: TestRoot -> App -> Button (composition) -> _Button (react)
             app = tree["children"][0]
@@ -489,9 +475,6 @@ class TestNoHistoryMessageWhenNoNavigation:
             await handler.handle_hello()
             handler.initial_render()
             handler.sent_messages.clear()
-
-            from trellis.platforms.common.messages import EventMessage
-            from trellis.platforms.common.serialization import serialize_element
 
             tree = serialize_element(handler.session.root_element, handler.session)
             # Navigate: TestRoot -> App -> Button (composition) -> _Button (react)
