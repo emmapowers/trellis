@@ -86,10 +86,11 @@ def generate_registry_ts(collected: CollectedModules) -> str:
     component_imports: list[tuple[str, str, str]] = []  # (name, module, source)
     function_imports: list[tuple[str, str, str]] = []  # (name, module, source)
     initializer_imports: list[tuple[str, str]] = []  # (module, source)
+    stylesheet_imports: list[tuple[str, str]] = []  # (module, source)
 
     for module in collected.modules:
         for export in module.exports:
-            # Remove .tsx/.ts extension for import path
+            # Remove .tsx/.ts extension for import path (but keep .css)
             source_path = export.source
             if source_path.endswith(".tsx"):
                 source_path = source_path[:-4]
@@ -102,6 +103,8 @@ def generate_registry_ts(collected: CollectedModules) -> str:
                 function_imports.append((export.name, module.name, source_path))
             elif export.kind == ExportKind.initializer:
                 initializer_imports.append((module.name, source_path))
+            elif export.kind == ExportKind.stylesheet:
+                stylesheet_imports.append((module.name, export.source))
 
     # Import registerWidget if we have components
     if component_imports:
@@ -113,6 +116,13 @@ def generate_registry_ts(collected: CollectedModules) -> str:
         lines.append(f'import "@trellis/{module_name}/{source_path}";')
 
     if initializer_imports:
+        lines.append("")
+
+    # Import stylesheets (side-effect imports, keep .css extension)
+    for module_name, source_path in stylesheet_imports:
+        lines.append(f'import "@trellis/{module_name}/{source_path}";')
+
+    if stylesheet_imports:
         lines.append("")
 
     # Import components

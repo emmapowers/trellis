@@ -60,6 +60,9 @@ class ExportKind(StrEnum):
     initializer = auto()
     """Side-effect code - called at startup."""
 
+    stylesheet = auto()
+    """CSS file - imported for side effects, keeps .css extension."""
+
 
 @dataclass
 class ModuleExport:

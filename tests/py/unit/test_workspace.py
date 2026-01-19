@@ -375,3 +375,24 @@ class TestGenerateRegistryTs:
         code = generate_registry_ts(collected)
 
         assert "export function initRegistry()" in code
+
+    def test_imports_stylesheets(self) -> None:
+        """Generates import statements for stylesheet exports (keeps .css extension)."""
+        from trellis.bundler.workspace import generate_registry_ts
+
+        collected = CollectedModules(
+            modules=[
+                Module(
+                    name="my-theme",
+                    exports=[
+                        ModuleExport("styles", ExportKind.stylesheet, "theme.css"),
+                    ],
+                ),
+            ],
+            packages={},
+        )
+
+        code = generate_registry_ts(collected)
+
+        # Stylesheets are imported for side effects, keeping .css extension
+        assert 'import "@trellis/my-theme/theme.css";' in code

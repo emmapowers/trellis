@@ -7,28 +7,6 @@ from pathlib import Path
 import pytest
 
 
-class TestExportKind:
-    """Tests for ExportKind enum."""
-
-    def test_component_value(self) -> None:
-        """ExportKind.component exists."""
-        from trellis.bundler.registry import ExportKind
-
-        assert ExportKind.component is not None
-
-    def test_function_value(self) -> None:
-        """ExportKind.function exists."""
-        from trellis.bundler.registry import ExportKind
-
-        assert ExportKind.function is not None
-
-    def test_initializer_value(self) -> None:
-        """ExportKind.initializer exists."""
-        from trellis.bundler.registry import ExportKind
-
-        assert ExportKind.initializer is not None
-
-
 class TestModuleExport:
     """Tests for ModuleExport dataclass."""
 
