@@ -66,6 +66,7 @@ from trellis import html as h
 - snake_case variables, functions, modules, variables, etc...
 - PascalCase objects
 - MyEnum.UPPER_CASE enums
+- use absolute imports
 
 ## Commands
 

@@ -10,10 +10,10 @@ from typing import TYPE_CHECKING
 
 from trellis.bundler.steps import BuildContext
 
-from .registry import SUPPORTED_SOURCE_TYPES
+from .metafile import read_metafile
 
 if TYPE_CHECKING:
-    from trellis.bundler.registry import CollectedModules, ModuleRegistry
+    from trellis.bundler.registry import ModuleRegistry
     from trellis.bundler.steps import BuildStep
 
 logger = logging.getLogger(__name__)
@@ -54,26 +54,19 @@ def is_rebuild_needed(inputs: Iterable[Path], outputs: Iterable[Path]) -> bool:
     return False
 
 
-def _collect_input_files(entry_point: Path, collected: CollectedModules) -> list[Path]:
-    """Collect all input files for cache checking.
+def _collect_input_files(workspace: Path) -> list[Path]:
+    """Collect all input files for cache checking from metafile.
 
     Args:
-        entry_point: Main entry point file
-        collected: Collected modules from registry
+        workspace: Workspace directory containing metafile.json
 
     Returns:
-        List of input file paths
+        List of input file paths from metafile
+
+    Raises:
+        FileNotFoundError: If metafile.json doesn't exist
     """
-    inputs = [entry_point]
-
-    # Add source files from all modules with base paths
-    for module in collected.modules:
-        if module._base_path and module._base_path.exists():
-            # Add all source files in module directory
-            for ext in SUPPORTED_SOURCE_TYPES:
-                inputs.extend(module._base_path.rglob(f"*{ext}"))
-
-    return inputs
+    return read_metafile(workspace).inputs
 
 
 def build(
@@ -101,14 +94,19 @@ def build(
 
     # Check if rebuild is needed (skip if outputs up to date)
     if not force:
-        inputs = _collect_input_files(entry_point, collected)
-        # esbuild produces bundle.js and optionally bundle.css when CSS is imported.
-        # We only check bundle.js for cache invalidation since it's always produced.
-        outputs = [dist_dir / "bundle.js"]
+        try:
+            inputs = _collect_input_files(workspace)
+        except FileNotFoundError:
+            # No metafile from previous build - need to build
+            logger.debug("No metafile found, forcing rebuild")
+        else:
+            # esbuild produces bundle.js and optionally bundle.css when CSS is imported.
+            # We only check bundle.js for cache invalidation since it's always produced.
+            outputs = [dist_dir / "bundle.js"]
 
-        if not is_rebuild_needed(inputs, outputs):
-            logger.debug("Skipping build: outputs up to date")
-            return
+            if not is_rebuild_needed(inputs, outputs):
+                logger.debug("Skipping build: outputs up to date")
+                return
 
     dist_dir.mkdir(parents=True, exist_ok=True)
 

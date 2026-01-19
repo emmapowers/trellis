@@ -910,6 +910,14 @@ class TestBuildCaching:
         output_js = dist_dir / "bundle.js"
         output_js.write_text("// built")
 
+        # Create metafile (required for cache checking)
+        # Paths in metafile are relative to workspace - use ../ to navigate to tmp_path
+        metafile_content = {
+            "inputs": {"../main.tsx": {"bytes": 8}},
+            "outputs": {"dist/bundle.js": {"bytes": 100}},
+        }
+        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
+
         step_ran = []
 
         class TrackingStep(BuildStep):
@@ -1012,6 +1020,13 @@ class TestBuildCaching:
         entry_point = tmp_path / "main.tsx"
         entry_point.write_text("// entry")
 
+        # Create metafile with input - use relative path from workspace
+        metafile_content = {
+            "inputs": {"../main.tsx": {"bytes": 8}},
+            "outputs": {"dist/bundle.js": {"bytes": 100}},
+        }
+        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
+
         step_ran = []
 
         class TrackingStep(BuildStep):
@@ -1033,7 +1048,7 @@ class TestBuildCaching:
         assert step_ran == [True], "Step should run when input newer than output"
 
     def test_considers_module_source_files_as_inputs(self, tmp_path: Path) -> None:
-        """build() treats module source files as inputs for caching."""
+        """build() treats module source files as inputs for caching via metafile."""
         registry = ModuleRegistry()
 
         # Create module source file
@@ -1052,6 +1067,15 @@ class TestBuildCaching:
         # Create output before module source update
         output_js = dist_dir / "bundle.js"
         output_js.write_text("// built")
+
+        # Create metafile with module source as input
+        # (metafile is created by esbuild and lists actual inputs from the bundle)
+        # Path is relative from workspace - use ../ to navigate to tmp_path then to module
+        metafile_content = {
+            "inputs": {"../my_mod/index.ts": {"bytes": 16}},
+            "outputs": {"dist/bundle.js": {"bytes": 100}},
+        }
+        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
 
         # Wait then update module source (newer than output)
         time.sleep(0.01)

@@ -15,8 +15,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .packages import ensure_packages, get_bin
-from .workspace import write_registry_ts
+from trellis.bundler.metafile import get_metafile_path
+from trellis.bundler.packages import ensure_packages, get_bin
+from trellis.bundler.workspace import write_registry_ts
 
 logger = logging.getLogger(__name__)
 
@@ -255,6 +256,7 @@ class BundleBuildStep(BuildStep):
             )
 
         esbuild = get_bin(ctx.node_modules, "esbuild")
+        metafile_path = get_metafile_path(ctx.workspace)
 
         cmd = [
             str(esbuild),
@@ -262,6 +264,7 @@ class BundleBuildStep(BuildStep):
             "--bundle",
             f"--outdir={ctx.dist_dir}",
             f"--entry-names={self.output_name}",
+            f"--metafile={metafile_path}",
             "--format=esm",
             "--platform=browser",
             "--target=es2022",

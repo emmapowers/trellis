@@ -91,6 +91,38 @@ class TestServerPlatformBundle:
         assert bundle_path.exists()
         assert bundle_path.stat().st_size > 0
 
+    def test_generates_metafile(self) -> None:
+        """Build generates metafile.json with input/output information."""
+        from trellis.bundler.metafile import get_metafile_path, read_metafile
+        from trellis.platforms.server.platform import ServerPlatform
+
+        platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
+        entry_point = platforms_dir / "server" / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
+
+        # Force rebuild
+        platform = ServerPlatform()
+        platform.bundle(force=True)
+
+        # Metafile should exist
+        metafile_path = get_metafile_path(workspace)
+        assert metafile_path.exists(), "metafile.json not created"
+
+        # Metafile should be parseable
+        metafile = read_metafile(workspace)
+        assert len(metafile.inputs) > 0, "Metafile should have inputs"
+        assert len(metafile.outputs) > 0, "Metafile should have outputs"
+
+        # Entry point should be in inputs
+        assert any(
+            p.name == "main.tsx" for p in metafile.inputs
+        ), "Entry point not in metafile inputs"
+
+        # Bundle should be in outputs
+        assert any(
+            p.name == "bundle.js" for p in metafile.outputs
+        ), "bundle.js not in metafile outputs"
+
 
 class TestDesktopPlatformBundle:
     @requires_pytauri

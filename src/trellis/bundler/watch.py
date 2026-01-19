@@ -15,91 +15,51 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .build import build
+from .metafile import read_metafile
 
 if TYPE_CHECKING:
-    from .registry import CollectedModules, ModuleRegistry
+    from .registry import ModuleRegistry
     from .steps import BuildStep
 
 logger = logging.getLogger(__name__)
 
 
-def get_watch_paths(entry_point: Path, collected: CollectedModules) -> set[Path]:
+def get_watch_paths(workspace: Path) -> set[Path]:
     """Get all paths that should trigger a rebuild when changed.
 
-    This includes:
-    - The entry point file
-    - All module base directories (for source file changes)
-    - All static file sources
+    Reads the metafile from a previous build to get the exact list of
+    input files that were used in the bundle.
 
     Args:
-        entry_point: Path to the entry point file
-        collected: Collected modules from the registry
+        workspace: Workspace directory containing metafile.json
 
     Returns:
-        Set of paths to watch
+        Set of resolved absolute paths to watch
+
+    Raises:
+        FileNotFoundError: If metafile.json doesn't exist
     """
-    paths: set[Path] = {entry_point.resolve()}
-
-    for module in collected.modules:
-        # Watch module base directory for any source changes
-        if module._base_path:
-            paths.add(module._base_path.resolve())
-
-        # Add static file sources
-        for src_path in module.static_files.values():
-            paths.add(src_path.resolve())
-
-    return paths
+    metafile = read_metafile(workspace)
+    return {p.resolve() for p in metafile.inputs}
 
 
-def get_watch_directories(entry_point: Path, collected: CollectedModules) -> set[Path]:
+def get_watch_directories(workspace: Path) -> set[Path]:
     """Get directories to watch for file changes.
 
-    Returns directories that should be passed to file watchers. For directories
-    in watch_paths, returns them directly. For files, returns their parent.
+    Returns parent directories of all watch paths. This is needed because
+    watchfiles monitors directories, not individual files.
 
     Args:
-        entry_point: Path to the entry point file
-        collected: Collected modules from the registry
+        workspace: Workspace directory containing metafile.json
 
     Returns:
         Set of directories to watch
+
+    Raises:
+        FileNotFoundError: If metafile.json doesn't exist
     """
-    paths = get_watch_paths(entry_point, collected)
-    dirs: set[Path] = set()
-    for p in paths:
-        if p.is_dir():
-            dirs.add(p)
-        else:
-            dirs.add(p.parent)
-    return dirs
-
-
-def _is_path_relevant(changed_path: Path, watch_paths: set[Path]) -> bool:
-    """Check if a changed path is relevant to our watched paths.
-
-    A path is relevant if:
-    - It's directly in watch_paths, OR
-    - It's under a directory in watch_paths
-
-    Args:
-        changed_path: Path that changed
-        watch_paths: Set of paths we're watching (files and directories)
-
-    Returns:
-        True if the change is relevant
-    """
-    if changed_path in watch_paths:
-        return True
-    # Check if path is under any watched directory
-    for watch_path in watch_paths:
-        if watch_path.is_dir():
-            try:
-                changed_path.relative_to(watch_path)
-                return True
-            except ValueError:
-                pass
-    return False
+    paths = get_watch_paths(workspace)
+    return {p.parent for p in paths}
 
 
 async def watch_and_rebuild(
@@ -120,25 +80,27 @@ async def watch_and_rebuild(
         workspace: Workspace directory for staging and output
         steps: Build steps to execute on rebuild
         on_rebuild: Optional callback invoked after successful rebuild
+
+    Raises:
+        FileNotFoundError: If metafile.json doesn't exist (build must run first)
     """
     # Import watchfiles here to avoid loading it when not needed
     # (especially important for browser platform where it's unavailable)
     import watchfiles
 
-    # Get collected modules for watch paths
-    collected = registry.collect()
-    watch_dirs = get_watch_directories(entry_point, collected)
-    watch_paths = get_watch_paths(entry_point, collected)
+    # Get watch paths from metafile (requires build to have run first)
+    watch_paths = get_watch_paths(workspace)
+    watch_dirs = get_watch_directories(workspace)
 
-    logger.info("Watch mode enabled, monitoring %d paths", len(watch_paths))
+    logger.info("Watch mode enabled, monitoring %d files", len(watch_paths))
 
     # Watch the directories
     async for changes in watchfiles.awatch(*watch_dirs):
-        # Filter to only changes in our watched paths (files or under watched directories)
+        # Filter to only changes in our watched paths (exact file matches)
         relevant_changes = [
             (change_type, path)
             for change_type, path in changes
-            if _is_path_relevant(Path(path), watch_paths)
+            if Path(path).resolve() in watch_paths
         ]
 
         if relevant_changes:
@@ -155,6 +117,15 @@ async def watch_and_rebuild(
                     force=True,
                 )
                 logger.info("Bundle rebuilt successfully")
+
+                # Update watch paths from new metafile
+                watch_paths = get_watch_paths(workspace)
+                new_dirs = get_watch_directories(workspace)
+                if new_dirs != watch_dirs:
+                    # Directories changed - need to restart watcher
+                    # For now, just log it. Full restart would require restructuring.
+                    logger.info("Watch directories changed, some changes may be missed")
+                    watch_dirs = new_dirs
 
                 # Notify caller of successful rebuild
                 if on_rebuild is not None:

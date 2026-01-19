@@ -217,3 +217,203 @@ class TestIsRebuildNeeded:
         output_file.write_text("bundled")
 
         assert is_rebuild_needed([], [output_file]) is False
+
+
+class TestMetafile:
+    """Tests for metafile parsing utilities."""
+
+    def test_get_metafile_path_returns_workspace_path(self, tmp_path: Path) -> None:
+        """get_metafile_path returns metafile.json in workspace."""
+        from trellis.bundler.metafile import get_metafile_path
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        result = get_metafile_path(workspace)
+        assert result == workspace / "metafile.json"
+
+    def test_read_metafile_parses_inputs(self, tmp_path: Path) -> None:
+        """read_metafile extracts input paths from metafile."""
+        import json
+
+        from trellis.bundler.metafile import read_metafile
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        # Create source files that the metafile references
+        src_dir = workspace / "src"
+        src_dir.mkdir()
+        (src_dir / "main.tsx").write_text("// main")
+        (src_dir / "Button.tsx").write_text("// button")
+
+        # Create metafile with paths relative to workspace
+        metafile_content = {
+            "inputs": {
+                "src/main.tsx": {"bytes": 1234, "imports": []},
+                "src/Button.tsx": {"bytes": 567, "imports": []},
+            },
+            "outputs": {
+                "dist/bundle.js": {"bytes": 5000, "inputs": {}},
+            },
+        }
+        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
+
+        result = read_metafile(workspace)
+        assert len(result.inputs) == 2
+        # Paths should be absolute
+        assert all(p.is_absolute() for p in result.inputs)
+        assert any(p.name == "main.tsx" for p in result.inputs)
+        assert any(p.name == "Button.tsx" for p in result.inputs)
+
+    def test_read_metafile_parses_outputs(self, tmp_path: Path) -> None:
+        """read_metafile extracts output paths from metafile."""
+        import json
+
+        from trellis.bundler.metafile import read_metafile
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        metafile_content = {
+            "inputs": {"src/main.tsx": {"bytes": 1234, "imports": []}},
+            "outputs": {
+                "dist/bundle.js": {"bytes": 5000, "inputs": {}},
+                "dist/bundle.css": {"bytes": 1000, "inputs": {}},
+            },
+        }
+        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
+
+        result = read_metafile(workspace)
+        assert len(result.outputs) == 2
+        assert all(p.is_absolute() for p in result.outputs)
+        assert any(p.name == "bundle.js" for p in result.outputs)
+        assert any(p.name == "bundle.css" for p in result.outputs)
+
+    def test_read_metafile_raises_on_missing(self, tmp_path: Path) -> None:
+        """read_metafile raises FileNotFoundError when metafile doesn't exist."""
+        from trellis.bundler.metafile import read_metafile
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        # No metafile.json created
+
+        with pytest.raises(FileNotFoundError):
+            read_metafile(workspace)
+
+    def test_read_metafile_raises_on_invalid_json(self, tmp_path: Path) -> None:
+        """read_metafile raises ValueError when metafile is invalid JSON."""
+        from trellis.bundler.metafile import read_metafile
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        (workspace / "metafile.json").write_text("not valid json")
+
+        with pytest.raises(ValueError, match="Invalid JSON"):
+            read_metafile(workspace)
+
+    def test_read_metafile_filters_node_modules(self, tmp_path: Path) -> None:
+        """read_metafile excludes node_modules from inputs."""
+        import json
+
+        from trellis.bundler.metafile import read_metafile
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        metafile_content = {
+            "inputs": {
+                "src/main.tsx": {"bytes": 1234, "imports": []},
+                "node_modules/react/index.js": {"bytes": 9999, "imports": []},
+                "../node_modules/lodash/lodash.js": {"bytes": 8888, "imports": []},
+            },
+            "outputs": {"dist/bundle.js": {"bytes": 5000, "inputs": {}}},
+        }
+        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
+
+        result = read_metafile(workspace)
+        # Only source file, not node_modules
+        assert len(result.inputs) == 1
+        assert result.inputs[0].name == "main.tsx"
+
+
+class TestCollectInputFiles:
+    """Tests for _collect_input_files function."""
+
+    def test_returns_metafile_inputs(self, tmp_path: Path) -> None:
+        """_collect_input_files returns inputs from metafile."""
+        import json
+
+        from trellis.bundler.build import _collect_input_files
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        # Create metafile with specific inputs
+        metafile_content = {
+            "inputs": {
+                "src/main.tsx": {"bytes": 100, "imports": []},
+                "src/Button.tsx": {"bytes": 200, "imports": []},
+            },
+            "outputs": {"dist/bundle.js": {"bytes": 5000, "inputs": {}}},
+        }
+        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
+
+        inputs = _collect_input_files(workspace)
+
+        assert len(inputs) == 2
+        assert any(p.name == "main.tsx" for p in inputs)
+        assert any(p.name == "Button.tsx" for p in inputs)
+
+    def test_raises_when_metafile_missing(self, tmp_path: Path) -> None:
+        """_collect_input_files raises FileNotFoundError when metafile doesn't exist."""
+        from trellis.bundler.build import _collect_input_files
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        # No metafile.json
+
+        with pytest.raises(FileNotFoundError):
+            _collect_input_files(workspace)
+
+
+class TestGetWatchPaths:
+    """Tests for get_watch_paths function."""
+
+    def test_returns_metafile_inputs(self, tmp_path: Path) -> None:
+        """get_watch_paths returns inputs from metafile as resolved paths."""
+        import json
+
+        from trellis.bundler.watch import get_watch_paths
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        # Create metafile with specific inputs
+        metafile_content = {
+            "inputs": {
+                "src/main.tsx": {"bytes": 100, "imports": []},
+                "src/Button.tsx": {"bytes": 200, "imports": []},
+            },
+            "outputs": {"dist/bundle.js": {"bytes": 5000, "inputs": {}}},
+        }
+        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
+
+        paths = get_watch_paths(workspace)
+
+        assert len(paths) == 2
+        # Paths should be resolved (absolute)
+        assert all(p.is_absolute() for p in paths)
+        assert any(p.name == "main.tsx" for p in paths)
+        assert any(p.name == "Button.tsx" for p in paths)
+
+    def test_raises_when_metafile_missing(self, tmp_path: Path) -> None:
+        """get_watch_paths raises FileNotFoundError when metafile doesn't exist."""
+        from trellis.bundler.watch import get_watch_paths
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        # No metafile.json
+
+        with pytest.raises(FileNotFoundError):
+            get_watch_paths(workspace)
