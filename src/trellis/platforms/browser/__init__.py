@@ -12,18 +12,11 @@ Usage:
     # TrellisApp registers the bridge, then executes user code
 """
 
-from pathlib import Path
-
 from trellis.bundler import registry
 from trellis.platforms.browser.handler import BrowserMessageHandler
 from trellis.platforms.browser.platform import BrowserPlatform
 
-_CLIENT_SRC = Path(__file__).parent / "client" / "src"
-
 # Register the trellis-browser module
-registry.register(
-    "trellis-browser",
-    static_files={"index.html": _CLIENT_SRC / "index.html"},
-)
+registry.register("trellis-browser")
 
 __all__ = ["BrowserMessageHandler", "BrowserPlatform"]

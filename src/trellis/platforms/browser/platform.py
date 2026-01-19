@@ -37,6 +37,7 @@ class BrowserPlatform(Platform):
         extra_packages: dict[str, str] | None = None,
         dest: Path | None = None,
         library: bool = False,
+        app_static_dir: Path | None = None,
     ) -> None:
         """No-op in Pyodide - bundling is done before loading.
 

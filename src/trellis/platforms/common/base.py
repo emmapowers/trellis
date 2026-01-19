@@ -78,6 +78,7 @@ class Platform(ABC):
         extra_packages: dict[str, str] | None = None,
         dest: Path | None = None,
         library: bool = False,
+        app_static_dir: Path | None = None,
     ) -> None:
         """Build the client bundle for this platform.
 
@@ -86,6 +87,7 @@ class Platform(ABC):
             extra_packages: Additional npm packages beyond platform defaults
             dest: Custom output directory (default: cache directory)
             library: Build as library with exports (vs app that renders to DOM)
+            app_static_dir: App-level static files directory to copy to dist
         """
         ...
 

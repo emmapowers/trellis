@@ -43,7 +43,7 @@ def register_spa_fallback(app: FastAPI) -> None:
 def get_index_html(static_path: str = "/static", title: str = "Trellis App") -> str:
     """Generate the HTML page that loads the React app.
 
-    Uses the index.html Jinja2 template from server/client/src/.
+    Uses the index.html.j2 Jinja2 template from server/client/src/.
 
     Args:
         static_path: URL path prefix for static assets (bundle.js, bundle.css)
@@ -52,7 +52,7 @@ def get_index_html(static_path: str = "/static", title: str = "Trellis App") -> 
     Returns:
         Rendered HTML string
     """
-    template = _jinja_env.get_template("index.html")
+    template = _jinja_env.get_template("index.html.j2")
     return template.render(static_path=static_path, title=title)
 
 

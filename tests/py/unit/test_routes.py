@@ -47,17 +47,17 @@ class TestSpaRoutes:
 
 
 class TestIndexHtmlTemplate:
-    """Tests for index.html Jinja2 template."""
+    """Tests for index.html.j2 Jinja2 template."""
 
     def test_template_file_exists(self) -> None:
         """Template file exists at expected location."""
-        template_path = _TEMPLATE_DIR / "index.html"
+        template_path = _TEMPLATE_DIR / "index.html.j2"
         assert template_path.exists(), f"Template not found at {template_path}"
 
     def test_template_is_valid_jinja2(self) -> None:
         """Template can be loaded by Jinja2 environment."""
         # Should not raise
-        template = _jinja_env.get_template("index.html")
+        template = _jinja_env.get_template("index.html.j2")
         assert template is not None
 
 

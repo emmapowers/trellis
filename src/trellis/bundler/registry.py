@@ -15,38 +15,6 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Supported source file types for bundling
-SUPPORTED_SOURCE_TYPES: frozenset[str] = frozenset({".ts", ".tsx", ".css", ".js", ".jsx"})
-
-
-def _expand_static_files(static_files: dict[str, Path]) -> dict[str, Path]:
-    """Expand directories in static_files to individual files.
-
-    Directories are expanded to include all files EXCEPT source types.
-    Single files are kept as-is.
-
-    Args:
-        static_files: Dict of output_name -> source_path
-
-    Returns:
-        Expanded dict with directories replaced by their contents
-    """
-    result: dict[str, Path] = {}
-    for output_name, source_path in static_files.items():
-        if source_path.is_dir():
-            # Expand directory - include all files except source types
-            for file_path in source_path.rglob("*"):
-                if file_path.is_file():
-                    ext = file_path.suffix.lower()
-                    if ext not in SUPPORTED_SOURCE_TYPES:
-                        # Use relative path from the directory as the output key
-                        rel_path = file_path.relative_to(source_path)
-                        result[f"{output_name}/{rel_path}"] = file_path
-        else:
-            # Single file - keep as-is
-            result[output_name] = source_path
-    return result
-
 
 class ExportKind(StrEnum):
     """Kind of export from a module."""
@@ -88,9 +56,6 @@ class Module:
     packages: dict[str, str] = field(default_factory=dict)
     """NPM packages required by this module (name -> version)."""
 
-    static_files: dict[str, Path] = field(default_factory=dict)
-    """Static files to copy (output name -> source path)."""
-
     exports: list[ModuleExport] = field(default_factory=list)
     """Exports from this module."""
 
@@ -120,7 +85,6 @@ class ModuleRegistry:
         name: str,
         *,
         packages: dict[str, str] | None = None,
-        static_files: dict[str, Path] | None = None,
         exports: list[tuple[str, ExportKind, str]] | None = None,
     ) -> None:
         """Register a module.
@@ -128,7 +92,6 @@ class ModuleRegistry:
         Args:
             name: Unique module name
             packages: NPM packages (name -> version)
-            static_files: Static files (output name -> source path)
             exports: Exports as (name, kind, source) tuples
 
         Raises:
@@ -151,15 +114,9 @@ class ModuleRegistry:
             for export_name, kind, source in exports:
                 module_exports.append(ModuleExport(name=export_name, kind=kind, source=source))
 
-        # Expand directories in static_files
-        expanded_static: dict[str, Path] = {}
-        if static_files:
-            expanded_static = _expand_static_files(static_files)
-
         module = Module(
             name=name,
             packages=packages or {},
-            static_files=expanded_static,
             exports=module_exports,
             _base_path=base_path,
         )

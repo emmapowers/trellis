@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 from trellis.bundler.registry import (
-    SUPPORTED_SOURCE_TYPES,
     CollectedModules,
     ExportKind,
     Module,
@@ -46,11 +45,6 @@ class TestModule:
         module = Module(name="my-module")
         assert module.packages == {}
 
-    def test_static_files_defaults_to_empty(self) -> None:
-        """static_files defaults to empty dict."""
-        module = Module(name="my-module")
-        assert module.static_files == {}
-
     def test_exports_defaults_to_empty(self) -> None:
         """exports defaults to empty list."""
         module = Module(name="my-module")
@@ -66,13 +60,11 @@ class TestModule:
         module = Module(
             name="my-module",
             packages={"react": "18.2.0"},
-            static_files={"icon.png": Path("/path/to/icon.png")},
             exports=[ModuleExport("Widget", ExportKind.COMPONENT, "Widget.tsx")],
             _base_path=Path("/some/path"),
         )
         assert module.name == "my-module"
         assert module.packages == {"react": "18.2.0"}
-        assert module.static_files == {"icon.png": Path("/path/to/icon.png")}
         assert len(module.exports) == 1
         assert module.exports[0].name == "Widget"
         assert module._base_path == Path("/some/path")
@@ -213,114 +205,3 @@ class TestGlobalRegistry:
         import trellis.bundler  # noqa: PLC0415
 
         assert trellis.bundler.registry is registry
-
-
-class TestSourceFileTypes:
-    """Tests for source file type constant."""
-
-    def test_supported_source_types_constant_exists(self) -> None:
-        """SUPPORTED_SOURCE_TYPES constant is exported."""
-        assert isinstance(SUPPORTED_SOURCE_TYPES, frozenset)
-        assert ".ts" in SUPPORTED_SOURCE_TYPES
-        assert ".tsx" in SUPPORTED_SOURCE_TYPES
-        assert ".css" in SUPPORTED_SOURCE_TYPES
-
-
-class TestStaticFilesDirectory:
-    """Tests for static_files directory expansion."""
-
-    def test_static_files_directory_expands_excluding_source_types(self, tmp_path: Path) -> None:
-        """Directory in static_files includes all files EXCEPT source types."""
-
-        assets_dir = tmp_path / "assets"
-        assets_dir.mkdir()
-        (assets_dir / "icon.png").write_text("PNG DATA")
-        (assets_dir / "logo.svg").write_text("<svg/>")
-        (assets_dir / "data.json").write_text("{}")
-        (assets_dir / "utils.ts").write_text("export const x = 1;")  # Excluded
-
-        module_file = tmp_path / "register.py"
-        module_file.write_text(
-            """\
-from pathlib import Path
-from trellis.bundler.registry import ModuleRegistry
-
-def register_module(registry):
-    registry.register("test-module", static_files={"assets": Path(__file__).parent / "assets"})
-"""
-        )
-
-        registry = ModuleRegistry()
-        spec = importlib.util.spec_from_file_location("register", module_file)
-        assert spec is not None and spec.loader is not None
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        mod.register_module(registry)
-
-        collected = registry.collect()
-        static = collected.modules[0].static_files
-        # Directory was expanded to individual files
-        assert "assets/icon.png" in static
-        assert "assets/logo.svg" in static
-        assert "assets/data.json" in static
-        assert "assets/utils.ts" not in static
-
-    def test_static_files_single_file_still_works(self, tmp_path: Path) -> None:
-        """Single file path in static_files still works as before."""
-
-        (tmp_path / "index.html").write_text("<html/>")
-
-        module_file = tmp_path / "register.py"
-        module_file.write_text(
-            """\
-from pathlib import Path
-from trellis.bundler.registry import ModuleRegistry
-
-def register_module(registry):
-    registry.register("test-module", static_files={"index.html": Path(__file__).parent / "index.html"})
-"""
-        )
-
-        registry = ModuleRegistry()
-        spec = importlib.util.spec_from_file_location("register", module_file)
-        assert spec is not None and spec.loader is not None
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        mod.register_module(registry)
-
-        collected = registry.collect()
-        static = collected.modules[0].static_files
-        assert "index.html" in static
-        assert static["index.html"] == tmp_path / "index.html"
-
-    def test_static_files_nested_directory(self, tmp_path: Path) -> None:
-        """Nested directory in static_files expands correctly."""
-
-        public_dir = tmp_path / "public"
-        images_dir = public_dir / "images"
-        images_dir.mkdir(parents=True)
-        (images_dir / "icon.png").write_text("PNG")
-        (public_dir / "manifest.json").write_text("{}")
-
-        module_file = tmp_path / "register.py"
-        module_file.write_text(
-            """\
-from pathlib import Path
-from trellis.bundler.registry import ModuleRegistry
-
-def register_module(registry):
-    registry.register("test-module", static_files={"public": Path(__file__).parent / "public"})
-"""
-        )
-
-        registry = ModuleRegistry()
-        spec = importlib.util.spec_from_file_location("register", module_file)
-        assert spec is not None and spec.loader is not None
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        mod.register_module(registry)
-
-        collected = registry.collect()
-        static = collected.modules[0].static_files
-        assert "public/manifest.json" in static
-        assert "public/images/icon.png" in static

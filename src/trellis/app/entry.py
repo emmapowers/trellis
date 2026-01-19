@@ -371,6 +371,7 @@ class Trellis:
         batch_delay: float | None = None,
         hot_reload: bool | None = None,
         routing_mode: RoutingMode | None = None,
+        static_files: Path | str | None = None,
         # Server args
         host: str | None = None,
         port: int | None = None,
@@ -392,6 +393,7 @@ class Trellis:
             hot_reload: Enable hot reload (default True, disable with --no-hot-reload)
             routing_mode: How the router handles browser history and URLs.
                 Desktop forces EMBEDDED. Browser defaults to HASH_URL. Server uses STANDARD.
+            static_files: Directory containing static files to copy to dist during build
             host: Server bind host (server only)
             port: Server bind port (server only)
             static_dir: Custom static files directory (server only)
@@ -403,6 +405,7 @@ class Trellis:
             PlatformArgumentError: If platform-specific arg used with wrong platform
         """
         self.top = top
+        self._static_files = Path(static_files) if isinstance(static_files, str) else static_files
 
         # Build args with defaults
         self._args = _TrellisArgs()
@@ -546,7 +549,10 @@ class Trellis:
             raise ValueError("No top component specified")
 
         # Build client bundle if needed
-        self._platform.bundle(force=self._args.get("build_bundle"))
+        self._platform.bundle(
+            force=self._args.get("build_bundle"),
+            app_static_dir=self._static_files,
+        )
 
         # Start watch in background thread if enabled
         # Using a thread keeps rebuilds off the main event loop and works

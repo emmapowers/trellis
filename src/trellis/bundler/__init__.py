@@ -2,7 +2,6 @@
 
 from trellis.bundler.build import build
 from trellis.bundler.registry import (
-    SUPPORTED_SOURCE_TYPES,
     CollectedModules,
     ExportKind,
     Module,
@@ -15,6 +14,7 @@ from trellis.bundler.steps import (
     BuildStep,
     BundleBuildStep,
     DeclarationStep,
+    IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
     StaticFileCopyStep,
@@ -23,13 +23,13 @@ from trellis.bundler.steps import (
 )
 
 __all__ = [
-    "SUPPORTED_SOURCE_TYPES",
     "BuildContext",
     "BuildStep",
     "BundleBuildStep",
     "CollectedModules",
     "DeclarationStep",
     "ExportKind",
+    "IndexHtmlRenderStep",
     "Module",
     "ModuleExport",
     "ModuleRegistry",

@@ -209,6 +209,7 @@ class BrowserServePlatform(Platform):
         extra_packages: dict[str, str] | None = None,
         dest: Path | None = None,
         library: bool = False,
+        app_static_dir: Path | None = None,
     ) -> None:
         """Build the browser client bundle if needed.
 
@@ -221,6 +222,7 @@ class BrowserServePlatform(Platform):
             dest: Custom output directory (default: cache directory)
             library: If True, build as library exporting TrellisApp (uses index.ts).
                      If False, build as app that renders to DOM (uses main.tsx).
+            app_static_dir: App-level static files directory to copy to dist
         """
         # Use index.ts for library mode, main.tsx for app mode
         entry_name = "index.ts" if library else "main.tsx"
@@ -251,6 +253,7 @@ class BrowserServePlatform(Platform):
             steps=steps,
             force=force,
             output_dir=dest,
+            app_static_dir=app_static_dir,
         )
 
     def get_watch_config(self) -> WatchConfig:
@@ -379,7 +382,7 @@ def _generate_html(
 ) -> str:
     """Generate the HTML page with embedded source config.
 
-    Uses the index.html jinja2 template from the browser client.
+    Uses the index.html.j2 jinja2 template from the browser client.
 
     Args:
         source: Source config dict, e.g.:
@@ -391,5 +394,5 @@ def _generate_html(
     # Escape </ to prevent script tag injection (e.g., </script> in code)
     source_json = json.dumps(source).replace("</", r"<\/")
 
-    template = _jinja_env.get_template("index.html")
+    template = _jinja_env.get_template("index.html.j2")
     return template.render(source_json=source_json, routing_mode=routing_mode.value)

@@ -591,71 +591,35 @@ class TestBundleBuildStep:
 
 
 class TestStaticFileCopyStep:
-    """Tests for StaticFileCopyStep."""
+    """Tests for StaticFileCopyStep.
 
-    @pytest.fixture
-    def build_context(self, tmp_path: Path) -> BuildContext:
-        """Create a BuildContext for testing with static files."""
-        registry = ModuleRegistry()
-
-        # Create a source file
-        src_file = tmp_path / "src" / "static" / "data.json"
-        src_file.parent.mkdir(parents=True)
-        src_file.write_text('{"key": "value"}')
-
-        # Register module with static file
-        registry.register(
-            "test-mod",
-            static_files={"data.json": src_file},
-        )
-        collected = registry.collect()
-
-        workspace = tmp_path / "workspace"
-        workspace.mkdir()
-
-        dist_dir = tmp_path / "dist"
-        dist_dir.mkdir()
-
-        return BuildContext(
-            registry=registry,
-            entry_point=tmp_path / "main.tsx",
-            workspace=workspace,
-            collected=collected,
-            dist_dir=dist_dir,
-        )
+    StaticFileCopyStep uses convention-based discovery:
+    - Copies from module._base_path / "static" for each module
+    - Copies from ctx.app_static_dir if provided
+    """
 
     def test_has_name_static_file_copy(self) -> None:
         """StaticFileCopyStep.name is 'static-file-copy'."""
         step = StaticFileCopyStep()
         assert step.name == "static-file-copy"
 
-    def test_copies_static_files_to_dist(self, build_context: BuildContext) -> None:
-        """StaticFileCopyStep copies static files to dist directory."""
-        step = StaticFileCopyStep()
-        step.run(build_context)
-
-        copied_file = build_context.dist_dir / "data.json"
-        assert copied_file.exists()
-        assert copied_file.read_text() == '{"key": "value"}'
-
-    def test_creates_subdirectories_for_nested_files(self, tmp_path: Path) -> None:
-        """StaticFileCopyStep creates subdirectories for nested static files."""
+    def test_copies_files_from_module_static_directory(self, tmp_path: Path) -> None:
+        """StaticFileCopyStep copies files from module._base_path / 'static'."""
         registry = ModuleRegistry()
 
-        # Create nested source file
-        src_file = tmp_path / "src" / "assets" / "images" / "logo.png"
-        src_file.parent.mkdir(parents=True)
-        src_file.write_bytes(b"PNG data")
+        # Create module with static directory
+        mod_dir = tmp_path / "my_mod"
+        static_dir = mod_dir / "static"
+        static_dir.mkdir(parents=True)
+        (static_dir / "data.json").write_text('{"key": "value"}')
+        (static_dir / "icon.png").write_bytes(b"PNG data")
 
-        registry.register(
-            "test-mod",
-            static_files={"assets/images/logo.png": src_file},
-        )
+        registry.register("my-mod")
+        registry._modules["my-mod"]._base_path = mod_dir
         collected = registry.collect()
 
         workspace = tmp_path / "workspace"
         workspace.mkdir()
-
         dist_dir = tmp_path / "dist"
         dist_dir.mkdir()
 
@@ -670,9 +634,156 @@ class TestStaticFileCopyStep:
         step = StaticFileCopyStep()
         step.run(ctx)
 
-        copied_file = dist_dir / "assets" / "images" / "logo.png"
-        assert copied_file.exists()
-        assert copied_file.read_bytes() == b"PNG data"
+        # Files should be copied to dist
+        assert (dist_dir / "data.json").exists()
+        assert (dist_dir / "data.json").read_text() == '{"key": "value"}'
+        assert (dist_dir / "icon.png").exists()
+        assert (dist_dir / "icon.png").read_bytes() == b"PNG data"
+
+    def test_ignores_modules_without_static_directory(self, tmp_path: Path) -> None:
+        """StaticFileCopyStep skips modules that have no static directory."""
+        registry = ModuleRegistry()
+
+        # Create module WITHOUT static directory
+        mod_dir = tmp_path / "my_mod"
+        mod_dir.mkdir()
+        # No static folder created
+
+        registry.register("my-mod")
+        registry._modules["my-mod"]._base_path = mod_dir
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+        )
+
+        step = StaticFileCopyStep()
+        # Should not raise - just skip the module
+        step.run(ctx)
+
+        # dist should be empty (except what dist_dir.mkdir() created)
+        assert list(dist_dir.iterdir()) == []
+
+    def test_preserves_nested_directory_structure(self, tmp_path: Path) -> None:
+        """StaticFileCopyStep preserves nested directories from static folder."""
+        registry = ModuleRegistry()
+
+        # Create module with nested static structure
+        mod_dir = tmp_path / "my_mod"
+        static_dir = mod_dir / "static"
+        (static_dir / "assets" / "images").mkdir(parents=True)
+        (static_dir / "assets" / "images" / "logo.png").write_bytes(b"PNG data")
+        (static_dir / "assets" / "fonts").mkdir(parents=True)
+        (static_dir / "assets" / "fonts" / "font.woff").write_bytes(b"WOFF data")
+
+        registry.register("my-mod")
+        registry._modules["my-mod"]._base_path = mod_dir
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+        )
+
+        step = StaticFileCopyStep()
+        step.run(ctx)
+
+        # Nested structure should be preserved
+        assert (dist_dir / "assets" / "images" / "logo.png").exists()
+        assert (dist_dir / "assets" / "images" / "logo.png").read_bytes() == b"PNG data"
+        assert (dist_dir / "assets" / "fonts" / "font.woff").exists()
+        assert (dist_dir / "assets" / "fonts" / "font.woff").read_bytes() == b"WOFF data"
+
+    def test_copies_app_level_static_files(self, tmp_path: Path) -> None:
+        """StaticFileCopyStep copies from ctx.app_static_dir if provided."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+
+        # Create app-level static directory
+        app_static = tmp_path / "app_static"
+        app_static.mkdir()
+        (app_static / "favicon.ico").write_bytes(b"ICON data")
+        (app_static / "robots.txt").write_text("User-agent: *")
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            app_static_dir=app_static,  # New attribute
+        )
+
+        step = StaticFileCopyStep()
+        step.run(ctx)
+
+        # App-level static files should be copied
+        assert (dist_dir / "favicon.ico").exists()
+        assert (dist_dir / "favicon.ico").read_bytes() == b"ICON data"
+        assert (dist_dir / "robots.txt").exists()
+        assert (dist_dir / "robots.txt").read_text() == "User-agent: *"
+
+    def test_copies_from_both_modules_and_app(self, tmp_path: Path) -> None:
+        """StaticFileCopyStep copies from both module static dirs and app_static_dir."""
+        registry = ModuleRegistry()
+
+        # Create module with static directory
+        mod_dir = tmp_path / "my_mod"
+        static_dir = mod_dir / "static"
+        static_dir.mkdir(parents=True)
+        (static_dir / "module.css").write_text(".mod { }")
+
+        registry.register("my-mod")
+        registry._modules["my-mod"]._base_path = mod_dir
+        collected = registry.collect()
+
+        # Create app-level static directory
+        app_static = tmp_path / "app_static"
+        app_static.mkdir()
+        (app_static / "app.css").write_text(".app { }")
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            app_static_dir=app_static,
+        )
+
+        step = StaticFileCopyStep()
+        step.run(ctx)
+
+        # Both module and app static files should be copied
+        assert (dist_dir / "module.css").exists()
+        assert (dist_dir / "app.css").exists()
 
 
 class TestBuildOrchestration:

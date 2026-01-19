@@ -76,6 +76,7 @@ def build(
     *,
     force: bool = False,
     output_dir: Path | None = None,
+    app_static_dir: Path | None = None,
 ) -> None:
     """Run a build pipeline with the given steps.
 
@@ -86,6 +87,7 @@ def build(
         steps: List of build steps to execute in order
         force: Force rebuild even if up to date
         output_dir: Custom output directory (default: workspace/dist)
+        app_static_dir: App-level static files directory to copy to dist
     """
 
     collected = registry.collect()
@@ -116,6 +118,7 @@ def build(
         workspace=workspace,
         collected=collected,
         dist_dir=dist_dir,
+        app_static_dir=app_static_dir,
         env=os.environ.copy(),
     )
 

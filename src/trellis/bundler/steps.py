@@ -35,6 +35,7 @@ class BuildContext:
         workspace: Workspace directory for generated files
         collected: Collected modules from registry
         dist_dir: Output directory for bundle files
+        app_static_dir: Optional app-level static files directory
         esbuild_args: Additional esbuild arguments (steps can append)
         env: Environment variables for subprocess calls (steps can modify)
         generated_files: Map of generated file names to paths (steps set these)
@@ -47,6 +48,7 @@ class BuildContext:
     workspace: Path
     collected: CollectedModules
     dist_dir: Path
+    app_static_dir: Path | None = None
 
     # Mutable state (steps can modify)
     esbuild_args: list[str] = field(default_factory=list)
@@ -284,15 +286,57 @@ class BundleBuildStep(BuildStep):
 
 
 class StaticFileCopyStep(BuildStep):
-    """Copy static files from registered modules to the dist directory."""
+    """Copy static files to the dist directory using convention-based discovery.
+
+    Copies from:
+    - module._base_path / "static" for each registered module
+    - ctx.app_static_dir if provided (for app-level static files)
+    """
 
     @property
     def name(self) -> str:
         return "static-file-copy"
 
     def run(self, ctx: BuildContext) -> None:
+        # Copy from each module's static directory
         for module in ctx.collected.modules:
-            for static_name, src_path in module.static_files.items():
-                dst_path = ctx.dist_dir / static_name
-                dst_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src_path, dst_path)
+            if module._base_path is None:
+                continue
+            static_dir = module._base_path / "static"
+            if static_dir.is_dir():
+                shutil.copytree(static_dir, ctx.dist_dir, dirs_exist_ok=True)
+
+        # Copy from app-level static directory
+        if ctx.app_static_dir is not None and ctx.app_static_dir.is_dir():
+            shutil.copytree(ctx.app_static_dir, ctx.dist_dir, dirs_exist_ok=True)
+
+
+class IndexHtmlRenderStep(BuildStep):
+    """Render index.html.j2 template to dist directory.
+
+    Args:
+        template_path: Path to the Jinja2 template file
+        context: Template context variables (defaults to empty dict)
+    """
+
+    def __init__(self, template_path: Path, context: dict[str, str] | None = None) -> None:
+        self._template_path = template_path
+        self._context = context or {}
+
+    @property
+    def name(self) -> str:
+        return "index-html-render"
+
+    def run(self, ctx: BuildContext) -> None:
+        # Lazy import jinja2 to avoid import overhead when not used
+        from jinja2 import Environment, FileSystemLoader  # noqa: PLC0415
+
+        template_dir = self._template_path.parent
+        template_name = self._template_path.name
+
+        env = Environment(loader=FileSystemLoader(template_dir), autoescape=True)
+        template = env.get_template(template_name)
+        html_content = template.render(**self._context)
+
+        output_path = ctx.dist_dir / "index.html"
+        output_path.write_text(html_content)

@@ -18,6 +18,7 @@ from rich.console import Console
 from trellis.bundler import (
     BuildStep,
     BundleBuildStep,
+    IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
     StaticFileCopyStep,
@@ -96,13 +97,19 @@ class DesktopPlatform(Platform):
     def name(self) -> str:
         return "desktop"
 
-    def _get_build_steps(self) -> list[BuildStep]:
-        """Get build steps for this platform."""
+    def _get_build_steps(self, title: str = "Trellis App") -> list[BuildStep]:
+        """Get build steps for this platform.
+
+        Args:
+            title: Window title to render into index.html
+        """
+        template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
         return [
             PackageInstallStep(),
             RegistryGenerationStep(),
             BundleBuildStep(output_name="bundle"),
             StaticFileCopyStep(),
+            IndexHtmlRenderStep(template_path, {"title": title}),
         ]
 
     def bundle(
@@ -111,6 +118,7 @@ class DesktopPlatform(Platform):
         extra_packages: dict[str, str] | None = None,
         dest: Path | None = None,
         library: bool = False,
+        app_static_dir: Path | None = None,
     ) -> None:
         """Build the desktop client bundle if needed.
 
@@ -127,6 +135,7 @@ class DesktopPlatform(Platform):
             steps=self._get_build_steps(),
             force=force,
             output_dir=dest,
+            app_static_dir=app_static_dir,
         )
 
     def get_watch_config(self) -> WatchConfig:

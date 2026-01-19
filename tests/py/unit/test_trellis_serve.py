@@ -61,7 +61,7 @@ class TestServeBundling:
         trellis_with_mock_platform._platform = mock_platform
         asyncio.run(trellis_with_mock_platform.serve())
 
-        mock_platform.bundle.assert_called_once_with(force=False)
+        mock_platform.bundle.assert_called_once_with(force=False, app_static_dir=None)
 
     def test_serve_calls_bundle_with_force_true(self, mock_platform: Mock) -> None:
         """serve() calls platform.bundle() with force=True when build_bundle=True."""
@@ -75,7 +75,7 @@ class TestServeBundling:
 
         asyncio.run(app.serve())
 
-        mock_platform.bundle.assert_called_once_with(force=True)
+        mock_platform.bundle.assert_called_once_with(force=True, app_static_dir=None)
 
     def test_serve_calls_bundle_with_cli_build_bundle(self, mock_platform: Mock) -> None:
         """serve() respects --build-bundle CLI flag."""
@@ -89,7 +89,7 @@ class TestServeBundling:
 
         asyncio.run(app.serve())
 
-        mock_platform.bundle.assert_called_once_with(force=True)
+        mock_platform.bundle.assert_called_once_with(force=True, app_static_dir=None)
 
 
 class TestServePlatformRun:
