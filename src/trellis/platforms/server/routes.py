@@ -10,7 +10,6 @@ from pathlib import Path
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import HTMLResponse
-from jinja2 import Environment, FileSystemLoader
 
 from trellis.bundler.workspace import get_project_workspace
 
@@ -18,10 +17,6 @@ if tp.TYPE_CHECKING:
     from starlette.exceptions import HTTPException as StarletteHTTPException
 
 router = APIRouter()
-
-# Jinja2 environment for HTML templates
-_TEMPLATE_DIR = Path(__file__).parent / "client" / "src"
-_jinja_env = Environment(loader=FileSystemLoader(_TEMPLATE_DIR), autoescape=True)
 
 
 def register_spa_fallback(app: FastAPI) -> None:
@@ -40,20 +35,16 @@ def register_spa_fallback(app: FastAPI) -> None:
         return HTMLResponse(content=get_index_html(), status_code=200)
 
 
-def get_index_html(static_path: str = "/static", title: str = "Trellis App") -> str:
-    """Generate the HTML page that loads the React app.
+def get_index_html() -> str:
+    """Get the index.html content for serving.
 
-    Uses the index.html.j2 Jinja2 template from server/client/src/.
-
-    Args:
-        static_path: URL path prefix for static assets (bundle.js, bundle.css)
-        title: Page title
+    Reads from dist/index.html which is rendered at build time by IndexHtmlRenderStep.
 
     Returns:
-        Rendered HTML string
+        HTML string
     """
-    template = _jinja_env.get_template("index.html.j2")
-    return template.render(static_path=static_path, title=title)
+    index_path = create_static_dir() / "index.html"
+    return index_path.read_text()
 
 
 @router.get("/", response_class=HTMLResponse)

@@ -20,6 +20,7 @@ from rich.console import Console
 from trellis.bundler import (
     BuildStep,
     BundleBuildStep,
+    IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
     StaticFileCopyStep,
@@ -60,11 +61,13 @@ class ServerPlatform(Platform):
 
     def _get_build_steps(self) -> list[BuildStep]:
         """Get build steps for this platform."""
+        template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
         return [
             PackageInstallStep(),
             RegistryGenerationStep(),
             BundleBuildStep(output_name="bundle"),
             StaticFileCopyStep(),
+            IndexHtmlRenderStep(template_path, {"static_path": "/static"}),
         ]
 
     def bundle(
