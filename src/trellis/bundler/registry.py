@@ -51,16 +51,16 @@ def _expand_static_files(static_files: dict[str, Path]) -> dict[str, Path]:
 class ExportKind(StrEnum):
     """Kind of export from a module."""
 
-    Component = auto()
+    COMPONENT = auto()
     """React component - will be registered via registerWidget()."""
 
-    Function = auto()
+    FUNCTION = auto()
     """Utility function - exported for use by other modules."""
 
-    Initializer = auto()
+    INITIALIZER = auto()
     """Side-effect code - called at startup."""
 
-    Stylesheet = auto()
+    STYLESHEET = auto()
     """CSS file - imported for side effects, keeps .css extension."""
 
 

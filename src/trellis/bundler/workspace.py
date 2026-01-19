@@ -135,13 +135,13 @@ def generate_registry_ts(collected: CollectedModules) -> str:
             elif source_path.endswith(".ts"):
                 source_path = source_path[:-3]
 
-            if export.kind == ExportKind.Component:
+            if export.kind == ExportKind.COMPONENT:
                 components.append((export.name, module.name, source_path))
-            elif export.kind == ExportKind.Function:
+            elif export.kind == ExportKind.FUNCTION:
                 functions.append((export.name, module.name, source_path))
-            elif export.kind == ExportKind.Initializer:
+            elif export.kind == ExportKind.INITIALIZER:
                 initializers.append((module.name, source_path))
-            elif export.kind == ExportKind.Stylesheet:
+            elif export.kind == ExportKind.STYLESHEET:
                 stylesheets.append((module.name, export.source))
 
     return _REGISTRY_TS_TEMPLATE.render(
