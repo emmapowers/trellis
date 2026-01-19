@@ -9,7 +9,6 @@ since watchfiles is not available in Pyodide.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from collections.abc import Callable
 from pathlib import Path
@@ -162,28 +161,3 @@ async def watch_and_rebuild(
                     on_rebuild()
             except Exception:
                 logger.exception("Bundle rebuild failed")
-
-
-def start_watch_task(
-    registry: ModuleRegistry,
-    entry_point: Path,
-    workspace: Path,
-    steps: list[BuildStep],
-) -> asyncio.Task[None]:
-    """Start a background task to watch and rebuild.
-
-    Returns a task that can be cancelled to stop watching.
-
-    Args:
-        registry: Module registry with registered modules
-        entry_point: Path to entry point file
-        workspace: Workspace directory for staging and output
-        steps: Build steps to execute on rebuild
-
-    Returns:
-        Asyncio task running the watch loop
-    """
-    return asyncio.create_task(
-        watch_and_rebuild(registry, entry_point, workspace, steps),
-        name="bundle-watcher",
-    )
