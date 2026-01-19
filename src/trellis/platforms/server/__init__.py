@@ -3,8 +3,10 @@
 This is the default platform for Trellis applications.
 """
 
-# Register trellis-server module with the bundler
-from trellis.platforms.server import _register as _  # noqa: F401
+from trellis.bundler import registry
 from trellis.platforms.server.platform import ServerPlatform
+
+# Register the trellis-server module
+registry.register("trellis-server")
 
 __all__ = ["ServerPlatform"]
