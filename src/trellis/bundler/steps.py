@@ -26,6 +26,18 @@ from trellis.bundler.workspace import write_registry_ts
 logger = logging.getLogger(__name__)
 
 
+def collect_ts_source_files(base_path: Path) -> set[Path]:
+    """Collect TypeScript/TSX source files recursively from a directory.
+
+    Args:
+        base_path: Directory to search for source files
+
+    Returns:
+        Set of paths to .ts and .tsx files
+    """
+    return {f for f in base_path.rglob("*") if f.suffix in {".ts", ".tsx"}}
+
+
 class ShouldBuild(StrEnum):
     """Enum indicating whether a step should build or skip."""
 
@@ -171,13 +183,14 @@ class RegistryGenerationStep(BuildStep):
     def name(self) -> str:
         return "registry-generation"
 
-    def _compute_collected_hash(self, ctx: BuildContext) -> int:
-        """Compute hash of collected modules structure."""
-        modules_key = tuple(
-            (m.name, tuple((e.name, e.kind, e.source) for e in m.exports))
+    def _compute_collected_hash(self, ctx: BuildContext) -> str:
+        """Compute stable hash of collected modules structure."""
+        modules_data = [
+            {"name": m.name, "exports": [(e.name, e.kind, e.source) for e in m.exports]}
             for m in ctx.collected.modules
-        )
-        return hash(modules_key)
+        ]
+        data_str = json.dumps(modules_data, sort_keys=True)
+        return hashlib.sha256(data_str.encode()).hexdigest()
 
     def should_build(
         self, ctx: BuildContext, step_manifest: StepManifest | None
@@ -211,13 +224,16 @@ class TsconfigStep(BuildStep):
     def name(self) -> str:
         return "tsconfig"
 
-    def _compute_inputs_hash(self, ctx: BuildContext) -> int:
-        """Compute hash of inputs that determine tsconfig content."""
-        aliases = tuple(
-            sorted((m.name, str(m._base_path)) for m in ctx.collected.modules if m._base_path)
-        )
-        inputs_key = (aliases, str(ctx.entry_point), "_registry" in ctx.generated_files)
-        return hash(inputs_key)
+    def _compute_inputs_hash(self, ctx: BuildContext) -> str:
+        """Compute stable hash of inputs that determine tsconfig content."""
+        aliases = sorted((m.name, str(m._base_path)) for m in ctx.collected.modules if m._base_path)
+        inputs_data = {
+            "aliases": aliases,
+            "entry_point": str(ctx.entry_point),
+            "has_registry": "_registry" in ctx.generated_files,
+        }
+        data_str = json.dumps(inputs_data, sort_keys=True)
+        return hashlib.sha256(data_str.encode()).hexdigest()
 
     def should_build(
         self, ctx: BuildContext, step_manifest: StepManifest | None
@@ -329,9 +345,7 @@ class TypeCheckStep(BuildStep):
         step_manifest.dest_files.add(marker)
 
         # Track source files
-        for source in ctx.entry_point.parent.rglob("*"):
-            if source.suffix in {".ts", ".tsx"}:
-                step_manifest.source_paths.add(source)
+        step_manifest.source_paths.update(collect_ts_source_files(ctx.entry_point.parent))
 
 
 class DeclarationStep(BuildStep):
@@ -379,9 +393,7 @@ class DeclarationStep(BuildStep):
 
         # Track sources and outputs
         step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
-        for source in ctx.entry_point.parent.rglob("*"):
-            if source.suffix in {".ts", ".tsx"}:
-                step_manifest.source_paths.add(source)
+        step_manifest.source_paths.update(collect_ts_source_files(ctx.entry_point.parent))
         for output in ctx.dist_dir.rglob("*.d.ts"):
             step_manifest.dest_files.add(output)
 
@@ -502,13 +514,12 @@ class StaticFileCopyStep(BuildStep):
         # Add source directory (not individual files) - enables recursive mtime checking
         step_manifest.source_paths.add(src_dir)
 
-        # Copy and track destination files
-        for src_file in src_dir.rglob("*"):
-            if src_file.is_file():
-                rel_path = src_file.relative_to(src_dir)
-                dest_file = dest_dir / rel_path
-                dest_file.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src_file, dest_file)
+        # Copy entire tree
+        shutil.copytree(src_dir, dest_dir, dirs_exist_ok=True)
+
+        # Build files list with glob
+        for dest_file in dest_dir.glob("**/*"):
+            if dest_file.is_file():
                 step_manifest.dest_files.add(dest_file)
 
 

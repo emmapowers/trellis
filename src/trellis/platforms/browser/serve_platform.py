@@ -114,7 +114,6 @@ class BrowserServePlatform(Platform):
     def bundle(
         self,
         force: bool = False,
-        extra_packages: dict[str, str] | None = None,
         dest: Path | None = None,
         library: bool = False,
         app_static_dir: Path | None = None,
@@ -127,7 +126,6 @@ class BrowserServePlatform(Platform):
 
         Args:
             force: Force rebuild even if sources unchanged
-            extra_packages: Additional npm packages beyond platform defaults
             dest: Custom output directory (default: cache directory)
             library: If True, build as library exporting TrellisApp (uses index.ts).
                      If False, build as app that renders to DOM (uses main.tsx).

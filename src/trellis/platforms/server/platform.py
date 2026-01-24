@@ -73,7 +73,6 @@ class ServerPlatform(Platform):
     def bundle(
         self,
         force: bool = False,
-        extra_packages: dict[str, str] | None = None,
         dest: Path | None = None,
         library: bool = False,
         app_static_dir: Path | None = None,

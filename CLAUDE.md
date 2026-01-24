@@ -52,7 +52,7 @@ src/trellis/
 - MyEnum.UPPER_CASE enums
 - use absolute imports
 - place imports at the top of the file unless there is a compelling reason not to. Imports mid file add complexity, so avoid them unless they are really needed, and add a comment to explain why.
-- When writing tests, use pytest style instead of xunit. Organizing related tests into classes is fine, but use fixtures for shared code instead of class members and inheritance. Look for oportunities to re-factor common test code into fixtures. Check relevant conftest.py to see if there are useful fixtures already.
+- When writing tests, use pytest style instead of xunit. Organizing related tests into classes is fine, but use fixtures for shared code instead of class members and inheritance. Look for opportunities to re-factor common test code into fixtures. Check relevant conftest.py to see if there are useful fixtures already.
 
 ### Import Style
 

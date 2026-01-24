@@ -181,8 +181,6 @@ class WheelCopyStep(BuildStep):
     This step copies the wheel from the project's dist/ directory
     to the build's dist_dir so it can be served alongside the bundle.
 
-    Also populates manifest and implements should_build() for wheel version check.
-
     Args:
         wheel_dir: Directory containing the trellis wheel (project's dist/)
     """

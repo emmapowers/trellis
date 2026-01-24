@@ -51,6 +51,6 @@ def collect_package_files(package_dir: Path) -> dict[str, str]:
 
         # Get path relative to package parent (so package name is included)
         rel_path = py_file.relative_to(package_dir.parent)
-        files[str(rel_path)] = py_file.read_text()
+        files[str(rel_path)] = py_file.read_text(encoding="utf-8")
 
     return files

@@ -115,7 +115,6 @@ class DesktopPlatform(Platform):
     def bundle(
         self,
         force: bool = False,
-        extra_packages: dict[str, str] | None = None,
         dest: Path | None = None,
         library: bool = False,
         app_static_dir: Path | None = None,
@@ -164,7 +163,13 @@ class DesktopPlatform(Platform):
             )
             # Register handler for broadcast (e.g., reload messages)
             get_global_registry().register(self._handler)
+
+            def _on_handler_done(task: asyncio.Task[None]) -> None:
+                if self._handler is not None:
+                    get_global_registry().unregister(self._handler)
+
             self._handler_task = asyncio.create_task(self._handler.run())
+            self._handler_task.add_done_callback(_on_handler_done)
             return "ok"
 
         @commands.command()

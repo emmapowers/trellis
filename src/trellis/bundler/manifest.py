@@ -30,25 +30,13 @@ class StepManifest:
 class BuildManifest:
     """Tracks all inputs and outputs for a build with per-step granularity.
 
-    Each step stores its own StepManifest in the steps dict. The source_paths
-    and dest_files properties aggregate data from all steps for backwards
-    compatibility with existing code.
+    Each step stores its own StepManifest in the steps dict.
 
     Attributes:
         steps: Dict mapping step name to its StepManifest
     """
 
     steps: dict[str, StepManifest] = field(default_factory=dict)
-
-    @property
-    def source_paths(self) -> set[Path]:
-        """All source paths across all steps (backwards compat)."""
-        return {p for s in self.steps.values() for p in s.source_paths}
-
-    @property
-    def dest_files(self) -> set[Path]:
-        """All dest files across all steps (backwards compat)."""
-        return {p for s in self.steps.values() for p in s.dest_files}
 
 
 def get_manifest_path(workspace: Path) -> Path:

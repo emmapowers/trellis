@@ -26,7 +26,67 @@ from trellis.bundler.steps import (
     StaticFileCopyStep,
     TsconfigStep,
     TypeCheckStep,
+    collect_ts_source_files,
 )
+
+
+class TestCollectTsSourceFiles:
+    """Tests for collect_ts_source_files() helper function."""
+
+    def test_finds_ts_files(self, tmp_path: Path) -> None:
+        """collect_ts_source_files finds .ts files recursively."""
+        (tmp_path / "main.ts").write_text("// main")
+        (tmp_path / "sub").mkdir()
+        (tmp_path / "sub" / "util.ts").write_text("// util")
+
+        result = collect_ts_source_files(tmp_path)
+
+        assert (tmp_path / "main.ts") in result
+        assert (tmp_path / "sub" / "util.ts") in result
+
+    def test_finds_tsx_files(self, tmp_path: Path) -> None:
+        """collect_ts_source_files finds .tsx files recursively."""
+        (tmp_path / "App.tsx").write_text("// app")
+        (tmp_path / "components").mkdir()
+        (tmp_path / "components" / "Button.tsx").write_text("// button")
+
+        result = collect_ts_source_files(tmp_path)
+
+        assert (tmp_path / "App.tsx") in result
+        assert (tmp_path / "components" / "Button.tsx") in result
+
+    def test_ignores_other_file_types(self, tmp_path: Path) -> None:
+        """collect_ts_source_files ignores non-TypeScript files."""
+        (tmp_path / "main.ts").write_text("// ts")
+        (tmp_path / "util.js").write_text("// js")
+        (tmp_path / "config.json").write_text("{}")
+        (tmp_path / "README.md").write_text("# readme")
+        (tmp_path / "data.txt").write_text("data")
+
+        result = collect_ts_source_files(tmp_path)
+
+        assert (tmp_path / "main.ts") in result
+        assert (tmp_path / "util.js") not in result
+        assert (tmp_path / "config.json") not in result
+        assert (tmp_path / "README.md") not in result
+        assert (tmp_path / "data.txt") not in result
+
+    def test_returns_empty_set_for_empty_directory(self, tmp_path: Path) -> None:
+        """collect_ts_source_files returns empty set for empty directory."""
+        result = collect_ts_source_files(tmp_path)
+
+        assert result == set()
+
+    def test_returns_empty_set_for_directory_with_no_ts_files(self, tmp_path: Path) -> None:
+        """collect_ts_source_files returns empty set when no TS/TSX files exist."""
+        (tmp_path / "app.js").write_text("// js")
+        (tmp_path / "styles.css").write_text("/* css */")
+
+        result = collect_ts_source_files(tmp_path)
+
+        assert result == set()
+
+
 class TestBuildContext:
     """Tests for BuildContext dataclass."""
 

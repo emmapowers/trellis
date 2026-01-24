@@ -84,32 +84,6 @@ class TestBuildManifest:
         assert "bundle-build" in manifest.steps
         assert manifest.steps["bundle-build"] is step_manifest
 
-    def test_source_paths_property_aggregates_all_steps(self) -> None:
-        """source_paths property aggregates paths from all steps."""
-        manifest = BuildManifest()
-
-        manifest.steps["step1"] = StepManifest(
-            source_paths={Path("/a.ts"), Path("/b.ts")},
-        )
-        manifest.steps["step2"] = StepManifest(
-            source_paths={Path("/c.ts")},
-        )
-
-        assert manifest.source_paths == {Path("/a.ts"), Path("/b.ts"), Path("/c.ts")}
-
-    def test_dest_files_property_aggregates_all_steps(self) -> None:
-        """dest_files property aggregates files from all steps."""
-        manifest = BuildManifest()
-
-        manifest.steps["step1"] = StepManifest(
-            dest_files={Path("/dist/a.js")},
-        )
-        manifest.steps["step2"] = StepManifest(
-            dest_files={Path("/dist/b.js"), Path("/dist/c.js")},
-        )
-
-        assert manifest.dest_files == {Path("/dist/a.js"), Path("/dist/b.js"), Path("/dist/c.js")}
-
 
 class TestManifestPath:
     """Tests for get_manifest_path."""

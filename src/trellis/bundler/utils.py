@@ -68,7 +68,7 @@ def safe_extract(tar: tarfile.TarFile, dest: Path) -> None:
         member_path = (dest / member.name).resolve()
         if not member_path.is_relative_to(dest):
             raise ValueError(f"Tarball contains path traversal: {member.name}")
-    tar.extractall(dest)
+    tar.extractall(dest, filter="data")
 
 
 def _get_newest_mtime(path: Path) -> float:
@@ -118,6 +118,10 @@ def is_rebuild_needed(inputs: Iterable[Path], outputs: Iterable[Path]) -> bool:
     # No inputs means nothing to rebuild from
     if not input_list:
         return False
+
+    # No outputs means nothing exists yet - rebuild needed
+    if not output_list:
+        return True
 
     # Check all outputs exist
     for output in output_list:
