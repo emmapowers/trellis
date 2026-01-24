@@ -7,13 +7,12 @@ import importlib.util
 import logging
 import os
 import sys
-from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from trellis.bundler.metafile import read_metafile
+from trellis.bundler.manifest import BuildManifest, load_manifest, save_manifest
 from trellis.bundler.python_source import find_package_root
-from trellis.bundler.steps import BuildContext
+from trellis.bundler.steps import BuildContext, ShouldBuild
 
 if TYPE_CHECKING:
     from trellis.bundler.registry import ModuleRegistry
@@ -66,56 +65,6 @@ def _import_entry_point(entry_point: Path) -> None:
         spec.loader.exec_module(module)
 
 
-def is_rebuild_needed(inputs: Iterable[Path], outputs: Iterable[Path]) -> bool:
-    """Check if outputs are stale relative to inputs.
-
-    Returns True if any output is missing or older than any input.
-
-    Args:
-        inputs: Source files to check
-        outputs: Output files that should be newer than inputs
-
-    Returns:
-        True if rebuild is needed, False if outputs are up to date
-    """
-    input_list = list(inputs)
-    output_list = list(outputs)
-
-    # No inputs means nothing to rebuild from
-    if not input_list:
-        return False
-
-    # Check all outputs exist
-    for output in output_list:
-        if not output.exists():
-            return True
-
-    # Find oldest output mtime
-    oldest_output = min(output.stat().st_mtime for output in output_list)
-
-    # Check if any input is newer than oldest output
-    for input_file in input_list:
-        if input_file.exists() and input_file.stat().st_mtime > oldest_output:
-            return True
-
-    return False
-
-
-def _collect_input_files(workspace: Path) -> list[Path]:
-    """Collect all input files for cache checking from metafile.
-
-    Args:
-        workspace: Workspace directory containing metafile.json
-
-    Returns:
-        List of input file paths from metafile
-
-    Raises:
-        FileNotFoundError: If metafile.json doesn't exist
-    """
-    return read_metafile(workspace).inputs
-
-
 def build(
     registry: ModuleRegistry,
     entry_point: Path,
@@ -128,6 +77,10 @@ def build(
     python_entry_point: Path | None = None,
 ) -> None:
     """Run a build pipeline with the given steps.
+
+    Each step decides whether to run via should_build():
+    - SKIP: Step is up to date, copy old manifest section to new
+    - BUILD/None: Step needs to run
 
     Args:
         registry: Module registry with registered modules
@@ -146,23 +99,11 @@ def build(
     collected = registry.collect()
     dist_dir = output_dir or (workspace / "dist")
 
-    # Check if rebuild is needed (skip if outputs up to date)
-    if not force:
-        try:
-            inputs = _collect_input_files(workspace)
-        except FileNotFoundError:
-            # No metafile from previous build - need to build
-            logger.debug("No metafile found, forcing rebuild")
-        else:
-            # esbuild produces bundle.js and optionally bundle.css when CSS is imported.
-            # We only check bundle.js for cache invalidation since it's always produced.
-            outputs = [dist_dir / "bundle.js"]
+    # Load previous manifest for per-step staleness check
+    previous_manifest = load_manifest(workspace)
 
-            if not is_rebuild_needed(inputs, outputs):
-                logger.debug("Skipping build: outputs up to date")
-                return
-
-    dist_dir.mkdir(parents=True, exist_ok=True)
+    # Create fresh manifest for this build (steps write directly to ctx.manifest.steps)
+    manifest = BuildManifest()
 
     # Create build context with system environment so subprocess tools can find node
     ctx = BuildContext(
@@ -171,11 +112,29 @@ def build(
         workspace=workspace,
         collected=collected,
         dist_dir=dist_dir,
+        manifest=manifest,
         app_static_dir=app_static_dir,
         python_entry_point=python_entry_point,
         env=os.environ.copy(),
     )
 
+    # Ensure directories exist
+    workspace.mkdir(parents=True, exist_ok=True)
+    dist_dir.mkdir(parents=True, exist_ok=True)
+
+    # Single pass: evaluate and run each step in order
     for step in steps:
-        logger.debug("Running step: %s", step.name)
-        step.run(ctx)
+        prev_step_manifest = previous_manifest.steps.get(step.name) if previous_manifest else None
+        should_build = step.should_build(ctx, prev_step_manifest) or ShouldBuild.BUILD
+
+        # Run step if: forced, should_build says BUILD, or nothing to skip from
+        if force or should_build == ShouldBuild.BUILD or prev_step_manifest is None:
+            logger.debug("Running step: %s", step.name)
+            step.run(ctx)
+            # Steps write directly to ctx.manifest.steps
+        else:
+            logger.debug("Skipping step: %s", step.name)
+            ctx.manifest.steps[step.name] = prev_step_manifest
+
+    # Save manifest for next build
+    save_manifest(workspace, ctx.manifest)

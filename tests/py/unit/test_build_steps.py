@@ -11,31 +11,33 @@ from unittest.mock import patch
 
 import pytest
 
-from trellis.bundler.build import build, is_rebuild_needed
+from trellis.bundler.build import build
+from trellis.bundler.manifest import BuildManifest, StepManifest
 from trellis.bundler.registry import ModuleRegistry, registry
 from trellis.bundler.steps import (
     BuildContext,
     BuildStep,
     BundleBuildStep,
     DeclarationStep,
+    IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
+    ShouldBuild,
     StaticFileCopyStep,
     TsconfigStep,
     TypeCheckStep,
 )
-
-
 class TestBuildContext:
     """Tests for BuildContext dataclass."""
 
     def test_creates_with_required_fields(self, tmp_path: Path) -> None:
-        """BuildContext requires registry, entry_point, workspace, collected, dist_dir."""
+        """BuildContext requires registry, entry_point, workspace, collected, dist_dir, manifest."""
         registry = ModuleRegistry()
         collected = registry.collect()
         entry_point = tmp_path / "main.tsx"
         workspace = tmp_path / "workspace"
         dist_dir = tmp_path / "dist"
+        manifest = BuildManifest()
 
         ctx = BuildContext(
             registry=registry,
@@ -43,6 +45,7 @@ class TestBuildContext:
             workspace=workspace,
             collected=collected,
             dist_dir=dist_dir,
+            manifest=manifest,
         )
 
         assert ctx.registry is registry
@@ -50,6 +53,7 @@ class TestBuildContext:
         assert ctx.workspace == workspace
         assert ctx.collected is collected
         assert ctx.dist_dir == dist_dir
+        assert ctx.manifest is manifest
 
     def test_has_mutable_esbuild_args(self, tmp_path: Path) -> None:
         """BuildContext has empty esbuild_args list by default."""
@@ -62,6 +66,7 @@ class TestBuildContext:
             workspace=tmp_path / "workspace",
             collected=collected,
             dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
         )
 
         assert ctx.esbuild_args == []
@@ -80,6 +85,7 @@ class TestBuildContext:
             workspace=tmp_path / "workspace",
             collected=collected,
             dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
         )
 
         assert ctx.env == {}
@@ -97,6 +103,7 @@ class TestBuildContext:
             workspace=tmp_path / "workspace",
             collected=collected,
             dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
         )
 
         assert ctx.generated_files == {}
@@ -114,9 +121,114 @@ class TestBuildContext:
             workspace=tmp_path / "workspace",
             collected=collected,
             dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
         )
 
         assert ctx.node_modules is None
+
+    def test_has_manifest_field(self, tmp_path: Path) -> None:
+        """BuildContext has manifest field."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+        manifest = BuildManifest()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=collected,
+            dist_dir=tmp_path / "dist",
+            manifest=manifest,
+        )
+
+        assert ctx.manifest is manifest
+
+    def test_manifest_is_required(self, tmp_path: Path) -> None:
+        """BuildContext requires manifest field."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+
+        # This should fail at type checking level, but we verify the field exists
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=collected,
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+        assert hasattr(ctx, "manifest")
+
+
+class TestBuildContextDirectManifestAccess:
+    """Tests for BuildContext - steps access manifest.steps directly."""
+
+    def test_no_step_manifests_attribute(self, tmp_path: Path) -> None:
+        """BuildContext should NOT have step_manifests attribute (removed)."""
+        ctx = BuildContext(
+            registry=ModuleRegistry(),
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=ModuleRegistry().collect(),
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+        assert not hasattr(ctx, "step_manifests")
+
+    def test_no_get_step_manifest_method(self, tmp_path: Path) -> None:
+        """BuildContext should NOT have get_step_manifest method (removed)."""
+        ctx = BuildContext(
+            registry=ModuleRegistry(),
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=ModuleRegistry().collect(),
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+        assert not hasattr(ctx, "get_step_manifest")
+
+    def test_steps_write_to_manifest_steps_directly(self, tmp_path: Path) -> None:
+        """Steps write to ctx.manifest.steps directly."""
+        ctx = BuildContext(
+            registry=ModuleRegistry(),
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=ModuleRegistry().collect(),
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+        # Steps use setdefault to create/get their manifest entry
+        step_manifest = ctx.manifest.steps.setdefault("test-step", StepManifest())
+        step_manifest.metadata["foo"] = "bar"
+
+        # The manifest should contain the step
+        assert "test-step" in ctx.manifest.steps
+        assert ctx.manifest.steps["test-step"].metadata["foo"] == "bar"
+
+    def test_setdefault_returns_existing(self, tmp_path: Path) -> None:
+        """setdefault returns existing StepManifest if present."""
+        ctx = BuildContext(
+            registry=ModuleRegistry(),
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=ModuleRegistry().collect(),
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+        # First call creates
+        first = ctx.manifest.steps.setdefault("bundle-build", StepManifest())
+        first.metadata["foo"] = "bar"
+
+        # Second call returns same instance
+        second = ctx.manifest.steps.setdefault("bundle-build", StepManifest())
+
+        assert second is first
+        assert second.metadata["foo"] == "bar"
 
 
 class TestBuildStep:
@@ -163,6 +275,143 @@ class TestBuildStep:
         assert step.name == "noop"
 
 
+class TestShouldBuildEnum:
+    """Tests for ShouldBuild enum."""
+
+    def test_has_skip_member(self) -> None:
+        """ShouldBuild enum has SKIP member."""
+        assert hasattr(ShouldBuild, "SKIP")
+        assert ShouldBuild.SKIP.value == "skip"
+
+    def test_has_build_member(self) -> None:
+        """ShouldBuild enum has BUILD member."""
+        assert hasattr(ShouldBuild, "BUILD")
+        assert ShouldBuild.BUILD.value == "build"
+
+
+class TestBuildStepShouldBuildSignature:
+    """Tests for BuildStep.should_build() method with new signature."""
+
+    def test_default_returns_none(self, tmp_path: Path) -> None:
+        """BuildStep.should_build() returns None by default (always run)."""
+        ctx = BuildContext(
+            registry=ModuleRegistry(),
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=ModuleRegistry().collect(),
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+        class NoopStep(BuildStep):
+            @property
+            def name(self) -> str:
+                return "noop"
+
+            def run(self, ctx: BuildContext) -> None:
+                pass
+
+        step = NoopStep()
+        result = step.should_build(ctx, step_manifest=None)
+
+        assert result is None
+
+    def test_receives_step_manifest_parameter(self, tmp_path: Path) -> None:
+        """BuildStep.should_build() receives step_manifest for comparison."""
+        ctx = BuildContext(
+            registry=ModuleRegistry(),
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=ModuleRegistry().collect(),
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+        received_manifest: list[StepManifest | None] = []
+
+        class CheckManifestStep(BuildStep):
+            @property
+            def name(self) -> str:
+                return "check-manifest"
+
+            def run(self, ctx: BuildContext) -> None:
+                pass
+
+            def should_build(
+                self, ctx: BuildContext, step_manifest: StepManifest | None
+            ) -> ShouldBuild | None:
+                received_manifest.append(step_manifest)
+                return None
+
+        step = CheckManifestStep()
+        prev_step_manifest = StepManifest(
+            source_paths={Path("/some/file")},
+            metadata={"key": "value"},
+        )
+        step.should_build(ctx, step_manifest=prev_step_manifest)
+
+        assert len(received_manifest) == 1
+        assert received_manifest[0] is prev_step_manifest
+
+    def test_can_return_skip(self, tmp_path: Path) -> None:
+        """BuildStep.should_build() can return SKIP."""
+        ctx = BuildContext(
+            registry=ModuleRegistry(),
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=ModuleRegistry().collect(),
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+        class SkipStep(BuildStep):
+            @property
+            def name(self) -> str:
+                return "skip-step"
+
+            def run(self, ctx: BuildContext) -> None:
+                pass
+
+            def should_build(
+                self, ctx: BuildContext, step_manifest: StepManifest | None
+            ) -> ShouldBuild | None:
+                return ShouldBuild.SKIP
+
+        step = SkipStep()
+        result = step.should_build(ctx, step_manifest=None)
+
+        assert result == ShouldBuild.SKIP
+
+    def test_can_return_build(self, tmp_path: Path) -> None:
+        """BuildStep.should_build() can return BUILD."""
+        ctx = BuildContext(
+            registry=ModuleRegistry(),
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=ModuleRegistry().collect(),
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+        class BuildAlwaysStep(BuildStep):
+            @property
+            def name(self) -> str:
+                return "build-always"
+
+            def run(self, ctx: BuildContext) -> None:
+                pass
+
+            def should_build(
+                self, ctx: BuildContext, step_manifest: StepManifest | None
+            ) -> ShouldBuild | None:
+                return ShouldBuild.BUILD
+
+        step = BuildAlwaysStep()
+        result = step.should_build(ctx, step_manifest=None)
+
+        assert result == ShouldBuild.BUILD
+
+
 class TestPackageInstallStep:
     """Tests for PackageInstallStep."""
 
@@ -182,6 +431,7 @@ class TestPackageInstallStep:
             workspace=workspace,
             collected=collected,
             dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
         )
 
     def test_has_name_package_install(self) -> None:
@@ -217,6 +467,68 @@ class TestPackageInstallStep:
         mock_ensure.assert_called_once_with({"react": "18.2.0"}, build_context.workspace)
 
 
+class TestPackageInstallStepShouldBuild:
+    """Tests for PackageInstallStep.should_build() with new signature."""
+
+    @pytest.fixture
+    def build_context(self, tmp_path: Path) -> BuildContext:
+        """Create a BuildContext for testing."""
+        registry = ModuleRegistry()
+        registry.register("test-mod", packages={"react": "18.2.0"})
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        return BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+    def test_returns_skip_when_packages_unchanged(self, build_context: BuildContext) -> None:
+        """should_build returns SKIP when packages match previous step manifest."""
+        prev_step_manifest = StepManifest(
+            metadata={"packages": {"react": "18.2.0"}},  # Same version
+        )
+
+        step = PackageInstallStep()
+        result = step.should_build(build_context, prev_step_manifest)
+
+        assert result == ShouldBuild.SKIP
+
+    def test_returns_build_when_packages_changed(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when packages differ from previous manifest."""
+        prev_step_manifest = StepManifest(
+            metadata={"packages": {"react": "17.0.0"}},  # Different version
+        )
+
+        step = PackageInstallStep()
+        result = step.should_build(build_context, prev_step_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_no_previous_manifest(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when no previous step manifest."""
+        step = PackageInstallStep()
+        result = step.should_build(build_context, step_manifest=None)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_writes_packages_to_step_manifest_metadata(self, build_context: BuildContext) -> None:
+        """PackageInstallStep stores packages in step manifest metadata."""
+        with patch("trellis.bundler.steps.ensure_packages"):
+            step = PackageInstallStep()
+            step.run(build_context)
+
+        step_manifest = build_context.manifest.steps["package-install"]
+        expected_packages = {"react": "18.2.0"}
+        assert step_manifest.metadata["packages"] == expected_packages
+
+
 class TestRegistryGenerationStep:
     """Tests for RegistryGenerationStep."""
 
@@ -235,6 +547,7 @@ class TestRegistryGenerationStep:
             workspace=workspace,
             collected=collected,
             dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
         )
 
     def test_has_name_registry_generation(self) -> None:
@@ -269,6 +582,79 @@ class TestRegistryGenerationStep:
         assert expected_alias in build_context.esbuild_args
 
 
+class TestRegistryGenerationStepShouldBuild:
+    """Tests for RegistryGenerationStep.should_build()."""
+
+    @pytest.fixture
+    def build_context(self, tmp_path: Path) -> BuildContext:
+        """Create a BuildContext for testing."""
+        registry = ModuleRegistry()
+        registry.register("test-mod", packages={"react": "18.0.0"})
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        return BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+    def test_returns_build_when_no_previous_manifest(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when no previous step manifest."""
+        step = RegistryGenerationStep()
+        result = step.should_build(build_context, step_manifest=None)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_collected_hash_missing(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when previous manifest has no collected_hash."""
+        prev_manifest = StepManifest(metadata={})
+
+        step = RegistryGenerationStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_modules_changed(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when modules have changed."""
+        # Run once to get the hash
+        step = RegistryGenerationStep()
+        step.run(build_context)
+        original_hash = build_context.manifest.steps["registry-generation"].metadata.get(
+            "collected_hash"
+        )
+
+        # Create new context with different modules
+        registry2 = ModuleRegistry()
+        registry2.register("different-mod", packages={"lodash": "4.0.0"})
+        build_context.collected = registry2.collect()
+
+        prev_manifest = StepManifest(metadata={"collected_hash": original_hash})
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_skip_when_modules_unchanged(self, build_context: BuildContext) -> None:
+        """should_build returns SKIP when modules are unchanged."""
+        # Run once to get the hash
+        step = RegistryGenerationStep()
+        step.run(build_context)
+        current_hash = build_context.manifest.steps["registry-generation"].metadata.get(
+            "collected_hash"
+        )
+
+        # Use same hash in previous manifest
+        prev_manifest = StepManifest(metadata={"collected_hash": current_hash})
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.SKIP
+
+
 class TestTsconfigStep:
     """Tests for TsconfigStep."""
 
@@ -291,6 +677,7 @@ class TestTsconfigStep:
             workspace=workspace,
             collected=collected,
             dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
         )
 
     def test_has_name_tsconfig(self) -> None:
@@ -329,6 +716,79 @@ class TestTsconfigStep:
         assert "@trellis/test-mod/*" in paths
 
 
+class TestTsconfigStepShouldBuild:
+    """Tests for TsconfigStep.should_build()."""
+
+    @pytest.fixture
+    def build_context(self, tmp_path: Path) -> BuildContext:
+        """Create a BuildContext for testing."""
+        registry = ModuleRegistry()
+        registry.register("test-mod")
+        registry._modules["test-mod"]._base_path = tmp_path / "test-mod"
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        return BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+    def test_returns_build_when_no_previous_manifest(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when no previous step manifest."""
+        step = TsconfigStep()
+        result = step.should_build(build_context, step_manifest=None)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_inputs_hash_missing(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when previous manifest has no inputs_hash."""
+        prev_manifest = StepManifest(metadata={})
+
+        step = TsconfigStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_module_paths_changed(
+        self, build_context: BuildContext, tmp_path: Path
+    ) -> None:
+        """should_build returns BUILD when module paths have changed."""
+        # Run once to get the hash
+        step = TsconfigStep()
+        step.run(build_context)
+        original_hash = build_context.manifest.steps["tsconfig"].metadata.get("inputs_hash")
+
+        # Change module path
+        registry2 = ModuleRegistry()
+        registry2.register("test-mod")
+        registry2._modules["test-mod"]._base_path = tmp_path / "different-path"
+        build_context.collected = registry2.collect()
+
+        prev_manifest = StepManifest(metadata={"inputs_hash": original_hash})
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_skip_when_inputs_unchanged(self, build_context: BuildContext) -> None:
+        """should_build returns SKIP when inputs are unchanged."""
+        # Run once to get the hash
+        step = TsconfigStep()
+        step.run(build_context)
+        current_hash = build_context.manifest.steps["tsconfig"].metadata.get("inputs_hash")
+
+        # Use same hash in previous manifest
+        prev_manifest = StepManifest(metadata={"inputs_hash": current_hash})
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.SKIP
+
+
 class TestTypeCheckStep:
     """Tests for TypeCheckStep."""
 
@@ -352,6 +812,7 @@ class TestTypeCheckStep:
             workspace=workspace,
             collected=collected,
             dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
         )
         ctx.node_modules = node_modules
         ctx.generated_files["tsconfig"] = workspace / "tsconfig.json"
@@ -410,6 +871,115 @@ class TestTypeCheckStep:
                 step.run(build_context)
 
 
+class TestTypeCheckStepShouldBuild:
+    """Tests for TypeCheckStep.should_build()."""
+
+    @pytest.fixture
+    def build_context(self, tmp_path: Path) -> BuildContext:
+        """Create a BuildContext with source files for testing."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        # Create entry point directory with a source file
+        entry_dir = tmp_path / "src"
+        entry_dir.mkdir()
+        entry_point = entry_dir / "main.tsx"
+        entry_point.write_text("// main")
+
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        node_modules = workspace / "node_modules"
+        node_modules.mkdir()
+        (node_modules / ".bin").mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+        )
+        ctx.node_modules = node_modules
+        ctx.generated_files["tsconfig"] = workspace / "tsconfig.json"
+
+        return ctx
+
+    def test_returns_build_when_no_previous_manifest(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when no previous step manifest."""
+        step = TypeCheckStep()
+        result = step.should_build(build_context, step_manifest=None)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_source_paths_empty(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when previous manifest has empty source_paths."""
+        prev_manifest = StepManifest(
+            source_paths=set(),
+            dest_files={build_context.workspace / ".tsc-check"},
+        )
+
+        step = TypeCheckStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_marker_missing(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when marker file doesn't exist."""
+        prev_manifest = StepManifest(
+            source_paths={build_context.entry_point},
+            dest_files={build_context.workspace / ".tsc-check"},  # Doesn't exist
+        )
+
+        step = TypeCheckStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_source_newer(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when source is newer than marker."""
+        # Create marker first
+        marker = build_context.workspace / ".tsc-check"
+        marker.write_text("")
+
+        time.sleep(0.01)  # Ensure different mtime
+
+        # Modify source (now newer)
+        build_context.entry_point.write_text("// modified main")
+
+        prev_manifest = StepManifest(
+            source_paths={build_context.entry_point},
+            dest_files={marker},
+        )
+
+        step = TypeCheckStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_skip_when_marker_up_to_date(self, build_context: BuildContext) -> None:
+        """should_build returns SKIP when marker is newer than sources."""
+        time.sleep(0.01)  # Ensure different mtime
+
+        # Create marker (newer than source)
+        marker = build_context.workspace / ".tsc-check"
+        marker.write_text("")
+
+        prev_manifest = StepManifest(
+            source_paths={build_context.entry_point},
+            dest_files={marker},
+        )
+
+        step = TypeCheckStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.SKIP
+
+
 class TestDeclarationStep:
     """Tests for DeclarationStep."""
 
@@ -436,6 +1006,7 @@ class TestDeclarationStep:
             workspace=workspace,
             collected=collected,
             dist_dir=dist_dir,
+            manifest=BuildManifest(),
         )
         ctx.node_modules = node_modules
         ctx.generated_files["tsconfig"] = workspace / "tsconfig.json"
@@ -476,6 +1047,115 @@ class TestDeclarationStep:
         assert cmd[outdir_idx + 1] == str(build_context.dist_dir)
 
 
+class TestDeclarationStepShouldBuild:
+    """Tests for DeclarationStep.should_build()."""
+
+    @pytest.fixture
+    def build_context(self, tmp_path: Path) -> BuildContext:
+        """Create a BuildContext with source files for testing."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        # Create entry point directory with source file
+        entry_dir = tmp_path / "src"
+        entry_dir.mkdir()
+        entry_point = entry_dir / "main.tsx"
+        entry_point.write_text("// main")
+
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        node_modules = workspace / "node_modules"
+        node_modules.mkdir()
+        (node_modules / ".bin").mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+        )
+        ctx.node_modules = node_modules
+        ctx.generated_files["tsconfig"] = workspace / "tsconfig.json"
+
+        return ctx
+
+    def test_returns_build_when_no_previous_manifest(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when no previous step manifest."""
+        step = DeclarationStep()
+        result = step.should_build(build_context, step_manifest=None)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_source_paths_empty(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when previous manifest has empty source_paths."""
+        prev_manifest = StepManifest(
+            source_paths=set(),
+            dest_files={build_context.dist_dir / "main.d.ts"},
+        )
+
+        step = DeclarationStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_output_missing(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when output file doesn't exist."""
+        prev_manifest = StepManifest(
+            source_paths={build_context.entry_point},
+            dest_files={build_context.dist_dir / "main.d.ts"},  # Doesn't exist
+        )
+
+        step = DeclarationStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_source_newer(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when source is newer than output."""
+        # Create output first
+        output_file = build_context.dist_dir / "main.d.ts"
+        output_file.write_text("// declarations")
+
+        time.sleep(0.01)  # Ensure different mtime
+
+        # Modify source (now newer)
+        build_context.entry_point.write_text("// modified main")
+
+        prev_manifest = StepManifest(
+            source_paths={build_context.entry_point},
+            dest_files={output_file},
+        )
+
+        step = DeclarationStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_skip_when_outputs_up_to_date(self, build_context: BuildContext) -> None:
+        """should_build returns SKIP when outputs are newer than sources."""
+        time.sleep(0.01)  # Ensure different mtime
+
+        # Create output (newer than source)
+        output_file = build_context.dist_dir / "main.d.ts"
+        output_file.write_text("// declarations")
+
+        prev_manifest = StepManifest(
+            source_paths={build_context.entry_point},
+            dest_files={output_file},
+        )
+
+        step = DeclarationStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.SKIP
+
+
 class TestBundleBuildStep:
     """Tests for BundleBuildStep."""
 
@@ -501,12 +1181,24 @@ class TestBundleBuildStep:
         node_modules.mkdir()
         (node_modules / ".bin").mkdir()
 
+        # Create a mock metafile for read_metafile()
+        metafile_path = workspace / "metafile.json"
+        metafile_path.write_text(
+            json.dumps(
+                {
+                    "inputs": ["../main.tsx"],
+                    "outputs": ["../dist/bundle.js"],
+                }
+            )
+        )
+
         ctx = BuildContext(
             registry=registry,
             entry_point=entry_point,
             workspace=workspace,
             collected=collected,
             dist_dir=dist_dir,
+            manifest=BuildManifest(),
         )
         ctx.node_modules = node_modules
         ctx.env["NODE_PATH"] = str(node_modules)
@@ -590,6 +1282,416 @@ class TestBundleBuildStep:
         assert "--alias:@trellis/_registry=/some/path" in cmd
 
 
+class TestBundleBuildStepManifest:
+    """Tests for BundleBuildStep manifest population."""
+
+    @pytest.fixture
+    def build_context(self, tmp_path: Path) -> BuildContext:
+        """Create a BuildContext for testing."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        entry_point = tmp_path / "main.tsx"
+        entry_point.write_text("// entry")
+
+        # Set up node_modules
+        node_modules = workspace / "node_modules"
+        node_modules.mkdir()
+        (node_modules / ".bin").mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+        )
+        ctx.node_modules = node_modules
+        ctx.env["NODE_PATH"] = str(node_modules)
+
+        return ctx
+
+    def test_adds_metafile_inputs_to_step_manifest(self, build_context: BuildContext) -> None:
+        """BundleBuildStep adds metafile inputs to step manifest source_paths."""
+        # Create a metafile that esbuild would produce
+        metafile_content = {
+            "inputs": {"../main.tsx": {"bytes": 8}, "../util.ts": {"bytes": 16}},
+            "outputs": {"dist/bundle.js": {"bytes": 100}},
+        }
+        (build_context.workspace / "metafile.json").write_text(json.dumps(metafile_content))
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+
+            step = BundleBuildStep()
+            step.run(build_context)
+
+        # Check step manifest has input files (absolute paths)
+        workspace = build_context.workspace
+        expected_inputs = {
+            (workspace / "../main.tsx").resolve(),
+            (workspace / "../util.ts").resolve(),
+        }
+        step_manifest = build_context.manifest.steps["bundle-build"]
+        assert step_manifest.source_paths == expected_inputs
+
+    def test_adds_metafile_outputs_to_step_manifest(self, build_context: BuildContext) -> None:
+        """BundleBuildStep adds metafile outputs to step manifest dest_files."""
+        # Create a metafile that esbuild would produce
+        metafile_content = {
+            "inputs": {"../main.tsx": {"bytes": 8}},
+            "outputs": {"dist/bundle.js": {"bytes": 100}, "dist/bundle.css": {"bytes": 50}},
+        }
+        (build_context.workspace / "metafile.json").write_text(json.dumps(metafile_content))
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+
+            step = BundleBuildStep()
+            step.run(build_context)
+
+        # Check step manifest has output files (absolute paths)
+        workspace = build_context.workspace
+        expected_outputs = {
+            (workspace / "dist/bundle.js").resolve(),
+            (workspace / "dist/bundle.css").resolve(),
+        }
+        step_manifest = build_context.manifest.steps["bundle-build"]
+        assert step_manifest.dest_files == expected_outputs
+
+
+class TestBundleBuildStepShouldBuild:
+    """Tests for BundleBuildStep.should_build()."""
+
+    @pytest.fixture
+    def build_context(self, tmp_path: Path) -> BuildContext:
+        """Create a BuildContext for testing."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        entry_point = tmp_path / "main.tsx"
+        entry_point.write_text("// entry")
+
+        return BuildContext(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+        )
+
+    def test_returns_build_when_no_previous_manifest(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when no previous step manifest."""
+        step = BundleBuildStep()
+        result = step.should_build(build_context, step_manifest=None)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_source_paths_empty(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when previous manifest has empty source_paths."""
+        prev_manifest = StepManifest(
+            source_paths=set(),
+            dest_files={build_context.dist_dir / "bundle.js"},
+        )
+
+        step = BundleBuildStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_dest_files_empty(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when previous manifest has empty dest_files."""
+        prev_manifest = StepManifest(
+            source_paths={build_context.entry_point},
+            dest_files=set(),
+        )
+
+        step = BundleBuildStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_output_missing(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when output file doesn't exist."""
+        prev_manifest = StepManifest(
+            source_paths={build_context.entry_point},
+            dest_files={build_context.dist_dir / "bundle.js"},  # Doesn't exist
+        )
+
+        step = BundleBuildStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_source_newer(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when source is newer than output."""
+        # Create output first
+        output_file = build_context.dist_dir / "bundle.js"
+        output_file.write_text("// old bundle")
+
+        time.sleep(0.01)  # Ensure different mtime
+
+        # Modify source (now newer)
+        build_context.entry_point.write_text("// modified entry")
+
+        prev_manifest = StepManifest(
+            source_paths={build_context.entry_point},
+            dest_files={output_file},
+        )
+
+        step = BundleBuildStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_skip_when_outputs_up_to_date(self, build_context: BuildContext) -> None:
+        """should_build returns SKIP when outputs are newer than sources."""
+        # Source file already exists from fixture
+
+        time.sleep(0.01)  # Ensure different mtime
+
+        # Create output (newer than source)
+        output_file = build_context.dist_dir / "bundle.js"
+        output_file.write_text("// bundle")
+
+        prev_manifest = StepManifest(
+            source_paths={build_context.entry_point},
+            dest_files={output_file},
+        )
+
+        step = BundleBuildStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.SKIP
+
+
+class TestIndexHtmlRenderStepManifest:
+    """Tests for IndexHtmlRenderStep manifest population."""
+
+    def test_adds_template_to_step_manifest_source_paths(self, tmp_path: Path) -> None:
+        """IndexHtmlRenderStep adds template path to step manifest source_paths."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+        )
+
+        # Create a template file
+        template_path = tmp_path / "index.html.j2"
+        template_path.write_text("<!DOCTYPE html><html><body>Hello</body></html>")
+
+        step = IndexHtmlRenderStep(template_path=template_path)
+        step.run(ctx)
+
+        step_manifest = ctx.manifest.steps["index-html-render"]
+        assert template_path in step_manifest.source_paths
+
+    def test_adds_index_html_to_step_manifest_dest_files(self, tmp_path: Path) -> None:
+        """IndexHtmlRenderStep adds index.html to step manifest dest_files."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+        )
+
+        # Create a template file
+        template_path = tmp_path / "index.html.j2"
+        template_path.write_text("<!DOCTYPE html><html><body>Hello</body></html>")
+
+        step = IndexHtmlRenderStep(template_path=template_path)
+        step.run(ctx)
+
+        step_manifest = ctx.manifest.steps["index-html-render"]
+        expected_output = dist_dir / "index.html"
+        assert expected_output in step_manifest.dest_files
+
+
+class TestIndexHtmlRenderStepShouldBuild:
+    """Tests for IndexHtmlRenderStep.should_build()."""
+
+    @pytest.fixture
+    def build_context(self, tmp_path: Path) -> BuildContext:
+        """Create a BuildContext for testing."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        return BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+        )
+
+    def test_returns_build_when_no_previous_manifest(
+        self, build_context: BuildContext, tmp_path: Path
+    ) -> None:
+        """should_build returns BUILD when no previous step manifest."""
+        template_path = tmp_path / "index.html.j2"
+        template_path.write_text("<!DOCTYPE html><html><body>Hello</body></html>")
+
+        step = IndexHtmlRenderStep(template_path=template_path)
+        result = step.should_build(build_context, step_manifest=None)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_source_paths_empty(
+        self, build_context: BuildContext, tmp_path: Path
+    ) -> None:
+        """should_build returns BUILD when previous manifest has empty source_paths."""
+        template_path = tmp_path / "index.html.j2"
+        template_path.write_text("<!DOCTYPE html>")
+
+        prev_manifest = StepManifest(
+            source_paths=set(),
+            dest_files={build_context.dist_dir / "index.html"},
+        )
+
+        step = IndexHtmlRenderStep(template_path=template_path)
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_output_missing(
+        self, build_context: BuildContext, tmp_path: Path
+    ) -> None:
+        """should_build returns BUILD when output file doesn't exist."""
+        template_path = tmp_path / "index.html.j2"
+        template_path.write_text("<!DOCTYPE html>")
+
+        prev_manifest = StepManifest(
+            source_paths={template_path},
+            dest_files={build_context.dist_dir / "index.html"},  # Doesn't exist
+        )
+
+        step = IndexHtmlRenderStep(template_path=template_path)
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_template_newer(
+        self, build_context: BuildContext, tmp_path: Path
+    ) -> None:
+        """should_build returns BUILD when template is newer than output."""
+        template_path = tmp_path / "index.html.j2"
+
+        # Create output first
+        output_file = build_context.dist_dir / "index.html"
+        output_file.write_text("<!DOCTYPE html><html><body>old</body></html>")
+
+        time.sleep(0.01)  # Ensure different mtime
+
+        # Create/modify template (now newer)
+        template_path.write_text("<!DOCTYPE html><html><body>new</body></html>")
+
+        prev_manifest = StepManifest(
+            source_paths={template_path},
+            dest_files={output_file},
+            metadata={"context_hash": "same"},
+        )
+
+        step = IndexHtmlRenderStep(template_path=template_path)
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_context_changed(
+        self, build_context: BuildContext, tmp_path: Path
+    ) -> None:
+        """should_build returns BUILD when context has changed."""
+        template_path = tmp_path / "index.html.j2"
+        template_path.write_text("<!DOCTYPE html>{{ title }}</html>")
+
+        time.sleep(0.01)  # Ensure different mtime
+
+        # Create output (newer than template)
+        output_file = build_context.dist_dir / "index.html"
+        output_file.write_text("<!DOCTYPE html>Old Title</html>")
+
+        prev_manifest = StepManifest(
+            source_paths={template_path},
+            dest_files={output_file},
+            metadata={"context_hash": "old_hash"},  # Different hash
+        )
+
+        step = IndexHtmlRenderStep(template_path=template_path, context={"title": "New Title"})
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_skip_when_template_and_context_unchanged(
+        self, build_context: BuildContext, tmp_path: Path
+    ) -> None:
+        """should_build returns SKIP when template and context are unchanged."""
+        template_path = tmp_path / "index.html.j2"
+        template_path.write_text("<!DOCTYPE html>")
+
+        time.sleep(0.01)  # Ensure different mtime
+
+        # Create output (newer than template)
+        output_file = build_context.dist_dir / "index.html"
+        output_file.write_text("<!DOCTYPE html>")
+
+        # Run step once to get the context hash
+        step = IndexHtmlRenderStep(template_path=template_path, context={"key": "value"})
+        step.run(build_context)
+        current_hash = build_context.manifest.steps["index-html-render"].metadata.get(
+            "context_hash"
+        )
+
+        prev_manifest = StepManifest(
+            source_paths={template_path},
+            dest_files={output_file},
+            metadata={"context_hash": current_hash},
+        )
+
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.SKIP
+
+
 class TestStaticFileCopyStep:
     """Tests for StaticFileCopyStep.
 
@@ -629,6 +1731,7 @@ class TestStaticFileCopyStep:
             workspace=workspace,
             collected=collected,
             dist_dir=dist_dir,
+            manifest=BuildManifest(),
         )
 
         step = StaticFileCopyStep()
@@ -664,6 +1767,7 @@ class TestStaticFileCopyStep:
             workspace=workspace,
             collected=collected,
             dist_dir=dist_dir,
+            manifest=BuildManifest(),
         )
 
         step = StaticFileCopyStep()
@@ -700,6 +1804,7 @@ class TestStaticFileCopyStep:
             workspace=workspace,
             collected=collected,
             dist_dir=dist_dir,
+            manifest=BuildManifest(),
         )
 
         step = StaticFileCopyStep()
@@ -733,7 +1838,8 @@ class TestStaticFileCopyStep:
             workspace=workspace,
             collected=collected,
             dist_dir=dist_dir,
-            app_static_dir=app_static,  # New attribute
+            manifest=BuildManifest(),
+            app_static_dir=app_static,
         )
 
         step = StaticFileCopyStep()
@@ -775,6 +1881,7 @@ class TestStaticFileCopyStep:
             workspace=workspace,
             collected=collected,
             dist_dir=dist_dir,
+            manifest=BuildManifest(),
             app_static_dir=app_static,
         )
 
@@ -784,6 +1891,227 @@ class TestStaticFileCopyStep:
         # Both module and app static files should be copied
         assert (dist_dir / "module.css").exists()
         assert (dist_dir / "app.css").exists()
+
+
+class TestStaticFileCopyStepManifest:
+    """Tests for StaticFileCopyStep manifest population."""
+
+    def test_adds_static_directories_to_source_paths(self, tmp_path: Path) -> None:
+        """StaticFileCopyStep adds static directories to manifest.source_paths."""
+        registry = ModuleRegistry()
+
+        # Create module with static directory
+        mod_dir = tmp_path / "my_mod"
+        static_dir = mod_dir / "static"
+        static_dir.mkdir(parents=True)
+        (static_dir / "data.json").write_text("{}")
+
+        registry.register("my-mod")
+        registry._modules["my-mod"]._base_path = mod_dir
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+        )
+
+        step = StaticFileCopyStep()
+        step.run(ctx)
+
+        # Static directory should be in source_paths (not individual files)
+        step_manifest = ctx.manifest.steps["static-file-copy"]
+        assert static_dir in step_manifest.source_paths
+
+    def test_adds_app_static_dir_to_source_paths(self, tmp_path: Path) -> None:
+        """StaticFileCopyStep adds app_static_dir to manifest.source_paths."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+
+        # Create app-level static directory
+        app_static = tmp_path / "app_static"
+        app_static.mkdir()
+        (app_static / "favicon.ico").write_bytes(b"ICON data")
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+            app_static_dir=app_static,
+        )
+
+        step = StaticFileCopyStep()
+        step.run(ctx)
+
+        step_manifest = ctx.manifest.steps["static-file-copy"]
+        assert app_static in step_manifest.source_paths
+
+    def test_adds_copied_files_to_dest_files(self, tmp_path: Path) -> None:
+        """StaticFileCopyStep adds copied files to manifest.dest_files."""
+        registry = ModuleRegistry()
+
+        # Create module with static files
+        mod_dir = tmp_path / "my_mod"
+        static_dir = mod_dir / "static"
+        (static_dir / "assets").mkdir(parents=True)
+        (static_dir / "data.json").write_text("{}")
+        (static_dir / "assets" / "logo.png").write_bytes(b"PNG")
+
+        registry.register("my-mod")
+        registry._modules["my-mod"]._base_path = mod_dir
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+        )
+
+        step = StaticFileCopyStep()
+        step.run(ctx)
+
+        # All copied files should be in dest_files
+        step_manifest = ctx.manifest.steps["static-file-copy"]
+        assert (dist_dir / "data.json") in step_manifest.dest_files
+        assert (dist_dir / "assets" / "logo.png") in step_manifest.dest_files
+
+
+class TestStaticFileCopyStepShouldBuild:
+    """Tests for StaticFileCopyStep.should_build()."""
+
+    @pytest.fixture
+    def build_context(self, tmp_path: Path) -> BuildContext:
+        """Create a BuildContext with static directory for testing."""
+        registry = ModuleRegistry()
+
+        # Create module with static directory
+        mod_dir = tmp_path / "my_mod"
+        static_dir = mod_dir / "static"
+        static_dir.mkdir(parents=True)
+        (static_dir / "data.json").write_text('{"key": "value"}')
+
+        registry.register("my-mod")
+        registry._modules["my-mod"]._base_path = mod_dir
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        return BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+        )
+
+    def test_returns_build_when_no_previous_manifest(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when no previous step manifest."""
+        step = StaticFileCopyStep()
+        result = step.should_build(build_context, step_manifest=None)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_source_paths_empty(self, build_context: BuildContext) -> None:
+        """should_build returns BUILD when previous manifest has empty source_paths."""
+        prev_manifest = StepManifest(
+            source_paths=set(),
+            dest_files={build_context.dist_dir / "data.json"},
+        )
+
+        step = StaticFileCopyStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_output_missing(
+        self, build_context: BuildContext, tmp_path: Path
+    ) -> None:
+        """should_build returns BUILD when output file doesn't exist."""
+        static_dir = tmp_path / "my_mod" / "static"
+        prev_manifest = StepManifest(
+            source_paths={static_dir},
+            dest_files={build_context.dist_dir / "data.json"},  # Doesn't exist
+        )
+
+        step = StaticFileCopyStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_build_when_source_newer(
+        self, build_context: BuildContext, tmp_path: Path
+    ) -> None:
+        """should_build returns BUILD when source is newer than output."""
+        static_dir = tmp_path / "my_mod" / "static"
+
+        # Create output first
+        output_file = build_context.dist_dir / "data.json"
+        output_file.write_text('{"key": "old"}')
+
+        time.sleep(0.01)  # Ensure different mtime
+
+        # Modify source (now newer)
+        (static_dir / "data.json").write_text('{"key": "new"}')
+
+        prev_manifest = StepManifest(
+            source_paths={static_dir},
+            dest_files={output_file},
+        )
+
+        step = StaticFileCopyStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.BUILD
+
+    def test_returns_skip_when_outputs_up_to_date(
+        self, build_context: BuildContext, tmp_path: Path
+    ) -> None:
+        """should_build returns SKIP when outputs are newer than sources."""
+        static_dir = tmp_path / "my_mod" / "static"
+
+        time.sleep(0.01)  # Ensure different mtime
+
+        # Create output (newer than source)
+        output_file = build_context.dist_dir / "data.json"
+        output_file.write_text('{"key": "value"}')
+
+        prev_manifest = StepManifest(
+            source_paths={static_dir},
+            dest_files={output_file},
+        )
+
+        step = StaticFileCopyStep()
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.SKIP
 
 
 class TestBuildEntryPointImport:
@@ -957,305 +2285,3 @@ class TestBuildOrchestration:
         assert len(captured_collected[0].modules) == 1
         assert captured_collected[0].modules[0].name == "test-mod"
         assert captured_collected[0].packages == {"react": "18.0.0"}
-
-
-class TestIsRebuildNeeded:
-    """Tests for is_rebuild_needed helper function."""
-
-    def test_returns_false_when_no_inputs(self, tmp_path: Path) -> None:
-        """is_rebuild_needed returns False when no inputs provided."""
-        output = tmp_path / "output.js"
-        output.write_text("output")
-
-        result = is_rebuild_needed(inputs=[], outputs=[output])
-
-        assert result is False
-
-    def test_returns_true_when_output_missing(self, tmp_path: Path) -> None:
-        """is_rebuild_needed returns True when any output is missing."""
-        input_file = tmp_path / "input.ts"
-        input_file.write_text("input")
-        output = tmp_path / "output.js"  # Does not exist
-
-        result = is_rebuild_needed(inputs=[input_file], outputs=[output])
-
-        assert result is True
-
-    def test_returns_true_when_input_newer_than_output(self, tmp_path: Path) -> None:
-        """is_rebuild_needed returns True when input is newer than output."""
-        output = tmp_path / "output.js"
-        output.write_text("output")
-
-        # Wait to ensure different mtime
-        time.sleep(0.01)
-
-        input_file = tmp_path / "input.ts"
-        input_file.write_text("input")  # Created after output
-
-        result = is_rebuild_needed(inputs=[input_file], outputs=[output])
-
-        assert result is True
-
-    def test_returns_false_when_outputs_up_to_date(self, tmp_path: Path) -> None:
-        """is_rebuild_needed returns False when outputs are newer than inputs."""
-        input_file = tmp_path / "input.ts"
-        input_file.write_text("input")
-
-        # Wait to ensure different mtime
-        time.sleep(0.01)
-
-        output = tmp_path / "output.js"
-        output.write_text("output")  # Created after input
-
-        result = is_rebuild_needed(inputs=[input_file], outputs=[output])
-
-        assert result is False
-
-    def test_checks_all_outputs_exist(self, tmp_path: Path) -> None:
-        """is_rebuild_needed returns True if any output is missing."""
-        input_file = tmp_path / "input.ts"
-        input_file.write_text("input")
-
-        output1 = tmp_path / "output.js"
-        output1.write_text("output1")
-        output2 = tmp_path / "output.css"  # Does not exist
-
-        result = is_rebuild_needed(inputs=[input_file], outputs=[output1, output2])
-
-        assert result is True
-
-    def test_uses_oldest_output_for_comparison(self, tmp_path: Path) -> None:
-        """is_rebuild_needed uses oldest output mtime for comparison."""
-        # Create input
-        input_file = tmp_path / "input.ts"
-        input_file.write_text("input")
-        time.sleep(0.01)
-
-        # Create old output
-        old_output = tmp_path / "old.js"
-        old_output.write_text("old")
-        time.sleep(0.01)
-
-        # Modify input (now newer than old output)
-        input_file.write_text("modified input")
-        time.sleep(0.01)
-
-        # Create new output (newer than input)
-        new_output = tmp_path / "new.js"
-        new_output.write_text("new")
-
-        # Should return True because input is newer than old_output
-        result = is_rebuild_needed(inputs=[input_file], outputs=[old_output, new_output])
-
-        assert result is True
-
-
-class TestBuildCaching:
-    """Tests for build() caching behavior."""
-
-    def test_skips_steps_when_outputs_up_to_date(self, tmp_path: Path) -> None:
-        """build() skips steps when outputs are newer than inputs."""
-        registry = ModuleRegistry()
-        workspace = tmp_path / "workspace"
-        workspace.mkdir()
-        dist_dir = workspace / "dist"
-        dist_dir.mkdir()
-
-        entry_point = tmp_path / "main.tsx"
-        entry_point.write_text("// entry")
-
-        # Wait then create output
-        time.sleep(0.01)
-        output_js = dist_dir / "bundle.js"
-        output_js.write_text("// built")
-
-        # Create metafile (required for cache checking)
-        # Paths in metafile are relative to workspace - use ../ to navigate to tmp_path
-        metafile_content = {
-            "inputs": {"../main.tsx": {"bytes": 8}},
-            "outputs": {"dist/bundle.js": {"bytes": 100}},
-        }
-        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
-
-        step_ran = []
-
-        class TrackingStep(BuildStep):
-            @property
-            def name(self) -> str:
-                return "tracking"
-
-            def run(self, ctx: BuildContext) -> None:
-                step_ran.append(True)
-
-        build(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[TrackingStep()],
-            force=False,
-        )
-
-        assert step_ran == [], "Step should not have run when outputs up to date"
-
-    def test_runs_steps_when_force_true(self, tmp_path: Path) -> None:
-        """build() runs steps when force=True even if outputs up to date."""
-        registry = ModuleRegistry()
-        workspace = tmp_path / "workspace"
-        workspace.mkdir()
-        dist_dir = workspace / "dist"
-        dist_dir.mkdir()
-
-        entry_point = tmp_path / "main.tsx"
-        entry_point.write_text("// entry")
-
-        # Wait then create output (newer than input)
-        time.sleep(0.01)
-        output_js = dist_dir / "bundle.js"
-        output_js.write_text("// built")
-
-        step_ran = []
-
-        class TrackingStep(BuildStep):
-            @property
-            def name(self) -> str:
-                return "tracking"
-
-            def run(self, ctx: BuildContext) -> None:
-                step_ran.append(True)
-
-        build(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[TrackingStep()],
-            force=True,
-        )
-
-        assert step_ran == [True], "Step should run when force=True"
-
-    def test_runs_steps_when_output_missing(self, tmp_path: Path) -> None:
-        """build() runs steps when output files are missing."""
-        registry = ModuleRegistry()
-        workspace = tmp_path / "workspace"
-        workspace.mkdir()
-
-        entry_point = tmp_path / "main.tsx"
-        entry_point.write_text("// entry")
-
-        step_ran = []
-
-        class TrackingStep(BuildStep):
-            @property
-            def name(self) -> str:
-                return "tracking"
-
-            def run(self, ctx: BuildContext) -> None:
-                step_ran.append(True)
-
-        build(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[TrackingStep()],
-            force=False,
-        )
-
-        assert step_ran == [True], "Step should run when output missing"
-
-    def test_runs_steps_when_input_newer_than_output(self, tmp_path: Path) -> None:
-        """build() runs steps when input files are newer than outputs."""
-        registry = ModuleRegistry()
-        workspace = tmp_path / "workspace"
-        workspace.mkdir()
-        dist_dir = workspace / "dist"
-        dist_dir.mkdir()
-
-        # Create output first
-        output_js = dist_dir / "bundle.js"
-        output_js.write_text("// built")
-
-        # Wait then create input (newer than output)
-        time.sleep(0.01)
-        entry_point = tmp_path / "main.tsx"
-        entry_point.write_text("// entry")
-
-        # Create metafile with input - use relative path from workspace
-        metafile_content = {
-            "inputs": {"../main.tsx": {"bytes": 8}},
-            "outputs": {"dist/bundle.js": {"bytes": 100}},
-        }
-        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
-
-        step_ran = []
-
-        class TrackingStep(BuildStep):
-            @property
-            def name(self) -> str:
-                return "tracking"
-
-            def run(self, ctx: BuildContext) -> None:
-                step_ran.append(True)
-
-        build(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[TrackingStep()],
-            force=False,
-        )
-
-        assert step_ran == [True], "Step should run when input newer than output"
-
-    def test_considers_module_source_files_as_inputs(self, tmp_path: Path) -> None:
-        """build() treats module source files as inputs for caching via metafile."""
-        registry = ModuleRegistry()
-
-        # Create module source file
-        mod_dir = tmp_path / "my_mod"
-        mod_dir.mkdir()
-        mod_source = mod_dir / "index.ts"
-        mod_source.write_text("// module source")
-        registry.register("my-mod")
-        registry._modules["my-mod"]._base_path = mod_dir
-
-        workspace = tmp_path / "workspace"
-        workspace.mkdir()
-        dist_dir = workspace / "dist"
-        dist_dir.mkdir()
-
-        # Create output before module source update
-        output_js = dist_dir / "bundle.js"
-        output_js.write_text("// built")
-
-        # Create metafile with module source as input
-        # (metafile is created by esbuild and lists actual inputs from the bundle)
-        # Path is relative from workspace - use ../ to navigate to tmp_path then to module
-        metafile_content = {
-            "inputs": {"../my_mod/index.ts": {"bytes": 16}},
-            "outputs": {"dist/bundle.js": {"bytes": 100}},
-        }
-        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
-
-        # Wait then update module source (newer than output)
-        time.sleep(0.01)
-        mod_source.write_text("// updated module source")
-
-        step_ran = []
-
-        class TrackingStep(BuildStep):
-            @property
-            def name(self) -> str:
-                return "tracking"
-
-            def run(self, ctx: BuildContext) -> None:
-                step_ran.append(True)
-
-        build(
-            registry=registry,
-            entry_point=tmp_path / "main.tsx",
-            workspace=workspace,
-            steps=[TrackingStep()],
-            force=False,
-        )
-
-        assert step_ran == [True], "Step should run when module source is newer"

@@ -6,20 +6,32 @@ BuildContext. Platforms configure which steps to run and in what order.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import shutil
 import subprocess
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from enum import StrEnum, auto
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from trellis.bundler.metafile import get_metafile_path
+from trellis.bundler.manifest import BuildManifest, StepManifest
+from trellis.bundler.metafile import get_metafile_path, read_metafile
 from trellis.bundler.packages import ensure_packages, get_bin
+from trellis.bundler.utils import is_rebuild_needed
 from trellis.bundler.workspace import write_registry_ts
 
 logger = logging.getLogger(__name__)
+
+
+class ShouldBuild(StrEnum):
+    """Enum indicating whether a step should build or skip."""
+
+    SKIP = auto()  # Step is up to date, preserve manifest
+    BUILD = auto()  # Step needs to run
+
 
 if TYPE_CHECKING:
     from trellis.bundler.registry import CollectedModules, ModuleRegistry
@@ -35,6 +47,7 @@ class BuildContext:
         workspace: Workspace directory for generated files
         collected: Collected modules from registry
         dist_dir: Output directory for bundle files
+        manifest: Build manifest tracking inputs and outputs
         app_static_dir: Optional app-level static files directory
         python_entry_point: Optional Python app entry point for browser bundling
         esbuild_args: Additional esbuild arguments (steps can append)
@@ -50,6 +63,7 @@ class BuildContext:
     workspace: Path
     collected: CollectedModules
     dist_dir: Path
+    manifest: BuildManifest
     app_static_dir: Path | None = None
     python_entry_point: Path | None = None
 
@@ -80,6 +94,24 @@ class BuildStep(ABC):
         """Execute the step, may mutate ctx."""
         ...
 
+    def should_build(
+        self, ctx: BuildContext, step_manifest: StepManifest | None
+    ) -> ShouldBuild | None:
+        """Check if this step should build, skip, or defer.
+
+        Override this in subclasses to implement per-step staleness checking.
+
+        Args:
+            ctx: Current build context
+            step_manifest: Manifest from previous build for this step, or None
+
+        Returns:
+            SKIP: Step is up to date, copy old manifest section to new
+            BUILD: Step needs to run
+            None: Step always runs (same as BUILD)
+        """
+        return None
+
 
 def _get_module_aliases(collected: CollectedModules) -> dict[str, Path]:
     """Get module name to path mappings for @trellis/* aliases.
@@ -94,17 +126,39 @@ class PackageInstallStep(BuildStep):
     """Install npm packages using ensure_packages().
 
     Sets ctx.node_modules and ctx.env["NODE_PATH"].
+    Stores packages in manifest.other for change detection.
     """
 
     @property
     def name(self) -> str:
         return "package-install"
 
+    def should_build(
+        self, ctx: BuildContext, step_manifest: StepManifest | None
+    ) -> ShouldBuild | None:
+        """Check if packages have changed since last build.
+
+        Returns SKIP if packages unchanged, BUILD if different or no previous.
+        """
+        if step_manifest is None:
+            return ShouldBuild.BUILD
+
+        prev_packages = step_manifest.metadata.get("packages")
+        current_packages = dict(ctx.collected.packages)
+
+        if prev_packages != current_packages:
+            return ShouldBuild.BUILD
+        return ShouldBuild.SKIP
+
     def run(self, ctx: BuildContext) -> None:
         packages = dict(ctx.collected.packages)
         ensure_packages(packages, ctx.workspace)
         ctx.node_modules = ctx.workspace / "node_modules"
         ctx.env["NODE_PATH"] = str(ctx.node_modules)
+
+        # Store packages in step manifest for next build's comparison
+        step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
+        step_manifest.metadata["packages"] = packages
 
 
 class RegistryGenerationStep(BuildStep):
@@ -117,10 +171,34 @@ class RegistryGenerationStep(BuildStep):
     def name(self) -> str:
         return "registry-generation"
 
+    def _compute_collected_hash(self, ctx: BuildContext) -> int:
+        """Compute hash of collected modules structure."""
+        modules_key = tuple(
+            (m.name, tuple((e.name, e.kind, e.source) for e in m.exports))
+            for m in ctx.collected.modules
+        )
+        return hash(modules_key)
+
+    def should_build(
+        self, ctx: BuildContext, step_manifest: StepManifest | None
+    ) -> ShouldBuild | None:
+        """Check if registry needs regenerating based on collected modules."""
+        if step_manifest is None:
+            return ShouldBuild.BUILD
+
+        current_hash = self._compute_collected_hash(ctx)
+        if step_manifest.metadata.get("collected_hash") != current_hash:
+            return ShouldBuild.BUILD
+        return ShouldBuild.SKIP
+
     def run(self, ctx: BuildContext) -> None:
         registry_path = write_registry_ts(ctx.workspace, ctx.collected)
         ctx.generated_files["_registry"] = registry_path
         ctx.esbuild_args.append(f"--alias:@trellis/_registry={registry_path}")
+
+        # Store hash for next build's comparison
+        step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
+        step_manifest.metadata["collected_hash"] = self._compute_collected_hash(ctx)
 
 
 class TsconfigStep(BuildStep):
@@ -132,6 +210,26 @@ class TsconfigStep(BuildStep):
     @property
     def name(self) -> str:
         return "tsconfig"
+
+    def _compute_inputs_hash(self, ctx: BuildContext) -> int:
+        """Compute hash of inputs that determine tsconfig content."""
+        aliases = tuple(
+            sorted((m.name, str(m._base_path)) for m in ctx.collected.modules if m._base_path)
+        )
+        inputs_key = (aliases, str(ctx.entry_point), "_registry" in ctx.generated_files)
+        return hash(inputs_key)
+
+    def should_build(
+        self, ctx: BuildContext, step_manifest: StepManifest | None
+    ) -> ShouldBuild | None:
+        """Check if tsconfig needs regenerating based on inputs."""
+        if step_manifest is None:
+            return ShouldBuild.BUILD
+
+        current_hash = self._compute_inputs_hash(ctx)
+        if step_manifest.metadata.get("inputs_hash") != current_hash:
+            return ShouldBuild.BUILD
+        return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
         # Build path mappings for modules
@@ -175,6 +273,10 @@ class TsconfigStep(BuildStep):
         tsconfig_path.write_text(json.dumps(tsconfig, indent=2))
         ctx.generated_files["tsconfig"] = tsconfig_path
 
+        # Store hash for next build's comparison
+        step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
+        step_manifest.metadata["inputs_hash"] = self._compute_inputs_hash(ctx)
+
 
 class TypeCheckStep(BuildStep):
     """Run TypeScript type-checking with tsc --noEmit.
@@ -189,6 +291,18 @@ class TypeCheckStep(BuildStep):
     @property
     def name(self) -> str:
         return "type-check"
+
+    def should_build(
+        self, ctx: BuildContext, step_manifest: StepManifest | None
+    ) -> ShouldBuild | None:
+        """Check if type check needs rerunning based on source/marker mtimes."""
+        if step_manifest is None:
+            return ShouldBuild.BUILD
+        if not step_manifest.source_paths or not step_manifest.dest_files:
+            return ShouldBuild.BUILD
+        if is_rebuild_needed(step_manifest.source_paths, step_manifest.dest_files):
+            return ShouldBuild.BUILD
+        return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
         if ctx.node_modules is None:
@@ -208,6 +322,17 @@ class TypeCheckStep(BuildStep):
                 raise subprocess.CalledProcessError(result.returncode, cmd)
             logger.warning("TypeScript type-checking failed (continuing anyway)")
 
+        # Touch marker and track sources
+        step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
+        marker = ctx.workspace / ".tsc-check"
+        marker.touch()
+        step_manifest.dest_files.add(marker)
+
+        # Track source files
+        for source in ctx.entry_point.parent.rglob("*"):
+            if source.suffix in {".ts", ".tsx"}:
+                step_manifest.source_paths.add(source)
+
 
 class DeclarationStep(BuildStep):
     """Generate TypeScript declaration files (.d.ts).
@@ -218,6 +343,18 @@ class DeclarationStep(BuildStep):
     @property
     def name(self) -> str:
         return "declaration"
+
+    def should_build(
+        self, ctx: BuildContext, step_manifest: StepManifest | None
+    ) -> ShouldBuild | None:
+        """Check if declarations need regenerating based on source/output mtimes."""
+        if step_manifest is None:
+            return ShouldBuild.BUILD
+        if not step_manifest.source_paths or not step_manifest.dest_files:
+            return ShouldBuild.BUILD
+        if is_rebuild_needed(step_manifest.source_paths, step_manifest.dest_files):
+            return ShouldBuild.BUILD
+        return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
         if ctx.node_modules is None:
@@ -240,6 +377,14 @@ class DeclarationStep(BuildStep):
 
         subprocess.run(cmd, check=True, env={**ctx.env})
 
+        # Track sources and outputs
+        step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
+        for source in ctx.entry_point.parent.rglob("*"):
+            if source.suffix in {".ts", ".tsx"}:
+                step_manifest.source_paths.add(source)
+        for output in ctx.dist_dir.rglob("*.d.ts"):
+            step_manifest.dest_files.add(output)
+
 
 class BundleBuildStep(BuildStep):
     """Run esbuild to create the bundle.
@@ -254,6 +399,18 @@ class BundleBuildStep(BuildStep):
     @property
     def name(self) -> str:
         return "bundle-build"
+
+    def should_build(
+        self, ctx: BuildContext, step_manifest: StepManifest | None
+    ) -> ShouldBuild | None:
+        """Check if bundle needs rebuilding based on source/output mtimes."""
+        if step_manifest is None:
+            return ShouldBuild.BUILD
+        if not step_manifest.source_paths or not step_manifest.dest_files:
+            return ShouldBuild.BUILD
+        if is_rebuild_needed(step_manifest.source_paths, step_manifest.dest_files):
+            return ShouldBuild.BUILD
+        return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
         if ctx.node_modules is None:
@@ -288,6 +445,12 @@ class BundleBuildStep(BuildStep):
 
         subprocess.run(cmd, check=True, env={**ctx.env})
 
+        # Populate step manifest from metafile
+        metafile = read_metafile(ctx.workspace)
+        step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
+        step_manifest.source_paths.update(metafile.inputs)
+        step_manifest.dest_files.update(metafile.outputs)
+
 
 class StaticFileCopyStep(BuildStep):
     """Copy static files to the dist directory using convention-based discovery.
@@ -301,6 +464,18 @@ class StaticFileCopyStep(BuildStep):
     def name(self) -> str:
         return "static-file-copy"
 
+    def should_build(
+        self, ctx: BuildContext, step_manifest: StepManifest | None
+    ) -> ShouldBuild | None:
+        """Check if static files need copying based on source/output mtimes."""
+        if step_manifest is None:
+            return ShouldBuild.BUILD
+        if not step_manifest.source_paths or not step_manifest.dest_files:
+            return ShouldBuild.BUILD
+        if is_rebuild_needed(step_manifest.source_paths, step_manifest.dest_files):
+            return ShouldBuild.BUILD
+        return ShouldBuild.SKIP
+
     def run(self, ctx: BuildContext) -> None:
         # Copy from each module's static directory
         for module in ctx.collected.modules:
@@ -308,11 +483,33 @@ class StaticFileCopyStep(BuildStep):
                 continue
             static_dir = module._base_path / "static"
             if static_dir.is_dir():
-                shutil.copytree(static_dir, ctx.dist_dir, dirs_exist_ok=True)
+                self._copy_and_track(static_dir, ctx.dist_dir, ctx)
 
         # Copy from app-level static directory
         if ctx.app_static_dir is not None and ctx.app_static_dir.is_dir():
-            shutil.copytree(ctx.app_static_dir, ctx.dist_dir, dirs_exist_ok=True)
+            self._copy_and_track(ctx.app_static_dir, ctx.dist_dir, ctx)
+
+    def _copy_and_track(self, src_dir: Path, dest_dir: Path, ctx: BuildContext) -> None:
+        """Copy directory and track in step manifest.
+
+        Args:
+            src_dir: Source directory (added as directory input)
+            dest_dir: Destination directory
+            ctx: Build context
+        """
+        step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
+
+        # Add source directory (not individual files) - enables recursive mtime checking
+        step_manifest.source_paths.add(src_dir)
+
+        # Copy and track destination files
+        for src_file in src_dir.rglob("*"):
+            if src_file.is_file():
+                rel_path = src_file.relative_to(src_dir)
+                dest_file = dest_dir / rel_path
+                dest_file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_file, dest_file)
+                step_manifest.dest_files.add(dest_file)
 
 
 class IndexHtmlRenderStep(BuildStep):
@@ -334,6 +531,32 @@ class IndexHtmlRenderStep(BuildStep):
     def name(self) -> str:
         return "index-html-render"
 
+    def _compute_context_hash(self, ctx: BuildContext) -> str:
+        """Compute hash of merged template context."""
+        merged_context = {**ctx.template_context, **self._context}
+        context_str = json.dumps(merged_context, sort_keys=True, default=str)
+        return hashlib.sha256(context_str.encode()).hexdigest()
+
+    def should_build(
+        self, ctx: BuildContext, step_manifest: StepManifest | None
+    ) -> ShouldBuild | None:
+        """Check if index.html needs regenerating based on template/context."""
+        if step_manifest is None:
+            return ShouldBuild.BUILD
+        if not step_manifest.source_paths or not step_manifest.dest_files:
+            return ShouldBuild.BUILD
+
+        # Check template mtime
+        if is_rebuild_needed(step_manifest.source_paths, step_manifest.dest_files):
+            return ShouldBuild.BUILD
+
+        # Check context hash
+        current_hash = self._compute_context_hash(ctx)
+        if step_manifest.metadata.get("context_hash") != current_hash:
+            return ShouldBuild.BUILD
+
+        return ShouldBuild.SKIP
+
     def run(self, ctx: BuildContext) -> None:
         # Lazy import jinja2 to avoid import overhead when not used
         from jinja2 import Environment, FileSystemLoader  # noqa: PLC0415
@@ -350,3 +573,9 @@ class IndexHtmlRenderStep(BuildStep):
 
         output_path = ctx.dist_dir / "index.html"
         output_path.write_text(html_content)
+
+        # Populate step manifest
+        step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
+        step_manifest.source_paths.add(self._template_path)
+        step_manifest.dest_files.add(output_path)
+        step_manifest.metadata["context_hash"] = self._compute_context_hash(ctx)
