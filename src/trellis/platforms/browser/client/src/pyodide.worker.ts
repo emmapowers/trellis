@@ -72,6 +72,39 @@ function postError(message: string): void {
   self.postMessage({ type: "error", message });
 }
 
+/**
+ * Categorize an error into a user-friendly message.
+ *
+ * Identifies common error types (network, CORS, 404, package) and returns
+ * helpful messages with context about what might have caused the error.
+ */
+function categorizeError(error: Error): string {
+  const msg = error.message.toLowerCase();
+
+  // Network connectivity issues
+  if (msg.includes("networkerror") || msg.includes("failed to fetch")) {
+    return "Network error - check your internet connection or if the server is running";
+  }
+
+  // CORS policy violations
+  if (msg.includes("cors") || msg.includes("cross-origin")) {
+    return "CORS error - the server needs to allow cross-origin requests";
+  }
+
+  // File not found (404)
+  if (msg.includes("404") || msg.includes("not found")) {
+    return "File not found (404)";
+  }
+
+  // Package installation failures (micropip-specific)
+  if (msg.includes("no matching distribution") || msg.includes("can't find")) {
+    return "Package not available for Pyodide (may need a pure Python wheel)";
+  }
+
+  // Return original message for unknown errors
+  return error.message;
+}
+
 // === Worker Bridge ===
 const workerBridge = {
   set_handler(handler: PyodideHandler): void {
@@ -105,24 +138,36 @@ async function installTrellisWheel(
   // Build absolute URLs from paths + origin
   const absoluteUrls = WHEEL_PATHS.map((path) => pageOrigin + path);
   const sources = customUrl ? [customUrl, ...absoluteUrls] : absoluteUrls;
+  const errors: Array<{ url: string; error: string }> = [];
 
   for (const wheelUrl of sources) {
     try {
+      console.log(`[Pyodide] Trying wheel: ${wheelUrl}`);
       // Use globals to avoid string interpolation injection
       pyodide.globals.set("_wheel_url", wheelUrl);
       await pyodide.runPythonAsync(
-        `import micropip\nawait micropip.install(_wheel_url, deps=False)`
+        `import micropip\nawait micropip.install(_wheel_url)`
       );
       pyodide.globals.delete("_wheel_url");
+      console.log(`[Pyodide] Successfully installed wheel from: ${wheelUrl}`);
       return;
-    } catch {
-      // Try next source
+    } catch (e) {
+      const errorMsg = categorizeError(e as Error);
+      console.warn(`[Pyodide] Failed to install from ${wheelUrl}: ${errorMsg}`);
+      errors.push({ url: wheelUrl, error: errorMsg });
     }
   }
 
+  // Format comprehensive error message with all attempts
+  const details = errors
+    .map(({ url, error }) => `  • ${url}\n    → ${error}`)
+    .join("\n");
+
   throw new Error(
-    "Could not install trellis wheel. " +
-      "For local development, run: pixi run build-wheel && pixi run copy-wheel-to-docs"
+    `Could not install Trellis wheel.\n\n` +
+      `Tried:\n${details}\n\n` +
+      `For local development, run:\n` +
+      `  pixi run build-wheel && pixi run copy-wheel-to-docs`
   );
 }
 
@@ -130,26 +175,40 @@ async function initializePyodide(
   trellisWheelUrl: string | undefined,
   pageOrigin: string
 ): Promise<void> {
+  // Phase 1: Load Pyodide runtime
+  console.log("[Pyodide] Phase 1: Loading runtime...");
   postStatus("Loading Pyodide runtime...");
-  loadPyodideScript();
+  try {
+    loadPyodideScript();
+    const indexURL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+    pyodide = await loadPyodide({ indexURL });
+  } catch (e) {
+    throw new Error(
+      `Loading Pyodide runtime failed: ${categorizeError(e as Error)}\n\n` +
+        `This usually indicates a network issue or browser incompatibility.`
+    );
+  }
 
-  const indexURL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
-  pyodide = await loadPyodide({ indexURL });
-
-  postStatus("Loading packages...");
-  await pyodide.loadPackage(["micropip", "msgspec", "pygments"]);
-
-  const micropip = pyodide.pyimport("micropip");
-  await micropip.install("rich");
-  await micropip.install("wcmatch");
-  await micropip.install("httpx");
-  await micropip.install("jinja2");
-
+  // Phase 2: Load micropip
+  console.log("[Pyodide] Phase 2: Loading micropip...");
   postStatus("Installing Trellis...");
+  try {
+    await pyodide.loadPackage(["micropip"]);
+  } catch (e) {
+    throw new Error(
+      `Loading package manager failed: ${categorizeError(e as Error)}`
+    );
+  }
+
+  // Phase 3: Install Trellis wheel
+  console.log("[Pyodide] Phase 3: Installing Trellis wheel...");
   await installTrellisWheel(pyodide, trellisWheelUrl, pageOrigin);
 
+  // Phase 4: Register bridge
+  console.log("[Pyodide] Phase 4: Registering bridge...");
   pyodide.registerJsModule("trellis_browser_bridge", workerBridge);
 
+  console.log("[Pyodide] Initialization complete");
   postStatus("Ready");
   self.postMessage({ type: "ready" });
 }

@@ -36,6 +36,8 @@ type WorkerOutMessage =
 export interface PyodideWorkerOptions {
   /** Callback for status updates during loading */
   onStatus?: (status: string) => void;
+  /** Callback for errors after initialization is complete */
+  onError?: (error: string) => void;
   /** Custom trellis wheel URL */
   trellisWheelUrl?: string;
 }
@@ -62,6 +64,7 @@ export class PyodideWorker {
   private worker: Worker | null = null;
   private messageCallback: MessageCallback | null = null;
   private statusCallback: ((status: string) => void) | null = null;
+  private errorCallback: ((error: string) => void) | null = null;
   private readyPromise: Promise<void> | null = null;
   private readyResolve: (() => void) | null = null;
   private readyReject: ((error: Error) => void) | null = null;
@@ -79,6 +82,7 @@ export class PyodideWorker {
     }
 
     this.statusCallback = options.onStatus ?? null;
+    this.errorCallback = options.onError ?? null;
 
     // Create promise to track initialization
     this.readyPromise = new Promise((resolve, reject) => {
@@ -140,6 +144,9 @@ export class PyodideWorker {
           this.readyReject(new Error(msg.message));
           this.readyResolve = null;
           this.readyReject = null;
+        } else if (this.errorCallback) {
+          // After initialization, call the error callback
+          this.errorCallback(msg.message);
         }
         break;
     }
@@ -200,6 +207,7 @@ export class PyodideWorker {
     }
     this.messageCallback = null;
     this.statusCallback = null;
+    this.errorCallback = null;
     this.readyPromise = null;
     this.readyResolve = null;
     this.readyReject = null;
