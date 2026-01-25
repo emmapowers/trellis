@@ -15,9 +15,14 @@ from trellis.bundler import registry
 from trellis.bundler.metafile import get_metafile_path, read_metafile
 from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages, get_bin
 from trellis.bundler.workspace import get_project_workspace
+from trellis.platforms.browser import platform as browser_platform_module
+from trellis.platforms.desktop import platform as desktop_platform_module
+from trellis.platforms.server import platform as server_platform_module
 from trellis.platforms.server.platform import ServerPlatform
 
 
+@pytest.mark.network
+@pytest.mark.slow
 class TestEnsurePackages:
     def test_installs_system_packages_including_esbuild(self, tmp_path: Path) -> None:
         """SYSTEM_PACKAGES (esbuild, typescript) are automatically installed."""
@@ -72,12 +77,14 @@ class TestEnsurePackages:
         assert (workspace / "package.json").exists()
 
 
+@pytest.mark.network
+@pytest.mark.slow
 class TestServerPlatformBundle:
     def test_builds_bundle(self) -> None:
         """Builds client bundle successfully via ServerPlatform."""
         # Bundle is now in the cache workspace
-        platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        entry_point = platforms_dir / "server" / "client" / "src" / "main.tsx"
+        server_dir = Path(server_platform_module.__file__).parent
+        entry_point = server_dir / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)
         bundle_path = workspace / "dist" / "bundle.js"
 
@@ -90,8 +97,8 @@ class TestServerPlatformBundle:
 
     def test_generates_metafile(self) -> None:
         """Build generates metafile.json with input/output information."""
-        platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        entry_point = platforms_dir / "server" / "client" / "src" / "main.tsx"
+        server_dir = Path(server_platform_module.__file__).parent
+        entry_point = server_dir / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)
 
         # Force rebuild
@@ -118,6 +125,8 @@ class TestServerPlatformBundle:
         ), "bundle.js not in metafile outputs"
 
 
+@pytest.mark.network
+@pytest.mark.slow
 class TestDesktopPlatformBundle:
     @requires_pytauri
     def test_builds_bundle_and_copies_html(self) -> None:
@@ -126,8 +135,8 @@ class TestDesktopPlatformBundle:
         from trellis.platforms.desktop.platform import DesktopPlatform  # noqa: PLC0415
 
         # Bundle is now in the cache workspace
-        platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        entry_point = platforms_dir / "desktop" / "client" / "src" / "main.tsx"
+        desktop_dir = Path(desktop_platform_module.__file__).parent
+        entry_point = desktop_dir / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)
         dist_dir = workspace / "dist"
         bundle_path = dist_dir / "bundle.js"
@@ -146,13 +155,15 @@ class TestDesktopPlatformBundle:
         assert "bundle.js" in html_content
 
 
+@pytest.mark.network
+@pytest.mark.slow
 class TestBundleBuildCli:
     """Tests for the `trellis bundle build` CLI command."""
 
     def test_bundle_build_server_succeeds(self) -> None:
         """Running `trellis bundle build --platform server --force` succeeds."""
-        platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        entry_point = platforms_dir / "server" / "client" / "src" / "main.tsx"
+        server_dir = Path(server_platform_module.__file__).parent
+        entry_point = server_dir / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)
         server_bundle = workspace / "dist" / "bundle.js"
 
@@ -174,8 +185,8 @@ class TestBundleBuildCli:
     @pytest.mark.xfail(reason="Browser platform broken - worker generation not yet implemented")
     def test_bundle_build_browser_succeeds(self) -> None:
         """Running `trellis bundle build --platform browser --force` succeeds."""
-        platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        entry_point = platforms_dir / "browser" / "client" / "src" / "main.tsx"
+        browser_dir = Path(browser_platform_module.__file__).parent
+        entry_point = browser_dir / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)
         browser_bundle = workspace / "dist" / "bundle.js"
 
@@ -197,8 +208,8 @@ class TestBundleBuildCli:
     @requires_pytauri
     def test_bundle_build_desktop_succeeds(self) -> None:
         """Running `trellis bundle build --platform desktop --force` succeeds."""
-        platforms_dir = Path(__file__).parent.parent.parent.parent / "src" / "trellis" / "platforms"
-        entry_point = platforms_dir / "desktop" / "client" / "src" / "main.tsx"
+        desktop_dir = Path(desktop_platform_module.__file__).parent
+        entry_point = desktop_dir / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)
         desktop_bundle = workspace / "dist" / "bundle.js"
 

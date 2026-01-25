@@ -207,12 +207,21 @@ describe("ClientMessageHandler", () => {
 
   describe("handleMessage - RELOAD", () => {
     let locationReloadSpy: ReturnType<typeof vi.spyOn>;
+    let originalLocation: Location;
 
     beforeEach(() => {
       // Mock window.location.reload
+      originalLocation = window.location;
       locationReloadSpy = vi.fn();
       Object.defineProperty(window, "location", {
         value: { reload: locationReloadSpy },
+        writable: true,
+      });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(window, "location", {
+        value: originalLocation,
         writable: true,
       });
     });

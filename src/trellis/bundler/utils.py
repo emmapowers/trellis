@@ -2,12 +2,30 @@
 
 from __future__ import annotations
 
+import os
+import sys
 import tarfile
 from collections.abc import Iterable
 from pathlib import Path
 
 BUN_VERSION = "1.3.5"
-CACHE_DIR = Path.home() / ".cache" / "trellis"
+
+
+def _get_cache_dir() -> Path:
+    """Get platform-specific cache directory for trellis."""
+    if sys.platform == "win32":
+        # Windows: %LOCALAPPDATA%\trellis
+        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+    elif sys.platform == "darwin":
+        # macOS: ~/Library/Caches/trellis
+        base = Path.home() / "Library" / "Caches"
+    else:
+        # Linux/Unix: $XDG_CACHE_HOME/trellis or ~/.cache/trellis
+        base = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+    return base / "trellis"
+
+
+CACHE_DIR = _get_cache_dir()
 BIN_DIR = CACHE_DIR / "bin"
 
 

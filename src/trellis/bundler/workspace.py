@@ -14,6 +14,9 @@ from jinja2 import Template
 from trellis.bundler.registry import CollectedModules, ExportKind
 from trellis.bundler.utils import find_project_root
 
+# JavaScript/TypeScript extensions to strip from import paths
+JS_EXTENSIONS = (".tsx", ".ts", ".jsx", ".js")
+
 # Template for generating _registry.ts
 _REGISTRY_TS_TEMPLATE = Template(
     """\
@@ -128,12 +131,12 @@ def generate_registry_ts(collected: CollectedModules) -> str:
 
     for module in collected.modules:
         for export in module.exports:
-            # Remove .tsx/.ts extension for import path (but keep .css)
+            # Remove JS/TS extensions for import path (but keep .css)
             source_path = export.source
-            if source_path.endswith(".tsx"):
-                source_path = source_path[:-4]
-            elif source_path.endswith(".ts"):
-                source_path = source_path[:-3]
+            for ext in JS_EXTENSIONS:
+                if source_path.endswith(ext):
+                    source_path = source_path.removesuffix(ext)
+                    break
 
             if export.kind == ExportKind.COMPONENT:
                 components.append((export.name, module.name, source_path))
