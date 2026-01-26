@@ -9,8 +9,16 @@ from trellis.bundler.workspace import (
     generate_registry_ts,
     get_project_hash,
     get_project_workspace,
+    node_modules_path,
     write_registry_ts,
 )
+
+
+def test_node_modules_path_returns_workspace_node_modules(tmp_path: Path) -> None:
+    """node_modules_path returns workspace/node_modules."""
+    workspace = tmp_path / "workspace"
+    result = node_modules_path(workspace)
+    assert result == workspace / "node_modules"
 
 
 class TestGetProjectHash:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +11,7 @@ from trellis.bundler.packages import get_bin
 from trellis.bundler.python_source import collect_package_files, find_package_root
 from trellis.bundler.steps import BuildContext, BuildStep, ShouldBuild
 from trellis.bundler.utils import _get_newest_mtime, is_rebuild_needed
+from trellis.bundler.workspace import node_modules_path
 
 
 def build_source_config(entry_path: Path, module_name: str | None = None) -> dict[str, Any]:
@@ -77,20 +77,28 @@ class PyodideWorkerBuildStep(BuildStep):
     def should_build(
         self, ctx: BuildContext, step_manifest: StepManifest | None
     ) -> ShouldBuild | None:
-        """Check if worker bundle needs rebuilding based on source/output mtimes."""
+        """Check if worker bundle needs rebuilding based on source/output mtimes.
+
+        When skipping, restores context fields that run() would have set.
+        """
         if step_manifest is None:
             return ShouldBuild.BUILD
         if not step_manifest.source_paths or not step_manifest.dest_files:
             return ShouldBuild.BUILD
         if is_rebuild_needed(step_manifest.source_paths, step_manifest.dest_files):
             return ShouldBuild.BUILD
+
+        # Restore context fields that run() would have set
+        output_file = ctx.workspace / "pyodide.worker-bundle"
+        ctx.esbuild_args.append("--loader:.worker-bundle=text")
+        ctx.esbuild_args.append(
+            f"--alias:@trellis/trellis-browser/pyodide.worker-bundle={output_file}"
+        )
+
         return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
-        if ctx.node_modules is None:
-            raise RuntimeError("PyodideWorkerBuildStep requires node_modules")
-
-        esbuild = get_bin(ctx.node_modules, "esbuild")
+        esbuild = get_bin(node_modules_path(ctx.workspace), "esbuild")
         output_file = ctx.workspace / "pyodide.worker-bundle"
 
         cmd = [
@@ -104,11 +112,13 @@ class PyodideWorkerBuildStep(BuildStep):
             "--loader:.ts=ts",
         ]
 
-        subprocess.run(cmd, check=True, env={**ctx.env})
+        ctx.exec_in_build_env(cmd)
 
         # Add loader and alias so the main bundle can import the worker as text
         ctx.esbuild_args.append("--loader:.worker-bundle=text")
-        ctx.esbuild_args.append(f"--alias:@trellis/browser/pyodide.worker-bundle={output_file}")
+        ctx.esbuild_args.append(
+            f"--alias:@trellis/trellis-browser/pyodide.worker-bundle={output_file}"
+        )
 
         # Populate step manifest - track source directory and output bundle
         # Track parent directory to detect any changes in worker source files
@@ -132,7 +142,10 @@ class PythonSourceBundleStep(BuildStep):
     def should_build(
         self, ctx: BuildContext, step_manifest: StepManifest | None
     ) -> ShouldBuild | None:
-        """Check if Python source bundle needs rebuilding based on source mtime."""
+        """Check if Python source bundle needs rebuilding based on source mtime.
+
+        When skipping, restores context fields that run() would have set.
+        """
         if ctx.python_entry_point is None:
             return ShouldBuild.SKIP  # No-op
 
@@ -147,6 +160,13 @@ class PythonSourceBundleStep(BuildStep):
         prev_mtime = step_manifest.metadata.get("source_mtime")
         if prev_mtime is None or current_mtime > prev_mtime:
             return ShouldBuild.BUILD
+
+        # Restore context fields that run() would have set
+        source = build_source_config(ctx.python_entry_point)
+        source_json = json.dumps(source).replace("</", r"<\/")
+        ctx.template_context["source_json"] = source_json
+        ctx.template_context["routing_mode"] = "hash_url"
+
         return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
@@ -210,7 +230,7 @@ class WheelCopyStep(BuildStep):
     ) -> ShouldBuild | None:
         """Check if wheel has changed since last build.
 
-        Returns SKIP if wheel unchanged, BUILD if different or no previous.
+        Returns SKIP if wheel unchanged, BUILD if name or mtime differs.
         """
         if step_manifest is None:
             return ShouldBuild.BUILD
@@ -222,6 +242,12 @@ class WheelCopyStep(BuildStep):
         prev_wheel_name = step_manifest.metadata.get("wheel_name")
         if wheel.name != prev_wheel_name:
             return ShouldBuild.BUILD
+
+        # Check mtime to detect content changes when version stays the same
+        prev_wheel_mtime = step_manifest.metadata.get("wheel_mtime")
+        if prev_wheel_mtime is None or wheel.stat().st_mtime != prev_wheel_mtime:
+            return ShouldBuild.BUILD
+
         return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
@@ -241,3 +267,4 @@ class WheelCopyStep(BuildStep):
         step_manifest.source_paths.add(wheel)
         step_manifest.dest_files.add(dest)
         step_manifest.metadata["wheel_name"] = wheel.name
+        step_manifest.metadata["wheel_mtime"] = wheel.stat().st_mtime

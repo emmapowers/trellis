@@ -146,10 +146,15 @@ async function installTrellisWheel(
       // Use globals to avoid string interpolation injection
       pyodide.globals.set("_wheel_url", wheelUrl);
       await pyodide.runPythonAsync(
-        `import micropip\nawait micropip.install(_wheel_url)`
+        `import micropip\nawait micropip.install(_wheel_url, verbose=True)`
       );
       pyodide.globals.delete("_wheel_url");
       console.log(`[Pyodide] Successfully installed wheel from: ${wheelUrl}`);
+      // Log installed packages for debugging
+      await pyodide.runPythonAsync(`
+import micropip
+print("[Pyodide] Installed packages:", list(micropip.list().keys()))
+`);
       return;
     } catch (e) {
       const errorMsg = categorizeError(e as Error);

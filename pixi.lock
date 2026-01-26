@@ -2297,18 +2297,19 @@ packages:
 - pypi: .
   name: trellis
   version: 0.1.0
-  sha256: e63068ce9523b537de982332e34d58cefb037583cfc3491257948b290d0757a2
+  sha256: 8c40fe8f77dafb6085101eb3786cb8ccd1e733086adee29be3e0717fbb96672d
   requires_dist:
   - rich>=13.0
-  - fastapi>=0.115
-  - uvicorn[standard]>=0.34
+  - pygments>=2.13
   - msgspec>=0.19
   - httpx>=0.27
-  - click>=8.0
   - jinja2>=3.1
-  - jurigged>=0.6.0
   - wcmatch>=10.0
-  - watchfiles>=1.0
+  - fastapi>=0.115 ; sys_platform != 'emscripten'
+  - uvicorn[standard]>=0.34 ; sys_platform != 'emscripten'
+  - click>=8.0 ; sys_platform != 'emscripten'
+  - jurigged>=0.6.0 ; sys_platform != 'emscripten'
+  - watchfiles>=1.0 ; sys_platform != 'emscripten'
   - pytauri-wheel>=0.8.0 ; extra == 'desktop'
   - pydantic>=2.0 ; extra == 'desktop'
   requires_python: '>=3.13'

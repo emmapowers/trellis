@@ -9,7 +9,7 @@
 
 // Import worker code as text (built by bundler with --loader:.worker-bundle=text)
 // Uses @trellis alias so esbuild can resolve the pre-built worker bundle
-import WORKER_CODE from "@trellis/browser/pyodide.worker-bundle";
+import WORKER_CODE from "@trellis/trellis-browser/pyodide.worker-bundle";
 import type { HelloMessage, EventMessage, UrlChangedMessage } from "@trellis/trellis-core/client/src/types";
 
 // === Types ===

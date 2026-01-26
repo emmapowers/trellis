@@ -21,16 +21,22 @@ classifiers = [
     "Topic :: Software Development :: User Interfaces",
 ]
 dependencies = [
+    # Core deps (work in both server and browser/Pyodide)
     "rich>=13.0",
-    "fastapi>=0.115",
-    "uvicorn[standard]>=0.34",
+    # Pygments is required by rich for traceback syntax highlighting. Normally
+    # installed as a transitive dependency, but Pyodide's pre-built rich package
+    # declares no dependencies in pyodide-lock.json, so we must list it explicitly.
+    "pygments>=2.13",
     "msgspec>=0.19",
     "httpx>=0.27",
-    "click>=8.0",
     "jinja2>=3.1",
-    "jurigged>=0.6.0",
     "wcmatch>=10.0",
-    "watchfiles>=1.0",
+    # Server-only deps (excluded in Pyodide via PEP 508 markers)
+    "fastapi>=0.115; sys_platform != 'emscripten'",
+    "uvicorn[standard]>=0.34; sys_platform != 'emscripten'",
+    "click>=8.0; sys_platform != 'emscripten'",
+    "jurigged>=0.6.0; sys_platform != 'emscripten'",
+    "watchfiles>=1.0; sys_platform != 'emscripten'",
 ]
 
 [project.optional-dependencies]

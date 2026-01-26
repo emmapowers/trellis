@@ -57,6 +57,11 @@ export function initRegistry(): void {
 )
 
 
+def node_modules_path(workspace: Path) -> Path:
+    """Return the node_modules path for a workspace."""
+    return workspace / "node_modules"
+
+
 def get_project_hash(entry_point: Path) -> str:
     """Get a hash identifying a project based on its entry point path.
 

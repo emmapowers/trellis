@@ -66,10 +66,19 @@ def build(
         platforms.append(("desktop", desktop.get_watch_config()))
 
     if platform in ("browser", "all"):
-        from trellis.platforms.browser.serve_platform import BrowserServePlatform  # noqa: PLC0415
+        from trellis.platforms.browser.serve_platform import (  # noqa: PLC0415
+            BrowserServePlatform,
+            MissingEntryPointError,
+        )
 
         browser = BrowserServePlatform()
-        browser.bundle(force=force, dest=dest, library=library, python_entry_point=app)
+        try:
+            browser.bundle(force=force, dest=dest, library=library, python_entry_point=app)
+        except MissingEntryPointError:
+            raise click.UsageError(
+                "Browser app mode requires a Python entry point.\n"
+                "Use --app <path> to specify your app, or --library for library mode."
+            ) from None
         platforms.append(("browser", browser.get_watch_config()))
 
     # Start watch mode if enabled

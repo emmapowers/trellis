@@ -45,7 +45,14 @@ from trellis.platforms.browser.build_steps import (
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform, WatchConfig
 
-__all__ = ["BrowserServePlatform"]
+__all__ = ["BrowserServePlatform", "MissingEntryPointError"]
+
+
+class MissingEntryPointError(Exception):
+    """Raised when browser app mode is used without a Python entry point."""
+
+    pass
+
 
 _console = Console()
 
@@ -57,7 +64,9 @@ def _detect_entry_point() -> Path | None:
     `python -m app --browser` or `python app.py --browser`.
 
     Returns:
-        Path to the entry point file, or None if not detectable
+        Path to the entry point file, or None if not detectable.
+        Returns None if the detected file is not a .py file (e.g., when
+        running from a CLI entry script like `trellis bundle build`).
     """
     main_module = sys.modules.get("__main__")
     if main_module is None:
@@ -67,7 +76,13 @@ def _detect_entry_point() -> Path | None:
     if entry_file is None:
         return None
 
-    return Path(entry_file)
+    path = Path(entry_file)
+
+    # CLI entry scripts (like `trellis`) are not .py files
+    if path.suffix != ".py":
+        return None
+
+    return path
 
 
 def _print_startup_banner(url: str) -> None:
@@ -162,10 +177,13 @@ class BrowserServePlatform(Platform):
             if python_entry_point is None:
                 python_entry_point = _detect_entry_point()
 
-            # Add Python source bundling and HTML rendering when entry point is available
-            if python_entry_point is not None:
-                steps.append(PythonSourceBundleStep())
-                steps.append(IndexHtmlRenderStep(template_path))
+            # Error if still no entry point
+            if python_entry_point is None:
+                raise MissingEntryPointError("Browser app mode requires a Python entry point.")
+
+            # Add Python source bundling and HTML rendering
+            steps.append(PythonSourceBundleStep())
+            steps.append(IndexHtmlRenderStep(template_path))
 
         build(
             registry=registry,

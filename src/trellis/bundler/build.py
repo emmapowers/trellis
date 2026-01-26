@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 from trellis.bundler.manifest import BuildManifest, load_manifest, save_manifest
 from trellis.bundler.python_source import find_package_root
 from trellis.bundler.steps import BuildContext, ShouldBuild
+from trellis.bundler.workspace import node_modules_path
 
 if TYPE_CHECKING:
     from trellis.bundler.registry import ModuleRegistry
@@ -115,7 +116,10 @@ def build(
         manifest=manifest,
         app_static_dir=app_static_dir,
         python_entry_point=python_entry_point,
-        env=os.environ.copy(),
+        env={
+            **os.environ,
+            "NODE_PATH": str(node_modules_path(workspace)),
+        },
     )
 
     # Ensure directories exist

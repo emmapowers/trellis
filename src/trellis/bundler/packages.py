@@ -12,6 +12,7 @@ from trellis.bundler.bun import ensure_bun
 SYSTEM_PACKAGES: dict[str, str] = {
     "esbuild": "0.27.2",
     "typescript": "5.7.3",
+    "dts-bundle-generator": "9.5.1",
 }
 
 

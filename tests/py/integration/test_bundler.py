@@ -10,14 +10,16 @@ from pathlib import Path
 
 import pytest
 
-from tests.helpers import requires_pytauri
+from tests.helpers import HAS_PYTAURI, requires_pytauri
 from trellis.bundler import registry
 from trellis.bundler.metafile import get_metafile_path, read_metafile
 from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages, get_bin
 from trellis.bundler.workspace import get_project_workspace
-from trellis.platforms.browser import platform as browser_platform_module
-from trellis.platforms.desktop import platform as desktop_platform_module
 from trellis.platforms.server import platform as server_platform_module
+
+# Desktop requires pytauri which isn't available in CI
+if HAS_PYTAURI:
+    from trellis.platforms.desktop import platform as desktop_platform_module
 from trellis.platforms.server.platform import ServerPlatform
 
 
@@ -182,16 +184,8 @@ class TestBundleBuildCli:
         if mtime_before is not None:
             assert server_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"
 
-    @pytest.mark.xfail(reason="Browser platform broken - worker generation not yet implemented")
-    def test_bundle_build_browser_succeeds(self) -> None:
-        """Running `trellis bundle build --platform browser --force` succeeds."""
-        browser_dir = Path(browser_platform_module.__file__).parent
-        entry_point = browser_dir / "client" / "src" / "main.tsx"
-        workspace = get_project_workspace(entry_point)
-        browser_bundle = workspace / "dist" / "bundle.js"
-
-        mtime_before = browser_bundle.stat().st_mtime if browser_bundle.exists() else None
-
+    def test_bundle_build_browser_requires_library_or_app(self) -> None:
+        """Browser build without --library or --app shows helpful error."""
         result = subprocess.run(
             ["trellis", "bundle", "build", "--platform", "browser", "--force"],
             capture_output=True,
@@ -199,11 +193,112 @@ class TestBundleBuildCli:
             check=False,
         )
 
-        assert result.returncode == 0, f"Bundle build failed:\n{result.stderr}"
-        assert browser_bundle.exists(), "Browser bundle not created"
-        assert browser_bundle.stat().st_size > 0
-        if mtime_before is not None:
-            assert browser_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"
+        assert result.returncode != 0, "Should fail without --library or --app"
+        assert "Browser app mode requires a Python entry point" in result.stderr
+        assert "--app" in result.stderr
+        assert "--library" in result.stderr
+
+    def test_bundle_build_browser_library_mode(self, tmp_path: Path) -> None:
+        """Browser library mode builds successfully with --library flag."""
+        dest = tmp_path / "lib_output"
+
+        result = subprocess.run(
+            [
+                "trellis",
+                "bundle",
+                "build",
+                "--platform",
+                "browser",
+                "--library",
+                "--force",
+                "--dest",
+                str(dest),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert result.returncode == 0, f"Build failed:\n{result.stderr}"
+        assert (dest / "index.js").exists(), "index.js not created"
+        assert (dest / "index.css").exists(), "index.css not created"
+        assert (dest / "index.d.ts").exists(), "TypeScript declarations not created"
+        assert not (dest / "index.html").exists(), "Library mode should not create HTML"
+
+    def test_bundle_build_browser_app_with_package(self, tmp_path: Path) -> None:
+        """Browser app mode builds a Python package with --app flag."""
+        # Create test package
+        pkg_dir = tmp_path / "myapp"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+        (pkg_dir / "__main__.py").write_text(
+            "from trellis import component\n"
+            "from trellis.html import Div\n"
+            "@component\n"
+            "def App():\n"
+            "    Div()\n"
+        )
+
+        dest = tmp_path / "app_output"
+        result = subprocess.run(
+            [
+                "trellis",
+                "bundle",
+                "build",
+                "--platform",
+                "browser",
+                "--app",
+                str(pkg_dir / "__main__.py"),
+                "--force",
+                "--dest",
+                str(dest),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert result.returncode == 0, f"Build failed:\n{result.stderr}"
+        assert (dest / "bundle.js").exists(), "bundle.js not created"
+        assert (dest / "index.html").exists(), "index.html not created"
+
+        html = (dest / "index.html").read_text()
+        assert "window.__TRELLIS_CONFIG__" in html, "Config not embedded in HTML"
+
+    def test_bundle_build_browser_app_with_single_file(self, tmp_path: Path) -> None:
+        """Browser app mode builds a standalone .py file (not in a package)."""
+        # Create standalone file (no __init__.py nearby)
+        app_file = tmp_path / "standalone_app.py"
+        app_file.write_text(
+            "from trellis import component\n"
+            "from trellis.html import Div\n"
+            "@component\n"
+            "def App():\n"
+            "    Div()\n"
+        )
+
+        dest = tmp_path / "standalone_output"
+        result = subprocess.run(
+            [
+                "trellis",
+                "bundle",
+                "build",
+                "--platform",
+                "browser",
+                "--app",
+                str(app_file),
+                "--force",
+                "--dest",
+                str(dest),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert result.returncode == 0, f"Build failed:\n{result.stderr}"
+        assert (dest / "bundle.js").exists(), "bundle.js not created"
+        assert (dest / "index.html").exists(), "index.html not created"
 
     @requires_pytauri
     def test_bundle_build_desktop_succeeds(self) -> None:

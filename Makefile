@@ -79,7 +79,7 @@ $(SENTINEL)/.api-docs-built: $(PY_SOURCES) pydoc-markdown.yaml
 #------------------------------------------------------------------------------
 example-pages: $(SENTINEL)/.example-pages-built
 
-$(SENTINEL)/.example-pages-built: $(BROWSER_DIST)/bundle.js $(EXAMPLE_SOURCES) scripts/generate-example-pages.py
+$(SENTINEL)/.example-pages-built: $(EXAMPLE_SOURCES) scripts/generate-example-pages.py
 	python scripts/generate-example-pages.py
 	@touch $@
 

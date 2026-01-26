@@ -170,22 +170,6 @@ class TestBuildContext:
         ctx.generated_files["_registry"] = tmp_path / "_registry.ts"
         assert ctx.generated_files["_registry"] == tmp_path / "_registry.ts"
 
-    def test_node_modules_defaults_to_none(self, tmp_path: Path) -> None:
-        """BuildContext node_modules defaults to None."""
-        registry = ModuleRegistry()
-        collected = registry.collect()
-
-        ctx = BuildContext(
-            registry=registry,
-            entry_point=tmp_path / "main.tsx",
-            workspace=tmp_path / "workspace",
-            collected=collected,
-            dist_dir=tmp_path / "dist",
-            manifest=BuildManifest(),
-        )
-
-        assert ctx.node_modules is None
-
     def test_has_manifest_field(self, tmp_path: Path) -> None:
         """BuildContext has manifest field."""
         registry = ModuleRegistry()
@@ -219,6 +203,87 @@ class TestBuildContext:
         )
 
         assert hasattr(ctx, "manifest")
+
+    def test_exec_in_build_env_sets_cwd_to_workspace(self, tmp_path: Path) -> None:
+        """exec_in_build_env runs command with cwd set to workspace."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+        # Run pwd to verify cwd
+        result = ctx.exec_in_build_env(["pwd"], check=True)
+        # pwd output includes newline, workspace.resolve() handles symlinks
+        assert result.returncode == 0
+
+    def test_exec_in_build_env_uses_ctx_env(self, tmp_path: Path) -> None:
+        """exec_in_build_env passes ctx.env to subprocess."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+            env={"TEST_VAR": "test_value"},
+        )
+
+        # Create a script that checks the env var exists
+        # printenv returns 0 if var exists, 1 if not
+        result = ctx.exec_in_build_env(["printenv", "TEST_VAR"], check=False)
+        assert result.returncode == 0, "TEST_VAR should be set in environment"
+
+    def test_exec_in_build_env_raises_on_failure_when_check_true(self, tmp_path: Path) -> None:
+        """exec_in_build_env raises CalledProcessError when check=True and command fails."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+        with pytest.raises(subprocess.CalledProcessError):
+            ctx.exec_in_build_env(["false"], check=True)
+
+    def test_exec_in_build_env_returns_result_when_check_false(self, tmp_path: Path) -> None:
+        """exec_in_build_env returns CompletedProcess when check=False."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+        result = ctx.exec_in_build_env(["false"], check=False)
+        assert result.returncode != 0
 
 
 class TestBuildContextDirectManifestAccess:
@@ -498,23 +563,6 @@ class TestPackageInstallStep:
         """PackageInstallStep.name is 'package-install'."""
         step = PackageInstallStep()
         assert step.name == "package-install"
-
-    def test_sets_node_modules_path(self, build_context: BuildContext) -> None:
-        """PackageInstallStep sets ctx.node_modules to workspace/node_modules."""
-        with patch("trellis.bundler.steps.ensure_packages"):
-            step = PackageInstallStep()
-            step.run(build_context)
-
-        assert build_context.node_modules == build_context.workspace / "node_modules"
-
-    def test_sets_node_path_env(self, build_context: BuildContext) -> None:
-        """PackageInstallStep sets ctx.env['NODE_PATH'] to node_modules path."""
-        with patch("trellis.bundler.steps.ensure_packages"):
-            step = PackageInstallStep()
-            step.run(build_context)
-
-        expected = str(build_context.workspace / "node_modules")
-        assert build_context.env["NODE_PATH"] == expected
 
     def test_calls_ensure_packages_with_collected_packages(
         self, build_context: BuildContext
@@ -848,6 +896,28 @@ class TestTsconfigStepShouldBuild:
 
         assert result == ShouldBuild.SKIP
 
+    def test_restores_generated_files_when_skip(self, build_context: BuildContext) -> None:
+        """should_build restores generated_files['tsconfig'] when returning SKIP."""
+        step = TsconfigStep()
+        step.run(build_context)
+
+        inputs_hash = build_context.manifest.steps["tsconfig"].metadata["inputs_hash"]
+        prev_manifest = StepManifest(metadata={"inputs_hash": inputs_hash})
+
+        # Fresh context - generated_files is empty
+        fresh_ctx = BuildContext(
+            registry=build_context.registry,
+            entry_point=build_context.entry_point,
+            workspace=build_context.workspace,
+            collected=build_context.collected,
+            dist_dir=build_context.dist_dir,
+            manifest=BuildManifest(),
+        )
+        result = step.should_build(fresh_ctx, prev_manifest)
+
+        assert result == ShouldBuild.SKIP
+        assert fresh_ctx.generated_files["tsconfig"] == fresh_ctx.workspace / "tsconfig.json"
+
 
 class TestTypeCheckStep:
     """Tests for TypeCheckStep."""
@@ -874,7 +944,6 @@ class TestTypeCheckStep:
             dist_dir=tmp_path / "dist",
             manifest=BuildManifest(),
         )
-        ctx.node_modules = node_modules
         ctx.generated_files["tsconfig"] = workspace / "tsconfig.json"
 
         return ctx
@@ -964,7 +1033,6 @@ class TestTypeCheckStepShouldBuild:
             dist_dir=dist_dir,
             manifest=BuildManifest(),
         )
-        ctx.node_modules = node_modules
         ctx.generated_files["tsconfig"] = workspace / "tsconfig.json"
 
         return ctx
@@ -1068,7 +1136,6 @@ class TestDeclarationStep:
             dist_dir=dist_dir,
             manifest=BuildManifest(),
         )
-        ctx.node_modules = node_modules
         ctx.generated_files["tsconfig"] = workspace / "tsconfig.json"
 
         return ctx
@@ -1078,8 +1145,8 @@ class TestDeclarationStep:
         step = DeclarationStep()
         assert step.name == "declaration"
 
-    def test_runs_tsc_with_declaration_flags(self, build_context: BuildContext) -> None:
-        """DeclarationStep runs tsc with --declaration and --emitDeclarationOnly."""
+    def test_runs_dts_bundle_generator(self, build_context: BuildContext) -> None:
+        """DeclarationStep runs dts-bundle-generator with correct flags."""
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
 
@@ -1088,11 +1155,11 @@ class TestDeclarationStep:
 
         mock_run.assert_called_once()
         cmd = mock_run.call_args[0][0]
-        assert "--declaration" in cmd
-        assert "--emitDeclarationOnly" in cmd
+        assert "dts-bundle-generator" in cmd[0]
+        assert "--no-banner" in cmd
 
     def test_outputs_to_dist_dir(self, build_context: BuildContext) -> None:
-        """DeclarationStep outputs .d.ts files to ctx.dist_dir."""
+        """DeclarationStep outputs .d.ts file to ctx.dist_dir."""
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
 
@@ -1100,11 +1167,12 @@ class TestDeclarationStep:
             step.run(build_context)
 
         cmd = mock_run.call_args[0][0]
-        outdir_flag = "--outDir"
-        assert outdir_flag in cmd
-        # Find the outDir value
-        outdir_idx = cmd.index("--outDir")
-        assert cmd[outdir_idx + 1] == str(build_context.dist_dir)
+        # dts-bundle-generator uses -o for output file
+        assert "-o" in cmd
+        output_idx = cmd.index("-o")
+        output_path = cmd[output_idx + 1]
+        assert output_path.startswith(str(build_context.dist_dir))
+        assert output_path.endswith(".d.ts")
 
 
 class TestDeclarationStepShouldBuild:
@@ -1140,7 +1208,6 @@ class TestDeclarationStepShouldBuild:
             dist_dir=dist_dir,
             manifest=BuildManifest(),
         )
-        ctx.node_modules = node_modules
         ctx.generated_files["tsconfig"] = workspace / "tsconfig.json"
 
         return ctx
@@ -1260,7 +1327,6 @@ class TestBundleBuildStep:
             dist_dir=dist_dir,
             manifest=BuildManifest(),
         )
-        ctx.node_modules = node_modules
         ctx.env["NODE_PATH"] = str(node_modules)
 
         return ctx
@@ -1373,7 +1439,6 @@ class TestBundleBuildStepManifest:
             dist_dir=dist_dir,
             manifest=BuildManifest(),
         )
-        ctx.node_modules = node_modules
         ctx.env["NODE_PATH"] = str(node_modules)
 
         return ctx
@@ -2345,3 +2410,32 @@ class TestBuildOrchestration:
         assert len(captured_collected[0].modules) == 1
         assert captured_collected[0].modules[0].name == "test-mod"
         assert captured_collected[0].packages == {"react": "18.0.0"}
+
+    def test_sets_node_path_in_context_env(self, tmp_path: Path) -> None:
+        """build() sets NODE_PATH to node_modules path in context env."""
+        registry = ModuleRegistry()
+        entry_point = tmp_path / "main.tsx"
+        entry_point.write_text("// entry")
+        workspace = tmp_path / "workspace"
+
+        captured_env: list[dict[str, str]] = []
+
+        class CaptureStep(BuildStep):
+            @property
+            def name(self) -> str:
+                return "capture"
+
+            def run(self, ctx: BuildContext) -> None:
+                captured_env.append(ctx.env.copy())
+
+        build(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            steps=[CaptureStep()],
+            force=True,
+        )
+
+        # NODE_PATH should be set to workspace/node_modules
+        expected_node_path = str(workspace / "node_modules")
+        assert captured_env[0].get("NODE_PATH") == expected_node_path

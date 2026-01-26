@@ -21,7 +21,7 @@ from trellis.bundler.manifest import BuildManifest, StepManifest
 from trellis.bundler.metafile import get_metafile_path, read_metafile
 from trellis.bundler.packages import ensure_packages, get_bin
 from trellis.bundler.utils import is_rebuild_needed
-from trellis.bundler.workspace import write_registry_ts
+from trellis.bundler.workspace import node_modules_path, write_registry_ts
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,6 @@ class BuildContext:
         env: Environment variables for subprocess calls (steps can modify)
         generated_files: Map of generated file names to paths (steps set these)
         template_context: Template variables for IndexHtmlRenderStep (steps can add)
-        node_modules: Path to node_modules directory (set by PackageInstallStep)
     """
 
     # Inputs (set before steps run)
@@ -85,8 +84,23 @@ class BuildContext:
     generated_files: dict[str, Path] = field(default_factory=dict)
     template_context: dict[str, Any] = field(default_factory=dict)
 
-    # Step outputs
-    node_modules: Path | None = None
+    def exec_in_build_env(
+        self, cmd: list[str], *, check: bool = True
+    ) -> subprocess.CompletedProcess[bytes]:
+        """Execute a command in the build environment.
+
+        Runs the command with:
+        - cwd set to workspace (ensures consistent path resolution)
+        - env set to the build environment (includes NODE_PATH, etc.)
+
+        Args:
+            cmd: Command and arguments to execute
+            check: If True, raise CalledProcessError on non-zero exit
+
+        Returns:
+            CompletedProcess instance with return code and output
+        """
+        return subprocess.run(cmd, check=check, cwd=self.workspace, env=self.env)
 
 
 class BuildStep(ABC):
@@ -137,8 +151,7 @@ def _get_module_aliases(collected: CollectedModules) -> dict[str, Path]:
 class PackageInstallStep(BuildStep):
     """Install npm packages using ensure_packages().
 
-    Sets ctx.node_modules and ctx.env["NODE_PATH"].
-    Stores packages in manifest.other for change detection.
+    Stores packages in manifest metadata for change detection.
     """
 
     @property
@@ -165,8 +178,6 @@ class PackageInstallStep(BuildStep):
     def run(self, ctx: BuildContext) -> None:
         packages = dict(ctx.collected.packages)
         ensure_packages(packages, ctx.workspace)
-        ctx.node_modules = ctx.workspace / "node_modules"
-        ctx.env["NODE_PATH"] = str(ctx.node_modules)
 
         # Store packages in step manifest for next build's comparison
         step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
@@ -195,13 +206,22 @@ class RegistryGenerationStep(BuildStep):
     def should_build(
         self, ctx: BuildContext, step_manifest: StepManifest | None
     ) -> ShouldBuild | None:
-        """Check if registry needs regenerating based on collected modules."""
+        """Check if registry needs regenerating based on collected modules.
+
+        When skipping, restores context fields that run() would have set.
+        """
         if step_manifest is None:
             return ShouldBuild.BUILD
 
         current_hash = self._compute_collected_hash(ctx)
         if step_manifest.metadata.get("collected_hash") != current_hash:
             return ShouldBuild.BUILD
+
+        # Skipping - restore context fields that run() would have set
+        registry_path = ctx.workspace / "_registry.ts"
+        ctx.generated_files["_registry"] = registry_path
+        ctx.esbuild_args.append(f"--alias:@trellis/_registry={registry_path}")
+
         return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
@@ -238,13 +258,20 @@ class TsconfigStep(BuildStep):
     def should_build(
         self, ctx: BuildContext, step_manifest: StepManifest | None
     ) -> ShouldBuild | None:
-        """Check if tsconfig needs regenerating based on inputs."""
+        """Check if tsconfig needs regenerating based on inputs.
+
+        When skipping, restores context fields that run() would have set.
+        """
         if step_manifest is None:
             return ShouldBuild.BUILD
 
         current_hash = self._compute_inputs_hash(ctx)
         if step_manifest.metadata.get("inputs_hash") != current_hash:
             return ShouldBuild.BUILD
+
+        # Restore context fields that run() would have set
+        ctx.generated_files["tsconfig"] = ctx.workspace / "tsconfig.json"
+
         return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
@@ -321,17 +348,14 @@ class TypeCheckStep(BuildStep):
         return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
-        if ctx.node_modules is None:
-            raise RuntimeError("TypeCheckStep requires node_modules (run PackageInstallStep first)")
-
-        tsc = get_bin(ctx.node_modules, "tsc")
+        tsc = get_bin(node_modules_path(ctx.workspace), "tsc")
         tsconfig_path = ctx.generated_files.get("tsconfig")
 
         cmd = [str(tsc), "--noEmit"]
         if tsconfig_path:
             cmd.extend(["--project", str(tsconfig_path)])
 
-        result = subprocess.run(cmd, check=False, env={**ctx.env})
+        result = ctx.exec_in_build_env(cmd, check=False)
 
         if result.returncode != 0:
             if self.fail_on_error:
@@ -349,9 +373,10 @@ class TypeCheckStep(BuildStep):
 
 
 class DeclarationStep(BuildStep):
-    """Generate TypeScript declaration files (.d.ts).
+    """Generate a bundled TypeScript declaration file (.d.ts).
 
-    Runs tsc --declaration --emitDeclarationOnly, outputting to ctx.dist_dir.
+    Uses dts-bundle-generator to create a single declaration file from the
+    entry point, with tree-shaking of unused types.
     """
 
     @property
@@ -371,31 +396,29 @@ class DeclarationStep(BuildStep):
         return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
-        if ctx.node_modules is None:
-            raise RuntimeError(
-                "DeclarationStep requires node_modules (run PackageInstallStep first)"
-            )
-
-        tsc = get_bin(ctx.node_modules, "tsc")
+        dts_generator = get_bin(node_modules_path(ctx.workspace), "dts-bundle-generator")
         tsconfig_path = ctx.generated_files.get("tsconfig")
 
+        # Output file name matches the entry point (index.ts -> index.d.ts)
+        output_name = ctx.entry_point.stem + ".d.ts"
+        output_file = ctx.dist_dir / output_name
+
         cmd = [
-            str(tsc),
-            "--declaration",
-            "--emitDeclarationOnly",
-            "--outDir",
-            str(ctx.dist_dir),
+            str(dts_generator),
+            "-o",
+            str(output_file),
+            str(ctx.entry_point),
+            "--no-banner",  # Don't add "Generated by dts-bundle-generator" comment
         ]
         if tsconfig_path:
             cmd.extend(["--project", str(tsconfig_path)])
 
-        subprocess.run(cmd, check=True, env={**ctx.env})
+        ctx.exec_in_build_env(cmd)
 
         # Track sources and outputs
         step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
         step_manifest.source_paths.update(collect_ts_source_files(ctx.entry_point.parent))
-        for output in ctx.dist_dir.rglob("*.d.ts"):
-            step_manifest.dest_files.add(output)
+        step_manifest.dest_files.add(output_file)
 
 
 class BundleBuildStep(BuildStep):
@@ -425,12 +448,7 @@ class BundleBuildStep(BuildStep):
         return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
-        if ctx.node_modules is None:
-            raise RuntimeError(
-                "BundleBuildStep requires node_modules (run PackageInstallStep first)"
-            )
-
-        esbuild = get_bin(ctx.node_modules, "esbuild")
+        esbuild = get_bin(node_modules_path(ctx.workspace), "esbuild")
         metafile_path = get_metafile_path(ctx.workspace)
 
         cmd = [
@@ -455,7 +473,7 @@ class BundleBuildStep(BuildStep):
         # Add additional args from context (including _registry alias from RegistryGenerationStep)
         cmd.extend(ctx.esbuild_args)
 
-        subprocess.run(cmd, check=True, env={**ctx.env})
+        ctx.exec_in_build_env(cmd)
 
         # Populate step manifest from metafile
         metafile = read_metafile(ctx.workspace)
