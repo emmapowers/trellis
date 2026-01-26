@@ -98,7 +98,7 @@ def build(
         _import_entry_point(python_entry_point)
 
     collected = registry.collect()
-    dist_dir = output_dir or (workspace / "dist")
+    dist_dir = (output_dir or (workspace / "dist")).resolve()
 
     # Load previous manifest for per-step staleness check
     previous_manifest = load_manifest(workspace)

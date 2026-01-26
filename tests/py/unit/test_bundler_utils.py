@@ -208,6 +208,101 @@ class TestIsRebuildNeeded:
 
         assert result is True
 
+    def test_detects_new_file_in_directory(self, tmp_path: Path) -> None:
+        """is_rebuild_needed detects new files added to a directory input."""
+        static_dir = tmp_path / "static"
+        static_dir.mkdir()
+        (static_dir / "existing.txt").write_text("existing")
+
+        # Create output after the directory contents
+        time.sleep(0.01)
+        output = tmp_path / "bundle.js"
+        output.write_text("output")
+
+        # Initially should be up to date
+        assert is_rebuild_needed([static_dir], [output]) is False
+
+        # Add a new file to the directory
+        time.sleep(0.01)
+        (static_dir / "new.txt").write_text("new file")
+
+        # Now should need rebuild
+        assert is_rebuild_needed([static_dir], [output]) is True
+
+    def test_detects_modified_file_in_nested_dir(self, tmp_path: Path) -> None:
+        """is_rebuild_needed detects modified files in nested directories."""
+        static_dir = tmp_path / "static"
+        nested_dir = static_dir / "assets" / "images"
+        nested_dir.mkdir(parents=True)
+        nested_file = nested_dir / "logo.png"
+        nested_file.write_bytes(b"original")
+
+        # Create output after the directory contents
+        time.sleep(0.01)
+        output = tmp_path / "bundle.js"
+        output.write_text("output")
+
+        # Initially should be up to date
+        assert is_rebuild_needed([static_dir], [output]) is False
+
+        # Modify the nested file
+        time.sleep(0.01)
+        nested_file.write_bytes(b"modified")
+
+        # Now should need rebuild
+        assert is_rebuild_needed([static_dir], [output]) is True
+
+    def test_detects_deleted_file_in_directory(self, tmp_path: Path) -> None:
+        """is_rebuild_needed detects when a file is deleted from directory.
+
+        Note: Deletion typically updates the directory's mtime, which triggers rebuild.
+        """
+        static_dir = tmp_path / "static"
+        static_dir.mkdir()
+        to_delete = static_dir / "deleteme.txt"
+        to_delete.write_text("will be deleted")
+
+        # Create output after the directory contents
+        time.sleep(0.01)
+        output = tmp_path / "bundle.js"
+        output.write_text("output")
+
+        # Initially should be up to date
+        assert is_rebuild_needed([static_dir], [output]) is False
+
+        # Delete the file (this updates directory mtime)
+        time.sleep(0.01)
+        to_delete.unlink()
+
+        # Should need rebuild because directory was modified
+        assert is_rebuild_needed([static_dir], [output]) is True
+
+    def test_handles_mixed_files_and_directories(self, tmp_path: Path) -> None:
+        """is_rebuild_needed handles a mix of file and directory inputs."""
+        # Create a regular file
+        source_file = tmp_path / "main.ts"
+        source_file.write_text("// source")
+
+        # Create a directory
+        static_dir = tmp_path / "static"
+        static_dir.mkdir()
+        (static_dir / "data.json").write_text("{}")
+
+        # Create output after inputs
+        time.sleep(0.01)
+        output = tmp_path / "bundle.js"
+        output.write_text("output")
+
+        # Initially should be up to date
+        assert is_rebuild_needed([source_file, static_dir], [output]) is False
+
+        # Modify the source file
+        time.sleep(0.01)
+        source_file.write_text("// modified source")
+
+        # Should need rebuild
+        assert is_rebuild_needed([source_file, static_dir], [output]) is True
+
 
 class TestFindProjectRoot:
     """Tests for find_project_root function."""

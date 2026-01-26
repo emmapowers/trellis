@@ -7,7 +7,7 @@ on:
 
 jobs:
   ci:
-    name: Lint & Type Check
+    name: CI
     runs-on: ubuntu-latest
 
     steps:
@@ -21,6 +21,9 @@ jobs:
           environments: ci
           cache: true
           locked: true
+
+      - name: Build wheel
+        run: pixi run -e ci build-wheel
 
       - name: Run CI checks
         run: pixi run -e ci ci

@@ -12,7 +12,7 @@ from unittest.mock import patch
 import pytest
 
 from trellis.bundler.build import build
-from trellis.bundler.manifest import BuildManifest, StepManifest
+from trellis.bundler.manifest import BuildManifest, StepManifest, load_manifest, save_manifest
 from trellis.bundler.registry import ModuleRegistry, registry
 from trellis.bundler.steps import (
     BuildContext,
@@ -2439,3 +2439,260 @@ class TestBuildOrchestration:
         # NODE_PATH should be set to workspace/node_modules
         expected_node_path = str(workspace / "node_modules")
         assert captured_env[0].get("NODE_PATH") == expected_node_path
+
+    def test_handles_relative_output_dir_in_manifest(self, tmp_path: Path) -> None:
+        """build() handles relative output_dir without anchor mismatch error.
+
+        When output_dir is relative (e.g., Path("docs/static")), dest_files
+        written via ctx.dist_dir would be relative paths. save_manifest()
+        needs absolute paths to compute relative_to(workspace) correctly.
+
+        Reproduces: ValueError: 'docs/static/output.js' and '/abs/workspace'
+        have different anchors
+        """
+        test_registry = ModuleRegistry()
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        entry_point = tmp_path / "main.tsx"
+        entry_point.write_text("// entry")
+
+        # Use a relative path for output_dir (the bug trigger)
+        relative_output_dir = Path("docs/static/trellis")
+
+        class WriteToDistStep(BuildStep):
+            @property
+            def name(self) -> str:
+                return "write-to-dist"
+
+            def run(self, ctx: BuildContext) -> None:
+                # Simulate what DeclarationStep does: write to ctx.dist_dir
+                output_file = ctx.dist_dir / "output.js"
+                output_file.parent.mkdir(parents=True, exist_ok=True)
+                output_file.write_text("// output")
+
+                # Track the output file in manifest (this triggers the bug)
+                step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
+                step_manifest.dest_files.add(output_file)
+
+        # This should not raise ValueError about different anchors
+        build(
+            registry=test_registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            steps=[WriteToDistStep()],
+            output_dir=relative_output_dir,
+        )
+
+    def test_skips_step_when_should_build_returns_skip(self, tmp_path: Path) -> None:
+        """build() skips step when should_build returns SKIP and previous manifest exists."""
+        test_registry = ModuleRegistry()
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        entry_point = tmp_path / "main.tsx"
+        entry_point.write_text("// entry")
+
+        # Create previous manifest so SKIP has something to skip to
+        prev_manifest = BuildManifest()
+        prev_manifest.steps["skip-step"] = StepManifest(metadata={"previous": True})
+        save_manifest(workspace, prev_manifest)
+
+        step_ran = []
+
+        class SkipStep(BuildStep):
+            @property
+            def name(self) -> str:
+                return "skip-step"
+
+            def run(self, ctx: BuildContext) -> None:
+                step_ran.append(True)
+
+            def should_build(
+                self, ctx: BuildContext, step_manifest: StepManifest | None
+            ) -> ShouldBuild | None:
+                return ShouldBuild.SKIP
+
+        build(
+            registry=test_registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            steps=[SkipStep()],
+            force=False,
+        )
+
+        assert step_ran == [], "Step should not run when should_build returns SKIP"
+
+    def test_runs_step_when_should_build_returns_build(self, tmp_path: Path) -> None:
+        """build() runs step when should_build returns BUILD."""
+        test_registry = ModuleRegistry()
+        workspace = tmp_path / "workspace"
+        entry_point = tmp_path / "main.tsx"
+        entry_point.write_text("// entry")
+
+        step_ran = []
+
+        class BuildAlwaysStep(BuildStep):
+            @property
+            def name(self) -> str:
+                return "build-always"
+
+            def run(self, ctx: BuildContext) -> None:
+                step_ran.append(True)
+
+            def should_build(
+                self, ctx: BuildContext, step_manifest: StepManifest | None
+            ) -> ShouldBuild | None:
+                return ShouldBuild.BUILD
+
+        build(
+            registry=test_registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            steps=[BuildAlwaysStep()],
+            force=False,
+        )
+
+        assert step_ran == [True], "Step should run when should_build returns BUILD"
+
+    def test_runs_step_when_should_build_returns_none(self, tmp_path: Path) -> None:
+        """build() runs step when should_build returns None (always run)."""
+        test_registry = ModuleRegistry()
+        workspace = tmp_path / "workspace"
+        entry_point = tmp_path / "main.tsx"
+        entry_point.write_text("// entry")
+
+        step_ran = []
+
+        class DefaultStep(BuildStep):
+            @property
+            def name(self) -> str:
+                return "default-step"
+
+            def run(self, ctx: BuildContext) -> None:
+                step_ran.append(True)
+
+            # Uses default should_build which returns None
+
+        build(
+            registry=test_registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            steps=[DefaultStep()],
+            force=False,
+        )
+
+        assert step_ran == [True], "Step should run when should_build returns None"
+
+    def test_preserves_manifest_for_skipped_steps(self, tmp_path: Path) -> None:
+        """build() preserves previous manifest section for skipped steps."""
+        test_registry = ModuleRegistry()
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        entry_point = tmp_path / "main.tsx"
+        entry_point.write_text("// entry")
+
+        # Create previous manifest with data for the step
+        prev_manifest = BuildManifest()
+        prev_manifest.steps["skip-step"] = StepManifest(
+            source_paths={tmp_path / "old_source.ts"},
+            dest_files={tmp_path / "old_output.js"},
+            metadata={"preserved": True},
+        )
+        save_manifest(workspace, prev_manifest)
+
+        class SkipStep(BuildStep):
+            @property
+            def name(self) -> str:
+                return "skip-step"
+
+            def run(self, ctx: BuildContext) -> None:
+                pass  # Should not be called
+
+            def should_build(
+                self, ctx: BuildContext, step_manifest: StepManifest | None
+            ) -> ShouldBuild | None:
+                return ShouldBuild.SKIP
+
+        build(
+            registry=test_registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            steps=[SkipStep()],
+            force=False,
+        )
+
+        # Load the new manifest and verify old data was preserved
+        new_manifest = load_manifest(workspace)
+        assert new_manifest is not None
+        assert "skip-step" in new_manifest.steps
+        assert new_manifest.steps["skip-step"].metadata == {"preserved": True}
+
+    def test_force_flag_runs_all_steps(self, tmp_path: Path) -> None:
+        """build() runs all steps when force=True, ignoring should_build."""
+        test_registry = ModuleRegistry()
+        workspace = tmp_path / "workspace"
+        entry_point = tmp_path / "main.tsx"
+        entry_point.write_text("// entry")
+
+        step_ran = []
+
+        class SkipStep(BuildStep):
+            @property
+            def name(self) -> str:
+                return "skip-step"
+
+            def run(self, ctx: BuildContext) -> None:
+                step_ran.append(True)
+
+            def should_build(
+                self, ctx: BuildContext, step_manifest: StepManifest | None
+            ) -> ShouldBuild | None:
+                return ShouldBuild.SKIP  # Would normally skip
+
+        build(
+            registry=test_registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            steps=[SkipStep()],
+            force=True,  # Force runs all
+        )
+
+        assert step_ran == [True], "Step should run when force=True"
+
+    def test_full_rebuild_when_no_previous_manifest(self, tmp_path: Path) -> None:
+        """build() runs all steps when no previous manifest exists."""
+        test_registry = ModuleRegistry()
+        workspace = tmp_path / "workspace"
+        # Don't create workspace yet - no manifest exists
+        entry_point = tmp_path / "main.tsx"
+        entry_point.write_text("// entry")
+
+        step_ran = []
+        received_manifest = []
+
+        class TestStep(BuildStep):
+            @property
+            def name(self) -> str:
+                return "test-step"
+
+            def run(self, ctx: BuildContext) -> None:
+                step_ran.append(True)
+
+            def should_build(
+                self, ctx: BuildContext, step_manifest: StepManifest | None
+            ) -> ShouldBuild | None:
+                received_manifest.append(step_manifest)
+                # Return SKIP but it should still run because no previous manifest
+                return ShouldBuild.SKIP
+
+        build(
+            registry=test_registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            steps=[TestStep()],
+            force=False,
+        )
+
+        # Step should receive None for step_manifest (no previous)
+        assert received_manifest == [None]
+        # With no previous manifest, step runs even if SKIP (nothing to skip to)
+        assert step_ran == [True]
