@@ -89,7 +89,11 @@ describe("Shadow DOM utilities", () => {
       const documentHandler = vi.fn();
       document.addEventListener("pointerup", documentHandler);
 
-      const event = new PointerEvent("pointerup", { bubbles: true });
+      // Use PointerEvent if available (real browser), fall back to MouseEvent (jsdom)
+      const event =
+        typeof PointerEvent !== "undefined"
+          ? new PointerEvent("pointerup", { bubbles: true })
+          : new MouseEvent("pointerup", { bubbles: true });
       inner.dispatchEvent(event);
 
       expect(documentHandler).toHaveBeenCalled();

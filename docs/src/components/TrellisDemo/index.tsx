@@ -31,6 +31,14 @@ function TrellisMount({
 }: TrellisMountProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<TrellisInstance | null>(null);
+  // Track latest theme to avoid race condition between mount and theme update
+  const latestThemeRef = useRef(themeMode);
+
+  // Keep ref in sync with prop
+  useEffect(() => {
+    latestThemeRef.current = themeMode;
+    instanceRef.current?.update({ themeMode });
+  }, [themeMode]);
 
   // Mount on first render
   useEffect(() => {
@@ -45,9 +53,10 @@ function TrellisMount({
         const lib = await import("../../../static/trellis");
         if (!mounted || !containerRef.current) return;
 
+        // Use latestThemeRef to get current theme even if async load took time
         instanceRef.current = lib.mount(containerRef.current, {
           source,
-          themeMode,
+          themeMode: latestThemeRef.current,
           onStatusChange,
           // Path is /trellis/trellis/ because:
           // - Docusaurus baseUrl is /trellis/
@@ -74,11 +83,6 @@ function TrellisMount({
       instanceRef.current = null;
     };
   }, []); // Run once on mount
-
-  // Update theme when it changes
-  useEffect(() => {
-    instanceRef.current?.update({ themeMode });
-  }, [themeMode]);
 
   return <div ref={containerRef} className={styles.trellisHost} />;
 }
