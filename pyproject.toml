@@ -22,12 +22,12 @@ classifiers = [
 ]
 dependencies = [
     # Core deps (work in both server and browser/Pyodide)
-    "rich>=14.0",
+    "rich>=13.9",
     # Pygments is required by rich for traceback syntax highlighting. Normally
     # installed as a transitive dependency, but Pyodide's pre-built rich package
     # declares no dependencies in pyodide-lock.json, so we must list it explicitly.
     "pygments>=2.19",
-    "msgspec>=0.20",
+    "msgspec>=0.19",
     "httpx>=0.28",
     "jinja2>=3.1",
     # Server-only deps (excluded in Pyodide via PEP 508 markers)
