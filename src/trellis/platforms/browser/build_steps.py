@@ -64,7 +64,7 @@ class PyodideWorkerBuildStep(BuildStep):
     Builds the pyodide.worker.ts file as an IIFE bundle and adds an alias
     so the main bundle can import it as text via:
 
-        import WORKER_CODE from "@trellis/browser/pyodide.worker-bundle";
+        import WORKER_CODE from "@trellis/trellis-browser/pyodide.worker-bundle";
         new Worker(URL.createObjectURL(new Blob([WORKER_CODE])));
 
     Populates manifest with worker source directory and output bundle.
