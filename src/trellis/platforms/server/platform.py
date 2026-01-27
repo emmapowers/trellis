@@ -29,7 +29,7 @@ from trellis.bundler import (
 )
 from trellis.bundler.workspace import get_project_workspace
 from trellis.platforms.common import find_available_port
-from trellis.platforms.common.base import Platform, WatchConfig
+from trellis.platforms.common.base import Platform
 from trellis.platforms.server.handler import router as ws_router
 from trellis.platforms.server.middleware import RequestLoggingMiddleware
 from trellis.platforms.server.routes import create_static_dir, register_spa_fallback
@@ -55,6 +55,9 @@ def _print_startup_banner(host: str, port: int) -> None:
 class ServerPlatform(Platform):
     """FastAPI/WebSocket platform implementation."""
 
+    def __init__(self) -> None:
+        pass
+
     @property
     def name(self) -> str:
         return "server"
@@ -76,11 +79,14 @@ class ServerPlatform(Platform):
         dest: Path | None = None,
         library: bool = False,
         app_static_dir: Path | None = None,
-    ) -> None:
+    ) -> Path:
         """Build the server client bundle if needed.
 
         Uses the registry-based build system. The bundle is stored in a
         cache workspace (or dest if specified) and served via /static/.
+
+        Returns:
+            The workspace Path used for the build
         """
         entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)
@@ -94,16 +100,7 @@ class ServerPlatform(Platform):
             output_dir=dest,
             app_static_dir=app_static_dir,
         )
-
-    def get_watch_config(self) -> WatchConfig:
-        """Get configuration for watch mode."""
-        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
-        return WatchConfig(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=get_project_workspace(entry_point),
-            steps=self._get_build_steps(),
-        )
+        return workspace
 
     async def run(
         self,

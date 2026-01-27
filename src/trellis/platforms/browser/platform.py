@@ -37,12 +37,13 @@ class BrowserPlatform(Platform):
         dest: Path | None = None,
         library: bool = False,
         app_static_dir: Path | None = None,
-    ) -> None:
+    ) -> Path:
         """No-op in Pyodide - bundling is done before loading.
 
         The bundle is already built and served by the time this platform runs.
+        Returns a placeholder path since no actual workspace is used.
         """
-        pass
+        return Path(".")
 
     async def run(
         self,

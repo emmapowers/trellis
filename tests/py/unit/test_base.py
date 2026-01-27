@@ -1,5 +1,9 @@
 """Tests for core component types and props functions."""
 
+import inspect
+from pathlib import Path
+from unittest.mock import patch
+
 from trellis.core.components.base import ElementKind
 from trellis.core.components.composition import component
 from trellis.core.components.react import ReactComponentBase
@@ -88,3 +92,65 @@ class TestIComponentProtocolConformance:
         widget = MyWidget(name="MyWidget")
         assert widget.element_kind == ElementKind.REACT_COMPONENT
         assert widget.element_name == "MyWidget"
+
+
+class TestServerPlatformBundle:
+    """Tests for ServerPlatform.bundle() method."""
+
+    def test_bundle_returns_workspace_path(self, tmp_path: Path) -> None:
+        """bundle() returns the workspace Path used for the build."""
+        from trellis.platforms.server.platform import ServerPlatform  # noqa: PLC0415
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        platform = ServerPlatform()
+        with (
+            patch("trellis.platforms.server.platform.build"),
+            patch("trellis.platforms.server.platform.get_project_workspace") as mock_ws,
+        ):
+            mock_ws.return_value = workspace
+            result = platform.bundle()
+
+            assert result == workspace
+            assert isinstance(result, Path)
+
+    def test_bundle_return_type_is_path(self) -> None:
+        """bundle() return type annotation is Path."""
+        from trellis.platforms.server.platform import ServerPlatform  # noqa: PLC0415
+
+        platform = ServerPlatform()
+        sig = inspect.signature(platform.bundle)
+        # With from __future__ import annotations, the annotation is a string
+        assert sig.return_annotation in (Path, "Path")
+
+
+class TestDesktopPlatformBundle:
+    """Tests for DesktopPlatform.bundle() method."""
+
+    def test_bundle_returns_workspace_path(self, tmp_path: Path) -> None:
+        """bundle() returns the workspace Path used for the build."""
+        from trellis.platforms.desktop.platform import DesktopPlatform  # noqa: PLC0415
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        platform = DesktopPlatform()
+        with (
+            patch("trellis.platforms.desktop.platform.build"),
+            patch("trellis.platforms.desktop.platform.get_project_workspace") as mock_ws,
+        ):
+            mock_ws.return_value = workspace
+            result = platform.bundle()
+
+            assert result == workspace
+            assert isinstance(result, Path)
+
+    def test_bundle_return_type_is_path(self) -> None:
+        """bundle() return type annotation is Path."""
+        from trellis.platforms.desktop.platform import DesktopPlatform  # noqa: PLC0415
+
+        platform = DesktopPlatform()
+        sig = inspect.signature(platform.bundle)
+        # With from __future__ import annotations, the annotation is a string
+        assert sig.return_annotation in (Path, "Path")

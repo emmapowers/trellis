@@ -12,14 +12,8 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-from trellis.bundler.build import build
 from trellis.bundler.metafile import read_metafile
-
-if TYPE_CHECKING:
-    from trellis.bundler.registry import ModuleRegistry
-    from trellis.bundler.steps import BuildStep
 
 logger = logging.getLogger(__name__)
 
@@ -63,10 +57,8 @@ def get_watch_directories(workspace: Path) -> set[Path]:
 
 
 async def watch_and_rebuild(
-    registry: ModuleRegistry,
-    entry_point: Path,
     workspace: Path,
-    steps: list[BuildStep],
+    rebuild: Callable[[], object],
     on_rebuild: Callable[[], None] | None = None,
 ) -> None:
     """Watch source files and rebuild when they change.
@@ -75,10 +67,8 @@ async def watch_and_rebuild(
     triggering rebuilds. It should be run as a background task.
 
     Args:
-        registry: Module registry with registered modules
-        entry_point: Path to entry point file
-        workspace: Workspace directory for staging and output
-        steps: Build steps to execute on rebuild
+        workspace: Workspace directory containing metafile.json
+        rebuild: Callback to perform the rebuild (e.g., platform.bundle())
         on_rebuild: Optional callback invoked after successful rebuild
 
     Raises:
@@ -108,14 +98,8 @@ async def watch_and_rebuild(
             logger.info("Detected changes in: %s", ", ".join(changed_files))
 
             try:
-                # Force rebuild
-                build(
-                    registry=registry,
-                    entry_point=entry_point,
-                    workspace=workspace,
-                    steps=steps,
-                    force=True,
-                )
+                # Call the rebuild callback
+                rebuild()
                 logger.info("Bundle rebuilt successfully")
 
                 # Update watch paths from new metafile

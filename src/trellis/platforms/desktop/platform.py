@@ -26,7 +26,7 @@ from trellis.bundler import (
     registry,
 )
 from trellis.bundler.workspace import get_project_workspace
-from trellis.platforms.common.base import Platform, WatchConfig
+from trellis.platforms.common.base import Platform
 from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
 from trellis.utils.hot_reload import get_or_create_hot_reload
@@ -118,11 +118,14 @@ class DesktopPlatform(Platform):
         dest: Path | None = None,
         library: bool = False,
         app_static_dir: Path | None = None,
-    ) -> None:
+    ) -> Path:
         """Build the desktop client bundle if needed.
 
         Uses the registry-based build system. The bundle is stored in a
         cache workspace (or dest if specified).
+
+        Returns:
+            The workspace Path used for the build
         """
         entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
         workspace = get_project_workspace(entry_point)
@@ -136,16 +139,7 @@ class DesktopPlatform(Platform):
             output_dir=dest,
             app_static_dir=app_static_dir,
         )
-
-    def get_watch_config(self) -> WatchConfig:
-        """Get configuration for watch mode."""
-        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
-        return WatchConfig(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=get_project_workspace(entry_point),
-            steps=self._get_build_steps(),
-        )
+        return workspace
 
     def _create_commands(self) -> Commands:
         """Create PyTauri commands with access to platform state via closure."""

@@ -37,7 +37,7 @@ from trellis.app.client_state import ClientState, ThemeMode
 from trellis.app.trellis_app import TrellisApp
 from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent
-from trellis.platforms.common.base import Platform, PlatformArgumentError, PlatformType, WatchConfig
+from trellis.platforms.common.base import Platform, PlatformArgumentError, PlatformType
 from trellis.routing.enums import RoutingMode
 from trellis.utils.debug import configure_debug, list_categories, parse_categories
 from trellis.utils.log_setup import setup_logging
@@ -236,8 +236,9 @@ def _is_pyodide() -> bool:
 class _WatchThread:
     """Background thread for watching files and rebuilding bundles."""
 
-    def __init__(self, config: WatchConfig) -> None:
-        self._config = config
+    def __init__(self, workspace: Path, rebuild: Callable[[], None]) -> None:
+        self._workspace = workspace
+        self._rebuild = rebuild
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
@@ -279,10 +280,8 @@ class _WatchThread:
         try:
             self._loop.create_task(
                 watch_and_rebuild(
-                    self._config.registry,
-                    self._config.entry_point,
-                    self._config.workspace,
-                    self._config.steps,
+                    self._workspace,
+                    self._rebuild,
                     on_rebuild=on_rebuild,
                 )
             )
@@ -549,7 +548,7 @@ class Trellis:
             raise ValueError("No top component specified")
 
         # Build client bundle if needed
-        self._platform.bundle(
+        workspace = self._platform.bundle(
             force=self._args.get("build_bundle"),
             app_static_dir=self._static_files,
         )
@@ -559,10 +558,12 @@ class Trellis:
         # uniformly across all platforms (including desktop which blocks main thread)
         watch_thread: _WatchThread | None = None
         if self._args.get("watch"):
-            watch_config = self._platform.get_watch_config()
-            if watch_config is not None:
-                watch_thread = _WatchThread(watch_config)
-                watch_thread.start()
+
+            def rebuild() -> None:
+                self._platform.bundle(app_static_dir=self._static_files)
+
+            watch_thread = _WatchThread(workspace, rebuild)
+            watch_thread.start()
 
         try:
             await self._platform.run(

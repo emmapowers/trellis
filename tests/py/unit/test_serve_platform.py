@@ -11,6 +11,47 @@ from starlette.routing import Mount
 from trellis.platforms.browser.serve_platform import BrowserServePlatform
 
 
+class TestBrowserServePlatformBundle:
+    """Tests for BrowserServePlatform.bundle() method."""
+
+    @pytest.fixture
+    def platform(self) -> BrowserServePlatform:
+        """Create a BrowserServePlatform instance."""
+        return BrowserServePlatform()
+
+    def test_bundle_returns_workspace_path(
+        self,
+        platform: BrowserServePlatform,
+        tmp_path: Path,
+    ) -> None:
+        """bundle() returns the workspace Path used for the build."""
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        with (
+            patch("trellis.platforms.browser.serve_platform.build"),
+            patch("trellis.platforms.browser.serve_platform.get_project_workspace") as mock_ws,
+        ):
+            mock_ws.return_value = workspace
+            result = platform.bundle(library=True)
+
+            assert result == workspace
+            assert isinstance(result, Path)
+
+    def test_bundle_return_type_is_path(
+        self,
+        platform: BrowserServePlatform,
+        tmp_path: Path,
+    ) -> None:
+        """bundle() return type annotation is Path."""
+        import inspect  # noqa: PLC0415
+
+        sig = inspect.signature(platform.bundle)
+        # Check return annotation is Path
+        # With from __future__ import annotations, the annotation is a string
+        assert sig.return_annotation in (Path, "Path")
+
+
 class TestBrowserServePlatformRun:
     """Tests for BrowserServePlatform.run() method."""
 

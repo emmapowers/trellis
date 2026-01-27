@@ -43,7 +43,7 @@ from trellis.platforms.browser.build_steps import (
     WheelCopyStep,
 )
 from trellis.platforms.common import find_available_port
-from trellis.platforms.common.base import Platform, WatchConfig
+from trellis.platforms.common.base import Platform
 
 __all__ = ["BrowserServePlatform", "MissingEntryPointError"]
 
@@ -104,6 +104,9 @@ class BrowserServePlatform(Platform):
     - Serves the pre-built bundle via HTTP
     """
 
+    def __init__(self) -> None:
+        pass
+
     @property
     def name(self) -> str:
         return "browser-serve"
@@ -133,7 +136,7 @@ class BrowserServePlatform(Platform):
         library: bool = False,
         app_static_dir: Path | None = None,
         python_entry_point: Path | None = None,
-    ) -> None:
+    ) -> Path:
         """Build the browser client bundle if needed.
 
         Uses the registry-based build system. The bundle is stored in a
@@ -147,6 +150,9 @@ class BrowserServePlatform(Platform):
             app_static_dir: App-level static files directory to copy to dist
             python_entry_point: Python app entry point to embed in bundle.
                 If None in app mode, auto-detects from __main__ module.
+
+        Returns:
+            The workspace Path used for the build
         """
         # Use index.ts for library mode, main.tsx for app mode
         entry_name = "index.ts" if library else "main.tsx"
@@ -195,16 +201,7 @@ class BrowserServePlatform(Platform):
             app_static_dir=app_static_dir,
             python_entry_point=python_entry_point,
         )
-
-    def get_watch_config(self) -> WatchConfig:
-        """Get configuration for watch mode."""
-        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
-        return WatchConfig(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=get_project_workspace(entry_point),
-            steps=self._get_build_steps(),
-        )
+        return workspace
 
     async def run(
         self,
