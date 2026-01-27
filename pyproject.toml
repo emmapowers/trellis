@@ -22,27 +22,26 @@ classifiers = [
 ]
 dependencies = [
     # Core deps (work in both server and browser/Pyodide)
-    "rich>=13.0",
+    "rich>=14.0",
     # Pygments is required by rich for traceback syntax highlighting. Normally
     # installed as a transitive dependency, but Pyodide's pre-built rich package
     # declares no dependencies in pyodide-lock.json, so we must list it explicitly.
-    "pygments>=2.13",
-    "msgspec>=0.19",
-    "httpx>=0.27",
+    "pygments>=2.19",
+    "msgspec>=0.20",
+    "httpx>=0.28",
     "jinja2>=3.1",
-    "wcmatch>=10.0",
     # Server-only deps (excluded in Pyodide via PEP 508 markers)
-    "fastapi>=0.115; sys_platform != 'emscripten'",
-    "uvicorn[standard]>=0.34; sys_platform != 'emscripten'",
-    "click>=8.0; sys_platform != 'emscripten'",
+    "fastapi>=0.128; sys_platform != 'emscripten'",
+    "uvicorn[standard]>=0.40; sys_platform != 'emscripten'",
+    "click>=8.3; sys_platform != 'emscripten'",
     "jurigged>=0.6.0; sys_platform != 'emscripten'",
-    "watchfiles>=1.0; sys_platform != 'emscripten'",
+    "watchfiles>=1.1; sys_platform != 'emscripten'",
 ]
 
 [project.optional-dependencies]
 desktop = [
     "pytauri-wheel>=0.8.0",
-    "pydantic>=2.0",
+    "pydantic>=2.12",
 ]
 
 [project.urls]

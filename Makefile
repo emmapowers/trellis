@@ -55,7 +55,7 @@ $(DESKTOP_DIST)/bundle.js: $(TS_SOURCES)
 	trellis bundle build --platform desktop --dest $(DESKTOP_DIST)
 
 $(BROWSER_DIST)/bundle.js: $(TS_SOURCES)
-	trellis bundle build --platform browser --dest $(BROWSER_DIST)
+	trellis bundle build --platform browser --dest $(BROWSER_DIST) --library
 
 #------------------------------------------------------------------------------
 # Browser library bundle (for playground and TrellisDemo)
