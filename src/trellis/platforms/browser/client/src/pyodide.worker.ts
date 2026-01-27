@@ -21,9 +21,13 @@ const WHEEL_PATHS = [
 declare function importScripts(...urls: string[]): void;
 declare function loadPyodide(options: { indexURL: string }): Promise<PyodideInterface>;
 
+interface PyProxy {
+  toJs(): unknown;
+}
+
 interface PyodideInterface {
   loadPackage(packages: string[]): Promise<void>;
-  runPythonAsync(code: string): Promise<unknown>;
+  runPythonAsync(code: string): Promise<PyProxy>;
   registerJsModule(name: string, module: unknown): void;
   pyimport(name: string): { install(pkg: string): Promise<void> };
   globals: {
@@ -56,6 +60,48 @@ interface WorkerMessage {
   main?: string;
   payload?: unknown;
 }
+
+/** Result from Python wheel install helper */
+interface WheelInstallResult {
+  success: boolean;
+  retry: boolean;
+  error: string;
+}
+
+/**
+ * Python helper for wheel installation with structured error handling.
+ *
+ * Returns a dict with:
+ * - success: whether installation succeeded
+ * - retry: whether to try the next URL (only true for fetch errors)
+ * - error: error message if failed
+ */
+const WHEEL_INSTALL_HELPER = `
+async def _try_install_wheel(url: str) -> dict:
+    """Try to install a wheel, returning structured error info."""
+    import micropip
+    try:
+        await micropip.install(url, verbose=True)
+        return {"success": True, "retry": False, "error": ""}
+    except Exception as e:
+        msg = str(e).lower()
+        # Fetch errors - worth trying next URL
+        is_fetch_error = (
+            "404" in msg or
+            "not found" in msg or
+            "failed to fetch" in msg or
+            "networkerror" in msg or
+            "network error" in msg or
+            "cors" in msg or
+            "cross-origin" in msg or
+            "not a zip file" in msg  # Server returned HTML error page
+        )
+        return {
+            "success": False,
+            "retry": is_fetch_error,
+            "error": str(e)
+        }
+`;
 
 // === Worker State ===
 let pyodide: PyodideInterface | null = null;
@@ -141,14 +187,17 @@ async function installTrellisWheel(
   const errors: Array<{ url: string; error: string }> = [];
 
   for (const wheelUrl of sources) {
-    try {
-      console.log(`[Pyodide] Trying wheel: ${wheelUrl}`);
-      // Use globals to avoid string interpolation injection
-      pyodide.globals.set("_wheel_url", wheelUrl);
-      await pyodide.runPythonAsync(
-        `import micropip\nawait micropip.install(_wheel_url, verbose=True)`
-      );
-      pyodide.globals.delete("_wheel_url");
+    console.log(`[Pyodide] Trying wheel: ${wheelUrl}`);
+    // Use globals to avoid string interpolation injection
+    pyodide.globals.set("_wheel_url", wheelUrl);
+    const resultProxy = await pyodide.runPythonAsync(
+      `await _try_install_wheel(_wheel_url)`
+    );
+    pyodide.globals.delete("_wheel_url");
+
+    const result = resultProxy.toJs() as WheelInstallResult;
+
+    if (result.success) {
       console.log(`[Pyodide] Successfully installed wheel from: ${wheelUrl}`);
       // Log installed packages for debugging
       await pyodide.runPythonAsync(`
@@ -156,20 +205,41 @@ import micropip
 print("[Pyodide] Installed packages:", list(micropip.list().keys()))
 `);
       return;
-    } catch (e) {
-      const errorMsg = categorizeError(e as Error);
-      console.warn(`[Pyodide] Failed to install from ${wheelUrl}: ${errorMsg}`);
-      errors.push({ url: wheelUrl, error: errorMsg });
+    }
+
+    // Installation failed
+    const errorMsg = categorizeError(new Error(result.error));
+    console.warn(`[Pyodide] Failed to install from ${wheelUrl}: ${errorMsg}`);
+    errors.push({ url: wheelUrl, error: errorMsg });
+
+    if (!result.retry) {
+      // Not a fetch error - don't try other URLs, they'll have the same problem
+      console.warn(`[Pyodide] Installation error (not a fetch error), stopping`);
+      break;
     }
   }
 
-  // Format comprehensive error message with all attempts
+  // Determine error message based on whether we stopped early
+  const lastError = errors[errors.length - 1];
+  const stoppedEarly = errors.length < sources.length;
+
+  if (stoppedEarly && lastError) {
+    // We stopped because of an installation error, not because we ran out of URLs
+    throw new Error(
+      `Failed to install Trellis wheel.\n\n` +
+        `The wheel was found but installation failed:\n` +
+        `  ${lastError.error}\n\n` +
+        `This is usually caused by a missing or incompatible dependency.`
+    );
+  }
+
+  // All URLs failed with fetch errors
   const details = errors
     .map(({ url, error }) => `  • ${url}\n    → ${error}`)
     .join("\n");
 
   throw new Error(
-    `Could not install Trellis wheel.\n\n` +
+    `Could not download Trellis wheel.\n\n` +
       `Tried:\n${details}\n\n` +
       `For local development, run:\n` +
       `  pixi run build-wheel && pixi run copy-wheel-to-docs`
@@ -194,11 +264,12 @@ async function initializePyodide(
     );
   }
 
-  // Phase 2: Load micropip
+  // Phase 2: Load micropip and define install helper
   console.log("[Pyodide] Phase 2: Loading micropip...");
   postStatus("Installing Trellis...");
   try {
     await pyodide.loadPackage(["micropip"]);
+    await pyodide.runPythonAsync(WHEEL_INSTALL_HELPER);
   } catch (e) {
     throw new Error(
       `Loading package manager failed: ${categorizeError(e as Error)}`
