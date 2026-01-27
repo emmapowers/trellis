@@ -248,6 +248,11 @@ class WheelCopyStep(BuildStep):
         if prev_wheel_mtime is None or wheel.stat().st_mtime != prev_wheel_mtime:
             return ShouldBuild.BUILD
 
+        # Verify dest file exists - rebuild if deleted
+        dest = ctx.dist_dir / wheel.name
+        if not dest.exists():
+            return ShouldBuild.BUILD
+
         return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:

@@ -19,6 +19,8 @@ SYSTEM_PACKAGES: dict[str, str] = {
 def get_bin(node_modules: Path, name: str) -> Path:
     """Get path to a binary installed in node_modules.
 
+    Checks for platform-specific extensions (.cmd, .exe) on Windows.
+
     Args:
         node_modules: Path to node_modules directory
         name: Name of the binary (e.g., "esbuild", "tsc")
@@ -26,7 +28,12 @@ def get_bin(node_modules: Path, name: str) -> Path:
     Returns:
         Path to the binary in node_modules/.bin/
     """
-    return node_modules / ".bin" / name
+    bin_dir = node_modules / ".bin"
+    for ext in ("", ".cmd", ".exe"):
+        candidate = bin_dir / (name + ext)
+        if candidate.exists():
+            return candidate
+    return bin_dir / name
 
 
 def generate_package_json(packages: dict[str, str]) -> dict[str, object]:

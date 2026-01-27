@@ -217,8 +217,12 @@ class RegistryGenerationStep(BuildStep):
         if step_manifest.metadata.get("collected_hash") != current_hash:
             return ShouldBuild.BUILD
 
-        # Skipping - restore context fields that run() would have set
+        # Verify output file exists - rebuild if deleted
         registry_path = ctx.workspace / "_registry.ts"
+        if not registry_path.exists():
+            return ShouldBuild.BUILD
+
+        # Skipping - restore context fields that run() would have set
         ctx.generated_files["_registry"] = registry_path
         ctx.esbuild_args.append(f"--alias:@trellis/_registry={registry_path}")
 
@@ -265,12 +269,17 @@ class TsconfigStep(BuildStep):
         if step_manifest is None:
             return ShouldBuild.BUILD
 
+        # Verify output file exists - rebuild if deleted
+        tsconfig_path = ctx.workspace / "tsconfig.json"
+        if not tsconfig_path.exists():
+            return ShouldBuild.BUILD
+
         current_hash = self._compute_inputs_hash(ctx)
         if step_manifest.metadata.get("inputs_hash") != current_hash:
             return ShouldBuild.BUILD
 
         # Restore context fields that run() would have set
-        ctx.generated_files["tsconfig"] = ctx.workspace / "tsconfig.json"
+        ctx.generated_files["tsconfig"] = tsconfig_path
 
         return ShouldBuild.SKIP
 
@@ -371,6 +380,11 @@ class TypeCheckStep(BuildStep):
         # Track source files
         step_manifest.source_paths.update(collect_ts_source_files(ctx.entry_point.parent))
 
+        # Track generated files as inputs
+        for gen_file in ctx.generated_files.values():
+            if gen_file.exists():
+                step_manifest.source_paths.add(gen_file)
+
 
 class DeclarationStep(BuildStep):
     """Generate a bundled TypeScript declaration file (.d.ts).
@@ -419,6 +433,11 @@ class DeclarationStep(BuildStep):
         step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
         step_manifest.source_paths.update(collect_ts_source_files(ctx.entry_point.parent))
         step_manifest.dest_files.add(output_file)
+
+        # Track generated files as inputs
+        for gen_file in ctx.generated_files.values():
+            if gen_file.exists():
+                step_manifest.source_paths.add(gen_file)
 
 
 class BundleBuildStep(BuildStep):

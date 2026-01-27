@@ -129,16 +129,20 @@ def build(
     # Single pass: evaluate and run each step in order
     for step in steps:
         prev_step_manifest = previous_manifest.steps.get(step.name) if previous_manifest else None
-        should_build = step.should_build(ctx, prev_step_manifest) or ShouldBuild.BUILD
 
-        # Run step if: forced, should_build says BUILD, or nothing to skip from
-        if force or should_build == ShouldBuild.BUILD or prev_step_manifest is None:
+        # Run step if: forced or no previous manifest
+        if force or prev_step_manifest is None:
             logger.debug("Running step: %s", step.name)
             step.run(ctx)
-            # Steps write directly to ctx.manifest.steps
         else:
-            logger.debug("Skipping step: %s", step.name)
-            ctx.manifest.steps[step.name] = prev_step_manifest
+            # Check if step needs to rebuild
+            decision = step.should_build(ctx, prev_step_manifest)
+            if decision is None or decision == ShouldBuild.BUILD:
+                logger.debug("Running step: %s", step.name)
+                step.run(ctx)
+            else:
+                logger.debug("Skipping step: %s", step.name)
+                ctx.manifest.steps[step.name] = prev_step_manifest
 
     # Save manifest for next build
     save_manifest(workspace, ctx.manifest)

@@ -204,6 +204,7 @@ class TestBuildContext:
 
         assert hasattr(ctx, "manifest")
 
+    @pytest.mark.slow
     def test_exec_in_build_env_sets_cwd_to_workspace(self, tmp_path: Path) -> None:
         """exec_in_build_env runs command with cwd set to workspace."""
         registry = ModuleRegistry()
@@ -225,6 +226,7 @@ class TestBuildContext:
         # pwd output includes newline, workspace.resolve() handles symlinks
         assert result.returncode == 0
 
+    @pytest.mark.slow
     def test_exec_in_build_env_uses_ctx_env(self, tmp_path: Path) -> None:
         """exec_in_build_env passes ctx.env to subprocess."""
         registry = ModuleRegistry()
@@ -247,6 +249,7 @@ class TestBuildContext:
         result = ctx.exec_in_build_env(["printenv", "TEST_VAR"], check=False)
         assert result.returncode == 0, "TEST_VAR should be set in environment"
 
+    @pytest.mark.slow
     def test_exec_in_build_env_raises_on_failure_when_check_true(self, tmp_path: Path) -> None:
         """exec_in_build_env raises CalledProcessError when check=True and command fails."""
         registry = ModuleRegistry()
@@ -266,6 +269,7 @@ class TestBuildContext:
         with pytest.raises(subprocess.CalledProcessError):
             ctx.exec_in_build_env(["false"], check=True)
 
+    @pytest.mark.slow
     def test_exec_in_build_env_returns_result_when_check_false(self, tmp_path: Path) -> None:
         """exec_in_build_env returns CompletedProcess when check=False."""
         registry = ModuleRegistry()
@@ -364,7 +368,7 @@ class TestBuildStep:
         with pytest.raises(TypeError):
             BuildStep()  # type: ignore[abstract]
 
-    def test_requires_name_property(self, tmp_path: Path) -> None:
+    def test_requires_name_property(self) -> None:
         """BuildStep subclass must implement name property."""
 
         class IncompleteStep(BuildStep):
@@ -374,7 +378,7 @@ class TestBuildStep:
         with pytest.raises(TypeError):
             IncompleteStep()  # type: ignore[abstract]
 
-    def test_requires_run_method(self, tmp_path: Path) -> None:
+    def test_requires_run_method(self) -> None:
         """BuildStep subclass must implement run method."""
 
         class IncompleteStep(BuildStep):
@@ -2659,7 +2663,12 @@ class TestBuildOrchestration:
         assert step_ran == [True], "Step should run when force=True"
 
     def test_full_rebuild_when_no_previous_manifest(self, tmp_path: Path) -> None:
-        """build() runs all steps when no previous manifest exists."""
+        """build() runs all steps when no previous manifest exists.
+
+        When there's no previous manifest, should_build is not called - we know
+        we must build, and calling should_build would be wasteful (and it mutates
+        ctx for SKIP cases).
+        """
         test_registry = ModuleRegistry()
         workspace = tmp_path / "workspace"
         # Don't create workspace yet - no manifest exists
@@ -2667,7 +2676,7 @@ class TestBuildOrchestration:
         entry_point.write_text("// entry")
 
         step_ran = []
-        received_manifest = []
+        should_build_called = []
 
         class TestStep(BuildStep):
             @property
@@ -2680,8 +2689,7 @@ class TestBuildOrchestration:
             def should_build(
                 self, ctx: BuildContext, step_manifest: StepManifest | None
             ) -> ShouldBuild | None:
-                received_manifest.append(step_manifest)
-                # Return SKIP but it should still run because no previous manifest
+                should_build_called.append(True)
                 return ShouldBuild.SKIP
 
         build(
@@ -2692,7 +2700,7 @@ class TestBuildOrchestration:
             force=False,
         )
 
-        # Step should receive None for step_manifest (no previous)
-        assert received_manifest == [None]
-        # With no previous manifest, step runs even if SKIP (nothing to skip to)
+        # should_build not called when no previous manifest (nothing to compare)
+        assert should_build_called == []
+        # Step runs because there's no previous manifest to skip to
         assert step_ran == [True]

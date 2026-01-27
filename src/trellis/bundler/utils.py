@@ -83,6 +83,9 @@ def safe_extract(tar: tarfile.TarFile, dest: Path) -> None:
         # Reject symlinks and hardlinks to prevent link-based escapes
         if member.issym() or member.islnk():
             raise ValueError(f"Tarball contains link entry: {member.name}")
+        # Reject device files and FIFOs
+        if member.ischr() or member.isblk() or member.isfifo():
+            raise ValueError(f"Tarball contains device/fifo entry: {member.name}")
         member_path = (dest / member.name).resolve()
         if not member_path.is_relative_to(dest):
             raise ValueError(f"Tarball contains path traversal: {member.name}")
@@ -151,9 +154,10 @@ def is_rebuild_needed(inputs: Iterable[Path], outputs: Iterable[Path]) -> bool:
 
     # Check if any input (file or directory contents) is newer than oldest output
     for input_path in input_list:
-        if input_path.exists():
-            newest_input = _get_newest_mtime(input_path)
-            if newest_input > oldest_output:
-                return True
+        if not input_path.exists():
+            return True  # Missing input forces rebuild
+        newest_input = _get_newest_mtime(input_path)
+        if newest_input > oldest_output:
+            return True
 
     return False

@@ -303,6 +303,28 @@ class TestIsRebuildNeeded:
         # Should need rebuild
         assert is_rebuild_needed([source_file, static_dir], [output]) is True
 
+    def test_returns_true_when_input_missing(self, tmp_path: Path) -> None:
+        """is_rebuild_needed returns True when input file doesn't exist."""
+        output = tmp_path / "output.js"
+        output.write_text("output")
+        missing_input = tmp_path / "missing.ts"  # Does not exist
+
+        result = is_rebuild_needed(inputs=[missing_input], outputs=[output])
+
+        assert result is True
+
+    def test_returns_true_when_any_input_missing(self, tmp_path: Path) -> None:
+        """is_rebuild_needed returns True when any input in list is missing."""
+        output = tmp_path / "output.js"
+        output.write_text("output")
+        existing_input = tmp_path / "exists.ts"
+        existing_input.write_text("exists")
+        missing_input = tmp_path / "missing.ts"  # Does not exist
+
+        result = is_rebuild_needed(inputs=[existing_input, missing_input], outputs=[output])
+
+        assert result is True
+
 
 class TestFindProjectRoot:
     """Tests for find_project_root function."""
@@ -488,4 +510,43 @@ class TestSafeExtract:
         tar_buffer.seek(0)
         with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
             with pytest.raises(ValueError, match="link entry"):
+                safe_extract(tar, tmp_path)
+
+    def test_rejects_character_device(self, tmp_path: Path) -> None:
+        """Rejects character device entries."""
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            info = tarfile.TarInfo(name="package/dev")
+            info.type = tarfile.CHRTYPE
+            tar.addfile(info)
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            with pytest.raises(ValueError, match="device/fifo"):
+                safe_extract(tar, tmp_path)
+
+    def test_rejects_block_device(self, tmp_path: Path) -> None:
+        """Rejects block device entries."""
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            info = tarfile.TarInfo(name="package/blk")
+            info.type = tarfile.BLKTYPE
+            tar.addfile(info)
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            with pytest.raises(ValueError, match="device/fifo"):
+                safe_extract(tar, tmp_path)
+
+    def test_rejects_fifo(self, tmp_path: Path) -> None:
+        """Rejects FIFO/named pipe entries."""
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            info = tarfile.TarInfo(name="package/pipe")
+            info.type = tarfile.FIFOTYPE
+            tar.addfile(info)
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            with pytest.raises(ValueError, match="device/fifo"):
                 safe_extract(tar, tmp_path)

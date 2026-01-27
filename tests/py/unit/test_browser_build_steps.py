@@ -577,6 +577,10 @@ class TestWheelCopyStepManifest:
 
         ctx = self._make_context(tmp_path)
 
+        # Create the dest file that should_build checks for
+        dest_wheel = ctx.dist_dir / "trellis-0.1.0-py3-none-any.whl"
+        dest_wheel.write_text("wheel content")
+
         prev_step_manifest = StepManifest(
             metadata={"wheel_name": "trellis-0.1.0-py3-none-any.whl", "wheel_mtime": wheel_mtime}
         )

@@ -295,3 +295,49 @@ class TestGetBin:
 
         assert result.name == "tsc"
         assert ".cmd" not in str(result)
+
+    def test_finds_cmd_extension_on_windows(self, tmp_path: Path) -> None:
+        """get_bin finds .cmd extension when it exists."""
+        node_modules = tmp_path / "node_modules"
+        bin_dir = node_modules / ".bin"
+        bin_dir.mkdir(parents=True)
+        # Create only the .cmd version (simulating Windows npm install)
+        (bin_dir / "esbuild.cmd").touch()
+
+        result = get_bin(node_modules, "esbuild")
+
+        assert result == bin_dir / "esbuild.cmd"
+
+    def test_finds_exe_extension(self, tmp_path: Path) -> None:
+        """get_bin finds .exe extension when it exists."""
+        node_modules = tmp_path / "node_modules"
+        bin_dir = node_modules / ".bin"
+        bin_dir.mkdir(parents=True)
+        (bin_dir / "tsc.exe").touch()
+
+        result = get_bin(node_modules, "tsc")
+
+        assert result == bin_dir / "tsc.exe"
+
+    def test_prefers_no_extension_when_exists(self, tmp_path: Path) -> None:
+        """get_bin prefers bare name when it exists (Unix behavior)."""
+        node_modules = tmp_path / "node_modules"
+        bin_dir = node_modules / ".bin"
+        bin_dir.mkdir(parents=True)
+        (bin_dir / "esbuild").touch()
+        (bin_dir / "esbuild.cmd").touch()
+
+        result = get_bin(node_modules, "esbuild")
+
+        assert result == bin_dir / "esbuild"
+
+    def test_returns_bare_name_when_nothing_exists(self, tmp_path: Path) -> None:
+        """get_bin falls back to bare name when no extension exists."""
+        node_modules = tmp_path / "node_modules"
+        bin_dir = node_modules / ".bin"
+        bin_dir.mkdir(parents=True)
+        # Nothing exists
+
+        result = get_bin(node_modules, "missing")
+
+        assert result == bin_dir / "missing"

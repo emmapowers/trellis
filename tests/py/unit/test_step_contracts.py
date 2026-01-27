@@ -215,6 +215,10 @@ class TestRegistryGenerationStepShouldBuild:
         ctx = make_context()
         step = RegistryGenerationStep()
 
+        # Create the registry file that should_build checks for
+        registry_path = ctx.workspace / "_registry.ts"
+        registry_path.write_text("// registry")
+
         # Compute the expected hash
         current_hash = step._compute_collected_hash(ctx)
         prev_manifest = StepManifest(metadata={"collected_hash": current_hash})
@@ -302,6 +306,10 @@ class TestTsconfigStepShouldBuild:
         """should_build() returns SKIP when inputs hash matches previous."""
         ctx = make_context()
         step = TsconfigStep()
+
+        # Create the tsconfig file that should_build checks for
+        tsconfig_path = ctx.workspace / "tsconfig.json"
+        tsconfig_path.write_text("{}")
 
         current_hash = step._compute_inputs_hash(ctx)
         prev_manifest = StepManifest(metadata={"inputs_hash": current_hash})
