@@ -4,6 +4,7 @@ import inspect
 from pathlib import Path
 from unittest.mock import patch
 
+from tests.helpers import requires_pytauri
 from trellis.core.components.base import ElementKind
 from trellis.core.components.composition import component
 from trellis.core.components.react import ReactComponentBase
@@ -125,11 +126,13 @@ class TestServerPlatformBundle:
         assert sig.return_annotation in (Path, "Path")
 
 
+@requires_pytauri
 class TestDesktopPlatformBundle:
     """Tests for DesktopPlatform.bundle() method."""
 
     def test_bundle_returns_workspace_path(self, tmp_path: Path) -> None:
         """bundle() returns the workspace Path used for the build."""
+        # Import guarded by @requires_pytauri on class
         from trellis.platforms.desktop.platform import DesktopPlatform  # noqa: PLC0415
 
         workspace = tmp_path / "workspace"
@@ -148,6 +151,7 @@ class TestDesktopPlatformBundle:
 
     def test_bundle_return_type_is_path(self) -> None:
         """bundle() return type annotation is Path."""
+        # Import guarded by @requires_pytauri on class
         from trellis.platforms.desktop.platform import DesktopPlatform  # noqa: PLC0415
 
         platform = DesktopPlatform()
