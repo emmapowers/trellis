@@ -129,7 +129,7 @@ class ModuleRegistry:
             CollectedModules with all modules and merged packages
 
         Raises:
-            ValueError: If package version conflicts exist
+            ValueError: If package version conflicts or export name collisions exist
         """
         modules = list(self._modules.values())
 
@@ -145,6 +145,19 @@ class ModuleRegistry:
                         )
                 else:
                     packages[pkg_name] = pkg_version
+
+        # Check for export name collisions (only for COMPONENT and FUNCTION)
+        # INITIALIZER and STYLESHEET use side-effect imports without named bindings
+        seen_exports: dict[str, str] = {}  # export name -> module name
+        for module in modules:
+            for export in module.exports:
+                if export.kind in (ExportKind.COMPONENT, ExportKind.FUNCTION):
+                    if export.name in seen_exports:
+                        raise ValueError(
+                            f"Export name collision for '{export.name}': "
+                            f"exported by both '{seen_exports[export.name]}' and '{module.name}'"
+                        )
+                    seen_exports[export.name] = module.name
 
         return CollectedModules(modules=modules, packages=packages)
 

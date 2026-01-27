@@ -165,6 +165,84 @@ def register_module(registry):
         with pytest.raises(ValueError, match="version conflict"):
             registry.collect()
 
+    def test_collect_errors_on_duplicate_component_name(self) -> None:
+        """collect() raises error if two modules export components with same name."""
+        registry = ModuleRegistry()
+        registry.register(
+            "module-a",
+            exports=[("Button", ExportKind.COMPONENT, "Button.tsx")],
+        )
+        registry.register(
+            "module-b",
+            exports=[("Button", ExportKind.COMPONENT, "widgets/Button.tsx")],
+        )
+
+        with pytest.raises(ValueError, match="Export name collision.*Button"):
+            registry.collect()
+
+    def test_collect_errors_on_duplicate_function_name(self) -> None:
+        """collect() raises error if two modules export functions with same name."""
+        registry = ModuleRegistry()
+        registry.register(
+            "module-a",
+            exports=[("formatDate", ExportKind.FUNCTION, "utils.ts")],
+        )
+        registry.register(
+            "module-b",
+            exports=[("formatDate", ExportKind.FUNCTION, "helpers.ts")],
+        )
+
+        with pytest.raises(ValueError, match="Export name collision.*formatDate"):
+            registry.collect()
+
+    def test_collect_allows_same_name_for_initializers(self) -> None:
+        """collect() allows duplicate names for initializers (side-effect imports)."""
+        registry = ModuleRegistry()
+        registry.register(
+            "module-a",
+            exports=[("setup", ExportKind.INITIALIZER, "setup.ts")],
+        )
+        registry.register(
+            "module-b",
+            exports=[("setup", ExportKind.INITIALIZER, "setup.ts")],
+        )
+
+        # Should not raise - initializers don't create named bindings
+        collected = registry.collect()
+        assert len(collected.modules) == 2
+
+    def test_collect_allows_same_name_for_stylesheets(self) -> None:
+        """collect() allows duplicate names for stylesheets (side-effect imports)."""
+        registry = ModuleRegistry()
+        registry.register(
+            "module-a",
+            exports=[("styles", ExportKind.STYLESHEET, "theme.css")],
+        )
+        registry.register(
+            "module-b",
+            exports=[("styles", ExportKind.STYLESHEET, "base.css")],
+        )
+
+        # Should not raise - stylesheets don't create named bindings
+        collected = registry.collect()
+        assert len(collected.modules) == 2
+
+    def test_collect_allows_same_name_different_kinds(self) -> None:
+        """collect() allows same name if one is initializer/stylesheet."""
+        registry = ModuleRegistry()
+        registry.register(
+            "module-a",
+            exports=[("Button", ExportKind.COMPONENT, "Button.tsx")],
+        )
+        registry.register(
+            "module-b",
+            exports=[("Button", ExportKind.INITIALIZER, "Button.ts")],
+        )
+
+        # Should not raise - initializer doesn't conflict with component
+        collected = registry.collect()
+        assert len(collected.modules) == 2
+
     def test_clear_removes_all_modules(self) -> None:
         """clear() removes all registered modules."""
         registry = ModuleRegistry()
