@@ -89,8 +89,8 @@ class HandlerRegistry:
                 logger.exception("Failed to send message to handler")
 
 
-# Global registry singleton
-_global_registry: HandlerRegistry | None = None
+# Global registry singleton (eager initialization for thread safety)
+_global_registry = HandlerRegistry()
 
 
 def get_global_registry() -> HandlerRegistry:
@@ -99,7 +99,4 @@ def get_global_registry() -> HandlerRegistry:
     Returns:
         The global HandlerRegistry instance
     """
-    global _global_registry
-    if _global_registry is None:
-        _global_registry = HandlerRegistry()
     return _global_registry
