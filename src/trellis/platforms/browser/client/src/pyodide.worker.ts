@@ -23,6 +23,7 @@ declare function loadPyodide(options: { indexURL: string }): Promise<PyodideInte
 
 interface PyProxy {
   toJs(): unknown;
+  destroy(): void;
 }
 
 interface PyodideInterface {
@@ -195,7 +196,12 @@ async function installTrellisWheel(
     );
     pyodide.globals.delete("_wheel_url");
 
-    const result = resultProxy.toJs() as WheelInstallResult;
+    let result: WheelInstallResult;
+    try {
+      result = resultProxy.toJs() as WheelInstallResult;
+    } finally {
+      resultProxy.destroy();
+    }
 
     if (result.success) {
       console.log(`[Pyodide] Successfully installed wheel from: ${wheelUrl}`);

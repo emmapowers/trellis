@@ -177,7 +177,7 @@ def register_module(registry):
             exports=[("Button", ExportKind.COMPONENT, "widgets/Button.tsx")],
         )
 
-        with pytest.raises(ValueError, match="Export name collision.*Button"):
+        with pytest.raises(ValueError, match=r"Export name collision.*Button"):
             registry.collect()
 
     def test_collect_errors_on_duplicate_function_name(self) -> None:
@@ -192,7 +192,7 @@ def register_module(registry):
             exports=[("formatDate", ExportKind.FUNCTION, "helpers.ts")],
         )
 
-        with pytest.raises(ValueError, match="Export name collision.*formatDate"):
+        with pytest.raises(ValueError, match=r"Export name collision.*formatDate"):
             registry.collect()
 
     def test_collect_allows_same_name_for_initializers(self) -> None:
