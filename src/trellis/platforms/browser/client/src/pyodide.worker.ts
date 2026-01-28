@@ -28,7 +28,8 @@ interface PyProxy {
 
 interface PyodideInterface {
   loadPackage(packages: string[]): Promise<void>;
-  runPythonAsync(code: string): Promise<PyProxy>;
+  // Returns undefined when Python returns None, otherwise a PyProxy
+  runPythonAsync(code: string): Promise<PyProxy | undefined>;
   registerJsModule(name: string, module: unknown): void;
   pyimport(name: string): { install(pkg: string): Promise<void> };
   globals: {
@@ -196,6 +197,11 @@ async function installTrellisWheel(
     );
     pyodide.globals.delete("_wheel_url");
 
+    // _try_install_wheel always returns a dict, never None
+    if (!resultProxy) {
+      throw new Error("Unexpected: _try_install_wheel returned None");
+    }
+
     let result: WheelInstallResult;
     try {
       result = resultProxy.toJs() as WheelInstallResult;
@@ -205,7 +211,7 @@ async function installTrellisWheel(
 
     if (result.success) {
       console.log(`[Pyodide] Successfully installed wheel from: ${wheelUrl}`);
-      // Log installed packages for debugging
+      // Log installed packages for debugging (print returns None, no proxy)
       await pyodide.runPythonAsync(`
 import micropip
 print("[Pyodide] Installed packages:", list(micropip.list().keys()))
@@ -275,6 +281,7 @@ async function initializePyodide(
   postStatus("Installing Trellis...");
   try {
     await pyodide.loadPackage(["micropip"]);
+    // Defining a function returns None, so no proxy to destroy
     await pyodide.runPythonAsync(WHEEL_INSTALL_HELPER);
   } catch (e) {
     throw new Error(
@@ -363,6 +370,7 @@ async function runCode(
     postStatus("Installing application...");
     // Use globals to avoid string interpolation injection
     pyodide.globals.set("_app_wheel_url", source.wheelUrl);
+    // micropip.install returns None, no proxy to destroy
     await pyodide.runPythonAsync(
       `import micropip\nawait micropip.install(_app_wheel_url)`
     );
@@ -372,9 +380,13 @@ async function runCode(
   postStatus("Starting application...");
   const code = prepareSource(source, main);
 
-  pyodide.runPythonAsync(code).catch((e: Error) => {
-    postError(e.message);
-  });
+  // App code may or may not return a value; destroy proxy if present
+  pyodide
+    .runPythonAsync(code)
+    .then((proxy) => proxy?.destroy())
+    .catch((e: Error) => {
+      postError(e.message);
+    });
 }
 
 // === Message Handler ===
