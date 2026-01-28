@@ -7,6 +7,7 @@ import pytest
 from tests.conftest import PatchCapture
 from trellis.core.components.composition import component
 from trellis.routing import Route, RouterState, Routes, router
+from trellis.widgets.basic import Label
 
 
 class TestRoutesExclusiveMatching:
@@ -271,7 +272,6 @@ class TestRoutesValidation:
 
     def test_non_route_child_raises_type_error(self, capture_patches: type[PatchCapture]) -> None:
         """Routes raises TypeError when child is not a Route component."""
-        from trellis.widgets.basic import Label
 
         @component
         def App() -> None:
@@ -288,7 +288,6 @@ class TestRoutesValidation:
         self, capture_patches: type[PatchCapture]
     ) -> None:
         """Error message includes the name of the invalid component."""
-        from trellis.widgets.basic import Label
 
         @component
         def App() -> None:

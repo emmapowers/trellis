@@ -4,7 +4,7 @@ import dataclasses
 
 import pytest
 
-from trellis.app import ClientState, ThemeMode, ThemeTokens
+from trellis.app import ClientState, ThemeMode, ThemeTokens, theme
 
 
 class TestClientStateTheme:
@@ -100,16 +100,12 @@ class TestThemeTokens:
 
     def test_tokens_are_css_variables(self) -> None:
         """Theme tokens should be CSS variable references."""
-        from trellis.app import theme
-
         assert theme.bg_page == "var(--trellis-bg-page)"
         assert theme.text_primary == "var(--trellis-text-primary)"
         assert theme.accent_primary == "var(--trellis-accent-primary)"
 
     def test_tokens_are_frozen(self) -> None:
         """Theme tokens should be immutable."""
-        from trellis.app import theme
-
         with pytest.raises(dataclasses.FrozenInstanceError):
             theme.bg_page = "something else"  # type: ignore
 

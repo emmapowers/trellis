@@ -1,0 +1,49 @@
+"""Client bundler using esbuild + Bun package management."""
+
+from trellis.bundler.build import build
+from trellis.bundler.python_source import (
+    collect_package_files,
+    find_package_root,
+)
+from trellis.bundler.registry import (
+    CollectedModules,
+    ExportKind,
+    Module,
+    ModuleExport,
+    ModuleRegistry,
+    registry,
+)
+from trellis.bundler.steps import (
+    BuildContext,
+    BuildStep,
+    BundleBuildStep,
+    DeclarationStep,
+    IndexHtmlRenderStep,
+    PackageInstallStep,
+    RegistryGenerationStep,
+    StaticFileCopyStep,
+    TsconfigStep,
+    TypeCheckStep,
+)
+
+__all__ = [
+    "BuildContext",
+    "BuildStep",
+    "BundleBuildStep",
+    "CollectedModules",
+    "DeclarationStep",
+    "ExportKind",
+    "IndexHtmlRenderStep",
+    "Module",
+    "ModuleExport",
+    "ModuleRegistry",
+    "PackageInstallStep",
+    "RegistryGenerationStep",
+    "StaticFileCopyStep",
+    "TsconfigStep",
+    "TypeCheckStep",
+    "build",
+    "collect_package_files",
+    "find_package_root",
+    "registry",
+]

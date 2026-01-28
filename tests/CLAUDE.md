@@ -80,6 +80,23 @@ Use markers to categorize tests that need special handling:
 
 Run excluding slow tests: `pytest -m "not slow"`
 
+## Optional Dependencies
+
+Some platforms have runtime dependencies not available in CI (pytauri for desktop).
+
+```python
+from tests.helpers import requires_pytauri
+
+@requires_pytauri
+class TestDesktopFeature:
+    def test_something(self) -> None:
+        # Import inside test - class marker skips before import runs
+        from trellis.platforms.desktop import DesktopPlatform
+        ...
+```
+
+The import must be inside the test/class body so the skip runs before Python attempts the import.
+
 ## Python Fixtures
 
 Shared fixtures are defined in `conftest.py`. **All integration tests have been migrated to use these fixtures.** Use them instead of writing custom setup.

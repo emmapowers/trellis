@@ -52,3 +52,13 @@ docs/docs/api/
 docs/static/examples/
 docs/src/generated-examples-sidebar.json
 .playwright-mcp/
+
+# Bundler build artifacts (staged workspaces, generated configs)
+**/staged/
+**/.snippets-hash
+src/trellis/platforms/*/client/entry.tsx
+src/trellis/platforms/*/client/tsconfig.json
+
+# Library bundle (built by `trellis bundle build --library`)
+docs/static/trellis/
+.trellis

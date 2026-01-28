@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from trellis.core.components.composition import CompositionComponent
 from trellis.core.rendering.element import Element
+from trellis.core.rendering.frames import _escape_key
 from trellis.core.rendering.session import RenderSession
 
 if TYPE_CHECKING:
@@ -89,8 +90,6 @@ class TestEscapeKey:
 
     def test_no_special_chars(self) -> None:
         """Keys without special chars pass through unchanged."""
-        from trellis.core.rendering.frames import _escape_key
-
         assert _escape_key("simple") == "simple"
         assert _escape_key("with-dash") == "with-dash"
         assert _escape_key("with_underscore") == "with_underscore"
@@ -99,36 +98,26 @@ class TestEscapeKey:
 
     def test_escape_colon(self) -> None:
         """Colon is escaped."""
-        from trellis.core.rendering.frames import _escape_key
-
         assert _escape_key("my:key") == "my%3Akey"
         assert _escape_key("a:b:c") == "a%3Ab%3Ac"
 
     def test_escape_at(self) -> None:
         """At sign is escaped."""
-        from trellis.core.rendering.frames import _escape_key
-
         assert _escape_key("item@home") == "item%40home"
         assert _escape_key("user@domain") == "user%40domain"
 
     def test_escape_slash(self) -> None:
         """Slash is escaped."""
-        from trellis.core.rendering.frames import _escape_key
-
         assert _escape_key("row/5") == "row%2F5"
         assert _escape_key("path/to/item") == "path%2Fto%2Fitem"
 
     def test_escape_percent(self) -> None:
         """Percent must be escaped first to avoid double-encoding."""
-        from trellis.core.rendering.frames import _escape_key
-
         assert _escape_key("100%") == "100%25"
         assert _escape_key("%done") == "%25done"
 
     def test_multiple_special_chars(self) -> None:
         """All special characters are escaped in a single key."""
-        from trellis.core.rendering.frames import _escape_key
-
         assert _escape_key("a:b@c/d%e") == "a%3Ab%40c%2Fd%25e"
         # Percent first, then others
         assert _escape_key("%:@/") == "%25%3A%40%2F"

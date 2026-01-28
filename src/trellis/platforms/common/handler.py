@@ -13,6 +13,7 @@ import logging
 import traceback
 import typing as tp
 from collections.abc import Callable
+from importlib.metadata import version as get_package_version
 from uuid import uuid4
 
 from trellis.core.callback_context import callback_context
@@ -56,10 +57,8 @@ logger = logging.getLogger(__name__)
 
 def _get_version() -> str:
     """Get package version from metadata."""
-    from importlib.metadata import version
-
     try:
-        return version("trellis")
+        return get_package_version("trellis")
     except Exception:
         return "0.0.0"
 

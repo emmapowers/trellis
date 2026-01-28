@@ -1,17 +1,13 @@
 {
+  "extends": "../../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "jsx": "react-jsx",
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true
+    "baseUrl": ".",
+    "paths": {
+      "@trellis/trellis-core/*": ["../../../src/trellis/platforms/common/*"],
+      "@trellis/trellis-browser/*": ["../../../src/trellis/platforms/browser/*"],
+      "@trellis/trellis-server/*": ["../../../src/trellis/platforms/server/*"],
+      "@trellis/trellis-desktop/*": ["../../../src/trellis/platforms/desktop/*"]
+    }
   },
   "include": ["src/**/*"]
 }

@@ -17,7 +17,17 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 
-from trellis.bundler import CORE_PACKAGES, BundleConfig, build_bundle
+from trellis.bundler import (
+    BuildStep,
+    BundleBuildStep,
+    IndexHtmlRenderStep,
+    PackageInstallStep,
+    RegistryGenerationStep,
+    StaticFileCopyStep,
+    build,
+    registry,
+)
+from trellis.bundler.workspace import get_project_workspace
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform
 from trellis.platforms.server.handler import router as ws_router
@@ -45,33 +55,52 @@ def _print_startup_banner(host: str, port: int) -> None:
 class ServerPlatform(Platform):
     """FastAPI/WebSocket platform implementation."""
 
+    def __init__(self) -> None:
+        pass
+
     @property
     def name(self) -> str:
         return "server"
 
+    def _get_build_steps(self) -> list[BuildStep]:
+        """Get build steps for this platform."""
+        template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
+        return [
+            PackageInstallStep(),
+            RegistryGenerationStep(),
+            BundleBuildStep(output_name="bundle"),
+            StaticFileCopyStep(),
+            IndexHtmlRenderStep(template_path, {"static_path": "/static"}),
+        ]
+
     def bundle(
         self,
         force: bool = False,
-        extra_packages: dict[str, str] | None = None,
-    ) -> None:
+        dest: Path | None = None,
+        library: bool = False,
+        app_static_dir: Path | None = None,
+    ) -> Path:
         """Build the server client bundle if needed.
 
-        Output: platforms/server/client/dist/bundle.js
+        Uses the registry-based build system. The bundle is stored in a
+        cache workspace (or dest if specified) and served via /static/.
 
-        The server platform serves this bundle via /static/bundle.js and returns
-        HTML dynamically from routes.py (no generated index.html needed).
+        Returns:
+            The workspace Path used for the build
         """
-        platforms_dir = Path(__file__).parent.parent
-        common_src_dir = platforms_dir / "common" / "client" / "src"
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        workspace = get_project_workspace(entry_point)
 
-        config = BundleConfig(
-            name="server",
-            src_dir=Path(__file__).parent / "client" / "src",
-            dist_dir=Path(__file__).parent / "client" / "dist",
-            packages=CORE_PACKAGES,
+        build(
+            registry=registry,
+            entry_point=entry_point,
+            workspace=workspace,
+            steps=self._get_build_steps(),
+            force=force,
+            output_dir=dest,
+            app_static_dir=app_static_dir,
         )
-
-        build_bundle(config, common_src_dir, force, extra_packages)
+        return workspace
 
     async def run(
         self,

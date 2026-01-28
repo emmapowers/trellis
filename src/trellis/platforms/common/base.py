@@ -9,6 +9,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from enum import StrEnum, auto
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -51,13 +52,20 @@ class Platform(ABC):
     def bundle(
         self,
         force: bool = False,
-        extra_packages: dict[str, str] | None = None,
-    ) -> None:
+        dest: Path | None = None,
+        library: bool = False,
+        app_static_dir: Path | None = None,
+    ) -> Path:
         """Build the client bundle for this platform.
 
         Args:
             force: Force rebuild even if sources unchanged
-            extra_packages: Additional npm packages beyond platform defaults
+            dest: Custom output directory (default: cache directory)
+            library: Build as library with exports (vs app that renders to DOM)
+            app_static_dir: App-level static files directory to copy to dist
+
+        Returns:
+            The workspace Path used for the build
         """
         ...
 

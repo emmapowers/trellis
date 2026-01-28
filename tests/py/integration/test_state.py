@@ -1,9 +1,13 @@
 """Tests for trellis.core.state module."""
 
+import asyncio
+import gc
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from trellis.core.components.composition import component
+from trellis.core.rendering.render import render
+from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
 
 if TYPE_CHECKING:
@@ -522,7 +526,6 @@ class TestStateDependencyTracking:
 
     def test_dependency_cleanup_on_unmount(self, capture_patches: "type[PatchCapture]") -> None:
         """Dependencies are cleaned up when component is unmounted (via WeakSet GC)."""
-        import gc
 
         @dataclass(kw_only=True)
         class MyState(Stateful):
@@ -569,10 +572,6 @@ class TestStateDependencyTracking:
         NOTE: This test uses RenderSession directly because it's testing internal
         WeakSet GC behavior that's sensitive to reference retention patterns.
         """
-        import gc
-
-        from trellis.core.rendering.render import render
-        from trellis.core.rendering.session import RenderSession
 
         @dataclass(kw_only=True)
         class MyState(Stateful):
@@ -717,8 +716,6 @@ class TestAsyncLifecycleHooks:
 
     def test_async_on_mount_is_called(self, capture_patches: "type[PatchCapture]") -> None:
         """Async on_mount hooks are called and complete."""
-        import asyncio
-
         completed: list[str] = []
         done_event = asyncio.Event()
 
@@ -743,8 +740,6 @@ class TestAsyncLifecycleHooks:
 
     def test_async_on_unmount_is_called(self, capture_patches: "type[PatchCapture]") -> None:
         """Async on_unmount hooks are called and complete."""
-        import asyncio
-
         completed: list[str] = []
         done_event = asyncio.Event()
         show_child = [True]
@@ -782,8 +777,6 @@ class TestAsyncLifecycleHooks:
 
     def test_async_on_mount_with_from_context(self, capture_patches: "type[PatchCapture]") -> None:
         """Async on_mount can use from_context()."""
-        import asyncio
-
         retrieved_values: list[str] = []
         done_event = asyncio.Event()
 
@@ -824,8 +817,6 @@ class TestAsyncLifecycleHooks:
 
         INTERNAL TEST: _background_tasks is internal - verifies GC prevention.
         """
-        import asyncio
-
         completed: list[str] = []
         proceed_event = asyncio.Event()
         done_event = asyncio.Event()

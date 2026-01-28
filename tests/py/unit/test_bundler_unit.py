@@ -2,225 +2,288 @@
 
 from __future__ import annotations
 
-import io
-import tarfile
+import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
-
-class TestGetPlatform:
-    def test_darwin_arm64(self) -> None:
-        """Returns darwin-arm64 for macOS ARM."""
-        from trellis.bundler import _get_platform
-
-        with patch("platform.system", return_value="Darwin"):
-            with patch("platform.machine", return_value="arm64"):
-                assert _get_platform() == "darwin-arm64"
-
-    def test_darwin_x64(self) -> None:
-        """Returns darwin-x64 for macOS Intel."""
-        from trellis.bundler import _get_platform
-
-        with patch("platform.system", return_value="Darwin"):
-            with patch("platform.machine", return_value="x86_64"):
-                assert _get_platform() == "darwin-x64"
-
-    def test_linux_x64(self) -> None:
-        """Returns linux-x64 for Linux x86_64."""
-        from trellis.bundler import _get_platform
-
-        with patch("platform.system", return_value="Linux"):
-            with patch("platform.machine", return_value="x86_64"):
-                assert _get_platform() == "linux-x64"
-
-    def test_linux_arm64(self) -> None:
-        """Returns linux-arm64 for Linux aarch64."""
-        from trellis.bundler import _get_platform
-
-        with patch("platform.system", return_value="Linux"):
-            with patch("platform.machine", return_value="aarch64"):
-                assert _get_platform() == "linux-arm64"
-
-    def test_windows_x64(self) -> None:
-        """Returns win32-x64 for Windows x64."""
-        from trellis.bundler import _get_platform
-
-        with patch("platform.system", return_value="Windows"):
-            with patch("platform.machine", return_value="AMD64"):
-                assert _get_platform() == "win32-x64"
-
-    def test_unsupported_os(self) -> None:
-        """Raises RuntimeError for unsupported OS."""
-        from trellis.bundler import _get_platform
-
-        with patch("platform.system", return_value="FreeBSD"):
-            with patch("platform.machine", return_value="x86_64"):
-                with pytest.raises(RuntimeError, match="Unsupported platform"):
-                    _get_platform()
-
-    def test_unsupported_arch(self) -> None:
-        """Raises RuntimeError for unsupported architecture."""
-        from trellis.bundler import _get_platform
-
-        with patch("platform.system", return_value="Linux"):
-            with patch("platform.machine", return_value="riscv64"):
-                with pytest.raises(RuntimeError, match="Unsupported platform"):
-                    _get_platform()
+from trellis.bundler.manifest import BuildManifest
+from trellis.bundler.metafile import get_metafile_path, read_metafile
+from trellis.bundler.steps import BuildContext, IndexHtmlRenderStep
+from trellis.bundler.watch import get_watch_paths
 
 
-class TestSafeExtract:
-    """Tests for _safe_extract tarball security."""
+class TestMetafile:
+    """Tests for metafile parsing utilities."""
 
-    def test_safe_extract_normal_paths(self, tmp_path: Path) -> None:
-        """Normal paths extract successfully."""
-        from trellis.bundler import _safe_extract
+    def test_get_metafile_path_returns_workspace_path(self, tmp_path: Path) -> None:
+        """get_metafile_path returns metafile.json in workspace."""
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
 
-        # Create a tarball with normal paths
-        tar_buffer = io.BytesIO()
-        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-            # Add a file
-            data = b"hello world"
-            info = tarfile.TarInfo(name="package/index.js")
-            info.size = len(data)
-            tar.addfile(info, io.BytesIO(data))
+        result = get_metafile_path(workspace)
+        assert result == workspace / "metafile.json"
 
-            # Add a subdirectory file
-            data2 = b"nested content"
-            info2 = tarfile.TarInfo(name="package/lib/utils.js")
-            info2.size = len(data2)
-            tar.addfile(info2, io.BytesIO(data2))
+    def test_read_metafile_parses_inputs(self, tmp_path: Path) -> None:
+        """read_metafile extracts input paths from metafile."""
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
 
-        tar_buffer.seek(0)
-        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
-            _safe_extract(tar, tmp_path)
-
-        assert (tmp_path / "package" / "index.js").read_bytes() == b"hello world"
-        assert (tmp_path / "package" / "lib" / "utils.js").read_bytes() == b"nested content"
-
-    def test_safe_extract_rejects_parent_traversal(self, tmp_path: Path) -> None:
-        """Rejects paths with parent directory traversal."""
-        from trellis.bundler import _safe_extract
-
-        tar_buffer = io.BytesIO()
-        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-            data = b"malicious"
-            info = tarfile.TarInfo(name="../../../etc/passwd")
-            info.size = len(data)
-            tar.addfile(info, io.BytesIO(data))
-
-        tar_buffer.seek(0)
-        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
-            with pytest.raises(ValueError, match="path traversal"):
-                _safe_extract(tar, tmp_path)
-
-    def test_safe_extract_rejects_hidden_traversal(self, tmp_path: Path) -> None:
-        """Rejects paths with hidden traversal in middle of path."""
-        from trellis.bundler import _safe_extract
-
-        tar_buffer = io.BytesIO()
-        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-            data = b"malicious"
-            info = tarfile.TarInfo(name="package/../../../etc/passwd")
-            info.size = len(data)
-            tar.addfile(info, io.BytesIO(data))
-
-        tar_buffer.seek(0)
-        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
-            with pytest.raises(ValueError, match="path traversal"):
-                _safe_extract(tar, tmp_path)
-
-    def test_safe_extract_rejects_absolute_paths(self, tmp_path: Path) -> None:
-        """Rejects absolute paths that escape destination."""
-        from trellis.bundler import _safe_extract
-
-        tar_buffer = io.BytesIO()
-        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-            data = b"malicious"
-            info = tarfile.TarInfo(name="/etc/passwd")
-            info.size = len(data)
-            tar.addfile(info, io.BytesIO(data))
-
-        tar_buffer.seek(0)
-        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
-            with pytest.raises(ValueError, match="path traversal"):
-                _safe_extract(tar, tmp_path)
-
-
-class TestBundleConfig:
-    """Tests for BundleConfig dataclass."""
-
-    def test_static_files_default_is_none(self) -> None:
-        """static_files defaults to None."""
-        from trellis.bundler import BundleConfig
-
-        config = BundleConfig(
-            name="test",
-            src_dir=Path("/src"),
-            dist_dir=Path("/dist"),
-            packages={},
-        )
-        assert config.static_files is None
-
-    def test_static_files_can_be_set(self) -> None:
-        """static_files can be configured as dict."""
-        from trellis.bundler import BundleConfig
-
-        config = BundleConfig(
-            name="test",
-            src_dir=Path("/src"),
-            dist_dir=Path("/dist"),
-            packages={},
-            static_files={"index.html": Path("/src/index.html")},
-        )
-        assert config.static_files == {"index.html": Path("/src/index.html")}
-
-
-class TestBuildBundleStaticFiles:
-    """Tests for static file copying in build_bundle."""
-
-    def test_copies_static_files_to_dist(self, tmp_path: Path) -> None:
-        """Static files are copied to dist directory."""
-        from trellis.bundler import BundleConfig, build_bundle
-
-        # Set up directories
-        src_dir = tmp_path / "src"
+        # Create source files that the metafile references
+        src_dir = workspace / "src"
         src_dir.mkdir()
-        dist_dir = tmp_path / "dist"
-        common_dir = tmp_path / "common"
-        common_dir.mkdir()
+        (src_dir / "main.tsx").write_text("// main")
+        (src_dir / "Button.tsx").write_text("// button")
 
-        # Create source static file
-        static_src = src_dir / "index.html"
-        static_src.write_text("<html>test</html>")
+        # Create metafile with paths relative to workspace
+        metafile_content = {
+            "inputs": {
+                "src/main.tsx": {"bytes": 1234, "imports": []},
+                "src/Button.tsx": {"bytes": 567, "imports": []},
+            },
+            "outputs": {
+                "dist/bundle.js": {"bytes": 5000, "inputs": {}},
+            },
+        }
+        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
 
-        # Create minimal TypeScript file
-        (src_dir / "main.tsx").write_text("export {}")
+        result = read_metafile(workspace)
+        assert len(result.inputs) == 2
+        # Paths should be absolute
+        assert all(p.is_absolute() for p in result.inputs)
+        assert any(p.name == "main.tsx" for p in result.inputs)
+        assert any(p.name == "Button.tsx" for p in result.inputs)
 
-        config = BundleConfig(
-            name="test",
-            src_dir=src_dir,
-            dist_dir=dist_dir,
-            packages={},
-            static_files={"index.html": static_src},
+    def test_read_metafile_parses_outputs(self, tmp_path: Path) -> None:
+        """read_metafile extracts output paths from metafile."""
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        metafile_content = {
+            "inputs": {"src/main.tsx": {"bytes": 1234, "imports": []}},
+            "outputs": {
+                "dist/bundle.js": {"bytes": 5000, "inputs": {}},
+                "dist/bundle.css": {"bytes": 1000, "inputs": {}},
+            },
+        }
+        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
+
+        result = read_metafile(workspace)
+        assert len(result.outputs) == 2
+        assert all(p.is_absolute() for p in result.outputs)
+        assert any(p.name == "bundle.js" for p in result.outputs)
+        assert any(p.name == "bundle.css" for p in result.outputs)
+
+    def test_read_metafile_raises_on_missing(self, tmp_path: Path) -> None:
+        """read_metafile raises FileNotFoundError when metafile doesn't exist."""
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        # No metafile.json created
+
+        with pytest.raises(FileNotFoundError):
+            read_metafile(workspace)
+
+    def test_read_metafile_raises_on_invalid_json(self, tmp_path: Path) -> None:
+        """read_metafile raises ValueError when metafile is invalid JSON."""
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        (workspace / "metafile.json").write_text("not valid json")
+
+        with pytest.raises(ValueError, match="Invalid JSON"):
+            read_metafile(workspace)
+
+    def test_read_metafile_filters_node_modules(self, tmp_path: Path) -> None:
+        """read_metafile excludes node_modules from inputs."""
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        metafile_content = {
+            "inputs": {
+                "src/main.tsx": {"bytes": 1234, "imports": []},
+                "node_modules/react/index.js": {"bytes": 9999, "imports": []},
+                "../node_modules/lodash/lodash.js": {"bytes": 8888, "imports": []},
+            },
+            "outputs": {"dist/bundle.js": {"bytes": 5000, "inputs": {}}},
+        }
+        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
+
+        result = read_metafile(workspace)
+        # Only source file, not node_modules
+        assert len(result.inputs) == 1
+        assert result.inputs[0].name == "main.tsx"
+
+
+class TestGetWatchPaths:
+    """Tests for get_watch_paths function."""
+
+    def test_returns_metafile_inputs(self, tmp_path: Path) -> None:
+        """get_watch_paths returns inputs from metafile as resolved paths."""
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+
+        # Create metafile with specific inputs
+        metafile_content = {
+            "inputs": {
+                "src/main.tsx": {"bytes": 100, "imports": []},
+                "src/Button.tsx": {"bytes": 200, "imports": []},
+            },
+            "outputs": {"dist/bundle.js": {"bytes": 5000, "inputs": {}}},
+        }
+        (workspace / "metafile.json").write_text(json.dumps(metafile_content))
+
+        paths = get_watch_paths(workspace)
+
+        assert len(paths) == 2
+        # Paths should be resolved (absolute)
+        assert all(p.is_absolute() for p in paths)
+        assert any(p.name == "main.tsx" for p in paths)
+        assert any(p.name == "Button.tsx" for p in paths)
+
+    def test_raises_when_metafile_missing(self, tmp_path: Path) -> None:
+        """get_watch_paths raises FileNotFoundError when metafile doesn't exist."""
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        # No metafile.json
+
+        with pytest.raises(FileNotFoundError):
+            get_watch_paths(workspace)
+
+
+class TestBuildContext:
+    """Tests for BuildContext dataclass."""
+
+    def test_has_template_context_default(self, tmp_path: Path) -> None:
+        """BuildContext has template_context field with empty dict default."""
+        mock_registry = MagicMock()
+        mock_collected = MagicMock()
+
+        ctx = BuildContext(
+            registry=mock_registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=mock_collected,
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
         )
 
-        # Mock esbuild and package fetching to avoid network
-        with patch("trellis.bundler.ensure_esbuild") as mock_esbuild:
-            with patch("trellis.bundler.ensure_packages") as mock_packages:
-                with patch("subprocess.run") as mock_run:
-                    mock_esbuild.return_value = Path("/fake/esbuild")
-                    mock_packages.return_value = Path("/fake/node_modules")
-                    mock_run.return_value = MagicMock(returncode=0)
+        assert ctx.template_context == {}
 
-                    # Create the bundle.js that esbuild would create
-                    dist_dir.mkdir(parents=True, exist_ok=True)
-                    (dist_dir / "bundle.js").write_text("// bundle")
+    def test_template_context_can_be_set(self, tmp_path: Path) -> None:
+        """BuildContext template_context can be set with custom values."""
+        mock_registry = MagicMock()
+        mock_collected = MagicMock()
 
-                    build_bundle(config, common_dir, force=True)
+        ctx = BuildContext(
+            registry=mock_registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=mock_collected,
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+            template_context={"source_json": '{"type": "code"}'},
+        )
 
-        # Verify static file was copied
-        copied_file = dist_dir / "index.html"
-        assert copied_file.exists()
-        assert copied_file.read_text() == "<html>test</html>"
+        assert ctx.template_context["source_json"] == '{"type": "code"}'
+
+    def test_has_python_entry_point_default_none(self, tmp_path: Path) -> None:
+        """BuildContext has python_entry_point field defaulting to None."""
+        mock_registry = MagicMock()
+        mock_collected = MagicMock()
+
+        ctx = BuildContext(
+            registry=mock_registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=mock_collected,
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+        )
+
+        assert ctx.python_entry_point is None
+
+    def test_python_entry_point_can_be_set(self, tmp_path: Path) -> None:
+        """BuildContext python_entry_point can be set to a Path."""
+        mock_registry = MagicMock()
+        mock_collected = MagicMock()
+        app_path = tmp_path / "app.py"
+
+        ctx = BuildContext(
+            registry=mock_registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=mock_collected,
+            dist_dir=tmp_path / "dist",
+            manifest=BuildManifest(),
+            python_entry_point=app_path,
+        )
+
+        assert ctx.python_entry_point == app_path
+
+
+class TestIndexHtmlRenderStep:
+    """Tests for IndexHtmlRenderStep template context handling."""
+
+    def _make_context(self, tmp_path: Path, **kwargs) -> BuildContext:
+        """Create a BuildContext for testing."""
+        mock_registry = MagicMock()
+        mock_collected = MagicMock()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir(parents=True, exist_ok=True)
+        return BuildContext(
+            registry=mock_registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=tmp_path / "workspace",
+            collected=mock_collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+            **kwargs,
+        )
+
+    def test_merges_template_context(self, tmp_path: Path) -> None:
+        """Step merges BuildContext.template_context with constructor context."""
+        # Create template (use |safe for JSON since it's embedded in JS, not displayed as HTML)
+        template = tmp_path / "index.html.j2"
+        template.write_text("source={{ source_json|safe }}, custom={{ custom_var }}")
+
+        # Set up context with template_context containing source_json
+        ctx = self._make_context(
+            tmp_path,
+            template_context={"source_json": '{"type": "code"}'},
+        )
+
+        step = IndexHtmlRenderStep(template, context={"custom_var": "hello"})
+        step.run(ctx)
+
+        output = (ctx.dist_dir / "index.html").read_text()
+        assert 'source={"type": "code"}' in output
+        assert "custom=hello" in output
+
+    def test_constructor_context_overrides_template_context(self, tmp_path: Path) -> None:
+        """Constructor context takes precedence over BuildContext.template_context."""
+        template = tmp_path / "index.html.j2"
+        template.write_text("value={{ shared_key }}")
+
+        ctx = self._make_context(
+            tmp_path,
+            template_context={"shared_key": "from_build_context"},
+        )
+
+        # Constructor context should override
+        step = IndexHtmlRenderStep(template, context={"shared_key": "from_constructor"})
+        step.run(ctx)
+
+        output = (ctx.dist_dir / "index.html").read_text()
+        assert "value=from_constructor" in output
+
+    def test_works_with_empty_contexts(self, tmp_path: Path) -> None:
+        """Step works when both contexts are empty."""
+        template = tmp_path / "index.html.j2"
+        template.write_text("<html>static content</html>")
+
+        ctx = self._make_context(tmp_path)
+        step = IndexHtmlRenderStep(template)
+        step.run(ctx)
+
+        output = (ctx.dist_dir / "index.html").read_text()
+        assert "static content" in output

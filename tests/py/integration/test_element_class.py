@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Self
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.components.react import react_component_base
 from trellis.core.rendering.element import Element
+from trellis.core.rendering.render import render
 from trellis.core.state.stateful import Stateful
 from trellis.html.base import html_element
 
@@ -133,8 +134,6 @@ class TestElementClass:
 
         # Trigger a re-render by marking dirty
         result.session.dirty.mark(root.id)
-        from trellis.core.rendering.render import render
-
         render(result.session)
 
         # Node should still be CustomElement after re-render

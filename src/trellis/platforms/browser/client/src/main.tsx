@@ -5,12 +5,15 @@
  * Configuration is read from window.__TRELLIS_CONFIG__.
  */
 
-import "../../../common/client/src/theme.css"; // Theme CSS variables
-import "../../../common/client/src/console"; // Set up console filtering
+// Initialize widget registry before any rendering
+import { initRegistry } from "@trellis/_registry";
+initRegistry();
+
+import "@trellis/trellis-core/client/src/theme.css"; // Theme CSS variables
+import "@trellis/trellis-core/client/src/console"; // Set up console filtering
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { TrellisApp, PythonSource } from "./TrellisApp";
-import { RoutingMode } from "../../../common/client/src/RouterManager";
+import { TrellisApp, PythonSource, RoutingMode } from "@trellis/trellis-browser/client/src/TrellisApp";
 
 declare global {
   interface Window {
@@ -53,7 +56,6 @@ function App() {
     <TrellisApp
       source={config.source}
       main={config.main}
-      workerUrl={config.workerUrl}
       trellisWheelUrl={config.trellisWheelUrl}
       routingMode={routingMode}
     />

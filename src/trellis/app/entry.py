@@ -26,7 +26,9 @@ CLI arguments:
 from __future__ import annotations
 
 import argparse
+import asyncio
 import sys
+import threading
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -37,6 +39,7 @@ from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent
 from trellis.platforms.common.base import Platform, PlatformArgumentError, PlatformType
 from trellis.routing.enums import RoutingMode
+from trellis.utils.debug import configure_debug, list_categories, parse_categories
 from trellis.utils.log_setup import setup_logging
 
 if TYPE_CHECKING:
@@ -47,6 +50,8 @@ if TYPE_CHECKING:
 _SERVER_ARGS = {"host", "port", "static_dir"}
 _DESKTOP_ARGS = {"window_title", "window_width", "window_height"}
 _BROWSER_ARGS = {"host", "port"}  # Browser CLI mode also serves HTTP
+# Watch mode is platform-independent (handled at Trellis level)
+_WATCH_PLATFORMS = {PlatformType.SERVER, PlatformType.DESKTOP, PlatformType.BROWSER}
 
 
 class _TrellisArgs:
@@ -155,6 +160,11 @@ def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
         help="Disable hot reload (enabled by default)",
     )
     parser.add_argument(
+        "--watch",
+        action="store_true",
+        help="Watch source files and rebuild bundle on changes",
+    )
+    parser.add_argument(
         "-d",
         "--debug",
         nargs="?",
@@ -188,8 +198,6 @@ def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
 
     # Handle debug argument
     if args.debug is not None:
-        from trellis.utils.debug import configure_debug, list_categories, parse_categories
-
         if args.debug == "":
             # -d with no value: list categories and exit
             print(list_categories())
@@ -214,15 +222,72 @@ def _parse_cli_args() -> tuple[PlatformType | None, dict[str, Any]]:
         other_args["build_bundle"] = True
     if args.no_hot_reload:
         other_args["hot_reload"] = False
+    if args.watch:
+        other_args["watch"] = True
 
     return platform, other_args
 
 
 def _is_pyodide() -> bool:
     """Check if we're running inside Pyodide."""
-    import sys
-
     return "pyodide" in sys.modules or hasattr(sys, "pyodide")
+
+
+class _WatchThread:
+    """Background thread for watching files and rebuilding bundles."""
+
+    def __init__(self, workspace: Path, rebuild: Callable[[], None]) -> None:
+        self._workspace = workspace
+        self._rebuild = rebuild
+        self._stop_event = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._background_tasks: set[asyncio.Task[None]] = set()
+
+    def start(self) -> None:
+        """Start the watch thread."""
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+
+    def stop(self) -> None:
+        """Stop the watch thread and wait for it to finish."""
+        self._stop_event.set()
+        if self._loop is not None:
+            self._loop.call_soon_threadsafe(self._loop.stop)
+        if self._thread is not None:
+            self._thread.join(timeout=1.0)
+
+    def _run(self) -> None:
+        """Run the watch loop in a new event loop."""
+        # Import watch module lazily to avoid loading watchfiles in browser
+        from trellis.bundler.watch import watch_and_rebuild  # noqa: PLC0415
+        from trellis.platforms.common.handler_registry import get_global_registry  # noqa: PLC0415
+        from trellis.platforms.common.messages import ReloadMessage  # noqa: PLC0415
+
+        def on_rebuild() -> None:
+            """Broadcast reload message to all connected clients."""
+            registry = get_global_registry()
+            if len(registry) > 0:
+                # Schedule broadcast on the watch thread's event loop
+                # This is safe because we're already in the watch thread
+                # Task reference stored to prevent garbage collection during execution
+                task = asyncio.create_task(registry.broadcast(ReloadMessage()))
+                self._background_tasks.add(task)
+                task.add_done_callback(self._background_tasks.discard)
+
+        self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._loop)
+        try:
+            self._loop.create_task(
+                watch_and_rebuild(
+                    self._workspace,
+                    self._rebuild,
+                    on_rebuild=on_rebuild,
+                )
+            )
+            self._loop.run_forever()
+        finally:
+            self._loop.close()
 
 
 def _get_platform(platform_type: PlatformType) -> Platform:
@@ -239,11 +304,11 @@ def _get_platform(platform_type: PlatformType) -> Platform:
         ValueError: If platform type is unknown
     """
     if platform_type == PlatformType.SERVER:
-        from trellis.platforms.server import ServerPlatform
+        from trellis.platforms.server import ServerPlatform  # noqa: PLC0415
 
         return ServerPlatform()
     if platform_type == PlatformType.DESKTOP:
-        from trellis.platforms.desktop import DesktopPlatform
+        from trellis.platforms.desktop import DesktopPlatform  # noqa: PLC0415
 
         return DesktopPlatform()
     if platform_type == PlatformType.BROWSER:
@@ -253,10 +318,10 @@ def _get_platform(platform_type: PlatformType) -> Platform:
         # - BrowserServePlatform: Runs on CLI side. Serves static files (bundle.js,
         #   wheel, HTML with embedded source) via HTTP for the browser to load.
         if _is_pyodide():
-            from trellis.platforms.browser import BrowserPlatform
+            from trellis.platforms.browser import BrowserPlatform  # noqa: PLC0415
 
             return BrowserPlatform()
-        from trellis.platforms.browser.serve_platform import BrowserServePlatform
+        from trellis.platforms.browser.serve_platform import BrowserServePlatform  # noqa: PLC0415
 
         return BrowserServePlatform()
     raise ValueError(f"Unknown platform: {platform_type}")
@@ -301,9 +366,11 @@ class Trellis:
         platform: PlatformType | str | None = None,
         ignore_cli: bool = False,
         build_bundle: bool = False,
+        watch: bool = False,
         batch_delay: float | None = None,
         hot_reload: bool | None = None,
         routing_mode: RoutingMode | None = None,
+        static_files: Path | str | None = None,
         # Server args
         host: str | None = None,
         port: int | None = None,
@@ -320,10 +387,12 @@ class Trellis:
             platform: Target platform (auto-detect if None)
             ignore_cli: If True, ignore CLI arguments
             build_bundle: Force rebuild client bundle
+            watch: Watch source files and rebuild bundle on changes
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
             hot_reload: Enable hot reload (default True, disable with --no-hot-reload)
             routing_mode: How the router handles browser history and URLs.
                 Desktop forces EMBEDDED. Browser defaults to HASH_URL. Server uses STANDARD.
+            static_files: Directory containing static files to copy to dist during build
             host: Server bind host (server only)
             port: Server bind port (server only)
             static_dir: Custom static files directory (server only)
@@ -335,6 +404,7 @@ class Trellis:
             PlatformArgumentError: If platform-specific arg used with wrong platform
         """
         self.top = top
+        self._static_files = Path(static_files) if isinstance(static_files, str) else static_files
 
         # Build args with defaults
         self._args = _TrellisArgs()
@@ -342,6 +412,7 @@ class Trellis:
         # Set defaults for all platforms
         self._args.set_default("platform", _detect_platform())
         self._args.set_default("build_bundle", False)
+        self._args.set_default("watch", False)
         self._args.set_default("batch_delay", 1.0 / 30)
         self._args.set_default("hot_reload", True)
         self._args.set_default("routing_mode", RoutingMode.HASH_URL)
@@ -355,6 +426,8 @@ class Trellis:
         # Override with constructor args (if provided)
         if build_bundle:
             self._args.set("build_bundle", build_bundle)
+        if watch:
+            self._args.set("watch", watch)
         if batch_delay is not None:
             self._args.set("batch_delay", batch_delay)
         if hot_reload is not None:
@@ -475,13 +548,32 @@ class Trellis:
             raise ValueError("No top component specified")
 
         # Build client bundle if needed
-        self._platform.bundle(force=self._args.get("build_bundle"))
-
-        await self._platform.run(
-            root_component=self.top,
-            app_wrapper=self._create_app_wrapper(),
-            **self._args.to_dict(),
+        workspace = self._platform.bundle(
+            force=self._args.get("build_bundle"),
+            app_static_dir=self._static_files,
         )
+
+        # Start watch in background thread if enabled
+        # Using a thread keeps rebuilds off the main event loop and works
+        # uniformly across all platforms (including desktop which blocks main thread)
+        watch_thread: _WatchThread | None = None
+        if self._args.get("watch"):
+
+            def rebuild() -> None:
+                self._platform.bundle(app_static_dir=self._static_files)
+
+            watch_thread = _WatchThread(workspace, rebuild)
+            watch_thread.start()
+
+        try:
+            await self._platform.run(
+                root_component=self.top,
+                app_wrapper=self._create_app_wrapper(),
+                **self._args.to_dict(),
+            )
+        finally:
+            if watch_thread is not None:
+                watch_thread.stop()
 
 
 __all__ = ["Trellis"]

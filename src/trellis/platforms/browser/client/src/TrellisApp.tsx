@@ -9,16 +9,20 @@
  */
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { BrowserClient, ConnectionState } from "./BrowserClient";
+import { BrowserClient, ConnectionState } from "@trellis/trellis-browser/client/src/BrowserClient";
 import {
   TrellisContext,
   HostThemeModeContext,
-} from "../../../common/client/src/TrellisContext";
-import { Message } from "../../../common/client/src/types";
-import { TreeRenderer } from "../../../common/client/src/TreeRenderer";
-import { useRootId } from "../../../common/client/src/core";
-import { PyodideWorker, type PythonSource } from "./PyodideWorker";
-import { RoutingMode } from "../../../common/client/src/RouterManager";
+} from "@trellis/trellis-core/client/src/TrellisContext";
+import { Message } from "@trellis/trellis-core/client/src/types";
+import { TreeRenderer } from "@trellis/trellis-core/client/src/TreeRenderer";
+import { useRootId } from "@trellis/trellis-core/client/src/core";
+import { PyodideWorker, type PythonSource } from "@trellis/trellis-browser/client/src/PyodideWorker";
+import {
+  INIT_TIMEOUT_MS,
+  formatTimeoutError,
+} from "@trellis/trellis-browser/client/src/pyodide-error-utils";
+import { RoutingMode } from "@trellis/trellis-core/client/src/RouterManager";
 
 // Re-export types for external use
 export type { PythonSource };
@@ -173,6 +177,13 @@ export function TrellisApp({
     initializedRef.current = true;
 
     async function initialize() {
+      // Set up initialization timeout
+      const timeoutId = setTimeout(() => {
+        setState({ status: "error", message: formatTimeoutError() });
+        workerRef.current?.terminate();
+        workerRef.current = null;
+      }, INIT_TIMEOUT_MS);
+
       try {
         // 1. Create and initialize the Pyodide worker
         const worker = new PyodideWorker();
@@ -183,13 +194,18 @@ export function TrellisApp({
             setState({ status: "loading", message: msg });
             onStatusChange?.(msg);
           },
+          onError: (error) => {
+            setState({ status: "error", message: error });
+          },
           trellisWheelUrl,
         });
+
+        clearTimeout(timeoutId);
 
         // 2. Wire up message passing between client and worker
         // Worker -> Client: Python sends HELLO_RESPONSE, RENDER, ERROR
         worker.onMessage((msg) => {
-          client.handleMessage(msg as Message);
+          client.handleMessage(msg as unknown as Message);
         });
 
         // Client -> Worker: JS sends HELLO, EVENT
@@ -212,6 +228,7 @@ export function TrellisApp({
         await new Promise((resolve) => setTimeout(resolve, 50));
         client.sendHello(initialThemeModeRef.current);
       } catch (e) {
+        clearTimeout(timeoutId);
         console.error("[TrellisApp] Error:", e);
         setState({ status: "error", message: (e as Error).message });
       }

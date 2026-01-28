@@ -7,12 +7,14 @@ For the CLI server that serves browser apps, see serve_platform.py.
 from __future__ import annotations
 
 from collections.abc import Callable
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
+from trellis.platforms.browser.handler import BrowserMessageHandler
 from trellis.platforms.common.base import Platform
 
 __all__ = ["BrowserPlatform"]
@@ -32,13 +34,16 @@ class BrowserPlatform(Platform):
     def bundle(
         self,
         force: bool = False,
-        extra_packages: dict[str, str] | None = None,
-    ) -> None:
+        dest: Path | None = None,
+        library: bool = False,
+        app_static_dir: Path | None = None,
+    ) -> Path:
         """No-op in Pyodide - bundling is done before loading.
 
         The bundle is already built and served by the time this platform runs.
+        Returns a placeholder path since no actual workspace is used.
         """
-        pass
+        return Path(".")
 
     async def run(
         self,
@@ -57,12 +62,13 @@ class BrowserPlatform(Platform):
             app_wrapper: Callback to wrap component with TrellisApp
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
         """
-        # Import the bridge module (registered by JavaScript)
-        import js  # type: ignore[import-not-found]
-        import trellis_browser_bridge as bridge  # type: ignore[import-not-found]
-        from pyodide.ffi import create_proxy, to_js  # type: ignore[import-not-found]
-
-        from trellis.platforms.browser.handler import BrowserMessageHandler
+        # Pyodide-only imports - these modules only exist inside the Pyodide runtime
+        import js  # type: ignore[import-not-found]  # noqa: PLC0415
+        import trellis_browser_bridge as bridge  # type: ignore[import-not-found]  # noqa: PLC0415
+        from pyodide.ffi import (  # type: ignore[import-not-found]  # noqa: PLC0415
+            create_proxy,
+            to_js,
+        )
 
         # Pyodide serializer: convert Python dict to JS object
         def pyodide_serializer(msg_dict: dict[str, Any]) -> Any:

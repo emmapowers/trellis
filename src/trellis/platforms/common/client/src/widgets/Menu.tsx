@@ -46,7 +46,7 @@ function MenuItemComponent({
   const ref = useRef<HTMLLIElement>(null);
   const { menuItemProps, isFocused, isDisabled } = useMenuItem(
     {
-      key: item.key,
+      key: item.key as string | number,
       onAction: itemData.on_click,
     },
     state,
