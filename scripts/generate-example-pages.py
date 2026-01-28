@@ -131,6 +131,7 @@ def generate_example_page(example: Example) -> None:
             str(example.entry_path),
             "--dest",
             str(example_dir),
+            "--force",
         ],
         check=True,
     )

@@ -65,10 +65,12 @@ def save_manifest(workspace: Path, manifest: BuildManifest) -> None:
     for step_name, step_manifest in manifest.steps.items():
         steps_data[step_name] = {
             "source_paths": sorted(
-                str(p.relative_to(workspace, walk_up=True)) for p in step_manifest.source_paths
+                str(p.resolve().relative_to(workspace, walk_up=True))
+                for p in step_manifest.source_paths
             ),
             "dest_files": sorted(
-                str(p.relative_to(workspace, walk_up=True)) for p in step_manifest.dest_files
+                str(p.resolve().relative_to(workspace, walk_up=True))
+                for p in step_manifest.dest_files
             ),
             "metadata": step_manifest.metadata,
         }

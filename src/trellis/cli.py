@@ -1,9 +1,16 @@
 """Trellis CLI utilities."""
 
 import asyncio
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import click
+
+from trellis.platforms.common.base import Platform
+
+# Rebuild callback type - returns Path but callers ignore it
+type RebuildCallback = Callable[[], Any]
 
 
 @click.group()
@@ -46,13 +53,6 @@ def build(
     force: bool, watch: bool, platform: str, dest: Path | None, library: bool, app: Path | None
 ) -> None:
     """Build platform bundles."""
-    from collections.abc import Callable  # noqa: PLC0415
-    from typing import Any  # noqa: PLC0415
-
-    from trellis.platforms.common.base import Platform  # noqa: PLC0415
-
-    # Rebuild callback type - returns Path but callers ignore it
-    RebuildCallback = Callable[[], Any]
 
     # Helper to create rebuild callbacks with proper closure
     def make_rebuild(

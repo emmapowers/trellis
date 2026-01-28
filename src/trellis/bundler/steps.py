@@ -17,6 +17,8 @@ from enum import StrEnum, auto
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from jinja2 import Environment, FileSystemLoader
+
 from trellis.bundler.manifest import BuildManifest, StepManifest
 from trellis.bundler.metafile import get_metafile_path, read_metafile
 from trellis.bundler.packages import ensure_packages, get_bin
@@ -606,9 +608,6 @@ class IndexHtmlRenderStep(BuildStep):
         return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
-        # Lazy import jinja2 to avoid import overhead when not used
-        from jinja2 import Environment, FileSystemLoader  # noqa: PLC0415
-
         # Merge contexts: BuildContext.template_context first, then constructor (overrides)
         merged_context = {**ctx.template_context, **self._context}
 
