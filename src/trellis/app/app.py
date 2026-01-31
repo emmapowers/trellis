@@ -7,10 +7,24 @@ import os
 import sys
 from pathlib import Path
 from types import ModuleType
+from typing import TYPE_CHECKING
 
 from trellis.app.config import Config
+from trellis.platforms.common.base import PlatformType
+
+if TYPE_CHECKING:
+    from trellis.platforms.common.base import Platform
 
 ENV_VAR_APP_ROOT = "TRELLIS_APP_ROOT"
+
+
+def _is_pyodide() -> bool:
+    """Check if running inside Pyodide.
+
+    Uses sys.platform == 'emscripten' as recommended by Pyodide docs.
+    See: https://pyodide.org/en/stable/usage/faq.html
+    """
+    return sys.platform == "emscripten"
 
 
 def find_app_path() -> Path:
@@ -119,6 +133,7 @@ class App:
         """
         self.path = path
         self.config: Config | None = None
+        self._platform: Platform | None = None
 
     def load_config(self) -> None:
         """Load configuration from trellis.py.
@@ -192,6 +207,55 @@ class App:
             importlib.invalidate_caches()
 
         return importlib.import_module(module_name)
+
+    @property
+    def platform(self) -> Platform:
+        """Get the platform instance for this application.
+
+        Lazily imports and instantiates the platform based on config.platform.
+        For browser platform, returns BrowserPlatform if running in Pyodide,
+        otherwise returns BrowserServePlatform.
+
+        Returns:
+            The platform instance
+
+        Raises:
+            RuntimeError: If config has not been loaded
+        """
+        if self._platform is not None:
+            return self._platform
+
+        if self.config is None:
+            raise RuntimeError(
+                "Config not loaded. Call load_config() first before accessing platform."
+            )
+
+        platform_type = self.config.platform
+
+        # Lazy imports to avoid circular dependencies and load platform deps only when needed
+        if platform_type == PlatformType.SERVER:
+            from trellis.platforms.server import ServerPlatform  # noqa: PLC0415
+
+            self._platform = ServerPlatform()
+        elif platform_type == PlatformType.DESKTOP:
+            from trellis.platforms.desktop import DesktopPlatform  # noqa: PLC0415
+
+            self._platform = DesktopPlatform()
+        elif platform_type == PlatformType.BROWSER:
+            if _is_pyodide():
+                from trellis.platforms.browser import BrowserPlatform  # noqa: PLC0415
+
+                self._platform = BrowserPlatform()
+            else:
+                from trellis.platforms.browser.serve_platform import (  # noqa: PLC0415
+                    BrowserServePlatform,
+                )
+
+                self._platform = BrowserServePlatform()
+        else:
+            raise ValueError(f"Unknown platform: {platform_type}")
+
+        return self._platform
 
 
 # Global singleton

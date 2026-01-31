@@ -8,7 +8,11 @@ from types import ModuleType
 
 import pytest
 
+from tests.helpers import requires_pytauri
 from trellis.app.app import App, find_app_path, get_app, set_app
+from trellis.platforms.browser import BrowserPlatform
+from trellis.platforms.browser.serve_platform import BrowserServePlatform
+from trellis.platforms.server import ServerPlatform
 
 
 class TestFindAppPath:
@@ -342,3 +346,111 @@ class TestAppGlobals:
         assert "App not initialized" in str(exc_info.value)
         assert "set_app()" in str(exc_info.value)
         assert "find_app_path()" in str(exc_info.value)
+
+
+class TestAppPlatform:
+    """Tests for App.platform property."""
+
+    def test_platform_raises_without_config(self, tmp_path: Path) -> None:
+        """platform property raises RuntimeError if config not loaded."""
+        app = App(tmp_path)
+
+        with pytest.raises(RuntimeError, match=r"load_config.*first"):
+            _ = app.platform
+
+    def test_platform_returns_server_platform(self, tmp_path: Path) -> None:
+        """platform returns ServerPlatform when config.platform is SERVER."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+from trellis.platforms.common.base import PlatformType
+
+config = Config(name="test", module="test", platform=PlatformType.SERVER)
+"""
+        )
+        app = App(tmp_path)
+        app.load_config()
+
+        assert isinstance(app.platform, ServerPlatform)
+
+    @requires_pytauri
+    def test_platform_returns_desktop_platform(self, tmp_path: Path) -> None:
+        """platform returns DesktopPlatform when config.platform is DESKTOP."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+from trellis.platforms.common.base import PlatformType
+
+config = Config(name="test", module="test", platform=PlatformType.DESKTOP)
+"""
+        )
+        app = App(tmp_path)
+        app.load_config()
+
+        # Import inside test because pytauri may not be installed
+        from trellis.platforms.desktop import DesktopPlatform  # noqa: PLC0415
+
+        assert isinstance(app.platform, DesktopPlatform)
+
+    def test_platform_returns_browser_serve_platform(self, tmp_path: Path) -> None:
+        """platform returns BrowserServePlatform when not in Pyodide."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+from trellis.platforms.common.base import PlatformType
+
+config = Config(name="test", module="test", platform=PlatformType.BROWSER)
+"""
+        )
+        app = App(tmp_path)
+        app.load_config()
+
+        assert isinstance(app.platform, BrowserServePlatform)
+
+    def test_platform_returns_browser_platform_in_pyodide(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """platform returns BrowserPlatform when running in Pyodide."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+from trellis.platforms.common.base import PlatformType
+
+config = Config(name="test", module="test", platform=PlatformType.BROWSER)
+"""
+        )
+        app = App(tmp_path)
+        app.load_config()
+
+        # Mock _is_pyodide to return True
+        monkeypatch.setattr("trellis.app.app._is_pyodide", lambda: True)
+
+        assert isinstance(app.platform, BrowserPlatform)
+
+    def test_platform_caches_instance(self, tmp_path: Path) -> None:
+        """platform returns same instance on subsequent accesses."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+from trellis.platforms.common.base import PlatformType
+
+config = Config(name="test", module="test", platform=PlatformType.SERVER)
+"""
+        )
+        app = App(tmp_path)
+        app.load_config()
+
+        first = app.platform
+        second = app.platform
+
+        assert first is second
+
+    def test_platform_returns_cached_without_config_check(self, tmp_path: Path) -> None:
+        """If _platform is already set, returns it without checking config."""
+        app = App(tmp_path)
+
+        # Manually set _platform (simulating pre-cached state)
+        app._platform = ServerPlatform()
+
+        # Should return cached platform even though config is None
+        assert isinstance(app.platform, ServerPlatform)
