@@ -37,7 +37,7 @@ class TestConfigCreation:
         assert config.force_build is False
         assert config.watch is False
         assert config.hot_reload is True
-        assert config.routing_mode == RoutingMode.STANDARD
+        assert config.routing_mode == RoutingMode.URL
         assert config.debug == ""
         assert config.assets_dir == Path("./assets/")
         assert config.title == "myapp"  # defaults to name
@@ -155,38 +155,38 @@ class TestConfigAssetsDir:
 class TestConfigRoutingMode:
     """Test routing_mode platform-dependent defaults."""
 
-    def test_server_platform_defaults_to_standard_routing(self) -> None:
+    def test_server_platform_defaults_to_url_routing(self) -> None:
         config = Config(name="myapp", module="main", platform=PlatformType.SERVER)
-        assert config.routing_mode == RoutingMode.STANDARD
+        assert config.routing_mode == RoutingMode.URL
 
-    def test_browser_platform_defaults_to_hash_url_routing(self) -> None:
+    def test_browser_platform_defaults_to_hash_routing(self) -> None:
         config = Config(name="myapp", module="main", platform=PlatformType.BROWSER)
-        assert config.routing_mode == RoutingMode.HASH_URL
+        assert config.routing_mode == RoutingMode.HASH
 
-    def test_desktop_platform_defaults_to_embedded_routing(self) -> None:
+    def test_desktop_platform_defaults_to_hidden_routing(self) -> None:
         config = Config(name="myapp", module="main", platform=PlatformType.DESKTOP)
-        assert config.routing_mode == RoutingMode.EMBEDDED
+        assert config.routing_mode == RoutingMode.HIDDEN
 
     def test_explicit_routing_mode_overrides_platform_default(self) -> None:
         config = Config(
             name="myapp",
             module="main",
             platform=PlatformType.SERVER,
-            routing_mode=RoutingMode.HASH_URL,
+            routing_mode=RoutingMode.HASH,
         )
-        assert config.routing_mode == RoutingMode.HASH_URL
+        assert config.routing_mode == RoutingMode.HASH
 
     def test_routing_mode_from_env_overrides_platform_default(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        monkeypatch.setenv("TRELLIS_ROUTING_MODE", "embedded")
+        monkeypatch.setenv("TRELLIS_ROUTING_MODE", "hidden")
         config = Config(name="myapp", module="main", platform=PlatformType.SERVER)
-        assert config.routing_mode == RoutingMode.EMBEDDED
+        assert config.routing_mode == RoutingMode.HIDDEN
 
     def test_routing_mode_from_cli_overrides_platform_default(self) -> None:
-        with cli_context({"routing_mode": RoutingMode.HASH_URL}):
+        with cli_context({"routing_mode": RoutingMode.HASH}):
             config = Config(name="myapp", module="main", platform=PlatformType.DESKTOP)
-            assert config.routing_mode == RoutingMode.HASH_URL
+            assert config.routing_mode == RoutingMode.HASH
 
 
 class TestConfigTitle:

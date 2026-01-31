@@ -391,7 +391,7 @@ class Trellis:
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
             hot_reload: Enable hot reload (default True, disable with --no-hot-reload)
             routing_mode: How the router handles browser history and URLs.
-                Desktop forces EMBEDDED. Browser defaults to HASH_URL. Server uses STANDARD.
+                Desktop forces HIDDEN. Browser defaults to HASH. Server uses URL.
             static_files: Directory containing static files to copy to dist during build
             host: Server bind host (server only)
             port: Server bind port (server only)
@@ -415,7 +415,7 @@ class Trellis:
         self._args.set_default("watch", False)
         self._args.set_default("batch_delay", 1.0 / 30)
         self._args.set_default("hot_reload", True)
-        self._args.set_default("routing_mode", RoutingMode.HASH_URL)
+        self._args.set_default("routing_mode", RoutingMode.HASH)
         self._args.set_default("host", "127.0.0.1")
         self._args.set_default("port", None)
         self._args.set_default("static_dir", None)
@@ -467,7 +467,7 @@ class Trellis:
 
         # Desktop always uses embedded mode (no URL bar)
         if self.platform_type == PlatformType.DESKTOP:
-            self._args.set("routing_mode", RoutingMode.EMBEDDED)
+            self._args.set("routing_mode", RoutingMode.HIDDEN)
 
         # Validate: check for explicit args from wrong platforms
         self._validate_platform_args()

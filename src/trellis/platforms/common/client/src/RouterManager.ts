@@ -2,9 +2,9 @@
  * Client-side router manager for handling browser history.
  *
  * Manages history based on routing mode:
- * - Standard: Uses real browser history API with pathname URLs
- * - HashUrl: Uses hash-based URLs (#/path) for platforms without server routing
- * - Embedded: Maintains internal history only (no window.history calls)
+ * - Url: Uses real browser history API with pathname URLs
+ * - Hash: Uses hash-based URLs (#/path) for platforms without server routing
+ * - Hidden: Maintains internal history only (no window.history calls)
  */
 
 import { MessageType, UrlChangedMessage } from "./types";
@@ -12,11 +12,11 @@ import { MessageType, UrlChangedMessage } from "./types";
 /** Routing mode for the RouterManager */
 export enum RoutingMode {
   /** Uses browser history API with pathname URLs (/path) */
-  Standard = "standard",
+  Url = "url",
   /** Uses hash-based URLs (#/path) for platforms without server routing */
-  HashUrl = "hash_url",
+  Hash = "hash",
   /** Internal history only, no browser URL changes (e.g., desktop apps) */
-  Embedded = "embedded",
+  Hidden = "hidden",
 }
 
 export interface RouterManagerOptions {
@@ -30,7 +30,7 @@ export class RouterManager {
   private sendMessage: (message: UrlChangedMessage) => void;
   private currentPath: string;
 
-  // Internal history for embedded mode
+  // Internal history for hidden mode
   private history: string[];
   private historyIndex: number;
 
@@ -44,13 +44,13 @@ export class RouterManager {
 
     // Determine initial path based on mode
     switch (this.mode) {
-      case RoutingMode.Embedded:
+      case RoutingMode.Hidden:
         this.currentPath = options.initialPath ?? "/";
         break;
-      case RoutingMode.HashUrl:
+      case RoutingMode.Hash:
         this.currentPath = this.getPathFromHash();
         break;
-      case RoutingMode.Standard:
+      case RoutingMode.Url:
         this.currentPath = window.location.pathname;
         break;
     }
@@ -61,16 +61,16 @@ export class RouterManager {
 
     // Set up event listeners based on mode
     switch (this.mode) {
-      case RoutingMode.Standard:
+      case RoutingMode.Url:
         this.popstateHandler = this.handlePopstate.bind(this);
         window.addEventListener("popstate", this.popstateHandler);
         break;
-      case RoutingMode.HashUrl:
+      case RoutingMode.Hash:
         this.hashchangeHandler = this.handleHashchange.bind(this);
         window.addEventListener("hashchange", this.hashchangeHandler);
         break;
-      case RoutingMode.Embedded:
-        // No browser event listeners in embedded mode
+      case RoutingMode.Hidden:
+        // No browser event listeners in hidden mode
         break;
     }
   }
@@ -109,24 +109,24 @@ export class RouterManager {
     this.currentPath = path;
 
     switch (this.mode) {
-      case RoutingMode.Embedded:
+      case RoutingMode.Hidden:
         // Manage internal history only, truncate forward history
         this.history = this.history.slice(0, this.historyIndex + 1);
         this.history.push(path);
         this.historyIndex = this.history.length - 1;
         break;
-      case RoutingMode.HashUrl:
+      case RoutingMode.Hash:
         // Update hash (browser handles history automatically)
         window.location.hash = "#" + path;
         break;
-      case RoutingMode.Standard:
+      case RoutingMode.Url:
         window.history.pushState({ path }, "", path);
         break;
     }
   }
 
   back(): void {
-    if (this.mode === RoutingMode.Embedded) {
+    if (this.mode === RoutingMode.Hidden) {
       // Navigate internal history
       if (this.historyIndex > 0) {
         this.historyIndex--;
@@ -137,13 +137,13 @@ export class RouterManager {
         });
       }
     } else {
-      // Standard and HashUrl both use browser history
+      // Url and Hash both use browser history
       window.history.back();
     }
   }
 
   forward(): void {
-    if (this.mode === RoutingMode.Embedded) {
+    if (this.mode === RoutingMode.Hidden) {
       // Navigate internal history
       if (this.historyIndex < this.history.length - 1) {
         this.historyIndex++;
@@ -154,7 +154,7 @@ export class RouterManager {
         });
       }
     } else {
-      // Standard and HashUrl both use browser history
+      // Url and Hash both use browser history
       window.history.forward();
     }
   }

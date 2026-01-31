@@ -35,7 +35,7 @@ export interface TrellisAppProps {
   main?: string;
   /** Custom trellis wheel URL (optional, tries several paths by default) */
   trellisWheelUrl?: string;
-  /** Routing mode for URL handling. Defaults to HashUrl. */
+  /** Routing mode for URL handling. Defaults to Hash. */
   routingMode?: RoutingMode;
   /** Callback when loading status changes */
   onStatusChange?: (status: string) => void;
@@ -136,7 +136,7 @@ export function TrellisApp({
   source,
   main,
   trellisWheelUrl,
-  routingMode = RoutingMode.HashUrl,
+  routingMode = RoutingMode.Hash,
   onStatusChange,
   loadingComponent,
   errorComponent,

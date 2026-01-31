@@ -90,7 +90,7 @@ class TestPythonSourceBundleStep:
 
         step.run(ctx)
 
-        assert ctx.template_context["routing_mode"] == "hash_url"
+        assert ctx.template_context["routing_mode"] == "hash"
 
     def test_escapes_script_tags_in_source(self, tmp_path: Path) -> None:
         """Step escapes </script> in source to prevent XSS."""
@@ -883,4 +883,4 @@ class TestPythonSourceBundleStepShouldBuild:
 
         assert result == ShouldBuild.SKIP
         assert "source_json" in fresh_ctx.template_context
-        assert fresh_ctx.template_context["routing_mode"] == "hash_url"
+        assert fresh_ctx.template_context["routing_mode"] == "hash"

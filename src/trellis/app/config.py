@@ -96,11 +96,11 @@ def _default_routing_mode(platform: PlatformType) -> RoutingMode:
     """Return the default routing mode for a platform."""
     match platform:
         case PlatformType.SERVER:
-            return RoutingMode.STANDARD
+            return RoutingMode.URL
         case PlatformType.BROWSER:
-            return RoutingMode.HASH_URL
+            return RoutingMode.HASH
         case PlatformType.DESKTOP:
-            return RoutingMode.EMBEDDED
+            return RoutingMode.HIDDEN
 
 
 # Title (global - used for page title on server/browser, window title on desktop)

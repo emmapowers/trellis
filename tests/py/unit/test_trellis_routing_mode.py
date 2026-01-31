@@ -30,8 +30,8 @@ def dummy_component() -> None:
 class TestRoutingModeDefault:
     """Tests for default routing_mode value."""
 
-    def test_routing_mode_defaults_to_hash_url(self, mock_platform: Mock) -> None:
-        """routing_mode defaults to HASH_URL."""
+    def test_routing_mode_defaults_to_hash(self, mock_platform: Mock) -> None:
+        """routing_mode defaults to HASH."""
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
             with patch("sys.argv", ["app"]):
                 app = Trellis(top=dummy_component, ignore_cli=True)
@@ -39,131 +39,131 @@ class TestRoutingModeDefault:
         asyncio.run(app.serve())
 
         call_kwargs = mock_platform.run.call_args.kwargs
-        assert call_kwargs["routing_mode"] == RoutingMode.HASH_URL
+        assert call_kwargs["routing_mode"] == RoutingMode.HASH
 
 
 class TestRoutingModeExplicit:
     """Tests for explicitly setting routing_mode."""
 
-    def test_routing_mode_can_be_set_embedded(self, mock_platform: Mock) -> None:
-        """routing_mode=EMBEDDED is passed to platform.run()."""
+    def test_routing_mode_can_be_set_hidden(self, mock_platform: Mock) -> None:
+        """routing_mode=HIDDEN is passed to platform.run()."""
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
             with patch("sys.argv", ["app"]):
                 app = Trellis(
                     top=dummy_component,
                     ignore_cli=True,
-                    routing_mode=RoutingMode.EMBEDDED,
+                    routing_mode=RoutingMode.HIDDEN,
                 )
 
         asyncio.run(app.serve())
 
         call_kwargs = mock_platform.run.call_args.kwargs
-        assert call_kwargs["routing_mode"] == RoutingMode.EMBEDDED
+        assert call_kwargs["routing_mode"] == RoutingMode.HIDDEN
 
-    def test_routing_mode_can_be_set_standard(self, mock_platform: Mock) -> None:
-        """routing_mode=STANDARD is passed to platform.run()."""
+    def test_routing_mode_can_be_set_url(self, mock_platform: Mock) -> None:
+        """routing_mode=URL is passed to platform.run()."""
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
             with patch("sys.argv", ["app"]):
                 app = Trellis(
                     top=dummy_component,
                     ignore_cli=True,
-                    routing_mode=RoutingMode.STANDARD,
+                    routing_mode=RoutingMode.URL,
                 )
 
         asyncio.run(app.serve())
 
         call_kwargs = mock_platform.run.call_args.kwargs
-        assert call_kwargs["routing_mode"] == RoutingMode.STANDARD
+        assert call_kwargs["routing_mode"] == RoutingMode.URL
 
-    def test_routing_mode_can_be_set_hash_url(self, mock_platform: Mock) -> None:
-        """routing_mode=HASH_URL is passed to platform.run()."""
+    def test_routing_mode_can_be_set_hash(self, mock_platform: Mock) -> None:
+        """routing_mode=HASH is passed to platform.run()."""
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
             with patch("sys.argv", ["app"]):
                 app = Trellis(
                     top=dummy_component,
                     ignore_cli=True,
-                    routing_mode=RoutingMode.HASH_URL,
+                    routing_mode=RoutingMode.HASH,
                 )
 
         asyncio.run(app.serve())
 
         call_kwargs = mock_platform.run.call_args.kwargs
-        assert call_kwargs["routing_mode"] == RoutingMode.HASH_URL
+        assert call_kwargs["routing_mode"] == RoutingMode.HASH
 
 
-class TestDesktopForcesEmbedded:
-    """Tests for desktop platform always using embedded mode."""
+class TestDesktopForcesHidden:
+    """Tests for desktop platform always using hidden mode."""
 
-    def test_desktop_forces_embedded(self, mock_platform: Mock) -> None:
-        """Desktop platform forces EMBEDDED even if user specifies different mode."""
-        with patch("trellis.app.entry._get_platform", return_value=mock_platform):
-            with patch("sys.argv", ["app"]):
-                app = Trellis(
-                    top=dummy_component,
-                    ignore_cli=True,
-                    platform=PlatformType.DESKTOP,
-                    routing_mode=RoutingMode.HASH_URL,  # User tries to set HASH_URL
-                )
-
-        asyncio.run(app.serve())
-
-        call_kwargs = mock_platform.run.call_args.kwargs
-        # Desktop should force EMBEDDED regardless of user input
-        assert call_kwargs["routing_mode"] == RoutingMode.EMBEDDED
-
-    def test_desktop_embedded_when_not_specified(self, mock_platform: Mock) -> None:
-        """Desktop platform uses EMBEDDED when routing_mode not explicitly specified."""
+    def test_desktop_forces_hidden(self, mock_platform: Mock) -> None:
+        """Desktop platform forces HIDDEN even if user specifies different mode."""
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
             with patch("sys.argv", ["app"]):
                 app = Trellis(
                     top=dummy_component,
                     ignore_cli=True,
                     platform=PlatformType.DESKTOP,
+                    routing_mode=RoutingMode.HASH,  # User tries to set HASH
                 )
 
         asyncio.run(app.serve())
 
         call_kwargs = mock_platform.run.call_args.kwargs
-        assert call_kwargs["routing_mode"] == RoutingMode.EMBEDDED
+        # Desktop should force HIDDEN regardless of user input
+        assert call_kwargs["routing_mode"] == RoutingMode.HIDDEN
+
+    def test_desktop_hidden_when_not_specified(self, mock_platform: Mock) -> None:
+        """Desktop platform uses HIDDEN when routing_mode not explicitly specified."""
+        with patch("trellis.app.entry._get_platform", return_value=mock_platform):
+            with patch("sys.argv", ["app"]):
+                app = Trellis(
+                    top=dummy_component,
+                    ignore_cli=True,
+                    platform=PlatformType.DESKTOP,
+                )
+
+        asyncio.run(app.serve())
+
+        call_kwargs = mock_platform.run.call_args.kwargs
+        assert call_kwargs["routing_mode"] == RoutingMode.HIDDEN
 
 
 class TestBrowserRespectsRoutingMode:
     """Tests for browser platform respecting routing_mode param."""
 
-    def test_browser_respects_embedded(self, mock_platform: Mock) -> None:
-        """Browser platform uses EMBEDDED when specified."""
+    def test_browser_respects_hidden(self, mock_platform: Mock) -> None:
+        """Browser platform uses HIDDEN when specified."""
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
             with patch("sys.argv", ["app"]):
                 app = Trellis(
                     top=dummy_component,
                     ignore_cli=True,
                     platform=PlatformType.BROWSER,
-                    routing_mode=RoutingMode.EMBEDDED,
+                    routing_mode=RoutingMode.HIDDEN,
                 )
 
         asyncio.run(app.serve())
 
         call_kwargs = mock_platform.run.call_args.kwargs
-        assert call_kwargs["routing_mode"] == RoutingMode.EMBEDDED
+        assert call_kwargs["routing_mode"] == RoutingMode.HIDDEN
 
-    def test_browser_respects_hash_url(self, mock_platform: Mock) -> None:
-        """Browser platform uses HASH_URL when specified."""
+    def test_browser_respects_hash(self, mock_platform: Mock) -> None:
+        """Browser platform uses HASH when specified."""
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
             with patch("sys.argv", ["app"]):
                 app = Trellis(
                     top=dummy_component,
                     ignore_cli=True,
                     platform=PlatformType.BROWSER,
-                    routing_mode=RoutingMode.HASH_URL,
+                    routing_mode=RoutingMode.HASH,
                 )
 
         asyncio.run(app.serve())
 
         call_kwargs = mock_platform.run.call_args.kwargs
-        assert call_kwargs["routing_mode"] == RoutingMode.HASH_URL
+        assert call_kwargs["routing_mode"] == RoutingMode.HASH
 
-    def test_browser_defaults_hash_url(self, mock_platform: Mock) -> None:
-        """Browser platform defaults to HASH_URL."""
+    def test_browser_defaults_hash(self, mock_platform: Mock) -> None:
+        """Browser platform defaults to HASH."""
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
             with patch("sys.argv", ["app"]):
                 app = Trellis(
@@ -175,14 +175,14 @@ class TestBrowserRespectsRoutingMode:
         asyncio.run(app.serve())
 
         call_kwargs = mock_platform.run.call_args.kwargs
-        assert call_kwargs["routing_mode"] == RoutingMode.HASH_URL
+        assert call_kwargs["routing_mode"] == RoutingMode.HASH
 
 
 class TestServerRoutingMode:
     """Tests for server platform routing_mode behavior."""
 
-    def test_server_defaults_hash_url(self, mock_platform: Mock) -> None:
-        """Server platform defaults to HASH_URL."""
+    def test_server_defaults_hash(self, mock_platform: Mock) -> None:
+        """Server platform defaults to HASH."""
         with patch("trellis.app.entry._get_platform", return_value=mock_platform):
             with patch("sys.argv", ["app"]):
                 app = Trellis(
@@ -194,4 +194,4 @@ class TestServerRoutingMode:
         asyncio.run(app.serve())
 
         call_kwargs = mock_platform.run.call_args.kwargs
-        assert call_kwargs["routing_mode"] == RoutingMode.HASH_URL
+        assert call_kwargs["routing_mode"] == RoutingMode.HASH

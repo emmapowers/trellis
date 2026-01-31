@@ -165,7 +165,7 @@ class PythonSourceBundleStep(BuildStep):
         source = build_source_config(ctx.python_entry_point)
         source_json = json.dumps(source).replace("</", r"<\/")
         ctx.template_context["source_json"] = source_json
-        ctx.template_context["routing_mode"] = "hash_url"
+        ctx.template_context["routing_mode"] = "hash"
 
         return ShouldBuild.SKIP
 
@@ -179,7 +179,7 @@ class PythonSourceBundleStep(BuildStep):
         source_json = json.dumps(source).replace("</", r"<\/")
 
         ctx.template_context["source_json"] = source_json
-        ctx.template_context["routing_mode"] = "hash_url"
+        ctx.template_context["routing_mode"] = "hash"
 
         # Populate step manifest with source files and mtime
         step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())

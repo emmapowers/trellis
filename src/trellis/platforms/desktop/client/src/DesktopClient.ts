@@ -47,7 +47,7 @@ export class DesktopClient extends BaseTrellisClient {
    * @param store - Optional store instance (defaults to singleton)
    */
   constructor(callbacks: DesktopClientCallbacks = {}, store?: TrellisStore) {
-    super(RoutingMode.Embedded, callbacks, store, "/");
+    super(RoutingMode.Hidden, callbacks, store, "/");
   }
 
   protected sendUrlChange(msg: UrlChangedMessage): void {

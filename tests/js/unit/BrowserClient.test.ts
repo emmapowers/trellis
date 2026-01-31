@@ -51,13 +51,13 @@ describe("BrowserClient", () => {
   });
 
   describe("routing mode", () => {
-    it("defaults to HashUrl mode (uses window.location.hash)", () => {
+    it("defaults to Hash mode (uses window.location.hash)", () => {
       const client = new BrowserClient();
 
       // Set up send callback so navigation works
       client.setSendCallback(() => {});
 
-      // In HashUrl mode, pushState should update hash, not call pushState
+      // In Hash mode, pushState should update hash, not call pushState
       // @ts-expect-error - accessing private property for testing
       client.routerManager.pushState("/users");
 
@@ -67,9 +67,9 @@ describe("BrowserClient", () => {
       client.disconnect();
     });
 
-    it("uses Standard mode when routingMode=Standard", () => {
+    it("uses Url mode when routingMode=Url", () => {
       const client = new BrowserClient({}, undefined, {
-        routingMode: RoutingMode.Standard,
+        routingMode: RoutingMode.Url,
       });
 
       // Set up send callback so navigation works
@@ -87,15 +87,15 @@ describe("BrowserClient", () => {
       client.disconnect();
     });
 
-    it("uses Embedded mode when routingMode=Embedded", () => {
+    it("uses Hidden mode when routingMode=Hidden", () => {
       const client = new BrowserClient({}, undefined, {
-        routingMode: RoutingMode.Embedded,
+        routingMode: RoutingMode.Hidden,
       });
 
       // Set up send callback so navigation works
       client.setSendCallback(() => {});
 
-      // In Embedded mode, pushState should NOT call window.history.pushState
+      // In Hidden mode, pushState should NOT call window.history.pushState
       // @ts-expect-error - accessing private property for testing
       client.routerManager.pushState("/users");
 
@@ -105,7 +105,7 @@ describe("BrowserClient", () => {
       client.disconnect();
     });
 
-    it("reads initial path from hash in HashUrl mode", () => {
+    it("reads initial path from hash in Hash mode", () => {
       Object.defineProperty(window, "location", {
         value: { pathname: "/", hash: "#/users/123" },
         writable: true,

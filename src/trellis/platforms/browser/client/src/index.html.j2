@@ -23,7 +23,7 @@
     <script>
         window.__TRELLIS_CONFIG__ = {
             source: {{ source_json | safe }},
-            routingMode: "{{ routing_mode | default('hash_url') }}"
+            routingMode: "{{ routing_mode | default('hash') }}"
         };
     </script>
     {% endif %}
