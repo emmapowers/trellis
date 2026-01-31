@@ -74,7 +74,7 @@ def build(
     *,
     force: bool = False,
     output_dir: Path | None = None,
-    app_static_dir: Path | None = None,
+    assets_dir: Path | None = None,
     python_entry_point: Path | None = None,
 ) -> None:
     """Run a build pipeline with the given steps.
@@ -90,7 +90,7 @@ def build(
         steps: List of build steps to execute in order
         force: Force rebuild even if up to date
         output_dir: Custom output directory (default: workspace/dist)
-        app_static_dir: App-level static files directory to copy to dist
+        assets_dir: App-level static files directory to copy to dist
         python_entry_point: Python app entry point for browser bundling (optional)
     """
     # Import Python entry point to trigger module registrations before collect()
@@ -114,7 +114,7 @@ def build(
         collected=collected,
         dist_dir=dist_dir,
         manifest=manifest,
-        app_static_dir=app_static_dir,
+        assets_dir=assets_dir,
         python_entry_point=python_entry_point,
         env={
             **os.environ,

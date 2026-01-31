@@ -46,7 +46,7 @@ class ActionType(StrEnum):
     NONE = auto()
     TOUCH_ENTRY_POINT = auto()
     TOUCH_TEMPLATE = auto()
-    TOUCH_STATIC_FILE = auto()
+    TOUCH_ASSET_FILE = auto()
     TOUCH_PYTHON_SOURCE = auto()
     TOUCH_WHEEL = auto()
     REGISTER_MODULE = auto()
@@ -70,8 +70,8 @@ class ServerBuildSetup:
     workspace: Path
     steps: list[BuildStep]
     template_path: Path
-    static_file: Path
-    app_static_dir: Path
+    asset_file: Path
+    assets_dir: Path
 
 
 @dataclass
@@ -83,8 +83,8 @@ class BrowserBuildSetup:
     workspace: Path
     steps: list[BuildStep]
     template_path: Path
-    static_file: Path
-    app_static_dir: Path
+    asset_file: Path
+    assets_dir: Path
     python_entry_point: Path
     wheel_path: Path
     wheel_dir: Path
@@ -127,7 +127,7 @@ STEP_DETECTORS: dict[str, StepDetector] = {
     "bundle-build": StepDetector(
         get_output=lambda ws, dist: dist / "bundle.js" if (dist / "bundle.js").exists() else None
     ),
-    "static-file-copy": StepDetector(
+    "asset-file-copy": StepDetector(
         get_output=lambda ws, dist: dist / "test.txt" if (dist / "test.txt").exists() else None
     ),
     "index-html-render": StepDetector(
@@ -217,8 +217,8 @@ def apply_action(action: ActionType, setup: ServerBuildSetup | BrowserBuildSetup
             setup.entry_point.touch()
         case ActionType.TOUCH_TEMPLATE:
             setup.template_path.touch()
-        case ActionType.TOUCH_STATIC_FILE:
-            setup.static_file.touch()
+        case ActionType.TOUCH_ASSET_FILE:
+            setup.asset_file.touch()
         case ActionType.TOUCH_PYTHON_SOURCE:
             if isinstance(setup, BrowserBuildSetup):
                 # Modify content, not just mtime - otherwise source_json is unchanged
@@ -245,7 +245,7 @@ SERVER_CASES = [
         "touch_template", ActionType.TOUCH_TEMPLATE, frozenset({"index-html-render"})
     ),
     IncrementalTestCase(
-        "touch_static", ActionType.TOUCH_STATIC_FILE, frozenset({"static-file-copy"})
+        "touch_static", ActionType.TOUCH_ASSET_FILE, frozenset({"asset-file-copy"})
     ),
     IncrementalTestCase(
         "touch_entry_point", ActionType.TOUCH_ENTRY_POINT, frozenset({"bundle-build"})
@@ -270,7 +270,7 @@ BROWSER_APP_CASES = [
     ),
     IncrementalTestCase("touch_wheel", ActionType.TOUCH_WHEEL, frozenset({"wheel-copy"})),
     IncrementalTestCase(
-        "touch_static", ActionType.TOUCH_STATIC_FILE, frozenset({"static-file-copy"})
+        "touch_static", ActionType.TOUCH_ASSET_FILE, frozenset({"asset-file-copy"})
     ),
     IncrementalTestCase(
         "touch_entry_point", ActionType.TOUCH_ENTRY_POINT, frozenset({"bundle-build"})
@@ -321,11 +321,11 @@ export const App = () => <div>Hello</div>;
 """
         )
 
-        # Create static dir with test file
-        static_dir = tmp_path / "static"
-        static_dir.mkdir()
-        static_file = static_dir / "test.txt"
-        static_file.write_text("test content")
+        # Create assets dir with test file
+        assets_dir = tmp_path / "assets"
+        assets_dir.mkdir()
+        asset_file = assets_dir / "test.txt"
+        asset_file.write_text("test content")
 
         # Registry with packages
         registry = ModuleRegistry()
@@ -348,8 +348,8 @@ export const App = () => <div>Hello</div>;
             workspace=workspace,
             steps=steps,
             template_path=template_path,
-            static_file=static_file,
-            app_static_dir=static_dir,
+            asset_file=asset_file,
+            assets_dir=assets_dir,
         )
 
     @pytest.mark.parametrize("case", SERVER_CASES, ids=lambda c: c.id)
@@ -366,7 +366,7 @@ export const App = () => <div>Hello</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
             force=True,
         )
 
@@ -382,7 +382,7 @@ export const App = () => <div>Hello</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
             force=False,
         )
 
@@ -433,11 +433,11 @@ export const App = () => <div>Hello Browser</div>;
 """
         )
 
-        # Create static dir with test file
-        static_dir = tmp_path / "static"
-        static_dir.mkdir()
-        static_file = static_dir / "test.txt"
-        static_file.write_text("test content")
+        # Create assets dir with test file
+        assets_dir = tmp_path / "assets"
+        assets_dir.mkdir()
+        asset_file = assets_dir / "test.txt"
+        asset_file.write_text("test content")
 
         # Create Python entry point
         python_dir = tmp_path / "app"
@@ -475,8 +475,8 @@ export const App = () => <div>Hello Browser</div>;
             workspace=workspace,
             steps=steps,
             template_path=template_path,
-            static_file=static_file,
-            app_static_dir=static_dir,
+            asset_file=asset_file,
+            assets_dir=assets_dir,
             python_entry_point=python_entry,
             wheel_path=wheel_path,
             wheel_dir=wheel_dir,
@@ -496,7 +496,7 @@ export const App = () => <div>Hello Browser</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
             python_entry_point=setup.python_entry_point,
             force=True,
         )
@@ -513,7 +513,7 @@ export const App = () => <div>Hello Browser</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
             python_entry_point=setup.python_entry_point,
             force=False,
         )
@@ -567,11 +567,11 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
 """
         )
 
-        # Create static dir with test file
-        static_dir = tmp_path / "static"
-        static_dir.mkdir()
-        static_file = static_dir / "test.txt"
-        static_file.write_text("test content")
+        # Create assets dir with test file
+        assets_dir = tmp_path / "assets"
+        assets_dir.mkdir()
+        asset_file = assets_dir / "test.txt"
+        asset_file.write_text("test content")
 
         # Registry with packages (including dts-bundle-generator for DeclarationStep)
         # Note: @types/react and @types/react-dom are required for dts-bundle-generator
@@ -606,8 +606,8 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             workspace=workspace,
             steps=steps,
             template_path=template_path,
-            static_file=static_file,
-            app_static_dir=static_dir,
+            asset_file=asset_file,
+            assets_dir=assets_dir,
         )
 
     def test_declaration_step_runs_on_initial_build(
@@ -622,7 +622,7 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
             force=True,
         )
 
@@ -643,7 +643,7 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
             force=True,
         )
 
@@ -655,7 +655,7 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
             force=False,
         )
 
@@ -677,7 +677,7 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
             force=True,
         )
 
@@ -693,7 +693,7 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
             force=False,
         )
 

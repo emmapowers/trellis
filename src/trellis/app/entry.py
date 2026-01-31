@@ -550,7 +550,7 @@ class Trellis:
         # Build client bundle if needed
         workspace = self._platform.bundle(
             force=self._args.get("build_bundle"),
-            app_static_dir=self._static_files,
+            assets_dir=self._static_files,
         )
 
         # Start watch in background thread if enabled
@@ -560,7 +560,7 @@ class Trellis:
         if self._args.get("watch"):
 
             def rebuild() -> None:
-                self._platform.bundle(app_static_dir=self._static_files)
+                self._platform.bundle(assets_dir=self._static_files)
 
             watch_thread = _WatchThread(workspace, rebuild)
             watch_thread.start()

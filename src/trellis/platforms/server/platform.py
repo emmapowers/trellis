@@ -78,7 +78,7 @@ class ServerPlatform(Platform):
         force: bool = False,
         dest: Path | None = None,
         library: bool = False,
-        app_static_dir: Path | None = None,
+        assets_dir: Path | None = None,
     ) -> Path:
         """Build the server client bundle if needed.
 
@@ -98,7 +98,7 @@ class ServerPlatform(Platform):
             steps=self._get_build_steps(),
             force=force,
             output_dir=dest,
-            app_static_dir=app_static_dir,
+            assets_dir=assets_dir,
         )
         return workspace
 

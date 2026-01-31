@@ -36,7 +36,7 @@ class BrowserPlatform(Platform):
         force: bool = False,
         dest: Path | None = None,
         library: bool = False,
-        app_static_dir: Path | None = None,
+        assets_dir: Path | None = None,
     ) -> Path:
         """No-op in Pyodide - bundling is done before loading.
 

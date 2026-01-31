@@ -134,7 +134,7 @@ class BrowserServePlatform(Platform):
         force: bool = False,
         dest: Path | None = None,
         library: bool = False,
-        app_static_dir: Path | None = None,
+        assets_dir: Path | None = None,
         python_entry_point: Path | None = None,
     ) -> Path:
         """Build the browser client bundle if needed.
@@ -147,7 +147,7 @@ class BrowserServePlatform(Platform):
             dest: Custom output directory (default: cache directory)
             library: If True, build as library exporting TrellisApp (uses index.ts).
                      If False, build as app that renders to DOM (uses main.tsx).
-            app_static_dir: App-level static files directory to copy to dist
+            assets_dir: App-level static files directory to copy to dist
             python_entry_point: Python app entry point to embed in bundle.
                 If None in app mode, auto-detects from __main__ module.
 
@@ -198,7 +198,7 @@ class BrowserServePlatform(Platform):
             steps=steps,
             force=force,
             output_dir=dest,
-            app_static_dir=app_static_dir,
+            assets_dir=assets_dir,
             python_entry_point=python_entry_point,
         )
         return workspace

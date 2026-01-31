@@ -54,7 +54,7 @@ class Platform(ABC):
         force: bool = False,
         dest: Path | None = None,
         library: bool = False,
-        app_static_dir: Path | None = None,
+        assets_dir: Path | None = None,
     ) -> Path:
         """Build the client bundle for this platform.
 
@@ -62,7 +62,7 @@ class Platform(ABC):
             force: Force rebuild even if sources unchanged
             dest: Custom output directory (default: cache directory)
             library: Build as library with exports (vs app that renders to DOM)
-            app_static_dir: App-level static files directory to copy to dist
+            assets_dir: App-level static files directory to copy to dist
 
         Returns:
             The workspace Path used for the build

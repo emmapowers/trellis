@@ -1825,25 +1825,25 @@ class TestStaticFileCopyStep:
     """Tests for StaticFileCopyStep.
 
     StaticFileCopyStep uses convention-based discovery:
-    - Copies from module._base_path / "static" for each module
-    - Copies from ctx.app_static_dir if provided
+    - Copies from module._base_path / "assets" for each module
+    - Copies from ctx.assets_dir if provided
     """
 
-    def test_has_name_static_file_copy(self) -> None:
-        """StaticFileCopyStep.name is 'static-file-copy'."""
+    def test_has_name_asset_file_copy(self) -> None:
+        """StaticFileCopyStep.name is 'asset-file-copy'."""
         step = StaticFileCopyStep()
-        assert step.name == "static-file-copy"
+        assert step.name == "asset-file-copy"
 
-    def test_copies_files_from_module_static_directory(self, tmp_path: Path) -> None:
-        """StaticFileCopyStep copies files from module._base_path / 'static'."""
+    def test_copies_files_from_module_assets_directory(self, tmp_path: Path) -> None:
+        """StaticFileCopyStep copies files from module._base_path / 'assets'."""
         registry = ModuleRegistry()
 
-        # Create module with static directory
+        # Create module with assets directory
         mod_dir = tmp_path / "my_mod"
-        static_dir = mod_dir / "static"
-        static_dir.mkdir(parents=True)
-        (static_dir / "data.json").write_text('{"key": "value"}')
-        (static_dir / "icon.png").write_bytes(b"PNG data")
+        assets_dir = mod_dir / "assets"
+        assets_dir.mkdir(parents=True)
+        (assets_dir / "data.json").write_text('{"key": "value"}')
+        (assets_dir / "icon.png").write_bytes(b"PNG data")
 
         registry.register("my-mod")
         registry._modules["my-mod"]._base_path = mod_dir
@@ -1872,14 +1872,14 @@ class TestStaticFileCopyStep:
         assert (dist_dir / "icon.png").exists()
         assert (dist_dir / "icon.png").read_bytes() == b"PNG data"
 
-    def test_ignores_modules_without_static_directory(self, tmp_path: Path) -> None:
-        """StaticFileCopyStep skips modules that have no static directory."""
+    def test_ignores_modules_without_assets_directory(self, tmp_path: Path) -> None:
+        """StaticFileCopyStep skips modules that have no assets directory."""
         registry = ModuleRegistry()
 
-        # Create module WITHOUT static directory
+        # Create module WITHOUT assets directory
         mod_dir = tmp_path / "my_mod"
         mod_dir.mkdir()
-        # No static folder created
+        # No assets folder created
 
         registry.register("my-mod")
         registry._modules["my-mod"]._base_path = mod_dir
@@ -1907,16 +1907,16 @@ class TestStaticFileCopyStep:
         assert list(dist_dir.iterdir()) == []
 
     def test_preserves_nested_directory_structure(self, tmp_path: Path) -> None:
-        """StaticFileCopyStep preserves nested directories from static folder."""
+        """StaticFileCopyStep preserves nested directories from assets folder."""
         registry = ModuleRegistry()
 
-        # Create module with nested static structure
+        # Create module with nested assets structure
         mod_dir = tmp_path / "my_mod"
-        static_dir = mod_dir / "static"
-        (static_dir / "assets" / "images").mkdir(parents=True)
-        (static_dir / "assets" / "images" / "logo.png").write_bytes(b"PNG data")
-        (static_dir / "assets" / "fonts").mkdir(parents=True)
-        (static_dir / "assets" / "fonts" / "font.woff").write_bytes(b"WOFF data")
+        assets_dir = mod_dir / "assets"
+        (assets_dir / "images").mkdir(parents=True)
+        (assets_dir / "images" / "logo.png").write_bytes(b"PNG data")
+        (assets_dir / "fonts").mkdir(parents=True)
+        (assets_dir / "fonts" / "font.woff").write_bytes(b"WOFF data")
 
         registry.register("my-mod")
         registry._modules["my-mod"]._base_path = mod_dir
@@ -1940,21 +1940,21 @@ class TestStaticFileCopyStep:
         step.run(ctx)
 
         # Nested structure should be preserved
-        assert (dist_dir / "assets" / "images" / "logo.png").exists()
-        assert (dist_dir / "assets" / "images" / "logo.png").read_bytes() == b"PNG data"
-        assert (dist_dir / "assets" / "fonts" / "font.woff").exists()
-        assert (dist_dir / "assets" / "fonts" / "font.woff").read_bytes() == b"WOFF data"
+        assert (dist_dir / "images" / "logo.png").exists()
+        assert (dist_dir / "images" / "logo.png").read_bytes() == b"PNG data"
+        assert (dist_dir / "fonts" / "font.woff").exists()
+        assert (dist_dir / "fonts" / "font.woff").read_bytes() == b"WOFF data"
 
-    def test_copies_app_level_static_files(self, tmp_path: Path) -> None:
-        """StaticFileCopyStep copies from ctx.app_static_dir if provided."""
+    def test_copies_app_level_assets(self, tmp_path: Path) -> None:
+        """StaticFileCopyStep copies from ctx.assets_dir if provided."""
         registry = ModuleRegistry()
         collected = registry.collect()
 
-        # Create app-level static directory
-        app_static = tmp_path / "app_static"
-        app_static.mkdir()
-        (app_static / "favicon.ico").write_bytes(b"ICON data")
-        (app_static / "robots.txt").write_text("User-agent: *")
+        # Create app-level assets directory
+        app_assets = tmp_path / "app_assets"
+        app_assets.mkdir()
+        (app_assets / "favicon.ico").write_bytes(b"ICON data")
+        (app_assets / "robots.txt").write_text("User-agent: *")
 
         workspace = tmp_path / "workspace"
         workspace.mkdir()
@@ -1968,36 +1968,36 @@ class TestStaticFileCopyStep:
             collected=collected,
             dist_dir=dist_dir,
             manifest=BuildManifest(),
-            app_static_dir=app_static,
+            assets_dir=app_assets,
         )
 
         step = StaticFileCopyStep()
         step.run(ctx)
 
-        # App-level static files should be copied
+        # App-level assets should be copied
         assert (dist_dir / "favicon.ico").exists()
         assert (dist_dir / "favicon.ico").read_bytes() == b"ICON data"
         assert (dist_dir / "robots.txt").exists()
         assert (dist_dir / "robots.txt").read_text() == "User-agent: *"
 
     def test_copies_from_both_modules_and_app(self, tmp_path: Path) -> None:
-        """StaticFileCopyStep copies from both module static dirs and app_static_dir."""
+        """StaticFileCopyStep copies from both module assets dirs and app assets_dir."""
         registry = ModuleRegistry()
 
-        # Create module with static directory
+        # Create module with assets directory
         mod_dir = tmp_path / "my_mod"
-        static_dir = mod_dir / "static"
-        static_dir.mkdir(parents=True)
-        (static_dir / "module.css").write_text(".mod { }")
+        mod_assets_dir = mod_dir / "assets"
+        mod_assets_dir.mkdir(parents=True)
+        (mod_assets_dir / "module.css").write_text(".mod { }")
 
         registry.register("my-mod")
         registry._modules["my-mod"]._base_path = mod_dir
         collected = registry.collect()
 
-        # Create app-level static directory
-        app_static = tmp_path / "app_static"
-        app_static.mkdir()
-        (app_static / "app.css").write_text(".app { }")
+        # Create app-level assets directory
+        app_assets = tmp_path / "app_assets"
+        app_assets.mkdir()
+        (app_assets / "app.css").write_text(".app { }")
 
         workspace = tmp_path / "workspace"
         workspace.mkdir()
@@ -2011,13 +2011,13 @@ class TestStaticFileCopyStep:
             collected=collected,
             dist_dir=dist_dir,
             manifest=BuildManifest(),
-            app_static_dir=app_static,
+            assets_dir=app_assets,
         )
 
         step = StaticFileCopyStep()
         step.run(ctx)
 
-        # Both module and app static files should be copied
+        # Both module assets dirs and app assets should be copied
         assert (dist_dir / "module.css").exists()
         assert (dist_dir / "app.css").exists()
 
@@ -2025,15 +2025,15 @@ class TestStaticFileCopyStep:
 class TestStaticFileCopyStepManifest:
     """Tests for StaticFileCopyStep manifest population."""
 
-    def test_adds_static_directories_to_source_paths(self, tmp_path: Path) -> None:
-        """StaticFileCopyStep adds static directories to manifest.source_paths."""
+    def test_adds_module_assets_directories_to_source_paths(self, tmp_path: Path) -> None:
+        """StaticFileCopyStep adds module assets directories to manifest.source_paths."""
         registry = ModuleRegistry()
 
-        # Create module with static directory
+        # Create module with assets directory
         mod_dir = tmp_path / "my_mod"
-        static_dir = mod_dir / "static"
-        static_dir.mkdir(parents=True)
-        (static_dir / "data.json").write_text("{}")
+        assets_dir = mod_dir / "assets"
+        assets_dir.mkdir(parents=True)
+        (assets_dir / "data.json").write_text("{}")
 
         registry.register("my-mod")
         registry._modules["my-mod"]._base_path = mod_dir
@@ -2056,19 +2056,19 @@ class TestStaticFileCopyStepManifest:
         step = StaticFileCopyStep()
         step.run(ctx)
 
-        # Static directory should be in source_paths (not individual files)
-        step_manifest = ctx.manifest.steps["static-file-copy"]
-        assert static_dir in step_manifest.source_paths
+        # Assets directory should be in source_paths (not individual files)
+        step_manifest = ctx.manifest.steps["asset-file-copy"]
+        assert assets_dir in step_manifest.source_paths
 
-    def test_adds_app_static_dir_to_source_paths(self, tmp_path: Path) -> None:
-        """StaticFileCopyStep adds app_static_dir to manifest.source_paths."""
+    def test_adds_assets_dir_to_source_paths(self, tmp_path: Path) -> None:
+        """StaticFileCopyStep adds assets_dir to manifest.source_paths."""
         registry = ModuleRegistry()
         collected = registry.collect()
 
-        # Create app-level static directory
-        app_static = tmp_path / "app_static"
-        app_static.mkdir()
-        (app_static / "favicon.ico").write_bytes(b"ICON data")
+        # Create app-level assets directory
+        app_assets = tmp_path / "app_assets"
+        app_assets.mkdir()
+        (app_assets / "favicon.ico").write_bytes(b"ICON data")
 
         workspace = tmp_path / "workspace"
         workspace.mkdir()
@@ -2082,25 +2082,25 @@ class TestStaticFileCopyStepManifest:
             collected=collected,
             dist_dir=dist_dir,
             manifest=BuildManifest(),
-            app_static_dir=app_static,
+            assets_dir=app_assets,
         )
 
         step = StaticFileCopyStep()
         step.run(ctx)
 
-        step_manifest = ctx.manifest.steps["static-file-copy"]
-        assert app_static in step_manifest.source_paths
+        step_manifest = ctx.manifest.steps["asset-file-copy"]
+        assert app_assets in step_manifest.source_paths
 
     def test_adds_copied_files_to_dest_files(self, tmp_path: Path) -> None:
         """StaticFileCopyStep adds copied files to manifest.dest_files."""
         registry = ModuleRegistry()
 
-        # Create module with static files
+        # Create module with assets
         mod_dir = tmp_path / "my_mod"
-        static_dir = mod_dir / "static"
-        (static_dir / "assets").mkdir(parents=True)
-        (static_dir / "data.json").write_text("{}")
-        (static_dir / "assets" / "logo.png").write_bytes(b"PNG")
+        assets_dir = mod_dir / "assets"
+        (assets_dir / "images").mkdir(parents=True)
+        (assets_dir / "data.json").write_text("{}")
+        (assets_dir / "images" / "logo.png").write_bytes(b"PNG")
 
         registry.register("my-mod")
         registry._modules["my-mod"]._base_path = mod_dir
@@ -2124,9 +2124,9 @@ class TestStaticFileCopyStepManifest:
         step.run(ctx)
 
         # All copied files should be in dest_files
-        step_manifest = ctx.manifest.steps["static-file-copy"]
+        step_manifest = ctx.manifest.steps["asset-file-copy"]
         assert (dist_dir / "data.json") in step_manifest.dest_files
-        assert (dist_dir / "assets" / "logo.png") in step_manifest.dest_files
+        assert (dist_dir / "images" / "logo.png") in step_manifest.dest_files
 
 
 class TestStaticFileCopyStepShouldBuild:
@@ -2134,14 +2134,14 @@ class TestStaticFileCopyStepShouldBuild:
 
     @pytest.fixture
     def build_context(self, tmp_path: Path) -> BuildContext:
-        """Create a BuildContext with static directory for testing."""
+        """Create a BuildContext with assets directory for testing."""
         registry = ModuleRegistry()
 
-        # Create module with static directory
+        # Create module with assets directory
         mod_dir = tmp_path / "my_mod"
-        static_dir = mod_dir / "static"
-        static_dir.mkdir(parents=True)
-        (static_dir / "data.json").write_text('{"key": "value"}')
+        assets_dir = mod_dir / "assets"
+        assets_dir.mkdir(parents=True)
+        (assets_dir / "data.json").write_text('{"key": "value"}')
 
         registry.register("my-mod")
         registry._modules["my-mod"]._base_path = mod_dir
@@ -2184,9 +2184,9 @@ class TestStaticFileCopyStepShouldBuild:
         self, build_context: BuildContext, tmp_path: Path
     ) -> None:
         """should_build returns BUILD when output file doesn't exist."""
-        static_dir = tmp_path / "my_mod" / "static"
+        assets_dir = tmp_path / "my_mod" / "assets"
         prev_manifest = StepManifest(
-            source_paths={static_dir},
+            source_paths={assets_dir},
             dest_files={build_context.dist_dir / "data.json"},  # Doesn't exist
         )
 
@@ -2199,7 +2199,7 @@ class TestStaticFileCopyStepShouldBuild:
         self, build_context: BuildContext, tmp_path: Path
     ) -> None:
         """should_build returns BUILD when source is newer than output."""
-        static_dir = tmp_path / "my_mod" / "static"
+        assets_dir = tmp_path / "my_mod" / "assets"
 
         # Create output first
         output_file = build_context.dist_dir / "data.json"
@@ -2208,10 +2208,10 @@ class TestStaticFileCopyStepShouldBuild:
         time.sleep(0.01)  # Ensure different mtime
 
         # Modify source (now newer)
-        (static_dir / "data.json").write_text('{"key": "new"}')
+        (assets_dir / "data.json").write_text('{"key": "new"}')
 
         prev_manifest = StepManifest(
-            source_paths={static_dir},
+            source_paths={assets_dir},
             dest_files={output_file},
         )
 
@@ -2224,7 +2224,7 @@ class TestStaticFileCopyStepShouldBuild:
         self, build_context: BuildContext, tmp_path: Path
     ) -> None:
         """should_build returns SKIP when outputs are newer than sources."""
-        static_dir = tmp_path / "my_mod" / "static"
+        assets_dir = tmp_path / "my_mod" / "assets"
 
         time.sleep(0.01)  # Ensure different mtime
 
@@ -2233,7 +2233,7 @@ class TestStaticFileCopyStepShouldBuild:
         output_file.write_text('{"key": "value"}')
 
         prev_manifest = StepManifest(
-            source_paths={static_dir},
+            source_paths={assets_dir},
             dest_files={output_file},
         )
 
