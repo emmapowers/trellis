@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
 
 from trellis.app.config import Config
-from trellis.app.configvars import cli_context
+from trellis.app.configvars import cli_context, coerce_value
 from trellis.platforms.common.base import PlatformType
 from trellis.routing.enums import RoutingMode
 
@@ -203,3 +204,154 @@ class TestConfigTitle:
     def test_explicit_title_overrides_name(self) -> None:
         config = Config(name="myapp", module="main", title="Custom Title")
         assert config.title == "Custom Title"
+
+
+class TestCoerceValue:
+    """Test coerce_value() helper function."""
+
+    def test_coerces_platform_enum(self) -> None:
+        result = coerce_value("platform", "desktop")
+        assert result == PlatformType.DESKTOP
+
+    def test_coerces_port_to_int(self) -> None:
+        result = coerce_value("port", "8080")
+        assert result == 8080
+        assert isinstance(result, int)
+
+    def test_coerces_path(self) -> None:
+        result = coerce_value("assets_dir", "/var/www/assets")
+        assert result == Path("/var/www/assets")
+
+    def test_unknown_field_raises_key_error(self) -> None:
+        with pytest.raises(KeyError, match="No ConfigVar registered for field"):
+            coerce_value("nonexistent_field", "value")
+
+
+class TestConfigToJson:
+    """Test Config.to_json() serialization."""
+
+    def test_serializes_required_fields(self) -> None:
+        config = Config(name="myapp", module="main")
+        result = json.loads(config.to_json())
+        assert result["name"] == "myapp"
+        assert result["module"] == "main"
+
+    def test_serializes_enum_as_string_value(self) -> None:
+        config = Config(name="myapp", module="main", platform=PlatformType.DESKTOP)
+        result = json.loads(config.to_json())
+        assert result["platform"] == "desktop"
+
+    def test_serializes_path_as_string(self) -> None:
+        config = Config(name="myapp", module="main", assets_dir=Path("/var/www"))
+        result = json.loads(config.to_json())
+        assert result["assets_dir"] == "/var/www"
+
+    def test_serializes_none_as_null(self) -> None:
+        config = Config(name="myapp", module="main", port=None)
+        result = json.loads(config.to_json())
+        assert result["port"] is None
+
+    def test_serializes_all_fields(self) -> None:
+        config = Config(name="myapp", module="main")
+        result = json.loads(config.to_json())
+        # Check that all Config fields are present
+        expected_fields = {
+            "name",
+            "module",
+            "platform",
+            "force_build",
+            "watch",
+            "batch_delay",
+            "hot_reload",
+            "routing_mode",
+            "debug",
+            "assets_dir",
+            "title",
+            "host",
+            "port",
+            "window_size",
+        }
+        assert set(result.keys()) == expected_fields
+
+
+class TestConfigFromJson:
+    """Test Config.from_json() deserialization."""
+
+    def test_deserializes_required_fields(self) -> None:
+        json_str = json.dumps({"name": "myapp", "module": "main"})
+        config = Config.from_json(json_str)
+        assert config.name == "myapp"
+        assert config.module == "main"
+
+    def test_deserializes_enum_from_string(self) -> None:
+        json_str = json.dumps({"name": "myapp", "module": "main", "platform": "desktop"})
+        config = Config.from_json(json_str)
+        assert config.platform == PlatformType.DESKTOP
+
+    def test_deserializes_path_from_string(self) -> None:
+        json_str = json.dumps({"name": "myapp", "module": "main", "assets_dir": "/var/www"})
+        config = Config.from_json(json_str)
+        assert config.assets_dir == Path("/var/www")
+
+    def test_deserializes_null_as_none(self) -> None:
+        json_str = json.dumps({"name": "myapp", "module": "main", "port": None})
+        config = Config.from_json(json_str)
+        assert config.port is None
+
+    def test_missing_fields_use_defaults(self) -> None:
+        json_str = json.dumps({"name": "myapp", "module": "main"})
+        config = Config.from_json(json_str)
+        # Check defaults are applied
+        assert config.platform == PlatformType.SERVER
+        assert config.host == "127.0.0.1"
+        assert config.watch is False
+
+
+class TestConfigJsonRoundTrip:
+    """Test round-trip JSON serialization/deserialization."""
+
+    def test_roundtrip_preserves_values(self) -> None:
+        original = Config(
+            name="myapp",
+            module="main",
+            platform=PlatformType.DESKTOP,
+            port=9000,
+            host="0.0.0.0",
+            assets_dir=Path("/var/www"),
+            watch=True,
+            debug="render,state",
+        )
+        json_str = original.to_json()
+        restored = Config.from_json(json_str)
+
+        assert restored.name == original.name
+        assert restored.module == original.module
+        assert restored.platform == original.platform
+        assert restored.port == original.port
+        assert restored.host == original.host
+        assert restored.assets_dir == original.assets_dir
+        assert restored.watch == original.watch
+        assert restored.debug == original.debug
+
+
+class TestConfigJsonErrors:
+    """Test error handling in JSON serialization/deserialization."""
+
+    def test_missing_name_raises_type_error(self) -> None:
+        json_str = json.dumps({"module": "main"})
+        with pytest.raises(TypeError, match=r"missing required argument.*name"):
+            Config.from_json(json_str)
+
+    def test_invalid_json_raises_decode_error(self) -> None:
+        with pytest.raises(json.JSONDecodeError):
+            Config.from_json("not valid json {")
+
+    def test_invalid_enum_raises_value_error(self) -> None:
+        json_str = json.dumps({"name": "myapp", "module": "main", "platform": "invalid"})
+        with pytest.raises(ValueError, match="not a valid PlatformType"):
+            Config.from_json(json_str)
+
+    def test_invalid_port_runs_validation(self) -> None:
+        json_str = json.dumps({"name": "myapp", "module": "main", "port": 99999})
+        with pytest.raises(ValueError, match="Port must be 1-65535"):
+            Config.from_json(json_str)

@@ -391,6 +391,25 @@ def get_config_vars() -> list[ConfigVar[Any]]:
     return list(_configvar_registry)
 
 
+def coerce_value(field_name: str, value: str) -> Any:
+    """Coerce a string value using the ConfigVar registry.
+
+    Args:
+        field_name: The name of the ConfigVar field
+        value: String value to coerce
+
+    Returns:
+        Value coerced to the ConfigVar's target type
+
+    Raises:
+        KeyError: If no ConfigVar is registered for the field name
+    """
+    for cv in _configvar_registry:
+        if cv.name == field_name:
+            return cv._coerce(value)
+    raise KeyError(f"No ConfigVar registered for field: {field_name}")
+
+
 def validate_debug_categories(value: str) -> str:
     """Validate and normalize debug category string.
 
@@ -432,6 +451,7 @@ def validate_debug_categories(value: str) -> str:
 __all__ = [
     "ConfigVar",
     "cli_context",
+    "coerce_value",
     "get_cli_args",
     "get_config_vars",
     "validate_batch_delay",

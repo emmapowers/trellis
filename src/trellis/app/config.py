@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import json
+from dataclasses import dataclass, field, fields
+from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
 from trellis.app.configvars import (
     ConfigVar,
+    cli_context,
+    coerce_value,
+    get_config_vars,
     validate_batch_delay,
     validate_debug_categories,
     validate_port_or_none,
@@ -201,3 +207,55 @@ class Config:
 
         # Desktop settings
         self.window_size = _WINDOW_SIZE.resolve(self.window_size)
+
+    def to_json(self) -> str:
+        """Serialize this Config to a JSON string.
+
+        Enums are serialized as their string values, Paths as strings.
+
+        Returns:
+            JSON string representation of the config
+        """
+        data: dict[str, Any] = {}
+        for f in fields(self):
+            value = getattr(self, f.name)
+            if isinstance(value, StrEnum):
+                data[f.name] = value.value
+            elif isinstance(value, Path):
+                data[f.name] = str(value)
+            else:
+                data[f.name] = value
+        return json.dumps(data)
+
+    @classmethod
+    def from_json(cls, json_str: str) -> Config:
+        """Deserialize a JSON string to a Config instance.
+
+        Uses cli_context to inject values so __post_init__ validation runs.
+
+        Args:
+            json_str: JSON string representation of a config
+
+        Returns:
+            A new Config instance
+
+        Raises:
+            json.JSONDecodeError: If json_str is not valid JSON
+            TypeError: If required fields (name, module) are missing
+            ValueError: If field values fail validation
+        """
+        data = json.loads(json_str)
+        name = data.get("name", "")
+        module = data.get("module", "")
+
+        configvar_names = {cv.name for cv in get_config_vars()}
+        cli_args: dict[str, Any] = {}
+
+        for key, value in data.items():
+            if key in ("name", "module") or value is None:
+                continue
+            if key in configvar_names:
+                cli_args[key] = coerce_value(key, value) if isinstance(value, str) else value
+
+        with cli_context(cli_args):
+            return cls(name=name, module=module)
