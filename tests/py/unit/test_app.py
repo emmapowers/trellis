@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
@@ -166,6 +168,149 @@ config = Config(name="my-app", module="my_app.main")
         assert "'config' must be a Config instance" in str(exc_info.value)
         assert "got dict" in str(exc_info.value)
         assert "config = Config(name=..., module=...)" in str(exc_info.value)
+
+
+class TestAppImportModule:
+    """Tests for App.import_module method."""
+
+    def test_imports_simple_module(self, tmp_path: Path) -> None:
+        """import_module imports a module in the app directory."""
+        # Create trellis.py
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+config = Config(name="test", module="myapp")
+"""
+        )
+        # Create myapp.py
+        (tmp_path / "myapp.py").write_text("VALUE = 42")
+
+        app = App(tmp_path)
+        app.load_config()
+
+        module = app.import_module()
+
+        assert module.VALUE == 42
+
+    def test_imports_subpackage_module(self, tmp_path: Path) -> None:
+        """import_module imports a module from a subpackage."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+config = Config(name="test", module="mypkg.main")
+"""
+        )
+        pkg_dir = tmp_path / "mypkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+        (pkg_dir / "main.py").write_text("VALUE = 'nested'")
+
+        app = App(tmp_path)
+        app.load_config()
+
+        module = app.import_module()
+
+        assert module.VALUE == "nested"
+
+    def test_returns_module_object(self, tmp_path: Path) -> None:
+        """import_module returns a ModuleType."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+config = Config(name="test", module="myapp")
+"""
+        )
+        (tmp_path / "myapp.py").write_text("")
+
+        app = App(tmp_path)
+        app.load_config()
+
+        module = app.import_module()
+
+        assert isinstance(module, ModuleType)
+
+    def test_error_module_not_found(self, tmp_path: Path) -> None:
+        """import_module raises ModuleNotFoundError with context when module doesn't exist."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+config = Config(name="test", module="nonexistent")
+"""
+        )
+
+        app = App(tmp_path)
+        app.load_config()
+
+        with pytest.raises(ModuleNotFoundError) as exc_info:
+            app.import_module()
+
+        assert "nonexistent" in str(exc_info.value)
+
+    def test_error_config_not_loaded(self, tmp_path: Path) -> None:
+        """import_module raises RuntimeError if config not loaded first."""
+        app = App(tmp_path)
+
+        with pytest.raises(RuntimeError, match=r"load_config.*first"):
+            app.import_module()
+
+    def test_propagates_syntax_error(self, tmp_path: Path) -> None:
+        """import_module propagates SyntaxError from the module."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+config = Config(name="test", module="broken")
+"""
+        )
+        (tmp_path / "broken.py").write_text("def oops(")
+
+        app = App(tmp_path)
+        app.load_config()
+
+        with pytest.raises(SyntaxError):
+            app.import_module()
+
+    def test_propagates_import_error(self, tmp_path: Path) -> None:
+        """import_module propagates ImportError from module dependencies."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+config = Config(name="test", module="has_bad_import")
+"""
+        )
+        (tmp_path / "has_bad_import.py").write_text("import nonexistent_dependency_xyz")
+
+        app = App(tmp_path)
+        app.load_config()
+
+        with pytest.raises(ModuleNotFoundError):
+            app.import_module()
+
+    def test_only_adds_to_sys_path_if_needed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """import_module only adds app path to sys.path if initial import fails."""
+        # Create a module that's already importable (in existing sys.path)
+        # We'll use tmp_path in sys.path to simulate this
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+config = Config(name="test", module="already_there")
+"""
+        )
+        (tmp_path / "already_there.py").write_text("VALUE = 'found'")
+
+        # Pre-add tmp_path to sys.path
+        monkeypatch.syspath_prepend(tmp_path)
+        original_path_len = len(sys.path)
+
+        app = App(tmp_path)
+        app.load_config()
+
+        module = app.import_module()
+
+        # Should not have added to sys.path since module was already findable
+        assert module.VALUE == "found"
+        assert len(sys.path) == original_path_len
 
 
 class TestAppGlobals:

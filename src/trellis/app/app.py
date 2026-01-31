@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import importlib
 import os
+import sys
 from pathlib import Path
+from types import ModuleType
 
 from trellis.app.config import Config
 
@@ -153,6 +156,42 @@ class App:
             )
 
         self.config = config
+
+    def import_module(self) -> ModuleType:
+        """Import the application module specified in config.module.
+
+        Attempts to import the module directly first. If that fails with
+        ModuleNotFoundError, adds the app's path to sys.path and retries.
+
+        Returns:
+            The imported module object
+
+        Raises:
+            RuntimeError: If load_config() has not been called first
+            ModuleNotFoundError: If the module cannot be found
+            SyntaxError: If the module has syntax errors (passed through)
+            ImportError: If the module has import errors (passed through)
+        """
+        if self.config is None:
+            raise RuntimeError(
+                "Config not loaded. Call load_config() first before import_module()."
+            )
+
+        module_name = self.config.module
+
+        # Try importing directly first
+        try:
+            return importlib.import_module(module_name)
+        except ModuleNotFoundError:
+            pass
+
+        # Add app path to sys.path and retry
+        app_path_str = str(self.path)
+        if app_path_str not in sys.path:
+            sys.path.insert(0, app_path_str)
+            importlib.invalidate_caches()
+
+        return importlib.import_module(module_name)
 
 
 # Global singleton
