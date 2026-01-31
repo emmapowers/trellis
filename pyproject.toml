@@ -120,6 +120,7 @@ ban-relative-imports = "all"
     "RUF005",   # list concatenation is clearer than spread in tests
     "RUF001",   # Unicode characters intentional (e.g. × for close button)
     "RUF012",   # Stateful classes intentionally use mutable defaults
+    "TC002",    # pytest type annotations are common in tests
     "TID252",   # relative imports in test helpers
 ]
 "examples/**" = [

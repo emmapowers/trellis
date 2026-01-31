@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from trellis.app.config import Config
+
+ENV_VAR_APP_ROOT = "TRELLIS_APP_ROOT"
 
 
 def find_app_path() -> Path:
@@ -33,6 +36,66 @@ def find_app_path() -> Path:
             )
 
         current = parent
+
+
+def resolve_app_root(cli_value: Path | None = None) -> Path:
+    """Resolve app root from CLI > ENV > auto-detect.
+
+    Resolution order:
+    1. If cli_value is provided, use it
+    2. Else check TRELLIS_APP_ROOT environment variable
+    3. Else call find_app_path() for auto-detection
+
+    For any explicit path (CLI or ENV): if it's a file, use its parent directory.
+    Always validates that the resulting directory contains trellis.py.
+
+    Args:
+        cli_value: Path from --app-root CLI option (None if not provided)
+
+    Returns:
+        Path to directory containing trellis.py
+
+    Raises:
+        FileNotFoundError: If path doesn't exist or no trellis.py found
+    """
+    # Try CLI value first
+    if cli_value is not None:
+        return _validate_app_root(cli_value, source="CLI")
+
+    # Try environment variable
+    env_value = os.environ.get(ENV_VAR_APP_ROOT, "").strip()
+    if env_value:
+        return _validate_app_root(Path(env_value), source="TRELLIS_APP_ROOT")
+
+    # Fall back to auto-detection
+    return find_app_path()
+
+
+def _validate_app_root(path: Path, source: str) -> Path:
+    """Validate and normalize an explicit app root path.
+
+    Args:
+        path: The path to validate
+        source: Description of where the path came from (for error messages)
+
+    Returns:
+        Normalized directory path containing trellis.py
+
+    Raises:
+        FileNotFoundError: If path doesn't exist or no trellis.py found
+    """
+    if not path.exists():
+        raise FileNotFoundError(f"Path from {source} does not exist: {path}")
+
+    # If path is a file, use its parent directory
+    if path.is_file():
+        path = path.parent
+
+    # Validate trellis.py exists
+    if not (path / "trellis.py").exists():
+        raise FileNotFoundError(f"trellis.py not found in {path}")
+
+    return path
 
 
 class App:

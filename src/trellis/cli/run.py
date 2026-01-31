@@ -1,13 +1,12 @@
 """Run command for Trellis CLI."""
 
-from pathlib import Path
 from typing import Any
 
 import click
 
-from trellis.app import App, find_app_path
+from trellis.app import App, resolve_app_root
 from trellis.app.configvars import cli_context, get_config_vars
-from trellis.cli import trellis
+from trellis.cli import CliContext, pass_cli_context, trellis
 from trellis.cli.options import configvar_options
 from trellis.platforms.common.base import PlatformType
 
@@ -16,29 +15,27 @@ _cli_config_vars = [v for v in get_config_vars() if not v.hidden]
 
 
 @trellis.command()
-@click.argument("app_path", type=click.Path(exists=True, path_type=Path), required=False)
+@pass_cli_context
 @configvar_options(_cli_config_vars)
 def run(
-    app_path: Path | None,
+    ctx: CliContext,
+    /,
     **cli_kwargs: Any,
 ) -> None:
     """Run a Trellis application.
 
-    APP_PATH is the path to a trellis.py file or directory containing one.
-    If not specified, searches upward from the current directory.
+    Uses --app-root global option or TRELLIS_APP_ROOT environment variable.
+    If neither is specified, searches upward from the current directory.
     """
     # Convert platform string to enum if present
     if "platform" in cli_kwargs:
         cli_kwargs["platform"] = PlatformType(cli_kwargs["platform"])
 
-    # Find or validate app path
-    if app_path is None:
-        try:
-            resolved_path = find_app_path()
-        except FileNotFoundError as e:
-            raise click.UsageError(str(e)) from None
-    else:
-        resolved_path = app_path if app_path.is_dir() else app_path.parent
+    # Resolve app root from CLI > ENV > auto-detect
+    try:
+        resolved_path = resolve_app_root(ctx.app_root)
+    except FileNotFoundError as e:
+        raise click.UsageError(str(e)) from None
 
     # Load and run with CLI context
     with cli_context(cli_kwargs):

@@ -4,7 +4,7 @@ This module provides the Trellis class for creating and running applications,
 along with theming infrastructure (ClientState, ThemeProvider, TrellisApp).
 """
 
-from trellis.app.app import App, find_app_path, get_app, set_app
+from trellis.app.app import App, find_app_path, get_app, resolve_app_root, set_app
 from trellis.app.client_state import (
     ClientState,
     ThemeMode,
@@ -27,6 +27,7 @@ __all__ = [
     "TrellisApp",
     "find_app_path",
     "get_app",
+    "resolve_app_root",
     "set_app",
     "theme",
 ]
