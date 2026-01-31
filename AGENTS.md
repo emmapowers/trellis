@@ -51,6 +51,7 @@ src/trellis/
 - When writing tests, use pytest style instead of xunit. Organizing related tests into classes is fine, but use fixtures for shared code instead of class members and inheritance. Look for opportunities to re-factor common test code into fixtures. Check relevant conftest.py to see if there are useful fixtures already.
  You may use test classes to group related tests, but they are not required and should only be used when they make large test files more readable.
 - use the test-driven development skill when making changes
+- code comments should document the code that as it is. Do not leave comments saying what has changed. Make sure existing comments are updated when code associated with them changes.
 
 ### Import Style
 
