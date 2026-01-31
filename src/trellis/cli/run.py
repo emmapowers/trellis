@@ -4,7 +4,7 @@ from typing import Any
 
 import click
 
-from trellis.app import App, resolve_app_root
+from trellis.app import AppLoader, resolve_app_root
 from trellis.app.configvars import cli_context, get_config_vars
 from trellis.cli import CliContext, pass_cli_context, trellis
 from trellis.cli.options import configvar_options
@@ -39,9 +39,9 @@ def run(
 
     # Load and run with CLI context
     with cli_context(cli_kwargs):
-        app = App(resolved_path)
-        app.load_config()
-        config = app.config
+        apploader = AppLoader(resolved_path)
+        apploader.load_config()
+        config = apploader.config
         assert config is not None  # load_config sets this
 
         click.echo(f"Running {config.name} on {config.platform.value}...")

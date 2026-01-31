@@ -131,11 +131,11 @@ class Config:
     3. Constructor values (passed to Config())
     4. Default values (lowest priority)
 
-    Access via get_app().config after the app is loaded:
+    Access via get_config() after the apploader is loaded:
 
-        from trellis.app import get_app
+        from trellis.app import get_config
 
-        config = get_app().config
+        config = get_config()
         print(config.name, config.module)
 
     Attributes:

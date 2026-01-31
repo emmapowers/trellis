@@ -1,456 +1,170 @@
-"""Unit tests for App configuration system."""
+"""Unit tests for user-facing App class."""
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-from types import ModuleType
-
-import pytest
-
-from tests.helpers import requires_pytauri
-from trellis.app.app import App, find_app_path, get_app, set_app
-from trellis.platforms.browser import BrowserPlatform
-from trellis.platforms.browser.serve_platform import BrowserServePlatform
-from trellis.platforms.server import ServerPlatform
-
-
-class TestFindAppPath:
-    """Tests for find_app_path function."""
-
-    def test_finds_trellis_py_in_cwd(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """find_app_path finds trellis.py in current working directory."""
-        (tmp_path / "trellis.py").write_text("config = None")
-        monkeypatch.chdir(tmp_path)
-
-        result = find_app_path()
-
-        assert result == tmp_path
-
-    def test_finds_trellis_py_in_parent(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """find_app_path finds trellis.py in parent directory."""
-        (tmp_path / "trellis.py").write_text("config = None")
-        child = tmp_path / "subdir"
-        child.mkdir()
-        monkeypatch.chdir(child)
-
-        result = find_app_path()
-
-        assert result == tmp_path
-
-    def test_finds_trellis_py_multiple_levels_up(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """find_app_path finds trellis.py multiple levels up."""
-        (tmp_path / "trellis.py").write_text("config = None")
-        deep = tmp_path / "a" / "b" / "c"
-        deep.mkdir(parents=True)
-        monkeypatch.chdir(deep)
-
-        result = find_app_path()
-
-        assert result == tmp_path
-
-    def test_raises_when_not_found(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """find_app_path raises FileNotFoundError when trellis.py not found."""
-        # tmp_path has no trellis.py
-        monkeypatch.chdir(tmp_path)
-
-        with pytest.raises(FileNotFoundError) as exc_info:
-            find_app_path()
-
-        assert "trellis.py not found" in str(exc_info.value)
-        assert "trellis init" in str(exc_info.value)
-
-    def test_returns_directory_not_file(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """find_app_path returns the directory containing trellis.py, not the file itself."""
-        trellis_file = tmp_path / "trellis.py"
-        trellis_file.write_text("config = None")
-        monkeypatch.chdir(tmp_path)
-
-        result = find_app_path()
-
-        assert result.is_dir()
-        assert result == tmp_path
-        assert result != trellis_file
-
-    def test_nearest_wins(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """find_app_path returns the nearest trellis.py when multiple exist."""
-        # Create trellis.py in parent
-        (tmp_path / "trellis.py").write_text("config = 'parent'")
-
-        # Create trellis.py in child
-        child = tmp_path / "subproject"
-        child.mkdir()
-        (child / "trellis.py").write_text("config = 'child'")
-
-        monkeypatch.chdir(child)
-
-        result = find_app_path()
-
-        assert result == child
+from trellis.app.app import App
+from trellis.core.components.base import Component
+from trellis.core.components.composition import CompositionComponent, component
 
 
 class TestApp:
-    """Tests for App class."""
+    """Tests for App class constructor and top attribute."""
 
-    def test_constructor_stores_path(self, tmp_path: Path) -> None:
-        """App constructor stores the provided path."""
-        app = App(tmp_path)
+    def test_constructor_stores_top(self) -> None:
+        """App constructor stores the top component."""
 
-        assert app.path == tmp_path
+        @component
+        def MyRoot() -> None:
+            pass
 
-    def test_config_is_none_before_load(self, tmp_path: Path) -> None:
-        """App.config is None before load_config is called."""
-        app = App(tmp_path)
-
-        assert app.config is None
-
-    def test_load_config_populates_config(self, tmp_path: Path) -> None:
-        """load_config populates config attribute from trellis.py."""
-        (tmp_path / "trellis.py").write_text(
-            """
-from trellis.app.config import Config
+        app = App(MyRoot)
 
-config = Config(name="my-app", module="my_app.main")
-"""
-        )
-        app = App(tmp_path)
+        assert app.top is MyRoot
 
-        app.load_config()
-
-        assert app.config is not None
-        assert app.config.name == "my-app"
-        assert app.config.module == "my_app.main"
-
-    def test_load_config_error_file_not_found(self, tmp_path: Path) -> None:
-        """load_config raises FileNotFoundError when trellis.py doesn't exist."""
-        app = App(tmp_path)
-
-        with pytest.raises(FileNotFoundError) as exc_info:
-            app.load_config()
+    def test_top_returns_component(self) -> None:
+        """App.top returns the component passed to constructor."""
 
-        assert "trellis.py not found at" in str(exc_info.value)
-        assert str(tmp_path) in str(exc_info.value)
+        @component
+        def AnotherRoot() -> None:
+            pass
 
-    def test_load_config_error_syntax_error(self, tmp_path: Path) -> None:
-        """load_config propagates SyntaxError from trellis.py."""
-        (tmp_path / "trellis.py").write_text("def broken(")
-        app = App(tmp_path)
-
-        with pytest.raises(SyntaxError):
-            app.load_config()
-
-    def test_load_config_error_import_error(self, tmp_path: Path) -> None:
-        """load_config propagates ImportError from trellis.py."""
-        (tmp_path / "trellis.py").write_text("import nonexistent_module_xyz")
-        app = App(tmp_path)
-
-        with pytest.raises(ModuleNotFoundError):
-            app.load_config()
+        app = App(AnotherRoot)
 
-    def test_load_config_error_no_config_variable(self, tmp_path: Path) -> None:
-        """load_config raises ValueError when config variable not defined."""
-        (tmp_path / "trellis.py").write_text("x = 1")
-        app = App(tmp_path)
+        assert app.top is AnotherRoot
 
-        with pytest.raises(ValueError, match="'config' variable not defined"):
-            app.load_config()
+    def test_top_accepts_callable(self) -> None:
+        """App accepts any callable that returns Element."""
 
-    def test_load_config_error_wrong_type(self, tmp_path: Path) -> None:
-        """load_config raises TypeError when config is not a Config instance."""
-        (tmp_path / "trellis.py").write_text("config = {'name': 'test'}")
-        app = App(tmp_path)
-
-        with pytest.raises(TypeError) as exc_info:
-            app.load_config()
-
-        assert "'config' must be a Config instance" in str(exc_info.value)
-        assert "got dict" in str(exc_info.value)
-        assert "config = Config(name=..., module=...)" in str(exc_info.value)
-
-
-class TestAppImportModule:
-    """Tests for App.import_module method."""
-
-    def test_imports_simple_module(self, tmp_path: Path) -> None:
-        """import_module imports a module in the app directory."""
-        # Create trellis.py
-        (tmp_path / "trellis.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="myapp")
-"""
-        )
-        # Create myapp.py
-        (tmp_path / "myapp.py").write_text("VALUE = 42")
-
-        app = App(tmp_path)
-        app.load_config()
-
-        module = app.import_module()
-
-        assert module.VALUE == 42
-
-    def test_imports_subpackage_module(self, tmp_path: Path) -> None:
-        """import_module imports a module from a subpackage."""
-        (tmp_path / "trellis.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="mypkg.main")
-"""
-        )
-        pkg_dir = tmp_path / "mypkg"
-        pkg_dir.mkdir()
-        (pkg_dir / "__init__.py").write_text("")
-        (pkg_dir / "main.py").write_text("VALUE = 'nested'")
-
-        app = App(tmp_path)
-        app.load_config()
-
-        module = app.import_module()
-
-        assert module.VALUE == "nested"
-
-    def test_returns_module_object(self, tmp_path: Path) -> None:
-        """import_module returns a ModuleType."""
-        (tmp_path / "trellis.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="myapp")
-"""
-        )
-        (tmp_path / "myapp.py").write_text("")
-
-        app = App(tmp_path)
-        app.load_config()
-
-        module = app.import_module()
-
-        assert isinstance(module, ModuleType)
-
-    def test_error_module_not_found(self, tmp_path: Path) -> None:
-        """import_module raises ModuleNotFoundError with context when module doesn't exist."""
-        (tmp_path / "trellis.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="nonexistent")
-"""
-        )
-
-        app = App(tmp_path)
-        app.load_config()
-
-        with pytest.raises(ModuleNotFoundError) as exc_info:
-            app.import_module()
-
-        assert "nonexistent" in str(exc_info.value)
-
-    def test_error_config_not_loaded(self, tmp_path: Path) -> None:
-        """import_module raises RuntimeError if config not loaded first."""
-        app = App(tmp_path)
-
-        with pytest.raises(RuntimeError, match=r"load_config.*first"):
-            app.import_module()
-
-    def test_propagates_syntax_error(self, tmp_path: Path) -> None:
-        """import_module propagates SyntaxError from the module."""
-        (tmp_path / "trellis.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="broken")
-"""
-        )
-        (tmp_path / "broken.py").write_text("def oops(")
-
-        app = App(tmp_path)
-        app.load_config()
-
-        with pytest.raises(SyntaxError):
-            app.import_module()
-
-    def test_propagates_import_error(self, tmp_path: Path) -> None:
-        """import_module propagates ImportError from module dependencies."""
-        (tmp_path / "trellis.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="has_bad_import")
-"""
-        )
-        (tmp_path / "has_bad_import.py").write_text("import nonexistent_dependency_xyz")
-
-        app = App(tmp_path)
-        app.load_config()
-
-        with pytest.raises(ModuleNotFoundError):
-            app.import_module()
-
-    def test_only_adds_to_sys_path_if_needed(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """import_module only adds app path to sys.path if initial import fails."""
-        # Create a module that's already importable (in existing sys.path)
-        # We'll use tmp_path in sys.path to simulate this
-        (tmp_path / "trellis.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="already_there")
-"""
-        )
-        (tmp_path / "already_there.py").write_text("VALUE = 'found'")
-
-        # Pre-add tmp_path to sys.path
-        monkeypatch.syspath_prepend(tmp_path)
-        original_path_len = len(sys.path)
-
-        app = App(tmp_path)
-        app.load_config()
-
-        module = app.import_module()
-
-        # Should not have added to sys.path since module was already findable
-        assert module.VALUE == "found"
-        assert len(sys.path) == original_path_len
-
-
-class TestAppGlobals:
-    """Tests for get_app/set_app global accessors."""
-
-    @pytest.fixture(autouse=True)
-    def reset_app(self) -> None:
-        """Reset global _app before each test."""
-        import trellis.app.app as app_module  # noqa: PLC0415
-
-        app_module._app = None
-        yield
-        app_module._app = None
-
-    def test_round_trip_works(self, tmp_path: Path) -> None:
-        """set_app/get_app round trip works correctly."""
-        app = App(tmp_path)
-
-        set_app(app)
-        result = get_app()
-
-        assert result is app
-
-    def test_get_app_before_set_raises(self) -> None:
-        """get_app raises RuntimeError when called before set_app."""
-        with pytest.raises(RuntimeError) as exc_info:
-            get_app()
-
-        assert "App not initialized" in str(exc_info.value)
-        assert "set_app()" in str(exc_info.value)
-        assert "find_app_path()" in str(exc_info.value)
-
-
-class TestAppPlatform:
-    """Tests for App.platform property."""
-
-    def test_platform_raises_without_config(self, tmp_path: Path) -> None:
-        """platform property raises RuntimeError if config not loaded."""
-        app = App(tmp_path)
-
-        with pytest.raises(RuntimeError, match=r"load_config.*first"):
-            _ = app.platform
-
-    def test_platform_returns_server_platform(self, tmp_path: Path) -> None:
-        """platform returns ServerPlatform when config.platform is SERVER."""
-        (tmp_path / "trellis.py").write_text(
-            """
-from trellis.app.config import Config
-from trellis.platforms.common.base import PlatformType
-
-config = Config(name="test", module="test", platform=PlatformType.SERVER)
-"""
-        )
-        app = App(tmp_path)
-        app.load_config()
-
-        assert isinstance(app.platform, ServerPlatform)
-
-    @requires_pytauri
-    def test_platform_returns_desktop_platform(self, tmp_path: Path) -> None:
-        """platform returns DesktopPlatform when config.platform is DESKTOP."""
-        (tmp_path / "trellis.py").write_text(
-            """
-from trellis.app.config import Config
-from trellis.platforms.common.base import PlatformType
-
-config = Config(name="test", module="test", platform=PlatformType.DESKTOP)
-"""
-        )
-        app = App(tmp_path)
-        app.load_config()
-
-        # Import inside test because pytauri may not be installed
-        from trellis.platforms.desktop import DesktopPlatform  # noqa: PLC0415
-
-        assert isinstance(app.platform, DesktopPlatform)
-
-    def test_platform_returns_browser_serve_platform(self, tmp_path: Path) -> None:
-        """platform returns BrowserServePlatform when not in Pyodide."""
-        (tmp_path / "trellis.py").write_text(
-            """
-from trellis.app.config import Config
-from trellis.platforms.common.base import PlatformType
-
-config = Config(name="test", module="test", platform=PlatformType.BROWSER)
-"""
-        )
-        app = App(tmp_path)
-        app.load_config()
-
-        assert isinstance(app.platform, BrowserServePlatform)
-
-    def test_platform_returns_browser_platform_in_pyodide(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """platform returns BrowserPlatform when running in Pyodide."""
-        (tmp_path / "trellis.py").write_text(
-            """
-from trellis.app.config import Config
-from trellis.platforms.common.base import PlatformType
-
-config = Config(name="test", module="test", platform=PlatformType.BROWSER)
-"""
-        )
-        app = App(tmp_path)
-        app.load_config()
-
-        # Mock _is_pyodide to return True
-        monkeypatch.setattr("trellis.app.app._is_pyodide", lambda: True)
-
-        assert isinstance(app.platform, BrowserPlatform)
-
-    def test_platform_caches_instance(self, tmp_path: Path) -> None:
-        """platform returns same instance on subsequent accesses."""
-        (tmp_path / "trellis.py").write_text(
-            """
-from trellis.app.config import Config
-from trellis.platforms.common.base import PlatformType
-
-config = Config(name="test", module="test", platform=PlatformType.SERVER)
-"""
-        )
-        app = App(tmp_path)
-        app.load_config()
-
-        first = app.platform
-        second = app.platform
-
-        assert first is second
-
-    def test_platform_returns_cached_without_config_check(self, tmp_path: Path) -> None:
-        """If _platform is already set, returns it without checking config."""
-        app = App(tmp_path)
-
-        # Manually set _platform (simulating pre-cached state)
-        app._platform = ServerPlatform()
-
-        # Should return cached platform even though config is None
-        assert isinstance(app.platform, ServerPlatform)
+        def plain_function() -> None:
+            pass
+
+        app = App(plain_function)
+
+        assert app.top is plain_function
+
+
+class TestAppGetWrappedTop:
+    """Tests for App.get_wrapped_top method."""
+
+    def test_returns_composition_component(self) -> None:
+        """get_wrapped_top returns a CompositionComponent."""
+
+        @component
+        def Root() -> None:
+            pass
+
+        app = App(Root)
+
+        wrapped = app.get_wrapped_top(system_theme="light", theme_mode="system")
+
+        assert isinstance(wrapped, CompositionComponent)
+
+    def test_wrapped_component_name_is_trellis_root(self) -> None:
+        """Wrapped component has name 'TrellisRoot'."""
+
+        @component
+        def Root() -> None:
+            pass
+
+        app = App(Root)
+
+        wrapped = app.get_wrapped_top(system_theme="light", theme_mode="system")
+
+        assert wrapped.name == "TrellisRoot"
+
+    def test_with_system_theme_light(self) -> None:
+        """get_wrapped_top handles system_theme='light'."""
+
+        @component
+        def Root() -> None:
+            pass
+
+        app = App(Root)
+
+        # Should not raise
+        wrapped = app.get_wrapped_top(system_theme="light", theme_mode="system")
+
+        assert isinstance(wrapped, Component)
+
+    def test_with_system_theme_dark(self) -> None:
+        """get_wrapped_top handles system_theme='dark'."""
+
+        @component
+        def Root() -> None:
+            pass
+
+        app = App(Root)
+
+        # Should not raise
+        wrapped = app.get_wrapped_top(system_theme="dark", theme_mode="dark")
+
+        assert isinstance(wrapped, Component)
+
+    def test_with_theme_mode_none_defaults_to_system(self) -> None:
+        """get_wrapped_top uses 'system' when theme_mode is None."""
+
+        @component
+        def Root() -> None:
+            pass
+
+        app = App(Root)
+
+        # Should not raise - defaults to system theme mode
+        wrapped = app.get_wrapped_top(system_theme="light", theme_mode=None)
+
+        assert isinstance(wrapped, Component)
+
+    def test_with_theme_mode_light(self) -> None:
+        """get_wrapped_top handles theme_mode='light'."""
+
+        @component
+        def Root() -> None:
+            pass
+
+        app = App(Root)
+
+        wrapped = app.get_wrapped_top(system_theme="dark", theme_mode="light")
+
+        assert isinstance(wrapped, Component)
+
+    def test_with_theme_mode_dark(self) -> None:
+        """get_wrapped_top handles theme_mode='dark'."""
+
+        @component
+        def Root() -> None:
+            pass
+
+        app = App(Root)
+
+        wrapped = app.get_wrapped_top(system_theme="light", theme_mode="dark")
+
+        assert isinstance(wrapped, Component)
+
+    def test_with_theme_mode_system(self) -> None:
+        """get_wrapped_top handles theme_mode='system'."""
+
+        @component
+        def Root() -> None:
+            pass
+
+        app = App(Root)
+
+        wrapped = app.get_wrapped_top(system_theme="dark", theme_mode="system")
+
+        assert isinstance(wrapped, Component)
+
+
+class TestAppExport:
+    """Tests for App being exported from trellis.app package."""
+
+    def test_app_exported_from_package(self) -> None:
+        """App is exported from trellis.app."""
+        from trellis.app import App as AppFromPackage  # noqa: PLC0415
+
+        @component
+        def Root() -> None:
+            pass
+
+        # Should be usable
+        app = AppFromPackage(Root)
+        assert app.top is Root

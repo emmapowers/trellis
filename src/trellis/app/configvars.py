@@ -59,8 +59,8 @@ def cli_context(args: dict[str, Any]) -> Any:
 
     Example:
         with cli_context({"port": 8080, "host": "0.0.0.0"}):
-            app = App(app_path)
-            app.load_config()  # Config will use CLI values
+            apploader = AppLoader(app_path)
+            apploader.load_config()  # Config will use CLI values
     """
     token = _cli_context.set(args)
     try:
