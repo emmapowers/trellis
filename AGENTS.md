@@ -58,12 +58,12 @@ src/trellis/
 Canonical import style for Trellis applications:
 
 ```python
-from trellis import Trellis, async_main, component, Stateful
+from trellis import App, component, Stateful
 from trellis import widgets as w
 from trellis import html as h
 ```
 
-- `trellis` exports core primitives (`component`, `Stateful`, `RenderSession`, etc.) plus `async_main` and `Trellis`
+- `trellis` exports core primitives (`component`, `Stateful`, `RenderSession`, etc.) plus `App`
 - Widgets are accessed via `w.Button`, `w.Label`, `w.Column`, etc.
 - HTML elements are accessed via `h.Div`, `h.Span`, `h.P`, etc.
 

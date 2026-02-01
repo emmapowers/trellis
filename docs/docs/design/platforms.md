@@ -225,17 +225,25 @@ The server platform supports multiple concurrent clients:
 
 ### Usage
 
+**trellis_config.py:**
 ```python
-from trellis import Trellis, async_main
+from trellis.app.config import Config
 
-@async_main
-async def main():
-    app = Trellis(top=MyApp)
-    await app.serve()  # Defaults to server platform
-
-# Or explicitly:
-app = Trellis(top=MyApp, platform="server", host="0.0.0.0", port=8080)
+config = Config(name="My App", module="app")
 ```
+
+**app.py:**
+```python
+from trellis import App, component
+
+@component
+def MyApp() -> None:
+    ...
+
+app = App(MyApp)
+```
+
+**Run with:** `trellis run`
 
 ---
 
@@ -339,18 +347,25 @@ Desktop requires additional packages (automatically included):
 
 ### Usage
 
-```bash
-# Run with --desktop flag
-pixi run demo --desktop
+**trellis_config.py:**
+```python
+from trellis.app.config import Config
 
-# Or programmatically
-from trellis import Trellis, async_main
-
-@async_main
-async def main():
-    app = Trellis(top=MyApp, platform="desktop")
-    await app.serve()
+config = Config(name="My App", module="app")
 ```
+
+**app.py:**
+```python
+from trellis import App, component
+
+@component
+def MyApp() -> None:
+    ...
+
+app = App(MyApp)
+```
+
+**Run with:** `trellis run --desktop`
 
 ---
 

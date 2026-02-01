@@ -39,13 +39,20 @@ python -m trellis.examples.demo --desktop
 
 ## Your First App
 
-Create a file called `app.py`:
+Create two files:
 
+**trellis_config.py:**
+```python
+from trellis.app.config import Config
+
+config = Config(name="My App", module="app")
+```
+
+**app.py:**
 ```python
 from dataclasses import dataclass
 
-from trellis import Stateful, Trellis, async_main, component
-from trellis import html as h
+from trellis import App, Stateful, component
 from trellis import widgets as w
 
 
@@ -58,7 +65,7 @@ class Counter(Stateful):
 
 
 @component
-def App() -> None:
+def MyApp() -> None:
     state = Counter()
 
     with w.Column():
@@ -67,16 +74,13 @@ def App() -> None:
         w.Button(text="Increment", on_click=state.increment)
 
 
-@async_main
-async def main() -> None:
-    app = Trellis(top=App)
-    await app.serve()
+app = App(MyApp)
 ```
 
 Run it:
 
 ```bash
-python app.py
+trellis run
 ```
 
 Open http://127.0.0.1:8000. Click the button—the count updates.
@@ -84,7 +88,7 @@ Open http://127.0.0.1:8000. Click the button—the count updates.
 Or run as a desktop app:
 
 ```bash
-python app.py --desktop
+trellis run --desktop
 ```
 
 ## What Just Happened?

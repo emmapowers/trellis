@@ -31,7 +31,7 @@ export { RoutingMode };
 export interface TrellisAppProps {
   /** Source of the Python code */
   source: PythonSource;
-  /** Entry point like "myapp:App" (optional if code has @async_main) */
+  /** Entry point like "myapp:app" (optional if code defines app = App(...)) */
   main?: string;
   /** Custom trellis wheel URL (optional, tries several paths by default) */
   trellisWheelUrl?: string;
