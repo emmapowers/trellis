@@ -2,7 +2,7 @@
 
 from trellis import Margin, Padding, Route, Routes, component, router
 from trellis import widgets as w
-from trellis.app import theme
+from trellis.app import App, theme
 from trellis.widgets import IconName, ThemeSwitcher
 
 from .sections import (
@@ -42,7 +42,7 @@ TABS = [
 
 
 @component
-def App() -> None:
+def WidgetShowcase() -> None:
     """Main application component with routed navigation."""
     # Get active tab from URL path (e.g., "/buttons" -> "buttons", "/" -> "layout")
     path = router().path
@@ -133,3 +133,6 @@ def SectionContent(
     # Section content in a card
     with w.Card(padding=20):
         section()
+
+
+app = App(WidgetShowcase)

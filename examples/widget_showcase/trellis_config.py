@@ -4,5 +4,5 @@ from trellis.app.config import Config
 
 config = Config(
     name="Widget Showcase",
-    module="app",
+    module="widget_showcase.app",
 )

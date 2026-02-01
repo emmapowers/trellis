@@ -37,8 +37,8 @@ ruff-fix = { cmd = "ruff check --fix src tests examples", depends-on = ["fmt"], 
 ruff-check = { cmd = "ruff check src tests examples", description = "Check ruff linting" }
 
 # Type checking
-mypy = { cmd = "dmypy run src examples", description = "Run mypy (daemon)" }
-mypy-ci = { cmd = "mypy src examples", description = "Run mypy (full check)" }
+mypy = { cmd = "dmypy run -- src/trellis examples/*/", description = "Run mypy (daemon)" }
+mypy-ci = { cmd = "mypy src/trellis examples/*/", description = "Run mypy (full check)" }
 
 # Testing
 test = { cmd = "pytest tests/py", description = "Run Python tests" }

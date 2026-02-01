@@ -50,7 +50,7 @@ Repository = "https://github.com/emmapowers/trellis"
 Issues = "https://github.com/emmapowers/trellis/issues"
 
 [project.scripts]
-trellis = "trellis.cli_old:trellis"
+trellis = "trellis.cli:trellis"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/trellis"]
@@ -129,6 +129,11 @@ ban-relative-imports = "all"
 
 [tool.mypy]
 python_version = "3.13"
+# Each example directory has a trellis_config.py file. Without explicit_package_bases,
+# mypy sees these as duplicate "trellis_config" modules. With it enabled, each directory
+# passed on the command line becomes a separate namespace root.
+explicit_package_bases = true
+mypy_path = ["src"]
 strict = true
 warn_return_any = true
 warn_unused_ignores = true

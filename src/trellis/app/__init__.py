@@ -22,7 +22,6 @@ from trellis.app.client_state import (
     theme,
 )
 from trellis.app.config import Config
-from trellis.app.entry import Trellis
 from trellis.app.theme_provider import ThemeProvider
 from trellis.app.trellis_app import TrellisApp
 
@@ -34,7 +33,6 @@ __all__ = [
     "ThemeMode",
     "ThemeProvider",
     "ThemeTokens",
-    "Trellis",
     "TrellisApp",
     "find_app_path",
     "get_app",

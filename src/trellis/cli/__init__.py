@@ -32,4 +32,4 @@ def trellis(ctx: CliContext, /, app_root: Path | None) -> None:
 
 
 # Import commands to register them
-from trellis.cli import run  # noqa: F401, E402
+from trellis.cli import bundle, run  # noqa: F401, E402

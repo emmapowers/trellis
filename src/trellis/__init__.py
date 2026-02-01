@@ -2,17 +2,16 @@
 
 Canonical import style for applications::
 
-    from trellis import Trellis, async_main
+    from trellis import component, Stateful, async_main
     from trellis import widgets as w
     from trellis import html as h
     from trellis.widgets import IconName
 
 The trellis package exports core rendering primitives (component, Stateful, etc.)
-plus async_main and Trellis. Widgets and HTML elements are accessed via their
-respective submodules. Icons are available via ``trellis.widgets.IconName``.
+plus async_main. Widgets and HTML elements are accessed via their respective
+submodules. Icons are available via ``trellis.widgets.IconName``.
 """
 
-from trellis.app import Trellis
 from trellis.core import (
     ActiveRender,
     Component,
@@ -87,7 +86,6 @@ __all__ = [
     "TrackedDict",
     "TrackedList",
     "TrackedSet",
-    "Trellis",
     "Width",
     "async_main",
     "callback",

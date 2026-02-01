@@ -4,5 +4,5 @@ from trellis.app.config import Config
 
 config = Config(
     name="Hello World",
-    module="counter",
+    module="hello_world",
 )

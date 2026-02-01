@@ -1,4 +1,4 @@
-"""Trellis CLI utilities."""
+"""Bundle command for Trellis CLI."""
 
 import asyncio
 from collections.abc import Callable
@@ -7,15 +7,11 @@ from typing import Any
 
 import click
 
+from trellis.cli import trellis
 from trellis.platforms.common.base import Platform
 
 # Rebuild callback type - returns Path but callers ignore it
 type RebuildCallback = Callable[[], Any]
-
-
-@click.group()
-def trellis() -> None:
-    """Trellis CLI utilities."""
 
 
 @trellis.group()

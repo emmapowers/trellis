@@ -8,9 +8,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from trellis import Height, Margin, Stateful, Trellis, async_main, callback, component, mutable
+from trellis import Height, Margin, Stateful, callback, component, mutable
 from trellis import widgets as w
-from trellis.app import theme
+from trellis.app import App, theme
 
 # =============================================================================
 # State
@@ -115,7 +115,7 @@ def SliderColumn() -> None:
 
 
 @component
-def App() -> None:
+def SlidersDemo() -> None:
     """Main application."""
     state = SliderState(num_sliders=3, value=50)
 
@@ -125,8 +125,4 @@ def App() -> None:
             SliderColumn()
 
 
-@async_main
-async def main() -> None:
-    """Start the Trellis server."""
-    app = Trellis(top=App)
-    await app.serve()
+app = App(SlidersDemo)

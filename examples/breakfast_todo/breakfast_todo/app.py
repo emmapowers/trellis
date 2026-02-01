@@ -2,14 +2,14 @@
 
 from trellis import Padding, component
 from trellis import widgets as w
-from trellis.app import theme
+from trellis.app import App, theme
 
 from .components import TodoFooter, TodoInput, TodoList
 from .state import Todo, TodosState
 
 
 @component
-def App() -> None:
+def BreakfastTodo() -> None:
     """Main application component. Provides TodosState as context."""
     state = TodosState(
         todos=[
@@ -51,3 +51,6 @@ def App() -> None:
                 if state.todos:
                     with w.Column(style={"borderTop": f"1px solid {theme.border_default}"}):
                         TodoFooter()
+
+
+app = App(BreakfastTodo)

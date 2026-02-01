@@ -44,6 +44,11 @@ def run(
         config = apploader.config
         assert config is not None  # load_config sets this
 
+        try:
+            apploader.load_app()
+        except (ValueError, TypeError) as e:
+            raise click.UsageError(str(e)) from None
+
         click.echo(f"Running {config.name} on {config.platform.value}...")
 
         # TODO: Actually run the platform

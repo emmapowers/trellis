@@ -5,12 +5,12 @@ from typing import Literal
 from trellis import Margin, Padding, Route, Routes, component, router
 from trellis import html as h
 from trellis import widgets as w
-from trellis.app import theme
+from trellis.app import App, theme
 from trellis.widgets import IconName, ThemeSwitcher
 
 
 @component
-def App() -> None:
+def RouterDemo() -> None:
     """Main application with routing setup."""
     with w.Column(gap=0, style={"height": "100vh"}):
         # Header
@@ -306,3 +306,6 @@ def NotFoundPage() -> None:
                 icon=IconName.HOME,
                 href="/",
             )
+
+
+app = App(RouterDemo)

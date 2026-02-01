@@ -7,9 +7,9 @@ Then open: http://127.0.0.1:8000
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from trellis import Margin, Padding, Stateful, Trellis, async_main, component
+from trellis import Margin, Padding, Stateful, component
 from trellis import widgets as w
-from trellis.app import theme
+from trellis.app import App, theme
 
 # =============================================================================
 # Styles
@@ -103,7 +103,7 @@ def RangeLabels(min_val: int, max_val: int) -> None:
 
 
 @component
-def App() -> None:
+def HelloWorld() -> None:
     """Main application component with interactive counter."""
     state = CounterState(count=5, min_val=1, max_val=10)
 
@@ -129,8 +129,4 @@ def App() -> None:
                 w.Button(text="Reset", on_click=state.reset, variant="outline")
 
 
-@async_main
-async def main() -> None:
-    """Start the Trellis server."""
-    app = Trellis(top=App)
-    await app.serve()
+app = App(HelloWorld)

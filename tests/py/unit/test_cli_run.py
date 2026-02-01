@@ -100,31 +100,42 @@ class TestCliContext:
 
     def test_options_populate_cli_context(self, tmp_path: Path) -> None:
         """CLI options should be available in cli_context during app loading."""
+        module_name = "test_cli_context_app"
+
         # Create a minimal trellis_config.py that captures cli_context
         trellis_py = tmp_path / "trellis_config.py"
         trellis_py.write_text(
-            """
+            f"""
 from trellis.app.config import Config
 from trellis.app.configvars import get_cli_args
 
 # Capture CLI args at module load time for testing
 _captured_cli_args = get_cli_args()
 
-config = Config(name="test", module="main")
+config = Config(name="test", module="{module_name}")
 """
         )
 
+        # Create a valid module with App
+        (tmp_path / f"{module_name}.py").write_text(
+            "from trellis import component\n"
+            "from trellis.app import App\n"
+            "\n"
+            "@component\n"
+            "def Root():\n"
+            "    pass\n"
+            "\n"
+            "app = App(Root)\n"
+        )
+
         runner = CliRunner()
-        with runner.isolated_filesystem(temp_dir=tmp_path):
-            # This will fail because there's no main module, but we can check
-            # that cli_context is set before the failure
-            runner.invoke(
-                trellis,
-                ["run", "--port", "9876", "--host", "192.168.1.1"],
-                catch_exceptions=False,
-            )
-            # We expect it to fail at the "run" step, but config should have been loaded
-            # with CLI args available. The actual context is tested via Config tests.
+        result = runner.invoke(
+            trellis,
+            ["--app-root", str(tmp_path), "run", "--port", "9876", "--host", "192.168.1.1"],
+        )
+        # Should succeed now that we have a valid app
+        assert result.exit_code == 0, f"Exit code: {result.exit_code}, output: {result.output}"
+        # CLI args are tested via Config tests, this just verifies the flow works.
 
     def test_cli_context_is_isolated(self) -> None:
         """CLI context should not leak between invocations."""
@@ -201,18 +212,42 @@ class TestAppRootGlobalOption:
 
     def test_cli_overrides_env(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """CLI --app-root should override TRELLIS_APP_ROOT."""
+        # Use unique module names to avoid module cache conflicts
+        cli_module = "cli_override_test_app"
+        env_module = "env_override_test_app"
+
         cli_dir = tmp_path / "cli_app"
         cli_dir.mkdir()
         (cli_dir / "trellis_config.py").write_text(
             "from trellis.app.config import Config\n"
-            "config = Config(name='cli-app', module='main')\n"
+            f"config = Config(name='cli-app', module='{cli_module}')\n"
+        )
+        (cli_dir / f"{cli_module}.py").write_text(
+            "from trellis import component\n"
+            "from trellis.app import App\n"
+            "\n"
+            "@component\n"
+            "def Root():\n"
+            "    pass\n"
+            "\n"
+            "app = App(Root)\n"
         )
 
         env_dir = tmp_path / "env_app"
         env_dir.mkdir()
         (env_dir / "trellis_config.py").write_text(
             "from trellis.app.config import Config\n"
-            "config = Config(name='env-app', module='main')\n"
+            f"config = Config(name='env-app', module='{env_module}')\n"
+        )
+        (env_dir / f"{env_module}.py").write_text(
+            "from trellis import component\n"
+            "from trellis.app import App\n"
+            "\n"
+            "@component\n"
+            "def Root():\n"
+            "    pass\n"
+            "\n"
+            "app = App(Root)\n"
         )
 
         monkeypatch.setenv("TRELLIS_APP_ROOT", str(env_dir))
@@ -232,3 +267,90 @@ class TestAppRootGlobalOption:
         assert result.exit_code != 0
         # Click's exists=True will give an error message
         assert "does not exist" in result.output.lower() or "invalid" in result.output.lower()
+
+
+class TestCliRunLoadApp:
+    """Test that CLI run command loads the app via AppLoader.load_app().
+
+    Note: Each test uses a unique module name to avoid Python's module caching
+    between tests. The module cache persists across tests in the same process.
+    """
+
+    def test_run_loads_app_from_module(self, tmp_path: Path) -> None:
+        """Run should successfully load an app from a module with app = App(...)."""
+        module_name = "test_valid_app"
+
+        # Create a minimal trellis_config.py
+        (tmp_path / "trellis_config.py").write_text(
+            "from trellis.app.config import Config\n"
+            f"config = Config(name='test-app', module='{module_name}')\n"
+        )
+
+        # Create module with valid App instance
+        (tmp_path / f"{module_name}.py").write_text(
+            "from trellis import component\n"
+            "from trellis.app import App\n"
+            "\n"
+            "@component\n"
+            "def Root():\n"
+            "    pass\n"
+            "\n"
+            "app = App(Root)\n"
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(trellis, ["--app-root", str(tmp_path), "run"])
+
+        # Should succeed and show "Running..."
+        assert result.exit_code == 0, f"Exit code: {result.exit_code}, output: {result.output}"
+        assert "Running test-app" in result.output
+
+    def test_run_error_when_app_variable_missing(self, tmp_path: Path) -> None:
+        """Run should error when module doesn't define 'app' variable."""
+        module_name = "test_missing_app"
+
+        # Create a minimal trellis_config.py
+        (tmp_path / "trellis_config.py").write_text(
+            "from trellis.app.config import Config\n"
+            f"config = Config(name='test-app', module='{module_name}')\n"
+        )
+
+        # Create module WITHOUT app variable
+        (tmp_path / f"{module_name}.py").write_text(
+            "from trellis import component\n"
+            "\n"
+            "@component\n"
+            "def Root():\n"
+            "    pass\n"
+            "\n"
+            "# No app variable defined!\n"
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(trellis, ["--app-root", str(tmp_path), "run"])
+
+        # Should fail with error about missing 'app' variable
+        assert result.exit_code != 0, f"Expected failure, output: {result.output}"
+        assert "'app' variable not defined" in result.output
+
+    def test_run_error_when_app_wrong_type(self, tmp_path: Path) -> None:
+        """Run should error when 'app' is not an App instance."""
+        module_name = "test_wrong_type_app"
+
+        # Create a minimal trellis_config.py
+        (tmp_path / "trellis_config.py").write_text(
+            "from trellis.app.config import Config\n"
+            f"config = Config(name='test-app', module='{module_name}')\n"
+        )
+
+        # Create module with wrong type for app
+        (tmp_path / f"{module_name}.py").write_text(
+            "# Wrong type - should be App instance, not string\napp = 'not an App'\n"
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(trellis, ["--app-root", str(tmp_path), "run"])
+
+        # Should fail with error about wrong type
+        assert result.exit_code != 0, f"Expected failure, output: {result.output}"
+        assert "'app' must be an App instance" in result.output
