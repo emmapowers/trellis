@@ -23,7 +23,7 @@ pass_cli_context = click.make_pass_decorator(CliContext, ensure=True)
     "-r",
     type=click.Path(exists=True, path_type=Path),
     envvar="TRELLIS_APP_ROOT",
-    help="Path to Trellis app directory (contains trellis.py)",
+    help="Path to Trellis app directory (contains trellis_config.py)",
 )
 @pass_cli_context
 def trellis(ctx: CliContext, /, app_root: Path | None) -> None:

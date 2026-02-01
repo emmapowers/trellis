@@ -28,8 +28,8 @@ class TestFindAppPath:
     """Tests for find_app_path function."""
 
     def test_finds_trellis_py_in_cwd(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """find_app_path finds trellis.py in current working directory."""
-        (tmp_path / "trellis.py").write_text("config = None")
+        """find_app_path finds trellis_config.py in current working directory."""
+        (tmp_path / "trellis_config.py").write_text("config = None")
         monkeypatch.chdir(tmp_path)
 
         result = find_app_path()
@@ -39,8 +39,8 @@ class TestFindAppPath:
     def test_finds_trellis_py_in_parent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """find_app_path finds trellis.py in parent directory."""
-        (tmp_path / "trellis.py").write_text("config = None")
+        """find_app_path finds trellis_config.py in parent directory."""
+        (tmp_path / "trellis_config.py").write_text("config = None")
         child = tmp_path / "subdir"
         child.mkdir()
         monkeypatch.chdir(child)
@@ -52,8 +52,8 @@ class TestFindAppPath:
     def test_finds_trellis_py_multiple_levels_up(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """find_app_path finds trellis.py multiple levels up."""
-        (tmp_path / "trellis.py").write_text("config = None")
+        """find_app_path finds trellis_config.py multiple levels up."""
+        (tmp_path / "trellis_config.py").write_text("config = None")
         deep = tmp_path / "a" / "b" / "c"
         deep.mkdir(parents=True)
         monkeypatch.chdir(deep)
@@ -63,21 +63,21 @@ class TestFindAppPath:
         assert result == tmp_path
 
     def test_raises_when_not_found(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """find_app_path raises FileNotFoundError when trellis.py not found."""
-        # tmp_path has no trellis.py
+        """find_app_path raises FileNotFoundError when trellis_config.py not found."""
+        # tmp_path has no trellis_config.py
         monkeypatch.chdir(tmp_path)
 
         with pytest.raises(FileNotFoundError) as exc_info:
             find_app_path()
 
-        assert "trellis.py not found" in str(exc_info.value)
+        assert "trellis_config.py not found" in str(exc_info.value)
         assert "trellis init" in str(exc_info.value)
 
     def test_returns_directory_not_file(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """find_app_path returns the directory containing trellis.py, not the file itself."""
-        trellis_file = tmp_path / "trellis.py"
+        """find_app_path returns the directory containing trellis_config.py, not the file itself."""
+        trellis_file = tmp_path / "trellis_config.py"
         trellis_file.write_text("config = None")
         monkeypatch.chdir(tmp_path)
 
@@ -88,14 +88,14 @@ class TestFindAppPath:
         assert result != trellis_file
 
     def test_nearest_wins(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """find_app_path returns the nearest trellis.py when multiple exist."""
-        # Create trellis.py in parent
-        (tmp_path / "trellis.py").write_text("config = 'parent'")
+        """find_app_path returns the nearest trellis_config.py when multiple exist."""
+        # Create trellis_config.py in parent
+        (tmp_path / "trellis_config.py").write_text("config = 'parent'")
 
-        # Create trellis.py in child
+        # Create trellis_config.py in child
         child = tmp_path / "subproject"
         child.mkdir()
-        (child / "trellis.py").write_text("config = 'child'")
+        (child / "trellis_config.py").write_text("config = 'child'")
 
         monkeypatch.chdir(child)
 
@@ -120,8 +120,8 @@ class TestAppLoader:
         assert apploader.config is None
 
     def test_load_config_populates_config(self, tmp_path: Path) -> None:
-        """load_config populates config attribute from trellis.py."""
-        (tmp_path / "trellis.py").write_text(
+        """load_config populates config attribute from trellis_config.py."""
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 
@@ -137,26 +137,26 @@ config = Config(name="my-app", module="my_app.main")
         assert apploader.config.module == "my_app.main"
 
     def test_load_config_error_file_not_found(self, tmp_path: Path) -> None:
-        """load_config raises FileNotFoundError when trellis.py doesn't exist."""
+        """load_config raises FileNotFoundError when trellis_config.py doesn't exist."""
         apploader = AppLoader(tmp_path)
 
         with pytest.raises(FileNotFoundError) as exc_info:
             apploader.load_config()
 
-        assert "trellis.py not found at" in str(exc_info.value)
+        assert "trellis_config.py not found at" in str(exc_info.value)
         assert str(tmp_path) in str(exc_info.value)
 
     def test_load_config_error_syntax_error(self, tmp_path: Path) -> None:
-        """load_config propagates SyntaxError from trellis.py."""
-        (tmp_path / "trellis.py").write_text("def broken(")
+        """load_config propagates SyntaxError from trellis_config.py."""
+        (tmp_path / "trellis_config.py").write_text("def broken(")
         apploader = AppLoader(tmp_path)
 
         with pytest.raises(SyntaxError):
             apploader.load_config()
 
     def test_load_config_error_import_error(self, tmp_path: Path) -> None:
-        """load_config propagates ImportError from trellis.py."""
-        (tmp_path / "trellis.py").write_text("import nonexistent_module_xyz")
+        """load_config propagates ImportError from trellis_config.py."""
+        (tmp_path / "trellis_config.py").write_text("import nonexistent_module_xyz")
         apploader = AppLoader(tmp_path)
 
         with pytest.raises(ModuleNotFoundError):
@@ -164,7 +164,7 @@ config = Config(name="my-app", module="my_app.main")
 
     def test_load_config_error_no_config_variable(self, tmp_path: Path) -> None:
         """load_config raises ValueError when config variable not defined."""
-        (tmp_path / "trellis.py").write_text("x = 1")
+        (tmp_path / "trellis_config.py").write_text("x = 1")
         apploader = AppLoader(tmp_path)
 
         with pytest.raises(ValueError, match="'config' variable not defined"):
@@ -172,7 +172,7 @@ config = Config(name="my-app", module="my_app.main")
 
     def test_load_config_error_wrong_type(self, tmp_path: Path) -> None:
         """load_config raises TypeError when config is not a Config instance."""
-        (tmp_path / "trellis.py").write_text("config = {'name': 'test'}")
+        (tmp_path / "trellis_config.py").write_text("config = {'name': 'test'}")
         apploader = AppLoader(tmp_path)
 
         with pytest.raises(TypeError) as exc_info:
@@ -188,8 +188,8 @@ class TestAppLoaderImportModule:
 
     def test_imports_simple_module(self, tmp_path: Path) -> None:
         """import_module imports a module in the app directory."""
-        # Create trellis.py
-        (tmp_path / "trellis.py").write_text(
+        # Create trellis_config.py
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 config = Config(name="test", module="myapp")
@@ -207,7 +207,7 @@ config = Config(name="test", module="myapp")
 
     def test_imports_subpackage_module(self, tmp_path: Path) -> None:
         """import_module imports a module from a subpackage."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 config = Config(name="test", module="mypkg.main")
@@ -227,7 +227,7 @@ config = Config(name="test", module="mypkg.main")
 
     def test_returns_module_object(self, tmp_path: Path) -> None:
         """import_module returns a ModuleType."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 config = Config(name="test", module="myapp")
@@ -244,7 +244,7 @@ config = Config(name="test", module="myapp")
 
     def test_error_module_not_found(self, tmp_path: Path) -> None:
         """import_module raises ModuleNotFoundError with context when module doesn't exist."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 config = Config(name="test", module="nonexistent")
@@ -268,7 +268,7 @@ config = Config(name="test", module="nonexistent")
 
     def test_propagates_syntax_error(self, tmp_path: Path) -> None:
         """import_module propagates SyntaxError from the module."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 config = Config(name="test", module="broken")
@@ -284,7 +284,7 @@ config = Config(name="test", module="broken")
 
     def test_propagates_import_error(self, tmp_path: Path) -> None:
         """import_module propagates ImportError from module dependencies."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 config = Config(name="test", module="has_bad_import")
@@ -304,7 +304,7 @@ config = Config(name="test", module="has_bad_import")
         """import_module only adds app path to sys.path if initial import fails."""
         # Create a module that's already importable (in existing sys.path)
         # We'll use tmp_path in sys.path to simulate this
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 config = Config(name="test", module="already_there")
@@ -338,7 +338,7 @@ class TestAppLoaderLoadApp:
 
     def test_load_app_discovers_app_from_module(self, tmp_path: Path) -> None:
         """load_app successfully loads App instance from module."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 config = Config(name="test", module="app_discover_test")
@@ -366,7 +366,7 @@ app = App(MyComponent)
 
     def test_load_app_missing_app_variable(self, tmp_path: Path) -> None:
         """load_app raises ValueError with helpful message if no 'app' in module."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 config = Config(name="test", module="app_missing_test")
@@ -382,7 +382,7 @@ config = Config(name="test", module="app_missing_test")
 
     def test_load_app_wrong_type(self, tmp_path: Path) -> None:
         """load_app raises TypeError if 'app' is not an App instance."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 config = Config(name="test", module="app_wrongtype_test")
@@ -398,7 +398,7 @@ config = Config(name="test", module="app_wrongtype_test")
 
     def test_load_app_sets_app_attribute(self, tmp_path: Path) -> None:
         """After load_app, apploader.app is the App instance from the module."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 config = Config(name="test", module="app_sets_attr_test")
@@ -463,7 +463,7 @@ class TestAppLoaderGlobals:
 
     def test_get_config_returns_config(self, tmp_path: Path) -> None:
         """get_config returns the config from the global AppLoader."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 config = Config(name="test-app", module="test")
@@ -517,7 +517,7 @@ config = Config(name="test-app", module="test")
 
     def test_get_app_returns_app_after_load(self, tmp_path: Path) -> None:
         """get_app returns App instance after load_app()."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 config = Config(name="test", module="get_app_test")
@@ -563,7 +563,7 @@ class TestAppLoaderPlatform:
 
     def test_platform_returns_server_platform(self, tmp_path: Path) -> None:
         """platform returns ServerPlatform when config.platform is SERVER."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 from trellis.platforms.common.base import PlatformType
@@ -579,7 +579,7 @@ config = Config(name="test", module="test", platform=PlatformType.SERVER)
     @requires_pytauri
     def test_platform_returns_desktop_platform(self, tmp_path: Path) -> None:
         """platform returns DesktopPlatform when config.platform is DESKTOP."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 from trellis.platforms.common.base import PlatformType
@@ -597,7 +597,7 @@ config = Config(name="test", module="test", platform=PlatformType.DESKTOP)
 
     def test_platform_returns_browser_serve_platform(self, tmp_path: Path) -> None:
         """platform returns BrowserServePlatform when not in Pyodide."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 from trellis.platforms.common.base import PlatformType
@@ -614,7 +614,7 @@ config = Config(name="test", module="test", platform=PlatformType.BROWSER)
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """platform returns BrowserPlatform when running in Pyodide."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 from trellis.platforms.common.base import PlatformType
@@ -632,7 +632,7 @@ config = Config(name="test", module="test", platform=PlatformType.BROWSER)
 
     def test_platform_caches_instance(self, tmp_path: Path) -> None:
         """platform returns same instance on subsequent accesses."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             """
 from trellis.app.config import Config
 from trellis.platforms.common.base import PlatformType

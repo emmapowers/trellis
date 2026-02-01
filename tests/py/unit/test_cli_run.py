@@ -100,8 +100,8 @@ class TestCliContext:
 
     def test_options_populate_cli_context(self, tmp_path: Path) -> None:
         """CLI options should be available in cli_context during app loading."""
-        # Create a minimal trellis.py that captures cli_context
-        trellis_py = tmp_path / "trellis.py"
+        # Create a minimal trellis_config.py that captures cli_context
+        trellis_py = tmp_path / "trellis_config.py"
         trellis_py.write_text(
             """
 from trellis.app.config import Config
@@ -163,8 +163,8 @@ class TestAppRootGlobalOption:
 
     def test_short_option_r_works(self, tmp_path: Path) -> None:
         """Short option -r should work for --app-root."""
-        # Create a valid trellis.py
-        (tmp_path / "trellis.py").write_text(
+        # Create a valid trellis_config.py
+        (tmp_path / "trellis_config.py").write_text(
             "from trellis.app.config import Config\n"
             "config = Config(name='test', module='main')\n"
         )
@@ -176,7 +176,7 @@ class TestAppRootGlobalOption:
 
     def test_app_root_before_subcommand(self, tmp_path: Path) -> None:
         """--app-root should be placed before the subcommand."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             "from trellis.app.config import Config\n"
             "config = Config(name='test', module='main')\n"
         )
@@ -187,7 +187,7 @@ class TestAppRootGlobalOption:
 
     def test_env_var_recognized(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """TRELLIS_APP_ROOT environment variable should be used."""
-        (tmp_path / "trellis.py").write_text(
+        (tmp_path / "trellis_config.py").write_text(
             "from trellis.app.config import Config\n"
             "config = Config(name='test', module='main')\n"
         )
@@ -203,14 +203,14 @@ class TestAppRootGlobalOption:
         """CLI --app-root should override TRELLIS_APP_ROOT."""
         cli_dir = tmp_path / "cli_app"
         cli_dir.mkdir()
-        (cli_dir / "trellis.py").write_text(
+        (cli_dir / "trellis_config.py").write_text(
             "from trellis.app.config import Config\n"
             "config = Config(name='cli-app', module='main')\n"
         )
 
         env_dir = tmp_path / "env_app"
         env_dir.mkdir()
-        (env_dir / "trellis.py").write_text(
+        (env_dir / "trellis_config.py").write_text(
             "from trellis.app.config import Config\n"
             "config = Config(name='env-app', module='main')\n"
         )

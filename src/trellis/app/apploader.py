@@ -29,28 +29,28 @@ def _is_pyodide() -> bool:
 
 
 def find_app_path() -> Path:
-    """Find the directory containing trellis.py by walking up from cwd.
+    """Find the directory containing trellis_config.py by walking up from cwd.
 
     Searches from the current working directory toward the filesystem root,
-    returning the first directory that contains a trellis.py file.
+    returning the first directory that contains a trellis_config.py file.
 
     Returns:
-        Path to the directory containing trellis.py
+        Path to the directory containing trellis_config.py
 
     Raises:
-        FileNotFoundError: If no trellis.py is found
+        FileNotFoundError: If no trellis_config.py is found
     """
     current = Path.cwd().resolve()
 
     while True:
-        if (current / "trellis.py").exists():
+        if (current / "trellis_config.py").exists():
             return current
 
         parent = current.parent
         if parent == current:
             # Reached filesystem root
             raise FileNotFoundError(
-                "trellis.py not found. Run 'trellis init' to create a Trellis project."
+                "trellis_config.py not found. Run 'trellis init' to create a Trellis project."
             )
 
         current = parent
@@ -65,16 +65,16 @@ def resolve_app_root(cli_value: Path | None = None) -> Path:
     3. Else call find_app_path() for auto-detection
 
     For any explicit path (CLI or ENV): if it's a file, use its parent directory.
-    Always validates that the resulting directory contains trellis.py.
+    Always validates that the resulting directory contains trellis_config.py.
 
     Args:
         cli_value: Path from --app-root CLI option (None if not provided)
 
     Returns:
-        Path to directory containing trellis.py
+        Path to directory containing trellis_config.py
 
     Raises:
-        FileNotFoundError: If path doesn't exist or no trellis.py found
+        FileNotFoundError: If path doesn't exist or no trellis_config.py found
     """
     # Try CLI value first
     if cli_value is not None:
@@ -97,10 +97,10 @@ def _validate_app_root(path: Path, source: str) -> Path:
         source: Description of where the path came from (for error messages)
 
     Returns:
-        Normalized directory path containing trellis.py
+        Normalized directory path containing trellis_config.py
 
     Raises:
-        FileNotFoundError: If path doesn't exist or no trellis.py found
+        FileNotFoundError: If path doesn't exist or no trellis_config.py found
     """
     if not path.exists():
         raise FileNotFoundError(f"Path from {source} does not exist: {path}")
@@ -109,9 +109,9 @@ def _validate_app_root(path: Path, source: str) -> Path:
     if path.is_file():
         path = path.parent
 
-    # Validate trellis.py exists
-    if not (path / "trellis.py").exists():
-        raise FileNotFoundError(f"trellis.py not found in {path}")
+    # Validate trellis_config.py exists
+    if not (path / "trellis_config.py").exists():
+        raise FileNotFoundError(f"trellis_config.py not found in {path}")
 
     return path
 
@@ -119,10 +119,10 @@ def _validate_app_root(path: Path, source: str) -> Path:
 class AppLoader:
     """Loads and manages a Trellis application.
 
-    The AppLoader class manages application configuration loaded from trellis.py.
+    The AppLoader class manages application configuration loaded from trellis_config.py.
 
     Attributes:
-        path: Directory containing the trellis.py file
+        path: Directory containing the trellis_config.py file
         config: Loaded configuration, or None if not yet loaded
     """
 
@@ -130,7 +130,7 @@ class AppLoader:
         """Initialize an AppLoader instance.
 
         Args:
-            path: Directory containing the trellis.py file
+            path: Directory containing the trellis_config.py file
         """
         self.path = path
         self.config: Config | None = None
@@ -138,31 +138,31 @@ class AppLoader:
         self._platform: Platform | None = None
 
     def load_config(self) -> None:
-        """Load configuration from trellis.py.
+        """Load configuration from trellis_config.py.
 
-        Executes the trellis.py file and extracts the `config` variable,
+        Executes the trellis_config.py file and extracts the `config` variable,
         which must be a Config instance.
 
         Raises:
-            FileNotFoundError: If trellis.py doesn't exist at self.path
-            ValueError: If `config` variable is not defined in trellis.py
+            FileNotFoundError: If trellis_config.py doesn't exist at self.path
+            ValueError: If `config` variable is not defined in trellis_config.py
             TypeError: If `config` is not a Config instance
-            SyntaxError: If trellis.py has syntax errors (passed through)
-            ModuleNotFoundError: If trellis.py has import errors (passed through)
+            SyntaxError: If trellis_config.py has syntax errors (passed through)
+            ModuleNotFoundError: If trellis_config.py has import errors (passed through)
         """
-        trellis_file = self.path / "trellis.py"
+        trellis_file = self.path / "trellis_config.py"
 
         if not trellis_file.exists():
-            raise FileNotFoundError(f"trellis.py not found at {self.path}")
+            raise FileNotFoundError(f"trellis_config.py not found at {self.path}")
 
-        # Execute trellis.py in its own namespace
+        # Execute trellis_config.py in its own namespace
         namespace: dict[str, object] = {}
         exec(trellis_file.read_text(), namespace)
 
         if "config" not in namespace:
             raise ValueError(
                 f"'config' variable not defined in {trellis_file}. "
-                "Your trellis.py must define: config = Config(name=..., module=...)"
+                "Your trellis_config.py must define: config = Config(name=..., module=...)"
             )
 
         config = namespace["config"]
@@ -350,7 +350,7 @@ def get_app_root() -> Path:
     """Get the app root path from the global AppLoader.
 
     Returns:
-        The path to the directory containing trellis.py
+        The path to the directory containing trellis_config.py
 
     Raises:
         RuntimeError: If set_apploader() has not been called
