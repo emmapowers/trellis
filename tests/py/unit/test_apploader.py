@@ -9,9 +9,11 @@ from types import ModuleType
 import pytest
 
 from tests.helpers import requires_pytauri
+from trellis.app.app import App
 from trellis.app.apploader import (
     AppLoader,
     find_app_path,
+    get_app,
     get_app_root,
     get_apploader,
     get_config,
@@ -324,6 +326,111 @@ config = Config(name="test", module="already_there")
         assert len(sys.path) == original_path_len
 
 
+class TestAppLoaderLoadApp:
+    """Tests for AppLoader.load_app method."""
+
+    def test_load_app_requires_config_loaded(self, tmp_path: Path) -> None:
+        """load_app raises RuntimeError if load_config not called first."""
+        apploader = AppLoader(tmp_path)
+
+        with pytest.raises(RuntimeError, match=r"load_config.*first"):
+            apploader.load_app()
+
+    def test_load_app_discovers_app_from_module(self, tmp_path: Path) -> None:
+        """load_app successfully loads App instance from module."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+config = Config(name="test", module="app_discover_test")
+"""
+        )
+        (tmp_path / "app_discover_test.py").write_text(
+            """
+from trellis import component
+from trellis.app import App
+
+@component
+def MyComponent():
+    pass
+
+app = App(MyComponent)
+"""
+        )
+
+        apploader = AppLoader(tmp_path)
+        apploader.load_config()
+        apploader.load_app()
+
+        assert apploader.app is not None
+        assert isinstance(apploader.app, App)
+
+    def test_load_app_missing_app_variable(self, tmp_path: Path) -> None:
+        """load_app raises ValueError with helpful message if no 'app' in module."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+config = Config(name="test", module="app_missing_test")
+"""
+        )
+        (tmp_path / "app_missing_test.py").write_text("VALUE = 42")
+
+        apploader = AppLoader(tmp_path)
+        apploader.load_config()
+
+        with pytest.raises(ValueError, match="'app' variable not defined"):
+            apploader.load_app()
+
+    def test_load_app_wrong_type(self, tmp_path: Path) -> None:
+        """load_app raises TypeError if 'app' is not an App instance."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+config = Config(name="test", module="app_wrongtype_test")
+"""
+        )
+        (tmp_path / "app_wrongtype_test.py").write_text("app = {'not': 'an App'}")
+
+        apploader = AppLoader(tmp_path)
+        apploader.load_config()
+
+        with pytest.raises(TypeError, match="'app' must be an App instance"):
+            apploader.load_app()
+
+    def test_load_app_sets_app_attribute(self, tmp_path: Path) -> None:
+        """After load_app, apploader.app is the App instance from the module."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+config = Config(name="test", module="app_sets_attr_test")
+"""
+        )
+        (tmp_path / "app_sets_attr_test.py").write_text(
+            """
+from trellis import component
+from trellis.app import App
+
+@component
+def Root():
+    pass
+
+app = App(Root)
+"""
+        )
+
+        apploader = AppLoader(tmp_path)
+        apploader.load_config()
+
+        assert apploader.app is None
+        apploader.load_app()
+        assert apploader.app is not None
+
+    def test_app_is_none_before_load(self, tmp_path: Path) -> None:
+        """AppLoader.app is None before load_app is called."""
+        apploader = AppLoader(tmp_path)
+
+        assert apploader.app is None
+
+
 class TestAppLoaderGlobals:
     """Tests for get_apploader/set_apploader global accessors."""
 
@@ -398,6 +505,50 @@ config = Config(name="test-app", module="test")
         """get_app_root raises RuntimeError if set_apploader hasn't been called."""
         with pytest.raises(RuntimeError, match="AppLoader not initialized"):
             get_app_root()
+
+    def test_get_app_returns_none_before_load(self, tmp_path: Path) -> None:
+        """get_app returns None when app not loaded."""
+        apploader = AppLoader(tmp_path)
+        set_apploader(apploader)
+
+        app = get_app()
+
+        assert app is None
+
+    def test_get_app_returns_app_after_load(self, tmp_path: Path) -> None:
+        """get_app returns App instance after load_app()."""
+        (tmp_path / "trellis.py").write_text(
+            """
+from trellis.app.config import Config
+config = Config(name="test", module="get_app_test")
+"""
+        )
+        (tmp_path / "get_app_test.py").write_text(
+            """
+from trellis import component
+from trellis.app import App
+
+@component
+def Root():
+    pass
+
+app = App(Root)
+"""
+        )
+        apploader = AppLoader(tmp_path)
+        apploader.load_config()
+        apploader.load_app()
+        set_apploader(apploader)
+
+        app = get_app()
+
+        assert app is not None
+        assert isinstance(app, App)
+
+    def test_get_app_raises_without_apploader(self) -> None:
+        """get_app raises RuntimeError if set_apploader not called."""
+        with pytest.raises(RuntimeError, match="AppLoader not initialized"):
+            get_app()
 
 
 class TestAppLoaderPlatform:

@@ -9,6 +9,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING
 
+from trellis.app.app import App
 from trellis.app.config import Config
 from trellis.platforms.common.base import PlatformType
 
@@ -133,6 +134,7 @@ class AppLoader:
         """
         self.path = path
         self.config: Config | None = None
+        self.app: App | None = None
         self._platform: Platform | None = None
 
     def load_config(self) -> None:
@@ -207,6 +209,37 @@ class AppLoader:
             importlib.invalidate_caches()
 
         return importlib.import_module(module_name)
+
+    def load_app(self) -> None:
+        """Load the App instance from the application module.
+
+        Imports the module via import_module() and extracts the `app` variable.
+        Requires load_config() to have been called first.
+
+        Raises:
+            RuntimeError: If load_config() has not been called first
+            ValueError: If `app` variable is not defined in the module
+            TypeError: If `app` is not an App instance
+        """
+        if self.config is None:
+            raise RuntimeError("Config not loaded. Call load_config() first before load_app().")
+
+        module = self.import_module()
+
+        if not hasattr(module, "app"):
+            raise ValueError(
+                f"'app' variable not defined in {self.config.module}. "
+                "Your module must define: app = App(YourRootComponent)"
+            )
+
+        app = module.app
+        if not isinstance(app, App):
+            raise TypeError(
+                f"'app' must be an App instance, got {type(app).__name__}. "
+                "Use: app = App(YourRootComponent)"
+            )
+
+        self.app = app
 
     @property
     def platform(self) -> Platform:
@@ -299,6 +332,18 @@ def get_config() -> Config | None:
         RuntimeError: If set_apploader() has not been called
     """
     return get_apploader().config
+
+
+def get_app() -> App | None:
+    """Get the app from the global AppLoader.
+
+    Returns:
+        The App from the global AppLoader, or None if not loaded
+
+    Raises:
+        RuntimeError: If set_apploader() has not been called
+    """
+    return get_apploader().app
 
 
 def get_app_root() -> Path:
