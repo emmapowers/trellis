@@ -7,6 +7,7 @@ from types import ModuleType
 
 import pytest
 
+from tests.conftest import WriteApp, WriteAppModule, WriteTrellisConfig
 from tests.helpers import requires_pytauri
 from trellis.app.app import App
 from trellis.app.apploader import (
@@ -118,16 +119,10 @@ class TestAppLoader:
 
         assert apploader.config is None
 
-    def test_load_config_populates_config(self, tmp_path: Path) -> None:
+    def test_load_config_populates_config(self, write_trellis_config: WriteTrellisConfig) -> None:
         """load_config populates config attribute from trellis_config.py."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-
-config = Config(name="my-app", module="my_app.main")
-"""
-        )
-        apploader = AppLoader(tmp_path)
+        app_root = write_trellis_config(name="my-app", module="my_app.main")
+        apploader = AppLoader(app_root)
 
         apploader.load_config()
 
@@ -145,34 +140,36 @@ config = Config(name="my-app", module="my_app.main")
         assert "trellis_config.py not found at" in str(exc_info.value)
         assert str(tmp_path) in str(exc_info.value)
 
-    def test_load_config_error_syntax_error(self, tmp_path: Path) -> None:
+    def test_load_config_error_syntax_error(self, write_trellis_config: WriteTrellisConfig) -> None:
         """load_config propagates SyntaxError from trellis_config.py."""
-        (tmp_path / "trellis_config.py").write_text("def broken(")
-        apploader = AppLoader(tmp_path)
+        app_root = write_trellis_config(content="def broken(")
+        apploader = AppLoader(app_root)
 
         with pytest.raises(SyntaxError):
             apploader.load_config()
 
-    def test_load_config_error_import_error(self, tmp_path: Path) -> None:
+    def test_load_config_error_import_error(self, write_trellis_config: WriteTrellisConfig) -> None:
         """load_config propagates ImportError from trellis_config.py."""
-        (tmp_path / "trellis_config.py").write_text("import nonexistent_module_xyz")
-        apploader = AppLoader(tmp_path)
+        app_root = write_trellis_config(content="import nonexistent_module_xyz")
+        apploader = AppLoader(app_root)
 
         with pytest.raises(ModuleNotFoundError):
             apploader.load_config()
 
-    def test_load_config_error_no_config_variable(self, tmp_path: Path) -> None:
+    def test_load_config_error_no_config_variable(
+        self, write_trellis_config: WriteTrellisConfig
+    ) -> None:
         """load_config raises ValueError when config variable not defined."""
-        (tmp_path / "trellis_config.py").write_text("x = 1")
-        apploader = AppLoader(tmp_path)
+        app_root = write_trellis_config(content="x = 1")
+        apploader = AppLoader(app_root)
 
         with pytest.raises(ValueError, match="'config' variable not defined"):
             apploader.load_config()
 
-    def test_load_config_error_wrong_type(self, tmp_path: Path) -> None:
+    def test_load_config_error_wrong_type(self, write_trellis_config: WriteTrellisConfig) -> None:
         """load_config raises TypeError when config is not a Config instance."""
-        (tmp_path / "trellis_config.py").write_text("config = {'name': 'test'}")
-        apploader = AppLoader(tmp_path)
+        app_root = write_trellis_config(content="config = {'name': 'test'}")
+        apploader = AppLoader(app_root)
 
         with pytest.raises(TypeError) as exc_info:
             apploader.load_config()
@@ -185,72 +182,60 @@ config = Config(name="my-app", module="my_app.main")
 class TestAppLoaderImportModule:
     """Tests for AppLoader.import_module method."""
 
-    def test_imports_simple_module(self, tmp_path: Path) -> None:
+    def test_imports_simple_module(
+        self,
+        write_trellis_config: WriteTrellisConfig,
+        write_app_module: WriteAppModule,
+    ) -> None:
         """import_module imports a module in the app directory."""
-        # Create trellis_config.py
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="myapp")
-"""
-        )
-        # Create myapp.py
-        (tmp_path / "myapp.py").write_text("VALUE = 42")
+        app_root = write_trellis_config(name="test", module="myapp")
+        write_app_module(module_name="myapp", content="VALUE = 42")
 
-        apploader = AppLoader(tmp_path)
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
         module = apploader.import_module()
 
         assert module.VALUE == 42
 
-    def test_imports_subpackage_module(self, tmp_path: Path) -> None:
+    def test_imports_subpackage_module(
+        self, tmp_path: Path, write_trellis_config: WriteTrellisConfig
+    ) -> None:
         """import_module imports a module from a subpackage."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="mypkg.main")
-"""
-        )
+        app_root = write_trellis_config(name="test", module="mypkg.main")
         pkg_dir = tmp_path / "mypkg"
         pkg_dir.mkdir()
         (pkg_dir / "__init__.py").write_text("")
         (pkg_dir / "main.py").write_text("VALUE = 'nested'")
 
-        apploader = AppLoader(tmp_path)
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
         module = apploader.import_module()
 
         assert module.VALUE == "nested"
 
-    def test_returns_module_object(self, tmp_path: Path) -> None:
+    def test_returns_module_object(
+        self,
+        write_trellis_config: WriteTrellisConfig,
+        write_app_module: WriteAppModule,
+    ) -> None:
         """import_module returns a ModuleType."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="myapp")
-"""
-        )
-        (tmp_path / "myapp.py").write_text("")
+        app_root = write_trellis_config(name="test", module="myapp")
+        write_app_module(module_name="myapp", content="")
 
-        apploader = AppLoader(tmp_path)
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
         module = apploader.import_module()
 
         assert isinstance(module, ModuleType)
 
-    def test_error_module_not_found(self, tmp_path: Path) -> None:
+    def test_error_module_not_found(self, write_trellis_config: WriteTrellisConfig) -> None:
         """import_module raises ModuleNotFoundError with context when module doesn't exist."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="nonexistent")
-"""
-        )
+        app_root = write_trellis_config(name="test", module="nonexistent")
 
-        apploader = AppLoader(tmp_path)
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
         with pytest.raises(ModuleNotFoundError) as exc_info:
@@ -265,65 +250,69 @@ config = Config(name="test", module="nonexistent")
         with pytest.raises(RuntimeError, match=r"load_config.*first"):
             apploader.import_module()
 
-    def test_propagates_syntax_error(self, tmp_path: Path) -> None:
+    def test_propagates_syntax_error(
+        self,
+        write_trellis_config: WriteTrellisConfig,
+        write_app_module: WriteAppModule,
+    ) -> None:
         """import_module propagates SyntaxError from the module."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="broken")
-"""
-        )
-        (tmp_path / "broken.py").write_text("def oops(")
+        app_root = write_trellis_config(name="test", module="broken")
+        write_app_module(module_name="broken", content="def oops(")
 
-        apploader = AppLoader(tmp_path)
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
         with pytest.raises(SyntaxError):
             apploader.import_module()
 
-    def test_propagates_import_error(self, tmp_path: Path) -> None:
+    def test_propagates_import_error(
+        self,
+        write_trellis_config: WriteTrellisConfig,
+        write_app_module: WriteAppModule,
+    ) -> None:
         """import_module propagates ImportError from module dependencies."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="has_bad_import")
-"""
-        )
-        (tmp_path / "has_bad_import.py").write_text("import nonexistent_dependency_xyz")
+        app_root = write_trellis_config(name="test", module="has_bad_import")
+        write_app_module(module_name="has_bad_import", content="import nonexistent_dependency_xyz")
 
-        apploader = AppLoader(tmp_path)
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
         with pytest.raises(ModuleNotFoundError):
             apploader.import_module()
 
-    def test_import_with_src_subdirectory(self, tmp_path: Path) -> None:
+    def test_import_with_src_subdirectory(
+        self, tmp_path: Path, write_trellis_config: WriteTrellisConfig
+    ) -> None:
         """python_path=["src"] allows importing from src/ subdirectory."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from pathlib import Path
-from trellis.app.config import Config
-config = Config(name="test", module="myapp_src_subdir", python_path=[Path("src")])
-"""
+        app_root = write_trellis_config(
+            content=(
+                "from pathlib import Path\n"
+                "from trellis.app.config import Config\n"
+                'config = Config(name="test", module="myapp_src_subdir",'
+                ' python_path=[Path("src")])\n'
+            )
         )
         src_dir = tmp_path / "src"
         src_dir.mkdir()
         (src_dir / "myapp_src_subdir.py").write_text("VALUE = 'from_src'")
 
-        apploader = AppLoader(tmp_path)
+        apploader = AppLoader(app_root)
         apploader.load_config()
         module = apploader.import_module()
 
         assert module.VALUE == "from_src"
 
-    def test_import_with_multiple_python_paths(self, tmp_path: Path) -> None:
+    def test_import_with_multiple_python_paths(
+        self, tmp_path: Path, write_trellis_config: WriteTrellisConfig
+    ) -> None:
         """python_path with multiple entries adds all to sys.path."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from pathlib import Path
-from trellis.app.config import Config
-config = Config(name="test", module="myapp_multi_path", python_path=[Path("src"), Path("lib")])
-"""
+        app_root = write_trellis_config(
+            content=(
+                "from pathlib import Path\n"
+                "from trellis.app.config import Config\n"
+                'config = Config(name="test", module="myapp_multi_path",'
+                ' python_path=[Path("src"), Path("lib")])\n'
+            )
         )
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -333,23 +322,22 @@ config = Config(name="test", module="myapp_multi_path", python_path=[Path("src")
         lib_dir.mkdir()
         (lib_dir / "helper_multi.py").write_text("VALUE = 'from_lib'")
 
-        apploader = AppLoader(tmp_path)
+        apploader = AppLoader(app_root)
         apploader.load_config()
         module = apploader.import_module()
 
         assert module.VALUE == "from_lib"
 
-    def test_import_default_python_path_includes_app_root(self, tmp_path: Path) -> None:
+    def test_import_default_python_path_includes_app_root(
+        self,
+        write_trellis_config: WriteTrellisConfig,
+        write_app_module: WriteAppModule,
+    ) -> None:
         """Default python_path=[Path(".")] allows importing from app root."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="myapp_default_path")
-"""
-        )
-        (tmp_path / "myapp_default_path.py").write_text("VALUE = 'from_root'")
+        app_root = write_trellis_config(name="test", module="myapp_default_path")
+        write_app_module(module_name="myapp_default_path", content="VALUE = 'from_root'")
 
-        apploader = AppLoader(tmp_path)
+        apploader = AppLoader(app_root)
         apploader.load_config()
         module = apploader.import_module()
 
@@ -366,88 +354,52 @@ class TestAppLoaderLoadApp:
         with pytest.raises(RuntimeError, match=r"load_config.*first"):
             apploader.load_app()
 
-    def test_load_app_discovers_app_from_module(self, tmp_path: Path) -> None:
+    def test_load_app_discovers_app_from_module(self, write_app: WriteApp) -> None:
         """load_app successfully loads App instance from module."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="app_discover_test")
-"""
-        )
-        (tmp_path / "app_discover_test.py").write_text(
-            """
-from trellis import component
-from trellis.app import App
+        app_root = write_app(module="app_discover_test", component_name="MyComponent")
 
-@component
-def MyComponent():
-    pass
-
-app = App(MyComponent)
-"""
-        )
-
-        apploader = AppLoader(tmp_path)
+        apploader = AppLoader(app_root)
         apploader.load_config()
         apploader.load_app()
 
         assert apploader.app is not None
         assert isinstance(apploader.app, App)
 
-    def test_load_app_missing_app_variable(self, tmp_path: Path) -> None:
+    def test_load_app_missing_app_variable(
+        self,
+        write_trellis_config: WriteTrellisConfig,
+        write_app_module: WriteAppModule,
+    ) -> None:
         """load_app raises ValueError with helpful message if no 'app' in module."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="app_missing_test")
-"""
-        )
-        (tmp_path / "app_missing_test.py").write_text("VALUE = 42")
+        app_root = write_trellis_config(name="test", module="app_missing_test")
+        write_app_module(module_name="app_missing_test", content="VALUE = 42")
 
-        apploader = AppLoader(tmp_path)
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
         with pytest.raises(ValueError, match="'app' variable not defined"):
             apploader.load_app()
 
-    def test_load_app_wrong_type(self, tmp_path: Path) -> None:
+    def test_load_app_wrong_type(
+        self,
+        write_trellis_config: WriteTrellisConfig,
+        write_app_module: WriteAppModule,
+    ) -> None:
         """load_app raises TypeError if 'app' is not an App instance."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="app_wrongtype_test")
-"""
-        )
-        (tmp_path / "app_wrongtype_test.py").write_text("app = {'not': 'an App'}")
+        app_root = write_trellis_config(name="test", module="app_wrongtype_test")
+        write_app_module(module_name="app_wrongtype_test", content="app = {'not': 'an App'}")
 
-        apploader = AppLoader(tmp_path)
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
         with pytest.raises(TypeError, match="'app' must be an App instance"):
             apploader.load_app()
 
-    def test_load_app_sets_app_attribute(self, tmp_path: Path) -> None:
+    def test_load_app_sets_app_attribute(self, write_app: WriteApp) -> None:
         """After load_app, apploader.app is the App instance from the module."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="app_sets_attr_test")
-"""
-        )
-        (tmp_path / "app_sets_attr_test.py").write_text(
-            """
-from trellis import component
-from trellis.app import App
+        app_root = write_app(module="app_sets_attr_test")
 
-@component
-def Root():
-    pass
-
-app = App(Root)
-"""
-        )
-
-        apploader = AppLoader(tmp_path)
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
         assert apploader.app is None
@@ -491,15 +443,10 @@ class TestAppLoaderGlobals:
         assert "set_apploader()" in str(exc_info.value)
         assert "find_app_path()" in str(exc_info.value)
 
-    def test_get_config_returns_config(self, tmp_path: Path) -> None:
+    def test_get_config_returns_config(self, write_trellis_config: WriteTrellisConfig) -> None:
         """get_config returns the config from the global AppLoader."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test-app", module="test")
-"""
-        )
-        apploader = AppLoader(tmp_path)
+        app_root = write_trellis_config(name="test-app", module="test")
+        apploader = AppLoader(app_root)
         apploader.load_config()
         set_apploader(apploader)
 
@@ -545,27 +492,10 @@ config = Config(name="test-app", module="test")
 
         assert app is None
 
-    def test_get_app_returns_app_after_load(self, tmp_path: Path) -> None:
+    def test_get_app_returns_app_after_load(self, write_app: WriteApp) -> None:
         """get_app returns App instance after load_app()."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-config = Config(name="test", module="get_app_test")
-"""
-        )
-        (tmp_path / "get_app_test.py").write_text(
-            """
-from trellis import component
-from trellis.app import App
-
-@component
-def Root():
-    pass
-
-app = App(Root)
-"""
-        )
-        apploader = AppLoader(tmp_path)
+        app_root = write_app(module="get_app_test")
+        apploader = AppLoader(app_root)
         apploader.load_config()
         apploader.load_app()
         set_apploader(apploader)
@@ -591,33 +521,23 @@ class TestAppLoaderPlatform:
         with pytest.raises(RuntimeError, match=r"load_config.*first"):
             _ = apploader.platform
 
-    def test_platform_returns_server_platform(self, tmp_path: Path) -> None:
+    def test_platform_returns_server_platform(
+        self, write_trellis_config: WriteTrellisConfig
+    ) -> None:
         """platform returns ServerPlatform when config.platform is SERVER."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-from trellis.platforms.common.base import PlatformType
-
-config = Config(name="test", module="test", platform=PlatformType.SERVER)
-"""
-        )
-        apploader = AppLoader(tmp_path)
+        app_root = write_trellis_config(module="test", platform="SERVER")
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
         assert isinstance(apploader.platform, ServerPlatform)
 
     @requires_pytauri
-    def test_platform_returns_desktop_platform(self, tmp_path: Path) -> None:
+    def test_platform_returns_desktop_platform(
+        self, write_trellis_config: WriteTrellisConfig
+    ) -> None:
         """platform returns DesktopPlatform when config.platform is DESKTOP."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-from trellis.platforms.common.base import PlatformType
-
-config = Config(name="test", module="test", platform=PlatformType.DESKTOP)
-"""
-        )
-        apploader = AppLoader(tmp_path)
+        app_root = write_trellis_config(module="test", platform="DESKTOP")
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
         # Import inside test because pytauri may not be installed
@@ -625,52 +545,34 @@ config = Config(name="test", module="test", platform=PlatformType.DESKTOP)
 
         assert isinstance(apploader.platform, DesktopPlatform)
 
-    def test_platform_returns_browser_serve_platform(self, tmp_path: Path) -> None:
+    def test_platform_returns_browser_serve_platform(
+        self, write_trellis_config: WriteTrellisConfig
+    ) -> None:
         """platform returns BrowserServePlatform when not in Pyodide."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-from trellis.platforms.common.base import PlatformType
-
-config = Config(name="test", module="test", platform=PlatformType.BROWSER)
-"""
-        )
-        apploader = AppLoader(tmp_path)
+        app_root = write_trellis_config(module="test", platform="BROWSER")
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
         assert isinstance(apploader.platform, BrowserServePlatform)
 
     def test_platform_returns_browser_platform_in_pyodide(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        self,
+        write_trellis_config: WriteTrellisConfig,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """platform returns BrowserPlatform when running in Pyodide."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-from trellis.platforms.common.base import PlatformType
-
-config = Config(name="test", module="test", platform=PlatformType.BROWSER)
-"""
-        )
-        apploader = AppLoader(tmp_path)
+        app_root = write_trellis_config(module="test", platform="BROWSER")
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
-        # Mock _is_pyodide to return True
         monkeypatch.setattr("trellis.app.apploader._is_pyodide", lambda: True)
 
         assert isinstance(apploader.platform, BrowserPlatform)
 
-    def test_platform_caches_instance(self, tmp_path: Path) -> None:
+    def test_platform_caches_instance(self, write_trellis_config: WriteTrellisConfig) -> None:
         """platform returns same instance on subsequent accesses."""
-        (tmp_path / "trellis_config.py").write_text(
-            """
-from trellis.app.config import Config
-from trellis.platforms.common.base import PlatformType
-
-config = Config(name="test", module="test", platform=PlatformType.SERVER)
-"""
-        )
-        apploader = AppLoader(tmp_path)
+        app_root = write_trellis_config(module="test", platform="SERVER")
+        apploader = AppLoader(app_root)
         apploader.load_config()
 
         first = apploader.platform

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typing as tp
 from dataclasses import dataclass, field
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -221,6 +222,117 @@ def mock_stateful() -> tp.Callable[..., Stateful]:
         return cls(**kwargs)
 
     return _make
+
+
+# =============================================================================
+# App Setup Fixtures
+# =============================================================================
+
+WriteTrellisConfig = tp.Callable[..., Path]
+WriteAppModule = tp.Callable[..., Path]
+WriteApp = tp.Callable[..., Path]
+
+
+@pytest.fixture
+def write_trellis_config(tmp_path: Path) -> WriteTrellisConfig:
+    """Factory to write trellis_config.py with sensible defaults.
+
+    Usage:
+        def test_config(write_trellis_config):
+            app_root = write_trellis_config(name="my-app", module="main")
+            # app_root / "trellis_config.py" exists with valid Config
+
+        def test_bad_config(write_trellis_config):
+            app_root = write_trellis_config(content="def broken(")
+            # app_root / "trellis_config.py" has raw content
+    """
+
+    def _write(
+        name: str = "test-app",
+        module: str = "main",
+        platform: str | None = None,
+        *,
+        content: str | None = None,
+    ) -> Path:
+        if content is not None:
+            (tmp_path / "trellis_config.py").write_text(content)
+        else:
+            lines = [
+                "from trellis.app.config import Config",
+            ]
+            kwargs = [f'name="{name}"', f'module="{module}"']
+            if platform is not None:
+                lines.append("from trellis.platforms.common.base import PlatformType")
+                kwargs.append(f"platform=PlatformType.{platform}")
+            lines.append(f"config = Config({', '.join(kwargs)})")
+            (tmp_path / "trellis_config.py").write_text("\n".join(lines) + "\n")
+        return tmp_path
+
+    return _write
+
+
+@pytest.fixture
+def write_app_module(tmp_path: Path) -> WriteAppModule:
+    """Factory to write app module files with sensible defaults.
+
+    Usage:
+        def test_module(write_app_module):
+            path = write_app_module(module_name="main", component_name="Root")
+            # tmp_path / "main.py" exists with @component + App
+
+        def test_broken_module(write_app_module):
+            path = write_app_module(content="import nonexistent")
+    """
+
+    def _write(
+        module_name: str = "main",
+        component_name: str = "Root",
+        *,
+        content: str | None = None,
+    ) -> Path:
+        file_path = tmp_path / f"{module_name}.py"
+        if content is not None:
+            file_path.write_text(content)
+        else:
+            file_path.write_text(
+                "from trellis import component\n"
+                "from trellis.app import App\n"
+                "\n"
+                "@component\n"
+                f"def {component_name}():\n"
+                "    pass\n"
+                "\n"
+                f"app = App({component_name})\n"
+            )
+        return file_path
+
+    return _write
+
+
+@pytest.fixture
+def write_app(
+    write_trellis_config: WriteTrellisConfig,
+    write_app_module: WriteAppModule,
+) -> WriteApp:
+    """Convenience fixture that writes both config and module.
+
+    Usage:
+        def test_full_app(write_app):
+            app_root = write_app(name="my-app", module="main")
+            # app_root has trellis_config.py + main.py
+    """
+
+    def _write(
+        name: str = "test-app",
+        module: str = "main",
+        component_name: str = "Root",
+        platform: str | None = None,
+    ) -> Path:
+        app_root = write_trellis_config(name=name, module=module, platform=platform)
+        write_app_module(module_name=module, component_name=component_name)
+        return app_root
+
+    return _write
 
 
 # =============================================================================
