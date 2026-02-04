@@ -26,6 +26,12 @@ from trellis.routing.enums import RoutingMode
 # ============================================================================
 
 # General settings
+_PYTHON_PATH: ConfigVar[list[Path]] = ConfigVar(
+    "python_path",
+    default=[Path(".")],
+    type_hint=list[Path],
+    help="Python import paths relative to app root",
+)
 _PLATFORM = ConfigVar(
     "platform",
     default=PlatformType.SERVER,
@@ -141,6 +147,7 @@ class Config:
     Attributes:
         name: Application name (used for build artifacts, etc.)
         module: Python module path containing the entry point
+        python_path: Python import paths relative to app root (default: ["."])
         platform: Target platform (server, desktop, browser)
         force_build: Force rebuild of client bundle even if sources unchanged
         watch: Whether to watch for file changes
@@ -160,6 +167,7 @@ class Config:
     module: str
 
     # General settings
+    python_path: list[Path] = field(default_factory=lambda: [Path(".")])
     platform: PlatformType = field(default_factory=lambda: PlatformType.SERVER)
     force_build: bool = False
     watch: bool = False
@@ -187,6 +195,7 @@ class Config:
 
         # Resolve each field through CLI > ENV > constructor_value > default
         # General settings
+        self.python_path = _PYTHON_PATH.resolve(self.python_path)
         self.platform = _PLATFORM.resolve(self.platform)
         self.force_build = _FORCE_BUILD.resolve(self.force_build)
         self.watch = _WATCH.resolve(self.watch)
@@ -211,7 +220,8 @@ class Config:
     def to_json(self) -> str:
         """Serialize this Config to a JSON string.
 
-        Enums are serialized as their string values, Paths as strings.
+        Enums are serialized as their string values, Paths as strings,
+        lists of Paths as lists of strings.
 
         Returns:
             JSON string representation of the config
@@ -223,6 +233,8 @@ class Config:
                 data[f.name] = value.value
             elif isinstance(value, Path):
                 data[f.name] = str(value)
+            elif isinstance(value, list):
+                data[f.name] = [str(item) if isinstance(item, Path) else item for item in value]
             else:
                 data[f.name] = value
         return json.dumps(data)

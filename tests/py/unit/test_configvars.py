@@ -407,6 +407,45 @@ class TestConfigVarRegistry:
         assert var.hidden is True
 
 
+class TestConfigVarListCoercion:
+    """Test ConfigVar coercion of list types from ENV string values."""
+
+    def test_coerces_list_of_paths_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """list[Path] ConfigVar splits comma-separated string and coerces each element."""
+        monkeypatch.setenv("TRELLIS_PATHS", "src,lib")
+        var: ConfigVar[list[Path]] = ConfigVar("paths", default=[Path(".")], type_hint=list[Path])
+        result = var.resolve()
+        assert result == [Path("src"), Path("lib")]
+
+    def test_coerces_list_of_strings_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """list[str] ConfigVar splits comma-separated string."""
+        monkeypatch.setenv("TRELLIS_TAGS", "alpha,beta,gamma")
+        var: ConfigVar[list[str]] = ConfigVar("tags", default=["default"], type_hint=list[str])
+        result = var.resolve()
+        assert result == ["alpha", "beta", "gamma"]
+
+    def test_list_strips_whitespace_from_elements(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """list coercion strips whitespace from each element."""
+        monkeypatch.setenv("TRELLIS_PATHS", " src , lib ")
+        var: ConfigVar[list[Path]] = ConfigVar("paths", default=[Path(".")], type_hint=list[Path])
+        result = var.resolve()
+        assert result == [Path("src"), Path("lib")]
+
+    def test_list_returns_default_when_env_not_set(self) -> None:
+        """list ConfigVar returns default when no ENV set."""
+        var: ConfigVar[list[Path]] = ConfigVar("paths", default=[Path(".")], type_hint=list[Path])
+        result = var.resolve()
+        assert result == [Path(".")]
+
+    def test_list_expands_user_in_paths(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """list[Path] expands ~ in path elements."""
+        monkeypatch.setenv("TRELLIS_PATHS", "~/src,lib")
+        var: ConfigVar[list[Path]] = ConfigVar("paths", default=[Path(".")], type_hint=list[Path])
+        result = var.resolve()
+        assert result[0] == Path.home() / "src"
+        assert result[1] == Path("lib")
+
+
 class TestConfigVarCliMetadata:
     """Test CLI-specific metadata fields on ConfigVar."""
 

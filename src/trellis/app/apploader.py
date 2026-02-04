@@ -177,8 +177,8 @@ class AppLoader:
     def import_module(self) -> ModuleType:
         """Import the application module specified in config.module.
 
-        Attempts to import the module directly first. If that fails with
-        ModuleNotFoundError, adds the app's path to sys.path and retries.
+        Adds each path from config.python_path to sys.path (resolved relative
+        to app root), then imports the module.
 
         Returns:
             The imported module object
@@ -194,21 +194,14 @@ class AppLoader:
                 "Config not loaded. Call load_config() first before import_module()."
             )
 
-        module_name = self.config.module
+        # Add python_path entries to sys.path
+        for rel_path in self.config.python_path:
+            abs_path = str(self.path / rel_path)
+            if abs_path not in sys.path:
+                sys.path.insert(0, abs_path)
 
-        # Try importing directly first
-        try:
-            return importlib.import_module(module_name)
-        except ModuleNotFoundError:
-            pass
-
-        # Add app path to sys.path and retry
-        app_path_str = str(self.path)
-        if app_path_str not in sys.path:
-            sys.path.insert(0, app_path_str)
-            importlib.invalidate_caches()
-
-        return importlib.import_module(module_name)
+        importlib.invalidate_caches()
+        return importlib.import_module(self.config.module)
 
     def load_app(self) -> None:
         """Load the App instance from the application module.

@@ -258,6 +258,7 @@ class TestConfigToJson:
         expected_fields = {
             "name",
             "module",
+            "python_path",
             "platform",
             "force_build",
             "watch",

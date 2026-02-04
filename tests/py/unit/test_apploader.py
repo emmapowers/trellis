@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from types import ModuleType
 
@@ -298,32 +297,63 @@ config = Config(name="test", module="has_bad_import")
         with pytest.raises(ModuleNotFoundError):
             apploader.import_module()
 
-    def test_only_adds_to_sys_path_if_needed(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """import_module only adds app path to sys.path if initial import fails."""
-        # Create a module that's already importable (in existing sys.path)
-        # We'll use tmp_path in sys.path to simulate this
+    def test_import_with_src_subdirectory(self, tmp_path: Path) -> None:
+        """python_path=["src"] allows importing from src/ subdirectory."""
         (tmp_path / "trellis_config.py").write_text(
             """
+from pathlib import Path
 from trellis.app.config import Config
-config = Config(name="test", module="already_there")
+config = Config(name="test", module="myapp_src_subdir", python_path=[Path("src")])
 """
         )
-        (tmp_path / "already_there.py").write_text("VALUE = 'found'")
-
-        # Pre-add tmp_path to sys.path
-        monkeypatch.syspath_prepend(tmp_path)
-        original_path_len = len(sys.path)
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "myapp_src_subdir.py").write_text("VALUE = 'from_src'")
 
         apploader = AppLoader(tmp_path)
         apploader.load_config()
-
         module = apploader.import_module()
 
-        # Should not have added to sys.path since module was already findable
-        assert module.VALUE == "found"
-        assert len(sys.path) == original_path_len
+        assert module.VALUE == "from_src"
+
+    def test_import_with_multiple_python_paths(self, tmp_path: Path) -> None:
+        """python_path with multiple entries adds all to sys.path."""
+        (tmp_path / "trellis_config.py").write_text(
+            """
+from pathlib import Path
+from trellis.app.config import Config
+config = Config(name="test", module="myapp_multi_path", python_path=[Path("src"), Path("lib")])
+"""
+        )
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "myapp_multi_path.py").write_text("from helper_multi import VALUE")
+
+        lib_dir = tmp_path / "lib"
+        lib_dir.mkdir()
+        (lib_dir / "helper_multi.py").write_text("VALUE = 'from_lib'")
+
+        apploader = AppLoader(tmp_path)
+        apploader.load_config()
+        module = apploader.import_module()
+
+        assert module.VALUE == "from_lib"
+
+    def test_import_default_python_path_includes_app_root(self, tmp_path: Path) -> None:
+        """Default python_path=[Path(".")] allows importing from app root."""
+        (tmp_path / "trellis_config.py").write_text(
+            """
+from trellis.app.config import Config
+config = Config(name="test", module="myapp_default_path")
+"""
+        )
+        (tmp_path / "myapp_default_path.py").write_text("VALUE = 'from_root'")
+
+        apploader = AppLoader(tmp_path)
+        apploader.load_config()
+        module = apploader.import_module()
+
+        assert module.VALUE == "from_root"
 
 
 class TestAppLoaderLoadApp:

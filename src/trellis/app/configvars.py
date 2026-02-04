@@ -152,11 +152,13 @@ class ConfigVar(Generic[T]):
             return type(self.default)
         return None
 
-    def _coerce(self, value: str) -> T:  # noqa: PLR0911
+    def _coerce(self, value: str, target_type: type | None = None) -> T:  # noqa: PLR0911
         """Coerce a string value to the target type.
 
         Args:
             value: String value (already stripped) from ENV
+            target_type: Explicit type to coerce to. If None, inferred from
+                         type_hint or default value.
 
         Returns:
             Value coerced to target type T
@@ -164,7 +166,8 @@ class ConfigVar(Generic[T]):
         Raises:
             ValueError: If coercion fails
         """
-        target_type = self._get_target_type()
+        if target_type is None:
+            target_type = self._get_target_type()
 
         # Handle None type or unknown - return string as-is
         if target_type is None:
@@ -177,6 +180,14 @@ class ConfigVar(Generic[T]):
             args = [a for a in get_args(target_type) if a is not type(None)]
             if args:
                 target_type = args[0]
+                origin = get_origin(target_type)
+
+        # Handle list types (e.g., list[Path], list[str])
+        if origin is list:
+            type_args = get_args(target_type)
+            element_type = type_args[0] if type_args else str
+            elements = [elem.strip() for elem in value.split(",")]
+            return [self._coerce(elem, element_type) for elem in elements]  # type: ignore
 
         # String - return as-is
         if target_type is str:
