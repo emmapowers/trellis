@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
 from click.testing import CliRunner
 
 from tests.conftest import WriteApp, WriteAppModule, WriteTrellisConfig
+from trellis.app import AppLoader
+from trellis.app.config import Config
 from trellis.app.configvars import get_cli_args
 from trellis.cli import CliContext, pass_cli_context, trellis
+from trellis.cli.run import _build_run_kwargs
+from trellis.platforms.common.base import PlatformType
 
 
 class TestTrellisRunBasics:
@@ -103,6 +108,7 @@ class TestCliContext:
         self,
         write_trellis_config: WriteTrellisConfig,
         write_app_module: WriteAppModule,
+        reset_apploader: None,
     ) -> None:
         """CLI options should be available in cli_context during app loading."""
         module_name = "test_cli_context_app"
@@ -117,11 +123,20 @@ class TestCliContext:
         )
         write_app_module(module_name=module_name)
 
+        mock_platform = MagicMock()
+        mock_platform.run = AsyncMock()
+
         runner = CliRunner()
-        result = runner.invoke(
-            trellis,
-            ["--app-root", str(app_root), "run", "--port", "9876", "--host", "192.168.1.1"],
-        )
+        with (
+            patch.object(AppLoader, "bundle"),
+            patch.object(
+                AppLoader, "platform", new_callable=PropertyMock, return_value=mock_platform
+            ),
+        ):
+            result = runner.invoke(
+                trellis,
+                ["--app-root", str(app_root), "run", "--port", "9876", "--host", "192.168.1.1"],
+            )
         assert result.exit_code == 0, f"Exit code: {result.exit_code}, output: {result.output}"
 
     def test_cli_context_is_isolated(self) -> None:
@@ -188,7 +203,9 @@ class TestAppRootGlobalOption:
         result = runner.invoke(trellis, ["run", "--help"])
         assert result.exit_code == 0
 
-    def test_cli_overrides_env(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_cli_overrides_env(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, reset_apploader: None
+    ) -> None:
         """CLI --app-root should override TRELLIS_APP_ROOT."""
         # Use unique module names to avoid module cache conflicts
         cli_module = "cli_override_test_app"
@@ -230,9 +247,18 @@ class TestAppRootGlobalOption:
 
         monkeypatch.setenv("TRELLIS_APP_ROOT", str(env_dir))
 
+        mock_platform = MagicMock()
+        mock_platform.run = AsyncMock()
+
         runner = CliRunner()
-        # Run should use cli_dir, not env_dir
-        result = runner.invoke(trellis, ["--app-root", str(cli_dir), "run"])
+        with (
+            patch.object(AppLoader, "bundle"),
+            patch.object(
+                AppLoader, "platform", new_callable=PropertyMock, return_value=mock_platform
+            ),
+        ):
+            # Run should use cli_dir, not env_dir
+            result = runner.invoke(trellis, ["--app-root", str(cli_dir), "run"])
         # Should show "Running cli-app" not "Running env-app"
         assert "cli-app" in result.output
 
@@ -254,12 +280,21 @@ class TestCliRunLoadApp:
     between tests. The module cache persists across tests in the same process.
     """
 
-    def test_run_loads_app_from_module(self, write_app: WriteApp) -> None:
+    def test_run_loads_app_from_module(self, write_app: WriteApp, reset_apploader: None) -> None:
         """Run should successfully load an app from a module with app = App(...)."""
         app_root = write_app(name="test-app", module="test_valid_app")
 
+        mock_platform = MagicMock()
+        mock_platform.run = AsyncMock()
+
         runner = CliRunner()
-        result = runner.invoke(trellis, ["--app-root", str(app_root), "run"])
+        with (
+            patch.object(AppLoader, "bundle"),
+            patch.object(
+                AppLoader, "platform", new_callable=PropertyMock, return_value=mock_platform
+            ),
+        ):
+            result = runner.invoke(trellis, ["--app-root", str(app_root), "run"])
 
         assert result.exit_code == 0, f"Exit code: {result.exit_code}, output: {result.output}"
         assert "Running test-app" in result.output
@@ -306,3 +341,51 @@ class TestCliRunLoadApp:
 
         assert result.exit_code != 0, f"Expected failure, output: {result.output}"
         assert "'app' must be an App instance" in result.output
+
+
+# INTERNAL TEST: _build_run_kwargs is a pure function with clear logic worth testing directly
+class TestBuildRunKwargs:
+    """Tests for _build_run_kwargs helper."""
+
+    def test_server_defaults(self) -> None:
+        """Server config produces host, port, batch_delay, hot_reload."""
+        config = Config(name="test", module="test_mod")
+        kwargs = _build_run_kwargs(config)
+        assert kwargs["host"] == "127.0.0.1"
+        assert kwargs["port"] is None
+        assert kwargs["batch_delay"] == pytest.approx(1 / 30)
+        assert kwargs["hot_reload"] is True
+        assert "window_title" not in kwargs
+
+    def test_desktop_with_explicit_size(self) -> None:
+        """Desktop config parses window_size into width and height."""
+        config = Config(
+            name="test",
+            module="test_mod",
+            platform=PlatformType.DESKTOP,
+            window_size="1024x768",
+        )
+        kwargs = _build_run_kwargs(config)
+        assert kwargs["window_title"] == "test"
+        assert kwargs["window_width"] == 1024
+        assert kwargs["window_height"] == 768
+
+    def test_desktop_maximized_omits_dimensions(self) -> None:
+        """Desktop with maximized window_size does not include width/height."""
+        config = Config(
+            name="test",
+            module="test_mod",
+            platform=PlatformType.DESKTOP,
+            window_size="maximized",
+        )
+        kwargs = _build_run_kwargs(config)
+        assert kwargs["window_title"] == "test"
+        assert "window_width" not in kwargs
+        assert "window_height" not in kwargs
+
+    def test_custom_host_and_port(self) -> None:
+        """Custom host and port flow through."""
+        config = Config(name="test", module="test_mod", host="0.0.0.0", port=9000)
+        kwargs = _build_run_kwargs(config)
+        assert kwargs["host"] == "0.0.0.0"
+        assert kwargs["port"] == 9000
