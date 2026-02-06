@@ -7,7 +7,6 @@ For the CLI server that serves browser apps, see serve_platform.py.
 from __future__ import annotations
 
 from collections.abc import Callable
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -38,20 +37,6 @@ class BrowserPlatform(Platform):
         raise NotImplementedError(
             "BrowserPlatform runs inside Pyodide; use BrowserServePlatform for builds"
         )
-
-    def bundle(
-        self,
-        force: bool = False,
-        dest: Path | None = None,
-        library: bool = False,
-        assets_dir: Path | None = None,
-    ) -> Path:
-        """No-op in Pyodide - bundling is done before loading.
-
-        The bundle is already built and served by the time this platform runs.
-        Returns a placeholder path since no actual workspace is used.
-        """
-        return Path(".")
 
     async def run(
         self,

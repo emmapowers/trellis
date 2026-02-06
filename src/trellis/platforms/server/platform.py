@@ -18,17 +18,13 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 
-from trellis.app.apploader import get_dist_dir, get_workspace_dir
 from trellis.bundler import (
     BuildConfig,
-    BuildStep,
     BundleBuildStep,
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
     StaticFileCopyStep,
-    build,
-    registry,
 )
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform
@@ -87,46 +83,6 @@ class ServerPlatform(Platform):
                 ),
             ],
         )
-
-    def _get_build_steps(self) -> list[BuildStep]:
-        """Get build steps for this platform."""
-        template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
-        return [
-            PackageInstallStep(),
-            RegistryGenerationStep(),
-            BundleBuildStep(output_name="bundle"),
-            StaticFileCopyStep(),
-            IndexHtmlRenderStep(template_path, {"static_path": "/static"}),
-        ]
-
-    def bundle(
-        self,
-        force: bool = False,
-        dest: Path | None = None,
-        library: bool = False,
-        assets_dir: Path | None = None,
-    ) -> Path:
-        """Build the server client bundle if needed.
-
-        Uses the registry-based build system. The bundle is stored in a
-        cache workspace (or dest if specified) and served via /static/.
-
-        Returns:
-            The workspace Path used for the build
-        """
-        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
-        workspace = get_workspace_dir()
-
-        build(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=self._get_build_steps(),
-            force=force,
-            output_dir=dest or get_dist_dir(),
-            assets_dir=assets_dir,
-        )
-        return workspace
 
     async def run(
         self,

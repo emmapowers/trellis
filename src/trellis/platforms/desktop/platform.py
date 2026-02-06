@@ -15,17 +15,14 @@ from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
 from pytauri_wheel.lib import builder_factory, context_factory
 from rich.console import Console
 
-from trellis.app.apploader import get_dist_dir, get_workspace_dir
+from trellis.app.apploader import get_dist_dir
 from trellis.bundler import (
     BuildConfig,
-    BuildStep,
     BundleBuildStep,
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
     StaticFileCopyStep,
-    build,
-    registry,
 )
 from trellis.platforms.common.base import Platform
 from trellis.platforms.common.handler_registry import get_global_registry
@@ -120,50 +117,6 @@ class DesktopPlatform(Platform):
                 IndexHtmlRenderStep(template_path, {"title": config.title}),
             ],
         )
-
-    def _get_build_steps(self, title: str = "Trellis App") -> list[BuildStep]:
-        """Get build steps for this platform.
-
-        Args:
-            title: Window title to render into index.html
-        """
-        template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
-        return [
-            PackageInstallStep(),
-            RegistryGenerationStep(),
-            BundleBuildStep(output_name="bundle"),
-            StaticFileCopyStep(),
-            IndexHtmlRenderStep(template_path, {"title": title}),
-        ]
-
-    def bundle(
-        self,
-        force: bool = False,
-        dest: Path | None = None,
-        library: bool = False,
-        assets_dir: Path | None = None,
-    ) -> Path:
-        """Build the desktop client bundle if needed.
-
-        Uses the registry-based build system. The bundle is stored in a
-        cache workspace (or dest if specified).
-
-        Returns:
-            The workspace Path used for the build
-        """
-        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
-        workspace = get_workspace_dir()
-
-        build(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=self._get_build_steps(),
-            force=force,
-            output_dir=dest or get_dist_dir(),
-            assets_dir=assets_dir,
-        )
-        return workspace
 
     def _create_commands(self) -> Commands:
         """Create PyTauri commands with access to platform state via closure."""
