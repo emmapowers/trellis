@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from trellis.app.config import Config
+    from trellis.bundler.build_config import BuildConfig
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
@@ -30,6 +32,12 @@ class BrowserPlatform(Platform):
     @property
     def name(self) -> str:
         return "browser"
+
+    def get_build_config(self, config: Config) -> BuildConfig:
+        """Not applicable — BrowserPlatform runs inside Pyodide after bundling."""
+        raise NotImplementedError(
+            "BrowserPlatform runs inside Pyodide; use BrowserServePlatform for builds"
+        )
 
     def bundle(
         self,

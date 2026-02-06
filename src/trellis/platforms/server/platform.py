@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 import uvicorn
 
 if TYPE_CHECKING:
+    from trellis.app.config import Config
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
@@ -19,6 +20,7 @@ from rich.console import Console
 
 from trellis.app.apploader import get_dist_dir, get_workspace_dir
 from trellis.bundler import (
+    BuildConfig,
     BuildStep,
     BundleBuildStep,
     IndexHtmlRenderStep,
@@ -61,6 +63,30 @@ class ServerPlatform(Platform):
     @property
     def name(self) -> str:
         return "server"
+
+    def get_build_config(self, config: Config) -> BuildConfig:
+        """Get build configuration for this platform.
+
+        Args:
+            config: Application configuration
+
+        Returns:
+            BuildConfig with entry point and build steps
+        """
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
+        return BuildConfig(
+            entry_point=entry_point,
+            steps=[
+                PackageInstallStep(),
+                RegistryGenerationStep(),
+                BundleBuildStep(output_name="bundle"),
+                StaticFileCopyStep(),
+                IndexHtmlRenderStep(
+                    template_path, {"title": config.title, "static_path": "/static"}
+                ),
+            ],
+        )
 
     def _get_build_steps(self) -> list[BuildStep]:
         """Get build steps for this platform."""

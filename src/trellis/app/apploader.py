@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 from trellis.app.app import App
 from trellis.app.config import Config
+from trellis.bundler import build, registry
 from trellis.platforms.common.base import PlatformType
 
 if TYPE_CHECKING:
@@ -282,6 +283,64 @@ class AppLoader:
             raise ValueError(f"Unknown platform: {platform_type}")
 
         return self._platform
+
+    def bundle(self, dest: Path | None = None) -> Path:
+        """Build the client bundle for this application.
+
+        Uses the platform's get_build_config() to determine entry point and
+        build steps, then runs the build pipeline.
+
+        Args:
+            dest: Custom output directory (default: {app_root}/.dist)
+
+        Returns:
+            The workspace Path used for the build
+
+        Raises:
+            RuntimeError: If config has not been loaded
+        """
+        if self.config is None:
+            raise RuntimeError("Config not loaded. Call load_config() first before bundle().")
+
+        config = self.config
+        platform = self.platform
+        build_config = platform.get_build_config(config)
+        workspace = get_workspace_dir()
+
+        python_entry_point = None
+        if config.platform == PlatformType.BROWSER and not config.library:
+            python_entry_point = self._resolve_python_entry_point()
+
+        build(
+            registry=registry,
+            entry_point=build_config.entry_point,
+            workspace=workspace,
+            steps=build_config.steps,
+            force=config.force_build,
+            output_dir=dest or get_dist_dir(),
+            assets_dir=config.assets_dir,
+            python_entry_point=python_entry_point,
+        )
+        return workspace
+
+    def _resolve_python_entry_point(self) -> Path:
+        """Resolve the Python entry point file path.
+
+        Imports the application module and returns its __file__ path.
+
+        Returns:
+            Path to the module's source file
+
+        Raises:
+            RuntimeError: If config has not been loaded or module has no __file__
+        """
+        module = self.import_module()
+        file_path = getattr(module, "__file__", None)
+        if file_path is None:
+            raise RuntimeError(
+                f"Module '{self.config.module}' has no __file__ attribute"  # type: ignore[union-attr]
+            )
+        return Path(file_path)
 
 
 # Global singleton

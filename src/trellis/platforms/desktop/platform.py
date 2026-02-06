@@ -17,6 +17,7 @@ from rich.console import Console
 
 from trellis.app.apploader import get_dist_dir, get_workspace_dir
 from trellis.bundler import (
+    BuildConfig,
     BuildStep,
     BundleBuildStep,
     IndexHtmlRenderStep,
@@ -32,6 +33,7 @@ from trellis.platforms.desktop.handler import PyTauriMessageHandler
 from trellis.utils.hot_reload import get_or_create_hot_reload
 
 if TYPE_CHECKING:
+    from trellis.app.config import Config
     from trellis.core.components.base import Component
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
@@ -96,6 +98,28 @@ class DesktopPlatform(Platform):
     @property
     def name(self) -> str:
         return "desktop"
+
+    def get_build_config(self, config: Config) -> BuildConfig:
+        """Get build configuration for this platform.
+
+        Args:
+            config: Application configuration
+
+        Returns:
+            BuildConfig with entry point and build steps
+        """
+        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
+        template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
+        return BuildConfig(
+            entry_point=entry_point,
+            steps=[
+                PackageInstallStep(),
+                RegistryGenerationStep(),
+                BundleBuildStep(output_name="bundle"),
+                StaticFileCopyStep(),
+                IndexHtmlRenderStep(template_path, {"title": config.title}),
+            ],
+        )
 
     def _get_build_steps(self, title: str = "Trellis App") -> list[BuildStep]:
         """Get build steps for this platform.

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import ModuleType
+from unittest.mock import patch
 
 import pytest
 
@@ -627,3 +628,131 @@ class TestGetDistDir:
         """get_dist_dir raises RuntimeError if apploader not set."""
         with pytest.raises(RuntimeError, match="AppLoader not initialized"):
             get_dist_dir()
+
+
+class TestAppLoaderBundle:
+    """Tests for AppLoader.bundle() method."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, reset_apploader: None) -> None:
+        """Reset apploader for each test."""
+
+    def test_calls_build_with_server_config(
+        self,
+        write_trellis_config: WriteTrellisConfig,
+    ) -> None:
+        """bundle() calls build() with entry_point and steps from get_build_config()."""
+        app_root = write_trellis_config(name="myapp", module="main")
+        apploader = AppLoader(app_root)
+        apploader.load_config()
+        set_apploader(apploader)
+
+        with patch("trellis.app.apploader.build") as mock_build:
+            apploader.bundle()
+
+        mock_build.assert_called_once()
+        kwargs = mock_build.call_args.kwargs
+        assert "server" in str(kwargs["entry_point"])
+        assert kwargs["output_dir"] == app_root / ".dist"
+        assert kwargs["force"] is False
+
+    def test_passes_dest_to_build(
+        self,
+        tmp_path: Path,
+        write_trellis_config: WriteTrellisConfig,
+    ) -> None:
+        """Custom dest overrides get_dist_dir()."""
+        app_root = write_trellis_config(name="myapp", module="main")
+        apploader = AppLoader(app_root)
+        apploader.load_config()
+        set_apploader(apploader)
+
+        custom_dest = tmp_path / "custom_output"
+        with patch("trellis.app.apploader.build") as mock_build:
+            apploader.bundle(dest=custom_dest)
+
+        assert mock_build.call_args.kwargs["output_dir"] == custom_dest
+
+    def test_uses_force_build_from_config(
+        self,
+        write_trellis_config: WriteTrellisConfig,
+    ) -> None:
+        """bundle() passes config.force_build to build()."""
+        app_root = write_trellis_config(
+            content=(
+                "from trellis.app.config import Config\n"
+                "config = Config(name='myapp', module='main', force_build=True)\n"
+            )
+        )
+        apploader = AppLoader(app_root)
+        apploader.load_config()
+        set_apploader(apploader)
+
+        with patch("trellis.app.apploader.build") as mock_build:
+            apploader.bundle()
+
+        assert mock_build.call_args.kwargs["force"] is True
+
+    def test_raises_without_config(self, tmp_path: Path) -> None:
+        """bundle() raises RuntimeError if config not loaded."""
+        apploader = AppLoader(tmp_path)
+
+        with pytest.raises(RuntimeError, match="Config not loaded"):
+            apploader.bundle()
+
+    def test_returns_workspace_path(
+        self,
+        write_trellis_config: WriteTrellisConfig,
+    ) -> None:
+        """bundle() returns the workspace directory."""
+        app_root = write_trellis_config(name="myapp", module="main")
+        apploader = AppLoader(app_root)
+        apploader.load_config()
+        set_apploader(apploader)
+
+        with patch("trellis.app.apploader.build"):
+            result = apploader.bundle()
+
+        assert result == app_root / ".workspace"
+
+    def test_browser_passes_python_entry_point(
+        self,
+        write_trellis_config: WriteTrellisConfig,
+        write_app_module: WriteAppModule,
+    ) -> None:
+        """Browser app mode passes python_entry_point from resolved module."""
+        app_root = write_trellis_config(name="myapp", module="mymod", platform="BROWSER")
+        write_app_module(module_name="mymod", content="VALUE = 1")
+
+        apploader = AppLoader(app_root)
+        apploader.load_config()
+        set_apploader(apploader)
+
+        with patch("trellis.app.apploader.build") as mock_build:
+            apploader.bundle()
+
+        kwargs = mock_build.call_args.kwargs
+        assert kwargs["python_entry_point"] is not None
+        assert kwargs["python_entry_point"].name == "mymod.py"
+
+    def test_browser_library_mode_no_python_entry_point(
+        self,
+        write_trellis_config: WriteTrellisConfig,
+    ) -> None:
+        """Browser library mode does not pass python_entry_point."""
+        app_root = write_trellis_config(
+            content=(
+                "from trellis.app.config import Config\n"
+                "from trellis.platforms.common.base import PlatformType\n"
+                "config = Config(name='myapp', module='main',"
+                " platform=PlatformType.BROWSER, library=True)\n"
+            )
+        )
+        apploader = AppLoader(app_root)
+        apploader.load_config()
+        set_apploader(apploader)
+
+        with patch("trellis.app.apploader.build") as mock_build:
+            apploader.bundle()
+
+        assert mock_build.call_args.kwargs["python_entry_point"] is None

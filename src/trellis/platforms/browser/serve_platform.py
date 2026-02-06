@@ -21,11 +21,13 @@ from starlette.staticfiles import StaticFiles
 if TYPE_CHECKING:
     from starlette.requests import Request
 
+    from trellis.app.config import Config
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
 from trellis.app.apploader import get_dist_dir, get_workspace_dir
 from trellis.bundler import (
+    BuildConfig,
     BuildStep,
     BundleBuildStep,
     DeclarationStep,
@@ -110,6 +112,50 @@ class BrowserServePlatform(Platform):
     @property
     def name(self) -> str:
         return "browser-serve"
+
+    def get_build_config(self, config: Config) -> BuildConfig:
+        """Get build configuration for this platform.
+
+        Args:
+            config: Application configuration
+
+        Returns:
+            BuildConfig with entry point and build steps.
+            Library mode produces an ES module with type declarations.
+            App mode produces a standalone bundle with embedded Python source.
+        """
+        client_src = Path(__file__).parent / "client" / "src"
+
+        if config.library:
+            return BuildConfig(
+                entry_point=client_src / "index.ts",
+                steps=[
+                    PackageInstallStep(),
+                    RegistryGenerationStep(),
+                    TsconfigStep(),
+                    PyodideWorkerBuildStep(),
+                    BundleBuildStep(output_name="index"),
+                    DeclarationStep(),
+                    StaticFileCopyStep(),
+                ],
+            )
+
+        # App mode
+        wheel_dir = Path.cwd() / "dist"
+        template_path = client_src / "index.html.j2"
+        return BuildConfig(
+            entry_point=client_src / "main.tsx",
+            steps=[
+                PackageInstallStep(),
+                RegistryGenerationStep(),
+                PyodideWorkerBuildStep(),
+                BundleBuildStep(output_name="bundle"),
+                StaticFileCopyStep(),
+                WheelCopyStep(wheel_dir),
+                PythonSourceBundleStep(),
+                IndexHtmlRenderStep(template_path, {"title": config.title}),
+            ],
+        )
 
     def _get_build_steps(self, *, output_name: str = "bundle") -> list[BuildStep]:
         """Get build steps for this platform.

@@ -13,6 +13,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from trellis.app.config import Config
+    from trellis.bundler.build_config import BuildConfig
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
@@ -46,6 +48,18 @@ class Platform(ABC):
     @abstractmethod
     def name(self) -> str:
         """Platform identifier (e.g., 'server', 'desktop', 'browser')."""
+        ...
+
+    @abstractmethod
+    def get_build_config(self, config: Config) -> BuildConfig:
+        """Get build configuration for this platform.
+
+        Args:
+            config: Application configuration
+
+        Returns:
+            BuildConfig with entry point and build steps
+        """
         ...
 
     @abstractmethod
