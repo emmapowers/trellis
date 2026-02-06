@@ -10,11 +10,10 @@ from pathlib import Path
 import pytest
 
 from tests.helpers import requires_pytauri
-from trellis.app.apploader import AppLoader, set_apploader
+from trellis.app.apploader import AppLoader, get_dist_dir, get_workspace_dir, set_apploader
 from trellis.bundler import registry
 from trellis.bundler.metafile import get_metafile_path, read_metafile
 from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages, get_bin
-from trellis.bundler.workspace import get_dist_dir, get_workspace_dir
 
 
 @pytest.mark.network

@@ -12,6 +12,8 @@ from trellis.app.apploader import (
     get_app_root,
     get_apploader,
     get_config,
+    get_dist_dir,
+    get_workspace_dir,
     resolve_app_root,
     set_apploader,
 )
@@ -39,6 +41,8 @@ __all__ = [
     "get_app_root",
     "get_apploader",
     "get_config",
+    "get_dist_dir",
+    "get_workspace_dir",
     "resolve_app_root",
     "set_apploader",
     "theme",

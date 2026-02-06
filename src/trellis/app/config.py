@@ -80,6 +80,15 @@ _ASSETS_DIR: ConfigVar[Path | None] = ConfigVar(
     help="Directory containing static assets for bundling",
 )
 
+# Browser settings (category="browser" -> TRELLIS_BROWSER_*)
+_LIBRARY = ConfigVar(
+    "library",
+    default=False,
+    category="browser",
+    is_flag=True,
+    help="Build as library with exports instead of standalone app",
+)
+
 # Server settings (category="server" -> TRELLIS_SERVER_*)
 _HOST = ConfigVar(
     "host",
@@ -178,6 +187,9 @@ class Config:
     assets_dir: Path | None = None
     title: str | None = None
 
+    # Browser settings
+    library: bool = False
+
     # Server settings
     host: str = "127.0.0.1"
     port: int | None = None
@@ -209,6 +221,9 @@ class Config:
         self.title = _TITLE.resolve(self.title)
         if self.title is None:
             self.title = self.name
+
+        # Browser settings
+        self.library = _LIBRARY.resolve(self.library)
 
         # Server settings
         self.host = _HOST.resolve(self.host)

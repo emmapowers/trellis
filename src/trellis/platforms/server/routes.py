@@ -11,7 +11,7 @@ from pathlib import Path
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import HTMLResponse
 
-from trellis.bundler.workspace import get_dist_dir
+from trellis.app.apploader import get_dist_dir
 
 if tp.TYPE_CHECKING:
     from starlette.exceptions import HTTPException as StarletteHTTPException

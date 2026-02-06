@@ -4,14 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
-from trellis.app.apploader import AppLoader, set_apploader
 from trellis.bundler.registry import CollectedModules, ExportKind, Module, ModuleExport
 from trellis.bundler.workspace import (
     generate_registry_ts,
-    get_dist_dir,
-    get_workspace_dir,
     node_modules_path,
     write_registry_ts,
 )
@@ -22,42 +17,6 @@ def test_node_modules_path_returns_workspace_node_modules(tmp_path: Path) -> Non
     workspace = tmp_path / "workspace"
     result = node_modules_path(workspace)
     assert result == workspace / "node_modules"
-
-
-class TestGetWorkspaceDir:
-    """Tests for get_workspace_dir function."""
-
-    def test_returns_workspace_path(self, tmp_path: Path, reset_apploader: None) -> None:
-        """get_workspace_dir returns {app_root}/.workspace"""
-        apploader = AppLoader(tmp_path)
-        set_apploader(apploader)
-
-        result = get_workspace_dir()
-
-        assert result == tmp_path / ".workspace"
-
-    def test_raises_without_apploader(self, reset_apploader: None) -> None:
-        """get_workspace_dir raises RuntimeError if apploader not set."""
-        with pytest.raises(RuntimeError, match="AppLoader not initialized"):
-            get_workspace_dir()
-
-
-class TestGetDistDir:
-    """Tests for get_dist_dir function."""
-
-    def test_returns_dist_path(self, tmp_path: Path, reset_apploader: None) -> None:
-        """get_dist_dir returns {app_root}/.dist"""
-        apploader = AppLoader(tmp_path)
-        set_apploader(apploader)
-
-        result = get_dist_dir()
-
-        assert result == tmp_path / ".dist"
-
-    def test_raises_without_apploader(self, reset_apploader: None) -> None:
-        """get_dist_dir raises RuntimeError if apploader not set."""
-        with pytest.raises(RuntimeError, match="AppLoader not initialized"):
-            get_dist_dir()
 
 
 class TestWriteRegistryTs:

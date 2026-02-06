@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
+from trellis.app.apploader import get_dist_dir, get_workspace_dir
 from trellis.bundler import (
     BuildStep,
     BundleBuildStep,
@@ -36,7 +37,6 @@ from trellis.bundler import (
     build,
     registry,
 )
-from trellis.bundler.workspace import get_dist_dir, get_workspace_dir
 from trellis.platforms.browser.build_steps import (
     PyodideWorkerBuildStep,
     PythonSourceBundleStep,

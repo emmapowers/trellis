@@ -349,3 +349,27 @@ def get_app_root() -> Path:
         RuntimeError: If set_apploader() has not been called
     """
     return get_apploader().path
+
+
+def get_workspace_dir() -> Path:
+    """Get the workspace directory for the application.
+
+    Returns:
+        Path to {app_root}/.workspace
+
+    Raises:
+        RuntimeError: If set_apploader() has not been called
+    """
+    return get_app_root() / ".workspace"
+
+
+def get_dist_dir() -> Path:
+    """Get the output directory for built bundles.
+
+    Returns:
+        Path to {app_root}/.dist
+
+    Raises:
+        RuntimeError: If set_apploader() has not been called
+    """
+    return get_app_root() / ".dist"

@@ -60,37 +60,6 @@ def node_modules_path(workspace: Path) -> Path:
     return workspace / "node_modules"
 
 
-def get_workspace_dir() -> Path:
-    """Get the workspace directory for the application.
-
-    Returns:
-        Path to {app_root}/.workspace
-
-    Raises:
-        RuntimeError: If set_apploader() has not been called
-    """
-    # Late import to avoid circular dependency (workspace.py is imported during
-    # module initialization, but get_app_root is only called at runtime)
-    from trellis.app.apploader import get_app_root  # noqa: PLC0415
-
-    return get_app_root() / ".workspace"
-
-
-def get_dist_dir() -> Path:
-    """Get the output directory for built bundles.
-
-    Returns:
-        Path to {app_root}/.dist
-
-    Raises:
-        RuntimeError: If set_apploader() has not been called
-    """
-    # Late import to avoid circular dependency
-    from trellis.app.apploader import get_app_root  # noqa: PLC0415
-
-    return get_app_root() / ".dist"
-
-
 def write_registry_ts(workspace: Path, collected: CollectedModules) -> Path:
     """Generate and write the _registry.ts wiring file.
 

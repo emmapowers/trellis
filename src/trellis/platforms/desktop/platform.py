@@ -15,6 +15,7 @@ from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
 from pytauri_wheel.lib import builder_factory, context_factory
 from rich.console import Console
 
+from trellis.app.apploader import get_dist_dir, get_workspace_dir
 from trellis.bundler import (
     BuildStep,
     BundleBuildStep,
@@ -25,7 +26,6 @@ from trellis.bundler import (
     build,
     registry,
 )
-from trellis.bundler.workspace import get_dist_dir, get_workspace_dir
 from trellis.platforms.common.base import Platform
 from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.desktop.handler import PyTauriMessageHandler

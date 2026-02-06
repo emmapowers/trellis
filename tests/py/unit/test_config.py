@@ -206,6 +206,24 @@ class TestConfigTitle:
         assert config.title == "Custom Title"
 
 
+class TestConfigLibrary:
+    """Test library field defaults and overrides."""
+
+    def test_library_defaults_to_false(self) -> None:
+        config = Config(name="myapp", module="main")
+        assert config.library is False
+
+    def test_library_from_cli(self) -> None:
+        with cli_context({"library": True}):
+            config = Config(name="myapp", module="main")
+            assert config.library is True
+
+    def test_library_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("TRELLIS_BROWSER_LIBRARY", "true")
+        config = Config(name="myapp", module="main")
+        assert config.library is True
+
+
 class TestCoerceValue:
     """Test coerce_value() helper function."""
 
@@ -268,6 +286,7 @@ class TestConfigToJson:
             "debug",
             "assets_dir",
             "title",
+            "library",
             "host",
             "port",
             "window_size",

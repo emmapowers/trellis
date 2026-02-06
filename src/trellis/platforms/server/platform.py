@@ -17,6 +17,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 
+from trellis.app.apploader import get_dist_dir, get_workspace_dir
 from trellis.bundler import (
     BuildStep,
     BundleBuildStep,
@@ -27,7 +28,6 @@ from trellis.bundler import (
     build,
     registry,
 )
-from trellis.bundler.workspace import get_dist_dir, get_workspace_dir
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform
 from trellis.platforms.server.handler import router as ws_router

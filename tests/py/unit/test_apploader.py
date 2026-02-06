@@ -17,6 +17,8 @@ from trellis.app.apploader import (
     get_app_root,
     get_apploader,
     get_config,
+    get_dist_dir,
+    get_workspace_dir,
     set_apploader,
 )
 from trellis.platforms.browser import BrowserPlatform
@@ -589,3 +591,39 @@ class TestAppLoaderPlatform:
 
         # Should return cached platform even though config is None
         assert isinstance(apploader.platform, ServerPlatform)
+
+
+class TestGetWorkspaceDir:
+    """Tests for get_workspace_dir function."""
+
+    def test_returns_workspace_path(self, tmp_path: Path, reset_apploader: None) -> None:
+        """get_workspace_dir returns {app_root}/.workspace"""
+        apploader = AppLoader(tmp_path)
+        set_apploader(apploader)
+
+        result = get_workspace_dir()
+
+        assert result == tmp_path / ".workspace"
+
+    def test_raises_without_apploader(self, reset_apploader: None) -> None:
+        """get_workspace_dir raises RuntimeError if apploader not set."""
+        with pytest.raises(RuntimeError, match="AppLoader not initialized"):
+            get_workspace_dir()
+
+
+class TestGetDistDir:
+    """Tests for get_dist_dir function."""
+
+    def test_returns_dist_path(self, tmp_path: Path, reset_apploader: None) -> None:
+        """get_dist_dir returns {app_root}/.dist"""
+        apploader = AppLoader(tmp_path)
+        set_apploader(apploader)
+
+        result = get_dist_dir()
+
+        assert result == tmp_path / ".dist"
+
+    def test_raises_without_apploader(self, reset_apploader: None) -> None:
+        """get_dist_dir raises RuntimeError if apploader not set."""
+        with pytest.raises(RuntimeError, match="AppLoader not initialized"):
+            get_dist_dir()
