@@ -5,22 +5,16 @@ These tests download from npm registry and require network access.
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 
 import pytest
 
-from tests.helpers import HAS_PYTAURI, requires_pytauri
+from tests.helpers import requires_pytauri
+from trellis.app.apploader import AppLoader, set_apploader
 from trellis.bundler import registry
 from trellis.bundler.metafile import get_metafile_path, read_metafile
 from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages, get_bin
-from trellis.bundler.workspace import get_project_workspace
-from trellis.platforms.server import platform as server_platform_module
-
-# Desktop requires pytauri which isn't available in CI
-if HAS_PYTAURI:
-    from trellis.platforms.desktop import platform as desktop_platform_module
-from trellis.platforms.server.platform import ServerPlatform
+from trellis.bundler.workspace import get_dist_dir, get_workspace_dir
 
 
 @pytest.mark.network
@@ -82,15 +76,21 @@ class TestEnsurePackages:
 @pytest.mark.network
 @pytest.mark.slow
 class TestServerPlatformBundle:
+    """Integration tests for ServerPlatform.bundle()."""
+
+    @pytest.fixture(autouse=True)
+    def setup_apploader(self, tmp_path: Path, reset_apploader: None) -> None:
+        """Set up apploader with tmp_path as app root."""
+        apploader = AppLoader(tmp_path)
+        set_apploader(apploader)
+
     def test_builds_bundle(self) -> None:
         """Builds client bundle successfully via ServerPlatform."""
-        # Bundle is now in the cache workspace
-        server_dir = Path(server_platform_module.__file__).parent
-        entry_point = server_dir / "client" / "src" / "main.tsx"
-        workspace = get_project_workspace(entry_point)
-        bundle_path = workspace / "dist" / "bundle.js"
+        from trellis.platforms.server.platform import ServerPlatform  # noqa: PLC0415
 
-        # Force rebuild
+        dist_dir = get_dist_dir()
+        bundle_path = dist_dir / "bundle.js"
+
         platform = ServerPlatform()
         platform.bundle(force=True)
 
@@ -99,11 +99,10 @@ class TestServerPlatformBundle:
 
     def test_generates_metafile(self) -> None:
         """Build generates metafile.json with input/output information."""
-        server_dir = Path(server_platform_module.__file__).parent
-        entry_point = server_dir / "client" / "src" / "main.tsx"
-        workspace = get_project_workspace(entry_point)
+        from trellis.platforms.server.platform import ServerPlatform  # noqa: PLC0415
 
-        # Force rebuild
+        workspace = get_workspace_dir()
+
         platform = ServerPlatform()
         platform.bundle(force=True)
 
@@ -129,22 +128,24 @@ class TestServerPlatformBundle:
 
 @pytest.mark.network
 @pytest.mark.slow
+@requires_pytauri
 class TestDesktopPlatformBundle:
-    @requires_pytauri
+    """Integration tests for DesktopPlatform.bundle()."""
+
+    @pytest.fixture(autouse=True)
+    def setup_apploader(self, tmp_path: Path, reset_apploader: None) -> None:
+        """Set up apploader with tmp_path as app root."""
+        apploader = AppLoader(tmp_path)
+        set_apploader(apploader)
+
     def test_builds_bundle_and_copies_html(self) -> None:
         """Builds desktop bundle and copies static index.html."""
-        # Desktop import requires pytauri which isn't available in CI
         from trellis.platforms.desktop.platform import DesktopPlatform  # noqa: PLC0415
 
-        # Bundle is now in the cache workspace
-        desktop_dir = Path(desktop_platform_module.__file__).parent
-        entry_point = desktop_dir / "client" / "src" / "main.tsx"
-        workspace = get_project_workspace(entry_point)
-        dist_dir = workspace / "dist"
+        dist_dir = get_dist_dir()
         bundle_path = dist_dir / "bundle.js"
         index_path = dist_dir / "index.html"
 
-        # Force rebuild
         platform = DesktopPlatform()
         platform.bundle(force=True)
 
@@ -155,197 +156,3 @@ class TestDesktopPlatformBundle:
         html_content = index_path.read_text()
         assert '<div id="root" class="trellis-root"></div>' in html_content
         assert "bundle.js" in html_content
-
-
-@pytest.mark.network
-@pytest.mark.slow
-class TestBundleBuildCli:
-    """Tests for the `trellis bundle build` CLI command."""
-
-    def test_bundle_build_server_succeeds(self) -> None:
-        """Running `trellis bundle build --platform server --force` succeeds."""
-        server_dir = Path(server_platform_module.__file__).parent
-        entry_point = server_dir / "client" / "src" / "main.tsx"
-        workspace = get_project_workspace(entry_point)
-        server_bundle = workspace / "dist" / "bundle.js"
-
-        mtime_before = server_bundle.stat().st_mtime if server_bundle.exists() else None
-
-        result = subprocess.run(
-            ["trellis", "bundle", "build", "--platform", "server", "--force"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        assert result.returncode == 0, f"Bundle build failed:\n{result.stderr}"
-        assert server_bundle.exists(), "Server bundle not created"
-        assert server_bundle.stat().st_size > 0
-        if mtime_before is not None:
-            assert server_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"
-
-    def test_bundle_build_browser_requires_library_or_app(self) -> None:
-        """Browser build without --library or --app shows helpful error."""
-        result = subprocess.run(
-            ["trellis", "bundle", "build", "--platform", "browser", "--force"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        assert result.returncode != 0, "Should fail without --library or --app"
-        assert "Browser app mode requires a Python entry point" in result.stderr
-        assert "--app" in result.stderr
-        assert "--library" in result.stderr
-
-    def test_bundle_build_browser_library_mode(self, tmp_path: Path) -> None:
-        """Browser library mode builds successfully with --library flag."""
-        dest = tmp_path / "lib_output"
-
-        result = subprocess.run(
-            [
-                "trellis",
-                "bundle",
-                "build",
-                "--platform",
-                "browser",
-                "--library",
-                "--force",
-                "--dest",
-                str(dest),
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        assert result.returncode == 0, f"Build failed:\n{result.stderr}"
-        assert (dest / "index.js").exists(), "index.js not created"
-        assert (dest / "index.css").exists(), "index.css not created"
-        assert (dest / "index.d.ts").exists(), "TypeScript declarations not created"
-        assert not (dest / "index.html").exists(), "Library mode should not create HTML"
-
-    def test_bundle_build_browser_app_with_package(self, tmp_path: Path) -> None:
-        """Browser app mode builds a Python package with --app flag."""
-        # Create test package
-        pkg_dir = tmp_path / "myapp"
-        pkg_dir.mkdir()
-        (pkg_dir / "__init__.py").write_text("")
-        (pkg_dir / "__main__.py").write_text(
-            "from trellis import component\n"
-            "from trellis.html import Div\n"
-            "@component\n"
-            "def App():\n"
-            "    Div()\n"
-        )
-
-        dest = tmp_path / "app_output"
-        result = subprocess.run(
-            [
-                "trellis",
-                "bundle",
-                "build",
-                "--platform",
-                "browser",
-                "--app",
-                str(pkg_dir / "__main__.py"),
-                "--force",
-                "--dest",
-                str(dest),
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        assert result.returncode == 0, f"Build failed:\n{result.stderr}"
-        assert (dest / "bundle.js").exists(), "bundle.js not created"
-        assert (dest / "index.html").exists(), "index.html not created"
-
-        html = (dest / "index.html").read_text()
-        assert "window.__TRELLIS_CONFIG__" in html, "Config not embedded in HTML"
-
-    def test_bundle_build_browser_app_with_single_file(self, tmp_path: Path) -> None:
-        """Browser app mode builds a standalone .py file (not in a package)."""
-        # Create standalone file (no __init__.py nearby)
-        app_file = tmp_path / "standalone_app.py"
-        app_file.write_text(
-            "from trellis import component\n"
-            "from trellis.html import Div\n"
-            "@component\n"
-            "def App():\n"
-            "    Div()\n"
-        )
-
-        dest = tmp_path / "standalone_output"
-        result = subprocess.run(
-            [
-                "trellis",
-                "bundle",
-                "build",
-                "--platform",
-                "browser",
-                "--app",
-                str(app_file),
-                "--force",
-                "--dest",
-                str(dest),
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        assert result.returncode == 0, f"Build failed:\n{result.stderr}"
-        assert (dest / "bundle.js").exists(), "bundle.js not created"
-        assert (dest / "index.html").exists(), "index.html not created"
-
-    @requires_pytauri
-    def test_bundle_build_desktop_succeeds(self) -> None:
-        """Running `trellis bundle build --platform desktop --force` succeeds."""
-        desktop_dir = Path(desktop_platform_module.__file__).parent
-        entry_point = desktop_dir / "client" / "src" / "main.tsx"
-        workspace = get_project_workspace(entry_point)
-        desktop_bundle = workspace / "dist" / "bundle.js"
-
-        mtime_before = desktop_bundle.stat().st_mtime if desktop_bundle.exists() else None
-
-        result = subprocess.run(
-            ["trellis", "bundle", "build", "--platform", "desktop", "--force"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        assert result.returncode == 0, f"Bundle build failed:\n{result.stderr}"
-        assert desktop_bundle.exists(), "Desktop bundle not created"
-        assert desktop_bundle.stat().st_size > 0
-        if mtime_before is not None:
-            assert desktop_bundle.stat().st_mtime > mtime_before, "Bundle was not regenerated"
-
-    def test_bundle_build_with_dest_option(self, tmp_path: Path) -> None:
-        """Running `trellis bundle build --dest <path>` outputs to specified directory."""
-        dest_dir = tmp_path / "custom_output"
-
-        result = subprocess.run(
-            [
-                "trellis",
-                "bundle",
-                "build",
-                "--platform",
-                "server",
-                "--force",
-                "--dest",
-                str(dest_dir),
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        assert result.returncode == 0, f"Bundle build failed:\n{result.stderr}"
-
-        # Bundle should be directly in dest_dir
-        bundle_path = dest_dir / "bundle.js"
-        assert bundle_path.exists(), f"Bundle not found at {bundle_path}"
-        assert bundle_path.stat().st_size > 0

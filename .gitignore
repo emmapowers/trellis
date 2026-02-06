@@ -62,3 +62,5 @@ src/trellis/platforms/*/client/tsconfig.json
 # Library bundle (built by `trellis bundle build --library`)
 docs/static/trellis/
 .trellis
+.workspace
+.dist

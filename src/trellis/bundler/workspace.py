@@ -6,13 +6,11 @@ that connects all registered modules together.
 
 from __future__ import annotations
 
-import hashlib
 from pathlib import Path
 
 from jinja2 import Template
 
 from trellis.bundler.registry import CollectedModules, ExportKind
-from trellis.bundler.utils import find_project_root
 
 # JavaScript/TypeScript extensions to strip from import paths
 JS_EXTENSIONS = (".tsx", ".ts", ".jsx", ".js")
@@ -62,37 +60,35 @@ def node_modules_path(workspace: Path) -> Path:
     return workspace / "node_modules"
 
 
-def get_project_hash(entry_point: Path) -> str:
-    """Get a hash identifying a project based on its entry point path.
-
-    Args:
-        entry_point: Path to the project's entry point file
+def get_workspace_dir() -> Path:
+    """Get the workspace directory for the application.
 
     Returns:
-        A short hash string identifying this project
+        Path to {app_root}/.workspace
+
+    Raises:
+        RuntimeError: If set_apploader() has not been called
     """
-    path_str = str(entry_point.resolve())
-    return hashlib.sha256(path_str.encode()).hexdigest()[:16]
+    # Late import to avoid circular dependency (workspace.py is imported during
+    # module initialization, but get_app_root is only called at runtime)
+    from trellis.app.apploader import get_app_root  # noqa: PLC0415
+
+    return get_app_root() / ".workspace"
 
 
-def get_project_workspace(entry_point: Path) -> Path:
-    """Get the workspace directory for a project.
-
-    The workspace is in a .trellis directory at the project root,
-    identified by a hash of the entry point path. This ensures each
-    entry point gets its own isolated build workspace.
-
-    Args:
-        entry_point: Path to the project's entry point file
+def get_dist_dir() -> Path:
+    """Get the output directory for built bundles.
 
     Returns:
-        Path to the project's workspace directory (created if needed)
+        Path to {app_root}/.dist
+
+    Raises:
+        RuntimeError: If set_apploader() has not been called
     """
-    project_root = find_project_root(entry_point)
-    project_hash = get_project_hash(entry_point)
-    workspace = project_root / ".trellis" / project_hash
-    workspace.mkdir(parents=True, exist_ok=True)
-    return workspace
+    # Late import to avoid circular dependency
+    from trellis.app.apploader import get_app_root  # noqa: PLC0415
+
+    return get_app_root() / ".dist"
 
 
 def write_registry_ts(workspace: Path, collected: CollectedModules) -> Path:

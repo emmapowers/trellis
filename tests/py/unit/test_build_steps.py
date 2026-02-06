@@ -2284,6 +2284,7 @@ registry.register("test-entry-import-module", packages={"test-unique-pkg": "1.0.
             workspace=workspace,
             steps=[CaptureStep()],
             force=True,
+            output_dir=tmp_path / "dist",
             python_entry_point=python_entry,
         )
 
@@ -2334,6 +2335,7 @@ class TestBuildOrchestration:
             workspace=workspace,
             steps=[Step1(), Step2(), Step3()],
             force=True,
+            output_dir=tmp_path / "dist",
         )
 
         assert run_order == ["step1", "step2", "step3"]
@@ -2344,6 +2346,7 @@ class TestBuildOrchestration:
         entry_point = tmp_path / "main.tsx"
         entry_point.write_text("// entry")
         workspace = tmp_path / "workspace"
+        dist_dir = tmp_path / "dist"
 
         build(
             registry=registry,
@@ -2351,9 +2354,10 @@ class TestBuildOrchestration:
             workspace=workspace,
             steps=[],
             force=True,
+            output_dir=dist_dir,
         )
 
-        assert (workspace / "dist").is_dir()
+        assert dist_dir.is_dir()
 
     def test_uses_custom_output_dir(self, tmp_path: Path) -> None:
         """build() uses custom output_dir when provided."""
@@ -2409,6 +2413,7 @@ class TestBuildOrchestration:
             workspace=workspace,
             steps=[CaptureStep()],
             force=True,
+            output_dir=tmp_path / "dist",
         )
 
         assert len(captured_collected[0].modules) == 1
@@ -2438,6 +2443,7 @@ class TestBuildOrchestration:
             workspace=workspace,
             steps=[CaptureStep()],
             force=True,
+            output_dir=tmp_path / "dist",
         )
 
         # NODE_PATH should be set to workspace/node_modules
@@ -2521,6 +2527,7 @@ class TestBuildOrchestration:
             workspace=workspace,
             steps=[SkipStep()],
             force=False,
+            output_dir=tmp_path / "dist",
         )
 
         assert step_ran == [], "Step should not run when should_build returns SKIP"
@@ -2553,6 +2560,7 @@ class TestBuildOrchestration:
             workspace=workspace,
             steps=[BuildAlwaysStep()],
             force=False,
+            output_dir=tmp_path / "dist",
         )
 
         assert step_ran == [True], "Step should run when should_build returns BUILD"
@@ -2582,6 +2590,7 @@ class TestBuildOrchestration:
             workspace=workspace,
             steps=[DefaultStep()],
             force=False,
+            output_dir=tmp_path / "dist",
         )
 
         assert step_ran == [True], "Step should run when should_build returns None"
@@ -2622,6 +2631,7 @@ class TestBuildOrchestration:
             workspace=workspace,
             steps=[SkipStep()],
             force=False,
+            output_dir=tmp_path / "dist",
         )
 
         # Load the new manifest and verify old data was preserved
@@ -2658,6 +2668,7 @@ class TestBuildOrchestration:
             workspace=workspace,
             steps=[SkipStep()],
             force=True,  # Force runs all
+            output_dir=tmp_path / "dist",
         )
 
         assert step_ran == [True], "Step should run when force=True"
@@ -2698,6 +2709,7 @@ class TestBuildOrchestration:
             workspace=workspace,
             steps=[TestStep()],
             force=False,
+            output_dir=tmp_path / "dist",
         )
 
         # should_build not called when no previous manifest (nothing to compare)

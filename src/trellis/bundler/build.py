@@ -73,7 +73,7 @@ def build(
     steps: list[BuildStep],
     *,
     force: bool = False,
-    output_dir: Path | None = None,
+    output_dir: Path,
     assets_dir: Path | None = None,
     python_entry_point: Path | None = None,
 ) -> None:
@@ -89,7 +89,7 @@ def build(
         workspace: Workspace directory for generated files
         steps: List of build steps to execute in order
         force: Force rebuild even if up to date
-        output_dir: Custom output directory (default: workspace/dist)
+        output_dir: Output directory for built artifacts
         assets_dir: App-level static files directory to copy to dist
         python_entry_point: Python app entry point for browser bundling (optional)
     """
@@ -98,7 +98,7 @@ def build(
         _import_entry_point(python_entry_point)
 
     collected = registry.collect()
-    dist_dir = (output_dir or (workspace / "dist")).resolve()
+    dist_dir = output_dir.resolve()
 
     # Load previous manifest for per-step staleness check
     previous_manifest = load_manifest(workspace)

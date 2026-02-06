@@ -27,7 +27,7 @@ from trellis.bundler import (
     build,
     registry,
 )
-from trellis.bundler.workspace import get_project_workspace
+from trellis.bundler.workspace import get_dist_dir, get_workspace_dir
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform
 from trellis.platforms.server.handler import router as ws_router
@@ -89,7 +89,7 @@ class ServerPlatform(Platform):
             The workspace Path used for the build
         """
         entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
-        workspace = get_project_workspace(entry_point)
+        workspace = get_workspace_dir()
 
         build(
             registry=registry,
@@ -97,7 +97,7 @@ class ServerPlatform(Platform):
             workspace=workspace,
             steps=self._get_build_steps(),
             force=force,
-            output_dir=dest,
+            output_dir=dest or get_dist_dir(),
             assets_dir=assets_dir,
         )
         return workspace

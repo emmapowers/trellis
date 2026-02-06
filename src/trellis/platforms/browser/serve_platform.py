@@ -36,7 +36,7 @@ from trellis.bundler import (
     build,
     registry,
 )
-from trellis.bundler.workspace import get_project_workspace
+from trellis.bundler.workspace import get_dist_dir, get_workspace_dir
 from trellis.platforms.browser.build_steps import (
     PyodideWorkerBuildStep,
     PythonSourceBundleStep,
@@ -157,7 +157,7 @@ class BrowserServePlatform(Platform):
         # Use index.ts for library mode, main.tsx for app mode
         entry_name = "index.ts" if library else "main.tsx"
         entry_point = Path(__file__).parent / "client" / "src" / entry_name
-        workspace = get_project_workspace(entry_point)
+        workspace = get_workspace_dir()
 
         # Determine output name based on mode
         output_name = "index" if library else "bundle"
@@ -197,7 +197,7 @@ class BrowserServePlatform(Platform):
             workspace=workspace,
             steps=steps,
             force=force,
-            output_dir=dest,
+            output_dir=dest or get_dist_dir(),
             assets_dir=assets_dir,
             python_entry_point=python_entry_point,
         )
@@ -225,10 +225,8 @@ class BrowserServePlatform(Platform):
             )
             _console.print()
 
-        # Get paths from workspace
-        platform_entry = Path(__file__).parent / "client" / "src" / "main.tsx"
-        workspace = get_project_workspace(platform_entry)
-        dist_dir = workspace / "dist"
+        # Get paths from dist directory
+        dist_dir = get_dist_dir()
         index_path = dist_dir / "index.html"
 
         # Ensure pre-built bundle exists

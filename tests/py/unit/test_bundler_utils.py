@@ -11,7 +11,6 @@ import pytest
 
 from trellis.bundler.utils import (
     _get_newest_mtime,
-    find_project_root,
     is_rebuild_needed,
     safe_extract,
 )
@@ -324,93 +323,6 @@ class TestIsRebuildNeeded:
         result = is_rebuild_needed(inputs=[existing_input, missing_input], outputs=[output])
 
         assert result is True
-
-
-class TestFindProjectRoot:
-    """Tests for find_project_root function."""
-
-    def test_finds_pyproject_toml(self, tmp_path: Path) -> None:
-        """Finds project root by pyproject.toml presence."""
-        # Create pyproject.toml in project root
-        (tmp_path / "pyproject.toml").touch()
-        # Create nested entry point
-        nested = tmp_path / "src" / "app"
-        nested.mkdir(parents=True)
-        entry_point = nested / "main.py"
-        entry_point.touch()
-
-        result = find_project_root(entry_point)
-
-        assert result == tmp_path
-
-    def test_finds_git_directory(self, tmp_path: Path) -> None:
-        """Finds project root by .git directory presence."""
-        # Create .git directory in project root
-        (tmp_path / ".git").mkdir()
-        # Create nested entry point
-        nested = tmp_path / "src"
-        nested.mkdir()
-        entry_point = nested / "app.py"
-        entry_point.touch()
-
-        result = find_project_root(entry_point)
-
-        assert result == tmp_path
-
-    def test_finds_git_file_for_worktrees(self, tmp_path: Path) -> None:
-        """Finds project root by .git file presence (git worktree case)."""
-        # Create .git file (not directory) like in worktrees
-        (tmp_path / ".git").write_text("gitdir: /some/path/.git/worktrees/foo")
-        # Create entry point
-        entry_point = tmp_path / "app.py"
-        entry_point.touch()
-
-        result = find_project_root(entry_point)
-
-        assert result == tmp_path
-
-    def test_pyproject_toml_takes_priority_over_git(self, tmp_path: Path) -> None:
-        """pyproject.toml is preferred over .git when both exist at different levels."""
-        # Create .git in parent
-        parent = tmp_path / "parent"
-        parent.mkdir()
-        (parent / ".git").mkdir()
-
-        # Create pyproject.toml in child (closer to entry point)
-        child = parent / "child"
-        child.mkdir()
-        (child / "pyproject.toml").touch()
-
-        # Entry point in child
-        entry_point = child / "app.py"
-        entry_point.touch()
-
-        result = find_project_root(entry_point)
-
-        # Should find pyproject.toml first (closer)
-        assert result == child
-
-    def test_fallback_to_entry_point_parent(self, tmp_path: Path) -> None:
-        """Falls back to entry point parent when no markers found."""
-        # Create entry point with no project markers above
-        subdir = tmp_path / "isolated"
-        subdir.mkdir()
-        entry_point = subdir / "app.py"
-        entry_point.touch()
-
-        result = find_project_root(entry_point)
-
-        assert result == subdir
-
-    def test_handles_entry_point_in_root(self, tmp_path: Path) -> None:
-        """Works when entry point is directly in project root."""
-        (tmp_path / "pyproject.toml").touch()
-        entry_point = tmp_path / "app.py"
-        entry_point.touch()
-
-        result = find_project_root(entry_point)
-
-        assert result == tmp_path
 
 
 class TestSafeExtract:

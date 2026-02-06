@@ -367,6 +367,7 @@ export const App = () => <div>Hello</div>;
             workspace=setup.workspace,
             steps=setup.steps,
             assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=True,
         )
 
@@ -383,6 +384,7 @@ export const App = () => <div>Hello</div>;
             workspace=setup.workspace,
             steps=setup.steps,
             assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=False,
         )
 
@@ -497,6 +499,7 @@ export const App = () => <div>Hello Browser</div>;
             workspace=setup.workspace,
             steps=setup.steps,
             assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             python_entry_point=setup.python_entry_point,
             force=True,
         )
@@ -514,6 +517,7 @@ export const App = () => <div>Hello Browser</div>;
             workspace=setup.workspace,
             steps=setup.steps,
             assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             python_entry_point=setup.python_entry_point,
             force=False,
         )
@@ -623,6 +627,7 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             workspace=setup.workspace,
             steps=setup.steps,
             assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=True,
         )
 
@@ -644,6 +649,7 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             workspace=setup.workspace,
             steps=setup.steps,
             assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=True,
         )
 
@@ -656,6 +662,7 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             workspace=setup.workspace,
             steps=setup.steps,
             assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=False,
         )
 
@@ -678,6 +685,7 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             workspace=setup.workspace,
             steps=setup.steps,
             assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=True,
         )
 
@@ -694,6 +702,7 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             workspace=setup.workspace,
             steps=setup.steps,
             assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=False,
         )
 

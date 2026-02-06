@@ -12,7 +12,7 @@ Usage:
     # TrellisApp registers the bridge, then executes user code
 """
 
-from trellis.bundler import registry
+from trellis.bundler.registry import registry
 from trellis.platforms.browser.handler import BrowserMessageHandler
 from trellis.platforms.browser.platform import BrowserPlatform
 

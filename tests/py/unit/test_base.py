@@ -108,7 +108,8 @@ class TestServerPlatformBundle:
         platform = ServerPlatform()
         with (
             patch("trellis.platforms.server.platform.build"),
-            patch("trellis.platforms.server.platform.get_project_workspace") as mock_ws,
+            patch("trellis.platforms.server.platform.get_workspace_dir") as mock_ws,
+            patch("trellis.platforms.server.platform.get_dist_dir"),
         ):
             mock_ws.return_value = workspace
             result = platform.bundle()
@@ -141,7 +142,8 @@ class TestDesktopPlatformBundle:
         platform = DesktopPlatform()
         with (
             patch("trellis.platforms.desktop.platform.build"),
-            patch("trellis.platforms.desktop.platform.get_project_workspace") as mock_ws,
+            patch("trellis.platforms.desktop.platform.get_workspace_dir") as mock_ws,
+            patch("trellis.platforms.desktop.platform.get_dist_dir"),
         ):
             mock_ws.return_value = workspace
             result = platform.bundle()

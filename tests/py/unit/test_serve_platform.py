@@ -30,7 +30,8 @@ class TestBrowserServePlatformBundle:
 
         with (
             patch("trellis.platforms.browser.serve_platform.build"),
-            patch("trellis.platforms.browser.serve_platform.get_project_workspace") as mock_ws,
+            patch("trellis.platforms.browser.serve_platform.get_workspace_dir") as mock_ws,
+            patch("trellis.platforms.browser.serve_platform.get_dist_dir"),
         ):
             mock_ws.return_value = workspace
             result = platform.bundle(library=True)
@@ -85,12 +86,10 @@ class TestBrowserServePlatformRun:
         (dist_dir / "bundle.js").write_text("// bundle")
 
         with (
-            patch(
-                "trellis.platforms.browser.serve_platform.get_project_workspace"
-            ) as mock_workspace,
+            patch("trellis.platforms.browser.serve_platform.get_dist_dir") as mock_dist,
             patch("trellis.platforms.browser.serve_platform._print_startup_banner"),
         ):
-            mock_workspace.return_value = tmp_path
+            mock_dist.return_value = dist_dir
 
             with pytest.raises(RuntimeError, match=r"index\.html not found"):
                 await platform.run(mock_component, mock_wrapper)
@@ -118,9 +117,7 @@ class TestBrowserServePlatformRun:
             return captured_app
 
         with (
-            patch(
-                "trellis.platforms.browser.serve_platform.get_project_workspace"
-            ) as mock_workspace,
+            patch("trellis.platforms.browser.serve_platform.get_dist_dir") as mock_dist,
             patch("trellis.platforms.browser.serve_platform.uvicorn") as mock_uvicorn,
             patch(
                 "trellis.platforms.browser.serve_platform.find_available_port", return_value=8000
@@ -130,7 +127,7 @@ class TestBrowserServePlatformRun:
                 "trellis.platforms.browser.serve_platform.Starlette", side_effect=capture_starlette
             ) as mock_starlette,
         ):
-            mock_workspace.return_value = tmp_path
+            mock_dist.return_value = dist_dir
 
             # Make server.serve() complete immediately
             mock_server = AsyncMock()

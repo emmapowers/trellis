@@ -25,7 +25,7 @@ from trellis.bundler import (
     build,
     registry,
 )
-from trellis.bundler.workspace import get_project_workspace
+from trellis.bundler.workspace import get_dist_dir, get_workspace_dir
 from trellis.platforms.common.base import Platform
 from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
@@ -128,7 +128,7 @@ class DesktopPlatform(Platform):
             The workspace Path used for the build
         """
         entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
-        workspace = get_project_workspace(entry_point)
+        workspace = get_workspace_dir()
 
         build(
             registry=registry,
@@ -136,7 +136,7 @@ class DesktopPlatform(Platform):
             workspace=workspace,
             steps=self._get_build_steps(),
             force=force,
-            output_dir=dest,
+            output_dir=dest or get_dist_dir(),
             assets_dir=assets_dir,
         )
         return workspace
@@ -213,11 +213,9 @@ class DesktopPlatform(Platform):
 
         _print_startup_banner(window_title)
 
-        # Load Tauri configuration with workspace dist path
+        # Load Tauri configuration with dist path
         config_dir = Path(__file__).parent / "config"
-        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
-        workspace = get_project_workspace(entry_point)
-        dist_path = str(workspace / "dist")
+        dist_path = str(get_dist_dir())
 
         # Override frontendDist to point to the workspace cache
         config_override = {"build": {"frontendDist": dist_path}}

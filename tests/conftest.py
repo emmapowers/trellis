@@ -31,6 +31,21 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 # =============================================================================
+# AppLoader Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def reset_apploader() -> tp.Generator[None]:
+    """Reset global _apploader before and after test."""
+    import trellis.app.apploader as apploader_module  # noqa: PLC0415
+
+    apploader_module._apploader = None
+    yield
+    apploader_module._apploader = None
+
+
+# =============================================================================
 # Component Fixtures
 # =============================================================================
 
