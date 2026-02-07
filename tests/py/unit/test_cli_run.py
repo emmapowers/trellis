@@ -343,6 +343,50 @@ class TestCliRunLoadApp:
         assert "'app' must be an App instance" in result.output
 
 
+class TestPlatformShortcutFlags:
+    """Test --server/--desktop/--browser shortcut flags for trellis run."""
+
+    def test_shortcut_flags_recognized(self) -> None:
+        """Shortcut flags should be recognized as valid options."""
+        runner = CliRunner()
+        for flag in ["--server", "--desktop", "--browser"]:
+            result = runner.invoke(trellis, ["run", flag, "--help"])
+            assert result.exit_code == 0, f"{flag}: exit={result.exit_code}, output={result.output}"
+
+    def test_shortcut_sets_platform(self, write_app: WriteApp, reset_apploader: None) -> None:
+        """--desktop should set config.platform to DESKTOP."""
+        app_root = write_app(name="test-shortcut", module="test_shortcut_app")
+
+        mock_platform = MagicMock()
+        mock_platform.run = AsyncMock()
+
+        runner = CliRunner()
+        with (
+            patch.object(AppLoader, "bundle"),
+            patch.object(
+                AppLoader, "platform", new_callable=PropertyMock, return_value=mock_platform
+            ),
+        ):
+            result = runner.invoke(trellis, ["--app-root", str(app_root), "run", "--desktop"])
+
+        assert result.exit_code == 0, f"Exit code: {result.exit_code}, output: {result.output}"
+        assert "Running test-shortcut on desktop" in result.output
+
+    def test_shortcut_conflicts_with_platform(
+        self, write_app: WriteApp, reset_apploader: None
+    ) -> None:
+        """--server and --platform should conflict."""
+        app_root = write_app(name="test-conflict", module="test_conflict_app")
+
+        runner = CliRunner()
+        result = runner.invoke(
+            trellis, ["--app-root", str(app_root), "run", "--server", "--platform", "desktop"]
+        )
+
+        assert result.exit_code != 0, f"Expected failure, output: {result.output}"
+        assert "cannot be used with --platform" in result.output
+
+
 # INTERNAL TEST: _build_run_kwargs is a pure function with clear logic worth testing directly
 class TestBuildRunKwargs:
     """Tests for _build_run_kwargs helper."""

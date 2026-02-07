@@ -403,7 +403,7 @@ The browser platform runs Python directly in the browser using [Pyodide](https:/
 - `enqueue_message()`: called by JS bridge to queue incoming messages
 
 **BrowserServePlatform** (`platforms/browser/serve_platform.py`)
-- CLI mode for development: `python app.py --browser`
+- CLI mode for development: `trellis run --browser`
 - Packages source code and serves via HTTP
 - Generates HTML with embedded source config
 

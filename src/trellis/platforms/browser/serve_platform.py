@@ -128,9 +128,6 @@ class BrowserServePlatform(Platform):
     ) -> None:
         """Serve the pre-built browser bundle.
 
-        Requires bundle to be built first with:
-            trellis bundle build --platform browser --app <entry.py>
-
         Note: root_component and app_wrapper are accepted for signature compatibility
         but not used here - the app runs in Pyodide from the pre-built bundle.
         """

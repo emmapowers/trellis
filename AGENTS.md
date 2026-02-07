@@ -75,9 +75,9 @@ from trellis import html as h
 - `pixi run test` - Run tests
 - `pixi run ci` - Full CI checks
 - `pixi run showcase` - Run widget showcase
-- `trellis bundle build` - Build platform bundles (server + desktop)
-- `trellis bundle build --force` - Force rebuild even if sources unchanged
-- `trellis bundle build --platform server` - Build only server bundle
+- `trellis bundle` - Build platform bundles (server + desktop)
+- `trellis bundle --force-build` - Force rebuild even if sources unchanged
+- `trellis bundle --platform server` - Build only server bundle
 
 ## Git Workflow
 

@@ -35,11 +35,21 @@ def _build_run_kwargs(config: Config) -> dict[str, Any]:
 
 
 @trellis.command()
+@click.option(
+    "--server", "platform_shortcut", flag_value="server", help="Shortcut for --platform server"
+)
+@click.option(
+    "--desktop", "platform_shortcut", flag_value="desktop", help="Shortcut for --platform desktop"
+)
+@click.option(
+    "--browser", "platform_shortcut", flag_value="browser", help="Shortcut for --platform browser"
+)
 @pass_cli_context
 @configvar_options(_cli_config_vars)
 def run(
     ctx: CliContext,
     /,
+    platform_shortcut: str | None = None,
     **cli_kwargs: Any,
 ) -> None:
     """Run a Trellis application.
@@ -47,6 +57,11 @@ def run(
     Uses --app-root global option or TRELLIS_APP_ROOT environment variable.
     If neither is specified, searches upward from the current directory.
     """
+    if platform_shortcut:
+        if "platform" in cli_kwargs:
+            raise click.UsageError(f"--{platform_shortcut} cannot be used with --platform")
+        cli_kwargs["platform"] = platform_shortcut
+
     if "platform" in cli_kwargs:
         cli_kwargs["platform"] = PlatformType(cli_kwargs["platform"])
 

@@ -59,7 +59,7 @@ docs/src/generated-examples-sidebar.json
 src/trellis/platforms/*/client/entry.tsx
 src/trellis/platforms/*/client/tsconfig.json
 
-# Library bundle (built by `trellis bundle build --library`)
+# Library bundle (built by `trellis bundle --library`)
 docs/static/trellis/
 .trellis
 .workspace

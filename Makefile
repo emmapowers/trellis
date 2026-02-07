@@ -7,10 +7,6 @@
 # Directories
 SRC := src/trellis
 PLATFORMS := $(SRC)/platforms
-COMMON_CLIENT := $(PLATFORMS)/common/client/src
-SERVER_DIST := $(PLATFORMS)/server/client/dist
-DESKTOP_DIST := $(PLATFORMS)/desktop/client/dist
-BROWSER_DIST := $(PLATFORMS)/browser/client/dist
 DOCS := docs
 DOCS_STATIC := $(DOCS)/static
 TRELLIS_LIB := $(DOCS_STATIC)/trellis
@@ -40,30 +36,12 @@ dist/.wheel-built: pyproject.toml $(PY_SOURCES)
 	@touch $@
 
 #------------------------------------------------------------------------------
-# Platform bundles
-#------------------------------------------------------------------------------
-bundles: server-bundle desktop-bundle browser-bundle
-
-server-bundle: $(SERVER_DIST)/bundle.js
-desktop-bundle: $(DESKTOP_DIST)/bundle.js
-browser-bundle: $(BROWSER_DIST)/bundle.js
-
-$(SERVER_DIST)/bundle.js: $(TS_SOURCES)
-	trellis bundle build --platform server --dest $(SERVER_DIST)
-
-$(DESKTOP_DIST)/bundle.js: $(TS_SOURCES)
-	trellis bundle build --platform desktop --dest $(DESKTOP_DIST)
-
-$(BROWSER_DIST)/bundle.js: $(TS_SOURCES)
-	trellis bundle build --platform browser --dest $(BROWSER_DIST) --library
-
-#------------------------------------------------------------------------------
 # Browser library bundle (for playground and TrellisDemo)
 #------------------------------------------------------------------------------
 browser-lib: $(TRELLIS_LIB)/index.js
 
 $(TRELLIS_LIB)/index.js: $(TS_SOURCES)
-	trellis bundle build --platform browser --dest $(TRELLIS_LIB) --library
+	trellis bundle --platform browser --dest $(TRELLIS_LIB) --library
 
 #------------------------------------------------------------------------------
 # API documentation

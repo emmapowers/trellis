@@ -18,7 +18,7 @@ Usage:
         config = load_config()  # port will be 9000
 
     # Or via ENV
-    # TRELLIS_SERVER_PORT=8080 trellis run app.py
+    # TRELLIS_SERVER_PORT=8080 trellis run
 """
 
 from __future__ import annotations
