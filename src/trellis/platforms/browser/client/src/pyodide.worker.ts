@@ -12,8 +12,9 @@ import WHEEL_BUNDLE from "@trellis/wheel-bundle";
 import WHEEL_MANIFEST from "@trellis/wheel-manifest";
 
 // === Pyodide Configuration ===
-// PYODIDE_VERSION is injected at build time via esbuild --define
+// PYODIDE_VERSION and PYODIDE_PYTHON_VERSION are injected at build time via esbuild --define
 declare const PYODIDE_VERSION: string;
+declare const PYODIDE_PYTHON_VERSION: string;
 const PYODIDE_CDN = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/pyodide.js`;
 
 // === Types ===
@@ -30,6 +31,7 @@ interface PyodideInterface {
   runPythonAsync(code: string): Promise<PyProxy | undefined>;
   registerJsModule(name: string, module: unknown): void;
   unpackArchive(buffer: Uint8Array, format: string, options?: { extractDir: string }): void;
+  globals: { set(key: string, value: unknown): void };
 }
 
 interface PyodideHandler {
@@ -106,7 +108,7 @@ async function initializePyodide(): Promise<void> {
   console.log("[Pyodide] Phase 3: Unpacking wheel bundle...");
   postStatus("Installing application...");
   pyodide.unpackArchive(WHEEL_BUNDLE, "zip", {
-    extractDir: "/lib/python3/site-packages",
+    extractDir: `/lib/python${PYODIDE_PYTHON_VERSION}/site-packages`,
   });
 
   // Phase 4: Register bridge
@@ -124,7 +126,27 @@ async function runApp(): Promise<void> {
   }
 
   postStatus("Starting application...");
-  const code = `import runpy\nrunpy.run_module("${WHEEL_MANIFEST.entryModule}", run_name="__main__", alter_sys=True)`;
+
+  // Pass config JSON into Pyodide globals for the bootstrap code
+  pyodide.globals.set("CONFIG_JSON", WHEEL_MANIFEST.configJson);
+
+  // Bootstrap the app through AppLoader, mirroring the CLI `trellis run` flow
+  const code = `
+from trellis.app.config import Config
+from trellis.app.apploader import AppLoader, set_apploader
+
+config = Config.from_json(CONFIG_JSON)
+apploader = AppLoader.from_config(config)
+apploader.load_app()
+set_apploader(apploader)
+
+app = apploader.app
+
+def app_wrapper(_component, system_theme, theme_mode):
+    return app.get_wrapped_top(system_theme, theme_mode)
+
+await apploader.platform.run(app.top, app_wrapper, batch_delay=config.batch_delay)
+`;
 
   pyodide
     .runPythonAsync(code)

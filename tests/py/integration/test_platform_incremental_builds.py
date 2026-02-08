@@ -16,6 +16,7 @@ from typing import Any
 
 import pytest
 
+from trellis.app.config import Config
 from trellis.bundler.build import build
 from trellis.bundler.manifest import load_manifest
 from trellis.bundler.registry import ModuleRegistry
@@ -487,7 +488,7 @@ export const App = () => <div>Hello Browser</div>;
             RegistryGenerationStep(),
             WheelBuildStep(app_root),
             DependencyResolveStep(),
-            WheelBundleStep(entry_module="testapp"),
+            WheelBundleStep(config_json=Config(name="testapp", module="testapp").to_json()),
             PyodideWorkerBuildStep(),
             BundleBuildStep(output_name="bundle"),
             StaticFileCopyStep(),

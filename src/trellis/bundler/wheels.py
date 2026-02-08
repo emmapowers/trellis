@@ -33,6 +33,7 @@ class ResolvedDependencies:
 
     wheel_paths: list[Path] = field(default_factory=list)
     pyodide_packages: list[str] = field(default_factory=list)
+    python_version: str = ""
 
 
 def build_emscripten_env(python_version: str) -> dict[str, str]:
@@ -321,7 +322,7 @@ def resolve_dependencies(app_wheel: Path, cache_dir: Path) -> ResolvedDependenci
 
     major_minor = f"{pyodide_parts[0]}.{pyodide_parts[1]}"
 
-    result = ResolvedDependencies()
+    result = ResolvedDependencies(python_version=major_minor)
     result.wheel_paths.append(app_wheel)
 
     resolved_names: set[str] = set()

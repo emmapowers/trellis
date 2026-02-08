@@ -102,9 +102,11 @@ class DependencyResolveStep(BuildStep):
         # Restore resolved deps from metadata
         wheel_path_strs: list[str] = step_manifest.metadata.get("wheel_paths", [])
         pyodide_packages: list[str] = step_manifest.metadata.get("pyodide_packages", [])
+        python_version: str = step_manifest.metadata.get("python_version", "")
         ctx.build_data["resolved_deps"] = ResolvedDependencies(
             wheel_paths=[Path(p) for p in wheel_path_strs],
             pyodide_packages=pyodide_packages,
+            python_version=python_version,
         )
 
         return ShouldBuild.SKIP
@@ -124,6 +126,7 @@ class DependencyResolveStep(BuildStep):
         step_manifest.dest_files.add(marker)
         step_manifest.metadata["wheel_paths"] = [str(p) for p in resolved.wheel_paths]
         step_manifest.metadata["pyodide_packages"] = resolved.pyodide_packages
+        step_manifest.metadata["python_version"] = resolved.python_version
 
 
 class WheelBundleStep(BuildStep):
@@ -133,11 +136,11 @@ class WheelBundleStep(BuildStep):
     Writes zip and manifest JSON to workspace, stores paths in ctx.generated_files.
 
     Args:
-        entry_module: Python module name to run (e.g. "myapp")
+        config_json: Serialized Config JSON string (from config.to_json())
     """
 
-    def __init__(self, entry_module: str) -> None:
-        self._entry_module = entry_module
+    def __init__(self, config_json: str) -> None:
+        self._config_json = config_json
 
     @property
     def name(self) -> str:
@@ -171,10 +174,13 @@ class WheelBundleStep(BuildStep):
         zip_path = ctx.workspace / "site-packages.wheel-bundle"
         create_site_packages_zip(resolved.wheel_paths, zip_path)
 
-        # Write the manifest JSON
+        # Write the manifest JSON with config and pyodide package info
+        config_data: dict[str, object] = json.loads(self._config_json)
+        entry_module = config_data.get("module", "")
         manifest_data = {
-            "entryModule": self._entry_module,
+            "entryModule": entry_module,
             "pyodidePackages": resolved.pyodide_packages,
+            "configJson": self._config_json,
         }
         manifest_path = ctx.workspace / "wheel-manifest.json"
         manifest_path.write_text(json.dumps(manifest_data))
@@ -205,6 +211,11 @@ class PyodideWorkerBuildStep(BuildStep):
     @property
     def name(self) -> str:
         return "pyodide-worker-build"
+
+    def _get_python_version(self, ctx: BuildContext) -> str:
+        """Get the Pyodide Python version (major.minor) from resolved dependencies."""
+        resolved: ResolvedDependencies = ctx.build_data["resolved_deps"]
+        return resolved.python_version
 
     def _get_esbuild_args(self, ctx: BuildContext) -> list[str]:
         """Compute the esbuild args this step adds to context."""
@@ -260,6 +271,7 @@ class PyodideWorkerBuildStep(BuildStep):
             "--target=es2022",
             "--loader:.ts=ts",
             f'--define:PYODIDE_VERSION="{PYODIDE_VERSION}"',
+            f'--define:PYODIDE_PYTHON_VERSION="{self._get_python_version(ctx)}"',
         ]
 
         # Add wheel bundle/manifest as esbuild aliases for the worker build

@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from tests.helpers import requires_pytauri
+from trellis.app.apploader import AppLoader, set_apploader
 from trellis.app.config import Config
 from trellis.app.configvars import cli_context
 from trellis.bundler.build_config import BuildConfig
@@ -154,6 +155,11 @@ class TestDesktopGetBuildConfig:
 
 class TestBrowserServeGetBuildConfig:
     """Tests for BrowserServePlatform.get_build_config()."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_apploader(self, tmp_path: Path, reset_apploader: None) -> None:
+        """Set up a global apploader so get_app_root() works."""
+        set_apploader(AppLoader(tmp_path))
 
     def test_app_mode_entry_point(self) -> None:
         """App mode entry point is browser/client/src/main.tsx."""

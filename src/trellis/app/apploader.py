@@ -133,10 +133,32 @@ class AppLoader:
         Args:
             path: Directory containing the trellis_config.py file
         """
-        self.path = path
+        self.path: Path | None = path
         self.config: Config | None = None
         self.app: App | None = None
         self._platform: Platform | None = None
+
+    @classmethod
+    def from_config(cls, config: Config) -> AppLoader:
+        """Create an AppLoader from a Config object directly.
+
+        Used in Pyodide where there's no filesystem to load trellis_config.py
+        from. Sets path to None and clears python_path since wheels are
+        already installed in site-packages.
+
+        Args:
+            config: A pre-built Config instance
+
+        Returns:
+            A new AppLoader with config set and path=None
+        """
+        apploader = cls.__new__(cls)
+        config.python_path = []
+        apploader.config = config
+        apploader.path = None
+        apploader.app = None
+        apploader._platform = None
+        return apploader
 
     def load_config(self) -> None:
         """Load configuration from trellis_config.py.
@@ -151,6 +173,11 @@ class AppLoader:
             SyntaxError: If trellis_config.py has syntax errors (passed through)
             ModuleNotFoundError: If trellis_config.py has import errors (passed through)
         """
+        if self.path is None:
+            raise RuntimeError(
+                "Cannot load config from filesystem without an app root directory. "
+                "Use from_config() to create an AppLoader with a pre-built Config."
+            )
         trellis_file = self.path / "trellis_config.py"
 
         if not trellis_file.exists():
@@ -197,6 +224,11 @@ class AppLoader:
 
         # Add python_path entries to sys.path
         for rel_path in self.config.python_path:
+            if self.path is None:
+                raise RuntimeError(
+                    "Cannot resolve python_path without an app root directory. "
+                    "Use from_config() with python_path=[] for Pyodide."
+                )
             abs_path = str(self.path / rel_path)
             if abs_path not in sys.path:
                 sys.path.insert(0, abs_path)
@@ -381,9 +413,16 @@ def get_app_root() -> Path:
         The path to the directory containing trellis_config.py
 
     Raises:
-        RuntimeError: If set_apploader() has not been called
+        RuntimeError: If set_apploader() has not been called, or if the
+            apploader was created via from_config() with no app root directory
     """
-    return get_apploader().path
+    path = get_apploader().path
+    if path is None:
+        raise RuntimeError(
+            "AppLoader has no app root directory. "
+            "This happens when running inside Pyodide via AppLoader.from_config()."
+        )
+    return path
 
 
 def get_workspace_dir() -> Path:

@@ -8,6 +8,7 @@ import zipfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from trellis.app.config import Config
 from trellis.bundler.manifest import BuildManifest, StepManifest
 from trellis.bundler.steps import BuildContext, ShouldBuild
 from trellis.bundler.wheels import ResolvedDependencies
@@ -245,8 +246,12 @@ class TestDependencyResolveStep:
 class TestWheelBundleStep:
     """Tests for WheelBundleStep."""
 
+    def _make_config_json(self, module: str = "myapp", **kwargs: object) -> str:
+        """Create a config JSON string for testing."""
+        return Config(name="test", module=module, **kwargs).to_json()  # type: ignore[arg-type]
+
     def test_step_name(self) -> None:
-        step = WheelBundleStep(entry_module="myapp")
+        step = WheelBundleStep(config_json=self._make_config_json())
         assert step.name == "wheel-bundle"
 
     def test_creates_zip_and_manifest(self, tmp_path: Path) -> None:
@@ -260,7 +265,8 @@ class TestWheelBundleStep:
         )
         ctx.build_data["resolved_deps"] = resolved
 
-        step = WheelBundleStep(entry_module="myapp")
+        config_json = self._make_config_json()
+        step = WheelBundleStep(config_json=config_json)
         step.run(ctx)
 
         # Check zip was created
@@ -276,6 +282,22 @@ class TestWheelBundleStep:
         assert manifest["entryModule"] == "myapp"
         assert manifest["pyodidePackages"] == ["numpy"]
 
+    def test_manifest_includes_config_json(self, tmp_path: Path) -> None:
+        """run() includes configJson in the manifest."""
+        ctx = _make_context(tmp_path)
+        app_wheel = _make_wheel(tmp_path / "wheels", "myapp", "0.1.0")
+
+        resolved = ResolvedDependencies(wheel_paths=[app_wheel], pyodide_packages=[])
+        ctx.build_data["resolved_deps"] = resolved
+
+        config_json = self._make_config_json()
+        step = WheelBundleStep(config_json=config_json)
+        step.run(ctx)
+
+        manifest_path = ctx.generated_files["wheel_manifest"]
+        manifest = json.loads(manifest_path.read_text())
+        assert manifest["configJson"] == config_json
+
     def test_populates_step_manifest(self, tmp_path: Path) -> None:
         """run() populates step manifest with source and dest paths."""
         ctx = _make_context(tmp_path)
@@ -284,7 +306,7 @@ class TestWheelBundleStep:
         resolved = ResolvedDependencies(wheel_paths=[app_wheel], pyodide_packages=[])
         ctx.build_data["resolved_deps"] = resolved
 
-        step = WheelBundleStep(entry_module="myapp")
+        step = WheelBundleStep(config_json=self._make_config_json())
         step.run(ctx)
 
         sm = ctx.manifest.steps["wheel-bundle"]
@@ -295,7 +317,7 @@ class TestWheelBundleStep:
     def test_should_build_returns_build_when_no_manifest(self, tmp_path: Path) -> None:
         """should_build returns BUILD when no previous manifest."""
         ctx = _make_context(tmp_path)
-        step = WheelBundleStep(entry_module="myapp")
+        step = WheelBundleStep(config_json=self._make_config_json())
         assert step.should_build(ctx, step_manifest=None) == ShouldBuild.BUILD
 
     def test_should_build_skips_when_inputs_unchanged(self, tmp_path: Path) -> None:
@@ -319,7 +341,7 @@ class TestWheelBundleStep:
             },
         )
 
-        step = WheelBundleStep(entry_module="myapp")
+        step = WheelBundleStep(config_json=self._make_config_json())
         result = step.should_build(ctx, prev_manifest)
 
         assert result == ShouldBuild.SKIP
@@ -345,7 +367,7 @@ class TestWheelBundleStep:
             },
         )
 
-        step = WheelBundleStep(entry_module="myapp")
+        step = WheelBundleStep(config_json=self._make_config_json())
         result = step.should_build(ctx, prev_manifest)
 
         assert result == ShouldBuild.BUILD
@@ -355,11 +377,12 @@ class TestPyodideWorkerBuildStep:
     """Tests for PyodideWorkerBuildStep."""
 
     def _make_context_with_node_modules(self, tmp_path: Path, **kwargs: object) -> BuildContext:
-        """Create a BuildContext with node_modules set up."""
+        """Create a BuildContext with node_modules and resolved deps set up."""
         ctx = _make_context(tmp_path, **kwargs)
         node_modules = ctx.workspace / "node_modules"
         node_modules.mkdir(parents=True, exist_ok=True)
         (node_modules / ".bin").mkdir()
+        ctx.build_data["resolved_deps"] = ResolvedDependencies(python_version="3.13")
         return ctx
 
     def test_step_name(self) -> None:
@@ -505,6 +528,21 @@ class TestPyodideWorkerBuildStep:
         assert len(define_args) == 1
         # Value should be a quoted string for esbuild
         assert define_args[0].startswith('--define:PYODIDE_VERSION="')
+
+    def test_defines_python_version_for_worker(self, tmp_path: Path) -> None:
+        """Step passes --define:PYODIDE_PYTHON_VERSION from resolved deps."""
+        ctx = self._make_context_with_node_modules(tmp_path)
+        ctx.build_data["resolved_deps"] = ResolvedDependencies(python_version="3.13")
+        step = PyodideWorkerBuildStep()
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+            step.run(ctx)
+
+        cmd = mock_run.call_args[0][0]
+        define_args = [arg for arg in cmd if arg.startswith("--define:PYODIDE_PYTHON_VERSION=")]
+        assert len(define_args) == 1
+        assert define_args[0] == '--define:PYODIDE_PYTHON_VERSION="3.13"'
 
     def test_passes_context_env_to_subprocess(self, tmp_path: Path) -> None:
         """Step passes ctx.env to subprocess.run."""

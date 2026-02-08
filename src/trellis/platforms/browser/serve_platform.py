@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
-from trellis.app.apploader import get_dist_dir
+from trellis.app.apploader import get_app_root, get_dist_dir
 from trellis.bundler import (
     BuildConfig,
     BundleBuildStep,
@@ -87,7 +87,7 @@ class BrowserServePlatform(Platform):
             App mode produces a standalone bundle with embedded wheel data.
         """
         client_src = Path(__file__).parent / "client" / "src"
-        app_root = Path.cwd()
+        app_root = get_app_root()
 
         if config.library:
             return BuildConfig(
@@ -98,7 +98,7 @@ class BrowserServePlatform(Platform):
                     TsconfigStep(),
                     WheelBuildStep(app_root),
                     DependencyResolveStep(),
-                    WheelBundleStep(entry_module=config.module),
+                    WheelBundleStep(config_json=config.to_json()),
                     PyodideWorkerBuildStep(),
                     BundleBuildStep(output_name="index"),
                     DeclarationStep(),
@@ -115,7 +115,7 @@ class BrowserServePlatform(Platform):
                 RegistryGenerationStep(),
                 WheelBuildStep(app_root),
                 DependencyResolveStep(),
-                WheelBundleStep(entry_module=config.module),
+                WheelBundleStep(config_json=config.to_json()),
                 PyodideWorkerBuildStep(),
                 BundleBuildStep(output_name="bundle"),
                 StaticFileCopyStep(),

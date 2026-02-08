@@ -22,6 +22,7 @@ from trellis.app.apploader import (
     get_workspace_dir,
     set_apploader,
 )
+from trellis.app.config import Config
 from trellis.platforms.browser import BrowserPlatform
 from trellis.platforms.browser.serve_platform import BrowserServePlatform
 from trellis.platforms.server import ServerPlatform
@@ -714,3 +715,54 @@ class TestAppLoaderBundle:
             result = apploader.bundle()
 
         assert result == app_root / ".workspace"
+
+
+class TestAppLoaderFromConfig:
+    """Tests for AppLoader.from_config classmethod."""
+
+    def test_from_config_sets_config(self) -> None:
+        """from_config sets config directly and path to None."""
+        config = Config(name="myapp", module="myapp.main")
+
+        apploader = AppLoader.from_config(config)
+
+        assert apploader.config is config
+        assert apploader.path is None
+
+    def test_from_config_clears_python_path(self) -> None:
+        """from_config clears python_path even if input config had entries."""
+        config = Config(name="myapp", module="myapp.main", python_path=[Path("src")])
+
+        apploader = AppLoader.from_config(config)
+
+        assert apploader.config is not None
+        assert apploader.config.python_path == []
+
+    def test_from_config_load_app(
+        self,
+        write_app_module: WriteAppModule,
+        tmp_path: Path,
+    ) -> None:
+        """from_config → load_app() round-trip loads the app."""
+        write_app_module(module_name="from_config_test")
+        import sys  # noqa: PLC0415
+
+        sys.path.insert(0, str(tmp_path))
+        try:
+            config = Config(name="test", module="from_config_test")
+            apploader = AppLoader.from_config(config)
+            apploader.load_app()
+
+            assert apploader.app is not None
+            assert isinstance(apploader.app, App)
+        finally:
+            sys.path.remove(str(tmp_path))
+
+    def test_get_app_root_raises_without_path(self, reset_apploader: None) -> None:
+        """get_app_root raises RuntimeError when apploader has no path."""
+        config = Config(name="myapp", module="myapp.main")
+        apploader = AppLoader.from_config(config)
+        set_apploader(apploader)
+
+        with pytest.raises(RuntimeError, match="no app root directory"):
+            get_app_root()

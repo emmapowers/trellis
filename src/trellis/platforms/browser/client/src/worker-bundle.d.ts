@@ -14,6 +14,7 @@ declare module "@trellis/wheel-manifest" {
   const manifest: {
     entryModule: string;
     pyodidePackages: string[];
+    configJson: string;
   };
   export default manifest;
 }
