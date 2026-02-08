@@ -1,0 +1,66 @@
+from trellis import App, Margin, Padding, component
+from trellis import widgets as w
+from trellis.app import theme
+from trellis.widgets import IconName
+
+
+@component
+def Root():
+    with w.Column(gap=0, style={"height": "100vh"}):
+        # Header
+        with w.Row(
+            align="center",
+            gap=12,
+            padding=Padding(x=24, y=16),
+            style={
+                "borderBottom": f"1px solid {theme.border_default}",
+                "backgroundColor": theme.bg_surface,
+                "flexShrink": "0",
+            },
+        ):
+            w.Icon(name=IconName.LAYOUT_DASHBOARD, size=24, color=theme.accent_primary)
+            w.Heading(text="{{ title }}", level=3, flex=1)
+
+        # Centered welcome card
+        with w.Column(
+            flex=1,
+            align="center",
+            justify="center",
+            padding=24,
+            style={"backgroundColor": theme.bg_page},
+        ):
+            with w.Card(padding=32, width=480):
+                with w.Column(gap=20, align="center"):
+                    w.Icon(
+                        name=IconName.CHECK_CIRCLE,
+                        size=48,
+                        color=theme.success,
+                    )
+                    w.Heading(
+                        text="Welcome to {{ title }}",
+                        level=2,
+                        margin=Margin(bottom=0),
+                    )
+                    w.Label(
+                        text="Your app is set up and ready to go.",
+                        color=theme.text_secondary,
+                        text_align="center",
+                    )
+                    w.Divider()
+                    w.Label(
+                        text="Edit this file to start building your UI.",
+                        font_size=13,
+                        color=theme.text_muted,
+                        text_align="center",
+                    )
+                    w.Button(
+                        text="Read the docs",
+                        icon=IconName.EXTERNAL_LINK,
+                        icon_position="right",
+                        variant="primary",
+                        size="lg",
+                        href="https://emmapowers.github.io/trellis/",
+                    )
+
+
+app = App(Root)
