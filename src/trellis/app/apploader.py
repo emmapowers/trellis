@@ -307,10 +307,6 @@ class AppLoader:
         build_config = platform.get_build_config(config)
         workspace = get_workspace_dir()
 
-        python_entry_point = None
-        if config.platform == PlatformType.BROWSER and not config.library:
-            python_entry_point = self._resolve_python_entry_point()
-
         build(
             registry=registry,
             entry_point=build_config.entry_point,
@@ -319,28 +315,8 @@ class AppLoader:
             force=config.force_build,
             output_dir=dest or get_dist_dir(),
             assets_dir=config.assets_dir,
-            python_entry_point=python_entry_point,
         )
         return workspace
-
-    def _resolve_python_entry_point(self) -> Path:
-        """Resolve the Python entry point file path.
-
-        Imports the application module and returns its __file__ path.
-
-        Returns:
-            Path to the module's source file
-
-        Raises:
-            RuntimeError: If config has not been loaded or module has no __file__
-        """
-        module = self.import_module()
-        file_path = getattr(module, "__file__", None)
-        if file_path is None:
-            raise RuntimeError(
-                f"Module '{self.config.module}' has no __file__ attribute"  # type: ignore[union-attr]
-            )
-        return Path(file_path)
 
 
 # Global singleton

@@ -1,8 +1,4 @@
-"""Slider performance demo.
-
-Run with: pixi run -- python examples/all_sliders_all_the_time.py
-Then open: http://127.0.0.1:8000
-"""
+"""Slider performance demo application."""
 
 from __future__ import annotations
 

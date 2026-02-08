@@ -36,9 +36,10 @@ from trellis.bundler import (
     TsconfigStep,
 )
 from trellis.platforms.browser.build_steps import (
+    DependencyResolveStep,
     PyodideWorkerBuildStep,
-    PythonSourceBundleStep,
-    WheelCopyStep,
+    WheelBuildStep,
+    WheelBundleStep,
 )
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform
@@ -63,7 +64,7 @@ class BrowserServePlatform(Platform):
     """Platform for building and serving browser apps from CLI.
 
     This platform:
-    - Builds the browser client bundle with embedded Python app source
+    - Builds the browser client bundle with wheel-based Python packaging
     - Serves the pre-built bundle via HTTP
     """
 
@@ -83,9 +84,10 @@ class BrowserServePlatform(Platform):
         Returns:
             BuildConfig with entry point and build steps.
             Library mode produces an ES module with type declarations.
-            App mode produces a standalone bundle with embedded Python source.
+            App mode produces a standalone bundle with embedded wheel data.
         """
         client_src = Path(__file__).parent / "client" / "src"
+        app_root = Path.cwd()
 
         if config.library:
             return BuildConfig(
@@ -94,6 +96,9 @@ class BrowserServePlatform(Platform):
                     PackageInstallStep(),
                     RegistryGenerationStep(),
                     TsconfigStep(),
+                    WheelBuildStep(app_root),
+                    DependencyResolveStep(),
+                    WheelBundleStep(entry_module=config.module),
                     PyodideWorkerBuildStep(),
                     BundleBuildStep(output_name="index"),
                     DeclarationStep(),
@@ -102,19 +107,19 @@ class BrowserServePlatform(Platform):
             )
 
         # App mode
-        wheel_dir = Path.cwd() / "dist"
         template_path = client_src / "index.html.j2"
         return BuildConfig(
             entry_point=client_src / "main.tsx",
             steps=[
                 PackageInstallStep(),
                 RegistryGenerationStep(),
+                WheelBuildStep(app_root),
+                DependencyResolveStep(),
+                WheelBundleStep(entry_module=config.module),
                 PyodideWorkerBuildStep(),
                 BundleBuildStep(output_name="bundle"),
                 StaticFileCopyStep(),
-                WheelCopyStep(wheel_dir),
-                PythonSourceBundleStep(),
-                IndexHtmlRenderStep(template_path, {"title": config.title}),
+                IndexHtmlRenderStep(template_path, {"title": config.title, "routing_mode": "hash"}),
             ],
         )
 

@@ -13,7 +13,7 @@ import pytest
 
 from trellis.bundler.build import build
 from trellis.bundler.manifest import BuildManifest, StepManifest, load_manifest, save_manifest
-from trellis.bundler.registry import ModuleRegistry, registry
+from trellis.bundler.registry import ModuleRegistry
 from trellis.bundler.steps import (
     BuildContext,
     BuildStep,
@@ -2241,55 +2241,6 @@ class TestStaticFileCopyStepShouldBuild:
         result = step.should_build(build_context, prev_manifest)
 
         assert result == ShouldBuild.SKIP
-
-
-class TestBuildEntryPointImport:
-    """Tests for Python entry point import before module collection."""
-
-    def test_imports_entry_point_before_collect(self, tmp_path: Path) -> None:
-        """build() imports python_entry_point before calling registry.collect().
-
-        This ensures any module registrations in the entry point file are
-        available when collecting modules.
-        """
-        # Use the global registry since that's what entry points will register to
-        workspace = tmp_path / "workspace"
-        entry_point = tmp_path / "main.tsx"
-        entry_point.write_text("// entry")
-
-        # Create a Python entry point that registers a module when imported
-        # Use a unique module name to avoid conflicts with other tests
-        python_entry = tmp_path / "app.py"
-        python_entry.write_text(
-            """
-from trellis.bundler.registry import registry
-registry.register("test-entry-import-module", packages={"test-unique-pkg": "1.0.0"})
-"""
-        )
-
-        # Track what modules exist when collect is called
-        collected_packages: list = []
-
-        class CaptureStep(BuildStep):
-            @property
-            def name(self) -> str:
-                return "capture"
-
-            def run(self, ctx: BuildContext) -> None:
-                collected_packages.append(list(ctx.collected.packages.keys()))
-
-        build(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[CaptureStep()],
-            force=True,
-            output_dir=tmp_path / "dist",
-            python_entry_point=python_entry,
-        )
-
-        # The module should have been registered (via import) before collect()
-        assert "test-unique-pkg" in collected_packages[0]
 
 
 class TestBuildOrchestration:

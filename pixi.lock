@@ -2273,13 +2273,14 @@ packages:
 - pypi: .
   name: trellis
   version: 0.1.0
-  sha256: 2c68e7ce6323d8194effd96016cdd11b2ab71a4906507183113fcafaecbd9771
+  sha256: cf14234ed2c2caddb2cc5da7eb7f88e66b018fcbe7456142a3ef90381aec3974
   requires_dist:
   - rich>=13.9
   - pygments>=2.19
   - msgspec>=0.19
   - httpx>=0.28
   - jinja2>=3.1
+  - packaging>=24.0
   - fastapi>=0.128 ; sys_platform != 'emscripten'
   - uvicorn[standard]>=0.40 ; sys_platform != 'emscripten'
   - click>=8.3 ; sys_platform != 'emscripten'

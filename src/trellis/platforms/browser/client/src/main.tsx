@@ -13,15 +13,11 @@ import "@trellis/trellis-core/client/src/theme.css"; // Theme CSS variables
 import "@trellis/trellis-core/client/src/console"; // Set up console filtering
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { TrellisApp, PythonSource, RoutingMode } from "@trellis/trellis-browser/client/src/TrellisApp";
+import { TrellisApp, RoutingMode } from "@trellis/trellis-browser/client/src/TrellisApp";
 
 declare global {
   interface Window {
     __TRELLIS_CONFIG__?: {
-      source: PythonSource;
-      main?: string;
-      workerUrl: string;
-      trellisWheelUrl?: string;
       routingMode?: string;
     };
   }
@@ -53,12 +49,7 @@ function App() {
   const routingMode = config.routingMode as RoutingMode | undefined;
 
   return (
-    <TrellisApp
-      source={config.source}
-      main={config.main}
-      trellisWheelUrl={config.trellisWheelUrl}
-      routingMode={routingMode}
-    />
+    <TrellisApp routingMode={routingMode} />
   );
 }
 

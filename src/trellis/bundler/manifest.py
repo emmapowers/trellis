@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 # Manifest format version - increment when changing the serialization format
-MANIFEST_VERSION = 2
+MANIFEST_VERSION = 3
 
 
 @dataclass

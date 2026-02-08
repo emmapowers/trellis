@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "breakfast-todo"
+version = "0.1.0"
+description = "A minimal Trellis application demonstrating core patterns"
+requires-python = ">=3.13"
+dependencies = [
+    "trellis @ {root:parent:parent:uri}",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true

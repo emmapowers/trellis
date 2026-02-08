@@ -1,8 +1,4 @@
-"""Demo app to test end-to-end render loop.
-
-Run with: pixi run -- python examples/demo.py
-Then open: http://127.0.0.1:8000
-"""
+"""Hello World counter application."""
 
 from collections.abc import Callable
 from dataclasses import dataclass

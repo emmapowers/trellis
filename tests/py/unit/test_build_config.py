@@ -20,9 +20,10 @@ from trellis.bundler.steps import (
     TsconfigStep,
 )
 from trellis.platforms.browser.build_steps import (
+    DependencyResolveStep,
     PyodideWorkerBuildStep,
-    PythonSourceBundleStep,
-    WheelCopyStep,
+    WheelBuildStep,
+    WheelBundleStep,
 )
 from trellis.platforms.browser.serve_platform import BrowserServePlatform
 from trellis.platforms.server.platform import ServerPlatform
@@ -175,16 +176,17 @@ class TestBrowserServeGetBuildConfig:
         assert step_types == [
             PackageInstallStep,
             RegistryGenerationStep,
+            WheelBuildStep,
+            DependencyResolveStep,
+            WheelBundleStep,
             PyodideWorkerBuildStep,
             BundleBuildStep,
             StaticFileCopyStep,
-            WheelCopyStep,
-            PythonSourceBundleStep,
             IndexHtmlRenderStep,
         ]
 
     def test_app_mode_template_vars(self) -> None:
-        """App mode IndexHtmlRenderStep has title from config."""
+        """App mode IndexHtmlRenderStep has title and routing_mode from config."""
         platform = BrowserServePlatform()
         config = Config(name="myapp", module="main", title="Browser App")
 
@@ -193,6 +195,7 @@ class TestBrowserServeGetBuildConfig:
         html_step = build_config.steps[-1]
         assert isinstance(html_step, IndexHtmlRenderStep)
         assert html_step._context["title"] == "Browser App"
+        assert html_step._context["routing_mode"] == "hash"
 
     def test_library_mode_entry_point(self) -> None:
         """Library mode entry point is browser/client/src/index.ts."""
@@ -218,6 +221,9 @@ class TestBrowserServeGetBuildConfig:
             PackageInstallStep,
             RegistryGenerationStep,
             TsconfigStep,
+            WheelBuildStep,
+            DependencyResolveStep,
+            WheelBundleStep,
             PyodideWorkerBuildStep,
             BundleBuildStep,
             DeclarationStep,

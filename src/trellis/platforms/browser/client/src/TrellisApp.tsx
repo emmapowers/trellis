@@ -17,24 +17,16 @@ import {
 import { Message } from "@trellis/trellis-core/client/src/types";
 import { TreeRenderer } from "@trellis/trellis-core/client/src/TreeRenderer";
 import { useRootId } from "@trellis/trellis-core/client/src/core";
-import { PyodideWorker, type PythonSource } from "@trellis/trellis-browser/client/src/PyodideWorker";
+import { PyodideWorker } from "@trellis/trellis-browser/client/src/PyodideWorker";
 import {
   INIT_TIMEOUT_MS,
   formatTimeoutError,
 } from "@trellis/trellis-browser/client/src/pyodide-error-utils";
 import { RoutingMode } from "@trellis/trellis-core/client/src/RouterManager";
 
-// Re-export types for external use
-export type { PythonSource };
 export { RoutingMode };
 
 export interface TrellisAppProps {
-  /** Source of the Python code */
-  source: PythonSource;
-  /** Entry point like "myapp:app" (optional if code defines app = App(...)) */
-  main?: string;
-  /** Custom trellis wheel URL (optional, tries several paths by default) */
-  trellisWheelUrl?: string;
   /** Routing mode for URL handling. Defaults to Hash. */
   routingMode?: RoutingMode;
   /** Callback when loading status changes */
@@ -133,9 +125,6 @@ function DefaultError({ message }: { message: string }) {
 
 
 export function TrellisApp({
-  source,
-  main,
-  trellisWheelUrl,
   routingMode = RoutingMode.Hash,
   onStatusChange,
   loadingComponent,
@@ -197,7 +186,6 @@ export function TrellisApp({
           onError: (error) => {
             setState({ status: "error", message: error });
           },
-          trellisWheelUrl,
         });
 
         clearTimeout(timeoutId);
@@ -213,11 +201,10 @@ export function TrellisApp({
           worker.sendMessage(msg);
         });
 
-        // 3. Run Python code
-        // The handler.run() loop starts and waits for HelloMessage
+        // 3. Run pre-bundled application
         setState({ status: "loading", message: "Starting application..." });
         onStatusChange?.("Starting application...");
-        worker.run(source, main);
+        worker.run();
 
         // 4. Send HelloMessage to start the handshake
         // Note: The worker's bridge queues messages until Python's handler is set,

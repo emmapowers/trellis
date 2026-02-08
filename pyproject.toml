@@ -30,6 +30,7 @@ dependencies = [
     "msgspec>=0.19",
     "httpx>=0.28",
     "jinja2>=3.1",
+    "packaging>=24.0",
     # Server-only deps (excluded in Pyodide via PEP 508 markers)
     "fastapi>=0.128; sys_platform != 'emscripten'",
     "uvicorn[standard]>=0.40; sys_platform != 'emscripten'",
@@ -70,7 +71,7 @@ target-version = ["py312", "py313"]
 [tool.ruff]
 line-length = 100
 target-version = "py313"
-exclude = ["docs/"]
+exclude = ["docs/", "examples/*/pyproject.toml"]
 
 [tool.ruff.lint]
 select = [

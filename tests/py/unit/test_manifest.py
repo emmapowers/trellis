@@ -113,7 +113,7 @@ class TestManifestSerialization:
         assert manifest_path.exists()
 
         data = json.loads(manifest_path.read_text())
-        assert data["version"] == 2
+        assert data["version"] == 3
         assert "steps" in data
         assert "bundle-build" in data["steps"]
 
@@ -126,7 +126,7 @@ class TestManifestSerialization:
         manifest_path.write_text(
             json.dumps(
                 {
-                    "version": 2,
+                    "version": 3,
                     "steps": {
                         "step1": {
                             "source_paths": ["src/a.ts"],

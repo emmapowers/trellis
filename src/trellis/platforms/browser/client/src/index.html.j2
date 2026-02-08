@@ -19,14 +19,11 @@
 </head>
 <body>
     <div id="root" class="trellis-root"></div>
-    {% if source_json %}
     <script>
         window.__TRELLIS_CONFIG__ = {
-            source: {{ source_json | safe }},
             routingMode: "{{ routing_mode | default('hash') }}"
         };
     </script>
-    {% endif %}
     <script type="module" src="{{ asset_prefix | default('') }}bundle.js"></script>
 </body>
 </html>

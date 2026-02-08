@@ -63,11 +63,11 @@ class BuildContext:
         dist_dir: Output directory for bundle files
         manifest: Build manifest tracking inputs and outputs
         assets_dir: Optional app-level static files directory
-        python_entry_point: Optional Python app entry point for browser bundling
         esbuild_args: Additional esbuild arguments (steps can append)
         env: Environment variables for subprocess calls (steps can modify)
         generated_files: Map of generated file names to paths (steps set these)
         template_context: Template variables for IndexHtmlRenderStep (steps can add)
+        build_data: Arbitrary data shared between steps (e.g. resolved dependencies)
     """
 
     # Inputs (set before steps run)
@@ -78,13 +78,13 @@ class BuildContext:
     dist_dir: Path
     manifest: BuildManifest
     assets_dir: Path | None = None
-    python_entry_point: Path | None = None
 
     # Mutable state (steps can modify)
     esbuild_args: list[str] = field(default_factory=list)
     env: dict[str, str] = field(default_factory=dict)
     generated_files: dict[str, Path] = field(default_factory=dict)
     template_context: dict[str, Any] = field(default_factory=dict)
+    build_data: dict[str, Any] = field(default_factory=dict)
 
     def exec_in_build_env(
         self, cmd: list[str], *, check: bool = True
