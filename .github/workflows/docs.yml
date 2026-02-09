@@ -28,26 +28,8 @@ jobs:
           cache: true
           locked: true
 
-      - name: Build wheel
-        run: pixi run -e ci build-wheel
-
-      - name: Build playground
-        run: pixi run -e ci build-playground
-
-      - name: Generate API docs
-        run: pixi run -e ci generate-api-docs
-
-      - name: Generate example pages
-        run: pixi run -e ci generate-example-pages
-
-      - name: Copy wheel to docs static
-        run: pixi run -e ci copy-wheel-to-docs
-
       - name: Build docs site
-        run: |
-          cd docs
-          npm ci
-          npm run build
+        run: pixi run -e ci build-docs
 
       - name: Upload artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

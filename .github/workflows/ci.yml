@@ -22,8 +22,5 @@ jobs:
           cache: true
           locked: true
 
-      - name: Build wheel
-        run: pixi run -e ci build-wheel
-
       - name: Run CI checks
         run: pixi run -e ci ci

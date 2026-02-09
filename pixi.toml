@@ -51,10 +51,8 @@ cleanup = { depends-on = ["fmt", "ruff-fix"], description = "Run formatters with
 lint = { depends-on = ["fmt-check", "ruff-check", "mypy-ci"], description = "Check all linters (no fix)" }
 ci = { depends-on = ["lint", "test", "test-js"], description = "Run CI checks" }
 
-# Build tasks (use Make for incremental builds)
-build-wheel = { cmd = "make wheel", description = "Build wheel (incremental)" }
-build-bundles = { cmd = "make bundles", description = "Build all platform bundles (incremental)" }
-clean = { cmd = "make clean", description = "Clean build artifacts" }
+# Build tasks
+clean = { cmd = "rm -rf dist build .build .mypy_cache .ruff_cache .pytest_cache .coverage", description = "Clean build artifacts" }
 
 # Examples (all depend on build artifacts)
 demo = { cmd = "python examples/demo.py", description = "Run counter demo" }
@@ -63,16 +61,14 @@ sliders = { cmd = "python examples/all_sliders_all_the_time.py", description = "
 breakfast = { cmd = "python -m examples.breakfast_todo", description = "Run breakfast todo app" }
 
 # Playground
-install-playground-deps = { cmd = "npm install", cwd = "docs/static/playground", description = "Install playground dependencies" }
-build-playground = { cmd = "make playground", description = "Build playground (incremental)" }
-playground = { cmd = "python -c \"import http.server, socketserver, socket; s=socket.socket(); s.bind(('',0)); port=s.getsockname()[1]; s.close(); print(f'\\n  Playground: http://localhost:{port}/playground/\\n'); http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler, port=port, bind='127.0.0.1')\"", cwd = "docs/static", depends-on = ["build-playground", "copy-wheel-to-docs"], description = "Run playground server" }
+build-playground = { cmd = "npm run build", cwd = "docs/static/playground", description = "Build playground" }
+playground = { cmd = "python -c \"import http.server, socketserver, socket; s=socket.socket(); s.bind(('',0)); port=s.getsockname()[1]; s.close(); print(f'\\n  Playground: http://localhost:{port}/playground/\\n'); http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler, port=port, bind='127.0.0.1')\"", cwd = "docs/static", depends-on = ["build-playground"], description = "Run playground server" }
 
 # Documentation
-generate-api-docs = { cmd = "make api-docs", description = "Generate API docs (incremental)" }
-generate-example-pages = { cmd = "make example-pages", description = "Generate example pages (incremental)" }
-copy-wheel-to-docs = { cmd = "make docs-wheel", description = "Copy wheel to docs (incremental)" }
-build-docs = { cmd = "make docs", description = "Build documentation site (incremental)" }
-serve-docs = { cmd = "npm run start", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "generate-example-pages", "copy-wheel-to-docs"], description = "Serve docs locally with hot reload" }
+generate-api-docs = { cmd = "pydoc-markdown", description = "Generate API docs" }
+generate-example-pages = { cmd = "python scripts/generate-example-pages.py", description = "Generate example pages" }
+build-docs = { cmd = "npm run build", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "generate-example-pages"], description = "Build documentation site" }
+serve-docs = { cmd = "npm run start", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "generate-example-pages"], description = "Serve docs locally with hot reload" }
 watch-api-docs = { cmd = "watchfiles 'pixi run generate-api-docs' src/trellis", description = "Watch Python source and regenerate API docs" }
 
 [target.unix.activation]
