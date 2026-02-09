@@ -40,8 +40,8 @@ dist/.wheel-built: pyproject.toml $(PY_SOURCES)
 #------------------------------------------------------------------------------
 browser-lib: $(TRELLIS_LIB)/index.js
 
-$(TRELLIS_LIB)/index.js: $(TS_SOURCES)
-	trellis bundle --platform browser --dest $(TRELLIS_LIB) --library
+$(TRELLIS_LIB)/index.js: $(TS_SOURCES) $(PY_SOURCES) docs/trellis-lib/pyproject.toml
+	trellis --app-root docs/trellis-lib bundle --dest $(TRELLIS_LIB)
 
 #------------------------------------------------------------------------------
 # API documentation

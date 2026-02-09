@@ -145,3 +145,46 @@ describe("PyodideWorker error handling", () => {
     expect(errors).toHaveLength(0);
   });
 });
+
+describe("PyodideWorker.run() code passing", () => {
+  beforeEach(() => {
+    mockWorkerInstance = null;
+    vi.clearAllMocks();
+  });
+
+  it("posts run message with code when code is provided", async () => {
+    const worker = new PyodideWorker();
+    const posted: unknown[] = [];
+
+    const createPromise = worker.create({});
+    mockWorkerInstance?.onPostMessage((msg) => posted.push(msg));
+    mockWorkerInstance?.simulateMessage({ type: "ready" });
+    await createPromise;
+
+    // Clear init message
+    posted.length = 0;
+
+    worker.run("print('hello')");
+
+    expect(posted).toHaveLength(1);
+    expect(posted[0]).toEqual({ type: "run", code: "print('hello')" });
+  });
+
+  it("posts run message without code when no code is provided", async () => {
+    const worker = new PyodideWorker();
+    const posted: unknown[] = [];
+
+    const createPromise = worker.create({});
+    mockWorkerInstance?.onPostMessage((msg) => posted.push(msg));
+    mockWorkerInstance?.simulateMessage({ type: "ready" });
+    await createPromise;
+
+    // Clear init message
+    posted.length = 0;
+
+    worker.run();
+
+    expect(posted).toHaveLength(1);
+    expect(posted[0]).toEqual({ type: "run" });
+  });
+});

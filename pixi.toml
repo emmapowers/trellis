@@ -57,10 +57,10 @@ build-bundles = { cmd = "make bundles", description = "Build all platform bundle
 clean = { cmd = "make clean", description = "Clean build artifacts" }
 
 # Examples (all depend on build artifacts)
-demo = { cmd = "python examples/demo.py", depends-on = ["build-wheel"], description = "Run counter demo" }
-showcase = { cmd = "python -m examples.widget_showcase", depends-on = ["build-wheel"], description = "Run widget showcase" }
-sliders = { cmd = "python examples/all_sliders_all_the_time.py", depends-on = ["build-wheel"], description = "Run slider performance demo" }
-breakfast = { cmd = "python -m examples.breakfast_todo", depends-on = ["build-wheel"], description = "Run breakfast todo app" }
+demo = { cmd = "python examples/demo.py", description = "Run counter demo" }
+showcase = { cmd = "python -m examples.widget_showcase", description = "Run widget showcase" }
+sliders = { cmd = "python examples/all_sliders_all_the_time.py", description = "Run slider performance demo" }
+breakfast = { cmd = "python -m examples.breakfast_todo", description = "Run breakfast todo app" }
 
 # Playground
 install-playground-deps = { cmd = "npm install", cwd = "docs/static/playground", description = "Install playground dependencies" }

@@ -47,6 +47,13 @@ export interface TrellisAppProps {
    * - "dark": Force dark mode
    */
   themeMode?: "system" | "light" | "dark";
+  /**
+   * User-provided Python source code to run instead of the pre-bundled module.
+   *
+   * When provided, the worker runs this code via AppLoader.load_app_from_source()
+   * instead of importing from the wheel. Used by the playground and TrellisDemo.
+   */
+  source?: { type: "code"; code: string };
 }
 
 type AppState =
@@ -130,6 +137,7 @@ export function TrellisApp({
   loadingComponent,
   errorComponent,
   themeMode,
+  source,
 }: TrellisAppProps): React.ReactElement {
   const [state, setState] = useState<AppState>({
     status: "loading",
@@ -201,10 +209,10 @@ export function TrellisApp({
           worker.sendMessage(msg);
         });
 
-        // 3. Run pre-bundled application
+        // 3. Run application (user-provided source or pre-bundled module)
         setState({ status: "loading", message: "Starting application..." });
         onStatusChange?.("Starting application...");
-        worker.run();
+        worker.run(source?.code);
 
         // 4. Send HelloMessage to start the handshake
         // Note: The worker's bridge queues messages until Python's handler is set,

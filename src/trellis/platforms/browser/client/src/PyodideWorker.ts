@@ -17,7 +17,7 @@ import type { HelloMessage, EventMessage, UrlChangedMessage } from "@trellis/tre
 /** Messages from main thread to worker */
 type WorkerInMessage =
   | { type: "init" }
-  | { type: "run" }
+  | { type: "run"; code?: string }
   | { type: "message"; payload: HelloMessage | EventMessage | UrlChangedMessage };
 
 /** Messages from worker to main thread */
@@ -164,14 +164,20 @@ export class PyodideWorker {
   }
 
   /**
-   * Run the pre-bundled application in the worker.
+   * Run the application in the worker.
+   *
+   * @param code - Optional source code to run instead of the pre-bundled module.
+   *               When provided, the worker executes this code via
+   *               AppLoader.load_app_from_source() instead of load_app().
    */
-  run(): void {
+  run(code?: string): void {
     if (!this.worker) {
       throw new Error("Worker not created. Call create() first.");
     }
 
-    const runMsg: WorkerInMessage = { type: "run" };
+    const runMsg: WorkerInMessage = code !== undefined
+      ? { type: "run", code }
+      : { type: "run" };
     this.worker.postMessage(runMsg);
   }
 

@@ -114,7 +114,7 @@ def _validate_app_root(path: Path, source: str) -> Path:
     if not (path / "trellis_config.py").exists():
         raise FileNotFoundError(f"trellis_config.py not found in {path}")
 
-    return path
+    return path.resolve()
 
 
 class AppLoader:
@@ -259,6 +259,48 @@ class AppLoader:
             )
 
         app = module.app
+        if not isinstance(app, App):
+            raise TypeError(
+                f"'app' must be an App instance, got {type(app).__name__}. "
+                "Use: app = App(YourRootComponent)"
+            )
+
+        self.app = app
+
+    def load_app_from_source(self, code: str) -> None:
+        """Load the App instance from user-provided source code.
+
+        Executes the source code in a clean namespace and extracts the `app`
+        variable. Used in the browser platform to run code from the playground
+        or inline TrellisDemo components instead of importing a pre-bundled module.
+
+        Requires config to have been loaded first (via load_config() or from_config()).
+
+        Args:
+            code: Python source code that defines an ``app = App(...)`` variable
+
+        Raises:
+            RuntimeError: If config has not been loaded first
+            ValueError: If ``app`` variable is not defined in the source
+            TypeError: If ``app`` is not an App instance
+            SyntaxError: If the source code has syntax errors (passed through)
+        """
+        if self.config is None:
+            raise RuntimeError(
+                "Config not loaded. Call load_config() or use from_config() "
+                "before load_app_from_source()."
+            )
+
+        namespace: dict[str, object] = {}
+        exec(compile(code, "<source>", "exec"), namespace)
+
+        if "app" not in namespace:
+            raise ValueError(
+                "'app' variable not defined in source code. "
+                "Your code must define: app = App(YourRootComponent)"
+            )
+
+        app = namespace["app"]
         if not isinstance(app, App):
             raise TypeError(
                 f"'app' must be an App instance, got {type(app).__name__}. "

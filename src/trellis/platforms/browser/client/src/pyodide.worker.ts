@@ -40,6 +40,7 @@ interface PyodideHandler {
 
 interface WorkerMessage {
   type: "init" | "run" | "message";
+  code?: string;
   payload?: unknown;
 }
 
@@ -120,7 +121,7 @@ async function initializePyodide(): Promise<void> {
   self.postMessage({ type: "ready" });
 }
 
-async function runApp(): Promise<void> {
+async function runApp(sourceCode?: string): Promise<void> {
   if (!pyodide) {
     throw new Error("Pyodide not initialized. Call init first.");
   }
@@ -130,6 +131,15 @@ async function runApp(): Promise<void> {
   // Pass config JSON into Pyodide globals for the bootstrap code
   pyodide.globals.set("CONFIG_JSON", WHEEL_MANIFEST.configJson);
 
+  // Choose load path: user-provided source code or pre-bundled module
+  let loadStep: string;
+  if (sourceCode !== undefined) {
+    pyodide.globals.set("SOURCE_CODE", sourceCode);
+    loadStep = "apploader.load_app_from_source(SOURCE_CODE)";
+  } else {
+    loadStep = "apploader.load_app()";
+  }
+
   // Bootstrap the app through AppLoader, mirroring the CLI `trellis run` flow
   const code = `
 from trellis.app.config import Config
@@ -137,7 +147,7 @@ from trellis.app.apploader import AppLoader, set_apploader
 
 config = Config.from_json(CONFIG_JSON)
 apploader = AppLoader.from_config(config)
-apploader.load_app()
+${loadStep}
 set_apploader(apploader)
 
 app = apploader.app
@@ -167,7 +177,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>): Promise<void> => {
         break;
 
       case "run":
-        await runApp();
+        await runApp(msg.code);
         break;
 
       case "message":

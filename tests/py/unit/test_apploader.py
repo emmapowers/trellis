@@ -766,3 +766,62 @@ class TestAppLoaderFromConfig:
 
         with pytest.raises(RuntimeError, match="no app root directory"):
             get_app_root()
+
+
+class TestAppLoaderLoadAppFromSource:
+    """Tests for AppLoader.load_app_from_source method."""
+
+    def test_load_app_from_source_sets_app(self) -> None:
+        """load_app_from_source sets apploader.app from user-provided source code."""
+        config = Config(name="test", module="unused")
+        apploader = AppLoader.from_config(config)
+
+        source = (
+            "from trellis.app.app import App\n"
+            "from trellis.core.components.composition import component\n"
+            "@component\n"
+            "def MyComp():\n"
+            "    pass\n"
+            "app = App(MyComp)\n"
+        )
+        apploader.load_app_from_source(source)
+
+        assert apploader.app is not None
+        assert isinstance(apploader.app, App)
+
+    def test_load_app_from_source_missing_app_variable(self) -> None:
+        """load_app_from_source raises ValueError when source has no 'app' variable."""
+        config = Config(name="test", module="unused")
+        apploader = AppLoader.from_config(config)
+
+        source = "x = 42\n"
+
+        with pytest.raises(ValueError, match="'app' variable not defined"):
+            apploader.load_app_from_source(source)
+
+    def test_load_app_from_source_wrong_type(self) -> None:
+        """load_app_from_source raises TypeError when 'app' is not an App instance."""
+        config = Config(name="test", module="unused")
+        apploader = AppLoader.from_config(config)
+
+        source = "app = 'not an App'\n"
+
+        with pytest.raises(TypeError, match="'app' must be an App instance"):
+            apploader.load_app_from_source(source)
+
+    def test_load_app_from_source_syntax_error(self) -> None:
+        """load_app_from_source propagates SyntaxError from source code."""
+        config = Config(name="test", module="unused")
+        apploader = AppLoader.from_config(config)
+
+        source = "def broken(\n"
+
+        with pytest.raises(SyntaxError):
+            apploader.load_app_from_source(source)
+
+    def test_load_app_from_source_requires_config(self, tmp_path: Path) -> None:
+        """load_app_from_source raises RuntimeError if config not loaded."""
+        apploader = AppLoader(tmp_path)
+
+        with pytest.raises(RuntimeError, match="Config not loaded"):
+            apploader.load_app_from_source("app = None")

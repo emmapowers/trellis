@@ -130,3 +130,32 @@ class TestResolveAppRoot:
 
         result = resolve_app_root(cli_value=None)
         assert result == app_dir
+
+    def test_relative_cli_path_resolved_to_absolute(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Relative CLI paths are resolved to absolute paths."""
+        app_dir = tmp_path / "myapp"
+        app_dir.mkdir()
+        (app_dir / "trellis_config.py").write_text("config = None")
+        monkeypatch.chdir(tmp_path)
+
+        result = resolve_app_root(cli_value=Path("myapp"))
+
+        assert result.is_absolute()
+        assert result == app_dir.resolve()
+
+    def test_relative_env_path_resolved_to_absolute(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Relative ENV paths are resolved to absolute paths."""
+        app_dir = tmp_path / "myapp"
+        app_dir.mkdir()
+        (app_dir / "trellis_config.py").write_text("config = None")
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("TRELLIS_APP_ROOT", "myapp")
+
+        result = resolve_app_root(cli_value=None)
+
+        assert result.is_absolute()
+        assert result == app_dir.resolve()
