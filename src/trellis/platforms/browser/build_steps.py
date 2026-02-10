@@ -112,6 +112,11 @@ class DependencyResolveStep(BuildStep):
         return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
+        if "app_wheel" not in ctx.generated_files:
+            raise RuntimeError(
+                "DependencyResolveStep.run requires ctx.generated_files['app_wheel'] "
+                "— WheelBuildStep must run first"
+            )
         app_wheel = ctx.generated_files["app_wheel"]
         cache_dir = ctx.workspace / "cache"
         resolved = resolve_dependencies(app_wheel, cache_dir)
@@ -168,6 +173,11 @@ class WheelBundleStep(BuildStep):
         return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
+        if "resolved_deps" not in ctx.build_data:
+            raise RuntimeError(
+                "WheelBundleStep.run requires ctx.build_data['resolved_deps'] "
+                "(ResolvedDependencies) — DependencyResolveStep must run first"
+            )
         resolved: ResolvedDependencies = ctx.build_data["resolved_deps"]
 
         # Create the site-packages zip

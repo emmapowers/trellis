@@ -214,11 +214,11 @@ class ConfigVar(Generic[T]):
         if target_type is Path or (isinstance(target_type, type) and issubclass(target_type, Path)):
             return Path(value).expanduser()  # type: ignore
 
-        # StrEnum - case insensitive lookup
+        # StrEnum - case insensitive lookup by value or name
         if isinstance(target_type, type) and issubclass(target_type, StrEnum):
             lower_value = value.lower()
             for member in target_type:
-                if member.value == lower_value:
+                if member.value.lower() == lower_value or member.name.lower() == lower_value:
                     return member  # type: ignore
             raise ValueError(f"'{value}' is not a valid {target_type.__name__}")
 

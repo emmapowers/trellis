@@ -7,6 +7,8 @@ for CLI option definitions.
 
 from __future__ import annotations
 
+import types
+import typing
 from collections.abc import Callable
 from enum import StrEnum
 from functools import wraps
@@ -19,6 +21,21 @@ from click_option_group import OptionGroup
 from trellis.app.configvars import ConfigVar
 
 F = TypeVar("F", bound=Callable[..., Any])
+
+
+def _unwrap_optional_union(target_type: type) -> type:
+    """Unwrap Optional[T] or T | None to T.
+
+    Handles both typing.Union (Optional[T]) and types.UnionType (T | None).
+    Returns target_type unchanged if not a union.
+    """
+    origin = get_origin(target_type)
+    if origin in (types.UnionType, typing.Union):
+        args = [a for a in get_args(target_type) if a is not type(None)]
+        if args:
+            inner: type = args[0]
+            return inner
+    return target_type
 
 
 def get_click_type(var: ConfigVar[Any]) -> click.ParamType | type | None:
@@ -35,12 +52,7 @@ def get_click_type(var: ConfigVar[Any]) -> click.ParamType | type | None:
     if target_type is None:
         return str
 
-    # Handle Union types (e.g., int | None)
-    origin = get_origin(target_type)
-    if origin is type(int | None):  # UnionType
-        args = [a for a in get_args(target_type) if a is not type(None)]
-        if args:
-            target_type = args[0]
+    target_type = _unwrap_optional_union(target_type)
 
     # Bool types are handled specially (flags or --option/--no-option)
     if target_type is bool:
@@ -79,13 +91,8 @@ def _build_option_kwargs(var: ConfigVar[Any]) -> dict[str, Any]:
 
     # Get the target type to determine how to handle this option
     target_type = var._get_target_type()
-
-    # Handle Union types
-    origin = get_origin(target_type) if target_type else None
-    if origin is type(int | None):  # UnionType
-        args = [a for a in get_args(target_type) if a is not type(None)]
-        if args:
-            target_type = args[0]
+    if target_type is not None:
+        target_type = _unwrap_optional_union(target_type)
 
     # Boolean handling
     if target_type is bool:
@@ -123,11 +130,8 @@ def _build_option_names(var: ConfigVar[Any]) -> list[str]:
 
     # Get target type for boolean handling
     target_type = var._get_target_type()
-    origin = get_origin(target_type) if target_type else None
-    if origin is type(int | None):
-        args = [a for a in get_args(target_type) if a is not type(None)]
-        if args:
-            target_type = args[0]
+    if target_type is not None:
+        target_type = _unwrap_optional_union(target_type)
 
     # Boolean non-flag options use --option/--no-option format
     if target_type is bool and not var.is_flag:

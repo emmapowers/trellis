@@ -116,6 +116,8 @@ def _default_routing_mode(platform: PlatformType) -> RoutingMode:
             return RoutingMode.HASH
         case PlatformType.DESKTOP:
             return RoutingMode.HIDDEN
+        case _:
+            raise ValueError(f"No default RoutingMode for PlatformType {platform!r}")
 
 
 # Title (global - used for page title on server/browser, window title on desktop)

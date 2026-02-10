@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -360,6 +361,14 @@ class TestValidateWindowSize:
 
 class TestConfigVarRegistry:
     """Test ConfigVar auto-registration."""
+
+    @pytest.fixture(autouse=True)
+    def _restore_registry(self) -> Generator[None]:
+        """Snapshot and restore _configvar_registry so tests don't leak state."""
+        registry_backup = list(_configvar_registry)
+        yield
+        _configvar_registry.clear()
+        _configvar_registry.extend(registry_backup)
 
     def test_configvar_auto_registers(self) -> None:
         """ConfigVar constructor adds to registry."""

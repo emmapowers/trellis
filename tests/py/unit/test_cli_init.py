@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
@@ -309,7 +309,7 @@ class TestInitInteractive:
     @patch("trellis.cli.init._ask_select")
     @patch("trellis.cli.init._ask_text")
     def test_prompts_for_all_when_no_flags(
-        self, mock_text: patch, mock_select: patch, tmp_path: Path
+        self, mock_text: MagicMock, mock_select: MagicMock, tmp_path: Path
     ) -> None:
         mock_text.side_effect = [
             "my-app",  # name
@@ -327,7 +327,7 @@ class TestInitInteractive:
     @patch("trellis.cli.init._ask_select")
     @patch("trellis.cli.init._ask_text")
     def test_skips_prompts_when_flags_given(
-        self, mock_text: patch, mock_select: patch, tmp_path: Path
+        self, mock_text: MagicMock, mock_select: MagicMock, tmp_path: Path
     ) -> None:
         dest = tmp_path / "my_app"
         runner = CliRunner()
@@ -352,7 +352,7 @@ class TestInitInteractive:
     @patch("trellis.cli.init._ask_select")
     @patch("trellis.cli.init._ask_text")
     def test_no_prompts_when_name_given(
-        self, mock_text: patch, mock_select: patch, tmp_path: Path
+        self, mock_text: MagicMock, mock_select: MagicMock, tmp_path: Path
     ) -> None:
         # Providing --name triggers non-interactive mode; defaults are applied silently
         runner = CliRunner()

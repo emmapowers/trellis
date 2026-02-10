@@ -9,6 +9,7 @@ from unittest.mock import Mock
 
 import pytest
 
+import trellis.app.apploader as apploader_module
 from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent
 from trellis.core.rendering.element import Element
@@ -38,8 +39,6 @@ def pytest_configure(config: pytest.Config) -> None:
 @pytest.fixture
 def reset_apploader() -> tp.Generator[None]:
     """Reset global _apploader before and after test."""
-    import trellis.app.apploader as apploader_module  # noqa: PLC0415
-
     apploader_module._apploader = None
     yield
     apploader_module._apploader = None

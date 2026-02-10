@@ -55,7 +55,7 @@ def save_manifest(workspace: Path, manifest: BuildManifest) -> None:
     """Save a BuildManifest to the workspace as JSON.
 
     Paths are stored relative to the workspace for portability.
-    Uses version 2 format with per-step data.
+    Uses version 3 format with per-step data.
 
     Args:
         workspace: Workspace directory
@@ -88,7 +88,7 @@ def load_manifest(workspace: Path) -> BuildManifest | None:
     """Load a BuildManifest from the workspace.
 
     Paths are converted from relative to absolute using the workspace.
-    Returns None if file is missing, invalid JSON, or old format (version != 2).
+    Returns None if file is missing, invalid JSON, or old format (version != 3).
 
     Args:
         workspace: Workspace directory
