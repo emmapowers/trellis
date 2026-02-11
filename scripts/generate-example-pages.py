@@ -12,8 +12,11 @@ from __future__ import annotations
 
 import json
 import subprocess
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+
+from trellis.app.config import Config
 
 # Paths
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -31,128 +34,95 @@ class Example:
     name: str  # URL-friendly name (e.g., "widget-showcase")
     title: str  # Display title (e.g., "Widget Showcase")
     description: str  # Short description
-    entry_path: Path  # Path to Python entry point
-    module_name: str | None = None  # Module name for packages (None for single files)
+    path: Path  # Path to example directory
 
 
 def slugify(name: str) -> str:
-    """Convert a Python module/file name to a URL-friendly slug."""
+    """Convert a directory name to a URL-friendly slug."""
     return name.replace("_", "-").lower()
 
 
-def titleize(name: str) -> str:
-    """Convert a slug or module name to a display title."""
-    return name.replace("_", " ").replace("-", " ").title()
-
-
-def extract_docstring(code: str) -> str:
-    """Extract the module docstring from Python code."""
-    import ast
-
-    try:
-        tree = ast.parse(code)
-        docstring = ast.get_docstring(tree)
-        return docstring.split("\n")[0] if docstring else ""
-    except SyntaxError:
-        return ""
+def load_config(config_path: Path) -> Config:
+    """Load a Config from a trellis_config.py file."""
+    namespace: dict[str, object] = {}
+    exec(compile(config_path.read_text(), config_path, "exec"), namespace)
+    config = namespace["config"]
+    assert isinstance(config, Config)
+    return config
 
 
 def discover_examples() -> list[Example]:
     """Discover all examples in the examples/ folder.
 
-    Returns:
-        List of Example objects
+    Each example is a directory containing a trellis_config.py file.
+    The display title comes from Config.name, and the description
+    from pyproject.toml's project.description field.
     """
     examples: list[Example] = []
 
     for item in sorted(EXAMPLES_DIR.iterdir()):
-        # Skip hidden files and __pycache__
-        if item.name.startswith(("_", ".")):
+        if item.name.startswith(("_", ".")) or not item.is_dir():
             continue
 
-        if item.is_file() and item.suffix == ".py":
-            # Single-file example
-            code = item.read_text()
-            name = slugify(item.stem)
-            title = titleize(item.stem)
-            description = extract_docstring(code)
+        config_file = item / "trellis_config.py"
+        if not config_file.exists():
+            continue
 
-            examples.append(
-                Example(
-                    name=name,
-                    title=title,
-                    description=description,
-                    entry_path=item,
-                )
+        config = load_config(config_file)
+
+        description = ""
+        pyproject_file = item / "pyproject.toml"
+        if pyproject_file.exists():
+            with open(pyproject_file, "rb") as f:
+                pyproject = tomllib.load(f)
+            description = pyproject.get("project", {}).get("description", "")
+
+        examples.append(
+            Example(
+                name=slugify(item.name),
+                title=config.name,
+                description=description,
+                path=item,
             )
-
-        elif item.is_dir() and (item / "__main__.py").exists():
-            # Package example
-            module_name = item.name  # e.g., "breakfast_todo"
-            name = slugify(item.name)
-            title = titleize(item.name)
-            entry_path = item / "__main__.py"
-
-            # Try to extract description from __init__.py or __main__.py
-            init_file = item / "__init__.py"
-            init_code = init_file.read_text() if init_file.exists() else ""
-            main_code = entry_path.read_text()
-            description = extract_docstring(init_code) or extract_docstring(main_code)
-
-            examples.append(
-                Example(
-                    name=name,
-                    title=title,
-                    description=description,
-                    entry_path=entry_path,
-                    module_name=module_name,
-                )
-            )
+        )
 
     return examples
 
 
 def generate_example_page(example: Example) -> None:
-    """Generate an example page by calling the trellis CLI.
-
-    Args:
-        example: Example to generate page for
-    """
+    """Generate an example page by calling the trellis CLI."""
     example_dir = DOCS_EXAMPLES_DIR / example.name
 
     subprocess.run(
         [
             "trellis",
+            "--app-root",
+            str(example.path),
             "bundle",
-            "build",
             "--platform",
             "browser",
-            "--app",
-            str(example.entry_path),
             "--dest",
             str(example_dir),
-            "--force",
+            "--force-build",
         ],
         check=True,
     )
 
 
-def generate_sidebar_items(examples: list[Example]) -> list[dict]:
+def generate_sidebar_items(examples: list[Example]) -> list[dict[str, object]]:
     """Generate sidebar items for examples as external links.
 
-    Args:
-        examples: List of examples
-
-    Returns:
-        List of sidebar item dicts for Docusaurus
+    Uses type: 'html' with target="_blank" to bypass Docusaurus SPA router.
+    This opens examples in a new tab.
     """
-    # Use type: 'html' with target="_blank" to bypass Docusaurus SPA router
-    # This opens examples in a new tab, similar to navbar external links
-    # See: https://docusaurus.canny.io/feature-requests/p/support-target-for-sidebar-links
     return [
         {
             "type": "html",
-            "value": f'<a class="menu__link" target="_blank" href="/trellis/examples/{example.name}/">{example.title}</a>',
+            "value": (
+                f'<a class="menu__link" target="_blank"'
+                f' href="/trellis/examples/{example.name}/">'
+                f"{example.title}</a>"
+            ),
             "defaultStyle": True,
         }
         for example in examples

@@ -41,7 +41,7 @@ export abstract class BaseTrellisClient implements TrellisClient {
    * @param routingMode - The routing mode for this client
    * @param callbacks - Optional callbacks for connection events
    * @param store - Optional store instance (defaults to singleton)
-   * @param initialPath - Initial path (for embedded mode)
+   * @param initialPath - Initial path (for hidden mode)
    */
   constructor(
     routingMode: RoutingMode,

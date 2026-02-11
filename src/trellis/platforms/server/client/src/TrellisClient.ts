@@ -39,7 +39,7 @@ export class ServerTrellisClient extends BaseTrellisClient {
    * @param store - Optional store instance (defaults to singleton)
    */
   constructor(callbacks: TrellisClientCallbacks = {}, store?: TrellisStore) {
-    super(RoutingMode.Standard, callbacks, store);
+    super(RoutingMode.Url, callbacks, store);
   }
 
   protected sendUrlChange(msg: UrlChangedMessage): void {

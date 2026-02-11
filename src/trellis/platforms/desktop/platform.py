@@ -15,23 +15,22 @@ from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
 from pytauri_wheel.lib import builder_factory, context_factory
 from rich.console import Console
 
+from trellis.app.apploader import get_dist_dir
 from trellis.bundler import (
-    BuildStep,
+    BuildConfig,
     BundleBuildStep,
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
     StaticFileCopyStep,
-    build,
-    registry,
 )
-from trellis.bundler.workspace import get_project_workspace
 from trellis.platforms.common.base import Platform
 from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
 from trellis.utils.hot_reload import get_or_create_hot_reload
 
 if TYPE_CHECKING:
+    from trellis.app.config import Config
     from trellis.core.components.base import Component
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
@@ -97,49 +96,27 @@ class DesktopPlatform(Platform):
     def name(self) -> str:
         return "desktop"
 
-    def _get_build_steps(self, title: str = "Trellis App") -> list[BuildStep]:
-        """Get build steps for this platform.
+    def get_build_config(self, config: Config) -> BuildConfig:
+        """Get build configuration for this platform.
 
         Args:
-            title: Window title to render into index.html
-        """
-        template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
-        return [
-            PackageInstallStep(),
-            RegistryGenerationStep(),
-            BundleBuildStep(output_name="bundle"),
-            StaticFileCopyStep(),
-            IndexHtmlRenderStep(template_path, {"title": title}),
-        ]
-
-    def bundle(
-        self,
-        force: bool = False,
-        dest: Path | None = None,
-        library: bool = False,
-        app_static_dir: Path | None = None,
-    ) -> Path:
-        """Build the desktop client bundle if needed.
-
-        Uses the registry-based build system. The bundle is stored in a
-        cache workspace (or dest if specified).
+            config: Application configuration
 
         Returns:
-            The workspace Path used for the build
+            BuildConfig with entry point and build steps
         """
         entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
-        workspace = get_project_workspace(entry_point)
-
-        build(
-            registry=registry,
+        template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
+        return BuildConfig(
             entry_point=entry_point,
-            workspace=workspace,
-            steps=self._get_build_steps(),
-            force=force,
-            output_dir=dest,
-            app_static_dir=app_static_dir,
+            steps=[
+                PackageInstallStep(),
+                RegistryGenerationStep(),
+                BundleBuildStep(output_name="bundle"),
+                StaticFileCopyStep(),
+                IndexHtmlRenderStep(template_path, {"title": config.title}),
+            ],
         )
-        return workspace
 
     def _create_commands(self) -> Commands:
         """Create PyTauri commands with access to platform state via closure."""
@@ -213,11 +190,9 @@ class DesktopPlatform(Platform):
 
         _print_startup_banner(window_title)
 
-        # Load Tauri configuration with workspace dist path
+        # Load Tauri configuration with dist path
         config_dir = Path(__file__).parent / "config"
-        entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
-        workspace = get_project_workspace(entry_point)
-        dist_path = str(workspace / "dist")
+        dist_path = str(get_dist_dir())
 
         # Override frontendDist to point to the workspace cache
         config_override = {"build": {"frontendDist": dist_path}}

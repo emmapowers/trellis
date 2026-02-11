@@ -1,18 +1,18 @@
 """Browser platform - runs Python in browser via Pyodide.
 
 This platform has two execution paths:
-1. CLI mode (python app.py --browser): Build and serve static files
+1. CLI mode (trellis run --browser): Build and serve static files
 2. Pyodide mode (running inside browser): Use JS bridge for messaging
 
 Usage:
     # From command line - builds and serves for testing
-    python examples/demo.py --browser
+    trellis run --browser
 
     # Inside Pyodide - runs via JS bridge (handled automatically)
     # TrellisApp registers the bridge, then executes user code
 """
 
-from trellis.bundler import registry
+from trellis.bundler.registry import registry
 from trellis.platforms.browser.handler import BrowserMessageHandler
 from trellis.platforms.browser.platform import BrowserPlatform
 

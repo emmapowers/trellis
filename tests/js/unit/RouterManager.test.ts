@@ -52,11 +52,11 @@ describe("RouterManager", () => {
     vi.clearAllMocks();
   });
 
-  describe("standard mode", () => {
+  describe("url mode", () => {
     let manager: RouterManager;
 
     beforeEach(() => {
-      manager = new RouterManager({ mode: RoutingMode.Standard, sendMessage });
+      manager = new RouterManager({ mode: RoutingMode.Url, sendMessage });
     });
 
     afterEach(() => {
@@ -140,7 +140,7 @@ describe("RouterManager", () => {
         });
 
         const newManager = new RouterManager({
-          mode: RoutingMode.Standard,
+          mode: RoutingMode.Url,
           sendMessage,
         });
         expect(newManager.getCurrentPath()).toBe("/initial");
@@ -149,11 +149,11 @@ describe("RouterManager", () => {
     });
   });
 
-  describe("embedded mode", () => {
+  describe("hidden mode", () => {
     let manager: RouterManager;
 
     beforeEach(() => {
-      manager = new RouterManager({ mode: RoutingMode.Embedded, sendMessage });
+      manager = new RouterManager({ mode: RoutingMode.Hidden, sendMessage });
     });
 
     afterEach(() => {
@@ -275,7 +275,7 @@ describe("RouterManager", () => {
     describe("initial path", () => {
       it("uses provided initial path", () => {
         const newManager = new RouterManager({
-          mode: RoutingMode.Embedded,
+          mode: RoutingMode.Hidden,
           sendMessage,
           initialPath: "/start",
         });
@@ -305,9 +305,9 @@ describe("RouterManager", () => {
   });
 
   describe("destroy", () => {
-    it("removes popstate listener in standard mode", () => {
+    it("removes popstate listener in url mode", () => {
       const manager = new RouterManager({
-        mode: RoutingMode.Standard,
+        mode: RoutingMode.Url,
         sendMessage,
       });
       manager.destroy();
@@ -352,7 +352,7 @@ describe("RouterManager", () => {
         });
 
         manager = new RouterManager({
-          mode: RoutingMode.HashUrl,
+          mode: RoutingMode.Hash,
           sendMessage,
         });
         expect(manager.getCurrentPath()).toBe("/users/123");
@@ -366,7 +366,7 @@ describe("RouterManager", () => {
         });
 
         manager = new RouterManager({
-          mode: RoutingMode.HashUrl,
+          mode: RoutingMode.Hash,
           sendMessage,
         });
         expect(manager.getCurrentPath()).toBe("/");
@@ -380,7 +380,7 @@ describe("RouterManager", () => {
         });
 
         manager = new RouterManager({
-          mode: RoutingMode.HashUrl,
+          mode: RoutingMode.Hash,
           sendMessage,
         });
         expect(manager.getCurrentPath()).toBe("/");
@@ -390,7 +390,7 @@ describe("RouterManager", () => {
     describe("pushState", () => {
       beforeEach(() => {
         manager = new RouterManager({
-          mode: RoutingMode.HashUrl,
+          mode: RoutingMode.Hash,
           sendMessage,
         });
       });
@@ -417,7 +417,7 @@ describe("RouterManager", () => {
     describe("hashchange handling", () => {
       beforeEach(() => {
         manager = new RouterManager({
-          mode: RoutingMode.HashUrl,
+          mode: RoutingMode.Hash,
           sendMessage,
         });
       });
@@ -467,7 +467,7 @@ describe("RouterManager", () => {
     describe("back and forward", () => {
       beforeEach(() => {
         manager = new RouterManager({
-          mode: RoutingMode.HashUrl,
+          mode: RoutingMode.Hash,
           sendMessage,
         });
       });
@@ -488,7 +488,7 @@ describe("RouterManager", () => {
     describe("destroy", () => {
       it("removes hashchange listener", () => {
         manager = new RouterManager({
-          mode: RoutingMode.HashUrl,
+          mode: RoutingMode.Hash,
           sendMessage,
         });
         manager.destroy();

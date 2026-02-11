@@ -44,17 +44,14 @@ interface MonacoEditor {
  * Wrap user code with Trellis boilerplate.
  *
  * The playground expects an `App` component to be defined. This wrapper
- * adds the @async_main entry point that runs the app.
+ * adds the app definition.
  */
 function wrapWithBoilerplate(code: string): string {
   return `${code}
 
-from trellis import Trellis, async_main
+from trellis import App as TrellisApp
 
-@async_main
-async def _trellis_main():
-    app = Trellis(top=App)
-    await app.serve()
+app = TrellisApp(App)
 `;
 }
 

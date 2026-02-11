@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 import uvicorn
 
 if TYPE_CHECKING:
+    from trellis.app.config import Config
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
@@ -18,16 +19,13 @@ from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 
 from trellis.bundler import (
-    BuildStep,
+    BuildConfig,
     BundleBuildStep,
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
     StaticFileCopyStep,
-    build,
-    registry,
 )
-from trellis.bundler.workspace import get_project_workspace
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform
 from trellis.platforms.server.handler import router as ws_router
@@ -62,45 +60,29 @@ class ServerPlatform(Platform):
     def name(self) -> str:
         return "server"
 
-    def _get_build_steps(self) -> list[BuildStep]:
-        """Get build steps for this platform."""
-        template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
-        return [
-            PackageInstallStep(),
-            RegistryGenerationStep(),
-            BundleBuildStep(output_name="bundle"),
-            StaticFileCopyStep(),
-            IndexHtmlRenderStep(template_path, {"static_path": "/static"}),
-        ]
+    def get_build_config(self, config: Config) -> BuildConfig:
+        """Get build configuration for this platform.
 
-    def bundle(
-        self,
-        force: bool = False,
-        dest: Path | None = None,
-        library: bool = False,
-        app_static_dir: Path | None = None,
-    ) -> Path:
-        """Build the server client bundle if needed.
-
-        Uses the registry-based build system. The bundle is stored in a
-        cache workspace (or dest if specified) and served via /static/.
+        Args:
+            config: Application configuration
 
         Returns:
-            The workspace Path used for the build
+            BuildConfig with entry point and build steps
         """
         entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
-        workspace = get_project_workspace(entry_point)
-
-        build(
-            registry=registry,
+        template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
+        return BuildConfig(
             entry_point=entry_point,
-            workspace=workspace,
-            steps=self._get_build_steps(),
-            force=force,
-            output_dir=dest,
-            app_static_dir=app_static_dir,
+            steps=[
+                PackageInstallStep(),
+                RegistryGenerationStep(),
+                BundleBuildStep(output_name="bundle"),
+                StaticFileCopyStep(),
+                IndexHtmlRenderStep(
+                    template_path, {"title": config.title, "static_path": "/static"}
+                ),
+            ],
         )
-        return workspace
 
     async def run(
         self,

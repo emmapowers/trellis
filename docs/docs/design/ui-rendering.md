@@ -908,8 +908,8 @@ Renders are triggered by:
 
 **1. Initial Render:**
 ```python
-app = Trellis(top=App)
-await app.serve()  # Triggers initial render on connection
+app = App(MyApp)
+# Run with `trellis run` - triggers initial render on connection
 ```
 
 **2. State Changes:**

@@ -1,0 +1,8 @@
+from trellis.app.config import Config
+from trellis.platforms.common.base import PlatformType
+
+config = Config(
+    name="{{ name }}",
+    module="{{ module }}",
+    platform=PlatformType.{{ platform_upper }},
+)

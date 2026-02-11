@@ -5,9 +5,9 @@ controlled via command-line arguments. Each category maps to a Python
 logger that will be set to DEBUG level when enabled.
 
 Usage:
-    trellis run app.py -d              # List available categories
-    trellis run app.py -d render,state # Enable specific categories
-    trellis run app.py -d all          # Enable all debug logging
+    trellis run -d              # List available categories
+    trellis run -d render,state # Enable specific categories
+    trellis run -d all          # Enable all debug logging
 
 Categories:
     render    - Render lifecycle, element execution, mount/unmount
@@ -66,8 +66,8 @@ def list_categories() -> str:
         "",
         *[f"  {cat.name:<{max_name_len}}  {cat.description}" for cat in CATEGORY_DESCRIPTIONS],
         "",
-        "Usage: trellis run app.py -d render,state",
-        "       trellis run app.py -d all",
+        "Usage: trellis run -d render,state",
+        "       trellis run -d all",
     ]
     return "\n".join(lines)
 

@@ -16,7 +16,7 @@ Key Concepts:
 
 from dataclasses import dataclass
 
-from trellis import Stateful, Trellis, async_main, component, mutable
+from trellis import App, Stateful, component, mutable
 from trellis import html as h
 from trellis import widgets as w
 
@@ -131,7 +131,7 @@ def Form() -> None:
 # App Entry Point
 # ---------------------------------------------------------------------------
 @component
-def App() -> None:
+def Root() -> None:
     """Root component providing FormState context to descendants."""
     with h.Div(style={"maxWidth": "400px", "margin": "40px auto"}):
         w.Label(text="User Registration", font_size=24, bold=True)
@@ -141,7 +141,4 @@ def App() -> None:
             Form()
 
 
-@async_main
-async def main() -> None:
-    app = Trellis(top=App)
-    await app.serve()
+app = App(Root)

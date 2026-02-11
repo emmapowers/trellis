@@ -7,10 +7,11 @@ For the CLI server that serves browser apps, see serve_platform.py.
 from __future__ import annotations
 
 from collections.abc import Callable
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from trellis.app.config import Config
+    from trellis.bundler.build_config import BuildConfig
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
 
@@ -31,19 +32,11 @@ class BrowserPlatform(Platform):
     def name(self) -> str:
         return "browser"
 
-    def bundle(
-        self,
-        force: bool = False,
-        dest: Path | None = None,
-        library: bool = False,
-        app_static_dir: Path | None = None,
-    ) -> Path:
-        """No-op in Pyodide - bundling is done before loading.
-
-        The bundle is already built and served by the time this platform runs.
-        Returns a placeholder path since no actual workspace is used.
-        """
-        return Path(".")
+    def get_build_config(self, config: Config) -> BuildConfig:
+        """Not applicable — BrowserPlatform runs inside Pyodide after bundling."""
+        raise NotImplementedError(
+            "BrowserPlatform runs inside Pyodide; use BrowserServePlatform for builds"
+        )
 
     async def run(
         self,

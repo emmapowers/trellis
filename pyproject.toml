@@ -30,11 +30,14 @@ dependencies = [
     "msgspec>=0.19",
     "httpx>=0.28",
     "jinja2>=3.1",
+    "packaging>=24.0",
     # Server-only deps (excluded in Pyodide via PEP 508 markers)
     "fastapi>=0.128; sys_platform != 'emscripten'",
     "uvicorn[standard]>=0.40; sys_platform != 'emscripten'",
     "click>=8.3; sys_platform != 'emscripten'",
+    "click-option-group>=0.5.6; sys_platform != 'emscripten'",
     "jurigged>=0.6.0; sys_platform != 'emscripten'",
+    "questionary>=2.1; sys_platform != 'emscripten'",
     "watchfiles>=1.1; sys_platform != 'emscripten'",
 ]
 
@@ -69,7 +72,7 @@ target-version = ["py312", "py313"]
 [tool.ruff]
 line-length = 100
 target-version = "py313"
-exclude = ["docs/"]
+exclude = ["docs/", "examples/*/pyproject.toml"]
 
 [tool.ruff.lint]
 select = [
@@ -119,6 +122,7 @@ ban-relative-imports = "all"
     "RUF005",   # list concatenation is clearer than spread in tests
     "RUF001",   # Unicode characters intentional (e.g. × for close button)
     "RUF012",   # Stateful classes intentionally use mutable defaults
+    "TC002",    # pytest type annotations are common in tests
     "TID252",   # relative imports in test helpers
 ]
 "examples/**" = [
@@ -127,6 +131,11 @@ ban-relative-imports = "all"
 
 [tool.mypy]
 python_version = "3.13"
+# Each example directory has a trellis_config.py file. Without explicit_package_bases,
+# mypy sees these as duplicate "trellis_config" modules. With it enabled, each directory
+# passed on the command line becomes a separate namespace root.
+explicit_package_bases = true
+mypy_path = ["src"]
 strict = true
 warn_return_any = true
 warn_unused_ignores = true

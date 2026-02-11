@@ -1,10 +1,7 @@
 """Client bundler using esbuild + Bun package management."""
 
 from trellis.bundler.build import build
-from trellis.bundler.python_source import (
-    collect_package_files,
-    find_package_root,
-)
+from trellis.bundler.build_config import BuildConfig
 from trellis.bundler.registry import (
     CollectedModules,
     ExportKind,
@@ -27,6 +24,7 @@ from trellis.bundler.steps import (
 )
 
 __all__ = [
+    "BuildConfig",
     "BuildContext",
     "BuildStep",
     "BundleBuildStep",
@@ -43,7 +41,5 @@ __all__ = [
     "TsconfigStep",
     "TypeCheckStep",
     "build",
-    "collect_package_files",
-    "find_package_root",
     "registry",
 ]

@@ -11,7 +11,7 @@
  *   import { mount } from "@anthropic/trellis";
  *
  *   const instance = mount(container, {
- *     source: { type: "code", code: pythonCode },
+ *     routingMode: "hash",
  *   });
  *
  *   // Update props
@@ -25,14 +25,14 @@ import { initRegistry } from "@trellis/_registry";
 import React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { TrellisApp } from "@trellis/trellis-browser/client/src/TrellisApp";
-import type { TrellisAppProps, PythonSource } from "@trellis/trellis-browser/client/src/TrellisApp";
+import type { TrellisAppProps } from "@trellis/trellis-browser/client/src/TrellisApp";
 import { createShadowRoot, setupEventForwarding } from "@trellis/trellis-browser/client/src/shadow-dom";
 
 // Import CSS so esbuild bundles it into index.css
 import "@trellis/trellis-core/client/src/theme.css";
 
 // Re-export types for consumers
-export type { TrellisAppProps, PythonSource };
+export type { TrellisAppProps };
 
 /**
  * Options for the mount() function.
@@ -109,12 +109,10 @@ export function mount(
   // Create React root in shadow DOM
   const root: Root = createRoot(mountPoint);
   let currentProps = props;
-  let mountKey = 0;
 
   const render = () => {
-    // Use key to force remount when source changes (matches previous behavior)
     root.render(
-      React.createElement(TrellisApp, { ...currentProps, key: mountKey })
+      React.createElement(TrellisApp, { ...currentProps })
     );
   };
 
@@ -122,10 +120,6 @@ export function mount(
 
   return {
     update(newProps: Partial<TrellisAppProps>) {
-      // If source changes, increment key to force full remount
-      if (newProps.source && newProps.source !== currentProps.source) {
-        mountKey++;
-      }
       // Update theme on mount point
       if (newProps.themeMode) {
         mountPoint.dataset.theme = resolveTheme(newProps.themeMode);

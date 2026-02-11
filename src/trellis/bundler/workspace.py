@@ -6,13 +6,11 @@ that connects all registered modules together.
 
 from __future__ import annotations
 
-import hashlib
 from pathlib import Path
 
 from jinja2 import Template
 
 from trellis.bundler.registry import CollectedModules, ExportKind
-from trellis.bundler.utils import find_project_root
 
 # JavaScript/TypeScript extensions to strip from import paths
 JS_EXTENSIONS = (".tsx", ".ts", ".jsx", ".js")
@@ -60,39 +58,6 @@ export function initRegistry(): void {
 def node_modules_path(workspace: Path) -> Path:
     """Return the node_modules path for a workspace."""
     return workspace / "node_modules"
-
-
-def get_project_hash(entry_point: Path) -> str:
-    """Get a hash identifying a project based on its entry point path.
-
-    Args:
-        entry_point: Path to the project's entry point file
-
-    Returns:
-        A short hash string identifying this project
-    """
-    path_str = str(entry_point.resolve())
-    return hashlib.sha256(path_str.encode()).hexdigest()[:16]
-
-
-def get_project_workspace(entry_point: Path) -> Path:
-    """Get the workspace directory for a project.
-
-    The workspace is in a .trellis directory at the project root,
-    identified by a hash of the entry point path. This ensures each
-    entry point gets its own isolated build workspace.
-
-    Args:
-        entry_point: Path to the project's entry point file
-
-    Returns:
-        Path to the project's workspace directory (created if needed)
-    """
-    project_root = find_project_root(entry_point)
-    project_hash = get_project_hash(entry_point)
-    workspace = project_root / ".trellis" / project_hash
-    workspace.mkdir(parents=True, exist_ok=True)
-    return workspace
 
 
 def write_registry_ts(workspace: Path, collected: CollectedModules) -> Path:

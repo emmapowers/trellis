@@ -31,9 +31,9 @@ export interface BrowserClientCallbacks extends ClientMessageHandlerCallbacks {}
 export interface BrowserClientOptions {
   /**
    * Routing mode for URL handling.
-   * - HashUrl (default): Uses hash-based URLs (#/path) for browser platform
-   * - Standard: Uses pathname-based URLs (requires server-side routing support)
-   * - Embedded: Internal history only, no URL changes
+   * - Hash (default): Uses hash-based URLs (#/path) for browser platform
+   * - Url: Uses pathname-based URLs (requires server-side routing support)
+   * - Hidden: Internal history only, no URL changes
    */
   routingMode?: RoutingMode;
 }
@@ -63,7 +63,7 @@ export class BrowserClient extends BaseTrellisClient {
     store?: TrellisStore,
     options: BrowserClientOptions = {}
   ) {
-    super(options.routingMode ?? RoutingMode.HashUrl, callbacks, store);
+    super(options.routingMode ?? RoutingMode.Hash, callbacks, store);
   }
 
   protected sendUrlChange(msg: UrlChangedMessage): void {

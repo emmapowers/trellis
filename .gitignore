@@ -19,9 +19,6 @@ htmlcov/
 # Linting
 .ruff_cache/
 
-# Make sentinel files
-.build/
-
 # Pixi
 .pixi/
 
@@ -43,7 +40,6 @@ node_modules/
 # Docusaurus
 docs/build/
 docs/.docusaurus/
-docs/static/*.whl
 
 # Generated API docs (from pydoc-markdown)
 docs/docs/api/
@@ -59,6 +55,8 @@ docs/src/generated-examples-sidebar.json
 src/trellis/platforms/*/client/entry.tsx
 src/trellis/platforms/*/client/tsconfig.json
 
-# Library bundle (built by `trellis bundle build --library`)
+# Library bundle (built by `trellis bundle --library`)
 docs/static/trellis/
 .trellis
+.workspace
+.dist

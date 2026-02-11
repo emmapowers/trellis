@@ -16,6 +16,7 @@ from typing import Any
 
 import pytest
 
+from trellis.app.config import Config
 from trellis.bundler.build import build
 from trellis.bundler.manifest import load_manifest
 from trellis.bundler.registry import ModuleRegistry
@@ -30,9 +31,10 @@ from trellis.bundler.steps import (
     TsconfigStep,
 )
 from trellis.platforms.browser.build_steps import (
+    DependencyResolveStep,
     PyodideWorkerBuildStep,
-    PythonSourceBundleStep,
-    WheelCopyStep,
+    WheelBuildStep,
+    WheelBundleStep,
 )
 
 # =============================================================================
@@ -46,10 +48,9 @@ class ActionType(StrEnum):
     NONE = auto()
     TOUCH_ENTRY_POINT = auto()
     TOUCH_TEMPLATE = auto()
-    TOUCH_STATIC_FILE = auto()
-    TOUCH_PYTHON_SOURCE = auto()
-    TOUCH_WHEEL = auto()
+    TOUCH_ASSET_FILE = auto()
     REGISTER_MODULE = auto()
+    TOUCH_APP_SOURCE = auto()
 
 
 @dataclass(frozen=True)
@@ -70,8 +71,8 @@ class ServerBuildSetup:
     workspace: Path
     steps: list[BuildStep]
     template_path: Path
-    static_file: Path
-    app_static_dir: Path
+    asset_file: Path
+    assets_dir: Path
 
 
 @dataclass
@@ -83,11 +84,10 @@ class BrowserBuildSetup:
     workspace: Path
     steps: list[BuildStep]
     template_path: Path
-    static_file: Path
-    app_static_dir: Path
-    python_entry_point: Path
-    wheel_path: Path
-    wheel_dir: Path
+    asset_file: Path
+    assets_dir: Path
+    app_root: Path | None = None
+    app_source_file: Path | None = None
 
 
 # =============================================================================
@@ -127,7 +127,7 @@ STEP_DETECTORS: dict[str, StepDetector] = {
     "bundle-build": StepDetector(
         get_output=lambda ws, dist: dist / "bundle.js" if (dist / "bundle.js").exists() else None
     ),
-    "static-file-copy": StepDetector(
+    "asset-file-copy": StepDetector(
         get_output=lambda ws, dist: dist / "test.txt" if (dist / "test.txt").exists() else None
     ),
     "index-html-render": StepDetector(
@@ -136,9 +136,25 @@ STEP_DETECTORS: dict[str, StepDetector] = {
     "declaration": StepDetector(
         get_output=lambda ws, dist: dist / "main.d.ts" if (dist / "main.d.ts").exists() else None
     ),
-    # Steps that use metadata comparison instead of file output
-    "python-source-bundle": StepDetector(metadata_changed=lambda old, new: old != new),
-    "wheel-copy": StepDetector(metadata_changed=lambda old, new: old != new),
+    "wheel-build": StepDetector(
+        get_output=lambda ws, dist: (
+            next(iter((ws / "wheels").glob("*.whl")), None) if (ws / "wheels").exists() else None
+        )
+    ),
+    "dependency-resolve": StepDetector(
+        get_output=lambda ws, dist: (
+            ws / ".dependency-resolve-marker"
+            if (ws / ".dependency-resolve-marker").exists()
+            else None
+        )
+    ),
+    "wheel-bundle": StepDetector(
+        get_output=lambda ws, dist: (
+            ws / "site-packages.wheel-bundle"
+            if (ws / "site-packages.wheel-bundle").exists()
+            else None
+        )
+    ),
 }
 
 
@@ -217,21 +233,13 @@ def apply_action(action: ActionType, setup: ServerBuildSetup | BrowserBuildSetup
             setup.entry_point.touch()
         case ActionType.TOUCH_TEMPLATE:
             setup.template_path.touch()
-        case ActionType.TOUCH_STATIC_FILE:
-            setup.static_file.touch()
-        case ActionType.TOUCH_PYTHON_SOURCE:
-            if isinstance(setup, BrowserBuildSetup):
-                # Modify content, not just mtime - otherwise source_json is unchanged
-                # and IndexHtmlRenderStep won't detect a context change
-                current = setup.python_entry_point.read_text()
-                setup.python_entry_point.write_text(current + f"\n# {uuid.uuid4().hex}")
-        case ActionType.TOUCH_WHEEL:
-            if isinstance(setup, BrowserBuildSetup):
-                # Create a new wheel file with updated mtime
-                new_wheel = setup.wheel_dir / f"trellis-{uuid.uuid4().hex[:8]}-py3-none-any.whl"
-                new_wheel.write_bytes(b"new wheel content")
+        case ActionType.TOUCH_ASSET_FILE:
+            setup.asset_file.touch()
         case ActionType.REGISTER_MODULE:
             setup.registry.register(f"new-module-{uuid.uuid4().hex[:8]}")
+        case ActionType.TOUCH_APP_SOURCE:
+            assert isinstance(setup, BrowserBuildSetup) and setup.app_source_file
+            setup.app_source_file.touch()
 
 
 # =============================================================================
@@ -245,7 +253,7 @@ SERVER_CASES = [
         "touch_template", ActionType.TOUCH_TEMPLATE, frozenset({"index-html-render"})
     ),
     IncrementalTestCase(
-        "touch_static", ActionType.TOUCH_STATIC_FILE, frozenset({"static-file-copy"})
+        "touch_static", ActionType.TOUCH_ASSET_FILE, frozenset({"asset-file-copy"})
     ),
     IncrementalTestCase(
         "touch_entry_point", ActionType.TOUCH_ENTRY_POINT, frozenset({"bundle-build"})
@@ -264,13 +272,7 @@ BROWSER_APP_CASES = [
         "touch_template", ActionType.TOUCH_TEMPLATE, frozenset({"index-html-render"})
     ),
     IncrementalTestCase(
-        "touch_python_source",
-        ActionType.TOUCH_PYTHON_SOURCE,
-        frozenset({"python-source-bundle", "index-html-render"}),
-    ),
-    IncrementalTestCase("touch_wheel", ActionType.TOUCH_WHEEL, frozenset({"wheel-copy"})),
-    IncrementalTestCase(
-        "touch_static", ActionType.TOUCH_STATIC_FILE, frozenset({"static-file-copy"})
+        "touch_static", ActionType.TOUCH_ASSET_FILE, frozenset({"asset-file-copy"})
     ),
     IncrementalTestCase(
         "touch_entry_point", ActionType.TOUCH_ENTRY_POINT, frozenset({"bundle-build"})
@@ -279,6 +281,18 @@ BROWSER_APP_CASES = [
         "register_module",
         ActionType.REGISTER_MODULE,
         frozenset({"registry-generation", "bundle-build"}),
+    ),
+    IncrementalTestCase(
+        "touch_app_source",
+        ActionType.TOUCH_APP_SOURCE,
+        frozenset(
+            {
+                "wheel-build",
+                "dependency-resolve",
+                "wheel-bundle",
+                "pyodide-worker-build",
+            }
+        ),
     ),
 ]
 
@@ -321,11 +335,11 @@ export const App = () => <div>Hello</div>;
 """
         )
 
-        # Create static dir with test file
-        static_dir = tmp_path / "static"
-        static_dir.mkdir()
-        static_file = static_dir / "test.txt"
-        static_file.write_text("test content")
+        # Create assets dir with test file
+        assets_dir = tmp_path / "assets"
+        assets_dir.mkdir()
+        asset_file = assets_dir / "test.txt"
+        asset_file.write_text("test content")
 
         # Registry with packages
         registry = ModuleRegistry()
@@ -348,8 +362,8 @@ export const App = () => <div>Hello</div>;
             workspace=workspace,
             steps=steps,
             template_path=template_path,
-            static_file=static_file,
-            app_static_dir=static_dir,
+            asset_file=asset_file,
+            assets_dir=assets_dir,
         )
 
     @pytest.mark.parametrize("case", SERVER_CASES, ids=lambda c: c.id)
@@ -366,7 +380,8 @@ export const App = () => <div>Hello</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=True,
         )
 
@@ -382,7 +397,8 @@ export const App = () => <div>Hello</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=False,
         )
 
@@ -400,15 +416,38 @@ export const App = () => <div>Hello</div>;
 @pytest.mark.network
 @pytest.mark.slow
 class TestBrowserAppIncrementalBuilds:
-    """Incremental build tests for browser app platform."""
+    """Incremental build tests for browser app platform.
+
+    Uses real WheelBuildStep, DependencyResolveStep, and WheelBundleStep
+    with a minimal Python package to test the full wheel-based build cascade.
+    """
 
     @pytest.fixture
     def browser_build_setup(self, tmp_path: Path) -> BrowserBuildSetup:
-        """Set up files for browser platform build."""
+        """Set up files for browser platform build with real wheel steps."""
         workspace = tmp_path / "workspace"
         workspace.mkdir()
 
-        # Create minimal entry point that imports registry (so registry changes trigger rebuild)
+        # Create a real Python package for WheelBuildStep
+        app_root = tmp_path / "testapp"
+        app_root.mkdir()
+        (app_root / "pyproject.toml").write_text(
+            """\
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "testapp"
+version = "0.1.0"
+"""
+        )
+        pkg_dir = app_root / "testapp"
+        pkg_dir.mkdir()
+        app_source_file = pkg_dir / "__init__.py"
+        app_source_file.write_text("# testapp\n")
+
+        # Create minimal entry point that imports registry
         entry_point = tmp_path / "main.tsx"
         entry_point.write_text(
             """\
@@ -426,30 +465,17 @@ export const App = () => <div>Hello Browser</div>;
 <html>
 <head><title>Test</title></head>
 <body>
-{% if source_json %}<script id="source">{{ source_json }}</script>{% endif %}
 <script src="{{ static_path }}/bundle.js" type="module"></script>
 </body>
 </html>
 """
         )
 
-        # Create static dir with test file
-        static_dir = tmp_path / "static"
-        static_dir.mkdir()
-        static_file = static_dir / "test.txt"
-        static_file.write_text("test content")
-
-        # Create Python entry point
-        python_dir = tmp_path / "app"
-        python_dir.mkdir()
-        python_entry = python_dir / "main.py"
-        python_entry.write_text("print('hello')")
-
-        # Create wheel directory and wheel file
-        wheel_dir = tmp_path / "wheels"
-        wheel_dir.mkdir()
-        wheel_path = wheel_dir / "trellis-0.1.0-py3-none-any.whl"
-        wheel_path.write_bytes(b"fake wheel content")
+        # Create assets dir with test file
+        assets_dir = tmp_path / "assets"
+        assets_dir.mkdir()
+        asset_file = assets_dir / "test.txt"
+        asset_file.write_text("test content")
 
         # Registry with packages
         registry = ModuleRegistry()
@@ -457,14 +483,14 @@ export const App = () => <div>Hello Browser</div>;
             "core", packages={"react": "18.2.0", "react-dom": "18.2.0", "typescript": "5.3.3"}
         )
 
-        # Steps matching BrowserAppPlatform
         steps: list[BuildStep] = [
             PackageInstallStep(),
             RegistryGenerationStep(),
+            WheelBuildStep(app_root),
+            DependencyResolveStep(),
+            WheelBundleStep(config_json=Config(name="testapp", module="testapp").to_json()),
             PyodideWorkerBuildStep(),
-            PythonSourceBundleStep(),
             BundleBuildStep(output_name="bundle"),
-            WheelCopyStep(wheel_dir),
             StaticFileCopyStep(),
             IndexHtmlRenderStep(template_path, {"static_path": "/static"}),
         ]
@@ -475,11 +501,10 @@ export const App = () => <div>Hello Browser</div>;
             workspace=workspace,
             steps=steps,
             template_path=template_path,
-            static_file=static_file,
-            app_static_dir=static_dir,
-            python_entry_point=python_entry,
-            wheel_path=wheel_path,
-            wheel_dir=wheel_dir,
+            asset_file=asset_file,
+            assets_dir=assets_dir,
+            app_root=app_root,
+            app_source_file=app_source_file,
         )
 
     @pytest.mark.parametrize("case", BROWSER_APP_CASES, ids=lambda c: c.id)
@@ -496,8 +521,8 @@ export const App = () => <div>Hello Browser</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
-            python_entry_point=setup.python_entry_point,
+            assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=True,
         )
 
@@ -513,8 +538,8 @@ export const App = () => <div>Hello Browser</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
-            python_entry_point=setup.python_entry_point,
+            assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=False,
         )
 
@@ -567,11 +592,11 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
 """
         )
 
-        # Create static dir with test file
-        static_dir = tmp_path / "static"
-        static_dir.mkdir()
-        static_file = static_dir / "test.txt"
-        static_file.write_text("test content")
+        # Create assets dir with test file
+        assets_dir = tmp_path / "assets"
+        assets_dir.mkdir()
+        asset_file = assets_dir / "test.txt"
+        asset_file.write_text("test content")
 
         # Registry with packages (including dts-bundle-generator for DeclarationStep)
         # Note: @types/react and @types/react-dom are required for dts-bundle-generator
@@ -606,8 +631,8 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             workspace=workspace,
             steps=steps,
             template_path=template_path,
-            static_file=static_file,
-            app_static_dir=static_dir,
+            asset_file=asset_file,
+            assets_dir=assets_dir,
         )
 
     def test_declaration_step_runs_on_initial_build(
@@ -622,7 +647,8 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=True,
         )
 
@@ -643,7 +669,8 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=True,
         )
 
@@ -655,7 +682,8 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=False,
         )
 
@@ -677,7 +705,8 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=True,
         )
 
@@ -693,7 +722,8 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
             entry_point=setup.entry_point,
             workspace=setup.workspace,
             steps=setup.steps,
-            app_static_dir=setup.app_static_dir,
+            assets_dir=setup.assets_dir,
+            output_dir=dist_dir,
             force=False,
         )
 

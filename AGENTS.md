@@ -51,18 +51,19 @@ src/trellis/
 - When writing tests, use pytest style instead of xunit. Organizing related tests into classes is fine, but use fixtures for shared code instead of class members and inheritance. Look for opportunities to re-factor common test code into fixtures. Check relevant conftest.py to see if there are useful fixtures already.
  You may use test classes to group related tests, but they are not required and should only be used when they make large test files more readable.
 - use the test-driven development skill when making changes
+- code comments should document the code that as it is. Do not leave comments saying what has changed. Make sure existing comments are updated when code associated with them changes.
 
 ### Import Style
 
 Canonical import style for Trellis applications:
 
 ```python
-from trellis import Trellis, async_main, component, Stateful
+from trellis import App, component, Stateful
 from trellis import widgets as w
 from trellis import html as h
 ```
 
-- `trellis` exports core primitives (`component`, `Stateful`, `RenderSession`, etc.) plus `async_main` and `Trellis`
+- `trellis` exports core primitives (`component`, `Stateful`, `RenderSession`, etc.) plus `App`
 - Widgets are accessed via `w.Button`, `w.Label`, `w.Column`, etc.
 - HTML elements are accessed via `h.Div`, `h.Span`, `h.P`, etc.
 
@@ -74,9 +75,9 @@ from trellis import html as h
 - `pixi run test` - Run tests
 - `pixi run ci` - Full CI checks
 - `pixi run showcase` - Run widget showcase
-- `trellis bundle build` - Build platform bundles (server + desktop)
-- `trellis bundle build --force` - Force rebuild even if sources unchanged
-- `trellis bundle build --platform server` - Build only server bundle
+- `trellis bundle` - Build platform bundles (server + desktop)
+- `trellis bundle --force-build` - Force rebuild even if sources unchanged
+- `trellis bundle --platform server` - Build only server bundle
 
 ## Git Workflow
 

@@ -7,8 +7,6 @@ from pathlib import Path
 from trellis.bundler.registry import CollectedModules, ExportKind, Module, ModuleExport
 from trellis.bundler.workspace import (
     generate_registry_ts,
-    get_project_hash,
-    get_project_workspace,
     node_modules_path,
     write_registry_ts,
 )
@@ -19,78 +17,6 @@ def test_node_modules_path_returns_workspace_node_modules(tmp_path: Path) -> Non
     workspace = tmp_path / "workspace"
     result = node_modules_path(workspace)
     assert result == workspace / "node_modules"
-
-
-class TestGetProjectHash:
-    """Tests for get_project_hash function."""
-
-    def test_consistent_hash_for_same_path(self) -> None:
-        """Same path always produces same hash."""
-        path = Path("/some/project/app.py")
-        hash1 = get_project_hash(path)
-        hash2 = get_project_hash(path)
-        assert hash1 == hash2
-
-    def test_different_hash_for_different_paths(self) -> None:
-        """Different paths produce different hashes."""
-        hash1 = get_project_hash(Path("/project1/app.py"))
-        hash2 = get_project_hash(Path("/project2/app.py"))
-        assert hash1 != hash2
-
-
-class TestGetProjectWorkspace:
-    """Tests for get_project_workspace function."""
-
-    def test_returns_project_local_trellis_directory(self, tmp_path: Path) -> None:
-        """Workspace is under .trellis in project root, not global cache."""
-        # Create project with pyproject.toml
-        (tmp_path / "pyproject.toml").touch()
-        entry_point = tmp_path / "app.py"
-        entry_point.touch()
-
-        workspace = get_project_workspace(entry_point)
-
-        # Should be under .trellis in project root
-        assert workspace.parent.parent == tmp_path
-        assert workspace.parent.name == ".trellis"
-
-    def test_creates_trellis_directory_if_needed(self, tmp_path: Path) -> None:
-        """Creates .trellis directory and workspace if they don't exist."""
-        (tmp_path / "pyproject.toml").touch()
-        entry_point = tmp_path / "app.py"
-        entry_point.touch()
-
-        workspace = get_project_workspace(entry_point)
-
-        assert workspace.exists()
-        assert workspace.is_dir()
-
-    def test_uses_project_hash_for_workspace_name(self, tmp_path: Path) -> None:
-        """Workspace subdirectory is named by project hash."""
-        (tmp_path / "pyproject.toml").touch()
-        entry_point = tmp_path / "app.py"
-        entry_point.touch()
-
-        workspace = get_project_workspace(entry_point)
-        expected_hash = get_project_hash(entry_point)
-
-        assert workspace.name == expected_hash
-
-    def test_different_entry_points_get_different_workspaces(self, tmp_path: Path) -> None:
-        """Different entry points get separate workspace directories."""
-        (tmp_path / "pyproject.toml").touch()
-
-        entry1 = tmp_path / "app1.py"
-        entry1.touch()
-        entry2 = tmp_path / "app2.py"
-        entry2.touch()
-
-        workspace1 = get_project_workspace(entry1)
-        workspace2 = get_project_workspace(entry2)
-
-        # Both under same .trellis but different subdirs
-        assert workspace1.parent == workspace2.parent
-        assert workspace1 != workspace2
 
 
 class TestWriteRegistryTs:

@@ -17,25 +17,17 @@ import {
 import { Message } from "@trellis/trellis-core/client/src/types";
 import { TreeRenderer } from "@trellis/trellis-core/client/src/TreeRenderer";
 import { useRootId } from "@trellis/trellis-core/client/src/core";
-import { PyodideWorker, type PythonSource } from "@trellis/trellis-browser/client/src/PyodideWorker";
+import { PyodideWorker } from "@trellis/trellis-browser/client/src/PyodideWorker";
 import {
   INIT_TIMEOUT_MS,
   formatTimeoutError,
 } from "@trellis/trellis-browser/client/src/pyodide-error-utils";
 import { RoutingMode } from "@trellis/trellis-core/client/src/RouterManager";
 
-// Re-export types for external use
-export type { PythonSource };
 export { RoutingMode };
 
 export interface TrellisAppProps {
-  /** Source of the Python code */
-  source: PythonSource;
-  /** Entry point like "myapp:App" (optional if code has @async_main) */
-  main?: string;
-  /** Custom trellis wheel URL (optional, tries several paths by default) */
-  trellisWheelUrl?: string;
-  /** Routing mode for URL handling. Defaults to HashUrl. */
+  /** Routing mode for URL handling. Defaults to Hash. */
   routingMode?: RoutingMode;
   /** Callback when loading status changes */
   onStatusChange?: (status: string) => void;
@@ -55,6 +47,13 @@ export interface TrellisAppProps {
    * - "dark": Force dark mode
    */
   themeMode?: "system" | "light" | "dark";
+  /**
+   * User-provided Python source code to run instead of the pre-bundled module.
+   *
+   * When provided, the worker runs this code via AppLoader.load_app_from_source()
+   * instead of importing from the wheel. Used by the playground and TrellisDemo.
+   */
+  source?: { type: "code"; code: string };
 }
 
 type AppState =
@@ -133,14 +132,12 @@ function DefaultError({ message }: { message: string }) {
 
 
 export function TrellisApp({
-  source,
-  main,
-  trellisWheelUrl,
-  routingMode = RoutingMode.HashUrl,
+  routingMode = RoutingMode.Hash,
   onStatusChange,
   loadingComponent,
   errorComponent,
   themeMode,
+  source,
 }: TrellisAppProps): React.ReactElement {
   const [state, setState] = useState<AppState>({
     status: "loading",
@@ -197,7 +194,6 @@ export function TrellisApp({
           onError: (error) => {
             setState({ status: "error", message: error });
           },
-          trellisWheelUrl,
         });
 
         clearTimeout(timeoutId);
@@ -213,11 +209,10 @@ export function TrellisApp({
           worker.sendMessage(msg);
         });
 
-        // 3. Run Python code
-        // The handler.run() loop starts and waits for HelloMessage
+        // 3. Run application (user-provided source or pre-bundled module)
         setState({ status: "loading", message: "Starting application..." });
         onStatusChange?.("Starting application...");
-        worker.run(source, main);
+        worker.run(source?.code);
 
         // 4. Send HelloMessage to start the handshake
         // Note: The worker's bridge queues messages until Python's handler is set,

@@ -14,16 +14,10 @@ import type { HelloMessage, EventMessage, UrlChangedMessage } from "@trellis/tre
 
 // === Types ===
 
-/** Python source to load and execute */
-export type PythonSource =
-  | { type: "code"; code: string }
-  | { type: "module"; files: Record<string, string>; moduleName: string }
-  | { type: "wheel"; wheelUrl: string };
-
 /** Messages from main thread to worker */
 type WorkerInMessage =
-  | { type: "init"; trellisWheelUrl?: string; pageOrigin: string }
-  | { type: "run"; source: PythonSource; main?: string }
+  | { type: "init" }
+  | { type: "run"; code?: string }
   | { type: "message"; payload: HelloMessage | EventMessage | UrlChangedMessage };
 
 /** Messages from worker to main thread */
@@ -38,8 +32,6 @@ export interface PyodideWorkerOptions {
   onStatus?: (status: string) => void;
   /** Callback for errors after initialization is complete */
   onError?: (error: string) => void;
-  /** Custom trellis wheel URL */
-  trellisWheelUrl?: string;
 }
 
 type MessageCallback = (msg: Record<string, unknown>) => void;
@@ -54,7 +46,7 @@ type MessageCallback = (msg: Record<string, unknown>) => void;
  * const worker = new PyodideWorker();
  * await worker.create({ onStatus: console.log });
  * worker.onMessage((msg) => handleMessage(msg));
- * worker.run(source, main);
+ * worker.run();
  * // Later, to re-run:
  * worker.terminate();
  * await worker.create({ onStatus: console.log });
@@ -105,12 +97,8 @@ export class PyodideWorker {
       this.readyReject?.(new Error(`Worker error: ${error.message}`));
     };
 
-    // Send init message with page origin for absolute URL construction
-    const initMsg: WorkerInMessage = {
-      type: "init",
-      trellisWheelUrl: options.trellisWheelUrl,
-      pageOrigin: globalThis.location?.origin ?? "",
-    };
+    // Send init message
+    const initMsg: WorkerInMessage = { type: "init" };
     this.worker.postMessage(initMsg);
 
     // Wait for ready signal
@@ -176,18 +164,20 @@ export class PyodideWorker {
   }
 
   /**
-   * Run Python code in the worker.
+   * Run the application in the worker.
+   *
+   * @param code - Optional source code to run instead of the pre-bundled module.
+   *               When provided, the worker executes this code via
+   *               AppLoader.load_app_from_source() instead of load_app().
    */
-  run(source: PythonSource, main?: string): void {
+  run(code?: string): void {
     if (!this.worker) {
       throw new Error("Worker not created. Call create() first.");
     }
 
-    const runMsg: WorkerInMessage = {
-      type: "run",
-      source,
-      main,
-    };
+    const runMsg: WorkerInMessage = code !== undefined
+      ? { type: "run", code }
+      : { type: "run" };
     this.worker.postMessage(runMsg);
   }
 

@@ -62,12 +62,12 @@ class BuildContext:
         collected: Collected modules from registry
         dist_dir: Output directory for bundle files
         manifest: Build manifest tracking inputs and outputs
-        app_static_dir: Optional app-level static files directory
-        python_entry_point: Optional Python app entry point for browser bundling
+        assets_dir: Optional app-level static files directory
         esbuild_args: Additional esbuild arguments (steps can append)
         env: Environment variables for subprocess calls (steps can modify)
         generated_files: Map of generated file names to paths (steps set these)
         template_context: Template variables for IndexHtmlRenderStep (steps can add)
+        build_data: Arbitrary data shared between steps (e.g. resolved dependencies)
     """
 
     # Inputs (set before steps run)
@@ -77,14 +77,14 @@ class BuildContext:
     collected: CollectedModules
     dist_dir: Path
     manifest: BuildManifest
-    app_static_dir: Path | None = None
-    python_entry_point: Path | None = None
+    assets_dir: Path | None = None
 
     # Mutable state (steps can modify)
     esbuild_args: list[str] = field(default_factory=list)
     env: dict[str, str] = field(default_factory=dict)
     generated_files: dict[str, Path] = field(default_factory=dict)
     template_context: dict[str, Any] = field(default_factory=dict)
+    build_data: dict[str, Any] = field(default_factory=dict)
 
     def exec_in_build_env(
         self, cmd: list[str], *, check: bool = True
@@ -504,16 +504,16 @@ class BundleBuildStep(BuildStep):
 
 
 class StaticFileCopyStep(BuildStep):
-    """Copy static files to the dist directory using convention-based discovery.
+    """Copy asset files to the dist directory using convention-based discovery.
 
     Copies from:
-    - module._base_path / "static" for each registered module
-    - ctx.app_static_dir if provided (for app-level static files)
+    - module._base_path / "assets" for each registered module
+    - ctx.assets_dir if provided (for app-level assets)
     """
 
     @property
     def name(self) -> str:
-        return "static-file-copy"
+        return "asset-file-copy"
 
     def should_build(
         self, ctx: BuildContext, step_manifest: StepManifest | None
@@ -528,17 +528,17 @@ class StaticFileCopyStep(BuildStep):
         return ShouldBuild.SKIP
 
     def run(self, ctx: BuildContext) -> None:
-        # Copy from each module's static directory
+        # Copy from each module's assets directory
         for module in ctx.collected.modules:
             if module._base_path is None:
                 continue
-            static_dir = module._base_path / "static"
-            if static_dir.is_dir():
-                self._copy_and_track(static_dir, ctx.dist_dir, ctx)
+            assets_dir = module._base_path / "assets"
+            if assets_dir.is_dir():
+                self._copy_and_track(assets_dir, ctx.dist_dir, ctx)
 
-        # Copy from app-level static directory
-        if ctx.app_static_dir is not None and ctx.app_static_dir.is_dir():
-            self._copy_and_track(ctx.app_static_dir, ctx.dist_dir, ctx)
+        # Copy from app-level assets directory
+        if ctx.assets_dir is not None and ctx.assets_dir.is_dir():
+            self._copy_and_track(ctx.assets_dir, ctx.dist_dir, ctx)
 
     def _copy_and_track(self, src_dir: Path, dest_dir: Path, ctx: BuildContext) -> None:
         """Copy directory and track in step manifest.

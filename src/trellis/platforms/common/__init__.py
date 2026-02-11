@@ -1,6 +1,6 @@
 """Common utilities shared across platforms."""
 
-from trellis.bundler import registry
+from trellis.bundler.registry import registry
 from trellis.platforms.common.base import Platform, PlatformArgumentError, PlatformType
 from trellis.platforms.common.handler import MessageHandler
 from trellis.platforms.common.messages import (

@@ -29,41 +29,6 @@ CACHE_DIR = _get_cache_dir()
 BIN_DIR = CACHE_DIR / "bin"
 
 
-def find_project_root(entry_point: Path) -> Path:
-    """Find the project root directory by walking up from the entry point.
-
-    Looks for project markers in this priority order:
-    1. pyproject.toml
-    2. .git (file or directory - handles worktrees)
-
-    Falls back to the entry point's parent directory if no markers found.
-
-    Args:
-        entry_point: Path to the project's entry point file
-
-    Returns:
-        Path to the project root directory
-    """
-    current = entry_point.resolve().parent
-
-    while True:
-        # Check for pyproject.toml first (highest priority)
-        if (current / "pyproject.toml").exists():
-            return current
-
-        # Check for .git (file for worktrees, directory for normal repos)
-        if (current / ".git").exists():
-            return current
-
-        # Move up to parent
-        parent = current.parent
-        if parent == current:
-            # Reached filesystem root, fallback to entry point's parent
-            return entry_point.resolve().parent
-
-        current = parent
-
-
 def safe_extract(tar: tarfile.TarFile, dest: Path) -> None:
     """Safely extract a tarball, preventing path traversal attacks.
 

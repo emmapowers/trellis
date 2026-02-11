@@ -186,8 +186,8 @@ class TestBuildContext:
 
         assert ctx.template_context["source_json"] == '{"type": "code"}'
 
-    def test_has_python_entry_point_default_none(self, tmp_path: Path) -> None:
-        """BuildContext has python_entry_point field defaulting to None."""
+    def test_has_build_data_default_empty(self, tmp_path: Path) -> None:
+        """BuildContext has build_data field defaulting to empty dict."""
         mock_registry = MagicMock()
         mock_collected = MagicMock()
 
@@ -200,13 +200,12 @@ class TestBuildContext:
             manifest=BuildManifest(),
         )
 
-        assert ctx.python_entry_point is None
+        assert ctx.build_data == {}
 
-    def test_python_entry_point_can_be_set(self, tmp_path: Path) -> None:
-        """BuildContext python_entry_point can be set to a Path."""
+    def test_build_data_can_be_populated(self, tmp_path: Path) -> None:
+        """BuildContext build_data can store arbitrary data between steps."""
         mock_registry = MagicMock()
         mock_collected = MagicMock()
-        app_path = tmp_path / "app.py"
 
         ctx = BuildContext(
             registry=mock_registry,
@@ -215,10 +214,10 @@ class TestBuildContext:
             collected=mock_collected,
             dist_dir=tmp_path / "dist",
             manifest=BuildManifest(),
-            python_entry_point=app_path,
         )
 
-        assert ctx.python_entry_point == app_path
+        ctx.build_data["resolved_deps"] = {"wheels": ["a.whl"]}
+        assert ctx.build_data["resolved_deps"] == {"wheels": ["a.whl"]}
 
 
 class TestIndexHtmlRenderStep:
