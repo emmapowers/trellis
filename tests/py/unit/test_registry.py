@@ -114,6 +114,18 @@ def register_module(registry):
         # The base path should be resolved to the directory containing register.py
         assert collected.modules[0]._base_path == module_file.parent
 
+    def test_register_uses_explicit_base_path(self, tmp_path: Path) -> None:
+        """register() uses explicit base_path when provided, bypassing frame inspection."""
+        registry = ModuleRegistry()
+        explicit_path = tmp_path / "my_widgets"
+        explicit_path.mkdir()
+
+        registry.register("widget-module", base_path=explicit_path)
+
+        collected = registry.collect()
+        assert len(collected.modules) == 1
+        assert collected.modules[0]._base_path == explicit_path
+
     def test_register_errors_on_duplicate_name(self) -> None:
         """register() raises error if module name already registered."""
         registry = ModuleRegistry()

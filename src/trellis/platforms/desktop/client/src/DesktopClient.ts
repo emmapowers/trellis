@@ -15,14 +15,14 @@ import {
   HelloResponseMessage,
   EventMessage,
   UrlChangedMessage,
-} from "@trellis/trellis-core/client/src/types";
-import { ClientMessageHandlerCallbacks } from "@trellis/trellis-core/client/src/ClientMessageHandler";
+} from "@trellis/trellis-core/types";
+import { ClientMessageHandlerCallbacks } from "@trellis/trellis-core/ClientMessageHandler";
 import {
   BaseTrellisClient,
   ConnectionState,
-} from "@trellis/trellis-core/client/src/TrellisClient";
-import { TrellisStore } from "@trellis/trellis-core/client/src/core";
-import { RoutingMode } from "@trellis/trellis-core/client/src/RouterManager";
+} from "@trellis/trellis-core/TrellisClient";
+import { TrellisStore } from "@trellis/trellis-core/core";
+import { RoutingMode } from "@trellis/trellis-core/RouterManager";
 
 export type { ConnectionState };
 

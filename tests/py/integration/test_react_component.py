@@ -1,12 +1,13 @@
-"""Tests for ReactComponentBase base class and react_component_base decorator."""
+"""Tests for ReactComponentBase base class and @react decorator."""
 
 from dataclasses import dataclass
+from unittest.mock import patch
 
 import pytest
 
+from trellis.bundler.registry import ModuleRegistry
 from trellis.core.components.composition import component
-from trellis.core.components.react import ReactComponentBase, react_component_base
-from trellis.core.rendering.element import Element
+from trellis.core.components.react import ReactComponentBase, react
 from trellis.widgets import Button, Column, Label, Row
 
 
@@ -147,16 +148,22 @@ class TestReactComponentBaseSubclass:
         assert Leaf().is_container is False
 
 
-class TestReactComponentBaseDecorator:
-    """Tests for the @react_component_base decorator."""
+class TestReactDecorator:
+    """Tests for the @react decorator in integration context."""
+
+    @pytest.fixture(autouse=True)
+    def _isolated_registry(self):
+        """Provide an isolated registry for decorator tests."""
+        isolated = ModuleRegistry()
+        with patch("trellis.core.components.react.registry", isolated):
+            yield isolated
 
     def test_decorator_creates_callable(self, rendered) -> None:
         """Decorator creates a callable that returns Element."""
 
-        @react_component_base("TestWidget")
-        def TestWidget(value: int = 0) -> Element:
+        @react("client/TestWidget.tsx")
+        def TestWidget(value: int = 0) -> None:
             """Test widget."""
-            ...
 
         @component
         def App() -> None:
@@ -171,10 +178,9 @@ class TestReactComponentBaseDecorator:
     def test_decorator_preserves_function_metadata(self) -> None:
         """Decorator preserves function name and docstring."""
 
-        @react_component_base("MyWidget")
-        def MyWidget(x: int = 0) -> Element:
+        @react("client/MyWidget.tsx")
+        def MyWidget(x: int = 0) -> None:
             """My widget docstring."""
-            ...
 
         assert MyWidget.__name__ == "MyWidget"
         assert MyWidget.__doc__ == "My widget docstring."
@@ -182,25 +188,27 @@ class TestReactComponentBaseDecorator:
     def test_decorator_is_container_false_by_default(self) -> None:
         """Decorator creates components with _is_container False by default."""
 
-        @react_component_base("LeafWidget")
-        def LeafWidget() -> Element: ...
+        @react("client/LeafWidget.tsx")
+        def LeafWidget() -> None:
+            pass
 
-        # Access the underlying component
         assert LeafWidget._component.is_container is False
 
     def test_decorator_is_container_true(self) -> None:
         """Decorator can create container components."""
 
-        @react_component_base("ContainerWidget", is_container=True)
-        def ContainerWidget() -> Element: ...
+        @react("client/ContainerWidget.tsx", is_container=True)
+        def ContainerWidget() -> None:
+            pass
 
         assert ContainerWidget._component.is_container is True
 
     def test_decorator_exposes_component(self) -> None:
         """Decorated function exposes _component for introspection."""
 
-        @react_component_base("Widget")
-        def Widget() -> Element: ...
+        @react("client/Widget.tsx")
+        def Widget() -> None:
+            pass
 
         assert hasattr(Widget, "_component")
         assert isinstance(Widget._component, ReactComponentBase)

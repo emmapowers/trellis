@@ -10,7 +10,7 @@ from trellis.core.components import (
     ReactComponentBase,
     Width,
     component,
-    react_component_base,
+    react,
 )
 
 # rendering
@@ -87,7 +87,7 @@ __all__ = [
     "is_render_active",
     "mutable",
     "props_equal",
-    "react_component_base",
+    "react",
     "reconcile_children",
     "render",
     "set_active_session",

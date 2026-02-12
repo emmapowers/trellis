@@ -8,15 +8,14 @@ from __future__ import annotations
 import typing as tp
 from typing import Literal
 
-from trellis.core.components.react import react_component_base
+from trellis.core.components.react import react
 from trellis.core.components.style_props import Margin, Padding, Width
-from trellis.core.rendering.element import Element
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
 
 
-@react_component_base("Stat")
+@react("client/Stat.tsx")
 def Stat(
     *,
     label: str = "",
@@ -31,7 +30,7 @@ def Stat(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Display a key metric with label, value, and optional trend.
 
     Args:
@@ -49,10 +48,10 @@ def Stat(
         style: Inline styles
         key: Unique key for reconciliation
     """
-    ...
+    pass
 
 
-@react_component_base("Tag")
+@react("client/Tag.tsx")
 def Tag(
     text: str = "",
     *,
@@ -63,7 +62,7 @@ def Tag(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Display a tag/chip label.
 
     Args:
@@ -77,4 +76,4 @@ def Tag(
         style: Inline styles
         key: Unique key for reconciliation
     """
-    ...
+    pass

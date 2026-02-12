@@ -9,10 +9,10 @@
 import { initRegistry } from "@trellis/_registry";
 initRegistry();
 
-import "@trellis/trellis-core/client/src/theme.css"; // Theme CSS variables
+import "@trellis/trellis-core/theme.css"; // Theme CSS variables
 
 // Set up shared console (filtering, etc.) before other imports
-import { addConsoleHandler } from "@trellis/trellis-core/client/src/console";
+import { addConsoleHandler } from "@trellis/trellis-core/console";
 import { pyInvoke } from "tauri-plugin-pytauri-api";
 
 // Forward console messages to Python stdout
@@ -40,7 +40,7 @@ addConsoleHandler((level, args) => {
 import React, { useEffect, useState, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import { DesktopClient, ConnectionState } from "@trellis/trellis-desktop/client/src/DesktopClient";
-import { TrellisRoot } from "@trellis/trellis-core/client/src/TrellisRoot";
+import { TrellisRoot } from "@trellis/trellis-core/TrellisRoot";
 
 function App() {
   const [connectionState, setConnectionState] =

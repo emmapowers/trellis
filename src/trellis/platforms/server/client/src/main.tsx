@@ -9,12 +9,12 @@
 import { initRegistry } from "@trellis/_registry";
 initRegistry();
 
-import "@trellis/trellis-core/client/src/theme.css"; // Theme CSS variables
-import "@trellis/trellis-core/client/src/console"; // Set up console filtering
+import "@trellis/trellis-core/theme.css"; // Theme CSS variables
+import "@trellis/trellis-core/console"; // Set up console filtering
 import React, { useEffect, useState, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import { ServerTrellisClient, ConnectionState } from "@trellis/trellis-server/client/src/TrellisClient";
-import { TrellisRoot } from "@trellis/trellis-core/client/src/TrellisRoot";
+import { TrellisRoot } from "@trellis/trellis-core/TrellisRoot";
 
 function App() {
   const [connectionState, setConnectionState] =

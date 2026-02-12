@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render } from "../../test-utils";
-import { ThemeProvider } from "../../../../src/trellis/platforms/common/client/src/widgets/ThemeProvider";
+import { ThemeProvider } from "../../../../src/trellis/app/client/ThemeProvider";
 
 // Mock useHostThemeMode to return undefined (no host control)
-vi.mock("../../../../src/trellis/platforms/common/client/src/TrellisContext", () => ({
+vi.mock("@trellis/trellis-core/TrellisContext", () => ({
   useHostThemeMode: () => undefined,
 }));
 

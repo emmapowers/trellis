@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.components.react import react_component_base
+from trellis.core.components.react import react
 from trellis.core.components.style_props import Margin
-from trellis.core.rendering.element import Element
+
+_RECHARTS_PACKAGES = {"recharts": "3.6.0"}
+_UPLOT_PACKAGES = {"uplot": "1.6.31"}
 
 
-@react_component_base("TimeSeriesChart")
+@react("client/TimeSeriesChart.tsx", packages=_UPLOT_PACKAGES)
 def TimeSeriesChart(
     *,
     data: list[list[float]] | None = None,
@@ -23,7 +25,7 @@ def TimeSeriesChart(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """High-performance time-series chart using uPlot.
 
     Optimized for real-time data with high update frequencies.
@@ -48,9 +50,6 @@ def TimeSeriesChart(
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
 
-    Returns:
-        An Element for the TimeSeriesChart component.
-
     Example:
         TimeSeriesChart(
             data=[
@@ -65,10 +64,10 @@ def TimeSeriesChart(
             height=300,
         )
     """
-    ...
+    pass
 
 
-@react_component_base("LineChart")
+@react("client/LineChart.tsx", packages=_RECHARTS_PACKAGES)
 def LineChart(
     *,
     data: list[dict[str, tp.Any]] | None = None,
@@ -85,7 +84,7 @@ def LineChart(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Line chart using Recharts.
 
     General-purpose line chart for trend visualization.
@@ -109,9 +108,6 @@ def LineChart(
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
 
-    Returns:
-        An Element for the LineChart component.
-
     Example:
         LineChart(
             data=[
@@ -122,10 +118,10 @@ def LineChart(
             x_key="month",
         )
     """
-    ...
+    pass
 
 
-@react_component_base("BarChart")
+@react("client/BarChart.tsx", packages=_RECHARTS_PACKAGES)
 def BarChart(
     *,
     data: list[dict[str, tp.Any]] | None = None,
@@ -143,7 +139,7 @@ def BarChart(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Bar chart using Recharts.
 
     Categorical data comparison with vertical or horizontal bars.
@@ -166,9 +162,6 @@ def BarChart(
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
 
-    Returns:
-        An Element for the BarChart component.
-
     Example:
         BarChart(
             data=[
@@ -179,10 +172,10 @@ def BarChart(
             x_key="category",
         )
     """
-    ...
+    pass
 
 
-@react_component_base("AreaChart")
+@react("client/AreaChart.tsx", packages=_RECHARTS_PACKAGES)
 def AreaChart(
     *,
     data: list[dict[str, tp.Any]] | None = None,
@@ -200,7 +193,7 @@ def AreaChart(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Area chart using Recharts.
 
     Line chart with filled area beneath, good for showing volume/magnitude.
@@ -222,14 +215,11 @@ def AreaChart(
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
-
-    Returns:
-        An Element for the AreaChart component.
     """
-    ...
+    pass
 
 
-@react_component_base("PieChart")
+@react("client/PieChart.tsx", packages=_RECHARTS_PACKAGES)
 def PieChart(
     *,
     data: list[dict[str, tp.Any]] | None = None,
@@ -246,7 +236,7 @@ def PieChart(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Pie/donut chart using Recharts.
 
     Part-to-whole relationships. Set inner_radius > 0 for donut style.
@@ -269,9 +259,6 @@ def PieChart(
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
 
-    Returns:
-        An Element for the PieChart component.
-
     Example:
         PieChart(
             data=[
@@ -282,10 +269,10 @@ def PieChart(
             inner_radius=50,  # Donut style
         )
     """
-    ...
+    pass
 
 
-@react_component_base("Sparkline")
+@react("client/Sparkline.tsx", packages=_RECHARTS_PACKAGES)
 def Sparkline(
     *,
     data: list[float] | None = None,
@@ -297,7 +284,7 @@ def Sparkline(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Inline mini-chart for compact data visualization.
 
     Ideal for use in tables, cards, or alongside metrics.
@@ -314,10 +301,7 @@ def Sparkline(
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
 
-    Returns:
-        An Element for the Sparkline component.
-
     Example:
         Sparkline(data=[10, 20, 15, 25, 30, 28], color="#22c55e")
     """
-    ...
+    pass

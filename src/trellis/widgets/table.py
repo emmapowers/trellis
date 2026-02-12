@@ -39,9 +39,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from trellis.core.components.composition import component
-from trellis.core.components.react import react_component_base
+from trellis.core.components.react import react
 from trellis.core.components.style_props import Height, Margin, Width
-from trellis.core.rendering.element import Element
 from trellis.widgets.icons import IconName
 
 __all__ = ["Table", "TableColumn"]
@@ -101,20 +100,20 @@ def _get_row_key(
     return str(row_index)
 
 
-@react_component_base("CellSlot", is_container=True)
+@react("client/Table.tsx", export_name="CellSlot", is_container=True)
 def CellSlot(
     *,
     slot: str,
-) -> Element:
+) -> None:
     """Marker component for custom cell content.
 
     Used internally by Table to position custom cell content.
     The slot prop identifies the cell position as "rowKey:columnName".
     """
-    ...
+    pass
 
 
-@react_component_base("TableInner", is_container=True)
+@react("client/Table.tsx", export_name="TableInner", is_container=True)
 def _TableInner(
     *,
     columns: list[dict[str, tp.Any]],
@@ -124,13 +123,13 @@ def _TableInner(
     bordered: bool = False,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Internal React table component.
 
     Renders the actual table structure and positions custom cell content
     from CellSlot children.
     """
-    ...
+    pass
 
 
 @component
