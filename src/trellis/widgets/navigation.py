@@ -9,9 +9,8 @@ import typing as tp
 from typing import Literal
 
 from trellis.core.components.composition import component
-from trellis.core.components.react import react_component_base
+from trellis.core.components.react import react
 from trellis.core.components.style_props import Height, Margin, Padding, Width
-from trellis.core.rendering.element import Element
 from trellis.core.state.mutable import Mutable
 from trellis.html.layout import Nav, Span
 from trellis.html.links import A
@@ -21,12 +20,14 @@ if tp.TYPE_CHECKING:
     from collections.abc import Callable
 
 # Typography settings for server-side rendered components
+_ARIA_PACKAGES = {"react-aria": "3.35.0", "react-stately": "3.33.0"}
+
 _FONT_FAMILY = (
     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
 )
 
 
-@react_component_base("Tabs", is_container=True)
+@react("client/Tabs.tsx", is_container=True, packages=_ARIA_PACKAGES)
 def Tabs(
     *,
     selected: str | Mutable[str] | None = None,
@@ -37,7 +38,7 @@ def Tabs(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Tab container for organizing content.
 
     Args:
@@ -51,10 +52,10 @@ def Tabs(
         style: Inline styles
         key: Unique key for reconciliation
     """
-    ...
+    pass
 
 
-@react_component_base("Tab", is_container=True)
+@react("client/Tabs.tsx", export_name="Tab", is_container=True)
 def Tab(
     *,
     id: str,
@@ -64,7 +65,7 @@ def Tab(
     padding: Padding | int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Individual tab within a Tabs container.
 
     Args:
@@ -77,10 +78,10 @@ def Tab(
         style: Inline styles
         key: Unique key for reconciliation
     """
-    ...
+    pass
 
 
-@react_component_base("Tree")
+@react("client/Tree.tsx")
 def Tree(
     *,
     data: list[dict[str, tp.Any]] | None = None,
@@ -95,7 +96,7 @@ def Tree(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Hierarchical tree view.
 
     Args:
@@ -113,7 +114,7 @@ def Tree(
         style: Inline styles
         key: Unique key for reconciliation
     """
-    ...
+    pass
 
 
 @component

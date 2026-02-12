@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.components.react import react_component_base
+from trellis.core.components.react import react
 from trellis.core.components.style_props import Height, Margin, Padding, Width
-from trellis.core.rendering.element import Element
 
 
-@react_component_base("Column", is_container=True)
+@react("client/Column.tsx", is_container=True)
 def Column(
     *,
     gap: int | None = None,
@@ -23,7 +22,7 @@ def Column(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Vertical flex container.
 
     Renders children stacked vertically with configurable gap.
@@ -43,9 +42,6 @@ def Column(
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
 
-    Returns:
-        An Element for the Column component.
-
     Example:
         with Column(gap=16):
             Label(text="First")
@@ -55,10 +51,10 @@ def Column(
             Label(text="Item 1")
             Label(text="Item 2")
     """
-    ...
+    pass
 
 
-@react_component_base("Row", is_container=True)
+@react("client/Row.tsx", is_container=True)
 def Row(
     *,
     gap: int | None = None,
@@ -72,7 +68,7 @@ def Row(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Horizontal flex container.
 
     Renders children in a row with configurable gap.
@@ -92,18 +88,15 @@ def Row(
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
 
-    Returns:
-        An Element for the Row component.
-
     Example:
         with Row(gap=8):
             Button(text="Left")
             Button(text="Right")
     """
-    ...
+    pass
 
 
-@react_component_base("Card", is_container=True)
+@react("client/Card.tsx", is_container=True)
 def Card(
     *,
     padding: Padding | int | None = None,
@@ -113,7 +106,7 @@ def Card(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Visual container with card styling.
 
     Renders children inside a styled container with background, border,
@@ -129,12 +122,9 @@ def Card(
         style: Additional inline styles to apply.
         key: Optional key for reconciliation.
 
-    Returns:
-        An Element for the Card component.
-
     Example:
         with Card(padding=16):
             Label(text="Card content")
             Button(text="Action")
     """
-    ...
+    pass

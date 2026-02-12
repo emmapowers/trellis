@@ -13,9 +13,8 @@ from __future__ import annotations
 import typing as tp
 from enum import StrEnum
 
-from trellis.core.components.react import react_component_base
+from trellis.core.components.react import react
 from trellis.core.components.style_props import Margin
-from trellis.core.rendering.element import Element
 
 
 class IconName(StrEnum):
@@ -374,7 +373,7 @@ class IconName(StrEnum):
     POWER_OFF = "power-off"
 
 
-@react_component_base("Icon")
+@react("client/Icon.tsx", packages={"lucide-react": "0.468.0"})
 def Icon(
     name: IconName | str,
     *,
@@ -385,7 +384,7 @@ def Icon(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Render a Lucide icon.
 
     Args:
@@ -408,4 +407,4 @@ def Icon(
         Icon(name=IconName.CHECK, size=24, color="green")
         Icon(name=IconName.ALERT_TRIANGLE, color="#d97706")
     """
-    ...
+    pass

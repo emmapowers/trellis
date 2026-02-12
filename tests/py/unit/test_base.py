@@ -79,7 +79,7 @@ class TestIComponentProtocolConformance:
         assert text_node.element_kind == ElementKind.TEXT
         assert text_node.element_name == "__text__"
 
-    def test_react_component_base_has_react_component_kind(self) -> None:
+    def test_react_component_has_react_component_kind(self) -> None:
         """ReactComponentBase subclass should return REACT_COMPONENT kind."""
 
         class MyWidget(ReactComponentBase):

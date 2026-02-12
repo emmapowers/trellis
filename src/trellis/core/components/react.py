@@ -1,17 +1,20 @@
-"""React component base class."""
+"""React component base class and @react decorator."""
 
 from __future__ import annotations
 
 import functools
+import inspect
 import typing as tp
 from collections.abc import Callable
+from pathlib import Path
 from typing import ParamSpec
 
+from trellis.bundler.registry import ExportKind, registry
 from trellis.core.components.base import Component, ElementKind
 from trellis.core.components.style_props import Height, Margin, Padding, Width
 from trellis.core.rendering.element import Element
 
-__all__ = ["ReactComponentBase", "react_component_base"]
+__all__ = ["ReactComponentBase", "react"]
 
 # ParamSpec for preserving function signatures through decorators
 P = ParamSpec("P")
@@ -94,31 +97,61 @@ class ReactComponentBase(Component):
                 child()
 
 
-def react_component_base(
-    element_name: str,
+def react(
+    source: str,
     *,
+    export_name: str | None = None,
     is_container: bool = False,
+    packages: dict[str, str] | None = None,
     element_class: type[Element] = Element,
 ) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]:
-    """Decorator to create a ReactComponentBase from a function signature."""
+    """Decorator that creates a React component wrapper and registers it with the bundler.
+
+    Combines component creation with module
+    registration, so that widget Python definitions and TSX implementations are
+    colocated and the module registry is the single source of truth.
+
+    Args:
+        source: TSX source file path relative to the caller's directory.
+        export_name: React component export name. Defaults to the function name.
+        is_container: Whether this component accepts children via ``with`` blocks.
+        packages: NPM packages required by this component (name -> version).
+        element_class: Element subclass to use for this component's nodes.
+    """
+    # Capture caller's directory at decoration time (before entering decorator)
+    frame = inspect.currentframe()
+    if frame is not None and frame.f_back is not None:
+        caller_file = frame.f_back.f_code.co_filename
+        caller_dir = Path(caller_file).parent.resolve()
+    else:
+        caller_dir = None
 
     def decorator(
         func: Callable[P, tp.Any],
     ) -> Callable[P, Element]:
-        # Create a generated class with the function's name
+        resolved_export_name = export_name or func.__name__
+
+        # Create a generated ReactComponentBase subclass
         class _Generated(ReactComponentBase):
-            _element_name = element_name
+            _element_name = resolved_export_name
             _is_container = is_container
 
-        # Create singleton instance with the element_class
+        # Create singleton instance
         _singleton = _Generated(func.__name__, element_class=element_class)
+
+        # Register module with the bundler
+        module_name = f"{func.__module__}.{func.__qualname__}".replace(".", "-")
+        registry.register(
+            module_name,
+            base_path=caller_dir,
+            packages=packages,
+            exports=[(resolved_export_name, ExportKind.COMPONENT, source)],
+        )
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element:
-            # Widgets only accept keyword arguments, so args should be empty
             return _singleton._place(**_merge_style_props(dict(kwargs)))
 
-        # Expose the underlying component for introspection
         wrapper._component = _singleton  # type: ignore[attr-defined]
 
         return wrapper

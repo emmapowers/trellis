@@ -13,16 +13,16 @@ import { BrowserClient, ConnectionState } from "@trellis/trellis-browser/client/
 import {
   TrellisContext,
   HostThemeModeContext,
-} from "@trellis/trellis-core/client/src/TrellisContext";
-import { Message } from "@trellis/trellis-core/client/src/types";
-import { TreeRenderer } from "@trellis/trellis-core/client/src/TreeRenderer";
-import { useRootId } from "@trellis/trellis-core/client/src/core";
+} from "@trellis/trellis-core/TrellisContext";
+import { Message } from "@trellis/trellis-core/types";
+import { TreeRenderer } from "@trellis/trellis-core/TreeRenderer";
+import { useRootId } from "@trellis/trellis-core/core";
 import { PyodideWorker } from "@trellis/trellis-browser/client/src/PyodideWorker";
 import {
   INIT_TIMEOUT_MS,
   formatTimeoutError,
 } from "@trellis/trellis-browser/client/src/pyodide-error-utils";
-import { RoutingMode } from "@trellis/trellis-core/client/src/RouterManager";
+import { RoutingMode } from "@trellis/trellis-core/RouterManager";
 
 export { RoutingMode };
 

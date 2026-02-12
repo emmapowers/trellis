@@ -2,7 +2,7 @@
 
 from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent, component
-from trellis.core.components.react import ReactComponentBase, react_component_base
+from trellis.core.components.react import ReactComponentBase, react
 from trellis.core.components.style_props import Height, Margin, Padding, Width
 
 __all__ = [
@@ -14,5 +14,5 @@ __all__ = [
     "ReactComponentBase",
     "Width",
     "component",
-    "react_component_base",
+    "react",
 ]

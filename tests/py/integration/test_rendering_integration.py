@@ -562,7 +562,7 @@ class TestPropsComparison:
 class TestBuiltinWidgetsReconciliation:
     """Tests for reconciliation with built-in widgets (ReactComponentBase/HtmlElement).
 
-    These tests ensure that components created via @react_component_base and
+    These tests ensure that components created via @react and
     @html_element decorators work correctly in the reconciler. Unlike @component
     decorated functions, these use different class hierarchies that need to be
     hashable for type-based matching.
@@ -620,7 +620,7 @@ class TestBuiltinWidgetsReconciliation:
         assert len(ctx.root_element.child_ids) == 2
 
     def test_widgets_in_dynamic_list(self) -> None:
-        """Widgets (via @react_component_base) should be hashable for reconciliation."""
+        """Widgets (via @react) should be hashable for reconciliation."""
         items_ref = [[1, 2, 3, 4, 5]]
 
         @component
@@ -646,7 +646,7 @@ class TestBuiltinWidgetsReconciliation:
         assert len(column.child_ids) == 3
 
     def test_mixed_widgets_and_components_in_list(self) -> None:
-        """Mix of @component and @react_component_base in dynamic list."""
+        """Mix of @component and @react in dynamic list."""
         items_ref = [["a", "b", "c"]]
 
         @component

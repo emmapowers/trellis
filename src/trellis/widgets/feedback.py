@@ -8,16 +8,15 @@ from __future__ import annotations
 import typing as tp
 from typing import Literal
 
-from trellis.core.components.react import react_component_base
+from trellis.core.components.react import react
 from trellis.core.components.style_props import Margin, Padding, Width
-from trellis.core.rendering.element import Element
 from trellis.core.state.mutable import Mutable
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
 
 
-@react_component_base("Collapsible", is_container=True)
+@react("client/Collapsible.tsx", is_container=True)
 def Collapsible(
     *,
     title: str = "",
@@ -29,7 +28,7 @@ def Collapsible(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Collapsible content section.
 
     Args:
@@ -44,10 +43,10 @@ def Collapsible(
         style: Inline styles
         key: Unique key for reconciliation
     """
-    ...
+    pass
 
 
-@react_component_base("Callout", is_container=True)
+@react("client/Callout.tsx", is_container=True)
 def Callout(
     *,
     title: str | None = None,
@@ -61,7 +60,7 @@ def Callout(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Prominent status message or alert.
 
     Args:
@@ -78,4 +77,4 @@ def Callout(
         style: Inline styles
         key: Unique key for reconciliation
     """
-    ...
+    pass

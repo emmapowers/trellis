@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Self
+from unittest.mock import patch
 
+import pytest
+
+from trellis.bundler.registry import ModuleRegistry
 from trellis.core.components.composition import CompositionComponent, component
-from trellis.core.components.react import react_component_base
+from trellis.core.components.react import react
 from trellis.core.rendering.element import Element
 from trellis.core.rendering.render import render
 from trellis.core.state.stateful import Stateful
@@ -29,6 +33,13 @@ class CustomElement(Element):
 
 class TestElementClass:
     """Tests for element_class parameter on component decorators."""
+
+    @pytest.fixture(autouse=True)
+    def _isolated_registry(self):
+        """Provide an isolated registry for @react decorator tests."""
+        isolated = ModuleRegistry()
+        with patch("trellis.core.components.react.registry", isolated):
+            yield isolated
 
     def test_component_uses_custom_element_class(
         self, rendered: Callable[[CompositionComponent], RenderResult]
@@ -61,13 +72,14 @@ class TestElementClass:
         assert node is not None
         assert hasattr(node, "test_id")
 
-    def test_react_component_base_uses_custom_element_class(
+    def test_react_uses_custom_element_class(
         self, rendered: Callable[[CompositionComponent], RenderResult]
     ) -> None:
-        """@react_component_base with element_class creates nodes of that type."""
+        """@react with element_class creates nodes of that type."""
 
-        @react_component_base("TestWidget", element_class=CustomElement)
-        def TestWidget(*, text: str = "") -> Element: ...
+        @react("client/TestWidget.tsx", element_class=CustomElement)
+        def TestWidget(*, text: str = "") -> None:
+            pass
 
         @component
         def App() -> None:
@@ -115,8 +127,9 @@ class TestElementClass:
         class Counter(Stateful):
             count: int = 0
 
-        @react_component_base("TestWidget", element_class=CustomElement)
-        def TestWidget(*, value: int = 0) -> Element: ...
+        @react("client/TestWidget2.tsx", element_class=CustomElement)
+        def TestWidget(*, value: int = 0) -> None:
+            pass
 
         @component
         def App() -> None:

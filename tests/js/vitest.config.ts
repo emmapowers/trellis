@@ -17,7 +17,7 @@ export default defineConfig({
       "@trellis/trellis-browser/pyodide.worker-bundle": path.resolve(__dirname, "mocks/pyodide.worker-bundle.ts"),
       // @trellis/* aliases (matches esbuild build aliases)
       "@trellis/trellis-browser": path.resolve(__dirname, "../../src/trellis/platforms/browser"),
-      "@trellis/trellis-core": path.resolve(__dirname, "../../src/trellis/platforms/common"),
+      "@trellis/trellis-core": path.resolve(__dirname, "../../src/trellis/platforms/common/client/src"),
       "@trellis/trellis-server": path.resolve(__dirname, "../../src/trellis/platforms/server"),
       "@trellis/trellis-desktop": path.resolve(__dirname, "../../src/trellis/platforms/desktop"),
       // Use local node_modules for packages (source files import directly)

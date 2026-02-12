@@ -8,15 +8,16 @@ from __future__ import annotations
 import typing as tp
 from typing import Literal
 
-from trellis.core.components.react import react_component_base
+from trellis.core.components.react import react
 from trellis.core.components.style_props import Margin, Padding, Width
-from trellis.core.rendering.element import Element
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
 
+_ARIA_PACKAGES = {"react-aria": "3.35.0", "react-stately": "3.33.0"}
 
-@react_component_base("Menu", is_container=True)
+
+@react("client/Menu.tsx", is_container=True, packages=_ARIA_PACKAGES)
 def Menu(
     *,
     padding: Padding | int | None = None,
@@ -25,7 +26,7 @@ def Menu(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Menu container for menu items.
 
     Args:
@@ -36,10 +37,10 @@ def Menu(
         class_name: Additional CSS classes
         style: Inline styles
     """
-    ...
+    pass
 
 
-@react_component_base("MenuItem")
+@react("client/Menu.tsx", export_name="MenuItem")
 def MenuItem(
     text: str = "",
     *,
@@ -51,7 +52,7 @@ def MenuItem(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Individual menu item.
 
     Args:
@@ -65,23 +66,23 @@ def MenuItem(
         class_name: Additional CSS classes
         style: Inline styles
     """
-    ...
+    pass
 
 
-@react_component_base("MenuDivider")
+@react("client/Menu.tsx", export_name="MenuDivider")
 def MenuDivider(
     *,
     margin: Margin | None = None,
-) -> Element:
+) -> None:
     """Horizontal divider between menu items.
 
     Args:
         margin: Margin around the divider (Margin dataclass).
     """
-    ...
+    pass
 
 
-@react_component_base("Toolbar", is_container=True)
+@react("client/Toolbar.tsx", is_container=True, packages=_ARIA_PACKAGES)
 def Toolbar(
     *,
     variant: Literal["default", "minimal"] = "default",
@@ -92,7 +93,7 @@ def Toolbar(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Toolbar container for action buttons with keyboard navigation.
 
     Args:
@@ -105,4 +106,4 @@ def Toolbar(
         class_name: Additional CSS classes
         style: Inline styles
     """
-    ...
+    pass

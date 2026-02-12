@@ -5,9 +5,8 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.components.composition import component
-from trellis.core.components.react import react_component_base
+from trellis.core.components.react import react
 from trellis.core.components.style_props import Margin, Padding, Width
-from trellis.core.rendering.element import Element
 from trellis.core.state.mutable import Mutable
 from trellis.html.links import A
 from trellis.widgets.icons import IconName
@@ -16,7 +15,10 @@ if tp.TYPE_CHECKING:
     from collections.abc import Callable
 
 
-@react_component_base("Label")
+_ARIA_PACKAGES = {"react-aria": "3.35.0", "react-stately": "3.33.0"}
+
+
+@react("client/Label.tsx")
 def Label(
     text: str = "",
     *,
@@ -32,7 +34,7 @@ def Label(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Text display widget.
 
     Args:
@@ -59,7 +61,7 @@ def Label(
         Label(text="Centered", text_align="center")
         Label(text="Light weight", font_weight=300)
     """
-    ...
+    pass
 
 
 @component
@@ -146,7 +148,7 @@ def Button(
         )
 
 
-@react_component_base("Button")
+@react("client/Button.tsx", export_name="Button", packages=_ARIA_PACKAGES)
 def _Button(
     text: str = "",
     *,
@@ -161,10 +163,11 @@ def _Button(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element: ...
+) -> None:
+    pass
 
 
-@react_component_base("Slider")
+@react("client/Slider.tsx", packages=_ARIA_PACKAGES)
 def Slider(
     *,
     value: float | Mutable[float] = 50,
@@ -177,7 +180,7 @@ def Slider(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Range slider widget.
 
     Args:
@@ -199,10 +202,10 @@ def Slider(
     Example:
         Slider(value=mutable(state.slider_value), min=0, max=100)
     """
-    ...
+    pass
 
 
-@react_component_base("TextInput")
+@react("client/TextInput.tsx", packages=_ARIA_PACKAGES)
 def TextInput(
     value: str | Mutable[str] = "",
     *,
@@ -213,7 +216,7 @@ def TextInput(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Single-line text input widget.
 
     Args:
@@ -233,10 +236,10 @@ def TextInput(
     Example:
         TextInput(value=mutable(state.text), placeholder="Enter text...")
     """
-    ...
+    pass
 
 
-@react_component_base("NumberInput")
+@react("client/NumberInput.tsx", packages={**_ARIA_PACKAGES, "@internationalized/date": "3.5.6"})
 def NumberInput(
     *,
     value: float | Mutable[float] | None = None,
@@ -249,7 +252,7 @@ def NumberInput(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Numeric input widget.
 
     Args:
@@ -272,10 +275,10 @@ def NumberInput(
     Example:
         NumberInput(value=mutable(state.count), min=0, max=100, step=1)
     """
-    ...
+    pass
 
 
-@react_component_base("Checkbox")
+@react("client/Checkbox.tsx", packages=_ARIA_PACKAGES)
 def Checkbox(
     *,
     checked: bool | Mutable[bool] = False,
@@ -285,7 +288,7 @@ def Checkbox(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Checkbox toggle widget.
 
     Args:
@@ -304,10 +307,10 @@ def Checkbox(
     Example:
         Checkbox(checked=mutable(state.enabled), label="Enable feature")
     """
-    ...
+    pass
 
 
-@react_component_base("Divider")
+@react("client/Divider.tsx")
 def Divider(
     *,
     orientation: tp.Literal["horizontal", "vertical"] = "horizontal",
@@ -315,7 +318,7 @@ def Divider(
     color: str | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Divider line for separating content.
 
     Args:
@@ -335,10 +338,10 @@ def Divider(
         Divider()  # horizontal divider
         Divider(orientation="vertical", margin=12)  # vertical divider in a Row
     """
-    ...
+    pass
 
 
-@react_component_base("Select")
+@react("client/Select.tsx", packages=_ARIA_PACKAGES)
 def Select(
     *,
     value: str | Mutable[str] | None = None,
@@ -350,7 +353,7 @@ def Select(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Single-selection dropdown widget.
 
     Args:
@@ -374,10 +377,10 @@ def Select(
             options=[{"value": "opt1", "label": "Option 1"}, {"value": "opt2", "label": "Option 2"}],
         )
     """
-    ...
+    pass
 
 
-@react_component_base("Heading")
+@react("client/Heading.tsx")
 def Heading(
     text: str = "",
     *,
@@ -387,7 +390,7 @@ def Heading(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Semantic heading widget.
 
     Renders an HTML heading element (<h1> through <h6>) based on the level.
@@ -409,10 +412,10 @@ def Heading(
         Heading(text="Welcome", level=1)
         Heading(text="Section Title", level=2, color="#333")
     """
-    ...
+    pass
 
 
-@react_component_base("ProgressBar")
+@react("client/ProgressBar.tsx")
 def ProgressBar(
     *,
     value: float = 0,
@@ -427,7 +430,7 @@ def ProgressBar(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Progress bar widget.
 
     Displays a horizontal progress indicator with optional loading animation.
@@ -454,10 +457,10 @@ def ProgressBar(
         ProgressBar(value=50, min=0, max=100)
         ProgressBar(loading=True)  # Indeterminate loading state
     """
-    ...
+    pass
 
 
-@react_component_base("StatusIndicator")
+@react("client/StatusIndicator.tsx")
 def StatusIndicator(
     *,
     status: tp.Literal["success", "error", "warning", "pending", "info"] = "pending",
@@ -468,7 +471,7 @@ def StatusIndicator(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Status indicator with icon and optional label.
 
     Displays a semantic status (success, error, warning, etc.) with an icon
@@ -499,10 +502,10 @@ def StatusIndicator(
         StatusIndicator(status="error", label="Failed")
         StatusIndicator(status="pending")  # Icon only
     """
-    ...
+    pass
 
 
-@react_component_base("Badge")
+@react("client/Badge.tsx")
 def Badge(
     text: str = "",
     *,
@@ -512,7 +515,7 @@ def Badge(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Small badge for counts or status labels.
 
     Displays a compact, pill-shaped badge with semantic coloring.
@@ -541,10 +544,10 @@ def Badge(
         Badge(text="3", variant="error")  # Count badge
         Badge(text="Beta", variant="info")
     """
-    ...
+    pass
 
 
-@react_component_base("Tooltip", is_container=True)
+@react("client/Tooltip.tsx", is_container=True, packages=_ARIA_PACKAGES)
 def Tooltip(
     content: str = "",
     *,
@@ -554,7 +557,7 @@ def Tooltip(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
-) -> Element:
+) -> None:
     """Tooltip wrapper for hover hints.
 
     Wraps child elements and shows a tooltip on hover. The tooltip appears
@@ -581,4 +584,4 @@ def Tooltip(
         with w.Tooltip(content="Click to save"):
             w.Button(text="Save")
     """
-    ...
+    pass

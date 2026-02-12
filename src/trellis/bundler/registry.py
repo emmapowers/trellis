@@ -86,6 +86,7 @@ class ModuleRegistry:
         *,
         packages: dict[str, str] | None = None,
         exports: list[tuple[str, ExportKind, str]] | None = None,
+        base_path: Path | None = None,
     ) -> None:
         """Register a module.
 
@@ -93,6 +94,8 @@ class ModuleRegistry:
             name: Unique module name
             packages: NPM packages (name -> version)
             exports: Exports as (name, kind, source) tuples
+            base_path: Base path for resolving relative file paths. If not
+                provided, detected from the caller's file location.
 
         Raises:
             ValueError: If module name is already registered
@@ -100,13 +103,14 @@ class ModuleRegistry:
         if name in self._modules:
             raise ValueError(f"Module '{name}' already registered")
 
-        # Get the caller's file path for resolving relative paths
-        frame = inspect.currentframe()
-        if frame is not None and frame.f_back is not None:
-            caller_file = frame.f_back.f_code.co_filename
-            base_path = Path(caller_file).parent.resolve()
-        else:
-            base_path = None
+        if base_path is None:
+            # Get the caller's file path for resolving relative paths
+            frame = inspect.currentframe()
+            if frame is not None and frame.f_back is not None:
+                caller_file = frame.f_back.f_code.co_filename
+                base_path = Path(caller_file).parent.resolve()
+            else:
+                base_path = None
 
         # Convert export tuples to ModuleExport objects
         module_exports = []
