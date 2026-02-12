@@ -210,6 +210,7 @@ import typing as tp
 from trellis import *
 from trellis import widgets as w
 from trellis import html as h
+from trellis.app import theme
 from trellis.widgets import IconName
 
 {source}
@@ -217,8 +218,9 @@ from trellis.widgets import IconName
 
 @component
 def App():
-    with w.Column(padding=24):
-        {func_name}()
+    with w.Card(style={{"margin": "24px"}}):
+        with w.Column():
+            {func_name}()
 """
 
     # Encode for URL: base64(encodeURIComponent(code))

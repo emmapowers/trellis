@@ -485,6 +485,10 @@ class BundleBuildStep(BuildStep):
             "--jsx=automatic",
             "--loader:.tsx=tsx",
             "--loader:.ts=ts",
+            # Force ESM entry point for decimal.js-light. With --platform=browser,
+            # esbuild picks the "browser" field (CJS), breaking `new Decimal()` in
+            # recharts-scale when bundled as ESM.
+            "--alias:decimal.js-light=decimal.js-light/decimal.mjs",
         ]
 
         # Add aliases for each module - point directly to source paths
