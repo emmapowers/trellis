@@ -43,6 +43,9 @@ def bundle(ctx: CliContext, /, dest: Path | None = None, **cli_kwargs: Any) -> N
         config = apploader.config
         assert config is not None
 
+        # Import the app module to trigger @react decorator registration
+        apploader.import_module()
+
         click.echo(f"Bundling {config.name} for {config.platform.value}...")
         apploader.bundle(dest=dest)
         click.echo("Bundle complete.")
