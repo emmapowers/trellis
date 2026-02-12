@@ -184,6 +184,28 @@ class TestAnchorAutoRouting:
 
         assert router_state.path == "/users"
 
+    def test_target_blank_no_onclick(self, capture_patches: type[PatchCapture]) -> None:
+        """A with target='_blank' does NOT get auto onClick even for relative URLs.
+
+        Opening in a new tab should always use browser navigation, not the router.
+        """
+
+        @component
+        def App() -> None:
+            with RouterState():
+                A("Playground", href="/playground#code=abc", target="_blank")
+
+        capture = capture_patches(App)
+        capture.render()
+
+        tree = serialize_element(capture.session.root_element, capture.session)
+        anchor = find_element_by_type(tree, "a")
+        assert anchor is not None
+
+        # Should NOT have onClick handler - browser opens new tab
+        on_click_data = anchor.get("props", {}).get("onClick")
+        assert on_click_data is None, "A with target='_blank' should not have auto onClick"
+
     def test_use_router_false_no_onclick(self, capture_patches: type[PatchCapture]) -> None:
         """A with use_router=False does NOT get auto onClick even for relative URLs."""
 
