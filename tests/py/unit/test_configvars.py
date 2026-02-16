@@ -454,6 +454,27 @@ class TestConfigVarListCoercion:
         assert result[0] == Path.home() / "src"
         assert result[1] == Path("lib")
 
+    def test_coerces_list_of_paths_from_constructor_strings(self) -> None:
+        """list[Path] constructor values accept strings and normalize to Path."""
+        var: ConfigVar[list[Path]] = ConfigVar("paths", default=[Path(".")], type_hint=list[Path])
+        result = var.resolve(constructor_value=["src", "lib"])
+        assert result == [Path("src"), Path("lib")]
+
+
+class TestConfigVarPathCoercion:
+    """Test ConfigVar coercion of path-like values from non-ENV sources."""
+
+    def test_coerces_path_from_constructor_string(self) -> None:
+        var: ConfigVar[Path | None] = ConfigVar("icon", default=None, type_hint=Path)
+        result = var.resolve(constructor_value="~/icon.png")
+        assert result == Path.home() / "icon.png"
+
+    def test_coerces_path_from_cli_string(self) -> None:
+        var: ConfigVar[Path | None] = ConfigVar("icon", default=None, type_hint=Path)
+        with cli_context({"icon": "~/icon.png"}):
+            result = var.resolve()
+        assert result == Path.home() / "icon.png"
+
 
 class TestConfigVarCliMetadata:
     """Test CLI-specific metadata fields on ConfigVar."""

@@ -49,6 +49,10 @@ class TestConfigCreation:
         # Desktop defaults
         assert config.window_size == "maximized"
 
+    def test_python_path_from_constructor_strings(self) -> None:
+        config = Config(name="myapp", module="main", python_path=["src", "lib"])
+        assert config.python_path == [Path("src"), Path("lib")]
+
 
 class TestConfigFromEnv:
     """Test Config resolution from environment variables."""
@@ -142,6 +146,10 @@ class TestConfigAssetsDir:
         config = Config(name="myapp", module="main", assets_dir=Path("/var/www"))
         assert config.assets_dir == Path("/var/www")
 
+    def test_assets_dir_from_constructor_string(self) -> None:
+        config = Config(name="myapp", module="main", assets_dir="~/assets")
+        assert config.assets_dir == Path.home() / "assets"
+
     def test_assets_dir_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("TRELLIS_ASSETS_DIR", "~/assets")
         config = Config(name="myapp", module="main")
@@ -162,6 +170,10 @@ class TestConfigIcon:
     def test_icon_from_constructor(self) -> None:
         config = Config(name="myapp", module="main", icon=Path("/tmp/icon.png"))
         assert config.icon == Path("/tmp/icon.png")
+
+    def test_icon_from_constructor_string(self) -> None:
+        config = Config(name="myapp", module="main", icon="~/icon.png")
+        assert config.icon == Path.home() / "icon.png"
 
     def test_icon_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("TRELLIS_ICON", "~/icon.png")

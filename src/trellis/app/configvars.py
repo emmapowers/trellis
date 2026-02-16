@@ -249,7 +249,7 @@ class ConfigVar(Generic[T]):
         cli_args = get_cli_args()
         cli_value = cli_args.get(self.name)
         if cli_value is not None:
-            value = cli_value
+            value = self._coerce_input_value(cli_value)
         else:
             # 2. Environment variable
             env_str = os.environ.get(self.get_env_name())
@@ -262,7 +262,7 @@ class ConfigVar(Generic[T]):
 
         # 3. Constructor value (if not set from CLI or ENV)
         if value is None and constructor_value is not None:
-            value = constructor_value
+            value = self._coerce_input_value(constructor_value)
 
         # 4. Default (if nothing else set)
         if value is None:
@@ -273,6 +273,33 @@ class ConfigVar(Generic[T]):
             value = self.validator(value)
 
         # Value could be the default (type T), so this is safe
+        return value
+
+    def _coerce_input_value(self, value: Any) -> T:
+        """Coerce CLI/constructor values using this ConfigVar's target type when needed."""
+        target_type = self._get_target_type()
+        if target_type is None:
+            return value
+
+        if isinstance(value, str):
+            return self._coerce(value, target_type)
+
+        origin = get_origin(target_type)
+        if origin is type(int | None):
+            args = [a for a in get_args(target_type) if a is not type(None)]
+            if args:
+                target_type = args[0]
+                origin = get_origin(target_type)
+
+        if origin is list and isinstance(value, list):
+            type_args = get_args(target_type)
+            element_type = type_args[0] if type_args else str
+            coerced_list = [
+                self._coerce(item, element_type) if isinstance(item, str) else item
+                for item in value
+            ]
+            return coerced_list
+
         return value
 
 
