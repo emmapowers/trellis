@@ -2,7 +2,8 @@
 
 from trellis import Margin, Padding, Route, Routes, component, router
 from trellis import widgets as w
-from trellis.app import App, theme
+from trellis.app import App, get_config, theme
+from trellis.platforms.common.base import PlatformType
 from trellis.widgets import IconName, ThemeSwitcher
 
 from .sections import (
@@ -10,6 +11,7 @@ from .sections import (
     ButtonsSection,
     ChartsSection,
     DataDisplaySection,
+    DesktopSection,
     FeedbackSection,
     FormInputsSection,
     IconsSection,
@@ -22,8 +24,7 @@ from .sections import (
     TypographySection,
 )
 
-# Tab definitions: (id, label, icon, component)
-TABS = [
+_BASE_TABS = [
     ("layout", "Layout", IconName.LAYOUT_GRID, LayoutSection),
     ("buttons", "Buttons", IconName.MOUSE_POINTER, ButtonsSection),
     ("forms", "Forms", IconName.EDIT_2, FormInputsSection),
@@ -40,6 +41,35 @@ TABS = [
     ("actions", "Actions", IconName.MENU, ActionsSection),
 ]
 
+_DESKTOP_TAB = ("desktop", "Desktop", IconName.MONITOR, DesktopSection)
+
+
+def _resolve_platform() -> PlatformType:
+    try:
+        config = get_config()
+    except RuntimeError:
+        return PlatformType.SERVER
+
+    if config is None:
+        return PlatformType.SERVER
+
+    return config.platform
+
+
+def resolve_tabs(platform: PlatformType | None = None) -> list[tuple[str, str, IconName, type]]:
+    tabs = list(_BASE_TABS)
+    active_platform = platform if platform is not None else _resolve_platform()
+    if active_platform != PlatformType.DESKTOP:
+        return tabs
+
+    forms_index = next((index for index, (tab_id, *_rest) in enumerate(tabs) if tab_id == "forms"), -1)
+    if forms_index == -1:
+        tabs.append(_DESKTOP_TAB)
+        return tabs
+
+    tabs.insert(forms_index + 1, _DESKTOP_TAB)
+    return tabs
+
 
 @component
 def WidgetShowcase() -> None:
@@ -47,6 +77,7 @@ def WidgetShowcase() -> None:
     # Get active tab from URL path (e.g., "/buttons" -> "buttons", "/" -> "layout")
     path = router().path
     active_tab = path.strip("/") or "layout"
+    tabs = resolve_tabs()
 
     with w.Column(gap=0, style={"height": "100vh"}):
         # Header
@@ -78,7 +109,7 @@ def WidgetShowcase() -> None:
                     "flexShrink": "0",
                 },
             ):
-                for tab_id, label, _icon, _ in TABS:
+                for tab_id, label, _icon, _ in tabs:
                     is_active = active_tab == tab_id
                     # Use href for client-side navigation
                     href = "/" if tab_id == "layout" else f"/{tab_id}"
@@ -108,7 +139,7 @@ def WidgetShowcase() -> None:
                         )
 
                     # Generate routes for each tab
-                    for tab_id, label, icon, SectionComponent in TABS:
+                    for tab_id, label, icon, SectionComponent in tabs:
                         if tab_id != "layout":  # Skip layout, it's the default
                             with Route(pattern=f"/{tab_id}"):
                                 SectionContent(

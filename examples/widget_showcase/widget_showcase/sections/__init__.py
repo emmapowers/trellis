@@ -4,6 +4,7 @@ from .actions import ActionsSection
 from .buttons import ButtonsSection
 from .charts import ChartsSection
 from .data import DataDisplaySection
+from .desktop import DesktopSection
 from .feedback import FeedbackSection
 from .forms import FormInputsSection
 from .icons import IconsSection
@@ -20,6 +21,7 @@ __all__ = [
     "ButtonsSection",
     "ChartsSection",
     "DataDisplaySection",
+    "DesktopSection",
     "FeedbackSection",
     "FormInputsSection",
     "IconsSection",
