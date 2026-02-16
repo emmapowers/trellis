@@ -103,6 +103,8 @@ class DesktopPlatform(Platform):
     _batch_delay: float
     _e2e_config: DesktopE2EConfig | None
     _e2e_result_event: asyncio.Event
+    _e2e_connected_event: asyncio.Event
+    _e2e_finished: bool
     _e2e_external_url: str | None
 
     def __init__(self) -> None:
@@ -113,6 +115,8 @@ class DesktopPlatform(Platform):
         self._batch_delay = 1.0 / 30
         self._e2e_config = load_desktop_e2e_config_from_env()
         self._e2e_result_event = asyncio.Event()
+        self._e2e_connected_event = asyncio.Event()
+        self._e2e_finished = False
         self._e2e_external_url = None
 
     @property
@@ -171,6 +175,7 @@ class DesktopPlatform(Platform):
             self._handler_task.add_done_callback(_on_handler_done)
 
             if self._e2e_config is not None:
+                self._e2e_connected_event.set()
                 self._start_e2e_probe(webview_window, app_handle)
             return "ok"
 
@@ -210,7 +215,9 @@ class DesktopPlatform(Platform):
 
         async def run_probe() -> None:
             await asyncio.sleep(self._e2e_config.initial_delay_seconds)
-            webview_window.eval(build_probe_script(self._e2e_config))
+            webview_window.run_on_main_thread(
+                lambda: webview_window.eval(build_probe_script(self._e2e_config))
+            )
 
         async def watch_result() -> None:
             try:
@@ -230,8 +237,11 @@ class DesktopPlatform(Platform):
                 return
 
             if self._e2e_config.scenario == DesktopE2EScenario.MARKDOWN_EXTERNAL_LINK:
-                expected_url = "https://github.com/emmapowers/trellis/"
-                if self._e2e_external_url == expected_url:
+                expected_urls = {
+                    "https://github.com/emmapowers/trellis",
+                    "https://github.com/emmapowers/trellis/",
+                }
+                if self._e2e_external_url in expected_urls:
                     self._finish_e2e(
                         app_handle=app_handle,
                         success=True,
@@ -250,7 +260,7 @@ class DesktopPlatform(Platform):
                     details={
                         "scenario": self._e2e_config.scenario,
                         "external_url": self._e2e_external_url,
-                        "expected_url": expected_url,
+                        "expected_urls": sorted(expected_urls),
                     },
                 )
                 return
@@ -265,6 +275,26 @@ class DesktopPlatform(Platform):
         asyncio.create_task(run_probe())
         asyncio.create_task(watch_result())
 
+    async def _watch_e2e_global_timeout(self, app_handle: AppHandle) -> None:
+        """Fail fast when desktop E2E flow does not complete."""
+        if self._e2e_config is None:
+            return
+
+        total_timeout = self._e2e_config.initial_delay_seconds + self._e2e_config.timeout_seconds + 2
+        try:
+            await asyncio.wait_for(self._e2e_result_event.wait(), timeout=total_timeout)
+        except TimeoutError:
+            reason = "not_connected" if not self._e2e_connected_event.is_set() else "timeout"
+            self._finish_e2e(
+                app_handle=app_handle,
+                success=False,
+                reason=reason,
+                details={
+                    "scenario": self._e2e_config.scenario,
+                    "external_url": self._e2e_external_url,
+                },
+            )
+
     def _finish_e2e(
         self,
         *,
@@ -274,12 +304,13 @@ class DesktopPlatform(Platform):
         details: dict[str, Any],
     ) -> None:
         """Emit E2E result line and terminate desktop app."""
-        if self._e2e_result_event.is_set():
+        if self._e2e_finished:
             return
-        self._e2e_result_event.set()
+        self._e2e_finished = True
         payload = {"success": success, "reason": reason, **details}
         print(f"TRELLIS_DESKTOP_E2E_RESULT={json.dumps(payload, sort_keys=True)}", flush=True)
-        app_handle.exit(0 if success else 1)
+        exit_code = 0 if success else 1
+        app_handle.run_on_main_thread(lambda: app_handle.exit(exit_code))
 
     async def run(
         self,
@@ -309,6 +340,8 @@ class DesktopPlatform(Platform):
         self._app_wrapper = app_wrapper
         self._batch_delay = batch_delay
         self._e2e_result_event = asyncio.Event()
+        self._e2e_connected_event = asyncio.Event()
+        self._e2e_finished = False
         self._e2e_external_url = None
 
         # Create commands with registered handlers
@@ -342,6 +375,9 @@ class DesktopPlatform(Platform):
             from pytauri_plugins import dialog as dialog_plugin  # noqa: PLC0415
 
             app.handle().plugin(dialog_plugin.init())
+
+            if self._e2e_config is not None:
+                portal.start_task_soon(self._watch_e2e_global_timeout, app.handle())
 
             # Run until window is closed
             try:
