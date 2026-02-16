@@ -62,6 +62,11 @@ class TestIsRelativeUrl:
         assert _is_relative_url("file:///path/to/file") is False
         assert _is_relative_url("file://localhost/path") is False
 
+    def test_other_absolute_schemes_are_not_relative(self) -> None:
+        """Any absolute URI scheme should bypass router navigation."""
+        assert _is_relative_url("ftp://example.com/file.txt") is False
+        assert _is_relative_url("tauri://localhost/path") is False
+
     def test_bare_path_is_relative(self) -> None:
         """Paths without leading slash are still relative."""
         assert _is_relative_url("path/to/resource") is True

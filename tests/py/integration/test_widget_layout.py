@@ -1,7 +1,9 @@
-"""Tests for layout widgets: Column, Row."""
+"""Tests for layout widgets: Column, Row, SplitPane."""
+
+import pytest
 
 from trellis.core.components.composition import component
-from trellis.widgets import Button, Column, Label, Row
+from trellis.widgets import Button, Column, Label, Row, SplitPane
 
 
 class TestLayoutWidgets:
@@ -79,3 +81,34 @@ class TestLayoutWidgets:
         assert row2.component.name == "Row"
         assert len(row1.child_ids) == 2
         assert len(row2.child_ids) == 2
+
+    def test_split_pane_renders_two_children(self, rendered) -> None:
+        """SplitPane renders exactly two panes."""
+
+        @component
+        def App() -> None:
+            with SplitPane(split=0.4, min_size=80):
+                Label(text="Left")
+                Label(text="Right")
+
+        result = rendered(App)
+
+        split_pane = result.session.elements.get(result.root_element.child_ids[0])
+        assert split_pane.component.name == "SplitPane"
+        assert split_pane.properties["split"] == 0.4
+        assert split_pane.properties["min_size"] == 80
+
+        rendered_split_pane = result.session.elements.get(split_pane.child_ids[0])
+        assert rendered_split_pane.component.element_name == "SplitPane"
+        assert len(rendered_split_pane.child_ids) == 2
+
+    def test_split_pane_requires_exactly_two_children(self, rendered) -> None:
+        """SplitPane raises when child count is not exactly two."""
+
+        @component
+        def App() -> None:
+            with SplitPane():
+                Label(text="Only one")
+
+        with pytest.raises(ValueError, match="exactly two"):
+            rendered(App)

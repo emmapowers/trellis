@@ -6,6 +6,7 @@ Elements for hyperlinks and images.
 from __future__ import annotations
 
 import typing as tp
+from urllib.parse import urlparse
 
 from trellis.core.rendering.element import Element
 from trellis.html.base import Style, html_element
@@ -34,21 +35,15 @@ def _is_relative_url(href: str) -> bool:
     Returns:
         True if the URL is relative (should use router), False if absolute or special scheme
     """
-    # Absolute URLs, protocol-relative URLs, and special schemes should bypass router
-    if href.startswith(
-        (
-            "http://",
-            "https://",
-            "//",
-            "mailto:",
-            "tel:",
-            "javascript:",
-            "data:",
-            "file:",
-            "#",  # Fragment-only: scroll to element
-            "?",  # Query-only: modify query params on current page
-        )
-    ):
+    if href.startswith("//"):
+        return False
+    if href.startswith("#"):
+        return False
+    if href.startswith("?"):
+        return False
+
+    parsed = urlparse(href)
+    if parsed.scheme:
         return False
     return True
 
@@ -126,6 +121,7 @@ def A(
     """
     # For relative URLs without custom onClick, add router navigation
     effective_onclick = onClick
+    effective_props = dict(props)
     if href and onClick is None and use_router and target != "_blank" and _is_relative_url(href):
         # Capture href in closure for the async callback
         nav_href = href
@@ -134,6 +130,7 @@ def A(
             await router().navigate(nav_href)
 
         effective_onclick = router_click
+        effective_props["data-trellis-router-link"] = "true"
 
     return _A(
         _text=text if text else None,
@@ -143,5 +140,5 @@ def A(
         className=className,
         style=style,
         onClick=effective_onclick,
-        **props,
+        **effective_props,
     )
