@@ -8,6 +8,7 @@ interface SplitPaneProps {
   split?: number;
   min_size?: number;
   divider_size?: number;
+  height?: number | string;
   className?: string;
   style?: React.CSSProperties;
   children?: React.ReactNode;
@@ -19,6 +20,13 @@ function clamp(value: number, min: number, max: number): number {
 
 function toPercent(value: number): string {
   return `${(value * 100).toFixed(4).replace(/\.?0+$/, "")}%`;
+}
+
+function toCssLength(value: number | string | undefined, fallback: string): string {
+  if (value === undefined) {
+    return fallback;
+  }
+  return typeof value === "number" ? `${value}px` : value;
 }
 
 function clampSplitForBounds(rawSplit: number, containerSize: number, minSize: number): number {
@@ -35,6 +43,7 @@ export function SplitPane({
   split = 0.5,
   min_size = 120,
   divider_size = 8,
+  height,
   className,
   style,
   children,
@@ -91,7 +100,7 @@ export function SplitPane({
         display: "flex",
         flexDirection: isHorizontal ? "row" : "column",
         width: "100%",
-        height: "100%",
+        height: toCssLength(height, "100%"),
         minWidth: 0,
         minHeight: 0,
         overflow: "hidden",
