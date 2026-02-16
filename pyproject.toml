@@ -45,6 +45,7 @@ dependencies = [
 desktop = [
     "pytauri-wheel>=0.8.0",
     "pydantic>=2.12",
+    "pyinstaller>=6.12",
 ]
 
 [project.urls]
