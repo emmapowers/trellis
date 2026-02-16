@@ -5,7 +5,6 @@ Provides basic UI building blocks that map to React components on the client.
 
 # Re-export theme tokens for styling convenience
 from trellis.widgets.actions import Menu, MenuDivider, MenuItem, Toolbar
-from trellis.widgets.agentic import Markdown
 from trellis.widgets.basic import (
     Badge,
     Button,
@@ -34,6 +33,7 @@ from trellis.widgets.data import Stat, Tag
 from trellis.widgets.feedback import Callout, Collapsible
 from trellis.widgets.icons import Icon, IconName
 from trellis.widgets.layout import Card, Column, Row, SplitPane
+from trellis.widgets.markdown import Markdown
 from trellis.widgets.navigation import Breadcrumb, Tab, Tabs, Tree
 from trellis.widgets.table import Table, TableColumn
 from trellis.widgets.theme_switcher import ThemeSwitcher

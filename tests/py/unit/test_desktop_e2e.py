@@ -13,7 +13,9 @@ from trellis.platforms.desktop.e2e import (
 
 
 class TestDesktopE2EConfig:
-    def test_returns_none_when_no_scenario_configured(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_returns_none_when_no_scenario_configured(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.delenv("TRELLIS_DESKTOP_E2E_SCENARIO", raising=False)
         result = load_desktop_e2e_config_from_env()
         assert result is None

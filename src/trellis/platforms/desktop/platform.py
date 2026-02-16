@@ -7,7 +7,7 @@ import json
 import webbrowser
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, assert_never
 from urllib.parse import urlparse
 
 from anyio.from_thread import start_blocking_portal
@@ -118,6 +118,8 @@ class DesktopPlatform(Platform):
     _e2e_connected_event: asyncio.Event
     _e2e_finished: bool
     _e2e_external_url: str | None
+    _e2e_probe_task: asyncio.Task[None] | None
+    _e2e_watch_task: asyncio.Task[None] | None
 
     def __init__(self) -> None:
         self._root_component = None
@@ -130,6 +132,8 @@ class DesktopPlatform(Platform):
         self._e2e_connected_event = asyncio.Event()
         self._e2e_finished = False
         self._e2e_external_url = None
+        self._e2e_probe_task = None
+        self._e2e_watch_task = None
 
     @property
     def name(self) -> str:
@@ -222,19 +226,20 @@ class DesktopPlatform(Platform):
 
     def _start_e2e_probe(self, webview_window: WebviewWindow, app_handle: AppHandle) -> None:
         """Start desktop E2E probe and timeout watcher."""
-        if self._e2e_config is None:
+        e2e_config = self._e2e_config
+        if e2e_config is None:
             return
 
         async def run_probe() -> None:
-            await asyncio.sleep(self._e2e_config.initial_delay_seconds)
+            await asyncio.sleep(e2e_config.initial_delay_seconds)
             webview_window.run_on_main_thread(
-                lambda: webview_window.eval(build_probe_script(self._e2e_config))
+                lambda: webview_window.eval(build_probe_script(e2e_config))
             )
 
         async def watch_result() -> None:
             try:
                 await asyncio.wait_for(
-                    self._e2e_result_event.wait(), timeout=self._e2e_config.timeout_seconds
+                    self._e2e_result_event.wait(), timeout=e2e_config.timeout_seconds
                 )
             except TimeoutError:
                 self._finish_e2e(
@@ -242,50 +247,46 @@ class DesktopPlatform(Platform):
                     success=False,
                     reason="timeout",
                     details={
-                        "scenario": self._e2e_config.scenario,
+                        "scenario": e2e_config.scenario,
                         "external_url": self._e2e_external_url,
                     },
                 )
                 return
 
-            if self._e2e_config.scenario == DesktopE2EScenario.MARKDOWN_EXTERNAL_LINK:
-                expected_urls = {
-                    "https://github.com/emmapowers/trellis",
-                    "https://github.com/emmapowers/trellis/",
-                }
-                if self._e2e_external_url in expected_urls:
+            match e2e_config.scenario:
+                case DesktopE2EScenario.MARKDOWN_EXTERNAL_LINK:
+                    expected_urls = {
+                        "https://github.com/emmapowers/trellis",
+                        "https://github.com/emmapowers/trellis/",
+                    }
+                    if self._e2e_external_url in expected_urls:
+                        self._finish_e2e(
+                            app_handle=app_handle,
+                            success=True,
+                            reason="ok",
+                            details={
+                                "scenario": e2e_config.scenario,
+                                "external_url": self._e2e_external_url,
+                            },
+                        )
+                        return
+
                     self._finish_e2e(
                         app_handle=app_handle,
-                        success=True,
-                        reason="ok",
+                        success=False,
+                        reason="unexpected_url",
                         details={
-                            "scenario": self._e2e_config.scenario,
+                            "scenario": e2e_config.scenario,
                             "external_url": self._e2e_external_url,
+                            "expected_urls": sorted(expected_urls),
                         },
                     )
                     return
+                case _:
+                    assert_never(e2e_config.scenario)
 
-                self._finish_e2e(
-                    app_handle=app_handle,
-                    success=False,
-                    reason="unexpected_url",
-                    details={
-                        "scenario": self._e2e_config.scenario,
-                        "external_url": self._e2e_external_url,
-                        "expected_urls": sorted(expected_urls),
-                    },
-                )
-                return
-
-            self._finish_e2e(
-                app_handle=app_handle,
-                success=False,
-                reason="unsupported_scenario",
-                details={"scenario": self._e2e_config.scenario},
-            )
-
-        asyncio.create_task(run_probe())
-        asyncio.create_task(watch_result())
+        self._e2e_probe_task = asyncio.create_task(run_probe())
+        self._e2e_watch_task = asyncio.create_task(watch_result())
 
     async def _watch_e2e_global_timeout(self, app_handle: AppHandle) -> None:
         """Fail fast when desktop E2E flow does not complete."""
@@ -357,6 +358,8 @@ class DesktopPlatform(Platform):
         self._e2e_connected_event = asyncio.Event()
         self._e2e_finished = False
         self._e2e_external_url = None
+        self._e2e_probe_task = None
+        self._e2e_watch_task = None
 
         # Create commands with registered handlers
         commands = self._create_commands()

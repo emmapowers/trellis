@@ -32,7 +32,7 @@ def test_timeout_terminates_spawned_child_process(tmp_path: Path) -> None:
     script = (
         "import pathlib, subprocess, sys, time;"
         "child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)']);"
-        f"pathlib.Path({repr(str(child_pid_file))}).write_text(str(child.pid));"
+        f"pathlib.Path({str(child_pid_file)!r}).write_text(str(child.pid));"
         "print('started', flush=True);"
         "time.sleep(60)"
     )

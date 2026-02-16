@@ -72,7 +72,7 @@ Widgets are accessed via `trellis.widgets` (conventionally imported as `w`):
 | **Forms** | `Button`, `TextInput`, `MultilineInput`, `NumberInput`, `Checkbox`, `Slider`, `Select` |
 | **Text** | `Label`, `Heading`, `Divider` |
 | **Data** | `Table`, `Stat`, `Tag`, `Badge` |
-| **Agentic** | `Markdown` |
+| **Rich Text** | `Markdown` |
 | **Charts** | `TimeSeriesChart`, `LineChart`, `BarChart`, `AreaChart`, `PieChart`, `Sparkline` |
 | **Feedback** | `ProgressBar`, `StatusIndicator`, `Tooltip`, `Callout`, `Collapsible` |
 | **Navigation** | `Tabs`/`Tab`, `Breadcrumb`, `Tree`, `Menu`/`MenuItem`, `Toolbar` |
