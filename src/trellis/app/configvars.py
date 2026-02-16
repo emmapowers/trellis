@@ -30,7 +30,7 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Generic, TypeVar, get_args, get_origin
+from typing import Any, Generic, TypeVar, cast, get_args, get_origin
 
 from trellis.utils.debug import DEBUG_CATEGORIES
 
@@ -279,7 +279,7 @@ class ConfigVar(Generic[T]):
         """Coerce CLI/constructor values using this ConfigVar's target type when needed."""
         target_type = self._get_target_type()
         if target_type is None:
-            return value
+            return cast("T", value)
 
         if isinstance(value, str):
             return self._coerce(value, target_type)
@@ -294,13 +294,15 @@ class ConfigVar(Generic[T]):
         if origin is list and isinstance(value, list):
             type_args = get_args(target_type)
             element_type = type_args[0] if type_args else str
-            coerced_list = [
-                self._coerce(item, element_type) if isinstance(item, str) else item
-                for item in value
-            ]
-            return coerced_list
+            return cast(
+                "T",
+                [
+                    self._coerce(item, element_type) if isinstance(item, str) else item
+                    for item in value
+                ],
+            )
 
-        return value
+        return cast("T", value)
 
 
 # ============================================================================

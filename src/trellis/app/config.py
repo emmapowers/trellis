@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass, field, fields
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from trellis.app.configvars import (
     ConfigVar,
@@ -206,6 +206,30 @@ class Config:
 
     # Desktop settings
     window_size: str = "maximized"
+
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            *,
+            name: str,
+            module: str,
+            python_path: list[Path | str] = ...,
+            platform: PlatformType = ...,
+            force_build: bool = ...,
+            watch: bool = ...,
+            batch_delay: float = ...,
+            hot_reload: bool = ...,
+            routing_mode: RoutingMode | None = ...,
+            debug: str = ...,
+            assets_dir: Path | str | None = ...,
+            icon: Path | str | None = ...,
+            title: str | None = ...,
+            library: bool = ...,
+            host: str = ...,
+            port: int | None = ...,
+            window_size: str = ...,
+        ) -> None: ...
 
     def __post_init__(self) -> None:
         """Resolve all fields through ConfigVar system and validate."""
