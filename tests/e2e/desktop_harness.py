@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -34,7 +35,7 @@ def run_desktop_e2e_scenario(
     env["TRELLIS_DESKTOP_E2E_INITIAL_DELAY_SECONDS"] = "0.8"
 
     process = subprocess.run(
-        ["trellis", "--app-root", str(app_root), "run", "--desktop"],
+        [sys.executable, "-m", "trellis.cli", "--app-root", str(app_root), "run", "--desktop"],
         cwd=app_root,
         env=env,
         text=True,

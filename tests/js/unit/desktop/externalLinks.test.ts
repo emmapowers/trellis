@@ -62,4 +62,31 @@ describe("desktop external link delegation", () => {
     uninstall();
     anchor.remove();
   });
+
+  it("intercepts links rendered inside shadow dom", () => {
+    const openExternal = vi.fn().mockResolvedValue(undefined);
+    const uninstall = installExternalLinkDelegation(openExternal);
+
+    const host = document.createElement("div");
+    const shadowRoot = host.attachShadow({ mode: "open" });
+    const anchor = document.createElement("a");
+    anchor.href = "https://example.com";
+    anchor.textContent = "external";
+    shadowRoot.appendChild(anchor);
+    document.body.appendChild(host);
+
+    const event = new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      button: 0,
+    });
+    anchor.dispatchEvent(event);
+
+    expect(openExternal).toHaveBeenCalledWith("https://example.com/");
+    expect(event.defaultPrevented).toBe(true);
+
+    uninstall();
+    host.remove();
+  });
 });
