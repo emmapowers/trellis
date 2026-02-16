@@ -5,7 +5,7 @@ from trellis.widgets import Checkbox, MultilineInput, NumberInput, Select, TextI
 
 
 class TestInputWidgets:
-    """Tests for TextInput, NumberInput, Checkbox, and Select widgets."""
+    """Tests for TextInput, NumberInput, Checkbox, Select, and MultilineInput widgets."""
 
     def test_text_input_with_value(self, rendered) -> None:
         """TextInput stores value and placeholder props."""

@@ -74,7 +74,7 @@ def _load_dialog_ext() -> Any:
     try:
         dialog_module = importlib.import_module("pytauri_plugins.dialog")
         return dialog_module.DialogExt
-    except (ImportError, AttributeError) as exc:
+    except (ModuleNotFoundError, AttributeError) as exc:
         raise RuntimeError(
             "Desktop dialog plugin is unavailable. Ensure pytauri dialog support is installed."
         ) from exc

@@ -27,6 +27,24 @@ def test_parses_payload_from_custom_command(tmp_path: Path) -> None:
     assert result.payload == {"success": True, "scenario": "unit"}
 
 
+def test_sets_timeout_env_from_timeout_seconds(tmp_path: Path) -> None:
+    script = (
+        "import json, os;"
+        f"print({E2E_RESULT_PREFIX!r} + json.dumps("
+        '{"timeout": os.environ.get("TRELLIS_DESKTOP_E2E_TIMEOUT_SECONDS")}'
+        "), flush=True)"
+    )
+    result = run_desktop_e2e_scenario(
+        app_root=tmp_path,
+        scenario="markdown_external_link",
+        timeout_seconds=12.5,
+        command=[sys.executable, "-c", script],
+    )
+
+    assert result.return_code == 0
+    assert result.payload == {"timeout": "12.5"}
+
+
 def test_timeout_terminates_spawned_child_process(tmp_path: Path) -> None:
     child_pid_file = tmp_path / "child.pid"
     script = (

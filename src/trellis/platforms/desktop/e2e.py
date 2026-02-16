@@ -8,6 +8,10 @@ from enum import StrEnum
 
 _DEFAULT_TIMEOUT_SECONDS = 8.0
 _DEFAULT_INITIAL_DELAY_SECONDS = 0.8
+_MARKDOWN_EXTERNAL_LINK_EXPECTED_URLS = (
+    "https://github.com/emmapowers/trellis",
+    "https://github.com/emmapowers/trellis/",
+)
 
 
 class DesktopE2EScenario(StrEnum):
@@ -23,6 +27,7 @@ class DesktopE2EConfig:
     scenario: DesktopE2EScenario
     timeout_seconds: float = _DEFAULT_TIMEOUT_SECONDS
     initial_delay_seconds: float = _DEFAULT_INITIAL_DELAY_SECONDS
+    expected_external_urls: tuple[str, ...] = ()
 
 
 def load_desktop_e2e_config_from_env() -> DesktopE2EConfig | None:
@@ -45,6 +50,7 @@ def load_desktop_e2e_config_from_env() -> DesktopE2EConfig | None:
         scenario=scenario,
         timeout_seconds=timeout_seconds,
         initial_delay_seconds=initial_delay_seconds,
+        expected_external_urls=_MARKDOWN_EXTERNAL_LINK_EXPECTED_URLS,
     )
 
 

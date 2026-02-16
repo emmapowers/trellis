@@ -256,10 +256,7 @@ class DesktopPlatform(Platform):
 
             match e2e_config.scenario:
                 case DesktopE2EScenario.MARKDOWN_EXTERNAL_LINK:
-                    expected_urls = {
-                        "https://github.com/emmapowers/trellis",
-                        "https://github.com/emmapowers/trellis/",
-                    }
+                    expected_urls = set(e2e_config.expected_external_urls)
                     if self._e2e_external_url in expected_urls:
                         self._finish_e2e(
                             app_handle=app_handle,
@@ -395,6 +392,8 @@ class DesktopPlatform(Platform):
                 context=context_factory(config_dir, tauri_config=config_override),
                 invoke_handler=commands.generate_handler(portal),
             )
+            # Keep this runtime-only import local so non-desktop environments do not
+            # require desktop plugin modules during normal import/CI workflows.
             dialog_plugin: Any = importlib.import_module("pytauri_plugins.dialog")
             app.handle().plugin(dialog_plugin.init())
 

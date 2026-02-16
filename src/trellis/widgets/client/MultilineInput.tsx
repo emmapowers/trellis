@@ -54,8 +54,8 @@ export function MultilineInput({
   const computedStyle: React.CSSProperties = {
     ...textareaStyles,
     ...(isFocusVisible && !disabled ? focusRing : {}),
-    ...(disabled ? disabledStyles : {}),
     ...(read_only ? readOnlyStyles : {}),
+    ...(disabled ? disabledStyles : {}),
     ...style,
   };
 

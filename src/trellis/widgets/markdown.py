@@ -5,14 +5,14 @@ from __future__ import annotations
 from trellis.core.components.react import react
 from trellis.core.components.style_props import Margin, Width
 
-_MARKDOWN_PACKAGES = {
+_markdown_packages = {
     "@types/markdown-it": "14.1.2",
     "dompurify": "3.3.0",
     "markdown-it": "14.1.0",
 }
 
 
-@react("client/Markdown.tsx", packages=_MARKDOWN_PACKAGES)
+@react("client/Markdown.tsx", packages=_markdown_packages)
 def Markdown(
     content: str = "",
     *,

@@ -25,6 +25,7 @@ registry.register(
 
 def __getattr__(name: str) -> Any:
     if name == "DesktopPlatform":
+        # Lazy import keeps pytauri-only runtime dependencies out of non-desktop imports.
         from trellis.platforms.desktop.platform import DesktopPlatform  # noqa: PLC0415
 
         return DesktopPlatform

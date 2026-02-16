@@ -1863,14 +1863,21 @@ class TestIconAssetStep:
         self, build_context: BuildContext, tmp_path: Path
     ) -> None:
         source_icon = tmp_path / "icon.png"
-        source_icon.write_bytes(b"icon-bytes")
+        png_bytes = (
+            b"\x89PNG\r\n\x1a\n"
+            b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+            b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        source_icon.write_bytes(png_bytes)
 
         step = IconAssetStep(icon_path=source_icon)
         step.run(build_context)
 
         copied_icon = build_context.dist_dir / "favicon.png"
         assert copied_icon.exists()
-        assert copied_icon.read_bytes() == b"icon-bytes"
+        assert copied_icon.read_bytes() == png_bytes
         assert build_context.template_context["has_icon"] is True
         assert build_context.template_context["favicon_href"] == "favicon.png"
         assert build_context.template_context["favicon_type"] == "image/png"
@@ -1883,7 +1890,13 @@ class TestIconAssetStep:
         self, build_context: BuildContext, tmp_path: Path
     ) -> None:
         source_icon = tmp_path / "icon.png"
-        source_icon.write_bytes(b"icon-bytes")
+        source_icon.write_bytes(
+            b"\x89PNG\r\n\x1a\n"
+            b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+            b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
 
         # Run once to populate manifest and output.
         step = IconAssetStep(icon_path=source_icon)

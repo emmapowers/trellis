@@ -43,4 +43,23 @@ describe("Markdown", () => {
     expect(html).toContain('target="_blank"');
     expect(html).toContain('rel="noopener noreferrer"');
   });
+
+  it("keeps fragment-only links when base_path is unset", () => {
+    const html = sanitizeMarkdownHtml("<a href=\"#section\">jump</a>", {});
+    expect(html).toContain('href="#section"');
+  });
+
+  it("treats relative base_path as unset for local resource policy", () => {
+    const html = sanitizeMarkdownHtml("<img src=\"images/pic.png\" />", {
+      base_path: "project",
+    });
+    expect(html).not.toContain("<img");
+  });
+
+  it("treats malformed base_path as unset for local resource policy", () => {
+    const html = sanitizeMarkdownHtml("<img src=\"images/pic.png\" />", {
+      base_path: "/bad%ZZ",
+    });
+    expect(html).not.toContain("<img");
+  });
 });

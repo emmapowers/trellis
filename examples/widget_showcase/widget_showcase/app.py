@@ -7,23 +7,20 @@ from trellis.core.components.composition import CompositionComponent
 from trellis.platforms.common.base import PlatformType
 from trellis.widgets import IconName, ThemeSwitcher
 
-from .sections import (
-    ActionsSection,
-    ButtonsSection,
-    ChartsSection,
-    DataDisplaySection,
-    DesktopSection,
-    FeedbackSection,
-    FormInputsSection,
-    IconsSection,
-    LayoutSection,
-    NavigationSection,
-    ProgressSection,
-    StatusSection,
-    TableSection,
-    TooltipSection,
-    TypographySection,
-)
+from .sections.actions import ActionsSection
+from .sections.buttons import ButtonsSection
+from .sections.charts import ChartsSection
+from .sections.data import DataDisplaySection
+from .sections.feedback import FeedbackSection
+from .sections.forms import FormInputsSection
+from .sections.icons import IconsSection
+from .sections.layout import LayoutSection
+from .sections.navigation import NavigationSection
+from .sections.progress import ProgressSection
+from .sections.status import StatusSection
+from .sections.tables import TableSection
+from .sections.tooltips import TooltipSection
+from .sections.typography import TypographySection
 
 type ShowcaseTab = tuple[str, str, IconName, CompositionComponent]
 
@@ -45,7 +42,12 @@ _BASE_TABS: list[ShowcaseTab] = [
     ("actions", "Actions", IconName.MENU, ActionsSection),
 ]
 
-_DESKTOP_TAB: ShowcaseTab = ("desktop", "Desktop", IconName.MONITOR, DesktopSection)
+
+def _resolve_desktop_tab() -> ShowcaseTab:
+    # Desktop section imports desktop-only APIs; keep import local to desktop platform.
+    from .sections.desktop import DesktopSection  # noqa: PLC0415
+
+    return ("desktop", "Desktop", IconName.MONITOR, DesktopSection)
 
 
 def _resolve_platform() -> PlatformType:
@@ -70,10 +72,10 @@ def resolve_tabs(platform: PlatformType | None = None) -> list[ShowcaseTab]:
         (index for index, (tab_id, *_rest) in enumerate(tabs) if tab_id == "forms"), -1
     )
     if forms_index == -1:
-        tabs.append(_DESKTOP_TAB)
+        tabs.append(_resolve_desktop_tab())
         return tabs
 
-    tabs.insert(forms_index + 1, _DESKTOP_TAB)
+    tabs.insert(forms_index + 1, _resolve_desktop_tab())
     return tabs
 
 

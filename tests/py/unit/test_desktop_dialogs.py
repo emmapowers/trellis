@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 
 from tests.helpers import requires_pytauri
-from trellis.desktop import dialogs
 
 
 class _FakeFileDialogBuilder:
@@ -56,94 +55,126 @@ class _FakeDialogExt:
         return self._builder
 
 
-@pytest.fixture(autouse=True)
-def _reset_runtime() -> None:
+@pytest.fixture
+def dialogs_module():
+    # Runtime import keeps desktop-only module loading aligned with requires_pytauri.
+    from trellis.desktop import dialogs  # noqa: PLC0415
+
+    dialogs._clear_dialog_runtime()
+    yield dialogs
     dialogs._clear_dialog_runtime()
 
 
 @requires_pytauri
-class TestDesktopDialogs:
-    """Desktop dialog API behavior."""
+@pytest.mark.anyio
+async def test_open_file_raises_outside_desktop_runtime(dialogs_module) -> None:
+    with pytest.raises(RuntimeError, match="desktop runtime"):
+        await dialogs_module.open_file()
 
-    @pytest.mark.anyio
-    async def test_open_file_raises_outside_desktop_runtime(self) -> None:
-        with pytest.raises(RuntimeError, match="desktop runtime"):
-            await dialogs.open_file()
 
-    @pytest.mark.anyio
-    async def test_open_file_returns_selected_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        manager = object()
-        builder = _FakeFileDialogBuilder(file_result=Path("/tmp/example.txt"))
-        dialogs._set_dialog_runtime(manager)
-        monkeypatch.setattr(dialogs, "_load_dialog_ext", lambda: _FakeDialogExt(manager, builder))
+@requires_pytauri
+@pytest.mark.anyio
+async def test_open_file_returns_selected_path(
+    monkeypatch: pytest.MonkeyPatch,
+    dialogs_module,
+) -> None:
+    manager = object()
+    builder = _FakeFileDialogBuilder(file_result=Path("/tmp/example.txt"))
+    dialogs_module._set_dialog_runtime(manager)
+    monkeypatch.setattr(
+        dialogs_module,
+        "_load_dialog_ext",
+        lambda: _FakeDialogExt(manager, builder),
+    )
 
-        options = dialogs.FileDialogOptions(
-            title="Choose file",
-            directory=Path("/tmp"),
+    options = dialogs_module.FileDialogOptions(
+        title="Choose file",
+        directory=Path("/tmp"),
+    )
+    result = await dialogs_module.open_file(options=options)
+
+    assert result == Path("/tmp/example.txt")
+    assert builder.calls == [
+        (
+            "pick_file",
+            {
+                "set_title": "Choose file",
+                "set_directory": Path("/tmp"),
+            },
         )
-        result = await dialogs.open_file(options=options)
+    ]
 
-        assert result == Path("/tmp/example.txt")
-        assert builder.calls == [
-            (
-                "pick_file",
-                {
-                    "set_title": "Choose file",
-                    "set_directory": Path("/tmp"),
-                },
-            )
-        ]
 
-    @pytest.mark.anyio
-    async def test_open_files_returns_empty_list_on_cancel(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        manager = object()
-        builder = _FakeFileDialogBuilder(files_result=None)
-        dialogs._set_dialog_runtime(manager)
-        monkeypatch.setattr(dialogs, "_load_dialog_ext", lambda: _FakeDialogExt(manager, builder))
+@requires_pytauri
+@pytest.mark.anyio
+async def test_open_files_returns_empty_list_on_cancel(
+    monkeypatch: pytest.MonkeyPatch,
+    dialogs_module,
+) -> None:
+    manager = object()
+    builder = _FakeFileDialogBuilder(files_result=None)
+    dialogs_module._set_dialog_runtime(manager)
+    monkeypatch.setattr(
+        dialogs_module,
+        "_load_dialog_ext",
+        lambda: _FakeDialogExt(manager, builder),
+    )
 
-        result = await dialogs.open_files()
+    result = await dialogs_module.open_files()
 
-        assert result == []
-        assert builder.calls[0][0] == "pick_files"
+    assert result == []
+    assert builder.calls[0][0] == "pick_files"
 
-    @pytest.mark.anyio
-    async def test_save_file_applies_filter_and_filename(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        manager = object()
-        builder = _FakeFileDialogBuilder(save_result=Path("/tmp/result.txt"))
-        dialogs._set_dialog_runtime(manager)
-        monkeypatch.setattr(dialogs, "_load_dialog_ext", lambda: _FakeDialogExt(manager, builder))
 
-        options = dialogs.FileDialogOptions(
-            file_name="result.txt",
-            filter=dialogs.FileDialogFilter(name="Text files", extensions=("txt", "md")),
+@requires_pytauri
+@pytest.mark.anyio
+async def test_save_file_applies_filter_and_filename(
+    monkeypatch: pytest.MonkeyPatch,
+    dialogs_module,
+) -> None:
+    manager = object()
+    builder = _FakeFileDialogBuilder(save_result=Path("/tmp/result.txt"))
+    dialogs_module._set_dialog_runtime(manager)
+    monkeypatch.setattr(
+        dialogs_module,
+        "_load_dialog_ext",
+        lambda: _FakeDialogExt(manager, builder),
+    )
+
+    options = dialogs_module.FileDialogOptions(
+        file_name="result.txt",
+        filter=dialogs_module.FileDialogFilter(name="Text files", extensions=("txt", "md")),
+    )
+    result = await dialogs_module.save_file(options=options)
+
+    assert result == Path("/tmp/result.txt")
+    assert builder.calls == [
+        (
+            "save_file",
+            {
+                "set_file_name": "result.txt",
+                "add_filter": ("Text files", ("txt", "md")),
+            },
         )
-        result = await dialogs.save_file(options=options)
+    ]
 
-        assert result == Path("/tmp/result.txt")
-        assert builder.calls == [
-            (
-                "save_file",
-                {
-                    "set_file_name": "result.txt",
-                    "add_filter": ("Text files", ("txt", "md")),
-                },
-            )
-        ]
 
-    @pytest.mark.anyio
-    async def test_select_directory_returns_selected_path(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        manager = object()
-        builder = _FakeFileDialogBuilder(folder_result=Path("/tmp/project"))
-        dialogs._set_dialog_runtime(manager)
-        monkeypatch.setattr(dialogs, "_load_dialog_ext", lambda: _FakeDialogExt(manager, builder))
+@requires_pytauri
+@pytest.mark.anyio
+async def test_select_directory_returns_selected_path(
+    monkeypatch: pytest.MonkeyPatch,
+    dialogs_module,
+) -> None:
+    manager = object()
+    builder = _FakeFileDialogBuilder(folder_result=Path("/tmp/project"))
+    dialogs_module._set_dialog_runtime(manager)
+    monkeypatch.setattr(
+        dialogs_module,
+        "_load_dialog_ext",
+        lambda: _FakeDialogExt(manager, builder),
+    )
 
-        result = await dialogs.select_directory()
+    result = await dialogs_module.select_directory()
 
-        assert result == Path("/tmp/project")
-        assert builder.calls[0][0] == "pick_folder"
+    assert result == Path("/tmp/project")
+    assert builder.calls[0][0] == "pick_folder"

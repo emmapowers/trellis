@@ -30,8 +30,23 @@ function normalizePath(path: string): string {
   return `${isAbsolute ? "/" : ""}${segments.join("/")}`;
 }
 
-function toBaseFileUrl(basePath: string): URL {
-  const normalizedBase = normalizePath(basePath);
+function normalizeBasePath(basePath: string): string | null {
+  try {
+    const normalizedBase = normalizePath(basePath);
+    if (!normalizedBase.startsWith("/")) {
+      return null;
+    }
+    return normalizedBase;
+  } catch {
+    return null;
+  }
+}
+
+function toBaseFileUrl(basePath: string): URL | null {
+  const normalizedBase = normalizeBasePath(basePath);
+  if (normalizedBase === null) {
+    return null;
+  }
   const withSlash = normalizedBase.endsWith("/") ? normalizedBase : `${normalizedBase}/`;
   return new URL(`file://${withSlash}`);
 }
@@ -44,7 +59,11 @@ function resolveLocalReference(reference: string, basePath: string): string | nu
     if (hasExplicitScheme(reference)) {
       return null;
     }
-    const resolved = new URL(reference, toBaseFileUrl(basePath));
+    const baseUrl = toBaseFileUrl(basePath);
+    if (baseUrl === null) {
+      return null;
+    }
+    const resolved = new URL(reference, baseUrl);
     if (resolved.protocol !== "file:") {
       return null;
     }
@@ -59,7 +78,10 @@ function isWithinBasePath(reference: string, basePath: string): boolean {
   if (candidate === null) {
     return false;
   }
-  const normalizedBase = normalizePath(basePath);
+  const normalizedBase = normalizeBasePath(basePath);
+  if (normalizedBase === null) {
+    return false;
+  }
   return candidate === normalizedBase || candidate.startsWith(`${normalizedBase}/`);
 }
 
@@ -116,6 +138,10 @@ function applyLinkPolicy(container: HTMLElement, basePath?: string | null): void
     const reference = anchor.getAttribute("href") ?? "";
     if (!reference) {
       anchor.removeAttribute("href");
+      continue;
+    }
+
+    if (reference.startsWith("#")) {
       continue;
     }
 

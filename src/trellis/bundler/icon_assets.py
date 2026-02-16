@@ -43,6 +43,10 @@ def generate_icon_assets(icon_path: Path | None, dist_dir: Path) -> IconAssetRes
     if not extension:
         raise ValueError("Icon file must have an extension")
 
+    if dist_dir.exists() and not dist_dir.is_dir():
+        raise NotADirectoryError(f"Icon output path is not a directory: {dist_dir}")
+    dist_dir.mkdir(parents=True, exist_ok=True)
+
     generated_files: list[Path] = []
     favicon_name = f"favicon{extension}"
     favicon_output = dist_dir / favicon_name

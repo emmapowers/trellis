@@ -27,7 +27,7 @@ def Labels() -> None:
         w.Label(text="Secondary text color", color=theme.text_secondary)
 
 
-_MARKDOWN_SAMPLE = """\
+_markdown_sample = """\
 # Markdown
 
 This is a formatting-focused markdown sample for Trellis.
@@ -47,7 +47,7 @@ Visit [Trellis on GitHub](https://github.com/emmapowers/trellis).
 @example("Markdown")
 def MarkdownExample() -> None:
     """Markdown renderer example with common formatting."""
-    w.Markdown(content=_MARKDOWN_SAMPLE)
+    w.Markdown(content=_markdown_sample)
 
 
 @component

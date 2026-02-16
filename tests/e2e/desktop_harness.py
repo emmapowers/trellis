@@ -33,7 +33,7 @@ def run_desktop_e2e_scenario(
     """Run a desktop app with an E2E scenario and parse harness output."""
     env = dict(os.environ)
     env["TRELLIS_DESKTOP_E2E_SCENARIO"] = scenario
-    env["TRELLIS_DESKTOP_E2E_TIMEOUT_SECONDS"] = "8"
+    env["TRELLIS_DESKTOP_E2E_TIMEOUT_SECONDS"] = str(timeout_seconds)
     env["TRELLIS_DESKTOP_E2E_INITIAL_DELAY_SECONDS"] = "0.8"
 
     runner_command = command or [
