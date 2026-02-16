@@ -27,9 +27,33 @@ def Labels() -> None:
         w.Label(text="Secondary text color", color=theme.text_secondary)
 
 
+_MARKDOWN_SAMPLE = """\
+# Markdown
+
+This is a formatting-focused markdown sample for Trellis.
+
+- Bullet item one
+- Bullet item two
+
+```python
+def greet(name: str) -> str:
+    return f"hello {name}"
+```
+
+Visit [Trellis on GitHub](https://github.com/emmapowers/trellis).
+"""
+
+
+@example("Markdown")
+def MarkdownExample() -> None:
+    """Markdown renderer example with common formatting."""
+    w.Markdown(content=_MARKDOWN_SAMPLE)
+
+
 @component
 def TypographySection() -> None:
     """Showcase typography widgets."""
     with w.Column(gap=16):
         ExampleCard(example=Headings)
         ExampleCard(example=Labels)
+        ExampleCard(example=MarkdownExample)
