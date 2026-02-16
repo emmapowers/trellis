@@ -60,6 +60,18 @@ def _print_startup_banner(title: str) -> None:
     _console.print()
 
 
+def _build_tauri_config_override(
+    *, dist_path: str, window_title: str, window_width: int, window_height: int
+) -> dict[str, Any]:
+    """Build runtime Tauri config overrides for desktop window and frontend assets."""
+    return {
+        "build": {"frontendDist": dist_path},
+        "app": {
+            "windows": [{"title": window_title, "width": window_width, "height": window_height}]
+        },
+    }
+
+
 # PyTauri command request models
 
 
@@ -280,7 +292,9 @@ class DesktopPlatform(Platform):
         if self._e2e_config is None:
             return
 
-        total_timeout = self._e2e_config.initial_delay_seconds + self._e2e_config.timeout_seconds + 2
+        total_timeout = (
+            self._e2e_config.initial_delay_seconds + self._e2e_config.timeout_seconds + 2
+        )
         try:
             await asyncio.wait_for(self._e2e_result_event.wait(), timeout=total_timeout)
         except TimeoutError:
@@ -353,8 +367,13 @@ class DesktopPlatform(Platform):
         config_dir = Path(__file__).parent / "config"
         dist_path = str(get_dist_dir())
 
-        # Override frontendDist to point to the workspace cache
-        config_override = {"build": {"frontendDist": dist_path}}
+        # Override frontendDist and window metadata with runtime app config.
+        config_override = _build_tauri_config_override(
+            dist_path=dist_path,
+            window_title=window_title,
+            window_width=window_width,
+            window_height=window_height,
+        )
 
         # PyTauri runs its own event loop on main thread (app.run_return).
         # start_blocking_portal creates an asyncio event loop in a background thread,
