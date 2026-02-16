@@ -26,7 +26,7 @@ class TestBuildDesktopAppBundle:
         app_root.mkdir()
 
         with (
-            patch("trellis.packaging.pyinstaller.sys.platform", "linux"),
+            patch("trellis.packaging.pyinstaller.platform.system", return_value="Linux"),
             pytest.raises(PackagePlatformError, match="macOS"),
         ):
             build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
@@ -40,7 +40,7 @@ class TestBuildDesktopAppBundle:
         expected_output = dist_dir / "myapp.app"
 
         with (
-            patch("trellis.packaging.pyinstaller.sys.platform", "darwin"),
+            patch("trellis.packaging.pyinstaller.platform.system", return_value="Darwin"),
             patch(
                 "trellis.packaging.pyinstaller.shutil.which", return_value="/usr/bin/pyinstaller"
             ),
@@ -76,7 +76,7 @@ class TestBuildDesktopAppBundle:
         app_root.mkdir()
 
         with (
-            patch("trellis.packaging.pyinstaller.sys.platform", "darwin"),
+            patch("trellis.packaging.pyinstaller.platform.system", return_value="Darwin"),
             patch(
                 "trellis.packaging.pyinstaller.shutil.which", return_value="/usr/bin/pyinstaller"
             ),
@@ -103,7 +103,7 @@ class TestBuildDesktopAppBundle:
         dist_dir.mkdir()
 
         with (
-            patch("trellis.packaging.pyinstaller.sys.platform", "darwin"),
+            patch("trellis.packaging.pyinstaller.platform.system", return_value="Darwin"),
             patch(
                 "trellis.packaging.pyinstaller.shutil.which", return_value="/usr/bin/pyinstaller"
             ),
@@ -127,7 +127,7 @@ class TestBuildDesktopAppBundle:
         dist_dir.mkdir()
 
         with (
-            patch("trellis.packaging.pyinstaller.sys.platform", "darwin"),
+            patch("trellis.packaging.pyinstaller.platform.system", return_value="Darwin"),
             patch(
                 "trellis.packaging.pyinstaller.shutil.which", return_value="/usr/bin/pyinstaller"
             ),

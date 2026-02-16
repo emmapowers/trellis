@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import importlib
 import json
 import webbrowser
 from collections.abc import Callable
@@ -394,8 +395,7 @@ class DesktopPlatform(Platform):
                 context=context_factory(config_dir, tauri_config=config_override),
                 invoke_handler=commands.generate_handler(portal),
             )
-            from pytauri_plugins import dialog as dialog_plugin  # noqa: PLC0415
-
+            dialog_plugin: Any = importlib.import_module("pytauri_plugins.dialog")
             app.handle().plugin(dialog_plugin.init())
 
             if self._e2e_config is not None:

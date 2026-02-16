@@ -7,6 +7,7 @@ Calls must happen while running in the Trellis desktop runtime.
 from __future__ import annotations
 
 import asyncio
+import importlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -71,12 +72,12 @@ def _require_dialog_manager() -> ImplManager:
 
 def _load_dialog_ext() -> Any:
     try:
-        from pytauri_plugins.dialog import DialogExt  # noqa: PLC0415
-    except ImportError as exc:
+        dialog_module = importlib.import_module("pytauri_plugins.dialog")
+        return dialog_module.DialogExt
+    except (ImportError, AttributeError) as exc:
         raise RuntimeError(
             "Desktop dialog plugin is unavailable. Ensure pytauri dialog support is installed."
         ) from exc
-    return DialogExt
 
 
 def _build_dialog_kwargs(options: FileDialogOptions) -> dict[str, Any]:

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -94,7 +94,7 @@ def build_desktop_app_bundle(config: Config, app_root: Path, output_dir: Path | 
     """
     if config.platform != PlatformType.DESKTOP:
         raise ValueError("PyInstaller packaging is only supported for desktop platform")
-    if sys.platform != "darwin":
+    if platform.system() != "Darwin":
         raise PackagePlatformError("PyInstaller packaging is currently supported on macOS only")
 
     pyinstaller_bin = shutil.which("pyinstaller")
