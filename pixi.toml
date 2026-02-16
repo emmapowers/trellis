@@ -45,6 +45,7 @@ test = { cmd = "pytest tests/py", description = "Run Python tests" }
 test-cov = { cmd = "pytest tests/py --cov=src/trellis --cov-report=term-missing", description = "Run Python tests with coverage" }
 install-js-test-deps = { cmd = "npm install", cwd = "tests/js", description = "Install JavaScript test dependencies" }
 test-js = { cmd = "npm test", cwd = "tests/js", depends-on = ["install-js-test-deps"], description = "Run JavaScript unit tests" }
+test-e2e-desktop = { cmd = "TRELLIS_RUN_DESKTOP_E2E=1 pytest tests/e2e -vv", description = "Run desktop end-to-end tests (requires desktop runtime)" }
 
 # Composite lint/test tasks
 cleanup = { depends-on = ["fmt", "ruff-fix"], description = "Run formatters with auto-fix" }
