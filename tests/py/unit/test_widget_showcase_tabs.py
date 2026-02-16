@@ -48,3 +48,16 @@ class TestWidgetShowcaseTabs:
         tabs = app_module.resolve_tabs()
         assert all(tab_id != "desktop" for tab_id, *_ in tabs)
 
+    @pytest.mark.parametrize(
+        "platform", [PlatformType.SERVER, PlatformType.BROWSER, PlatformType.DESKTOP]
+    )
+    def test_tab_order_and_uniqueness(
+        self, monkeypatch: pytest.MonkeyPatch, platform: PlatformType
+    ) -> None:
+        app_module = _import_showcase_app(monkeypatch)
+
+        tabs = app_module.resolve_tabs(platform)
+        tab_ids = [tab_id for tab_id, *_ in tabs]
+
+        assert tab_ids[0] == "layout"
+        assert len(tab_ids) == len(set(tab_ids))

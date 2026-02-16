@@ -3,6 +3,7 @@
 from trellis import Margin, Padding, Route, Routes, component, router
 from trellis import widgets as w
 from trellis.app import App, get_config, theme
+from trellis.core.components.composition import CompositionComponent
 from trellis.platforms.common.base import PlatformType
 from trellis.widgets import IconName, ThemeSwitcher
 
@@ -24,7 +25,10 @@ from .sections import (
     TypographySection,
 )
 
-_BASE_TABS = [
+type ShowcaseTab = tuple[str, str, IconName, CompositionComponent]
+
+
+_BASE_TABS: list[ShowcaseTab] = [
     ("layout", "Layout", IconName.LAYOUT_GRID, LayoutSection),
     ("buttons", "Buttons", IconName.MOUSE_POINTER, ButtonsSection),
     ("forms", "Forms", IconName.EDIT_2, FormInputsSection),
@@ -41,7 +45,7 @@ _BASE_TABS = [
     ("actions", "Actions", IconName.MENU, ActionsSection),
 ]
 
-_DESKTOP_TAB = ("desktop", "Desktop", IconName.MONITOR, DesktopSection)
+_DESKTOP_TAB: ShowcaseTab = ("desktop", "Desktop", IconName.MONITOR, DesktopSection)
 
 
 def _resolve_platform() -> PlatformType:
@@ -56,13 +60,15 @@ def _resolve_platform() -> PlatformType:
     return config.platform
 
 
-def resolve_tabs(platform: PlatformType | None = None) -> list[tuple[str, str, IconName, type]]:
+def resolve_tabs(platform: PlatformType | None = None) -> list[ShowcaseTab]:
     tabs = list(_BASE_TABS)
     active_platform = platform if platform is not None else _resolve_platform()
     if active_platform != PlatformType.DESKTOP:
         return tabs
 
-    forms_index = next((index for index, (tab_id, *_rest) in enumerate(tabs) if tab_id == "forms"), -1)
+    forms_index = next(
+        (index for index, (tab_id, *_rest) in enumerate(tabs) if tab_id == "forms"), -1
+    )
     if forms_index == -1:
         tabs.append(_DESKTOP_TAB)
         return tabs
