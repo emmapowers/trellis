@@ -86,6 +86,7 @@ def DesktopFileDialogs() -> None:
     """Desktop-native open/save/select dialog examples."""
     state = DesktopDialogState()
     with state:
+
         async def choose_file() -> None:
             try:
                 result = await open_file()
@@ -97,7 +98,9 @@ def DesktopFileDialogs() -> None:
         async def choose_files() -> None:
             try:
                 result = await open_files()
-                state.selected_files = ", ".join(str(path) for path in result) if result else "Cancelled"
+                state.selected_files = (
+                    ", ".join(str(path) for path in result) if result else "Cancelled"
+                )
                 state.error = ""
             except RuntimeError as exc:
                 state.error = str(exc)
