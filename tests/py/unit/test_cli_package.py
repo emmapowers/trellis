@@ -61,7 +61,9 @@ class TestPackageCommandExecution:
         runner = CliRunner()
         with (
             patch.object(AppLoader, "bundle"),
-            patch("trellis.cli.package.build_desktop_app_bundle", return_value=expected_path) as mock_build,
+            patch(
+                "trellis.cli.package.build_desktop_app_bundle", return_value=expected_path
+            ) as mock_build,
         ):
             result = runner.invoke(
                 trellis,

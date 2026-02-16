@@ -26,8 +26,12 @@ def test_markdown_external_link_opens_via_desktop_external_handler() -> None:
         scenario="markdown_external_link",
     )
 
-    assert result.payload is not None, f"missing E2E payload\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
-    assert result.return_code == 0, f"desktop E2E exited {result.return_code}\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    assert (
+        result.payload is not None
+    ), f"missing E2E payload\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    assert (
+        result.return_code == 0
+    ), f"desktop E2E exited {result.return_code}\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     assert result.payload["success"] is True
     assert result.payload["scenario"] == "markdown_external_link"
     assert result.payload["external_url"] in {

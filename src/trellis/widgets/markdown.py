@@ -6,6 +6,7 @@ from trellis.core.components.react import react
 from trellis.core.components.style_props import Margin, Width
 
 _MARKDOWN_PACKAGES = {
+    "@types/markdown-it": "14.1.2",
     "dompurify": "3.3.0",
     "markdown-it": "14.1.0",
 }
