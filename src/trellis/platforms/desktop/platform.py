@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from anyio.from_thread import start_blocking_portal
 from pydantic import BaseModel
-from pytauri import Commands
+from pytauri import AppHandle, Commands
 from pytauri.ipc import Channel, JavaScriptChannelId  # noqa: TC002 - runtime for pytauri
 from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
 from pytauri_wheel.lib import builder_factory, context_factory
@@ -25,6 +25,7 @@ from trellis.bundler import (
     RegistryGenerationStep,
     StaticFileCopyStep,
 )
+from trellis.desktop.dialogs import _clear_dialog_runtime, _set_dialog_runtime
 from trellis.platforms.common.base import Platform
 from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
@@ -125,9 +126,12 @@ class DesktopPlatform(Platform):
         commands = Commands()
 
         @commands.command()
-        async def trellis_connect(body: ConnectRequest, webview_window: WebviewWindow) -> str:
+        async def trellis_connect(
+            body: ConnectRequest, webview_window: WebviewWindow, app_handle: AppHandle
+        ) -> str:
             """Establish channel connection with frontend."""
             channel: Channel = body.channel_id.channel_on(webview_window.as_ref_webview())
+            _set_dialog_runtime(app_handle)
             self._handler = PyTauriMessageHandler(
                 self._root_component,  # type: ignore[arg-type]
                 self._app_wrapper,  # type: ignore[arg-type]
@@ -140,6 +144,7 @@ class DesktopPlatform(Platform):
             def _on_handler_done(task: asyncio.Task[None]) -> None:
                 if self._handler is not None:
                     get_global_registry().unregister(self._handler)
+                _clear_dialog_runtime()
 
             self._handler_task = asyncio.create_task(self._handler.run())
             self._handler_task.add_done_callback(_on_handler_done)
@@ -215,11 +220,17 @@ class DesktopPlatform(Platform):
                 context=context_factory(config_dir, tauri_config=config_override),
                 invoke_handler=commands.generate_handler(portal),
             )
+            from pytauri_plugins import dialog as dialog_plugin  # noqa: PLC0415
+
+            app.handle().plugin(dialog_plugin.init())
 
             # Run until window is closed
-            exit_code = app.run_return()
-            if exit_code != 0:
-                raise RuntimeError(f"Desktop app exited with code {exit_code}")
+            try:
+                exit_code = app.run_return()
+                if exit_code != 0:
+                    raise RuntimeError(f"Desktop app exited with code {exit_code}")
+            finally:
+                _clear_dialog_runtime()
 
 
 __all__ = ["DesktopPlatform"]
