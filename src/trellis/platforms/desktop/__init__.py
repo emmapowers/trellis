@@ -4,8 +4,14 @@ Provides native desktop applications using the system webview.
 Uses channel-based communication with the same message protocol as WebSocket.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from trellis.bundler import registry
-from trellis.platforms.desktop.platform import DesktopPlatform
+
+if TYPE_CHECKING:
+    from trellis.platforms.desktop.platform import DesktopPlatform
 
 # Register the trellis-desktop module
 registry.register(
@@ -15,5 +21,14 @@ registry.register(
         "tauri-plugin-pytauri-api": "0.8.0",
     },
 )
+
+
+def __getattr__(name: str) -> Any:
+    if name == "DesktopPlatform":
+        from trellis.platforms.desktop.platform import DesktopPlatform  # noqa: PLC0415
+
+        return DesktopPlatform
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = ["DesktopPlatform"]
