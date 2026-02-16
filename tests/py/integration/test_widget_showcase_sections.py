@@ -76,3 +76,13 @@ class TestWidgetShowcaseSections:
         label_texts = _collect_label_texts(result.tree)
 
         assert "Markdown" in label_texts
+
+    def test_desktop_section_includes_file_dialogs(
+        self, rendered, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        desktop_module = _import_showcase_module("widget_showcase.sections.desktop", monkeypatch)
+
+        result = rendered(desktop_module.DesktopSection)
+        label_texts = _collect_label_texts(result.tree)
+
+        assert "Desktop File Dialogs" in label_texts

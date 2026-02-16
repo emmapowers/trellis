@@ -118,7 +118,9 @@ def DividerWidget() -> None:
             w.Label(text="Bottom content")
 
         w.Label(text="Vertical divider")
-        with w.Row(gap=12, align="center", padding=8, style={"backgroundColor": theme.bg_surface_raised}):
+        with w.Row(
+            gap=12, align="center", padding=8, style={"backgroundColor": theme.bg_surface_raised}
+        ):
             w.Label(text="Left")
             w.Divider(orientation="vertical")
             w.Label(text="Right")
