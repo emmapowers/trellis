@@ -2,7 +2,7 @@
 
 from trellis.packaging.pyinstaller import (
     PackagePlatformError,
-    build_single_file_executable,
+    build_desktop_app_bundle,
 )
 
-__all__ = ["PackagePlatformError", "build_single_file_executable"]
+__all__ = ["PackagePlatformError", "build_desktop_app_bundle"]

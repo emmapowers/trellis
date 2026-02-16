@@ -14,7 +14,7 @@ from trellis.cli import CliContext, pass_cli_context, trellis
 from trellis.cli.options import configvar_options
 from trellis.packaging.pyinstaller import (
     PackagePlatformError,
-    build_single_file_executable,
+    build_desktop_app_bundle,
 )
 from trellis.platforms.common.base import PlatformType
 
@@ -26,12 +26,12 @@ _cli_config_vars = [v for v in get_config_vars() if not v.hidden]
     "--dest",
     type=click.Path(path_type=Path),
     default=None,
-    help="Output directory for the packaged executable (default: {app_root}/.package)",
+    help="Output directory for the packaged app bundle (default: {app_root}/package)",
 )
 @pass_cli_context
 @configvar_options(_cli_config_vars)
 def package_app(ctx: CliContext, /, dest: Path | None = None, **cli_kwargs: Any) -> None:
-    """Build a single-file desktop executable with PyInstaller."""
+    """Build a desktop app bundle with PyInstaller."""
     if "platform" in cli_kwargs:
         cli_kwargs["platform"] = PlatformType(cli_kwargs["platform"])
 
@@ -62,7 +62,7 @@ def package_app(ctx: CliContext, /, dest: Path | None = None, **cli_kwargs: Any)
         apploader.bundle()
 
         try:
-            executable_path = build_single_file_executable(
+            executable_path = build_desktop_app_bundle(
                 config=config,
                 app_root=resolved_path,
                 output_dir=dest,
