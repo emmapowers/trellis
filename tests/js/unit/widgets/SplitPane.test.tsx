@@ -82,4 +82,16 @@ describe("SplitPane", () => {
     fireEvent.mouseMove(window, { clientX: 390, clientY: 50 });
     expect(firstPane).toHaveStyle({ flexBasis: "75%" });
   });
+
+  it("applies explicit height prop to the split pane root", () => {
+    render(
+      <SplitPane height={220}>
+        <div>left</div>
+        <div>right</div>
+      </SplitPane>
+    );
+
+    const root = screen.getByTestId("split-pane-root");
+    expect(root).toHaveStyle({ height: "220px" });
+  });
 });
