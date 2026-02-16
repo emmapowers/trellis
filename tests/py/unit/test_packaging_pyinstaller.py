@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -40,7 +41,9 @@ class TestBuildDesktopAppBundle:
 
         with (
             patch("trellis.packaging.pyinstaller.sys.platform", "darwin"),
-            patch("trellis.packaging.pyinstaller.shutil.which", return_value="/usr/bin/pyinstaller"),
+            patch(
+                "trellis.packaging.pyinstaller.shutil.which", return_value="/usr/bin/pyinstaller"
+            ),
             patch("trellis.packaging.pyinstaller.subprocess.run") as mock_run,
         ):
             output = build_desktop_app_bundle(config=config, app_root=app_root, output_dir=dist_dir)
@@ -55,8 +58,16 @@ class TestBuildDesktopAppBundle:
         assert str(dist_dir) in cmd
         assert "--paths" in cmd
         assert str(app_root) in cmd
+        assert "--add-data" in cmd
+        assert f"{app_root / '.dist'}{os.pathsep}.dist" in cmd
         assert "--hidden-import" in cmd
         assert "myapp.main" in cmd
+        assert cmd.count("--hidden-import") == 2
+        assert "pytauri_wheel.ext_mod" in cmd
+        assert "--copy-metadata" in cmd
+        assert "pytauri-wheel" in cmd
+        assert "--collect-data" in cmd
+        assert "trellis.platforms.desktop" in cmd
         assert output == expected_output
 
     def test_default_output_dir_is_package(self, tmp_path: Path) -> None:
@@ -66,7 +77,9 @@ class TestBuildDesktopAppBundle:
 
         with (
             patch("trellis.packaging.pyinstaller.sys.platform", "darwin"),
-            patch("trellis.packaging.pyinstaller.shutil.which", return_value="/usr/bin/pyinstaller"),
+            patch(
+                "trellis.packaging.pyinstaller.shutil.which", return_value="/usr/bin/pyinstaller"
+            ),
             patch("trellis.packaging.pyinstaller.subprocess.run") as mock_run,
         ):
             output = build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
@@ -91,7 +104,9 @@ class TestBuildDesktopAppBundle:
 
         with (
             patch("trellis.packaging.pyinstaller.sys.platform", "darwin"),
-            patch("trellis.packaging.pyinstaller.shutil.which", return_value="/usr/bin/pyinstaller"),
+            patch(
+                "trellis.packaging.pyinstaller.shutil.which", return_value="/usr/bin/pyinstaller"
+            ),
             patch("trellis.packaging.pyinstaller.subprocess.run") as mock_run,
         ):
             build_desktop_app_bundle(config=config, app_root=app_root, output_dir=dist_dir)
@@ -100,7 +115,9 @@ class TestBuildDesktopAppBundle:
         assert "--icon" in cmd
         assert str(app_root / ".dist" / "favicon.icns") in cmd
 
-    def test_ignores_stale_derived_icon_when_no_project_icon_configured(self, tmp_path: Path) -> None:
+    def test_ignores_stale_derived_icon_when_no_project_icon_configured(
+        self, tmp_path: Path
+    ) -> None:
         config = Config(name="myapp", module="main", platform=PlatformType.DESKTOP)
         app_root = tmp_path / "app"
         app_root.mkdir()
@@ -111,7 +128,9 @@ class TestBuildDesktopAppBundle:
 
         with (
             patch("trellis.packaging.pyinstaller.sys.platform", "darwin"),
-            patch("trellis.packaging.pyinstaller.shutil.which", return_value="/usr/bin/pyinstaller"),
+            patch(
+                "trellis.packaging.pyinstaller.shutil.which", return_value="/usr/bin/pyinstaller"
+            ),
             patch("trellis.packaging.pyinstaller.subprocess.run") as mock_run,
         ):
             build_desktop_app_bundle(config=config, app_root=app_root, output_dir=dist_dir)
@@ -128,5 +147,7 @@ class TestBuildDesktopAppBundle:
         source = bootstrap_path.read_text()
         assert "apploader.bundle()" not in source
         assert "Config.from_json" in source
+        assert "AppLoader.from_config" not in source
+        assert "app_root = _runtime_app_root()" in source
         assert "apploader.load_config()" not in source
         assert '\\"platform\\": \\"desktop\\"' in source

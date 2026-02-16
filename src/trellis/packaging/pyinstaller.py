@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -45,6 +46,8 @@ def _write_bootstrap(config: Config, bootstrap_path: Path) -> None:
     bootstrap_source = f"""from __future__ import annotations
 
 import asyncio
+import sys
+from pathlib import Path
 from typing import Any
 
 from trellis.app import AppLoader, set_apploader
@@ -54,9 +57,17 @@ from trellis.cli.run import _build_run_kwargs
 APP_CONFIG_JSON = {config_json}
 
 
+def _runtime_app_root() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(getattr(sys, "_MEIPASS")).resolve()
+    return Path(__file__).resolve().parent
+
+
 def main() -> None:
     config = Config.from_json(APP_CONFIG_JSON)
-    apploader = AppLoader.from_config(config)
+    app_root = _runtime_app_root()
+    apploader = AppLoader(app_root)
+    apploader.config = config
     apploader.load_app()
     set_apploader(apploader)
     app = apploader.app
@@ -110,8 +121,16 @@ def build_desktop_app_bundle(config: Config, app_root: Path, output_dir: Path | 
         "--onedir",
         "--paths",
         str(app_root),
+        "--add-data",
+        f"{app_root / '.dist'}{os.pathsep}.dist",
         "--hidden-import",
         config.module,
+        "--hidden-import",
+        "pytauri_wheel.ext_mod",
+        "--copy-metadata",
+        "pytauri-wheel",
+        "--collect-data",
+        "trellis.platforms.desktop",
         "--name",
         config.name,
         "--distpath",
