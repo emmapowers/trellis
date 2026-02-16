@@ -68,10 +68,11 @@ Widgets are accessed via `trellis.widgets` (conventionally imported as `w`):
 
 | Category | Widgets |
 |----------|---------|
-| **Layout** | `Column`, `Row`, `Card` |
-| **Forms** | `Button`, `TextInput`, `NumberInput`, `Checkbox`, `Slider`, `Select` |
+| **Layout** | `Column`, `Row`, `Card`, `SplitPane` |
+| **Forms** | `Button`, `TextInput`, `MultilineInput`, `NumberInput`, `Checkbox`, `Slider`, `Select` |
 | **Text** | `Label`, `Heading`, `Divider` |
 | **Data** | `Table`, `Stat`, `Tag`, `Badge` |
+| **Agentic** | `Markdown` |
 | **Charts** | `TimeSeriesChart`, `LineChart`, `BarChart`, `AreaChart`, `PieChart`, `Sparkline` |
 | **Feedback** | `ProgressBar`, `StatusIndicator`, `Tooltip`, `Callout`, `Collapsible` |
 | **Navigation** | `Tabs`/`Tab`, `Breadcrumb`, `Tree`, `Menu`/`MenuItem`, `Toolbar` |
@@ -111,6 +112,29 @@ For desktop app support, install with the desktop extra:
 
 ```bash
 pip install "trellis[desktop] @ git+https://github.com/emmapowers/trellis.git"
+```
+
+## Project Configuration
+
+Set app metadata in `trellis_config.py`:
+
+```python
+from pathlib import Path
+from trellis.app.config import Config
+from trellis.platforms.common.base import PlatformType
+
+config = Config(
+    name="My App",
+    module="my_app.app",
+    platform=PlatformType.DESKTOP,
+    icon=Path("assets/icon.png"),  # single source icon used for derived platform assets
+)
+```
+
+Package desktop apps (macOS-first, single executable):
+
+```bash
+trellis package --platform desktop
 ```
 
 ## Implementation Status

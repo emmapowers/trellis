@@ -11,6 +11,8 @@ from trellis.core.components.style_props import Height, Margin, Padding, Width
 if tp.TYPE_CHECKING:
     from trellis.core.rendering.child_ref import ChildRef
 
+_SPLIT_PANE_REQUIRED_CHILDREN = 2
+
 
 @react("client/Column.tsx", is_container=True)
 def Column(
@@ -167,7 +169,7 @@ def SplitPane(
         children: Exactly two child panes.
     """
     pane_children = children or []
-    if len(pane_children) != 2:
+    if len(pane_children) != _SPLIT_PANE_REQUIRED_CHILDREN:
         raise ValueError("SplitPane requires exactly two children")
 
     _SplitPane(
@@ -198,5 +200,6 @@ def _SplitPane(
     flex: int | None = None,
     class_name: str | None = None,
     style: dict[str, tp.Any] | None = None,
+    children: list[ChildRef] | None = None,
 ) -> None:
     pass

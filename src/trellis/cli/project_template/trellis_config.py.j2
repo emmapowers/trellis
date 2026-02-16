@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from trellis.app.config import Config
 from trellis.platforms.common.base import PlatformType
 
@@ -5,4 +7,5 @@ config = Config(
     name="{{ name }}",
     module="{{ module }}",
     platform=PlatformType.{{ platform_upper }},
+    icon=Path("assets/icon.png") if Path("assets/icon.png").exists() else None,
 )

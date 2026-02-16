@@ -8,12 +8,12 @@ from unittest.mock import patch
 import pytest
 
 from trellis.app.config import Config
-from trellis.platforms.common.base import PlatformType
 from trellis.packaging.pyinstaller import (
     PackagePlatformError,
     _write_bootstrap,
     build_single_file_executable,
 )
+from trellis.platforms.common.base import PlatformType
 
 
 class TestBuildSingleFileExecutable:
@@ -43,7 +43,9 @@ class TestBuildSingleFileExecutable:
             patch("trellis.packaging.pyinstaller.sys.platform", "darwin"),
             patch("trellis.packaging.pyinstaller.subprocess.run") as mock_run,
         ):
-            output = build_single_file_executable(config=config, app_root=app_root, output_dir=dist_dir)
+            output = build_single_file_executable(
+                config=config, app_root=app_root, output_dir=dist_dir
+            )
 
         cmd = mock_run.call_args[0][0]
         assert "--onefile" in cmd

@@ -37,7 +37,7 @@ def _resolve_pyinstaller_icon(config: Config, app_root: Path) -> Path | None:
 
 def _write_bootstrap(config: Config, app_root: Path, bootstrap_path: Path) -> None:
     """Write a small launcher script that runs the desktop app."""
-    bootstrap_source = f'''from __future__ import annotations
+    bootstrap_source = f"""from __future__ import annotations
 
 import asyncio
 from pathlib import Path
@@ -69,7 +69,7 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-'''
+"""
     bootstrap_path.write_text(bootstrap_source)
 
 

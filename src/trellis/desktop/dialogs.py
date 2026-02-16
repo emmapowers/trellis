@@ -9,9 +9,12 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
-from pytauri import ImplManager
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from pytauri import ImplManager
 
 _DIALOG_RUNTIME_UNAVAILABLE = (
     "Desktop dialogs are only available while running in a desktop runtime. "
@@ -45,6 +48,7 @@ class FileDialogOptions:
 
 
 _dialog_manager: ImplManager | None = None
+_DialogResult = TypeVar("_DialogResult")
 
 
 def _set_dialog_runtime(manager: ImplManager) -> None:
@@ -100,8 +104,8 @@ async def _call_dialog(
     method_name: str,
     *,
     options: FileDialogOptions,
-    normalize: Any,
-) -> Any:
+    normalize: Callable[[Any], _DialogResult],
+) -> _DialogResult:
     manager = _require_dialog_manager()
     dialog_ext = _load_dialog_ext()
     builder = dialog_ext.file(manager)
@@ -109,7 +113,7 @@ async def _call_dialog(
     method = getattr(builder, method_name)
 
     loop = asyncio.get_running_loop()
-    future: asyncio.Future[Any] = loop.create_future()
+    future: asyncio.Future[_DialogResult] = loop.create_future()
 
     def _resolve(result: Any) -> None:
         if not future.done():
