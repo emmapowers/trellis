@@ -65,6 +65,16 @@ class TestWidgetShowcaseSections:
 
         assert "Divider Widget" in label_texts
 
+    def test_layout_section_includes_split_pane_demo(
+        self, rendered, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        layout_module = _import_showcase_module("widget_showcase.sections.layout", monkeypatch)
+
+        result = rendered(layout_module.LayoutSection)
+        label_texts = _collect_label_texts(result.tree)
+
+        assert "Split Pane" in label_texts
+
     def test_typography_section_includes_markdown_demo(
         self, rendered, monkeypatch: pytest.MonkeyPatch
     ) -> None:

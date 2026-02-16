@@ -126,6 +126,23 @@ def DividerWidget() -> None:
             w.Label(text="Right")
 
 
+@example("Split Pane")
+def SplitPaneLayout() -> None:
+    """Resizable two-pane layout with draggable divider."""
+    with w.SplitPane(
+        split=0.4,
+        min_size=100,
+        height=220,
+        style={"border": f"1px solid {theme.border_default}", "borderRadius": "8px"},
+    ):
+        with w.Column(gap=8, padding=12, style={"backgroundColor": theme.bg_surface_raised}):
+            w.Label(text="Left Pane", bold=True)
+            w.Label(text="Use the divider to resize.")
+        with w.Column(gap=8, padding=12, style={"backgroundColor": theme.bg_surface}):
+            w.Label(text="Right Pane", bold=True)
+            w.Label(text="SplitPane keeps two resizable regions.")
+
+
 @example("Card")
 def CardLayout() -> None:
     """Card container for grouped content."""
@@ -151,4 +168,5 @@ def LayoutSection() -> None:
         ExampleCard(example=ColumnLayout)
         ExampleCard(example=LayoutDividers)
         ExampleCard(example=DividerWidget)
+        ExampleCard(example=SplitPaneLayout)
         ExampleCard(example=CardLayout)
