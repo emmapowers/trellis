@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import webbrowser
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from urllib.parse import urlparse
 
 from anyio.from_thread import start_blocking_portal
 from pydantic import BaseModel
@@ -71,6 +73,12 @@ class LogRequest(BaseModel):
 
     level: str
     message: str
+
+
+class OpenExternalRequest(BaseModel):
+    """Request to open a URL in the system default browser."""
+
+    url: str
 
 
 class DesktopPlatform(Platform):
@@ -161,6 +169,17 @@ class DesktopPlatform(Platform):
         async def trellis_log(body: LogRequest) -> None:
             """Log a message from frontend to stdout."""
             print(f"[JS {body.level}] {body.message}", flush=True)
+
+        @commands.command()
+        async def trellis_open_external(body: OpenExternalRequest) -> None:
+            """Open a URL in the user's default browser."""
+            parsed = urlparse(body.url)
+            allowed_schemes = {"http", "https", "mailto", "tel"}
+            if parsed.scheme not in allowed_schemes:
+                raise ValueError(f"Unsupported URL scheme: {parsed.scheme}")
+            if parsed.scheme in {"http", "https"} and not parsed.netloc:
+                raise ValueError("External URL must include a host")
+            webbrowser.open(body.url)
 
         return commands
 
