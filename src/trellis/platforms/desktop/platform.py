@@ -19,6 +19,7 @@ from trellis.app.apploader import get_dist_dir
 from trellis.bundler import (
     BuildConfig,
     BundleBuildStep,
+    IconAssetStep,
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
@@ -114,6 +115,7 @@ class DesktopPlatform(Platform):
                 RegistryGenerationStep(),
                 BundleBuildStep(output_name="bundle"),
                 StaticFileCopyStep(),
+                IconAssetStep(icon_path=config.icon),
                 IndexHtmlRenderStep(template_path, {"title": config.title}),
             ],
         )

@@ -14,6 +14,7 @@ from trellis.bundler.build_config import BuildConfig
 from trellis.bundler.steps import (
     BundleBuildStep,
     DeclarationStep,
+    IconAssetStep,
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
@@ -78,6 +79,7 @@ class TestServerGetBuildConfig:
             RegistryGenerationStep,
             BundleBuildStep,
             StaticFileCopyStep,
+            IconAssetStep,
             IndexHtmlRenderStep,
         ]
 
@@ -136,6 +138,7 @@ class TestDesktopGetBuildConfig:
             RegistryGenerationStep,
             BundleBuildStep,
             StaticFileCopyStep,
+            IconAssetStep,
             IndexHtmlRenderStep,
         ]
 
@@ -188,6 +191,7 @@ class TestBrowserServeGetBuildConfig:
             PyodideWorkerBuildStep,
             BundleBuildStep,
             StaticFileCopyStep,
+            IconAssetStep,
             IndexHtmlRenderStep,
         ]
 
@@ -245,3 +249,4 @@ class TestBrowserServeGetBuildConfig:
         build_config = platform.get_build_config(config)
 
         assert not any(isinstance(s, IndexHtmlRenderStep) for s in build_config.steps)
+        assert not any(isinstance(s, IconAssetStep) for s in build_config.steps)

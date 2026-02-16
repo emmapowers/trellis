@@ -152,6 +152,23 @@ class TestConfigAssetsDir:
         assert config.assets_dir == Path("./assets/")
 
 
+class TestConfigIcon:
+    """Test icon field defaults and overrides."""
+
+    def test_icon_defaults_to_none(self) -> None:
+        config = Config(name="myapp", module="main")
+        assert config.icon is None
+
+    def test_icon_from_constructor(self) -> None:
+        config = Config(name="myapp", module="main", icon=Path("/tmp/icon.png"))
+        assert config.icon == Path("/tmp/icon.png")
+
+    def test_icon_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("TRELLIS_ICON", "~/icon.png")
+        config = Config(name="myapp", module="main")
+        assert config.icon == Path.home() / "icon.png"
+
+
 class TestConfigRoutingMode:
     """Test routing_mode platform-dependent defaults."""
 
@@ -240,6 +257,10 @@ class TestCoerceValue:
         result = coerce_value("assets_dir", "/var/www/assets")
         assert result == Path("/var/www/assets")
 
+    def test_coerces_icon_path(self) -> None:
+        result = coerce_value("icon", "/var/www/icon.png")
+        assert result == Path("/var/www/icon.png")
+
     def test_unknown_field_raises_key_error(self) -> None:
         with pytest.raises(KeyError, match="No ConfigVar registered for field"):
             coerce_value("nonexistent_field", "value")
@@ -285,6 +306,7 @@ class TestConfigToJson:
             "routing_mode",
             "debug",
             "assets_dir",
+            "icon",
             "title",
             "library",
             "host",

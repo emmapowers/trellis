@@ -79,6 +79,12 @@ _ASSETS_DIR: ConfigVar[Path | None] = ConfigVar(
     type_hint=Path,
     help="Directory containing static assets for bundling",
 )
+_ICON: ConfigVar[Path | None] = ConfigVar(
+    "icon",
+    default=None,
+    type_hint=Path,
+    help="Project icon source file used to derive platform/web icons",
+)
 
 # Browser settings (category="browser" -> TRELLIS_BROWSER_*)
 _LIBRARY = ConfigVar(
@@ -167,6 +173,7 @@ class Config:
         routing_mode: URL routing strategy (standard, hash_url, embedded)
         debug: Comma-separated debug categories to enable
         assets_dir: Directory containing static assets for bundling
+        icon: Project icon source file path
         title: Application title (page/window title, defaults to name)
         host: Server bind address
         port: Server port (None for auto-select)
@@ -187,6 +194,7 @@ class Config:
     routing_mode: RoutingMode | None = None
     debug: str = ""
     assets_dir: Path | None = None
+    icon: Path | None = None
     title: str | None = None
 
     # Browser settings
@@ -220,6 +228,7 @@ class Config:
             self.routing_mode = _default_routing_mode(self.platform)
         self.debug = _DEBUG.resolve(self.debug)
         self.assets_dir = _ASSETS_DIR.resolve(self.assets_dir)
+        self.icon = _ICON.resolve(self.icon)
         self.title = _TITLE.resolve(self.title)
         if self.title is None:
             self.title = self.name
