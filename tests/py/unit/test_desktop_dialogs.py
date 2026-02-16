@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import threading
 from pathlib import Path
 
 import pytest
@@ -53,6 +55,21 @@ class _FakeDialogExt:
     def file(self, manager: object) -> _FakeFileDialogBuilder:
         assert manager is self._manager
         return self._builder
+
+
+class _ThreadedFileDialogBuilder:
+    """Fake dialog builder that invokes callbacks from a worker thread."""
+
+    def __init__(self, *, file_result: object = None) -> None:
+        self.file_result = file_result
+        self.calls: list[tuple[str, dict[str, object]]] = []
+
+    def pick_file(self, handler, /, **kwargs):  # type: ignore[no-untyped-def]
+        self.calls.append(("pick_file", kwargs))
+
+        worker = threading.Thread(target=lambda: handler(self.file_result))
+        worker.start()
+        worker.join()
 
 
 @pytest.fixture
@@ -178,3 +195,32 @@ async def test_select_directory_returns_selected_path(
 
     assert result == Path("/tmp/project")
     assert builder.calls[0][0] == "pick_folder"
+
+
+@requires_pytauri
+@pytest.mark.anyio
+async def test_call_dialog_propagates_normalize_error_from_worker_thread(
+    monkeypatch: pytest.MonkeyPatch,
+    dialogs_module,
+) -> None:
+    manager = object()
+    builder = _ThreadedFileDialogBuilder(file_result=Path("/tmp/example.txt"))
+    dialogs_module._set_dialog_runtime(manager)
+    monkeypatch.setattr(
+        dialogs_module,
+        "_load_dialog_ext",
+        lambda: _FakeDialogExt(manager, builder),
+    )
+
+    def _raise_normalize(_: object) -> Path:
+        raise ValueError("normalize failed")
+
+    with pytest.raises(ValueError, match="normalize failed"):
+        await asyncio.wait_for(
+            dialogs_module._call_dialog(
+                "pick_file",
+                options=dialogs_module.FileDialogOptions(),
+                normalize=_raise_normalize,
+            ),
+            timeout=0.2,
+        )

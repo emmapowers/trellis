@@ -116,9 +116,21 @@ async def _call_dialog(
     loop = asyncio.get_running_loop()
     future: asyncio.Future[_DialogResult] = loop.create_future()
 
-    def _resolve(result: Any) -> None:
+    def _set_result(value: _DialogResult) -> None:
         if not future.done():
-            future.set_result(normalize(result))
+            future.set_result(value)
+
+    def _set_exception(error: Exception) -> None:
+        if not future.done():
+            future.set_exception(error)
+
+    def _resolve(result: Any) -> None:
+        try:
+            normalized_result = normalize(result)
+        except Exception as error:
+            loop.call_soon_threadsafe(_set_exception, error)
+            return
+        loop.call_soon_threadsafe(_set_result, normalized_result)
 
     method(_resolve, **kwargs)
     return await future
