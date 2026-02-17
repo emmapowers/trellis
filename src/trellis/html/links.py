@@ -6,7 +6,6 @@ Elements for hyperlinks and images.
 from __future__ import annotations
 
 import typing as tp
-from urllib.parse import urlparse
 
 from trellis.core.rendering.element import Element
 from trellis.html.base import Style, html_element
@@ -35,16 +34,40 @@ def _is_relative_url(href: str) -> bool:
     Returns:
         True if the URL is relative (should use router), False if absolute or special scheme
     """
-    if href.startswith("//"):
-        return False
-    if href.startswith("#"):
-        return False
-    if href.startswith("?"):
+    # Protocol-relative, fragment-only, and query-only URLs bypass the router.
+    if href.startswith(("//", "#", "?")):
         return False
 
-    parsed = urlparse(href)
-    if parsed.scheme:
+    # Explicit schemes bypass the router. We check a known set rather than using
+    # urlparse because urlparse treats any "word:rest" as a scheme (e.g.
+    # "localhost:3000" parses as scheme="localhost").
+    _NON_RELATIVE_PREFIXES = (
+        "http://",
+        "https://",
+        "mailto:",
+        "tel:",
+        "javascript:",
+        "data:",
+        "file:",
+        "ftp://",
+    )
+    if href.startswith(_NON_RELATIVE_PREFIXES):
         return False
+
+    # Catch any other URI scheme pattern (e.g. "tauri://...", "custom:...")
+    # by checking for "word:" where the word contains only valid scheme chars.
+    colon_pos = href.find(":")
+    if colon_pos > 0:
+        before_colon = href[:colon_pos]
+        if (
+            before_colon.isascii()
+            and before_colon.replace("+", "").replace("-", "").replace(".", "").isalnum()
+        ):
+            # Looks like a URI scheme — but exclude port-like patterns (e.g. "localhost:3000")
+            after_colon = href[colon_pos + 1 :]
+            if after_colon.startswith("//") or not after_colon[:1].isdigit():
+                return False
+
     return True
 
 

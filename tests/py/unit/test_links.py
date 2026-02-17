@@ -74,12 +74,20 @@ def test_other_absolute_schemes_are_not_relative() -> None:
     """Any absolute URI scheme should bypass router navigation."""
     assert _is_relative_url("ftp://example.com/file.txt") is False
     assert _is_relative_url("tauri://localhost/path") is False
+    assert _is_relative_url("custom:value") is False
 
 
 def test_bare_path_is_relative() -> None:
     """Paths without leading slash are still relative."""
     assert _is_relative_url("path/to/resource") is True
     assert _is_relative_url("relative") is True
+
+
+def test_host_with_port_is_relative() -> None:
+    """Host:port patterns are relative — not URI schemes."""
+    assert _is_relative_url("localhost:3000") is True
+    assert _is_relative_url("localhost:3000/path") is True
+    assert _is_relative_url("host:8080/api") is True
 
 
 def test_empty_string_is_relative() -> None:

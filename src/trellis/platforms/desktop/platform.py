@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import importlib
-import json
 import webbrowser
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, assert_never
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 from anyio.from_thread import start_blocking_portal
@@ -32,12 +31,6 @@ from trellis.bundler import (
 from trellis.desktop.dialogs import _clear_dialog_runtime, _set_dialog_runtime
 from trellis.platforms.common.base import Platform
 from trellis.platforms.common.handler_registry import get_global_registry
-from trellis.platforms.desktop.e2e import (
-    DesktopE2EConfig,
-    DesktopE2EScenario,
-    build_probe_script,
-    load_desktop_e2e_config_from_env,
-)
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
 from trellis.utils.hot_reload import get_or_create_hot_reload
 
@@ -114,13 +107,6 @@ class DesktopPlatform(Platform):
     _handler: PyTauriMessageHandler | None
     _handler_task: asyncio.Task[None] | None
     _batch_delay: float
-    _e2e_config: DesktopE2EConfig | None
-    _e2e_result_event: asyncio.Event
-    _e2e_connected_event: asyncio.Event
-    _e2e_finished: bool
-    _e2e_external_url: str | None
-    _e2e_probe_task: asyncio.Task[None] | None
-    _e2e_watch_task: asyncio.Task[None] | None
 
     def __init__(self) -> None:
         self._root_component = None
@@ -128,13 +114,6 @@ class DesktopPlatform(Platform):
         self._handler = None
         self._handler_task = None
         self._batch_delay = 1.0 / 30
-        self._e2e_config = load_desktop_e2e_config_from_env()
-        self._e2e_result_event = asyncio.Event()
-        self._e2e_connected_event = asyncio.Event()
-        self._e2e_finished = False
-        self._e2e_external_url = None
-        self._e2e_probe_task = None
-        self._e2e_watch_task = None
 
     @property
     def name(self) -> str:
@@ -190,10 +169,6 @@ class DesktopPlatform(Platform):
 
             self._handler_task = asyncio.create_task(self._handler.run())
             self._handler_task.add_done_callback(_on_handler_done)
-
-            if self._e2e_config is not None:
-                self._e2e_connected_event.set()
-                self._start_e2e_probe(webview_window, app_handle)
             return "ok"
 
         @commands.command()
@@ -217,113 +192,9 @@ class DesktopPlatform(Platform):
                 raise ValueError(f"Unsupported URL scheme: {parsed.scheme}")
             if parsed.scheme in {"http", "https"} and not parsed.netloc:
                 raise ValueError("External URL must include a host")
-            if self._e2e_config is not None:
-                self._e2e_external_url = body.url
-                self._e2e_result_event.set()
-                return
             webbrowser.open(body.url)
 
         return commands
-
-    def _start_e2e_probe(self, webview_window: WebviewWindow, app_handle: AppHandle) -> None:
-        """Start desktop E2E probe and timeout watcher."""
-        e2e_config = self._e2e_config
-        if e2e_config is None:
-            return
-
-        async def run_probe() -> None:
-            await asyncio.sleep(e2e_config.initial_delay_seconds)
-            webview_window.run_on_main_thread(
-                lambda: webview_window.eval(build_probe_script(e2e_config))
-            )
-
-        async def watch_result() -> None:
-            try:
-                await asyncio.wait_for(
-                    self._e2e_result_event.wait(), timeout=e2e_config.timeout_seconds
-                )
-            except TimeoutError:
-                self._finish_e2e(
-                    app_handle=app_handle,
-                    success=False,
-                    reason="timeout",
-                    details={
-                        "scenario": e2e_config.scenario,
-                        "external_url": self._e2e_external_url,
-                    },
-                )
-                return
-
-            match e2e_config.scenario:
-                case DesktopE2EScenario.MARKDOWN_EXTERNAL_LINK:
-                    expected_urls = set(e2e_config.expected_external_urls)
-                    if self._e2e_external_url in expected_urls:
-                        self._finish_e2e(
-                            app_handle=app_handle,
-                            success=True,
-                            reason="ok",
-                            details={
-                                "scenario": e2e_config.scenario,
-                                "external_url": self._e2e_external_url,
-                            },
-                        )
-                        return
-
-                    self._finish_e2e(
-                        app_handle=app_handle,
-                        success=False,
-                        reason="unexpected_url",
-                        details={
-                            "scenario": e2e_config.scenario,
-                            "external_url": self._e2e_external_url,
-                            "expected_urls": sorted(expected_urls),
-                        },
-                    )
-                    return
-                case _:
-                    assert_never(e2e_config.scenario)
-
-        self._e2e_probe_task = asyncio.create_task(run_probe())
-        self._e2e_watch_task = asyncio.create_task(watch_result())
-
-    async def _watch_e2e_global_timeout(self, app_handle: AppHandle) -> None:
-        """Fail fast when desktop E2E flow does not complete."""
-        if self._e2e_config is None:
-            return
-
-        total_timeout = (
-            self._e2e_config.initial_delay_seconds + self._e2e_config.timeout_seconds + 2
-        )
-        try:
-            await asyncio.wait_for(self._e2e_result_event.wait(), timeout=total_timeout)
-        except TimeoutError:
-            reason = "not_connected" if not self._e2e_connected_event.is_set() else "timeout"
-            self._finish_e2e(
-                app_handle=app_handle,
-                success=False,
-                reason=reason,
-                details={
-                    "scenario": self._e2e_config.scenario,
-                    "external_url": self._e2e_external_url,
-                },
-            )
-
-    def _finish_e2e(
-        self,
-        *,
-        app_handle: AppHandle,
-        success: bool,
-        reason: str,
-        details: dict[str, Any],
-    ) -> None:
-        """Emit E2E result line and terminate desktop app."""
-        if self._e2e_finished:
-            return
-        self._e2e_finished = True
-        payload = {"success": success, "reason": reason, **details}
-        print(f"TRELLIS_DESKTOP_E2E_RESULT={json.dumps(payload, sort_keys=True)}", flush=True)
-        exit_code = 0 if success else 1
-        app_handle.run_on_main_thread(lambda: app_handle.exit(exit_code))
 
     async def run(
         self,
@@ -352,12 +223,6 @@ class DesktopPlatform(Platform):
         self._root_component = root_component  # type: ignore[assignment]
         self._app_wrapper = app_wrapper
         self._batch_delay = batch_delay
-        self._e2e_result_event = asyncio.Event()
-        self._e2e_connected_event = asyncio.Event()
-        self._e2e_finished = False
-        self._e2e_external_url = None
-        self._e2e_probe_task = None
-        self._e2e_watch_task = None
 
         # Create commands with registered handlers
         commands = self._create_commands()
@@ -396,9 +261,6 @@ class DesktopPlatform(Platform):
             # require desktop plugin modules during normal import/CI workflows.
             dialog_plugin: Any = importlib.import_module("pytauri_plugins.dialog")
             app.handle().plugin(dialog_plugin.init())
-
-            if self._e2e_config is not None:
-                portal.start_task_soon(self._watch_e2e_global_timeout, app.handle())
 
             # Run until window is closed
             try:

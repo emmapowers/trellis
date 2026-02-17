@@ -24,6 +24,7 @@ Usage:
 from __future__ import annotations
 
 import os
+import types
 from collections.abc import Callable
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -175,7 +176,7 @@ class ConfigVar(Generic[T]):
 
         # Handle Union types (e.g., int | None, Path | None)
         origin = get_origin(target_type)
-        if origin is type(int | None):  # UnionType
+        if origin is types.UnionType:
             # Get non-None types from union
             args = [a for a in get_args(target_type) if a is not type(None)]
             if args:
@@ -285,7 +286,7 @@ class ConfigVar(Generic[T]):
             return self._coerce(value, target_type)
 
         origin = get_origin(target_type)
-        if origin is type(int | None):
+        if origin is types.UnionType:
             args = [a for a in get_args(target_type) if a is not type(None)]
             if args:
                 target_type = args[0]
