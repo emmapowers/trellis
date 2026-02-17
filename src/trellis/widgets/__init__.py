@@ -12,6 +12,7 @@ from trellis.widgets.basic import (
     Divider,
     Heading,
     Label,
+    MultilineInput,
     NumberInput,
     ProgressBar,
     Select,
@@ -31,7 +32,8 @@ from trellis.widgets.charts import (
 from trellis.widgets.data import Stat, Tag
 from trellis.widgets.feedback import Callout, Collapsible
 from trellis.widgets.icons import Icon, IconName
-from trellis.widgets.layout import Card, Column, Row
+from trellis.widgets.layout import Card, Column, Row, SplitPane
+from trellis.widgets.markdown import Markdown
 from trellis.widgets.navigation import Breadcrumb, Tab, Tabs, Tree
 from trellis.widgets.table import Table, TableColumn
 from trellis.widgets.theme_switcher import ThemeSwitcher
@@ -53,9 +55,11 @@ __all__ = [
     "IconName",
     "Label",
     "LineChart",
+    "Markdown",
     "Menu",
     "MenuDivider",
     "MenuItem",
+    "MultilineInput",
     "NumberInput",
     "PieChart",
     "ProgressBar",
@@ -63,6 +67,7 @@ __all__ = [
     "Select",
     "Slider",
     "Sparkline",
+    "SplitPane",
     "Stat",
     "StatusIndicator",
     "Tab",

@@ -1,11 +1,11 @@
-"""Tests for input widgets: TextInput, NumberInput, Checkbox, Select."""
+"""Tests for input widgets: TextInput, NumberInput, Checkbox, Select, MultilineInput."""
 
 from trellis.core.components.composition import component
-from trellis.widgets import Checkbox, NumberInput, Select, TextInput
+from trellis.widgets import Checkbox, MultilineInput, NumberInput, Select, TextInput
 
 
 class TestInputWidgets:
-    """Tests for TextInput, NumberInput, Checkbox, and Select widgets."""
+    """Tests for TextInput, NumberInput, Checkbox, Select, and MultilineInput widgets."""
 
     def test_text_input_with_value(self, rendered) -> None:
         """TextInput stores value and placeholder props."""
@@ -188,3 +188,46 @@ class TestInputWidgets:
 
         select = result.session.elements.get(result.root_element.child_ids[0])
         assert select.properties["disabled"] is True
+
+    def test_multiline_input_with_value(self, rendered) -> None:
+        """MultilineInput stores value and placeholder props."""
+
+        @component
+        def App() -> None:
+            MultilineInput(value="line one\nline two", placeholder="Enter text...")
+
+        result = rendered(App)
+
+        multiline = result.session.elements.get(result.root_element.child_ids[0])
+        assert multiline.component.name == "MultilineInput"
+        assert multiline.properties["value"] == "line one\nline two"
+        assert multiline.properties["placeholder"] == "Enter text..."
+
+    def test_multiline_input_with_callback(self, rendered) -> None:
+        """MultilineInput captures on_change callback."""
+        values: list[str] = []
+
+        @component
+        def App() -> None:
+            MultilineInput(value="test", on_change=lambda v: values.append(v))
+
+        result = rendered(App)
+
+        multiline = result.session.elements.get(result.root_element.child_ids[0])
+        assert callable(multiline.properties["on_change"])
+
+        multiline.properties["on_change"]("updated")
+        assert values == ["updated"]
+
+    def test_multiline_input_disabled_and_read_only(self, rendered) -> None:
+        """MultilineInput accepts disabled and read_only props."""
+
+        @component
+        def App() -> None:
+            MultilineInput(disabled=True, read_only=True)
+
+        result = rendered(App)
+
+        multiline = result.session.elements.get(result.root_element.child_ids[0])
+        assert multiline.properties["disabled"] is True
+        assert multiline.properties["read_only"] is True

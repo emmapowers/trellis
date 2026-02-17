@@ -2,28 +2,30 @@
 
 from trellis import Margin, Padding, Route, Routes, component, router
 from trellis import widgets as w
-from trellis.app import App, theme
+from trellis.app import App, get_config, theme
+from trellis.core.components.composition import CompositionComponent
+from trellis.platforms.common.base import PlatformType
 from trellis.widgets import IconName, ThemeSwitcher
 
-from .sections import (
-    ActionsSection,
-    ButtonsSection,
-    ChartsSection,
-    DataDisplaySection,
-    FeedbackSection,
-    FormInputsSection,
-    IconsSection,
-    LayoutSection,
-    NavigationSection,
-    ProgressSection,
-    StatusSection,
-    TableSection,
-    TooltipSection,
-    TypographySection,
-)
+from .sections.actions import ActionsSection
+from .sections.buttons import ButtonsSection
+from .sections.charts import ChartsSection
+from .sections.data import DataDisplaySection
+from .sections.feedback import FeedbackSection
+from .sections.forms import FormInputsSection
+from .sections.icons import IconsSection
+from .sections.layout import LayoutSection
+from .sections.navigation import NavigationSection
+from .sections.progress import ProgressSection
+from .sections.status import StatusSection
+from .sections.tables import TableSection
+from .sections.tooltips import TooltipSection
+from .sections.typography import TypographySection
 
-# Tab definitions: (id, label, icon, component)
-TABS = [
+type ShowcaseTab = tuple[str, str, IconName, CompositionComponent]
+
+
+_BASE_TABS: list[ShowcaseTab] = [
     ("layout", "Layout", IconName.LAYOUT_GRID, LayoutSection),
     ("buttons", "Buttons", IconName.MOUSE_POINTER, ButtonsSection),
     ("forms", "Forms", IconName.EDIT_2, FormInputsSection),
@@ -41,12 +43,49 @@ TABS = [
 ]
 
 
+def _resolve_desktop_tab() -> ShowcaseTab:
+    # Desktop section imports desktop-only APIs; keep import local to desktop platform.
+    from .sections.desktop import DesktopSection  # noqa: PLC0415
+
+    return ("desktop", "Desktop", IconName.MONITOR, DesktopSection)
+
+
+def _resolve_platform() -> PlatformType:
+    try:
+        config = get_config()
+    except RuntimeError:
+        return PlatformType.SERVER
+
+    if config is None:
+        return PlatformType.SERVER
+
+    return config.platform
+
+
+def resolve_tabs(platform: PlatformType | None = None) -> list[ShowcaseTab]:
+    tabs = list(_BASE_TABS)
+    active_platform = platform if platform is not None else _resolve_platform()
+    if active_platform != PlatformType.DESKTOP:
+        return tabs
+
+    forms_index = next(
+        (index for index, (tab_id, *_rest) in enumerate(tabs) if tab_id == "forms"), -1
+    )
+    if forms_index == -1:
+        tabs.append(_resolve_desktop_tab())
+        return tabs
+
+    tabs.insert(forms_index + 1, _resolve_desktop_tab())
+    return tabs
+
+
 @component
 def WidgetShowcase() -> None:
     """Main application component with routed navigation."""
     # Get active tab from URL path (e.g., "/buttons" -> "buttons", "/" -> "layout")
     path = router().path
     active_tab = path.strip("/") or "layout"
+    tabs = resolve_tabs()
 
     with w.Column(gap=0, style={"height": "100vh"}):
         # Header
@@ -78,7 +117,7 @@ def WidgetShowcase() -> None:
                     "flexShrink": "0",
                 },
             ):
-                for tab_id, label, _icon, _ in TABS:
+                for tab_id, label, _icon, _ in tabs:
                     is_active = active_tab == tab_id
                     # Use href for client-side navigation
                     href = "/" if tab_id == "layout" else f"/{tab_id}"
@@ -108,7 +147,7 @@ def WidgetShowcase() -> None:
                         )
 
                     # Generate routes for each tab
-                    for tab_id, label, icon, SectionComponent in TABS:
+                    for tab_id, label, icon, SectionComponent in tabs:
                         if tab_id != "layout":  # Skip layout, it's the default
                             with Route(pattern=f"/{tab_id}"):
                                 SectionContent(

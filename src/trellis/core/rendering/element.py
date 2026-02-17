@@ -15,6 +15,7 @@ from trellis.utils.logger import logger
 
 if tp.TYPE_CHECKING:
     from trellis.core.components.base import Component
+    from trellis.core.state.ref import _RefHolder
 
 __all__ = [
     "Element",
@@ -53,6 +54,38 @@ class Element(KeyTrait):
         if self.child_ids:
             props["child_ids"] = list(self.child_ids)
         return props
+
+    def ref(self, holder: _RefHolder[tp.Any]) -> Element:
+        """Attach a ref holder to this element.
+
+        The holder will be wired to the child's exposed_ref after the child
+        executes. If a different holder was previously attached, the old one
+        is detached first.
+
+        Args:
+            holder: A _RefHolder obtained from get_ref()
+
+        Returns:
+            This element, for chaining (e.g. MyChild().ref(holder))
+        """
+        session = self._session_ref()
+        if session is None:
+            raise RuntimeError("Cannot attach ref: session has been garbage collected")
+
+        state = session.states.get_or_create(self.id)
+
+        # Detach old holder if swapping
+        old_holder = state.ref_holder
+        if old_holder is not None and old_holder is not holder:
+            old_holder._detach()
+
+        state.ref_holder = holder
+
+        # If exposed_ref is already set (e.g. re-render), wire immediately
+        if state.exposed_ref is not None:
+            holder._attach(state.exposed_ref)
+
+        return self
 
     def __enter__(self) -> Element:
         """Enter a `with` block to collect children for a container component."""

@@ -31,6 +31,7 @@ from trellis.core import (
     Padding,
     PatchCollector,
     ReactComponentBase,
+    Ref,
     RenderAddPatch,
     RenderPatch,
     RenderRemovePatch,
@@ -45,6 +46,7 @@ from trellis.core import (
     component,
     convert_to_tracked,
     get_active_session,
+    get_ref,
     is_render_active,
     mutable,
     props_equal,
@@ -52,6 +54,7 @@ from trellis.core import (
     reconcile_children,
     render,
     set_active_session,
+    set_ref,
 )
 from trellis.routing import Route, RouterState, Routes, router
 
@@ -75,6 +78,7 @@ __all__ = [
     "Padding",
     "PatchCollector",
     "ReactComponentBase",
+    "Ref",
     "RenderAddPatch",
     "RenderPatch",
     "RenderRemovePatch",
@@ -92,6 +96,7 @@ __all__ = [
     "component",
     "convert_to_tracked",
     "get_active_session",
+    "get_ref",
     "is_render_active",
     "mutable",
     "props_equal",
@@ -100,4 +105,5 @@ __all__ = [
     "render",
     "router",
     "set_active_session",
+    "set_ref",
 ]

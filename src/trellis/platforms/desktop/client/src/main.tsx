@@ -41,6 +41,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import { DesktopClient, ConnectionState } from "@trellis/trellis-desktop/client/src/DesktopClient";
 import { TrellisRoot } from "@trellis/trellis-core/TrellisRoot";
+import { installExternalLinkDelegation } from "./externalLinks";
 
 function App() {
   const [connectionState, setConnectionState] =
@@ -72,6 +73,12 @@ function App() {
 
     return () => client.disconnect();
   }, [client]);
+
+  useEffect(() => {
+    return installExternalLinkDelegation(async (url: string) => {
+      await pyInvoke("trellis_open_external", { url });
+    });
+  }, []);
 
   return (
     <TrellisRoot

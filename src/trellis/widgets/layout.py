@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import typing as tp
 
+from trellis.core.components.composition import component
 from trellis.core.components.react import react
 from trellis.core.components.style_props import Height, Margin, Padding, Width
+
+if tp.TYPE_CHECKING:
+    from trellis.core.rendering.child_ref import ChildRef
+
+_SPLIT_PANE_REQUIRED_CHILDREN = 2
 
 
 @react("client/Column.tsx", is_container=True)
@@ -127,4 +133,73 @@ def Card(
             Label(text="Card content")
             Button(text="Action")
     """
+    pass
+
+
+@component
+def SplitPane(
+    *,
+    orientation: tp.Literal["horizontal", "vertical"] = "horizontal",
+    split: float = 0.5,
+    min_size: int = 120,
+    divider_size: int = 8,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    height: Height | int | str | None = None,
+    flex: int | None = None,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    children: list[ChildRef] | None = None,
+) -> None:
+    """Resizable two-pane layout container.
+
+    SplitPane requires exactly two child panes.
+
+    Args:
+        orientation: Split direction ("horizontal" for left/right, "vertical" for top/bottom).
+        split: Initial split ratio from 0.0 to 1.0.
+        min_size: Minimum size in pixels for each pane.
+        divider_size: Draggable divider thickness in pixels.
+        margin: Margin around the split pane.
+        width: Width of the split pane.
+        height: Height of the split pane.
+        flex: Flex grow/shrink value.
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+        children: Exactly two child panes.
+    """
+    pane_children = children or []
+    if len(pane_children) != _SPLIT_PANE_REQUIRED_CHILDREN:
+        raise ValueError("SplitPane requires exactly two children")
+
+    _SplitPane(
+        orientation=orientation,
+        split=split,
+        min_size=min_size,
+        divider_size=divider_size,
+        margin=margin,
+        width=width,
+        height=height,
+        flex=flex,
+        class_name=class_name,
+        style=style,
+        children=pane_children,
+    )
+
+
+@react("client/SplitPane.tsx", export_name="SplitPane", is_container=True)
+def _SplitPane(
+    *,
+    orientation: tp.Literal["horizontal", "vertical"] = "horizontal",
+    split: float = 0.5,
+    min_size: int = 120,
+    divider_size: int = 8,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    height: Height | int | str | None = None,
+    flex: int | None = None,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+    children: list[ChildRef] | None = None,
+) -> None:
     pass

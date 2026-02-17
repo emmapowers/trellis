@@ -8,16 +8,20 @@ This package provides:
 
 from trellis.core.state.conversion import convert_to_tracked
 from trellis.core.state.mutable import Mutable, callback, mutable
+from trellis.core.state.ref import Ref, get_ref, set_ref
 from trellis.core.state.stateful import Stateful
 from trellis.core.state.tracked import TrackedDict, TrackedList, TrackedSet
 
 __all__ = [
     "Mutable",
+    "Ref",
     "Stateful",
     "TrackedDict",
     "TrackedList",
     "TrackedSet",
     "callback",
     "convert_to_tracked",
+    "get_ref",
     "mutable",
+    "set_ref",
 ]
