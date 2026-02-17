@@ -12,7 +12,6 @@ from trellis.core.callback_context import callback_context
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.element import Element, props_equal
-from trellis.core.rendering.element_state import ElementState
 from trellis.core.rendering.patches import (
     RenderAddPatch,
     RenderPatch,
@@ -25,6 +24,7 @@ from trellis.core.rendering.session import (
     get_active_session,
     set_active_session,
 )
+from trellis.core.state.ref import Ref, _RefHolder
 from trellis.utils.logger import logger
 
 __all__ = [
@@ -167,11 +167,12 @@ def _execute_single_element(
         parent_id,
     )
 
-    # Create ElementState if this is a new element
-    state = session.states.get(element_id)
-    if state is None:
-        state = ElementState(parent_id=parent_id, mounted=True)
-        session.states.set(element_id, state)
+    # Get or create ElementState. State may already exist if Element.ref()
+    # was called before execution (which creates state to store ref_holder).
+    state = session.states.get_or_create(element_id)
+    if not state.mounted:
+        state.parent_id = parent_id
+        state.mounted = True
         # Track mount hook (called after render completes)
         session.active.lifecycle.track_mount(element_id)
     else:
@@ -185,6 +186,9 @@ def _execute_single_element(
     session.elements.store(element)
 
     state.state_call_count = 0
+
+    # Reset exposed_ref before execute so we detect if child calls set_ref()
+    state.exposed_ref = None
 
     # Get props including children if component accepts them
     props = element.props.copy()
@@ -204,6 +208,13 @@ def _execute_single_element(
         new_child_ids = list(frame.child_ids) if frame else []
 
         logger.debug("Execution (single) produced %d children", len(new_child_ids))
+
+        # Wire ref: connect holder to exposed ref, or detach if child stopped exposing
+        if state.exposed_ref is not None and state.ref_holder is not None:
+            state.ref_holder._attach(state.exposed_ref)
+        elif state.exposed_ref is None and state.ref_holder is not None:
+            if state.ref_holder:  # was previously attached
+                state.ref_holder._detach()
 
         # Update element in-place with child_ids (execution of children happens in _execute_tree)
         element.child_ids = new_child_ids
@@ -357,6 +368,33 @@ def _remove_element_tree(session: RenderSession, element_id: str) -> None:
     session.elements.remove(element_id)
 
 
+def _invoke_lifecycle_hook(
+    session: RenderSession,
+    element_id: str,
+    hook: tp.Any,
+    label: str,
+) -> None:
+    """Invoke a lifecycle hook (sync or async) with proper error handling."""
+    if inspect.iscoroutinefunction(hook):
+
+        async def run_async_hook(h: tp.Any = hook) -> None:
+            try:
+                with callback_context(session, element_id):
+                    await h()
+            except Exception:
+                logging.exception("Error in async %s", label)
+
+        task = asyncio.create_task(run_async_hook())
+        session._background_tasks.add(task)
+        task.add_done_callback(session._background_tasks.discard)
+    else:
+        try:
+            with callback_context(session, element_id):
+                hook()
+        except Exception:
+            logging.exception("Error in %s", label)
+
+
 def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
     """Call on_mount() for all Stateful instances on a element."""
     state = session.states.get(element_id)
@@ -371,35 +409,31 @@ def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
         logger.debug("Calling on_mount for %s (%d states)", element_id, len(items))
 
     for _, stateful in items:
+        if isinstance(stateful, _RefHolder):
+            continue
         if hasattr(stateful, "on_mount"):
-            hook = stateful.on_mount
-            if inspect.iscoroutinefunction(hook):
-                # Async hook: schedule as background task
-                # Capture hook in default arg to avoid closure over loop variable
-                async def run_async_hook(h: tp.Any = hook) -> None:
-                    try:
-                        with callback_context(session, element_id):
-                            await h()
-                    except Exception:
-                        logging.exception("Error in async Stateful.on_mount")
+            _invoke_lifecycle_hook(session, element_id, stateful.on_mount, "on_mount")
 
-                task = asyncio.create_task(run_async_hook())
-                session._background_tasks.add(task)
-                task.add_done_callback(session._background_tasks.discard)
-            else:
-                # Sync hook: call directly
-                try:
-                    with callback_context(session, element_id):
-                        hook()
-                except Exception:
-                    logging.exception("Error in Stateful.on_mount")
+    # Call Ref.on_mount if exposed_ref is a Ref instance
+    if state.exposed_ref is not None and isinstance(state.exposed_ref, Ref):
+        _invoke_lifecycle_hook(session, element_id, state.exposed_ref.on_mount, "Ref.on_mount")
 
 
 def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
-    """Call on_unmount() for all Stateful instances on a element."""
+    """Call on_unmount() for all Stateful instances and Ref on a element."""
     state = session.states.get(element_id)
     if state is None:
         return
+
+    # Call Ref.on_unmount if exposed_ref is a Ref instance
+    if state.exposed_ref is not None and isinstance(state.exposed_ref, Ref):
+        _invoke_lifecycle_hook(session, element_id, state.exposed_ref.on_unmount, "Ref.on_unmount")
+        state.exposed_ref = None
+
+    # Detach ref holder on unmount
+    if state.ref_holder is not None:
+        state.ref_holder._detach()
+
     # Get states sorted by call index, reversed
     items = list(state.local_state.items())
     items.sort(key=lambda x: x[0][1], reverse=True)
@@ -408,28 +442,10 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
         logger.debug("Calling on_unmount for %s", element_id)
 
     for _, stateful in items:
+        if isinstance(stateful, _RefHolder):
+            continue
         if hasattr(stateful, "on_unmount"):
-            hook = stateful.on_unmount
-            if inspect.iscoroutinefunction(hook):
-                # Async hook: schedule as background task
-                # Capture hook in default arg to avoid closure over loop variable
-                async def run_async_hook(h: tp.Any = hook) -> None:
-                    try:
-                        with callback_context(session, element_id):
-                            await h()
-                    except Exception:
-                        logging.exception("Error in async Stateful.on_unmount")
-
-                task = asyncio.create_task(run_async_hook())
-                session._background_tasks.add(task)
-                task.add_done_callback(session._background_tasks.discard)
-            else:
-                # Sync hook: call directly
-                try:
-                    with callback_context(session, element_id):
-                        hook()
-                except Exception:
-                    logging.exception("Error in Stateful.on_unmount")
+            _invoke_lifecycle_hook(session, element_id, stateful.on_unmount, "on_unmount")
 
 
 def _process_pending_hooks(

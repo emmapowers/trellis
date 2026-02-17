@@ -42,13 +42,16 @@ from trellis.core.rendering import (
 # state
 from trellis.core.state import (
     Mutable,
+    Ref,
     Stateful,
     TrackedDict,
     TrackedList,
     TrackedSet,
     callback,
     convert_to_tracked,
+    get_ref,
     mutable,
+    set_ref,
 )
 
 __all__ = [
@@ -70,6 +73,7 @@ __all__ = [
     "Padding",
     "PatchCollector",
     "ReactComponentBase",
+    "Ref",
     "RenderAddPatch",
     "RenderPatch",
     "RenderRemovePatch",
@@ -84,6 +88,7 @@ __all__ = [
     "component",
     "convert_to_tracked",
     "get_active_session",
+    "get_ref",
     "is_render_active",
     "mutable",
     "props_equal",
@@ -91,4 +96,5 @@ __all__ = [
     "reconcile_children",
     "render",
     "set_active_session",
+    "set_ref",
 ]
