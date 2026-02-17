@@ -34,22 +34,40 @@ def _is_relative_url(href: str) -> bool:
     Returns:
         True if the URL is relative (should use router), False if absolute or special scheme
     """
-    # Absolute URLs, protocol-relative URLs, and special schemes should bypass router
-    if href.startswith(
-        (
-            "http://",
-            "https://",
-            "//",
-            "mailto:",
-            "tel:",
-            "javascript:",
-            "data:",
-            "file:",
-            "#",  # Fragment-only: scroll to element
-            "?",  # Query-only: modify query params on current page
-        )
-    ):
+    # Protocol-relative, fragment-only, and query-only URLs bypass the router.
+    if href.startswith(("//", "#", "?")):
         return False
+
+    # Explicit schemes bypass the router. We check a known set rather than using
+    # urlparse because urlparse treats any "word:rest" as a scheme (e.g.
+    # "localhost:3000" parses as scheme="localhost").
+    _NON_RELATIVE_PREFIXES = (
+        "http://",
+        "https://",
+        "mailto:",
+        "tel:",
+        "javascript:",
+        "data:",
+        "file:",
+        "ftp://",
+    )
+    if href.startswith(_NON_RELATIVE_PREFIXES):
+        return False
+
+    # Catch any other URI scheme pattern (e.g. "tauri://...", "custom:...")
+    # by checking for "word:" where the word contains only valid scheme chars.
+    colon_pos = href.find(":")
+    if colon_pos > 0:
+        before_colon = href[:colon_pos]
+        if (
+            before_colon.isascii()
+            and before_colon.replace("+", "").replace("-", "").replace(".", "").isalnum()
+        ):
+            # Looks like a URI scheme — but exclude port-like patterns (e.g. "localhost:3000")
+            after_colon = href[colon_pos + 1 :]
+            if after_colon.startswith("//") or not after_colon[:1].isdigit():
+                return False
+
     return True
 
 
@@ -126,6 +144,7 @@ def A(
     """
     # For relative URLs without custom onClick, add router navigation
     effective_onclick = onClick
+    effective_props = dict(props)
     if href and onClick is None and use_router and target != "_blank" and _is_relative_url(href):
         # Capture href in closure for the async callback
         nav_href = href
@@ -134,6 +153,7 @@ def A(
             await router().navigate(nav_href)
 
         effective_onclick = router_click
+        effective_props["data-trellis-router-link"] = "true"
 
     return _A(
         _text=text if text else None,
@@ -143,5 +163,5 @@ def A(
         className=className,
         style=style,
         onClick=effective_onclick,
-        **props,
+        **effective_props,
     )

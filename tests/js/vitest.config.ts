@@ -26,6 +26,8 @@ export default defineConfig({
       "react-aria": path.resolve(__dirname, "node_modules/react-aria"),
       "react-stately": path.resolve(__dirname, "node_modules/react-stately"),
       "lucide-react": path.resolve(__dirname, "node_modules/lucide-react"),
+      "markdown-it": path.resolve(__dirname, "node_modules/markdown-it"),
+      "dompurify": path.resolve(__dirname, "node_modules/dompurify"),
       "@msgpack/msgpack": path.resolve(__dirname, "node_modules/@msgpack/msgpack"),
       "recharts": path.resolve(__dirname, "node_modules/recharts"),
       "uplot": path.resolve(__dirname, "node_modules/uplot"),

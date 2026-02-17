@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass, field, fields
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from trellis.app.configvars import (
     ConfigVar,
@@ -78,6 +78,12 @@ _ASSETS_DIR: ConfigVar[Path | None] = ConfigVar(
     default=Path("./assets/"),
     type_hint=Path,
     help="Directory containing static assets for bundling",
+)
+_ICON: ConfigVar[Path | None] = ConfigVar(
+    "icon",
+    default=None,
+    type_hint=Path,
+    help="Project icon source file used to derive platform/web icons",
 )
 
 # Browser settings (category="browser" -> TRELLIS_BROWSER_*)
@@ -167,6 +173,7 @@ class Config:
         routing_mode: URL routing strategy (standard, hash_url, embedded)
         debug: Comma-separated debug categories to enable
         assets_dir: Directory containing static assets for bundling
+        icon: Project icon source file path
         title: Application title (page/window title, defaults to name)
         host: Server bind address
         port: Server port (None for auto-select)
@@ -187,6 +194,7 @@ class Config:
     routing_mode: RoutingMode | None = None
     debug: str = ""
     assets_dir: Path | None = None
+    icon: Path | None = None
     title: str | None = None
 
     # Browser settings
@@ -198,6 +206,30 @@ class Config:
 
     # Desktop settings
     window_size: str = "maximized"
+
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            *,
+            name: str,
+            module: str,
+            python_path: list[Path | str] = ...,
+            platform: PlatformType = ...,
+            force_build: bool = ...,
+            watch: bool = ...,
+            batch_delay: float = ...,
+            hot_reload: bool = ...,
+            routing_mode: RoutingMode | None = ...,
+            debug: str = ...,
+            assets_dir: Path | str | None = ...,
+            icon: Path | str | None = ...,
+            title: str | None = ...,
+            library: bool = ...,
+            host: str = ...,
+            port: int | None = ...,
+            window_size: str = ...,
+        ) -> None: ...
 
     def __post_init__(self) -> None:
         """Resolve all fields through ConfigVar system and validate."""
@@ -220,6 +252,7 @@ class Config:
             self.routing_mode = _default_routing_mode(self.platform)
         self.debug = _DEBUG.resolve(self.debug)
         self.assets_dir = _ASSETS_DIR.resolve(self.assets_dir)
+        self.icon = _ICON.resolve(self.icon)
         self.title = _TITLE.resolve(self.title)
         if self.title is None:
             self.title = self.name

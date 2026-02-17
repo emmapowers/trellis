@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any
 
 from jinja2 import Environment, FileSystemLoader
 
+from trellis.bundler.icon_assets import generate_icon_assets
 from trellis.bundler.manifest import BuildManifest, StepManifest
 from trellis.bundler.metafile import get_metafile_path, read_metafile
 from trellis.bundler.packages import ensure_packages, get_bin
@@ -564,6 +565,94 @@ class StaticFileCopyStep(BuildStep):
         for dest_file in dest_dir.glob("**/*"):
             if dest_file.is_file():
                 step_manifest.dest_files.add(dest_file)
+
+
+class IconAssetStep(BuildStep):
+    """Generate derived icon files and template context from a project icon."""
+
+    def __init__(self, icon_path: Path | None, *, enabled: bool = True) -> None:
+        self.icon_path = icon_path
+        self.enabled = enabled
+
+    @property
+    def name(self) -> str:
+        return "icon-assets"
+
+    def _metadata_hash(self) -> str:
+        payload = {
+            "enabled": self.enabled,
+            "icon_path": str(self.icon_path) if self.icon_path is not None else None,
+        }
+        payload_str = json.dumps(payload, sort_keys=True)
+        return hashlib.sha256(payload_str.encode()).hexdigest()
+
+    def _apply_template_context_from_metadata(
+        self, ctx: BuildContext, metadata: dict[str, Any]
+    ) -> None:
+        has_icon = bool(metadata.get("has_icon", False))
+        ctx.template_context["has_icon"] = has_icon
+        if has_icon:
+            ctx.template_context["favicon_href"] = metadata.get("favicon_href")
+            ctx.template_context["favicon_type"] = metadata.get("favicon_type")
+            apple_touch_icon_href = metadata.get("apple_touch_icon_href")
+            if apple_touch_icon_href:
+                ctx.template_context["apple_touch_icon_href"] = apple_touch_icon_href
+
+    def should_build(
+        self, ctx: BuildContext, step_manifest: StepManifest | None
+    ) -> ShouldBuild | None:
+        if step_manifest is None:
+            return ShouldBuild.BUILD
+
+        current_hash = self._metadata_hash()
+        if step_manifest.metadata.get("step_hash") != current_hash:
+            return ShouldBuild.BUILD
+
+        self._apply_template_context_from_metadata(ctx, step_manifest.metadata)
+
+        # No icon configured; template context was restored, nothing else to rebuild.
+        if not step_manifest.metadata.get("has_icon", False):
+            return ShouldBuild.SKIP
+
+        if not step_manifest.source_paths or not step_manifest.dest_files:
+            return ShouldBuild.BUILD
+        if is_rebuild_needed(step_manifest.source_paths, step_manifest.dest_files):
+            return ShouldBuild.BUILD
+        return ShouldBuild.SKIP
+
+    def run(self, ctx: BuildContext) -> None:
+        step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
+        step_manifest.source_paths.clear()
+        step_manifest.dest_files.clear()
+        step_manifest.metadata.clear()
+        step_manifest.metadata["step_hash"] = self._metadata_hash()
+
+        if not self.enabled:
+            ctx.template_context["has_icon"] = False
+            step_manifest.metadata["has_icon"] = False
+            return
+
+        result = generate_icon_assets(self.icon_path, ctx.dist_dir)
+        ctx.template_context["has_icon"] = result.has_icon
+        step_manifest.metadata["has_icon"] = result.has_icon
+
+        if not result.has_icon:
+            return
+        assert self.icon_path is not None
+
+        step_manifest.source_paths.add(self.icon_path)
+        for output_file in result.generated_files:
+            step_manifest.dest_files.add(output_file)
+
+        if result.favicon_href is not None:
+            ctx.template_context["favicon_href"] = result.favicon_href
+            step_manifest.metadata["favicon_href"] = result.favicon_href
+        if result.favicon_type is not None:
+            ctx.template_context["favicon_type"] = result.favicon_type
+            step_manifest.metadata["favicon_type"] = result.favicon_type
+        if result.apple_touch_icon_href is not None:
+            ctx.template_context["apple_touch_icon_href"] = result.apple_touch_icon_href
+            step_manifest.metadata["apple_touch_icon_href"] = result.apple_touch_icon_href
 
 
 class IndexHtmlRenderStep(BuildStep):

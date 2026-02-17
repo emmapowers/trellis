@@ -85,6 +85,9 @@ class TestTypeDerivation:
         var: ConfigVar[Path | None] = ConfigVar("dir", default=None, type_hint=Path)
         click_type = get_click_type(var)
         assert isinstance(click_type, click.Path)
+        converted = click_type.convert("/tmp/example", None, None)
+        assert converted == Path("/tmp/example")
+        assert isinstance(converted, Path)
 
     def test_strenum_becomes_choice(self) -> None:
         """StrEnum ConfigVar -> click.Choice with enum values."""
@@ -235,6 +238,21 @@ class TestDecoratorWithClickRunner:
         runner = CliRunner()
         runner.invoke(cmd, ["--port", "9000"])
         assert received["port"] == 9000
+
+    def test_path_option_value_received_as_path(self) -> None:
+        """Path options should be passed as pathlib.Path values."""
+        var: ConfigVar[Path | None] = ConfigVar("icon", default=None, type_hint=Path)
+        received: dict[str, object] = {}
+
+        @click.command()
+        @configvar_options([var])
+        def cmd(**kwargs: object) -> None:
+            received.update(kwargs)
+
+        runner = CliRunner()
+        runner.invoke(cmd, ["--icon", "/tmp/icon.png"])
+        assert received["icon"] == Path("/tmp/icon.png")
+        assert isinstance(received["icon"], Path)
 
     def test_short_option_works(self) -> None:
         """Running with -d render passes debug='render'."""

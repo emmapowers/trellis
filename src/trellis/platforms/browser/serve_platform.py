@@ -29,6 +29,7 @@ from trellis.bundler import (
     BuildConfig,
     BundleBuildStep,
     DeclarationStep,
+    IconAssetStep,
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
@@ -119,6 +120,7 @@ class BrowserServePlatform(Platform):
                 PyodideWorkerBuildStep(),
                 BundleBuildStep(output_name="bundle"),
                 StaticFileCopyStep(),
+                IconAssetStep(icon_path=config.icon),
                 IndexHtmlRenderStep(template_path, {"title": config.title, "routing_mode": "hash"}),
             ],
         )

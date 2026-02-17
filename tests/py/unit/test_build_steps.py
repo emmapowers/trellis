@@ -19,6 +19,7 @@ from trellis.bundler.steps import (
     BuildStep,
     BundleBuildStep,
     DeclarationStep,
+    IconAssetStep,
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
@@ -1819,6 +1820,103 @@ class TestIndexHtmlRenderStepShouldBuild:
         result = step.should_build(build_context, prev_manifest)
 
         assert result == ShouldBuild.SKIP
+
+
+class TestIconAssetStep:
+    """Tests for IconAssetStep."""
+
+    @pytest.fixture
+    def build_context(self, tmp_path: Path) -> BuildContext:
+        registry = ModuleRegistry()
+        collected = registry.collect()
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+        return BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+        )
+
+    def test_name(self) -> None:
+        step = IconAssetStep(icon_path=None)
+        assert step.name == "icon-assets"
+
+    def test_without_icon_sets_has_icon_false(self, build_context: BuildContext) -> None:
+        step = IconAssetStep(icon_path=None)
+        step.run(build_context)
+
+        assert build_context.template_context["has_icon"] is False
+        assert "favicon_href" not in build_context.template_context
+
+    def test_missing_icon_path_raises(self, build_context: BuildContext, tmp_path: Path) -> None:
+        step = IconAssetStep(icon_path=tmp_path / "missing.png")
+
+        with pytest.raises(FileNotFoundError, match="Icon file not found"):
+            step.run(build_context)
+
+    def test_copies_icon_and_sets_template_context(
+        self, build_context: BuildContext, tmp_path: Path
+    ) -> None:
+        source_icon = tmp_path / "icon.png"
+        png_bytes = (
+            b"\x89PNG\r\n\x1a\n"
+            b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+            b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        source_icon.write_bytes(png_bytes)
+
+        step = IconAssetStep(icon_path=source_icon)
+        step.run(build_context)
+
+        copied_icon = build_context.dist_dir / "favicon.png"
+        assert copied_icon.exists()
+        assert copied_icon.read_bytes() == png_bytes
+        assert build_context.template_context["has_icon"] is True
+        assert build_context.template_context["favicon_href"] == "favicon.png"
+        assert build_context.template_context["favicon_type"] == "image/png"
+
+        step_manifest = build_context.manifest.steps["icon-assets"]
+        assert source_icon in step_manifest.source_paths
+        assert copied_icon in step_manifest.dest_files
+
+    def test_should_build_skips_when_unchanged(
+        self, build_context: BuildContext, tmp_path: Path
+    ) -> None:
+        source_icon = tmp_path / "icon.png"
+        source_icon.write_bytes(
+            b"\x89PNG\r\n\x1a\n"
+            b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+            b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+
+        # Run once to populate manifest and output.
+        step = IconAssetStep(icon_path=source_icon)
+        step.run(build_context)
+        prev = build_context.manifest.steps["icon-assets"]
+
+        # Create fresh context to simulate a new build pass.
+        fresh_ctx = BuildContext(
+            registry=build_context.registry,
+            entry_point=build_context.entry_point,
+            workspace=build_context.workspace,
+            collected=build_context.collected,
+            dist_dir=build_context.dist_dir,
+            manifest=BuildManifest(),
+        )
+        decision = step.should_build(fresh_ctx, prev)
+
+        assert decision == ShouldBuild.SKIP
+        assert fresh_ctx.template_context["has_icon"] is True
+        assert fresh_ctx.template_context["favicon_href"] == "favicon.png"
 
 
 class TestStaticFileCopyStep:
