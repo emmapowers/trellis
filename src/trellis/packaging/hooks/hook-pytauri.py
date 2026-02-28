@@ -8,7 +8,4 @@ metadata of their own.  Trellis loads ``pytauri_plugins.dialog`` via
 
 from PyInstaller.utils.hooks import collect_submodules
 
-hiddenimports = (
-    collect_submodules("pytauri_plugins")
-    + collect_submodules("pytauri_utils")
-)
+hiddenimports = collect_submodules("pytauri_plugins") + collect_submodules("pytauri_utils")

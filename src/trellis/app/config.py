@@ -286,7 +286,7 @@ class Config:
         data: dict[str, Any] = {}
         for f in fields(self):
             value = getattr(self, f.name)
-            if callable(value):
+            if callable(value) or f.repr is False:
                 continue
             if isinstance(value, StrEnum):
                 data[f.name] = value.value

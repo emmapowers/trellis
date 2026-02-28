@@ -165,3 +165,8 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["trellis.platforms.desktop.*"]
 disable_error_code = ["untyped-decorator"]
+
+# PyInstaller has no type stubs
+[[tool.mypy.overrides]]
+module = ["PyInstaller", "PyInstaller.*"]
+ignore_missing_imports = true

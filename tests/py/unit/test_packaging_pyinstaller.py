@@ -62,12 +62,10 @@ class TestBuildDesktopAppBundle:
         assert f"{app_root / '.dist'}{os.pathsep}.dist" in cmd
         assert "--hidden-import" in cmd
         assert "myapp.main" in cmd
-        assert cmd.count("--hidden-import") == 2
-        assert "pytauri_wheel.ext_mod" in cmd
+        assert cmd.count("--hidden-import") == 1
         assert "--copy-metadata" in cmd
         assert "pytauri-wheel" in cmd
-        assert "--collect-data" in cmd
-        assert "trellis.platforms.desktop" in cmd
+        assert "--collect-all" in cmd
         assert output == expected_output
 
     def test_default_output_dir_is_package(self, tmp_path: Path) -> None:
