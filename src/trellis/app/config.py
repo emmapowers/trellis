@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field, fields
 from enum import StrEnum
 from pathlib import Path
@@ -207,6 +208,11 @@ class Config:
     # Desktop settings
     window_size: str = "maximized"
 
+    # Packaging
+    collect_bundle_extras: Callable[[Path, list[str]], None] | None = field(
+        default=None, repr=False
+    )
+
     if TYPE_CHECKING:
 
         def __init__(
@@ -229,6 +235,7 @@ class Config:
             host: str = ...,
             port: int | None = ...,
             window_size: str = ...,
+            collect_bundle_extras: Callable[[Path, list[str]], None] | None = ...,
         ) -> None: ...
 
     def __post_init__(self) -> None:
@@ -279,6 +286,8 @@ class Config:
         data: dict[str, Any] = {}
         for f in fields(self):
             value = getattr(self, f.name)
+            if callable(value):
+                continue
             if isinstance(value, StrEnum):
                 data[f.name] = value.value
             elif isinstance(value, Path):

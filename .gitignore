@@ -31,6 +31,9 @@ htmlcov/
 # OS
 .DS_Store
 
+# Build state
+.build/
+
 # Node
 node_modules/
 
