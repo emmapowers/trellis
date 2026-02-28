@@ -7,7 +7,7 @@ import pytest
 from tests.conftest import render_to_tree
 from trellis.core.components.composition import component
 from trellis.core.rendering.session import RenderSession
-from trellis.core.state.mutable import Mutable, mutable
+from trellis.core.state.mutable import mutable
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.common.serialization import parse_callback_id
 from trellis.widgets import Button, Column, Label, Row, SplitPane
