@@ -7,6 +7,7 @@ import typing as tp
 from trellis.core.components.composition import component
 from trellis.core.components.react import react
 from trellis.core.components.style_props import Height, Margin, Padding, Width
+from trellis.core.state.mutable import Mutable
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering.child_ref import ChildRef
@@ -140,7 +141,7 @@ def Card(
 def SplitPane(
     *,
     orientation: tp.Literal["horizontal", "vertical"] = "horizontal",
-    split: float = 0.5,
+    split: float | Mutable[float] = 0.5,
     min_size: int = 120,
     divider_size: int = 8,
     margin: Margin | None = None,
@@ -191,7 +192,7 @@ def SplitPane(
 def _SplitPane(
     *,
     orientation: tp.Literal["horizontal", "vertical"] = "horizontal",
-    split: float = 0.5,
+    split: float | Mutable[float] = 0.5,
     min_size: int = 120,
     divider_size: int = 8,
     margin: Margin | None = None,

@@ -1,11 +1,12 @@
 import React from "react";
 import { colors } from "@trellis/trellis-core/theme";
+import { Mutable, unwrapMutable } from "@trellis/trellis-core/core/types";
 
 type SplitOrientation = "horizontal" | "vertical";
 
 interface SplitPaneProps {
   orientation?: SplitOrientation;
-  split?: number;
+  split?: number | Mutable<number>;
   min_size?: number;
   divider_size?: number;
   height?: number | string;
@@ -48,14 +49,17 @@ export function SplitPane({
   style,
   children,
 }: SplitPaneProps): React.ReactElement {
+  const { value: splitValue, setValue: onSplitChange } = unwrapMutable(split ?? 0.5);
   const rootRef = React.useRef<HTMLDivElement>(null);
   const isHorizontal = orientation === "horizontal";
   const [dragging, setDragging] = React.useState(false);
-  const [ratio, setRatio] = React.useState(() => clamp(split, 0, 1));
+  const [ratio, setRatio] = React.useState(() => clamp(splitValue, 0, 1));
 
   React.useEffect(() => {
-    setRatio(clamp(split, 0, 1));
-  }, [split]);
+    setRatio(clamp(splitValue, 0, 1));
+  }, [splitValue]);
+
+  const ratioRef = React.useRef(ratio);
 
   React.useEffect(() => {
     if (!dragging) {
@@ -72,10 +76,13 @@ export function SplitPane({
       const containerSize = isHorizontal ? rect.width : rect.height;
       const relativePosition = isHorizontal ? event.clientX - rect.left : event.clientY - rect.top;
       const next = relativePosition / Math.max(containerSize, 1);
-      setRatio(clampSplitForBounds(next, containerSize, min_size));
+      const clamped = clampSplitForBounds(next, containerSize, min_size);
+      ratioRef.current = clamped;
+      setRatio(clamped);
     };
 
     const onMouseUp = (): void => {
+      onSplitChange?.(ratioRef.current);
       setDragging(false);
     };
 
@@ -85,7 +92,7 @@ export function SplitPane({
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [dragging, isHorizontal, min_size]);
+  }, [dragging, isHorizontal, min_size, onSplitChange]);
 
   const childArray = React.Children.toArray(children);
   const firstChild = childArray[0] ?? null;
