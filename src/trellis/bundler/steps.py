@@ -570,9 +570,12 @@ class StaticFileCopyStep(BuildStep):
 class IconAssetStep(BuildStep):
     """Generate derived icon files and template context from a project icon."""
 
-    def __init__(self, icon_path: Path | None, *, enabled: bool = True) -> None:
+    def __init__(
+        self, icon_path: Path | None, *, enabled: bool = True, include_icns: bool = False
+    ) -> None:
         self.icon_path = icon_path
         self.enabled = enabled
+        self.include_icns = include_icns
 
     @property
     def name(self) -> str:
@@ -582,6 +585,7 @@ class IconAssetStep(BuildStep):
         payload = {
             "enabled": self.enabled,
             "icon_path": str(self.icon_path) if self.icon_path is not None else None,
+            "include_icns": self.include_icns,
         }
         payload_str = json.dumps(payload, sort_keys=True)
         return hashlib.sha256(payload_str.encode()).hexdigest()
@@ -632,7 +636,7 @@ class IconAssetStep(BuildStep):
             step_manifest.metadata["has_icon"] = False
             return
 
-        result = generate_icon_assets(self.icon_path, ctx.dist_dir)
+        result = generate_icon_assets(self.icon_path, ctx.dist_dir, include_icns=self.include_icns)
         ctx.template_context["has_icon"] = result.has_icon
         step_manifest.metadata["has_icon"] = result.has_icon
 

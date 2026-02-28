@@ -1,10 +1,21 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("@tauri-apps/plugin-opener", () => ({
+  openUrl: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { installExternalLinkDelegation } from "../../../../src/trellis/platforms/desktop/client/src/externalLinks";
 
+const mockedOpenUrl = vi.mocked(openUrl);
+
 describe("desktop external link delegation", () => {
-  it("opens non-router links in external browser", () => {
-    const openExternal = vi.fn().mockResolvedValue(undefined);
-    const uninstall = installExternalLinkDelegation(openExternal);
+  beforeEach(() => {
+    mockedOpenUrl.mockClear();
+  });
+
+  it("opens external-origin links via opener plugin", () => {
+    const uninstall = installExternalLinkDelegation();
 
     const anchor = document.createElement("a");
     anchor.href = "https://example.com";
@@ -14,38 +25,53 @@ describe("desktop external link delegation", () => {
     const event = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
     anchor.dispatchEvent(event);
 
-    expect(openExternal).toHaveBeenCalledWith("https://example.com/");
+    expect(mockedOpenUrl).toHaveBeenCalledWith("https://example.com/");
     expect(event.defaultPrevented).toBe(true);
 
     uninstall();
     anchor.remove();
   });
 
-  it("does not intercept router-handled links", () => {
-    const openExternal = vi.fn().mockResolvedValue(undefined);
-    const uninstall = installExternalLinkDelegation(openExternal);
+  it("does not intercept same-origin links", () => {
+    const uninstall = installExternalLinkDelegation();
 
     const anchor = document.createElement("a");
-    anchor.href = "#in-app";
-    anchor.setAttribute("data-trellis-router-link", "true");
+    anchor.href = "/about";
     document.body.appendChild(anchor);
 
     const event = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
     anchor.dispatchEvent(event);
 
-    expect(openExternal).not.toHaveBeenCalled();
+    expect(mockedOpenUrl).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
 
     uninstall();
     anchor.remove();
   });
 
-  it("does not intercept modified clicks", () => {
-    const openExternal = vi.fn().mockResolvedValue(undefined);
-    const uninstall = installExternalLinkDelegation(openExternal);
+  it("does not intercept router-handled links", () => {
+    const uninstall = installExternalLinkDelegation();
 
     const anchor = document.createElement("a");
-    anchor.href = "#external";
+    anchor.href = "https://example.com";
+    anchor.setAttribute("data-trellis-router-link", "true");
+    document.body.appendChild(anchor);
+
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
+    anchor.dispatchEvent(event);
+
+    expect(mockedOpenUrl).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+
+    uninstall();
+    anchor.remove();
+  });
+
+  it("skips modifier clicks", () => {
+    const uninstall = installExternalLinkDelegation();
+
+    const anchor = document.createElement("a");
+    anchor.href = "https://example.com";
     document.body.appendChild(anchor);
 
     const event = new MouseEvent("click", {
@@ -56,16 +82,33 @@ describe("desktop external link delegation", () => {
     });
     anchor.dispatchEvent(event);
 
-    expect(openExternal).not.toHaveBeenCalled();
+    expect(mockedOpenUrl).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
 
     uninstall();
     anchor.remove();
   });
 
-  it("intercepts links rendered inside shadow dom", () => {
-    const openExternal = vi.fn().mockResolvedValue(undefined);
-    const uninstall = installExternalLinkDelegation(openExternal);
+  it("skips target=_blank links", () => {
+    const uninstall = installExternalLinkDelegation();
+
+    const anchor = document.createElement("a");
+    anchor.href = "https://example.com";
+    anchor.target = "_blank";
+    document.body.appendChild(anchor);
+
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
+    anchor.dispatchEvent(event);
+
+    expect(mockedOpenUrl).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+
+    uninstall();
+    anchor.remove();
+  });
+
+  it("intercepts external links in shadow DOM", () => {
+    const uninstall = installExternalLinkDelegation();
 
     const host = document.createElement("div");
     const shadowRoot = host.attachShadow({ mode: "open" });
@@ -83,7 +126,7 @@ describe("desktop external link delegation", () => {
     });
     anchor.dispatchEvent(event);
 
-    expect(openExternal).toHaveBeenCalledWith("https://example.com/");
+    expect(mockedOpenUrl).toHaveBeenCalledWith("https://example.com/");
     expect(event.defaultPrevented).toBe(true);
 
     uninstall();

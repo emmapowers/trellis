@@ -19,6 +19,7 @@ registry.register(
     packages={
         "@tauri-apps/api": "2.8.0",
         "tauri-plugin-pytauri-api": "0.8.0",
+        "@tauri-apps/plugin-opener": "2.5.3",
     },
 )
 

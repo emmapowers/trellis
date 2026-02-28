@@ -5,4 +5,5 @@ permissions = [
     "core:default",
     "pytauri:default",
     "window-state:default",
+    "opener:default",
 ]

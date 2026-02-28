@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import importlib
-import webbrowser
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-from urllib.parse import urlparse
 
 from anyio.from_thread import start_blocking_portal
 from pydantic import BaseModel
@@ -95,12 +93,6 @@ class LogRequest(BaseModel):
     message: str
 
 
-class OpenExternalRequest(BaseModel):
-    """Request to open a URL in the system default browser."""
-
-    url: str
-
-
 class DesktopPlatform(Platform):
     """Desktop platform using PyTauri.
 
@@ -144,7 +136,7 @@ class DesktopPlatform(Platform):
                 RegistryGenerationStep(),
                 BundleBuildStep(output_name="bundle"),
                 StaticFileCopyStep(),
-                IconAssetStep(icon_path=config.icon),
+                IconAssetStep(icon_path=config.icon, include_icns=True),
                 IndexHtmlRenderStep(template_path, {"title": config.title}),
             ],
         )
@@ -189,17 +181,6 @@ class DesktopPlatform(Platform):
         async def trellis_log(body: LogRequest) -> None:
             """Log a message from frontend to stdout."""
             print(f"[JS {body.level}] {body.message}", flush=True)
-
-        @commands.command()
-        async def trellis_open_external(body: OpenExternalRequest) -> None:
-            """Open a URL in the user's default browser."""
-            parsed = urlparse(body.url)
-            allowed_schemes = {"http", "https", "mailto", "tel"}
-            if parsed.scheme not in allowed_schemes:
-                raise ValueError(f"Unsupported URL scheme: {parsed.scheme}")
-            if parsed.scheme in {"http", "https"} and not parsed.netloc:
-                raise ValueError("External URL must include a host")
-            webbrowser.open(body.url)
 
         return commands
 
@@ -271,6 +252,9 @@ class DesktopPlatform(Platform):
 
             window_state_plugin: Any = importlib.import_module("pytauri_plugins.window_state")
             app.handle().plugin(window_state_plugin.Builder.build())
+
+            opener_plugin: Any = importlib.import_module("pytauri_plugins.opener")
+            app.handle().plugin(opener_plugin.init())
 
             # Run until window is closed
             try:

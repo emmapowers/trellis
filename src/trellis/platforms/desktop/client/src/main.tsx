@@ -75,9 +75,7 @@ function App() {
   }, [client]);
 
   useEffect(() => {
-    return installExternalLinkDelegation(async (url: string) => {
-      await pyInvoke("trellis_open_external", { url });
-    });
+    return installExternalLinkDelegation();
   }, []);
 
   return (

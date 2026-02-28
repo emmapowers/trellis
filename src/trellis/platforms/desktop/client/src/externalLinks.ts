@@ -1,8 +1,4 @@
-type OpenExternalFn = (url: string) => Promise<void>;
-
-function isModifiedClick(event: MouseEvent): boolean {
-  return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0;
-}
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 function isRouterHandled(anchor: HTMLAnchorElement): boolean {
   return anchor.dataset.trellisRouterLink === "true";
@@ -33,9 +29,18 @@ function getAnchorFromEvent(event: MouseEvent): HTMLAnchorElement | null {
   return null;
 }
 
-export function installExternalLinkDelegation(openExternal: OpenExternalFn): () => void {
+function isExternalUrl(href: string): boolean {
+  const resolved = new URL(href, window.location.href);
+  return resolved.origin !== window.location.origin;
+}
+
+function isModifiedClick(event: MouseEvent): boolean {
+  return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0;
+}
+
+export function installExternalLinkDelegation(): () => void {
   const handleClick = (event: MouseEvent): void => {
-    if (event.defaultPrevented || isModifiedClick(event)) {
+    if (event.defaultPrevented) {
       return;
     }
 
@@ -53,9 +58,18 @@ export function installExternalLinkDelegation(openExternal: OpenExternalFn): () 
       return;
     }
 
+    if (!isExternalUrl(href)) {
+      return;
+    }
+
+    // Modifier clicks and target=_blank are handled by the opener plugin
+    if (isModifiedClick(event) || anchor.target === "_blank") {
+      return;
+    }
+
     const resolvedUrl = new URL(href, window.location.href).toString();
     event.preventDefault();
-    void openExternal(resolvedUrl).catch((error) => {
+    void openUrl(resolvedUrl).catch((error) => {
       console.error("Failed to open external link:", error);
     });
   };
