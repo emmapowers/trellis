@@ -4,4 +4,5 @@ windows = ["main"]
 permissions = [
     "core:default",
     "pytauri:default",
+    "window-state:default",
 ]

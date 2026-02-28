@@ -61,7 +61,14 @@ def _build_tauri_config_override(
     return {
         "build": {"frontendDist": dist_path},
         "app": {
-            "windows": [{"title": window_title, "width": window_width, "height": window_height}]
+            "windows": [
+                {
+                    "title": window_title,
+                    "width": window_width,
+                    "height": window_height,
+                    "visible": False,
+                }
+            ]
         },
     }
 
@@ -261,6 +268,9 @@ class DesktopPlatform(Platform):
             # require desktop plugin modules during normal import/CI workflows.
             dialog_plugin: Any = importlib.import_module("pytauri_plugins.dialog")
             app.handle().plugin(dialog_plugin.init())
+
+            window_state_plugin: Any = importlib.import_module("pytauri_plugins.window_state")
+            app.handle().plugin(window_state_plugin.Builder.build())
 
             # Run until window is closed
             try:

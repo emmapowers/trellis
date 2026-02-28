@@ -22,5 +22,5 @@ class TestBuildTauriConfigOverride:
 
         assert override["build"]["frontendDist"] == "/tmp/app/.dist"
         assert override["app"]["windows"] == [
-            {"title": "My Desktop App", "width": 1440, "height": 900}
+            {"title": "My Desktop App", "width": 1440, "height": 900, "visible": False}
         ]
