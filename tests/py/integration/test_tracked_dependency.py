@@ -309,6 +309,50 @@ class TestFineGrainedReactivity:
         assert list_renders[0] == 2  # Iterating = ITER_KEY dependency
         assert item0_renders[0] == 1  # Should NOT re-render
 
+    def test_list_setitem_single_index_rerenders_iterators(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """Single-index assignment marks ITER_KEY dirty so iterating components re-render."""
+
+        @dataclass
+        class MyState(Stateful):
+            items: list[str] = field(default_factory=list)
+
+        state = MyState()
+        state.items = ["a", "b", "c"]
+
+        iter_renders = [0]
+        item0_renders = [0]
+
+        @component
+        def ListViewer() -> None:
+            iter_renders[0] += 1
+            for _ in state.items:
+                pass
+
+        @component
+        def Item0Viewer() -> None:
+            item0_renders[0] += 1
+            _ = state.items[0]
+
+        @component
+        def App() -> None:
+            ListViewer()
+            Item0Viewer()
+
+        capture = capture_patches(App)
+        capture.render()
+
+        assert iter_renders[0] == 1
+        assert item0_renders[0] == 1
+
+        # Single-index assignment should mark ITER_KEY dirty
+        state.items[1] = "updated"
+        capture.render()
+
+        assert iter_renders[0] == 2  # Iterating component must re-render
+        assert item0_renders[0] == 1  # Item0Viewer reads items[0], not items[1]
+
 
 class TestDependencyCleanup:
     """Tests for dependency cleanup on unmount and re-render.

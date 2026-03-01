@@ -52,6 +52,7 @@ src/trellis/
  You may use test classes to group related tests, but they are not required and should only be used when they make large test files more readable.
 - use the test-driven development skill when making changes
 - code comments should document the code that as it is. Do not leave comments saying what has changed. Make sure existing comments are updated when code associated with them changes.
+- prefer normal attribute access over `object.__getattribute__`/`object.__setattr__`. If a class owns an attribute, declare it on the class and initialize it in the constructor. Only use `object.__getattribute__`/`object.__setattr__` when working around framework limitations (e.g. `@dataclass` not calling `super().__init__`) or truly dynamic attribute access.
 
 ### Import Style
 
