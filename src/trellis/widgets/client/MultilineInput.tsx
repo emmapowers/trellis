@@ -1,6 +1,7 @@
-import React, { useRef, useState, useLayoutEffect } from "react";
+import React from "react";
 import { colors, radius, typography, spacing, focusRing } from "@trellis/trellis-core/theme";
-import { Mutable, unwrapMutable } from "@trellis/trellis-core/core/types";
+import { Mutable } from "@trellis/trellis-core/core/types";
+import { useTextValue } from "@trellis/trellis-core/core/useTextValue";
 
 interface MultilineInputProps {
   value?: string | Mutable<string>;
@@ -48,26 +49,8 @@ export function MultilineInput({
   className,
   style,
 }: MultilineInputProps): React.ReactElement {
-  const { value: serverValue, setValue: sendToServer } = unwrapMutable(valueProp);
-  const [localValue, setLocalValue] = useState(serverValue);
+  const tv = useTextValue<HTMLTextAreaElement>(valueProp);
   const [isFocusVisible, setIsFocusVisible] = React.useState(false);
-  const ref = useRef<HTMLTextAreaElement>(null);
-  const cursorRef = useRef<number | null>(null);
-  const prevServerRef = useRef(serverValue);
-
-  // Accept new server values (e.g. transforms like .upper())
-  if (serverValue !== prevServerRef.current) {
-    prevServerRef.current = serverValue;
-    setLocalValue(serverValue);
-  }
-
-  // Restore cursor position after React commits a value change while focused.
-  useLayoutEffect(() => {
-    if (ref.current && ref.current === document.activeElement && cursorRef.current !== null) {
-      const pos = Math.min(cursorRef.current, localValue.length);
-      ref.current.setSelectionRange(pos, pos);
-    }
-  }, [localValue]);
 
   const computedStyle: React.CSSProperties = {
     ...textareaStyles,
@@ -79,19 +62,15 @@ export function MultilineInput({
 
   return (
     <textarea
-      ref={ref}
+      ref={tv.ref}
       className={className}
       style={computedStyle}
-      value={localValue}
+      value={tv.value}
       placeholder={placeholder}
       rows={rows}
       disabled={disabled}
       readOnly={read_only}
-      onChange={(event) => {
-        cursorRef.current = event.target.selectionStart;
-        setLocalValue(event.target.value);
-        sendToServer?.(event.target.value);
-      }}
+      onChange={tv.onChange}
       onFocus={(event) => {
         if (event.target.matches(":focus-visible")) {
           setIsFocusVisible(true);

@@ -1,7 +1,8 @@
-import React, { useRef, useState, useLayoutEffect } from "react";
+import React from "react";
 import { useTextField } from "react-aria";
 import { colors, radius, typography, spacing, focusRing } from "@trellis/trellis-core/theme";
-import { Mutable, unwrapMutable } from "@trellis/trellis-core/core/types";
+import { Mutable } from "@trellis/trellis-core/core/types";
+import { useTextValue } from "@trellis/trellis-core/core/useTextValue";
 
 interface TextInputProps {
   value?: string | Mutable<string>;
@@ -37,40 +38,18 @@ export function TextInput({
   className,
   style,
 }: TextInputProps): React.ReactElement {
-  const { value: serverValue, setValue: sendToServer } = unwrapMutable(valueProp);
-  const [localValue, setLocalValue] = useState(serverValue);
-
-  const ref = useRef<HTMLInputElement>(null);
-  const cursorRef = useRef<number | null>(null);
-  const prevServerRef = useRef(serverValue);
-
-  // Accept new server values (e.g. transforms like .upper())
-  if (serverValue !== prevServerRef.current) {
-    prevServerRef.current = serverValue;
-    setLocalValue(serverValue);
-  }
+  const tv = useTextValue<HTMLInputElement>(valueProp);
 
   const { inputProps } = useTextField(
     {
-      value: localValue,
-      onChange: (v) => {
-        setLocalValue(v);
-        sendToServer?.(v);
-      },
+      value: tv.value,
+      onChange: tv.setValue,
       placeholder,
       isDisabled: disabled,
     },
-    ref
+    tv.ref
   );
   const [isFocusVisible, setIsFocusVisible] = React.useState(false);
-
-  // Restore cursor position after React commits a value change while focused.
-  useLayoutEffect(() => {
-    if (ref.current && ref.current === document.activeElement && cursorRef.current !== null) {
-      const pos = Math.min(cursorRef.current, localValue.length);
-      ref.current.setSelectionRange(pos, pos);
-    }
-  }, [localValue]);
 
   const computedStyle: React.CSSProperties = {
     ...inputStyles,
@@ -82,11 +61,11 @@ export function TextInput({
   return (
     <input
       {...inputProps}
-      ref={ref}
+      ref={tv.ref}
       className={className}
       style={computedStyle}
       onChange={(e) => {
-        cursorRef.current = e.target.selectionStart;
+        tv.saveCursor(e);
         inputProps.onChange?.(e);
       }}
       onFocus={(e) => {
