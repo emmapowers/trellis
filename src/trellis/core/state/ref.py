@@ -160,11 +160,12 @@ class RefTrait:
         if state is not None and state.mounted:
             ts = state.trait(RefTraitState)
             old_holder = ts.ref_holder
+            # Attach new holder first so a TypeError doesn't leave refs half-swapped
+            if ts.exposed_ref is not None:
+                holder._attach(ts.exposed_ref)
             if old_holder is not None and old_holder is not holder:
                 old_holder._detach()
             ts.ref_holder = holder
-            if ts.exposed_ref is not None:
-                holder._attach(ts.exposed_ref)
 
         return self
 
@@ -182,11 +183,10 @@ class RefTrait:
         holder_attr: _RefHolder[tp.Any] | None = getattr(element, "_ref_holder", None)
 
         if holder_attr is not None:
-            # Detach old holder if swapping
             old_holder = ts.ref_holder
+            ts.ref_holder = holder_attr
             if old_holder is not None and old_holder is not holder_attr:
                 old_holder._detach()
-            ts.ref_holder = holder_attr
 
         # Wire ref: connect holder to exposed ref, or detach if child stopped exposing
         if ts.exposed_ref is not None and ts.ref_holder is not None:

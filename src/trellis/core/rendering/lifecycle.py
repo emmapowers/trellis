@@ -26,7 +26,14 @@ def invoke_lifecycle_hook(
     hook: tp.Any,
     label: str,
 ) -> None:
-    """Invoke a lifecycle hook (sync or async) with proper error handling."""
+    """Invoke a lifecycle hook (sync or async) with proper error handling.
+
+    Args:
+        session: The render session (used for callback context and background tasks)
+        element_id: ID of the element owning this hook
+        hook: The hook callable (sync function or async coroutine function)
+        label: Human-readable name for error messages (e.g. "on_mount", "Ref.on_unmount")
+    """
     if inspect.iscoroutinefunction(hook):
 
         async def run_async_hook(h: tp.Any = hook) -> None:

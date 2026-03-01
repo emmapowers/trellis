@@ -46,22 +46,6 @@ class TraitHooks:
     on_mount: TraitHookFn | None
     on_unmount: TraitHookFn | None
 
-    @property
-    def has_before_execute(self) -> bool:
-        return self.before_execute is not None
-
-    @property
-    def has_after_execute(self) -> bool:
-        return self.after_execute is not None
-
-    @property
-    def has_on_mount(self) -> bool:
-        return self.on_mount is not None
-
-    @property
-    def has_on_unmount(self) -> bool:
-        return self.on_unmount is not None
-
 
 def get_trait_hooks(element_class: type) -> list[TraitHooks]:
     """Discover trait hooks for an element class via MRO scan.

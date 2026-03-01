@@ -109,10 +109,10 @@ class TestTraitHooks:
         assert len(hooks) == 1
         th = hooks[0]
         assert th.trait_class is _BaseTrait
-        assert th.has_before_execute
-        assert th.has_after_execute
-        assert th.has_on_mount
-        assert th.has_on_unmount
+        assert th.before_execute is not None
+        assert th.after_execute is not None
+        assert th.on_mount is not None
+        assert th.on_unmount is not None
 
     def test_skips_traits_without_hooks(self) -> None:
         """Traits without any of the four hooks are skipped."""
@@ -124,7 +124,7 @@ class TestTraitHooks:
         assert len(hooks) == 0
 
     def test_handles_partial_hooks(self) -> None:
-        """Traits with only some hooks have correct flags."""
+        """Traits with only some hooks are discovered with correct fields."""
 
         class MyElement(_PartialTrait):
             pass
@@ -132,10 +132,10 @@ class TestTraitHooks:
         hooks = get_trait_hooks(MyElement)
         assert len(hooks) == 1
         th = hooks[0]
-        assert th.has_before_execute
-        assert not th.has_after_execute
-        assert not th.has_on_mount
-        assert not th.has_on_unmount
+        assert th.before_execute is not None
+        assert th.after_execute is None
+        assert th.on_mount is None
+        assert th.on_unmount is None
 
     def test_caches_results_per_class(self) -> None:
         """Repeated calls return the same list object (cached)."""
