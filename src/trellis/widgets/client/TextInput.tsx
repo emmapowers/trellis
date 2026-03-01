@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useLayoutEffect } from "react";
 import { useTextField } from "react-aria";
 import { colors, radius, typography, spacing, focusRing } from "@trellis/trellis-core/theme";
 import { Mutable, unwrapMutable } from "@trellis/trellis-core/core/types";
@@ -37,20 +37,40 @@ export function TextInput({
   className,
   style,
 }: TextInputProps): React.ReactElement {
-  // Unwrap mutable binding if present
-  const { value, setValue } = unwrapMutable(valueProp);
+  const { value: serverValue, setValue: sendToServer } = unwrapMutable(valueProp);
+  const [localValue, setLocalValue] = useState(serverValue);
 
   const ref = useRef<HTMLInputElement>(null);
+  const cursorRef = useRef<number | null>(null);
+  const prevServerRef = useRef(serverValue);
+
+  // Accept new server values (e.g. transforms like .upper())
+  if (serverValue !== prevServerRef.current) {
+    prevServerRef.current = serverValue;
+    setLocalValue(serverValue);
+  }
+
   const { inputProps } = useTextField(
     {
-      value,
-      onChange: setValue,
+      value: localValue,
+      onChange: (v) => {
+        setLocalValue(v);
+        sendToServer?.(v);
+      },
       placeholder,
       isDisabled: disabled,
     },
     ref
   );
   const [isFocusVisible, setIsFocusVisible] = React.useState(false);
+
+  // Restore cursor position after React commits a value change while focused.
+  useLayoutEffect(() => {
+    if (ref.current && ref.current === document.activeElement && cursorRef.current !== null) {
+      const pos = Math.min(cursorRef.current, localValue.length);
+      ref.current.setSelectionRange(pos, pos);
+    }
+  }, [localValue]);
 
   const computedStyle: React.CSSProperties = {
     ...inputStyles,
@@ -65,6 +85,10 @@ export function TextInput({
       ref={ref}
       className={className}
       style={computedStyle}
+      onChange={(e) => {
+        cursorRef.current = e.target.selectionStart;
+        inputProps.onChange?.(e);
+      }}
       onFocus={(e) => {
         inputProps.onFocus?.(e);
         if (e.target.matches(":focus-visible")) {

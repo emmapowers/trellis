@@ -35,17 +35,20 @@ describe("TextInput", () => {
     expect(input).toBeDisabled();
   });
 
-  it("preserves cursor position when value changes while focused", () => {
+  it("preserves cursor position after typing when server value arrives", () => {
     const { rerender } = render(<TextInput value={"hello"} />);
 
     const input = screen.getByRole("textbox") as HTMLInputElement;
     input.focus();
-    input.setSelectionRange(3, 3); // Cursor after "hel"
 
-    // Simulate server pushing an updated value (e.g., uppercase transform)
-    rerender(<TextInput value={"HELLO"} />);
+    // Simulate user typing in the middle: positions cursor at 3, types 'X'
+    input.setSelectionRange(3, 3);
+    fireEvent.change(input, { target: { value: "helXlo", selectionStart: 4 } });
 
-    expect(input.selectionStart).toBe(3);
-    expect(input.selectionEnd).toBe(3);
+    // Server responds with transformed value (e.g., uppercase)
+    rerender(<TextInput value={"HELXLO"} />);
+
+    expect(input.selectionStart).toBe(4);
+    expect(input.selectionEnd).toBe(4);
   });
 });

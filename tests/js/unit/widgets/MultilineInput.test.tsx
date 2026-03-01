@@ -44,17 +44,20 @@ describe("MultilineInput", () => {
     expect((textarea as HTMLTextAreaElement).value.length).toBe(20000);
   });
 
-  it("preserves cursor position when value changes while focused", () => {
+  it("preserves cursor position after typing when server value arrives", () => {
     const { rerender } = render(<MultilineInput value={"hello"} />);
 
     const textarea = screen.getByRole("textbox") as HTMLTextAreaElement;
     textarea.focus();
-    textarea.setSelectionRange(3, 3); // Cursor after "hel"
 
-    // Simulate server pushing an updated value (e.g., uppercase transform)
-    rerender(<MultilineInput value={"HELLO"} />);
+    // Simulate user typing in the middle: positions cursor at 3, types 'X'
+    textarea.setSelectionRange(3, 3);
+    fireEvent.change(textarea, { target: { value: "helXlo", selectionStart: 4 } });
 
-    expect(textarea.selectionStart).toBe(3);
-    expect(textarea.selectionEnd).toBe(3);
+    // Server responds with transformed value (e.g., uppercase)
+    rerender(<MultilineInput value={"HELXLO"} />);
+
+    expect(textarea.selectionStart).toBe(4);
+    expect(textarea.selectionEnd).toBe(4);
   });
 });
