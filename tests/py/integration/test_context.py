@@ -1,5 +1,6 @@
 """Tests for Stateful context API."""
 
+import gc
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -9,7 +10,7 @@ from trellis.core.components.composition import component
 from trellis.core.state.stateful import Stateful
 
 if TYPE_CHECKING:
-    from tests.conftest import RenderResult
+    from tests.conftest import PatchCapture, RenderResult
 
 
 class TestContextAPI:
@@ -525,3 +526,204 @@ class TestContextEdgeCases:
 
         # Consumer should not find sibling's context
         assert captured == [None]
+
+
+class TestContextDependencyTracking:
+    """Tests for context change detection and re-rendering of consumers."""
+
+    def test_context_change_rerenders_consumers(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """Parent switches from instance A to B, child sees B."""
+
+        @dataclass
+        class ItemState(Stateful):
+            name: str = ""
+
+        instance_a = ItemState(name="A")
+        instance_b = ItemState(name="B")
+        current_instance = [instance_a]
+        child_renders: list[str] = []
+
+        @component
+        def Child() -> None:
+            state = ItemState.from_context()
+            child_renders.append(state.name)
+
+        @component
+        def Parent() -> None:
+            with current_instance[0]:
+                Child()
+
+        capture = capture_patches(Parent)
+        capture.render()
+        assert child_renders == ["A"]
+
+        # Switch context to instance B and re-render parent
+        current_instance[0] = instance_b
+        capture.session.dirty.mark(capture.session.root_element.id)
+        capture.render()
+
+        assert child_renders == ["A", "B"]
+
+    def test_context_same_instance_skips_rerender(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """Parent re-renders with same cached instance, child does NOT re-render."""
+
+        @dataclass
+        class AppState(Stateful):
+            value: int = 0
+
+        child_render_count = [0]
+
+        @component
+        def Child() -> None:
+            child_render_count[0] += 1
+            _ = AppState.from_context()
+
+        @component
+        def Parent() -> None:
+            state = AppState()
+            with state:
+                Child()
+
+        capture = capture_patches(Parent)
+        capture.render()
+        assert child_render_count[0] == 1
+
+        # Re-render parent — same cached instance, child should be skipped
+        capture.session.dirty.mark(capture.session.root_element.id)
+        capture.render()
+        assert child_render_count[0] == 1
+
+    def test_context_multiple_consumers_all_rerender(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """Two children both re-render when context changes."""
+
+        @dataclass
+        class SharedState(Stateful):
+            value: str = ""
+
+        instance_a = SharedState(value="first")
+        instance_b = SharedState(value="second")
+        current = [instance_a]
+
+        child1_renders: list[str] = []
+        child2_renders: list[str] = []
+
+        @component
+        def Child1() -> None:
+            child1_renders.append(SharedState.from_context().value)
+
+        @component
+        def Child2() -> None:
+            child2_renders.append(SharedState.from_context().value)
+
+        @component
+        def Parent() -> None:
+            with current[0]:
+                Child1()
+                Child2()
+
+        capture = capture_patches(Parent)
+        capture.render()
+        assert child1_renders == ["first"]
+        assert child2_renders == ["first"]
+
+        # Switch context
+        current[0] = instance_b
+        capture.session.dirty.mark(capture.session.root_element.id)
+        capture.render()
+
+        assert child1_renders == ["first", "second"]
+        assert child2_renders == ["first", "second"]
+
+    def test_context_deep_consumer_rerenders(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """Grandchild re-renders when grandparent's context changes."""
+
+        @dataclass
+        class DeepState(Stateful):
+            level: str = ""
+
+        instance_a = DeepState(level="old")
+        instance_b = DeepState(level="new")
+        current = [instance_a]
+        grandchild_renders: list[str] = []
+
+        @component
+        def GrandChild() -> None:
+            grandchild_renders.append(DeepState.from_context().level)
+
+        @component
+        def Middle() -> None:
+            GrandChild()
+
+        @component
+        def GrandParent() -> None:
+            with current[0]:
+                Middle()
+
+        capture = capture_patches(GrandParent)
+        capture.render()
+        assert grandchild_renders == ["old"]
+
+        # Switch context at grandparent
+        current[0] = instance_b
+        capture.session.dirty.mark(capture.session.root_element.id)
+        capture.render()
+
+        assert grandchild_renders == ["old", "new"]
+
+    def test_context_consumer_cleanup_on_unmount(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """Unmounted consumer is cleaned from watchers, no error on next context change."""
+
+        @dataclass
+        class CleanupState(Stateful):
+            tag: str = ""
+
+        instance_a = CleanupState(tag="a")
+        instance_b = CleanupState(tag="b")
+        instance_c = CleanupState(tag="c")
+        current = [instance_a]
+        show_child = [True]
+        child_renders: list[str] = []
+
+        @component
+        def Child() -> None:
+            child_renders.append(CleanupState.from_context().tag)
+
+        @component
+        def Parent() -> None:
+            with current[0]:
+                if show_child[0]:
+                    Child()
+
+        capture = capture_patches(Parent)
+        capture.render()
+        assert child_renders == ["a"]
+
+        # Unmount child
+        show_child[0] = False
+        capture.session.dirty.mark(capture.session.root_element.id)
+        capture.render()
+
+        gc.collect()
+
+        # Switch context again — should not error even though consumer is gone
+        current[0] = instance_b
+        capture.session.dirty.mark(capture.session.root_element.id)
+        capture.render()
+
+        # Re-mount child with new context
+        show_child[0] = True
+        current[0] = instance_c
+        capture.session.dirty.mark(capture.session.root_element.id)
+        capture.render()
+
+        assert child_renders[-1] == "c"
