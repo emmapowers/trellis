@@ -19,15 +19,21 @@ from trellis.html.events import (
 )
 
 __all__ = [
+    "Address",
     "Article",
     "Aside",
+    "Blockquote",
+    "Details",
     "Div",
+    "Figcaption",
+    "Figure",
     "Footer",
     "Header",
     "Main",
     "Nav",
     "Section",
     "Span",
+    "Summary",
 ]
 
 
@@ -224,3 +230,210 @@ def Aside(
 ) -> Element:
     """An aside element for tangential content."""
     ...
+
+
+# New structural elements
+
+
+@html_element("blockquote", is_container=True, name="Blockquote")
+def _Blockquote(
+    *,
+    _text: str | None = None,
+    cite: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A blockquote element."""
+    ...
+
+
+@overload
+def Blockquote(
+    text: str,
+    /,
+    *,
+    cite: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Blockquote(
+    *,
+    cite: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Blockquote(
+    text: str = "",
+    /,
+    *,
+    cite: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A blockquote element."""
+    return _Blockquote(
+        _text=text if text else None,
+        cite=cite,
+        className=className,
+        style=style,
+        id=id,
+        **props,
+    )
+
+
+@html_element("address", is_container=True)
+def Address(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """An address element for contact information."""
+    ...
+
+
+@html_element("details", is_container=True)
+def Details(
+    *,
+    open: bool = False,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A details disclosure element."""
+    ...
+
+
+@html_element("summary", is_container=True, name="Summary")
+def _Summary(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A summary element for use within Details."""
+    ...
+
+
+@overload
+def Summary(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Summary(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Summary(
+    text: str = "",
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A summary element for use within Details."""
+    return _Summary(
+        _text=text if text else None,
+        className=className,
+        style=style,
+        id=id,
+        **props,
+    )
+
+
+@html_element("figure", is_container=True)
+def Figure(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A figure element for self-contained content."""
+    ...
+
+
+@html_element("figcaption", is_container=True, name="Figcaption")
+def _Figcaption(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A figcaption element."""
+    ...
+
+
+@overload
+def Figcaption(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Figcaption(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Figcaption(
+    text: str = "",
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A figcaption element."""
+    return _Figcaption(
+        _text=text if text else None,
+        className=className,
+        style=style,
+        id=id,
+        **props,
+    )

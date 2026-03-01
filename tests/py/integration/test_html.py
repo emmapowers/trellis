@@ -518,6 +518,366 @@ class TestTextElementsAsContainers:
         assert result.session.elements.get(pre.child_ids[0]).component.name == "Code"
 
 
+class TestNewTextElements:
+    """Tests for new text/inline elements."""
+
+    def test_br_renders_as_void(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Div():
+                h.P("Line 1")
+                h.Br()
+                h.P("Line 2")
+
+        result = rendered(App)
+        div = result.session.elements.get(result.root_element.child_ids[0])
+        assert len(div.child_ids) == 3
+        br = result.session.elements.get(div.child_ids[1])
+        assert br.component.name == "Br"
+        assert len(br.child_ids) == 0
+
+    def test_hr_renders_as_void(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Div():
+                h.Hr()
+
+        result = rendered(App)
+        div = result.session.elements.get(result.root_element.child_ids[0])
+        hr = result.session.elements.get(div.child_ids[0])
+        assert hr.component.name == "Hr"
+        assert len(hr.child_ids) == 0
+
+    def test_small_hybrid(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Small("fine print")
+            with h.Small():
+                h.Em("italic fine print")
+
+        result = rendered(App)
+        text_small = result.session.elements.get(result.root_element.child_ids[0])
+        assert text_small.properties["_text"] == "fine print"
+        container_small = result.session.elements.get(result.root_element.child_ids[1])
+        assert len(container_small.child_ids) == 1
+
+    def test_mark_hybrid(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Mark("highlighted")
+
+        result = rendered(App)
+        mark = result.session.elements.get(result.root_element.child_ids[0])
+        assert mark.properties["_text"] == "highlighted"
+
+    def test_sub_sup_hybrid(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Sub("2")
+            h.Sup("n")
+
+        result = rendered(App)
+        sub = result.session.elements.get(result.root_element.child_ids[0])
+        sup = result.session.elements.get(result.root_element.child_ids[1])
+        assert sub.properties["_text"] == "2"
+        assert sup.properties["_text"] == "n"
+
+    def test_abbr_with_title(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Abbr("HTML", title="HyperText Markup Language")
+
+        result = rendered(App)
+        abbr = result.session.elements.get(result.root_element.child_ids[0])
+        assert abbr.properties["_text"] == "HTML"
+        assert abbr.properties["title"] == "HyperText Markup Language"
+
+    def test_time_with_datetime(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Time("March 1", dateTime="2026-03-01")
+
+        result = rendered(App)
+        time_el = result.session.elements.get(result.root_element.child_ids[0])
+        assert time_el.properties["_text"] == "March 1"
+        assert time_el.properties["dateTime"] == "2026-03-01"
+
+
+class TestNewLayoutElements:
+    """Tests for new layout/structural elements."""
+
+    def test_blockquote_hybrid(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Blockquote("A wise quote", cite="https://example.com")
+
+        result = rendered(App)
+        bq = result.session.elements.get(result.root_element.child_ids[0])
+        assert bq.properties["_text"] == "A wise quote"
+        assert bq.properties["cite"] == "https://example.com"
+
+    def test_blockquote_as_container(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Blockquote():
+                h.P("Quote paragraph")
+
+        result = rendered(App)
+        bq = result.session.elements.get(result.root_element.child_ids[0])
+        assert len(bq.child_ids) == 1
+
+    def test_address_container(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Address():
+                h.P("123 Main St")
+
+        result = rendered(App)
+        addr = result.session.elements.get(result.root_element.child_ids[0])
+        assert addr.component.name == "Address"
+        assert len(addr.child_ids) == 1
+
+    def test_details_summary(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Details(open=True):
+                h.Summary("Click to expand")
+                h.P("Hidden content")
+
+        result = rendered(App)
+        details = result.session.elements.get(result.root_element.child_ids[0])
+        assert details.component.name == "Details"
+        assert details.properties["open"] is True
+        assert len(details.child_ids) == 2
+        summary = result.session.elements.get(details.child_ids[0])
+        assert summary.component.name == "Summary"
+        assert summary.properties["_text"] == "Click to expand"
+
+    def test_figure_figcaption(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Figure():
+                h.Img(src="photo.jpg")
+                h.Figcaption("A beautiful photo")
+
+        result = rendered(App)
+        figure = result.session.elements.get(result.root_element.child_ids[0])
+        assert figure.component.name == "Figure"
+        assert len(figure.child_ids) == 2
+        caption = result.session.elements.get(figure.child_ids[1])
+        assert caption.component.name == "Figcaption"
+        assert caption.properties["_text"] == "A beautiful photo"
+
+
+class TestNewListElements:
+    """Tests for definition list elements."""
+
+    def test_dl_dt_dd(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Dl():
+                h.Dt("Term")
+                h.Dd("Definition")
+
+        result = rendered(App)
+        dl = result.session.elements.get(result.root_element.child_ids[0])
+        assert dl.component.name == "Dl"
+        assert len(dl.child_ids) == 2
+        dt = result.session.elements.get(dl.child_ids[0])
+        dd = result.session.elements.get(dl.child_ids[1])
+        assert dt.properties["_text"] == "Term"
+        assert dd.properties["_text"] == "Definition"
+
+    def test_dt_dd_as_containers(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Dl():
+                with h.Dt():
+                    h.Strong("Term")
+                with h.Dd():
+                    h.P("Definition paragraph")
+
+        result = rendered(App)
+        dl = result.session.elements.get(result.root_element.child_ids[0])
+        dt = result.session.elements.get(dl.child_ids[0])
+        dd = result.session.elements.get(dl.child_ids[1])
+        assert len(dt.child_ids) == 1
+        assert len(dd.child_ids) == 1
+
+
+class TestNewTableElements:
+    """Tests for new table elements."""
+
+    def test_tfoot_container(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Table():
+                with h.Tfoot():
+                    with h.Tr():
+                        h.Td("Total")
+
+        result = rendered(App)
+        table = result.session.elements.get(result.root_element.child_ids[0])
+        tfoot = result.session.elements.get(table.child_ids[0])
+        assert tfoot.component.name == "Tfoot"
+        assert len(tfoot.child_ids) == 1
+
+    def test_caption_hybrid(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Table():
+                h.Caption("Table title")
+
+        result = rendered(App)
+        table = result.session.elements.get(result.root_element.child_ids[0])
+        caption = result.session.elements.get(table.child_ids[0])
+        assert caption.component.name == "Caption"
+        assert caption.properties["_text"] == "Table title"
+
+
+class TestNewFormElements:
+    """Tests for new form elements."""
+
+    def test_fieldset_legend(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Fieldset():
+                h.Legend("Personal Info")
+                h.Input(type="text", name="name")
+
+        result = rendered(App)
+        fieldset = result.session.elements.get(result.root_element.child_ids[0])
+        assert fieldset.component.name == "Fieldset"
+        assert len(fieldset.child_ids) == 2
+        legend = result.session.elements.get(fieldset.child_ids[0])
+        assert legend.properties["_text"] == "Personal Info"
+
+    def test_fieldset_disabled(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Fieldset(disabled=True):
+                h.Input(type="text")
+
+        result = rendered(App)
+        fieldset = result.session.elements.get(result.root_element.child_ids[0])
+        assert fieldset.properties["disabled"] is True
+
+    def test_optgroup(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Select():
+                with h.Optgroup(label="Group 1"):
+                    h.Option("A", value="a")
+                    h.Option("B", value="b")
+
+        result = rendered(App)
+        select = result.session.elements.get(result.root_element.child_ids[0])
+        optgroup = result.session.elements.get(select.child_ids[0])
+        assert optgroup.component.name == "Optgroup"
+        assert optgroup.properties["label"] == "Group 1"
+        assert len(optgroup.child_ids) == 2
+
+    def test_progress(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Progress(value=0.7, max=1.0)
+
+        result = rendered(App)
+        progress = result.session.elements.get(result.root_element.child_ids[0])
+        assert progress.component.name == "Progress"
+        assert progress.properties["value"] == 0.7
+        assert progress.properties["max"] == 1.0
+
+    def test_meter(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Meter(value=0.6, min=0.0, max=1.0, low=0.25, high=0.75, optimum=0.5)
+
+        result = rendered(App)
+        meter = result.session.elements.get(result.root_element.child_ids[0])
+        assert meter.component.name == "Meter"
+        assert meter.properties["value"] == 0.6
+
+    def test_output_hybrid(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Output("Result: 42", name="result")
+
+        result = rendered(App)
+        output = result.session.elements.get(result.root_element.child_ids[0])
+        assert output.properties["_text"] == "Result: 42"
+        assert output.properties["name"] == "result"
+
+    def test_datalist(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Datalist(id="browsers"):
+                h.Option("Chrome", value="chrome")
+                h.Option("Firefox", value="firefox")
+
+        result = rendered(App)
+        datalist = result.session.elements.get(result.root_element.child_ids[0])
+        assert datalist.component.name == "Datalist"
+        assert len(datalist.child_ids) == 2
+
+
+class TestNewMediaElements:
+    """Tests for media/embed elements."""
+
+    def test_video_container(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Video(controls=True, width=640, height=480):
+                h.Source(src="video.mp4", type="video/mp4")
+
+        result = rendered(App)
+        video = result.session.elements.get(result.root_element.child_ids[0])
+        assert video.component.name == "Video"
+        assert video.properties["controls"] is True
+        assert video.properties["width"] == 640
+        source = result.session.elements.get(video.child_ids[0])
+        assert source.component.name == "Source"
+        assert source.properties["src"] == "video.mp4"
+
+    def test_audio_container(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Audio(controls=True):
+                h.Source(src="song.mp3", type="audio/mpeg")
+
+        result = rendered(App)
+        audio = result.session.elements.get(result.root_element.child_ids[0])
+        assert audio.component.name == "Audio"
+        assert audio.properties["controls"] is True
+        assert len(audio.child_ids) == 1
+
+    def test_source_void(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Video():
+                h.Source(src="video.mp4", type="video/mp4")
+                h.Source(src="video.webm", type="video/webm")
+
+        result = rendered(App)
+        video = result.session.elements.get(result.root_element.child_ids[0])
+        assert len(video.child_ids) == 2
+        for child_id in video.child_ids:
+            source = result.session.elements.get(child_id)
+            assert len(source.child_ids) == 0
+
+    def test_iframe(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Iframe(src="https://example.com", title="Example", width=800, height=600)
+
+        result = rendered(App)
+        iframe = result.session.elements.get(result.root_element.child_ids[0])
+        assert iframe.component.name == "Iframe"
+        assert iframe.properties["src"] == "https://example.com"
+        assert iframe.properties["title"] == "Example"
+        assert iframe.properties["width"] == 800
+
+
 class TestHtmlContainerBehavior:
     """Tests for container vs non-container element behavior."""
 

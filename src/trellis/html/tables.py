@@ -12,9 +12,11 @@ from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
 
 __all__ = [
+    "Caption",
     "Table",
     "Tbody",
     "Td",
+    "Tfoot",
     "Th",
     "Thead",
     "Tr",
@@ -200,5 +202,71 @@ def Td(
         rowSpan=rowSpan,
         className=className,
         style=style,
+        **props,
+    )
+
+
+@html_element("tfoot", is_container=True)
+def Tfoot(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A table footer section element."""
+    ...
+
+
+@html_element("caption", is_container=True, name="Caption")
+def _Caption(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A table caption element."""
+    ...
+
+
+@overload
+def Caption(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Caption(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Caption(
+    text: str = "",
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A table caption element."""
+    return _Caption(
+        _text=text if text else None,
+        className=className,
+        style=style,
+        id=id,
         **props,
     )

@@ -14,12 +14,16 @@ Example:
     ```
 
 Categories:
-    - Layout: Div, Span, Section, Article, Header, Footer, Nav, Main, Aside
-    - Text: P, H1-H6, Strong, Em, Code, Pre
-    - Lists: Ul, Ol, Li
+    - Layout: Div, Span, Section, Article, Header, Footer, Nav, Main, Aside,
+              Blockquote, Address, Details, Summary, Figure, Figcaption
+    - Text: P, H1-H6, Strong, Em, Code, Pre, Br, Hr, Small, Mark, Sub, Sup,
+            Abbr, Time
+    - Lists: Ul, Ol, Li, Dl, Dt, Dd
     - Links: A, Img
-    - Forms: Form, Input, HtmlButton, Textarea, Select, Option, HtmlLabel
-    - Tables: Table, Thead, Tbody, Tr, Th, Td
+    - Forms: Form, Input, HtmlButton, Textarea, Select, Option, HtmlLabel,
+             Fieldset, Legend, Optgroup, Progress, Meter, Output, Datalist
+    - Tables: Table, Thead, Tbody, Tfoot, Tr, Th, Td, Caption
+    - Media: Video, Audio, Source, Iframe
 """
 
 # Base types
@@ -60,26 +64,39 @@ from trellis.html.events import (
 
 # Form elements
 from trellis.html.forms import (
+    Datalist,
+    Fieldset,
     Form,
     HtmlButton,
     HtmlLabel,
     Input,
+    Legend,
+    Meter,
+    Optgroup,
     Option,
+    Output,
+    Progress,
     Select,
     Textarea,
 )
 
 # Layout elements
 from trellis.html.layout import (
+    Address,
     Article,
     Aside,
+    Blockquote,
+    Details,
     Div,
+    Figcaption,
+    Figure,
     Footer,
     Header,
     Main,
     Nav,
     Section,
     Span,
+    Summary,
 )
 
 # Link and media elements
@@ -90,16 +107,29 @@ from trellis.html.links import (
 
 # List elements
 from trellis.html.lists import (
+    Dd,
+    Dl,
+    Dt,
     Li,
     Ol,
     Ul,
 )
 
+# Media elements
+from trellis.html.media import (
+    Audio,
+    Iframe,
+    Source,
+    Video,
+)
+
 # Table elements
 from trellis.html.tables import (
+    Caption,
     Table,
     Tbody,
     Td,
+    Tfoot,
     Th,
     Thead,
     Tr,
@@ -113,12 +143,20 @@ from trellis.html.text import (
     H4,
     H5,
     H6,
+    Abbr,
+    Br,
     Code,
     Em,
+    Hr,
+    Mark,
     P,
     Pre,
+    Small,
     Strong,
+    Sub,
+    Sup,
     Text,
+    Time,
 )
 
 __all__ = [
@@ -129,19 +167,33 @@ __all__ = [
     "H5",
     "H6",
     "A",
+    "Abbr",
+    "Address",
     "Article",
     "Aside",
+    "Audio",
     "BaseEvent",
+    "Blockquote",
+    "Br",
+    "Caption",
     "ChangeEvent",
     "ChangeEventHandler",
     "ChangeHandler",
     "Code",
+    "Datalist",
+    "Dd",
+    "Details",
     "Div",
+    "Dl",
     "DragEvent",
     "DragEventHandler",
     "DragHandler",
+    "Dt",
     "Em",
     "EventHandler",
+    "Fieldset",
+    "Figcaption",
+    "Figure",
     "FocusEvent",
     "FocusEventHandler",
     "FocusHandler",
@@ -151,9 +203,11 @@ __all__ = [
     "FormEventHandler",
     "FormHandler",
     "Header",
+    "Hr",
     "HtmlButton",
     "HtmlElement",
     "HtmlLabel",
+    "Iframe",
     "Img",
     "Input",
     "InputEvent",
@@ -162,33 +216,47 @@ __all__ = [
     "KeyboardEvent",
     "KeyboardEventHandler",
     "KeyboardHandler",
+    "Legend",
     "Li",
     "Main",
+    "Mark",
+    "Meter",
     "MouseEvent",
     "MouseEventHandler",
     "MouseHandler",
     "Nav",
     "Ol",
+    "Optgroup",
     "Option",
+    "Output",
     "P",
     "Pre",
+    "Progress",
     "ScrollEvent",
     "ScrollEventHandler",
     "ScrollHandler",
     "Section",
     "Select",
+    "Small",
+    "Source",
     "Span",
     "Strong",
     "Style",
+    "Sub",
+    "Summary",
+    "Sup",
     "Table",
     "Tbody",
     "Td",
     "Text",
     "Textarea",
+    "Tfoot",
     "Th",
     "Thead",
+    "Time",
     "Tr",
     "Ul",
+    "Video",
     "WheelEvent",
     "WheelEventHandler",
     "WheelHandler",

@@ -20,11 +20,18 @@ from trellis.html.events import (
 )
 
 __all__ = [
+    "Datalist",
+    "Fieldset",
     "Form",
     "HtmlButton",
     "HtmlLabel",
     "Input",
+    "Legend",
+    "Meter",
+    "Optgroup",
     "Option",
+    "Output",
+    "Progress",
     "Select",
     "Textarea",
 ]
@@ -326,3 +333,195 @@ def HtmlLabel(
         style=style,
         **props,
     )
+
+
+# New form elements
+
+
+@html_element("fieldset", is_container=True)
+def Fieldset(
+    *,
+    disabled: bool = False,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A fieldset element for grouping form controls."""
+    ...
+
+
+@html_element("legend", is_container=True, name="Legend")
+def _Legend(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A legend element for labeling a fieldset."""
+    ...
+
+
+@overload
+def Legend(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Legend(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Legend(
+    text: str = "",
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A legend element for labeling a fieldset."""
+    return _Legend(
+        _text=text if text else None,
+        className=className,
+        style=style,
+        id=id,
+        **props,
+    )
+
+
+@html_element("optgroup", is_container=True)
+def Optgroup(
+    *,
+    label: str | None = None,
+    disabled: bool = False,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """An option group element for organizing select options."""
+    ...
+
+
+@html_element("progress")
+def Progress(
+    *,
+    value: float | None = None,
+    max: float | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A progress indicator element."""
+    ...
+
+
+@html_element("meter")
+def Meter(
+    *,
+    value: float | None = None,
+    min: float | None = None,
+    max: float | None = None,
+    low: float | None = None,
+    high: float | None = None,
+    optimum: float | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A scalar measurement element."""
+    ...
+
+
+@html_element("output", is_container=True, name="Output")
+def _Output(
+    *,
+    _text: str | None = None,
+    htmlFor: str | None = None,
+    name: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """An output element for calculation results."""
+    ...
+
+
+@overload
+def Output(
+    text: str,
+    /,
+    *,
+    htmlFor: str | None = None,
+    name: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Output(
+    *,
+    htmlFor: str | None = None,
+    name: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Output(
+    text: str = "",
+    /,
+    *,
+    htmlFor: str | None = None,
+    name: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """An output element for calculation results."""
+    return _Output(
+        _text=text if text else None,
+        htmlFor=htmlFor,
+        name=name,
+        className=className,
+        style=style,
+        id=id,
+        **props,
+    )
+
+
+@html_element("datalist", is_container=True)
+def Datalist(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A datalist element for providing autocomplete suggestions."""
+    ...

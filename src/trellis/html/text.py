@@ -19,12 +19,20 @@ __all__ = [
     "H4",
     "H5",
     "H6",
+    "Abbr",
+    "Br",
     "Code",
     "Em",
+    "Hr",
+    "Mark",
     "P",
     "Pre",
+    "Small",
     "Strong",
+    "Sub",
+    "Sup",
     "Text",
+    "Time",
 ]
 
 
@@ -199,6 +207,112 @@ def _Pre(
     **props: tp.Any,
 ) -> Element:
     """A preformatted text element."""
+    ...
+
+
+# Void elements (no children, no text)
+@html_element("br")
+def Br(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A line break element."""
+    ...
+
+
+@html_element("hr")
+def Hr(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A horizontal rule element."""
+    ...
+
+
+# Additional hybrid text elements
+@html_element("small", is_container=True, name="Small")
+def _Small(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A small text element."""
+    ...
+
+
+@html_element("mark", is_container=True, name="Mark")
+def _Mark(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A marked/highlighted text element."""
+    ...
+
+
+@html_element("sub", is_container=True, name="Sub")
+def _Sub(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A subscript text element."""
+    ...
+
+
+@html_element("sup", is_container=True, name="Sup")
+def _Sup(
+    *,
+    _text: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A superscript text element."""
+    ...
+
+
+@html_element("abbr", is_container=True, name="Abbr")
+def _Abbr(
+    *,
+    _text: str | None = None,
+    title: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """An abbreviation element."""
+    ...
+
+
+@html_element("time", is_container=True, name="Time")
+def _Time(
+    *,
+    _text: str | None = None,
+    dateTime: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A time element."""
     ...
 
 
@@ -653,6 +767,260 @@ def Pre(
     """A preformatted text element."""
     return _Pre(
         _text=text if text else None,
+        className=className,
+        style=style,
+        id=id,
+        **props,
+    )
+
+
+@overload
+def Small(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Small(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Small(
+    text: str = "",
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A small text element."""
+    return _Small(
+        _text=text if text else None,
+        className=className,
+        style=style,
+        id=id,
+        **props,
+    )
+
+
+@overload
+def Mark(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Mark(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Mark(
+    text: str = "",
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A marked/highlighted text element."""
+    return _Mark(
+        _text=text if text else None,
+        className=className,
+        style=style,
+        id=id,
+        **props,
+    )
+
+
+@overload
+def Sub(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Sub(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Sub(
+    text: str = "",
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A subscript text element."""
+    return _Sub(
+        _text=text if text else None,
+        className=className,
+        style=style,
+        id=id,
+        **props,
+    )
+
+
+@overload
+def Sup(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Sup(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Sup(
+    text: str = "",
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A superscript text element."""
+    return _Sup(
+        _text=text if text else None,
+        className=className,
+        style=style,
+        id=id,
+        **props,
+    )
+
+
+@overload
+def Abbr(
+    text: str,
+    /,
+    *,
+    title: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Abbr(
+    *,
+    title: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Abbr(
+    text: str = "",
+    /,
+    *,
+    title: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """An abbreviation element."""
+    return _Abbr(
+        _text=text if text else None,
+        title=title,
+        className=className,
+        style=style,
+        id=id,
+        **props,
+    )
+
+
+@overload
+def Time(
+    text: str,
+    /,
+    *,
+    dateTime: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Time(
+    *,
+    dateTime: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Time(
+    text: str = "",
+    /,
+    *,
+    dateTime: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A time element."""
+    return _Time(
+        _text=text if text else None,
+        dateTime=dateTime,
         className=className,
         style=style,
         id=id,
