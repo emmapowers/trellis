@@ -9,8 +9,9 @@ from trellis.core.rendering.session import (
     RenderSession,
     get_active_session,
 )
-from trellis.core.rendering.traits import KeyTrait, RefTrait
+from trellis.core.rendering.traits import KeyTrait
 from trellis.core.state.mutable import Mutable
+from trellis.core.state.ref import RefTrait
 from trellis.utils.logger import logger
 
 if tp.TYPE_CHECKING:
