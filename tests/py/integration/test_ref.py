@@ -13,7 +13,12 @@ from trellis.core.state.ref import Ref, _RefHolder, get_ref, set_ref
 from trellis.core.state.stateful import Stateful
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from tests.conftest import PatchCapture
+    from trellis.core.components.composition import CompositionComponent
+
+    CapturePatches = Callable[[CompositionComponent], PatchCapture]
 
 
 # ---- Ref types for tests ----
@@ -39,7 +44,7 @@ class DialogRef(Ref):
 
 
 class TestGetRef:
-    def test_get_ref_returns_falsy_holder(self, capture_patches: type[PatchCapture]) -> None:
+    def test_get_ref_returns_falsy_holder(self, capture_patches: CapturePatches) -> None:
         """Inside a component, get_ref(MyRef) returns a falsy holder."""
         holders: list[_RefHolder[DialogRef]] = []
 
@@ -54,7 +59,7 @@ class TestGetRef:
         assert len(holders) == 1
         assert not holders[0]
 
-    def test_get_ref_cached_across_rerenders(self, capture_patches: type[PatchCapture]) -> None:
+    def test_get_ref_cached_across_rerenders(self, capture_patches: CapturePatches) -> None:
         """Same holder instance is returned on re-render."""
         holder_ids: list[int] = []
 
@@ -84,7 +89,7 @@ class TestSetRef:
         with pytest.raises(RuntimeError, match="render context"):
             set_ref(DialogRef())
 
-    def test_set_ref_called_twice_raises(self, capture_patches: type[PatchCapture]) -> None:
+    def test_set_ref_called_twice_raises(self, capture_patches: CapturePatches) -> None:
         """Second set_ref() in same component raises RuntimeError."""
         error: Exception | None = None
 
@@ -112,7 +117,7 @@ class TestSetRef:
 
 
 class TestElementRef:
-    def test_element_ref_returns_self(self, capture_patches: type[PatchCapture]) -> None:
+    def test_element_ref_returns_self(self, capture_patches: CapturePatches) -> None:
         """Element.ref() returns the element for chaining."""
 
         element_refs: list[bool] = []
@@ -133,7 +138,7 @@ class TestElementRef:
 
         assert element_refs == [True]
 
-    def test_parent_ref_connects_to_child(self, capture_patches: type[PatchCapture]) -> None:
+    def test_parent_ref_connects_to_child(self, capture_patches: CapturePatches) -> None:
         """Parent get_ref + child set_ref + Element.ref() -> holder proxies methods."""
 
         @component
@@ -158,7 +163,7 @@ class TestElementRef:
         holder.open()
         assert holder.is_open() is True
 
-    def test_ref_wiring_survives_rerender(self, capture_patches: type[PatchCapture]) -> None:
+    def test_ref_wiring_survives_rerender(self, capture_patches: CapturePatches) -> None:
         """After re-render, holder is still connected."""
 
         @component
@@ -182,7 +187,7 @@ class TestElementRef:
         holder = parent_state.local_state[(_RefHolder, 0)]
         assert holder
 
-    def test_set_ref_without_holder_is_noop(self, capture_patches: type[PatchCapture]) -> None:
+    def test_set_ref_without_holder_is_noop(self, capture_patches: CapturePatches) -> None:
         """Child calls set_ref with no parent holder — no error."""
 
         @component
@@ -197,7 +202,7 @@ class TestElementRef:
         capture = capture_patches(Parent)
         capture.render()  # Should not raise
 
-    def test_ref_with_container_and_with_block(self, capture_patches: type[PatchCapture]) -> None:
+    def test_ref_with_container_and_with_block(self, capture_patches: CapturePatches) -> None:
         """with MyContainer().ref(holder): works."""
 
         class PanelRef(Ref):
@@ -240,7 +245,7 @@ class TestElementRef:
 
 
 class TestRefLifecycle:
-    def test_ref_on_mount_called(self, capture_patches: type[PatchCapture]) -> None:
+    def test_ref_on_mount_called(self, capture_patches: CapturePatches) -> None:
         """Ref subclass on_mount() called after initial render."""
         mount_calls: list[str] = []
 
@@ -262,7 +267,7 @@ class TestRefLifecycle:
 
         assert mount_calls == ["mounted"]
 
-    def test_ref_on_mount_called_once(self, capture_patches: type[PatchCapture]) -> None:
+    def test_ref_on_mount_called_once(self, capture_patches: CapturePatches) -> None:
         """on_mount not called again on re-render."""
         mount_calls: list[str] = []
 
@@ -290,7 +295,7 @@ class TestRefLifecycle:
         # on_mount should NOT have been called again
         assert mount_calls == ["mounted"]
 
-    def test_ref_on_unmount_called_on_removal(self, capture_patches: type[PatchCapture]) -> None:
+    def test_ref_on_unmount_called_on_removal(self, capture_patches: CapturePatches) -> None:
         """Conditional render: remove child -> on_unmount fires."""
         unmount_calls: list[str] = []
         show_child = [True]
@@ -319,7 +324,7 @@ class TestRefLifecycle:
 
         assert unmount_calls == ["unmounted"]
 
-    def test_ref_holder_detached_on_unmount(self, capture_patches: type[PatchCapture]) -> None:
+    def test_ref_holder_detached_on_unmount(self, capture_patches: CapturePatches) -> None:
         """Holder becomes falsy when child unmounts."""
         show_child = [True]
 
@@ -346,7 +351,7 @@ class TestRefLifecycle:
 
         assert not holder  # detached after unmount
 
-    def test_async_ref_on_mount(self, capture_patches: type[PatchCapture]) -> None:
+    def test_async_ref_on_mount(self, capture_patches: CapturePatches) -> None:
         """Async on_mount is scheduled as background task."""
         mount_calls: list[str] = []
         done_event = asyncio.Event()
@@ -374,7 +379,7 @@ class TestRefLifecycle:
 
         asyncio.run(test())
 
-    def test_ref_on_mount_can_access_context(self, capture_patches: type[PatchCapture]) -> None:
+    def test_ref_on_mount_can_access_context(self, capture_patches: CapturePatches) -> None:
         """Stateful.from_context() works in Ref.on_mount()."""
         retrieved_values: list[str] = []
 
@@ -410,7 +415,7 @@ class TestRefLifecycle:
 
 class TestRefEdgeCases:
     def test_ref_detached_when_child_stops_calling_set_ref(
-        self, capture_patches: type[PatchCapture]
+        self, capture_patches: CapturePatches
     ) -> None:
         """Child conditionally calls set_ref. When it stops, holder detaches."""
         expose_ref = [True]
@@ -449,7 +454,7 @@ class TestRefEdgeCases:
 
         assert not holder  # detached because child stopped calling set_ref
 
-    def test_holder_swap(self, capture_patches: type[PatchCapture]) -> None:
+    def test_holder_swap(self, capture_patches: CapturePatches) -> None:
         """Parent switches which holder is attached to a child."""
         which_holder = [0]
 
@@ -482,7 +487,7 @@ class TestRefEdgeCases:
         assert not holder_a  # old detached
         assert holder_b  # new attached
 
-    def test_multiple_holders_multiple_children(self, capture_patches: type[PatchCapture]) -> None:
+    def test_multiple_holders_multiple_children(self, capture_patches: CapturePatches) -> None:
         """Two get_ref calls, two children, each wired independently."""
 
         @component
@@ -510,7 +515,7 @@ class TestRefEdgeCases:
         ref_b = object.__getattribute__(holder_b, "_ref")
         assert ref_a is not ref_b
 
-    def test_stateful_as_ref(self, capture_patches: type[PatchCapture]) -> None:
+    def test_stateful_as_ref(self, capture_patches: CapturePatches) -> None:
         """Stateful subclass exposed via set_ref, holder proxies, tracking suppressed."""
 
         @dataclass(kw_only=True)
@@ -549,9 +554,7 @@ class TestRefEdgeCases:
             parent_id = capture.session.root_element.id
             assert parent_id not in watcher_ids
 
-    def test_ref_holder_reattaches_on_child_rerender(
-        self, capture_patches: type[PatchCapture]
-    ) -> None:
+    def test_ref_holder_reattaches_on_child_rerender(self, capture_patches: CapturePatches) -> None:
         """Child re-renders, ref re-attaches to same holder."""
         ref_ids: list[int] = []
 
@@ -596,7 +599,7 @@ class TestRefEdgeCases:
 
 
 class TestDialogRefPattern:
-    def test_dialog_ref_pattern(self, capture_patches: type[PatchCapture]) -> None:
+    def test_dialog_ref_pattern(self, capture_patches: CapturePatches) -> None:
         """Full dialog ref pattern: parent holds handle to child dialog state."""
 
         @dataclass(kw_only=True)
