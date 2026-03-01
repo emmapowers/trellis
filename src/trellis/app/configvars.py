@@ -24,6 +24,7 @@ Usage:
 from __future__ import annotations
 
 import os
+import types
 from collections.abc import Callable
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -152,11 +153,14 @@ class ConfigVar(Generic[T]):
             return type(self.default)
         return None
 
-    def _coerce(self, value: str, target_type: type | None = None) -> T:  # noqa: PLR0911
-        """Coerce a string value to the target type.
+    def _coerce(self, value: Any, target_type: type | None = None) -> T:  # noqa: PLR0911
+        """Coerce a value to the target type.
+
+        Handles string values from ENV (splitting, parsing) and already-typed
+        values from CLI/constructor (passing through or coercing list elements).
 
         Args:
-            value: String value (already stripped) from ENV
+            value: Value to coerce (string from ENV, or typed from CLI/constructor)
             target_type: Explicit type to coerce to. If None, inferred from
                          type_hint or default value.
 
@@ -169,13 +173,35 @@ class ConfigVar(Generic[T]):
         if target_type is None:
             target_type = self._get_target_type()
 
+        # Non-string values: handle lists (coerce string elements) and pass through
+        if not isinstance(value, str):
+            if target_type is None:
+                return value  # type: ignore
+
+            origin = get_origin(target_type)
+            if origin is types.UnionType:
+                args = [a for a in get_args(target_type) if a is not type(None)]
+                if args:
+                    target_type = args[0]
+                    origin = get_origin(target_type)
+
+            if origin is list and isinstance(value, list):
+                type_args = get_args(target_type)
+                element_type = type_args[0] if type_args else str
+                return [  # type: ignore
+                    self._coerce(item, element_type) if isinstance(item, str) else item
+                    for item in value
+                ]
+
+            return value  # type: ignore
+
         # Handle None type or unknown - return string as-is
         if target_type is None:
             return value  # type: ignore
 
         # Handle Union types (e.g., int | None, Path | None)
         origin = get_origin(target_type)
-        if origin is type(int | None):  # UnionType
+        if origin is types.UnionType:
             # Get non-None types from union
             args = [a for a in get_args(target_type) if a is not type(None)]
             if args:
@@ -249,7 +275,7 @@ class ConfigVar(Generic[T]):
         cli_args = get_cli_args()
         cli_value = cli_args.get(self.name)
         if cli_value is not None:
-            value = cli_value
+            value = self._coerce(cli_value)
         else:
             # 2. Environment variable
             env_str = os.environ.get(self.get_env_name())
@@ -262,7 +288,7 @@ class ConfigVar(Generic[T]):
 
         # 3. Constructor value (if not set from CLI or ENV)
         if value is None and constructor_value is not None:
-            value = constructor_value
+            value = self._coerce(constructor_value)
 
         # 4. Default (if nothing else set)
         if value is None:

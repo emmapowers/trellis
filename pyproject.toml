@@ -39,12 +39,16 @@ dependencies = [
     "jurigged>=0.6.0; sys_platform != 'emscripten'",
     "questionary>=2.1; sys_platform != 'emscripten'",
     "watchfiles>=1.1; sys_platform != 'emscripten'",
+    # Icon format conversion (SVG rasterization, ICO/ICNS generation)
+    "Pillow>=10.0; sys_platform != 'emscripten'",
+    "resvg-py>=0.2; sys_platform != 'emscripten'",
 ]
 
 [project.optional-dependencies]
 desktop = [
     "pytauri-wheel>=0.8.0",
     "pydantic>=2.12",
+    "pyinstaller>=6.12",
 ]
 
 [project.urls]
@@ -164,3 +168,13 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["trellis.platforms.desktop.*"]
 disable_error_code = ["untyped-decorator"]
+
+# PyInstaller has no type stubs
+[[tool.mypy.overrides]]
+module = ["PyInstaller", "PyInstaller.*"]
+ignore_missing_imports = true
+
+# resvg-py has no type stubs
+[[tool.mypy.overrides]]
+module = ["resvg_py"]
+ignore_missing_imports = true

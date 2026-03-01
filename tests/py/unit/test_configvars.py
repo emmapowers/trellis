@@ -454,6 +454,48 @@ class TestConfigVarListCoercion:
         assert result[0] == Path.home() / "src"
         assert result[1] == Path("lib")
 
+    def test_coerces_list_of_paths_from_constructor_strings(self) -> None:
+        """list[Path] constructor values accept strings and normalize to Path."""
+        var: ConfigVar[list[Path]] = ConfigVar("paths", default=[Path(".")], type_hint=list[Path])
+        result = var.resolve(constructor_value=["src", "lib"])
+        assert result == [Path("src"), Path("lib")]
+
+
+class TestConfigVarPathCoercion:
+    """Test ConfigVar coercion of path-like values from non-ENV sources."""
+
+    def test_coerces_path_from_constructor_string(self) -> None:
+        var: ConfigVar[Path | None] = ConfigVar("icon", default=None, type_hint=Path)
+        result = var.resolve(constructor_value="~/icon.png")
+        assert result == Path.home() / "icon.png"
+
+    def test_coerces_path_from_cli_string(self) -> None:
+        var: ConfigVar[Path | None] = ConfigVar("icon", default=None, type_hint=Path)
+        with cli_context({"icon": "~/icon.png"}):
+            result = var.resolve()
+        assert result == Path.home() / "icon.png"
+
+
+class TestConfigVarCoercePassthrough:
+    """Test _coerce passes already-typed values through unchanged."""
+
+    def test_int_passthrough(self) -> None:
+        var: ConfigVar[int] = ConfigVar("port", default=8000)
+        assert var._coerce(9000) == 9000
+
+    def test_path_passthrough(self) -> None:
+        var: ConfigVar[Path | None] = ConfigVar("icon", default=None, type_hint=Path)
+        p = Path("/some/path")
+        assert var._coerce(p) is p
+
+    def test_bool_passthrough(self) -> None:
+        var: ConfigVar[bool] = ConfigVar("watch", default=False)
+        assert var._coerce(True) is True
+
+    def test_none_type_passthrough(self) -> None:
+        var: ConfigVar[int | None] = ConfigVar("port", default=None)
+        assert var._coerce(42) == 42
+
 
 class TestConfigVarCliMetadata:
     """Test CLI-specific metadata fields on ConfigVar."""

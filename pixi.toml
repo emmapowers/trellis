@@ -19,6 +19,7 @@ playwright = ">=1.57.0,<2"
 trellis = { path = ".", editable = true }
 mypy = ">=1.15,<2"
 pydoc-markdown = ">=4.8,<5"
+types-Pillow = ">=10.0"
 
 # Feature for desktop extras (pytauri-wheel)
 [feature.desktop.pypi-dependencies]
@@ -37,8 +38,8 @@ ruff-fix = { cmd = "ruff check --fix src tests examples", depends-on = ["fmt"], 
 ruff-check = { cmd = "ruff check src tests examples", description = "Check ruff linting" }
 
 # Type checking
-mypy = { cmd = "dmypy run -- src/trellis examples/*/", description = "Run mypy (daemon)" }
-mypy-ci = { cmd = "mypy src/trellis examples/*/", description = "Run mypy (full check)" }
+mypy = { cmd = "dmypy run -- src/trellis examples", description = "Run mypy (daemon)" }
+mypy-ci = { cmd = "mypy src/trellis examples", description = "Run mypy (full check)" }
 
 # Testing
 test = { cmd = "pytest tests/py", description = "Run Python tests" }

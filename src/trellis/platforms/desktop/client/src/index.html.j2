@@ -4,6 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ title | default('Trellis App') }}</title>
+    {% if has_icon %}
+    <link rel="icon" type="{{ favicon_type }}" href="{{ favicon_href }}">
+    {% if apple_touch_icon_href %}
+    <link rel="apple-touch-icon" href="{{ apple_touch_icon_href }}">
+    {% endif %}
+    {% endif %}
     <link rel="stylesheet" href="bundle.css">
     <script>
         // Early theme detection to prevent flash of wrong theme

@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import importlib
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from anyio.from_thread import start_blocking_portal
 from pydantic import BaseModel
-from pytauri import Commands
+from pytauri import AppHandle, Commands
 from pytauri.ipc import Channel, JavaScriptChannelId  # noqa: TC002 - runtime for pytauri
 from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
 from pytauri_wheel.lib import builder_factory, context_factory
@@ -19,11 +20,13 @@ from trellis.app.apploader import get_dist_dir
 from trellis.bundler import (
     BuildConfig,
     BundleBuildStep,
+    IconAssetStep,
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
     StaticFileCopyStep,
 )
+from trellis.desktop.dialogs import _clear_dialog_runtime, _set_dialog_runtime
 from trellis.platforms.common.base import Platform
 from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
@@ -47,6 +50,25 @@ def _print_startup_banner(title: str) -> None:
     _console.print()
     _console.print("  [dim]Close window to exit[/dim]")
     _console.print()
+
+
+def _build_tauri_config_override(
+    *, dist_path: str, window_title: str, window_width: int, window_height: int
+) -> dict[str, Any]:
+    """Build runtime Tauri config overrides for desktop window and frontend assets."""
+    return {
+        "build": {"frontendDist": dist_path},
+        "app": {
+            "windows": [
+                {
+                    "title": window_title,
+                    "width": window_width,
+                    "height": window_height,
+                    "visible": False,
+                }
+            ]
+        },
+    }
 
 
 # PyTauri command request models
@@ -114,6 +136,7 @@ class DesktopPlatform(Platform):
                 RegistryGenerationStep(),
                 BundleBuildStep(output_name="bundle"),
                 StaticFileCopyStep(),
+                IconAssetStep(icon_path=config.icon, include_icns=True),
                 IndexHtmlRenderStep(template_path, {"title": config.title}),
             ],
         )
@@ -123,9 +146,12 @@ class DesktopPlatform(Platform):
         commands = Commands()
 
         @commands.command()
-        async def trellis_connect(body: ConnectRequest, webview_window: WebviewWindow) -> str:
+        async def trellis_connect(
+            body: ConnectRequest, webview_window: WebviewWindow, app_handle: AppHandle
+        ) -> str:
             """Establish channel connection with frontend."""
             channel: Channel = body.channel_id.channel_on(webview_window.as_ref_webview())
+            _set_dialog_runtime(app_handle)
             self._handler = PyTauriMessageHandler(
                 self._root_component,  # type: ignore[arg-type]
                 self._app_wrapper,  # type: ignore[arg-type]
@@ -138,6 +164,7 @@ class DesktopPlatform(Platform):
             def _on_handler_done(task: asyncio.Task[None]) -> None:
                 if self._handler is not None:
                     get_global_registry().unregister(self._handler)
+                _clear_dialog_runtime()
 
             self._handler_task = asyncio.create_task(self._handler.run())
             self._handler_task.add_done_callback(_on_handler_done)
@@ -194,8 +221,13 @@ class DesktopPlatform(Platform):
         config_dir = Path(__file__).parent / "config"
         dist_path = str(get_dist_dir())
 
-        # Override frontendDist to point to the workspace cache
-        config_override = {"build": {"frontendDist": dist_path}}
+        # Override frontendDist and window metadata with runtime app config.
+        config_override = _build_tauri_config_override(
+            dist_path=dist_path,
+            window_title=window_title,
+            window_width=window_width,
+            window_height=window_height,
+        )
 
         # PyTauri runs its own event loop on main thread (app.run_return).
         # start_blocking_portal creates an asyncio event loop in a background thread,
@@ -213,11 +245,24 @@ class DesktopPlatform(Platform):
                 context=context_factory(config_dir, tauri_config=config_override),
                 invoke_handler=commands.generate_handler(portal),
             )
+            # Keep this runtime-only import local so non-desktop environments do not
+            # require desktop plugin modules during normal import/CI workflows.
+            dialog_plugin: Any = importlib.import_module("pytauri_plugins.dialog")
+            app.handle().plugin(dialog_plugin.init())
+
+            window_state_plugin: Any = importlib.import_module("pytauri_plugins.window_state")
+            app.handle().plugin(window_state_plugin.Builder.build())
+
+            opener_plugin: Any = importlib.import_module("pytauri_plugins.opener")
+            app.handle().plugin(opener_plugin.init())
 
             # Run until window is closed
-            exit_code = app.run_return()
-            if exit_code != 0:
-                raise RuntimeError(f"Desktop app exited with code {exit_code}")
+            try:
+                exit_code = app.run_return()
+                if exit_code != 0:
+                    raise RuntimeError(f"Desktop app exited with code {exit_code}")
+            finally:
+                _clear_dialog_runtime()
 
 
 __all__ = ["DesktopPlatform"]

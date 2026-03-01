@@ -239,6 +239,40 @@ def TextInput(
     pass
 
 
+@react("client/MultilineInput.tsx", packages=_ARIA_PACKAGES)
+def MultilineInput(
+    value: str | Mutable[str] = "",
+    *,
+    placeholder: str | None = None,
+    rows: int = 4,
+    disabled: bool = False,
+    read_only: bool = False,
+    margin: Margin | None = None,
+    width: Width | int | str | None = None,
+    flex: int | None = None,
+    class_name: str | None = None,
+    style: dict[str, tp.Any] | None = None,
+) -> None:
+    """Multi-line text input widget.
+
+    Args:
+        value: Current input value. Use mutable(state.prop) for two-way binding.
+        placeholder: Placeholder text when empty.
+        rows: Initial visible row count.
+        disabled: Whether the input is disabled.
+        read_only: Whether input text is read-only.
+        margin: Margin around the input (Margin dataclass).
+        width: Width of the input (Width dataclass, int for pixels, or str for CSS).
+        flex: Flex grow/shrink value.
+        class_name: CSS class name(s) to apply.
+        style: Additional inline styles to apply.
+
+    Returns:
+        An Element for the MultilineInput component.
+    """
+    pass
+
+
 @react("client/NumberInput.tsx", packages={**_ARIA_PACKAGES, "@internationalized/date": "3.5.6"})
 def NumberInput(
     *,

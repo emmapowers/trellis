@@ -64,7 +64,7 @@ def get_click_type(var: ConfigVar[Any]) -> click.ParamType | type | None:
 
     # Path -> click.Path
     if target_type is Path or (isinstance(target_type, type) and issubclass(target_type, Path)):
-        return click.Path()
+        return click.Path(path_type=Path)
 
     # Basic types map directly
     basic_types: dict[type, type] = {int: int, str: str, float: float}

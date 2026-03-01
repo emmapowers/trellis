@@ -5,11 +5,13 @@ from __future__ import annotations
 import json
 import logging
 import subprocess
+import sys
 import time
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from PIL import Image
 
 from trellis.bundler.build import build
 from trellis.bundler.manifest import BuildManifest, StepManifest, load_manifest, save_manifest
@@ -19,6 +21,7 @@ from trellis.bundler.steps import (
     BuildStep,
     BundleBuildStep,
     DeclarationStep,
+    IconAssetStep,
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
@@ -1819,6 +1822,161 @@ class TestIndexHtmlRenderStepShouldBuild:
         result = step.should_build(build_context, prev_manifest)
 
         assert result == ShouldBuild.SKIP
+
+
+class TestIconAssetStep:
+    """Tests for IconAssetStep."""
+
+    @pytest.fixture
+    def build_context(self, tmp_path: Path) -> BuildContext:
+        registry = ModuleRegistry()
+        collected = registry.collect()
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+        return BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+        )
+
+    @pytest.fixture
+    def png_icon(self, tmp_path: Path) -> Path:
+        """Create a 64x64 RGBA test PNG icon."""
+
+        icon_path = tmp_path / "icon.png"
+        img = Image.new("RGBA", (64, 64), color=(255, 0, 0, 255))
+        img.save(str(icon_path), format="PNG")
+        return icon_path
+
+    @pytest.fixture
+    def svg_icon(self, tmp_path: Path) -> Path:
+        """Create a minimal SVG test icon."""
+        icon_path = tmp_path / "icon.svg"
+        icon_path.write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            '<rect width="100" height="100" fill="red"/>'
+            "</svg>"
+        )
+        return icon_path
+
+    def test_name(self) -> None:
+        step = IconAssetStep(icon_path=None)
+        assert step.name == "icon-assets"
+
+    def test_without_icon_sets_has_icon_false(self, build_context: BuildContext) -> None:
+        step = IconAssetStep(icon_path=None)
+        step.run(build_context)
+
+        assert build_context.template_context["has_icon"] is False
+        assert "favicon_href" not in build_context.template_context
+
+    def test_missing_icon_path_raises(self, build_context: BuildContext, tmp_path: Path) -> None:
+        step = IconAssetStep(icon_path=tmp_path / "missing.png")
+
+        with pytest.raises(FileNotFoundError, match="Icon file not found"):
+            step.run(build_context)
+
+    def test_unsupported_extension_raises(
+        self, build_context: BuildContext, tmp_path: Path
+    ) -> None:
+        source_icon = tmp_path / "icon.bmp"
+        source_icon.write_bytes(b"BM")
+
+        step = IconAssetStep(icon_path=source_icon)
+
+        with pytest.raises(ValueError, match="Unsupported icon format"):
+            step.run(build_context)
+
+    def test_generates_icons_from_png_source(
+        self, build_context: BuildContext, png_icon: Path
+    ) -> None:
+
+        step = IconAssetStep(icon_path=png_icon)
+        step.run(build_context)
+
+        # Verify all generated files exist
+        assert (build_context.dist_dir / "favicon.ico").exists()
+        assert (build_context.dist_dir / "favicon.png").exists()
+        assert (build_context.dist_dir / "apple-touch-icon.png").exists()
+
+        # Verify favicon.png is 32x32
+        favicon_png = Image.open(build_context.dist_dir / "favicon.png")
+        assert favicon_png.size == (32, 32)
+
+        # Verify apple-touch-icon.png is 180x180
+        apple_icon = Image.open(build_context.dist_dir / "apple-touch-icon.png")
+        assert apple_icon.size == (180, 180)
+
+        # Verify template context
+        assert build_context.template_context["has_icon"] is True
+        assert build_context.template_context["favicon_href"] == "favicon.ico"
+        assert build_context.template_context["favicon_type"] == "image/x-icon"
+        assert build_context.template_context["apple_touch_icon_href"] == "apple-touch-icon.png"
+
+        # Verify manifest tracking
+        step_manifest = build_context.manifest.steps["icon-assets"]
+        assert png_icon in step_manifest.source_paths
+        assert (build_context.dist_dir / "favicon.ico") in step_manifest.dest_files
+
+    def test_generates_icons_from_svg_source(
+        self, build_context: BuildContext, svg_icon: Path
+    ) -> None:
+
+        step = IconAssetStep(icon_path=svg_icon)
+        step.run(build_context)
+
+        assert (build_context.dist_dir / "favicon.ico").exists()
+        assert (build_context.dist_dir / "favicon.png").exists()
+
+        favicon_png = Image.open(build_context.dist_dir / "favicon.png")
+        assert favicon_png.size == (32, 32)
+
+    @pytest.mark.skipif(sys.platform != "darwin", reason="iconutil is macOS-only")
+    def test_include_icns_generates_icns_file(
+        self, build_context: BuildContext, png_icon: Path
+    ) -> None:
+        step = IconAssetStep(icon_path=png_icon, include_icns=True)
+        step.run(build_context)
+
+        assert (build_context.dist_dir / "favicon.icns").exists()
+        assert (build_context.dist_dir / "favicon.icns") in build_context.manifest.steps[
+            "icon-assets"
+        ].dest_files
+
+    def test_small_source_warns(
+        self, build_context: BuildContext, png_icon: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        step = IconAssetStep(icon_path=png_icon)
+        with caplog.at_level(logging.WARNING):
+            step.run(build_context)
+
+        assert "recommend at least" in caplog.text
+
+    def test_should_build_skips_when_unchanged(
+        self, build_context: BuildContext, png_icon: Path
+    ) -> None:
+        step = IconAssetStep(icon_path=png_icon)
+        step.run(build_context)
+        prev = build_context.manifest.steps["icon-assets"]
+
+        fresh_ctx = BuildContext(
+            registry=build_context.registry,
+            entry_point=build_context.entry_point,
+            workspace=build_context.workspace,
+            collected=build_context.collected,
+            dist_dir=build_context.dist_dir,
+            manifest=BuildManifest(),
+        )
+        decision = step.should_build(fresh_ctx, prev)
+
+        assert decision == ShouldBuild.SKIP
+        assert fresh_ctx.template_context["has_icon"] is True
+        assert fresh_ctx.template_context["favicon_href"] == "favicon.ico"
 
 
 class TestStaticFileCopyStep:

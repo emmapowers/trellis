@@ -51,6 +51,7 @@ class TestAnchorAutoRouting:
         on_click_data = anchor.get("props", {}).get("onClick")
         assert on_click_data is not None, "A with relative href should have onClick"
         assert "__callback__" in on_click_data
+        assert anchor["props"]["data-trellis-router-link"] == "true"
 
     def test_relative_path_click_navigates(self, capture_patches: type[PatchCapture]) -> None:
         """Clicking A with relative path navigates via router."""
@@ -91,6 +92,7 @@ class TestAnchorAutoRouting:
         # Should NOT have onClick handler - let browser handle it
         on_click_data = anchor.get("props", {}).get("onClick")
         assert on_click_data is None, "A with absolute URL should not have auto onClick"
+        assert "data-trellis-router-link" not in anchor.get("props", {})
 
     def test_protocol_relative_url_no_onclick(self, capture_patches: type[PatchCapture]) -> None:
         """A with protocol-relative URL (//host) does NOT get auto onClick."""
@@ -205,6 +207,7 @@ class TestAnchorAutoRouting:
         # Should NOT have onClick handler - browser opens new tab
         on_click_data = anchor.get("props", {}).get("onClick")
         assert on_click_data is None, "A with target='_blank' should not have auto onClick"
+        assert "data-trellis-router-link" not in anchor.get("props", {})
 
     def test_use_router_false_no_onclick(self, capture_patches: type[PatchCapture]) -> None:
         """A with use_router=False does NOT get auto onClick even for relative URLs."""

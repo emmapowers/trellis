@@ -21,6 +21,7 @@ from rich.console import Console
 from trellis.bundler import (
     BuildConfig,
     BundleBuildStep,
+    IconAssetStep,
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
@@ -78,6 +79,7 @@ class ServerPlatform(Platform):
                 RegistryGenerationStep(),
                 BundleBuildStep(output_name="bundle"),
                 StaticFileCopyStep(),
+                IconAssetStep(icon_path=config.icon),
                 IndexHtmlRenderStep(
                     template_path, {"title": config.title, "static_path": "/static"}
                 ),

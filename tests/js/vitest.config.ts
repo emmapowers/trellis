@@ -20,12 +20,16 @@ export default defineConfig({
       "@trellis/trellis-core": path.resolve(__dirname, "../../src/trellis/platforms/common/client/src"),
       "@trellis/trellis-server": path.resolve(__dirname, "../../src/trellis/platforms/server"),
       "@trellis/trellis-desktop": path.resolve(__dirname, "../../src/trellis/platforms/desktop"),
+      // Tauri plugins (mocked for test environment)
+      "@tauri-apps/plugin-opener": path.resolve(__dirname, "mocks/tauri-plugin-opener.ts"),
       // Use local node_modules for packages (source files import directly)
       "react": path.resolve(__dirname, "node_modules/react"),
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
       "react-aria": path.resolve(__dirname, "node_modules/react-aria"),
       "react-stately": path.resolve(__dirname, "node_modules/react-stately"),
       "lucide-react": path.resolve(__dirname, "node_modules/lucide-react"),
+      "markdown-it": path.resolve(__dirname, "node_modules/markdown-it"),
+      "dompurify": path.resolve(__dirname, "node_modules/dompurify"),
       "@msgpack/msgpack": path.resolve(__dirname, "node_modules/@msgpack/msgpack"),
       "recharts": path.resolve(__dirname, "node_modules/recharts"),
       "uplot": path.resolve(__dirname, "node_modules/uplot"),
