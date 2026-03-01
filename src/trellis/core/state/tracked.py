@@ -242,6 +242,7 @@ class TrackedList(list[T], _TrackedMixin):
         self._mark_dirty(id(old_value))
         list.__setitem__(self, index, value)  # type: ignore[misc]
         self._mark_dirty(id(value))
+        self._mark_iter_dirty()
 
     def __delitem__(self, index: SupportsIndex | slice) -> None:
         self._check_no_render_mutation()
