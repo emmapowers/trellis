@@ -6,9 +6,10 @@ Elements for displaying and formatting text content.
 from __future__ import annotations
 
 import typing as tp
+from typing import overload
 
 from trellis.core.components.base import Component, ElementKind
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
 
 __all__ = [
@@ -58,7 +59,7 @@ class TextNode(Component):
 
 
 # Text elements use decorators but need wrappers for positional text args
-@html_element("p", name="P")
+@html_element("p", is_container=True, name="P")
 def _P(
     *,
     _text: str | None = None,
@@ -71,7 +72,7 @@ def _P(
     ...
 
 
-@html_element("h1", name="H1")
+@html_element("h1", is_container=True, name="H1")
 def _H1(
     *,
     _text: str | None = None,
@@ -84,7 +85,7 @@ def _H1(
     ...
 
 
-@html_element("h2", name="H2")
+@html_element("h2", is_container=True, name="H2")
 def _H2(
     *,
     _text: str | None = None,
@@ -97,7 +98,7 @@ def _H2(
     ...
 
 
-@html_element("h3", name="H3")
+@html_element("h3", is_container=True, name="H3")
 def _H3(
     *,
     _text: str | None = None,
@@ -110,7 +111,7 @@ def _H3(
     ...
 
 
-@html_element("h4", name="H4")
+@html_element("h4", is_container=True, name="H4")
 def _H4(
     *,
     _text: str | None = None,
@@ -123,7 +124,7 @@ def _H4(
     ...
 
 
-@html_element("h5", name="H5")
+@html_element("h5", is_container=True, name="H5")
 def _H5(
     *,
     _text: str | None = None,
@@ -136,7 +137,7 @@ def _H5(
     ...
 
 
-@html_element("h6", name="H6")
+@html_element("h6", is_container=True, name="H6")
 def _H6(
     *,
     _text: str | None = None,
@@ -149,48 +150,52 @@ def _H6(
     ...
 
 
-@html_element("strong", name="Strong")
+@html_element("strong", is_container=True, name="Strong")
 def _Strong(
     *,
     _text: str | None = None,
     className: str | None = None,
     style: Style | None = None,
+    id: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A strong (bold) text element."""
     ...
 
 
-@html_element("em", name="Em")
+@html_element("em", is_container=True, name="Em")
 def _Em(
     *,
     _text: str | None = None,
     className: str | None = None,
     style: Style | None = None,
+    id: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An emphasis (italic) text element."""
     ...
 
 
-@html_element("code", name="Code")
+@html_element("code", is_container=True, name="Code")
 def _Code(
     *,
     _text: str | None = None,
     className: str | None = None,
     style: Style | None = None,
+    id: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An inline code element."""
     ...
 
 
-@html_element("pre", name="Pre")
+@html_element("pre", is_container=True, name="Pre")
 def _Pre(
     *,
     _text: str | None = None,
     className: str | None = None,
     style: Style | None = None,
+    id: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A preformatted text element."""
@@ -201,9 +206,34 @@ def _Pre(
 _text_node = TextNode("Text")
 
 
-# Public API with positional text parameter support
+# Public API with positional text parameter support and @overload for hybrid behavior
+
+
+@overload
+def P(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def P(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def P(
     text: str = "",
+    /,
     *,
     className: str | None = None,
     style: Style | None = None,
@@ -220,8 +250,31 @@ def P(
     )
 
 
+@overload
+def H1(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def H1(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def H1(
     text: str = "",
+    /,
     *,
     className: str | None = None,
     style: Style | None = None,
@@ -238,8 +291,31 @@ def H1(
     )
 
 
+@overload
+def H2(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def H2(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def H2(
     text: str = "",
+    /,
     *,
     className: str | None = None,
     style: Style | None = None,
@@ -256,8 +332,31 @@ def H2(
     )
 
 
+@overload
+def H3(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def H3(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def H3(
     text: str = "",
+    /,
     *,
     className: str | None = None,
     style: Style | None = None,
@@ -274,8 +373,31 @@ def H3(
     )
 
 
+@overload
+def H4(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def H4(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def H4(
     text: str = "",
+    /,
     *,
     className: str | None = None,
     style: Style | None = None,
@@ -292,8 +414,31 @@ def H4(
     )
 
 
+@overload
+def H5(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def H5(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def H5(
     text: str = "",
+    /,
     *,
     className: str | None = None,
     style: Style | None = None,
@@ -310,8 +455,31 @@ def H5(
     )
 
 
+@overload
+def H6(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def H6(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def H6(
     text: str = "",
+    /,
     *,
     className: str | None = None,
     style: Style | None = None,
@@ -328,11 +496,35 @@ def H6(
     )
 
 
+@overload
 def Strong(
-    text: str = "",
+    text: str,
+    /,
     *,
     className: str | None = None,
     style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Strong(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Strong(
+    text: str = "",
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A strong (bold) text element."""
@@ -340,15 +532,40 @@ def Strong(
         _text=text if text else None,
         className=className,
         style=style,
+        id=id,
         **props,
     )
 
 
+@overload
 def Em(
-    text: str = "",
+    text: str,
+    /,
     *,
     className: str | None = None,
     style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Em(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Em(
+    text: str = "",
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An emphasis (italic) text element."""
@@ -356,15 +573,40 @@ def Em(
         _text=text if text else None,
         className=className,
         style=style,
+        id=id,
         **props,
     )
 
 
+@overload
 def Code(
-    text: str = "",
+    text: str,
+    /,
     *,
     className: str | None = None,
     style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Code(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Code(
+    text: str = "",
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An inline code element."""
@@ -372,15 +614,40 @@ def Code(
         _text=text if text else None,
         className=className,
         style=style,
+        id=id,
         **props,
     )
 
 
+@overload
 def Pre(
-    text: str = "",
+    text: str,
+    /,
     *,
     className: str | None = None,
     style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Pre(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def Pre(
+    text: str = "",
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """A preformatted text element."""
@@ -388,6 +655,7 @@ def Pre(
         _text=text if text else None,
         className=className,
         style=style,
+        id=id,
         **props,
     )
 

@@ -33,6 +33,9 @@ def Form(
     *,
     action: str | None = None,
     method: str | None = None,
+    encType: str | None = None,
+    noValidate: bool = False,
+    autoComplete: str | None = None,
     onSubmit: FormHandler | None = None,
     className: str | None = None,
     style: Style | None = None,
@@ -52,6 +55,17 @@ def Input(
     disabled: bool = False,
     readOnly: bool = False,
     name: str | None = None,
+    checked: bool | None = None,
+    required: bool = False,
+    min: str | int | float | None = None,
+    max: str | int | float | None = None,
+    step: str | int | float | None = None,
+    pattern: str | None = None,
+    maxLength: int | None = None,
+    autoComplete: str | None = None,
+    autoFocus: bool = False,
+    accept: str | None = None,
+    multiple: bool = False,
     onChange: ChangeHandler | None = None,
     onFocus: FocusHandler | None = None,
     onBlur: FocusHandler | None = None,
@@ -60,19 +74,7 @@ def Input(
     id: str | None = None,
     **props: tp.Any,
 ) -> Element:
-    """An input element.
-
-    Args:
-        type: Input type (text, password, email, number, checkbox, radio, etc.)
-        value: Current value
-        placeholder: Placeholder text
-        disabled: Whether the input is disabled
-        readOnly: Whether the input is read-only
-        name: Form field name
-        onChange: Called when the value changes
-        onFocus: Called when the input gains focus
-        onBlur: Called when the input loses focus
-    """
+    """An input element."""
     ...
 
 
@@ -86,6 +88,9 @@ def Textarea(
     disabled: bool = False,
     readOnly: bool = False,
     name: str | None = None,
+    required: bool = False,
+    maxLength: int | None = None,
+    autoFocus: bool = False,
     onChange: ChangeHandler | None = None,
     onFocus: FocusHandler | None = None,
     onBlur: FocusHandler | None = None,
@@ -104,6 +109,8 @@ def Select(
     value: str | None = None,
     disabled: bool = False,
     name: str | None = None,
+    required: bool = False,
+    multiple: bool = False,
     onChange: ChangeHandler | None = None,
     className: str | None = None,
     style: Style | None = None,
@@ -121,6 +128,8 @@ def _HtmlButton(
     _text: str | None = None,
     type: str = "button",
     disabled: bool = False,
+    name: str | None = None,
+    value: str | None = None,
     onClick: MouseHandler | None = None,
     className: str | None = None,
     style: Style | None = None,
@@ -165,6 +174,8 @@ def HtmlButton(
     *,
     type: str = "button",
     disabled: bool = False,
+    name: str | None = None,
+    value: str | None = None,
     onClick: MouseHandler | None = None,
     className: str | None = None,
     style: Style | None = None,
@@ -178,6 +189,8 @@ def HtmlButton(
     *,
     type: str = "button",
     disabled: bool = False,
+    name: str | None = None,
+    value: str | None = None,
     onClick: MouseHandler | None = None,
     className: str | None = None,
     style: Style | None = None,
@@ -192,6 +205,8 @@ def HtmlButton(
     *,
     type: str = "button",
     disabled: bool = False,
+    name: str | None = None,
+    value: str | None = None,
     onClick: MouseHandler | None = None,
     className: str | None = None,
     style: Style | None = None,
@@ -212,6 +227,8 @@ def HtmlButton(
         _text=text if text else None,
         type=type,
         disabled=disabled,
+        name=name,
+        value=value,
         onClick=onClick,
         className=className,
         style=style,

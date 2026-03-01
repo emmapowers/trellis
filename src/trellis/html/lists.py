@@ -37,6 +37,8 @@ def Ol(
     style: Style | None = None,
     id: str | None = None,
     start: int | None = None,
+    reversed: bool = False,
+    type: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An ordered list element."""

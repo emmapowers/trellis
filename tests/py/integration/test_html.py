@@ -391,6 +391,133 @@ class TestHybridElements:
             rendered(App)
 
 
+class TestTextElementsAsContainers:
+    """Tests for text elements used as containers (hybrid mode)."""
+
+    def test_p_as_container(self, rendered) -> None:
+        """P can be used as a container with children."""
+
+        @component
+        def App() -> None:
+            with h.P():
+                h.Strong("bold")
+
+        result = rendered(App)
+
+        p = result.session.elements.get(result.root_element.child_ids[0])
+        assert p.component.name == "P"
+        assert len(p.child_ids) == 1
+        assert result.session.elements.get(p.child_ids[0]).component.name == "Strong"
+
+    def test_p_as_text_still_works(self, rendered) -> None:
+        """P("text") still works as text-only."""
+
+        @component
+        def App() -> None:
+            h.P("text content")
+
+        result = rendered(App)
+
+        p = result.session.elements.get(result.root_element.child_ids[0])
+        assert p.properties["_text"] == "text content"
+
+    def test_p_text_with_block_raises(self, rendered) -> None:
+        """P("text") with block raises TypeError."""
+
+        @component
+        def App() -> None:
+            with h.P("text"):
+                pass
+
+        with pytest.raises(TypeError, match=r"Cannot use.*with.*text content"):
+            rendered(App)
+
+    def test_span_as_container(self, rendered) -> None:
+        """Span can be used as a container."""
+
+        @component
+        def App() -> None:
+            with h.Span():
+                h.Strong("inner")
+
+        result = rendered(App)
+
+        span = result.session.elements.get(result.root_element.child_ids[0])
+        assert span.component.name == "Span"
+        assert len(span.child_ids) == 1
+
+    def test_h1_as_container(self, rendered) -> None:
+        """H1 can be used as a container."""
+
+        @component
+        def App() -> None:
+            with h.H1():
+                h.Span("styled heading")
+
+        result = rendered(App)
+
+        h1 = result.session.elements.get(result.root_element.child_ids[0])
+        assert h1.component.name == "H1"
+        assert len(h1.child_ids) == 1
+
+    def test_strong_as_container(self, rendered) -> None:
+        """Strong can be used as a container."""
+
+        @component
+        def App() -> None:
+            with h.Strong():
+                h.Em("bold and italic")
+
+        result = rendered(App)
+
+        strong = result.session.elements.get(result.root_element.child_ids[0])
+        assert strong.component.name == "Strong"
+        assert len(strong.child_ids) == 1
+
+    def test_em_as_container(self, rendered) -> None:
+        """Em can be used as a container."""
+
+        @component
+        def App() -> None:
+            with h.Em():
+                h.Strong("italic and bold")
+
+        result = rendered(App)
+
+        em = result.session.elements.get(result.root_element.child_ids[0])
+        assert em.component.name == "Em"
+        assert len(em.child_ids) == 1
+
+    def test_code_as_container(self, rendered) -> None:
+        """Code can be used as a container."""
+
+        @component
+        def App() -> None:
+            with h.Code():
+                h.Span("code content")
+
+        result = rendered(App)
+
+        code = result.session.elements.get(result.root_element.child_ids[0])
+        assert code.component.name == "Code"
+        assert len(code.child_ids) == 1
+
+    def test_pre_containing_code(self, rendered) -> None:
+        """Pre can contain Code (common pattern)."""
+
+        @component
+        def App() -> None:
+            with h.Pre():
+                h.Code("code block")
+
+        result = rendered(App)
+
+        pre = result.session.elements.get(result.root_element.child_ids[0])
+        assert pre.component.name == "Pre"
+        assert len(pre.child_ids) == 1
+        assert result.session.elements.get(pre.child_ids[0]).component.name == "Code"
+
+
 class TestHtmlContainerBehavior:
     """Tests for container vs non-container element behavior."""
 
