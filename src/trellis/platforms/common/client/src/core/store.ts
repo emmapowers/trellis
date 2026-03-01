@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useSyncExternalStore } from "react";
-import { SerializedElement } from "./types";
+import { SerializedElement, resetMutableStates } from "./types";
 import {
   Patch,
   AddPatch,
@@ -122,9 +122,10 @@ export class TrellisStore {
       this.nodes.set(patch.parent_id, newParent);
       affectedIds.add(patch.parent_id);
     } else {
-      // Adding a new root - clear existing tree first
+      // Adding a new root - clear existing tree and optimistic state
       this.nodes.clear();
       this.nodeListeners.clear();
+      resetMutableStates();
       this.addNodeRecursive(patch.element);
       this.rootId = nodeId;
     }
