@@ -93,6 +93,46 @@ def _is_tracked_attribute(cls: type, name: str) -> bool:
     return False
 
 
+def _register_context_dependency(session: tp.Any, instance: Stateful) -> None:
+    """Register the current element as a context watcher on a Stateful instance.
+
+    Called during render when from_context() finds an instance. Adds the
+    current element to instance._context_watchers so that __enter__ can
+    mark consumers dirty when a different instance replaces context.
+    """
+    element_id = session.current_element_id
+    if element_id is None:
+        return
+    element = session.elements.get(element_id)
+    if element is None:
+        return
+
+    try:
+        watchers: weakref.WeakSet[Element] = object.__getattribute__(instance, "_context_watchers")
+    except AttributeError:
+        watchers = weakref.WeakSet()
+        object.__setattr__(instance, "_context_watchers", watchers)
+
+    watchers.add(element)
+
+
+def _mark_context_consumers_dirty(old_instance: Stateful) -> None:
+    """Mark all elements that consumed old_instance via from_context() as dirty.
+
+    Called from __enter__ when a different Stateful instance replaces context
+    for the same type. Uses the same pattern as _TrackedMixin._mark_dirty().
+    """
+    try:
+        watchers = object.__getattribute__(old_instance, "_context_watchers")
+    except AttributeError:
+        return
+
+    for element in watchers:
+        session = element._session_ref()
+        if session is not None:
+            session.dirty.mark(element.id)
+
+
 @dataclass(kw_only=True)
 class StatePropertyInfo:
     """Tracks which elements depend on a specific state property.
@@ -398,7 +438,15 @@ class Stateful:
         element_id = session.current_element_id
         assert element_id is not None  # Guaranteed by is_executing() check above
         state = session.states.get_or_create(element_id)
-        state.context[type(self)] = self
+
+        # If a different instance was previously providing context for this type,
+        # mark all its consumers dirty so they re-execute and pick up the new instance.
+        ctx_type = type(self)
+        old_instance = state.context.get(ctx_type)
+        if old_instance is not None and old_instance is not self:
+            _mark_context_consumers_dirty(old_instance)
+
+        state.context[ctx_type] = self
         logger.debug("Providing %s context at %s", type(self).__name__, element_id)
         return self
 
@@ -465,8 +513,10 @@ class Stateful:
         # Try render context first
         session = get_active_session()
         if session is not None and session.is_executing():
+            is_render_context = True
             element_id: str | None = session.current_element_id
         else:
+            is_render_context = False
             # Try callback context
             callback_element_id = get_callback_node_id()
             if callback_element_id is not None:
@@ -478,6 +528,7 @@ class Stateful:
                     f"Context API is only available within component execution or callback context."
                 )
 
+        assert session is not None
         logger.debug("Looking up %s context", cls.__name__)
 
         # Walk up the parent_id chain with cycle detection
@@ -488,8 +539,11 @@ class Stateful:
             visited.add(element_id)
             state = session.states.get(element_id)
             if state is not None and cls in state.context:
+                instance = tp.cast("tp.Self", state.context[cls])
                 logger.debug("Found %s at ancestor %s", cls.__name__, element_id)
-                return tp.cast("tp.Self", state.context[cls])
+                if is_render_context:
+                    _register_context_dependency(session, instance)
+                return instance
             element_id = state.parent_id if state else None
 
         # No context found - return default or raise

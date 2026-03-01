@@ -640,9 +640,7 @@ class TestContextDependencyTracking:
         assert child1_renders == ["first", "second"]
         assert child2_renders == ["first", "second"]
 
-    def test_context_deep_consumer_rerenders(
-        self, capture_patches: "type[PatchCapture]"
-    ) -> None:
+    def test_context_deep_consumer_rerenders(self, capture_patches: "type[PatchCapture]") -> None:
         """Grandchild re-renders when grandparent's context changes."""
 
         @dataclass
