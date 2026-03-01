@@ -113,7 +113,7 @@ class TestContainerComponent:
                 pass
 
         ctx = RenderSession(Parent)
-        with pytest.raises(TypeError, match="does not accept children"):
+        with pytest.raises(TypeError, match="does not support the context manager protocol"):
             render(ctx)
 
     def test_cannot_provide_children_prop_and_use_with(self) -> None:

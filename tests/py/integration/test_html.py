@@ -1,5 +1,7 @@
 """Tests for native HTML elements."""
 
+import pytest
+
 from trellis import html as h
 from trellis.core.components.composition import component
 from trellis.platforms.common.serialization import parse_callback_id, serialize_element
@@ -376,22 +378,17 @@ class TestHybridElements:
         assert len(a.child_ids) == 1
         assert result.session.elements.get(a.child_ids[0]).component.name == "Span"
 
-    def test_hybrid_no_double_collection(self, rendered) -> None:
-        """Using with on a text hybrid element doesn't double-collect."""
+    def test_hybrid_text_with_block_raises_type_error(self, rendered) -> None:
+        """Using with on a text hybrid element raises TypeError."""
 
         @component
         def App() -> None:
             with h.Div():
-                # This would double-collect without the _auto_collected fix
                 with h.Td("text"):
                     pass
 
-        result = rendered(App)
-
-        div = result.session.elements.get(result.root_element.child_ids[0])
-        # Should only have one Td child, not two
-        assert len(div.child_ids) == 1
-        assert result.session.elements.get(div.child_ids[0]).component.name == "Td"
+        with pytest.raises(TypeError, match=r"Cannot use.*with.*text content"):
+            rendered(App)
 
 
 class TestHtmlContainerBehavior:

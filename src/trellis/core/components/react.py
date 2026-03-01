@@ -7,12 +7,12 @@ import inspect
 import typing as tp
 from collections.abc import Callable
 from pathlib import Path
-from typing import ParamSpec
+from typing import Literal, ParamSpec
 
 from trellis.bundler.registry import ExportKind, registry
 from trellis.core.components.base import Component, ElementKind
 from trellis.core.components.style_props import Height, Margin, Padding, Width
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.element import ContainerElement, Element
 
 __all__ = ["ReactComponentBase", "react"]
 
@@ -97,13 +97,35 @@ class ReactComponentBase(Component):
                 child()
 
 
+@tp.overload
+def react(
+    source: str,
+    *,
+    export_name: str | None = None,
+    is_container: Literal[True],
+    packages: dict[str, str] | None = None,
+    element_class: type[Element] | None = None,
+) -> Callable[[Callable[P, tp.Any]], Callable[P, ContainerElement]]: ...
+
+
+@tp.overload
+def react(
+    source: str,
+    *,
+    export_name: str | None = None,
+    is_container: Literal[False] = ...,
+    packages: dict[str, str] | None = None,
+    element_class: type[Element] | None = None,
+) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]: ...
+
+
 def react(
     source: str,
     *,
     export_name: str | None = None,
     is_container: bool = False,
     packages: dict[str, str] | None = None,
-    element_class: type[Element] = Element,
+    element_class: type[Element] | None = None,
 ) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]:
     """Decorator that creates a React component wrapper and registers it with the bundler.
 
@@ -118,6 +140,8 @@ def react(
         packages: NPM packages required by this component (name -> version).
         element_class: Element subclass to use for this component's nodes.
     """
+    resolved_element_class = element_class or (ContainerElement if is_container else Element)
+
     # Capture caller's directory at decoration time (before entering decorator)
     frame = inspect.currentframe()
     if frame is not None and frame.f_back is not None:
@@ -128,7 +152,7 @@ def react(
 
     def decorator(
         func: Callable[P, tp.Any],
-    ) -> Callable[P, Element]:
+    ) -> Callable[P, tp.Any]:
         resolved_export_name = export_name or func.__name__
 
         # Create a generated ReactComponentBase subclass
@@ -137,7 +161,7 @@ def react(
             _is_container = is_container
 
         # Create singleton instance
-        _singleton = _Generated(func.__name__, element_class=element_class)
+        _singleton = _Generated(func.__name__, element_class=resolved_element_class)
 
         # Register module with the bundler
         module_name = f"{func.__module__}.{func.__qualname__}".replace(".", "-")
@@ -149,7 +173,7 @@ def react(
         )
 
         @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> tp.Any:
             return _singleton._place(**_merge_style_props(dict(kwargs)))
 
         wrapper._component = _singleton  # type: ignore[attr-defined]

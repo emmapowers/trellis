@@ -18,6 +18,7 @@ if tp.TYPE_CHECKING:
     from trellis.core.components.base import Component
 
 __all__ = [
+    "ContainerElement",
     "Element",
     "props_equal",
 ]
@@ -25,7 +26,7 @@ __all__ = [
 
 @dataclass
 class Element(KeyTrait, RefTrait):
-    """Tree nod e representing a component invocation."""
+    """Tree node representing a component invocation (leaf — no `with` block)."""
 
     component: Component
     _session_ref: weakref.ref[RenderSession]
@@ -55,10 +56,13 @@ class Element(KeyTrait, RefTrait):
             props["child_ids"] = list(self.child_ids)
         return props
 
-    def __enter__(self) -> Element:
+
+@dataclass(eq=False)
+class ContainerElement(Element):
+    """Element that supports `with` blocks for collecting children."""
+
+    def __enter__(self) -> ContainerElement:
         """Enter a `with` block to collect children for a container component."""
-        # Ensure we're inside a render context - containers cannot be used
-        # in callbacks or other code outside of rendering
         session = get_active_session()
         if session is None or session.active is None:
             raise RuntimeError(
@@ -66,11 +70,12 @@ class Element(KeyTrait, RefTrait):
                 f"Container components must be created during rendering, not in callbacks."
             )
 
-        # Validate that the component accepts children
-        if not self.component.is_container:
+        # Hybrid elements: text mode and container mode are mutually exclusive
+        if self.props.get("_text"):
             raise TypeError(
-                f"Component '{self.component.name}' cannot be used with 'with' statement: "
-                f"it does not accept children"
+                f"Cannot use 'with {self.component.name}(...)' with text content. "
+                f'Use either text mode ({self.component.name}("text")) or '
+                f"container mode (with {self.component.name}(): ...)."
             )
 
         # Validate: can't provide children as both prop and via with block

@@ -6,8 +6,9 @@ Elements for creating ordered and unordered lists.
 from __future__ import annotations
 
 import typing as tp
+from typing import overload
 
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
 
 __all__ = [
@@ -55,8 +56,29 @@ def _Li(
     ...
 
 
+@overload
+def Li(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Li(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def Li(
     text: str = "",
+    /,
     *,
     className: str | None = None,
     style: Style | None = None,

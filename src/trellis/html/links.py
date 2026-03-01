@@ -6,8 +6,9 @@ Elements for hyperlinks and images.
 from __future__ import annotations
 
 import typing as tp
+from typing import overload
 
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
 from trellis.html.events import MouseHandler
 from trellis.routing.state import router
@@ -104,8 +105,77 @@ def _A(
     ...
 
 
+def _make_a(
+    text: str,
+    *,
+    href: str | None,
+    target: str | None,
+    rel: str | None,
+    className: str | None,
+    style: Style | None,
+    onClick: MouseHandler | None,
+    use_router: bool,
+    **props: tp.Any,
+) -> Element:
+    """Shared implementation for A() overloads."""
+    # For relative URLs without custom onClick, add router navigation
+    effective_onclick = onClick
+    effective_props = dict(props)
+    if href and onClick is None and use_router and target != "_blank" and _is_relative_url(href):
+        # Capture href in closure for the async callback
+        nav_href = href
+
+        async def router_click(_event: object) -> None:
+            await router().navigate(nav_href)
+
+        effective_onclick = router_click
+        effective_props["data-trellis-router-link"] = "true"
+
+    return _A(
+        _text=text if text else None,
+        href=href,
+        target=target,
+        rel=rel,
+        className=className,
+        style=style,
+        onClick=effective_onclick,
+        **effective_props,
+    )
+
+
+@overload
+def A(
+    text: str,
+    /,
+    *,
+    href: str | None = None,
+    target: str | None = None,
+    rel: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    onClick: MouseHandler | None = None,
+    use_router: bool = True,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def A(
+    *,
+    href: str | None = None,
+    target: str | None = None,
+    rel: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    onClick: MouseHandler | None = None,
+    use_router: bool = True,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def A(
     text: str = "",
+    /,
     *,
     href: str | None = None,
     target: str | None = None,
@@ -142,26 +212,14 @@ def A(
             Set to False to force browser navigation for relative URLs.
         **props: Additional HTML attributes
     """
-    # For relative URLs without custom onClick, add router navigation
-    effective_onclick = onClick
-    effective_props = dict(props)
-    if href and onClick is None and use_router and target != "_blank" and _is_relative_url(href):
-        # Capture href in closure for the async callback
-        nav_href = href
-
-        async def router_click(_event: object) -> None:
-            await router().navigate(nav_href)
-
-        effective_onclick = router_click
-        effective_props["data-trellis-router-link"] = "true"
-
-    return _A(
-        _text=text if text else None,
+    return _make_a(
+        text,
         href=href,
         target=target,
         rel=rel,
         className=className,
         style=style,
-        onClick=effective_onclick,
-        **effective_props,
+        onClick=onClick,
+        use_router=use_router,
+        **props,
     )

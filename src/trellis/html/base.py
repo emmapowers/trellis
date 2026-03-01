@@ -9,10 +9,10 @@ from __future__ import annotations
 import functools
 import typing as tp
 from collections.abc import Callable
-from typing import ParamSpec
+from typing import Literal, ParamSpec, overload
 
 from trellis.core.components.base import Component, ElementKind
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.element import ContainerElement, Element
 
 __all__ = [
     "HtmlElement",
@@ -90,12 +90,32 @@ class HtmlElement(Component):
                 child()
 
 
+@overload
+def html_element(
+    tag: str,
+    *,
+    is_container: Literal[True],
+    name: str | None = None,
+    element_class: type[Element] | None = None,
+) -> Callable[[Callable[P, tp.Any]], Callable[P, ContainerElement]]: ...
+
+
+@overload
+def html_element(
+    tag: str,
+    *,
+    is_container: Literal[False] = ...,
+    name: str | None = None,
+    element_class: type[Element] | None = None,
+) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]: ...
+
+
 def html_element(
     tag: str,
     *,
     is_container: bool = False,
     name: str | None = None,
-    element_class: type[Element] = Element,
+    element_class: type[Element] | None = None,
 ) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]:
     """Decorator to create an HtmlElement from a function signature.
 
@@ -105,38 +125,23 @@ def html_element(
 
     Args:
         tag: The HTML tag name (e.g., "div", "span", "button")
-        is_container: Whether this element accepts children via `with` block
+        is_container: Whether this element accepts children via `with` block.
+            When True, the element returns ContainerElement (supports `with`).
+            When False (default), returns Element (no `with` support).
         name: Optional name override (defaults to function name). Useful for
             internal functions prefixed with underscore.
         element_class: Optional Element subclass to use for elements created by
-            this element. Useful for adding custom trait methods.
+            this element. Defaults to ContainerElement when is_container=True,
+            Element when is_container=False.
 
     Returns:
         A decorator that creates a callable returning Elements
-
-    Example:
-        ```python
-        @html_element("div", is_container=True)
-        def Div(
-            *,
-            className: str | None = None,
-            style: Style | None = None,
-        ) -> Element:
-            '''A div container element.'''
-            ...  # Body ignored
-
-        # Use like a regular function
-        Div(className="container", style={"padding": "20px"})
-
-        # Or as a container
-        with Div(className="wrapper"):
-            Span(text="Hello")
-        ```
     """
+    resolved_element_class = element_class or (ContainerElement if is_container else Element)
 
     def decorator(
         func: Callable[P, tp.Any],
-    ) -> Callable[P, Element]:
+    ) -> Callable[P, tp.Any]:
         # Use provided name or function name
         element_name = name or func.__name__
 
@@ -146,10 +151,10 @@ def html_element(
             _is_container = is_container
 
         # Create singleton instance with explicit name and element_class
-        _singleton = _Generated(element_name, element_class=element_class)
+        _singleton = _Generated(element_name, element_class=resolved_element_class)
 
         @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> tp.Any:
             return _singleton._place(**kwargs)
 
         # Expose the underlying component for introspection

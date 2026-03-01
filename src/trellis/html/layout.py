@@ -6,8 +6,9 @@ Container elements for structuring page content.
 from __future__ import annotations
 
 import typing as tp
+from typing import overload
 
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
 from trellis.html.events import MouseHandler
 
@@ -39,7 +40,7 @@ def Div(
     ...
 
 
-@html_element("span", name="Span")
+@html_element("span", is_container=True, name="Span")
 def _Span(
     *,
     _text: str | None = None,
@@ -53,8 +54,33 @@ def _Span(
     ...
 
 
+@overload
+def Span(
+    text: str,
+    /,
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    onClick: MouseHandler | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Span(
+    *,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    onClick: MouseHandler | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def Span(
     text: str = "",
+    /,
     *,
     className: str | None = None,
     style: Style | None = None,

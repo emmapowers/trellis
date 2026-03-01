@@ -6,8 +6,9 @@ Elements for user input and form handling.
 from __future__ import annotations
 
 import typing as tp
+from typing import overload
 
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
 from trellis.html.events import (
     ChangeHandler,
@@ -113,7 +114,7 @@ def Select(
     ...
 
 
-# Hybrid elements need special handling for text vs container mode
+# Hybrid elements need special handling
 @html_element("button", is_container=True, name="HtmlButton")
 def _HtmlButton(
     *,
@@ -157,8 +158,37 @@ def _HtmlLabel(
 
 
 # Public API for hybrid elements with positional text support
+@overload
+def HtmlButton(
+    text: str,
+    /,
+    *,
+    type: str = "button",
+    disabled: bool = False,
+    onClick: MouseHandler | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def HtmlButton(
+    *,
+    type: str = "button",
+    disabled: bool = False,
+    onClick: MouseHandler | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def HtmlButton(
     text: str = "",
+    /,
     *,
     type: str = "button",
     disabled: bool = False,
@@ -192,6 +222,7 @@ def HtmlButton(
 
 def Option(
     text: str = "",
+    /,
     *,
     value: str | None = None,
     disabled: bool = False,
@@ -208,8 +239,31 @@ def Option(
     )
 
 
+@overload
+def HtmlLabel(
+    text: str,
+    /,
+    *,
+    htmlFor: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def HtmlLabel(
+    *,
+    htmlFor: str | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def HtmlLabel(
     text: str = "",
+    /,
     *,
     htmlFor: str | None = None,
     className: str | None = None,

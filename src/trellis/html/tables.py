@@ -6,8 +6,9 @@ Elements for creating data tables.
 from __future__ import annotations
 
 import typing as tp
+from typing import overload
 
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
 
 __all__ = [
@@ -95,8 +96,35 @@ def _Td(
     ...
 
 
+@overload
+def Th(
+    text: str,
+    /,
+    *,
+    scope: str | None = None,
+    colSpan: int | None = None,
+    rowSpan: int | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Th(
+    *,
+    scope: str | None = None,
+    colSpan: int | None = None,
+    rowSpan: int | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def Th(
     text: str = "",
+    /,
     *,
     scope: str | None = None,
     colSpan: int | None = None,
@@ -124,8 +152,33 @@ def Th(
     )
 
 
+@overload
+def Td(
+    text: str,
+    /,
+    *,
+    colSpan: int | None = None,
+    rowSpan: int | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Td(
+    *,
+    colSpan: int | None = None,
+    rowSpan: int | None = None,
+    className: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
 def Td(
     text: str = "",
+    /,
     *,
     colSpan: int | None = None,
     rowSpan: int | None = None,
