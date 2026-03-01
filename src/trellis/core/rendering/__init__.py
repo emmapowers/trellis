@@ -19,7 +19,6 @@ from trellis.core.rendering.reconcile import reconcile_children
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import (
     RenderSession,
-    SessionRegistry,
     get_active_session,
     get_session_registry,
     is_render_active,
@@ -45,7 +44,6 @@ __all__ = [
     "RenderRemovePatch",
     "RenderSession",
     "RenderUpdatePatch",
-    "SessionRegistry",
     "get_active_session",
     "get_session_registry",
     "is_render_active",

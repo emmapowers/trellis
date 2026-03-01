@@ -11,6 +11,7 @@ from trellis.core.rendering.session import (
 )
 from trellis.core.rendering.traits import KeyTrait
 from trellis.core.state.mutable import Mutable
+from trellis.core.state.ref import RefTrait
 from trellis.utils.logger import logger
 
 if tp.TYPE_CHECKING:
@@ -23,7 +24,7 @@ __all__ = [
 
 
 @dataclass
-class Element(KeyTrait):
+class Element(KeyTrait, RefTrait):
     """Tree nod e representing a component invocation."""
 
     component: Component

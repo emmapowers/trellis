@@ -2,17 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
-import inspect
-import logging
 import time
-import typing as tp
 
-from trellis.core.callback_context import callback_context
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.element import Element, props_equal
-from trellis.core.rendering.element_state import ElementState
+from trellis.core.rendering.lifecycle import invoke_lifecycle_hook
 from trellis.core.rendering.patches import (
     RenderAddPatch,
     RenderPatch,
@@ -25,6 +20,7 @@ from trellis.core.rendering.session import (
     get_active_session,
     set_active_session,
 )
+from trellis.core.rendering.traits import get_trait_hooks
 from trellis.utils.logger import logger
 
 __all__ = [
@@ -167,11 +163,12 @@ def _execute_single_element(
         parent_id,
     )
 
-    # Create ElementState if this is a new element
-    state = session.states.get(element_id)
-    if state is None:
-        state = ElementState(parent_id=parent_id, mounted=True)
-        session.states.set(element_id, state)
+    # Get or create ElementState.
+    state = session.states.get_or_create(element_id)
+    state.element_type = type(element)
+    if not state.mounted:
+        state.parent_id = parent_id
+        state.mounted = True
         # Track mount hook (called after render completes)
         session.active.lifecycle.track_mount(element_id)
     else:
@@ -193,6 +190,12 @@ def _execute_single_element(
     old_element_id = session.active.current_element_id
     session.active.current_element_id = element_id
 
+    # Dispatch trait _before_execute hooks
+    trait_hooks = get_trait_hooks(type(element))
+    for th in trait_hooks:
+        if th.before_execute is not None:
+            th.before_execute(element, element, state, session)
+
     # Push a frame for child IDs created during execution
     session.active.frames.push(parent_id=element_id)
     try:
@@ -204,6 +207,11 @@ def _execute_single_element(
         new_child_ids = list(frame.child_ids) if frame else []
 
         logger.debug("Execution (single) produced %d children", len(new_child_ids))
+
+        # Dispatch trait _after_execute hooks
+        for th in trait_hooks:
+            if th.after_execute is not None:
+                th.after_execute(element, element, state, session)
 
         # Update element in-place with child_ids (execution of children happens in _execute_tree)
         element.child_ids = new_child_ids
@@ -358,7 +366,7 @@ def _remove_element_tree(session: RenderSession, element_id: str) -> None:
 
 
 def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
-    """Call on_mount() for all Stateful instances on a element."""
+    """Call on_mount() for all Stateful instances, then dispatch trait mount hooks."""
     state = session.states.get(element_id)
     if state is None:
         return
@@ -372,34 +380,30 @@ def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
 
     for _, stateful in items:
         if hasattr(stateful, "on_mount"):
-            hook = stateful.on_mount
-            if inspect.iscoroutinefunction(hook):
-                # Async hook: schedule as background task
-                # Capture hook in default arg to avoid closure over loop variable
-                async def run_async_hook(h: tp.Any = hook) -> None:
-                    try:
-                        with callback_context(session, element_id):
-                            await h()
-                    except Exception:
-                        logging.exception("Error in async Stateful.on_mount")
+            invoke_lifecycle_hook(session, element_id, stateful.on_mount, "on_mount")
 
-                task = asyncio.create_task(run_async_hook())
-                session._background_tasks.add(task)
-                task.add_done_callback(session._background_tasks.discard)
-            else:
-                # Sync hook: call directly
-                try:
-                    with callback_context(session, element_id):
-                        hook()
-                except Exception:
-                    logging.exception("Error in Stateful.on_mount")
+    # Dispatch trait _on_trait_mount hooks
+    element = session.elements.get(element_id)
+    if element is not None:
+        for th in get_trait_hooks(type(element)):
+            if th.on_mount is not None:
+                th.on_mount(element, element, state, session)
 
 
 def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
-    """Call on_unmount() for all Stateful instances on a element."""
+    """Dispatch trait unmount hooks, then call on_unmount() for Stateful instances."""
     state = session.states.get(element_id)
     if state is None:
         return
+
+    # Dispatch trait _on_trait_unmount hooks before stateful hooks.
+    # Use state.element_type since the element may already be removed from storage.
+    element = session.elements.get(element_id)
+    if state.element_type is not None:
+        for th in get_trait_hooks(state.element_type):
+            if th.on_unmount is not None:
+                th.on_unmount(element, element, state, session)
+
     # Get states sorted by call index, reversed
     items = list(state.local_state.items())
     items.sort(key=lambda x: x[0][1], reverse=True)
@@ -409,27 +413,7 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
 
     for _, stateful in items:
         if hasattr(stateful, "on_unmount"):
-            hook = stateful.on_unmount
-            if inspect.iscoroutinefunction(hook):
-                # Async hook: schedule as background task
-                # Capture hook in default arg to avoid closure over loop variable
-                async def run_async_hook(h: tp.Any = hook) -> None:
-                    try:
-                        with callback_context(session, element_id):
-                            await h()
-                    except Exception:
-                        logging.exception("Error in async Stateful.on_unmount")
-
-                task = asyncio.create_task(run_async_hook())
-                session._background_tasks.add(task)
-                task.add_done_callback(session._background_tasks.discard)
-            else:
-                # Sync hook: call directly
-                try:
-                    with callback_context(session, element_id):
-                        hook()
-                except Exception:
-                    logging.exception("Error in Stateful.on_unmount")
+            invoke_lifecycle_hook(session, element_id, stateful.on_unmount, "on_unmount")
 
 
 def _process_pending_hooks(

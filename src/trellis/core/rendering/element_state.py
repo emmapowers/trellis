@@ -8,6 +8,8 @@ from __future__ import annotations
 import typing as tp
 from dataclasses import dataclass, field
 
+S = tp.TypeVar("S")
+
 __all__ = ["ElementStateStore"]
 
 
@@ -24,6 +26,8 @@ class ElementState:
         state_call_count: Counter for consistent Stateful() instantiation ordering
         context: State context from `with state:` blocks
         parent_id: Parent element's ID (for context walking)
+        element_type: Element class type, for trait hook dispatch after removal
+        _trait_state: Per-trait state keyed by state type
     """
 
     mounted: bool = False
@@ -31,6 +35,21 @@ class ElementState:
     state_call_count: int = 0
     context: dict[type, tp.Any] = field(default_factory=dict)
     parent_id: str | None = None
+    element_type: type | None = None
+    _trait_state: dict[type, tp.Any] = field(default_factory=dict)
+
+    def trait(self, state_type: type[S]) -> S:
+        """Get or create typed trait state.
+
+        Each state_type gets a single instance, created on first access
+        and cached for subsequent calls.
+        """
+        existing: S | None = self._trait_state.get(state_type)
+        if existing is not None:
+            return existing
+        instance = state_type()
+        self._trait_state[state_type] = instance
+        return instance
 
 
 class ElementStateStore:
