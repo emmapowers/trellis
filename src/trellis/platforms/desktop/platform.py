@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import importlib
+import signal
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from anyio.from_thread import start_blocking_portal
 from pydantic import BaseModel
-from pytauri import AppHandle, Commands
+from pytauri import AppHandle, Commands, Manager
 from pytauri.ipc import Channel, JavaScriptChannelId  # noqa: TC002 - runtime for pytauri
 from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
 from pytauri_wheel.lib import builder_factory, context_factory
@@ -48,7 +49,7 @@ def _print_startup_banner(title: str) -> None:
     _console.print()
     _console.print(f"  [bold]➜[/bold]  [cyan]Window:[/cyan]   {title}")
     _console.print()
-    _console.print("  [dim]Close window to exit[/dim]")
+    _console.print("  [dim]Press Ctrl+C or close window to exit[/dim]")
     _console.print()
 
 
@@ -256,12 +257,39 @@ class DesktopPlatform(Platform):
             opener_plugin: Any = importlib.import_module("pytauri_plugins.opener")
             app.handle().plugin(opener_plugin.init())
 
-            # Run until window is closed
+            # Replace asyncio's SIGINT handler (which raises KeyboardInterrupt)
+            # with one that closes all windows to trigger a clean exit.
+            #
+            # Why close windows instead of calling handle.exit()?
+            # handle.exit() sends a message via the tao event loop proxy, but
+            # the signal handler fires inside the run callback (the only time
+            # Python has the GIL).  tao's macOS event loop guards against
+            # re-entrant processing (in_callback flag), so the exit message
+            # sits in the channel unprocessed and run_return never returns.
+            # Closing windows dispatches OS-level events that bypass this guard.
+            #
+            # The callback (_on_run_event) is still needed even though it's a
+            # no-op: without it, pytauri uses a Rust-only noop that never
+            # acquires the GIL, so Python signals are never delivered.
+            handle = app.handle()
+            prev_sigint = signal.getsignal(signal.SIGINT)
+
+            def _on_run_event(app_handle: AppHandle, event: object) -> None:
+                pass
+
+            def _sigint_handler(signum: int, frame: Any) -> None:
+                _console.print("\n  [dim]Shutting down...[/dim]\n")
+                for window in Manager.webview_windows(handle).values():
+                    window.close()
+
+            signal.signal(signal.SIGINT, _sigint_handler)
+
             try:
-                exit_code = app.run_return()
+                exit_code = app.run_return(_on_run_event)
                 if exit_code != 0:
                     raise RuntimeError(f"Desktop app exited with code {exit_code}")
             finally:
+                signal.signal(signal.SIGINT, prev_sigint)
                 _clear_dialog_runtime()
 
 
