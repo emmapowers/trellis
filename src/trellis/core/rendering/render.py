@@ -21,7 +21,6 @@ from trellis.core.rendering.session import (
     set_active_session,
 )
 from trellis.core.rendering.traits import get_trait_hooks
-from trellis.core.state.ref import _RefHolder
 from trellis.utils.logger import logger
 
 __all__ = [
@@ -380,10 +379,6 @@ def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
         logger.debug("Calling on_mount for %s (%d states)", element_id, len(items))
 
     for _, stateful in items:
-        # _RefHolder uses __getattr__ which would forward to the underlying
-        # ref's on_mount — skip it since RefTrait handles ref lifecycle
-        if isinstance(stateful, _RefHolder):
-            continue
         if hasattr(stateful, "on_mount"):
             invoke_lifecycle_hook(session, element_id, stateful.on_mount, "on_mount")
 
@@ -417,9 +412,6 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
         logger.debug("Calling on_unmount for %s", element_id)
 
     for _, stateful in items:
-        # _RefHolder uses __getattr__ — skip, RefTrait handles ref lifecycle
-        if isinstance(stateful, _RefHolder):
-            continue
         if hasattr(stateful, "on_unmount"):
             invoke_lifecycle_hook(session, element_id, stateful.on_unmount, "on_unmount")
 

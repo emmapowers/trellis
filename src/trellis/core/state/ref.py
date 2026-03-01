@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import typing as tp
 import weakref
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from trellis.core.rendering.lifecycle import invoke_lifecycle_hook
 from trellis.core.rendering.session import get_active_session
@@ -103,10 +103,19 @@ class _RefHolder(tp.Generic[T]):
 
 @dataclass
 class RefTraitState:
-    """Per-element state for RefTrait, stored via ElementState.trait()."""
+    """Per-element state for RefTrait, stored via ElementState.trait().
+
+    Fields:
+        exposed_ref: The ref object exposed by a child via set_ref()
+        ref_holder: The holder attached to a child via Element.ref()
+        holders: Holders created by get_ref() in the parent, keyed by call index
+        ref_call_count: Counter for stable get_ref() ordering across re-renders
+    """
 
     exposed_ref: tp.Any = None
     ref_holder: tp.Any = None
+    holders: dict[int, _RefHolder[tp.Any]] = field(default_factory=dict)
+    ref_call_count: int = 0
 
 
 class RefTrait:
@@ -162,9 +171,10 @@ class RefTrait:
     def _before_execute(
         self, element: Element, state: ElementState, session: RenderSession
     ) -> None:
-        """Reset exposed_ref before execute so we detect if child calls set_ref()."""
+        """Reset exposed_ref and ref_call_count before execute."""
         ts = state.trait(RefTraitState)
         ts.exposed_ref = None
+        ts.ref_call_count = 0
 
     def _after_execute(self, element: Element, state: ElementState, session: RenderSession) -> None:
         """Wire ref holder to exposed ref after component executes."""
@@ -212,7 +222,7 @@ def get_ref(ref_type: type[T]) -> _RefHolder[T]:
 
     Must be called during component execution (render context).
     Returns a cached _RefHolder that persists across re-renders,
-    using the same state_call_count mechanism as Stateful.
+    stored in RefTraitState with its own call counter.
 
     Args:
         ref_type: The expected ref type (Ref subclass or Stateful subclass)
@@ -234,15 +244,16 @@ def get_ref(ref_type: type[T]) -> _RefHolder[T]:
     assert element_id is not None
 
     state = session.states.get_or_create(element_id)
-    call_idx = state.state_call_count
-    state.state_call_count += 1
-    key = (_RefHolder, call_idx)
+    ts = state.trait(RefTraitState)
+    call_idx = ts.ref_call_count
+    ts.ref_call_count += 1
 
-    if key in state.local_state:
-        return tp.cast("_RefHolder[T]", state.local_state[key])
+    existing = ts.holders.get(call_idx)
+    if existing is not None:
+        return tp.cast("_RefHolder[T]", existing)
 
     holder = _RefHolder(ref_type)
-    state.local_state[key] = holder
+    ts.holders[call_idx] = holder
     return holder
 
 

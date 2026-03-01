@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from trellis.core.components.composition import component
-from trellis.core.state.ref import Ref, _RefHolder, get_ref, set_ref
+from trellis.core.state.ref import Ref, RefTraitState, _RefHolder, get_ref, set_ref
 from trellis.core.state.stateful import Stateful
 
 if TYPE_CHECKING:
@@ -19,6 +19,13 @@ if TYPE_CHECKING:
     from trellis.core.components.composition import CompositionComponent
 
     CapturePatches = Callable[[CompositionComponent], PatchCapture]
+
+
+def _get_holder(capture: PatchCapture, idx: int = 0) -> _RefHolder[object]:
+    """Get a ref holder from the root element's RefTraitState by call index."""
+    parent_state = capture.session.states.get(capture.session.root_element.id)
+    assert parent_state is not None
+    return parent_state.trait(RefTraitState).holders[idx]
 
 
 # ---- Ref types for tests ----
@@ -154,10 +161,7 @@ class TestElementRef:
         capture = capture_patches(Parent)
         capture.render()
 
-        # Get the holder from parent's state
-        parent_state = capture.session.states.get(capture.session.root_element.id)
-        holder = parent_state.local_state[(_RefHolder, 0)]
-
+        holder = _get_holder(capture)
         assert holder
         assert holder.is_open() is False
         holder.open()
@@ -183,8 +187,7 @@ class TestElementRef:
         capture.session.dirty.mark(capture.session.root_element.id)
         capture.render()
 
-        parent_state = capture.session.states.get(capture.session.root_element.id)
-        holder = parent_state.local_state[(_RefHolder, 0)]
+        holder = _get_holder(capture)
         assert holder
 
     def test_set_ref_without_holder_is_noop(self, capture_patches: CapturePatches) -> None:
@@ -233,8 +236,7 @@ class TestElementRef:
         capture = capture_patches(Parent)
         capture.render()
 
-        parent_state = capture.session.states.get(capture.session.root_element.id)
-        holder = parent_state.local_state[(_RefHolder, 0)]
+        holder = _get_holder(capture)
         assert holder
         assert holder.is_collapsed() is False
 
@@ -341,8 +343,7 @@ class TestRefLifecycle:
         capture = capture_patches(Parent)
         capture.render()
 
-        parent_state = capture.session.states.get(capture.session.root_element.id)
-        holder = parent_state.local_state[(_RefHolder, 0)]
+        holder = _get_holder(capture)
         assert holder  # attached
 
         show_child[0] = False
@@ -439,8 +440,7 @@ class TestRefEdgeCases:
         capture = capture_patches(Parent)
         capture.render()
 
-        parent_state = capture.session.states.get(capture.session.root_element.id)
-        holder = parent_state.local_state[(_RefHolder, 0)]
+        holder = _get_holder(capture)
         assert holder  # attached
 
         # Get child element_id and its state to trigger a re-render of the child
@@ -474,9 +474,8 @@ class TestRefEdgeCases:
         capture = capture_patches(Parent)
         capture.render()
 
-        parent_state = capture.session.states.get(capture.session.root_element.id)
-        holder_a = parent_state.local_state[(_RefHolder, 0)]
-        holder_b = parent_state.local_state[(_RefHolder, 1)]
+        holder_a = _get_holder(capture, 0)
+        holder_b = _get_holder(capture, 1)
         assert holder_a
         assert not holder_b
 
@@ -504,9 +503,8 @@ class TestRefEdgeCases:
         capture = capture_patches(Parent)
         capture.render()
 
-        parent_state = capture.session.states.get(capture.session.root_element.id)
-        holder_a = parent_state.local_state[(_RefHolder, 0)]
-        holder_b = parent_state.local_state[(_RefHolder, 1)]
+        holder_a = _get_holder(capture, 0)
+        holder_b = _get_holder(capture, 1)
 
         assert holder_a
         assert holder_b
@@ -541,8 +539,7 @@ class TestRefEdgeCases:
         capture = capture_patches(Parent)
         capture.render()
 
-        parent_state = capture.session.states.get(capture.session.root_element.id)
-        holder = parent_state.local_state[(_RefHolder, 0)]
+        holder = _get_holder(capture)
 
         assert holder
         assert holder.is_open() is False
@@ -578,8 +575,7 @@ class TestRefEdgeCases:
         capture = capture_patches(Parent)
         capture.render()
 
-        parent_state = capture.session.states.get(capture.session.root_element.id)
-        holder = parent_state.local_state[(_RefHolder, 0)]
+        holder = _get_holder(capture)
         assert holder
 
         # Re-render the child directly
@@ -640,8 +636,7 @@ class TestDialogRefPattern:
         assert dialog_renders == [False]
 
         # Get holder and call open()
-        app_state = capture.session.states.get(capture.session.root_element.id)
-        holder = app_state.local_state[(_RefHolder, 0)]
+        holder = _get_holder(capture)
         assert holder
 
         holder.open()
