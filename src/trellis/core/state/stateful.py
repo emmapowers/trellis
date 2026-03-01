@@ -58,6 +58,7 @@ from types import TracebackType
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering.element import Element
+    from trellis.core.rendering.session import RenderSession
 
 from trellis.core.callback_context import get_callback_node_id, get_callback_session
 from trellis.core.rendering.session import get_active_session, is_render_active
@@ -93,7 +94,7 @@ def _is_tracked_attribute(cls: type, name: str) -> bool:
     return False
 
 
-def _register_context_dependency(session: tp.Any, instance: Stateful) -> None:
+def _register_context_dependency(session: RenderSession, instance: Stateful) -> None:
     """Register the current element as a context watcher on a Stateful instance.
 
     Called during render when from_context() finds an instance. Adds the
@@ -107,13 +108,7 @@ def _register_context_dependency(session: tp.Any, instance: Stateful) -> None:
     if element is None:
         return
 
-    try:
-        watchers: weakref.WeakSet[Element] = object.__getattribute__(instance, "_context_watchers")
-    except AttributeError:
-        watchers = weakref.WeakSet()
-        object.__setattr__(instance, "_context_watchers", watchers)
-
-    watchers.add(element)
+    instance._context_watchers.add(element)
 
 
 def _mark_context_consumers_dirty(old_instance: Stateful) -> None:
@@ -122,15 +117,10 @@ def _mark_context_consumers_dirty(old_instance: Stateful) -> None:
     Called from __enter__ when a different Stateful instance replaces context
     for the same type. Uses the same pattern as _TrackedMixin._mark_dirty().
     """
-    try:
-        watchers = object.__getattribute__(old_instance, "_context_watchers")
-    except AttributeError:
-        return
-
-    for element in watchers:
-        session = element._session_ref()
-        if session is not None:
-            session.dirty.mark(element.id)
+    for element in old_instance._context_watchers:
+        element_session = element._session_ref()
+        if element_session is not None:
+            element_session.dirty.mark(element.id)
 
 
 @dataclass(kw_only=True)
@@ -173,6 +163,7 @@ class Stateful:
     """
 
     _state_props: dict[str, StatePropertyInfo]
+    _context_watchers: weakref.WeakSet[Element]
     _initialized: bool
 
     def __new__(cls, *args: tp.Any, **kwargs: tp.Any) -> Stateful:
@@ -202,6 +193,7 @@ class Stateful:
                     return  # Skip - cached instance
                 original_init(self, *a, **kw)
                 object.__setattr__(self, "_initialized", True)
+                object.__setattr__(self, "_context_watchers", weakref.WeakSet())
 
             cls.__init__ = wrapped_init  # type: ignore[assignment]
             cls._init_wrapped = True
