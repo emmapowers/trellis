@@ -510,6 +510,137 @@ class TestCallbackFunction:
         assert state_ref[0].name == "John Doe"
 
 
+class TestMutableVersionFlow:
+    """Tests for version tracking through serialization and callback flow."""
+
+    def test_mutable_serializes_version_zero_initially(self) -> None:
+        """First render serializes version: 0 in __mutable__ payload."""
+
+        @dataclass
+        class State(Stateful):
+            text: str = "hello"
+
+        @component
+        def TestComponent() -> None:
+            state = State()
+            w.TextInput(value=mutable(state.text))
+
+        ctx = RenderSession(TestComponent)
+        result = render_to_tree(ctx)
+
+        text_input = result["children"][0]
+        value_prop = text_input["props"]["value"]
+        assert value_prop["version"] == 0
+
+    def test_mutable_serializes_updated_version_after_callback(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """Invoke callback with version=5, re-render -> serialized version is 5."""
+
+        @dataclass
+        class State(Stateful):
+            text: str = "hello"
+
+        input_id: list[str] = []
+
+        @component
+        def TestComponent() -> None:
+            state = State()
+            node = w.TextInput(value=mutable(state.text))
+            input_id.append(node.id)
+
+        capture = capture_patches(TestComponent)
+        capture.render()
+
+        # Get the mutable callback
+        input_node = capture.session.elements.get(input_id[0])
+        serialized = serialize_element(input_node, capture.session)
+        cb_id = serialized["props"]["value"]["__mutable__"]
+
+        # Invoke with version
+        cb = get_callback_from_id(capture.session, cb_id)
+        cb("world", 5)
+
+        # Re-render
+        capture.render()
+
+        # Check serialized version
+        input_node = capture.session.elements.get(input_id[0])
+        serialized = serialize_element(input_node, capture.session)
+        assert serialized["props"]["value"]["version"] == 5
+
+    def test_callback_function_version_flow(self) -> None:
+        """callback(state.name, handler) path also stores/serializes version."""
+
+        @dataclass
+        class State(Stateful):
+            text: str = "hello"
+
+        handler_calls: list[str] = []
+
+        def custom_handler(value: str) -> None:
+            handler_calls.append(value)
+
+        @component
+        def TestComponent() -> None:
+            state = State()
+            w.TextInput(value=callback(state.text, custom_handler))
+
+        ctx = RenderSession(TestComponent)
+        result = render_to_tree(ctx)
+
+        text_input = result["children"][0]
+        value_prop = text_input["props"]["value"]
+
+        # Initial version is 0
+        assert value_prop["version"] == 0
+
+        # Invoke callback with version
+        cb = get_callback_from_id(ctx, value_prop["__mutable__"])
+        cb("world", 3)
+
+        # Custom handler still receives only the value
+        assert handler_calls == ["world"]
+
+    def test_full_round_trip_version(self, capture_patches: "type[PatchCapture]") -> None:
+        """render -> invoke callback with (value, version) -> re-render -> serialized version matches."""
+
+        @dataclass
+        class State(Stateful):
+            name: str = "initial"
+
+        input_id: list[str] = []
+
+        @component
+        def TestComponent() -> None:
+            state = State()
+            node = w.TextInput(value=mutable(state.name))
+            input_id.append(node.id)
+
+        capture = capture_patches(TestComponent)
+        capture.render()
+
+        # Get initial serialized state
+        input_node = capture.session.elements.get(input_id[0])
+        serialized = serialize_element(input_node, capture.session)
+        assert serialized["props"]["value"]["value"] == "initial"
+        assert serialized["props"]["value"]["version"] == 0
+
+        # Simulate client sending value with version
+        cb_id = serialized["props"]["value"]["__mutable__"]
+        cb = get_callback_from_id(capture.session, cb_id)
+        cb("updated", 42)
+
+        # Re-render
+        capture.render()
+
+        # Verify serialized output has updated version
+        input_node = capture.session.elements.get(input_id[0])
+        serialized = serialize_element(input_node, capture.session)
+        assert serialized["props"]["value"]["value"] == "updated"
+        assert serialized["props"]["value"]["version"] == 42
+
+
 class TestMutableRerender:
     """Tests for mutable bindings across re-renders.
 

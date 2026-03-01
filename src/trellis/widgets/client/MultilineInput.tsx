@@ -1,6 +1,7 @@
 import React from "react";
 import { colors, radius, typography, spacing, focusRing } from "@trellis/trellis-core/theme";
-import { Mutable, unwrapMutable } from "@trellis/trellis-core/core/types";
+import { Mutable } from "@trellis/trellis-core/core/types";
+import { useTextValue } from "@trellis/trellis-core/core/useTextValue";
 
 interface MultilineInputProps {
   value?: string | Mutable<string>;
@@ -48,7 +49,7 @@ export function MultilineInput({
   className,
   style,
 }: MultilineInputProps): React.ReactElement {
-  const { value, setValue } = unwrapMutable(valueProp);
+  const tv = useTextValue<HTMLTextAreaElement>(valueProp);
   const [isFocusVisible, setIsFocusVisible] = React.useState(false);
 
   const computedStyle: React.CSSProperties = {
@@ -61,14 +62,15 @@ export function MultilineInput({
 
   return (
     <textarea
+      ref={tv.ref}
       className={className}
       style={computedStyle}
-      value={value}
+      value={tv.value}
       placeholder={placeholder}
       rows={rows}
       disabled={disabled}
       readOnly={read_only}
-      onChange={(event) => setValue?.(event.target.value)}
+      onChange={tv.onChange}
       onFocus={(event) => {
         if (event.target.matches(":focus-visible")) {
           setIsFocusVisible(true);

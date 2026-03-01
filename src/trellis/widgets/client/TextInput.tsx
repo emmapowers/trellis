@@ -1,7 +1,8 @@
-import React, { useRef } from "react";
+import React from "react";
 import { useTextField } from "react-aria";
 import { colors, radius, typography, spacing, focusRing } from "@trellis/trellis-core/theme";
-import { Mutable, unwrapMutable } from "@trellis/trellis-core/core/types";
+import { Mutable } from "@trellis/trellis-core/core/types";
+import { useTextValue } from "@trellis/trellis-core/core/useTextValue";
 
 interface TextInputProps {
   value?: string | Mutable<string>;
@@ -37,18 +38,16 @@ export function TextInput({
   className,
   style,
 }: TextInputProps): React.ReactElement {
-  // Unwrap mutable binding if present
-  const { value, setValue } = unwrapMutable(valueProp);
+  const tv = useTextValue<HTMLInputElement>(valueProp);
 
-  const ref = useRef<HTMLInputElement>(null);
   const { inputProps } = useTextField(
     {
-      value,
-      onChange: setValue,
+      value: tv.value,
+      onChange: tv.setValue,
       placeholder,
       isDisabled: disabled,
     },
-    ref
+    tv.ref
   );
   const [isFocusVisible, setIsFocusVisible] = React.useState(false);
 
@@ -62,9 +61,13 @@ export function TextInput({
   return (
     <input
       {...inputProps}
-      ref={ref}
+      ref={tv.ref}
       className={className}
       style={computedStyle}
+      onChange={(e) => {
+        tv.saveCursor(e);
+        inputProps.onChange?.(e);
+      }}
       onFocus={(e) => {
         inputProps.onFocus?.(e);
         if (e.target.matches(":focus-visible")) {

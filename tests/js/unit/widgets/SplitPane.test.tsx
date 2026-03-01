@@ -2,11 +2,12 @@ import React from "react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent } from "../../test-utils";
 import { SplitPane } from "../../../../src/trellis/widgets/client/SplitPane";
-import { Mutable } from "@trellis/trellis-core/core/types";
+import { Mutable, resetMutableStates } from "@trellis/trellis-core/core/types";
 
 describe("SplitPane", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    resetMutableStates();
   });
 
   it("renders exactly two panes", () => {
@@ -98,7 +99,7 @@ describe("SplitPane", () => {
 
   it("calls Mutable setValue on drag completion (mouseUp)", () => {
     const onEvent = vi.fn();
-    const mutable = new Mutable<number>({ __mutable__: "split-cb", value: 0.5 }, onEvent);
+    const mutable = new Mutable<number>({ __mutable__: "split-cb", value: 0.5, version: 0 }, onEvent);
 
     render(
       <SplitPane split={mutable} min_size={50}>
@@ -131,7 +132,7 @@ describe("SplitPane", () => {
 
     // Release — setValue should fire
     fireEvent.mouseUp(window);
-    expect(onEvent).toHaveBeenCalledWith("split-cb", [0.75]);
+    expect(onEvent).toHaveBeenCalledWith("split-cb", [0.75, 1]);
   });
 
   it("works with a plain number split prop (no Mutable)", () => {
