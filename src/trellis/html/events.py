@@ -29,17 +29,32 @@ __all__ = [
     "BaseEvent",
     "ChangeEvent",
     "ChangeEventHandler",
+    "ChangeHandler",
+    "DragEvent",
+    "DragEventHandler",
+    "DragHandler",
     "EventHandler",
     "FocusEvent",
     "FocusEventHandler",
+    "FocusHandler",
     "FormEvent",
     "FormEventHandler",
+    "FormHandler",
     "InputEvent",
     "InputEventHandler",
+    "InputHandler",
     "KeyboardEvent",
     "KeyboardEventHandler",
+    "KeyboardHandler",
     "MouseEvent",
     "MouseEventHandler",
+    "MouseHandler",
+    "ScrollEvent",
+    "ScrollEventHandler",
+    "ScrollHandler",
+    "WheelEvent",
+    "WheelEventHandler",
+    "WheelHandler",
     "get_event_class",
 ]
 
@@ -62,17 +77,7 @@ class BaseEvent:
 
 @dataclass(frozen=True)
 class MouseEvent(BaseEvent):
-    """Mouse event data matching React's MouseEvent.
-
-    Attributes:
-        clientX: X coordinate relative to viewport
-        clientY: Y coordinate relative to viewport
-        button: Which button was pressed (0=left, 1=middle, 2=right)
-        altKey: Whether Alt key was held
-        ctrlKey: Whether Ctrl key was held
-        shiftKey: Whether Shift key was held
-        metaKey: Whether Meta/Cmd key was held
-    """
+    """Mouse event data matching React's MouseEvent."""
 
     clientX: int = 0
     clientY: int = 0
@@ -88,17 +93,7 @@ class MouseEvent(BaseEvent):
 
 @dataclass(frozen=True)
 class KeyboardEvent(BaseEvent):
-    """Keyboard event data matching React's KeyboardEvent.
-
-    Attributes:
-        key: The key value (e.g., 'Enter', 'a', 'ArrowUp')
-        code: Physical key code (e.g., 'KeyA', 'Enter')
-        altKey: Whether Alt key was held
-        ctrlKey: Whether Ctrl key was held
-        shiftKey: Whether Shift key was held
-        metaKey: Whether Meta/Cmd key was held
-        repeat: Whether key is being held down (auto-repeat)
-    """
+    """Keyboard event data matching React's KeyboardEvent."""
 
     key: str = ""
     code: str = ""
@@ -133,15 +128,39 @@ class InputEvent(BaseEvent):
 
 @dataclass(frozen=True)
 class ChangeEvent(BaseEvent):
-    """Change event data for onChange.
-
-    Attributes:
-        value: The new value of the input element
-        checked: For checkboxes/radios, whether it's checked
-    """
+    """Change event data for onChange."""
 
     value: str = ""
     checked: bool = False
+
+
+@dataclass(frozen=True)
+class ScrollEvent(BaseEvent):
+    """Scroll event data from scrollable containers."""
+
+    scrollTop: float = 0.0
+    scrollLeft: float = 0.0
+    scrollWidth: float = 0.0
+    scrollHeight: float = 0.0
+    clientWidth: float = 0.0
+    clientHeight: float = 0.0
+
+
+@dataclass(frozen=True)
+class WheelEvent(MouseEvent):
+    """Wheel event data (extends MouseEvent with delta fields)."""
+
+    deltaX: float = 0.0
+    deltaY: float = 0.0
+    deltaZ: float = 0.0
+    deltaMode: int = 0
+
+
+@dataclass(frozen=True)
+class DragEvent(MouseEvent):
+    """Drag event data (extends MouseEvent with dataTransfer)."""
+
+    dataTransfer: dict[str, object] | None = None
 
 
 # =============================================================================
@@ -158,6 +177,9 @@ FocusEventHandler = Callable[[FocusEvent], None] | Callable[[FocusEvent], Awaita
 FormEventHandler = Callable[[FormEvent], None] | Callable[[FormEvent], Awaitable[None]]
 InputEventHandler = Callable[[InputEvent], None] | Callable[[InputEvent], Awaitable[None]]
 ChangeEventHandler = Callable[[ChangeEvent], None] | Callable[[ChangeEvent], Awaitable[None]]
+ScrollEventHandler = Callable[[ScrollEvent], None] | Callable[[ScrollEvent], Awaitable[None]]
+WheelEventHandler = Callable[[WheelEvent], None] | Callable[[WheelEvent], Awaitable[None]]
+DragEventHandler = Callable[[DragEvent], None] | Callable[[DragEvent], Awaitable[None]]
 
 # Union type for any event handler (simple or typed, sync or async)
 MouseHandler = EventHandler | MouseEventHandler
@@ -166,6 +188,9 @@ FocusHandler = EventHandler | FocusEventHandler
 FormHandler = EventHandler | FormEventHandler
 InputHandler = EventHandler | InputEventHandler
 ChangeHandler = EventHandler | ChangeEventHandler
+ScrollHandler = EventHandler | ScrollEventHandler
+WheelHandler = EventHandler | WheelEventHandler
+DragHandler = EventHandler | DragEventHandler
 
 
 # =============================================================================
@@ -188,13 +213,23 @@ EVENT_TYPE_MAP: dict[str, type[BaseEvent]] = {
     # Keyboard events
     "keydown": KeyboardEvent,
     "keyup": KeyboardEvent,
-    "keypress": KeyboardEvent,
     # Form events
     "change": ChangeEvent,
     "input": InputEvent,
     "focus": FocusEvent,
     "blur": FocusEvent,
     "submit": FormEvent,
+    # Scroll/wheel events
+    "scroll": ScrollEvent,
+    "wheel": WheelEvent,
+    # Drag events
+    "dragstart": DragEvent,
+    "drag": DragEvent,
+    "dragend": DragEvent,
+    "dragenter": DragEvent,
+    "dragover": DragEvent,
+    "dragleave": DragEvent,
+    "drop": DragEvent,
 }
 
 

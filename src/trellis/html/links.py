@@ -10,7 +10,7 @@ from typing import overload
 
 from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
-from trellis.html.events import MouseHandler
+from trellis.html.events import KeyboardHandler, MouseHandler
 from trellis.routing.state import router
 
 __all__ = [
@@ -84,6 +84,8 @@ def Img(
     style: Style | None = None,
     id: str | None = None,
     onClick: MouseHandler | None = None,
+    onDoubleClick: MouseHandler | None = None,
+    onContextMenu: MouseHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """An image element."""
@@ -103,6 +105,10 @@ def _A(
     style: Style | None = None,
     id: str | None = None,
     onClick: MouseHandler | None = None,
+    onDoubleClick: MouseHandler | None = None,
+    onContextMenu: MouseHandler | None = None,
+    onKeyDown: KeyboardHandler | None = None,
+    onKeyUp: KeyboardHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """An anchor (link) element."""
@@ -120,6 +126,10 @@ def _make_a(
     style: Style | None,
     id: str | None,
     onClick: MouseHandler | None,
+    onDoubleClick: MouseHandler | None,
+    onContextMenu: MouseHandler | None,
+    onKeyDown: KeyboardHandler | None,
+    onKeyUp: KeyboardHandler | None,
     use_router: bool,
     **props: tp.Any,
 ) -> Element:
@@ -147,6 +157,10 @@ def _make_a(
         style=style,
         id=id,
         onClick=effective_onclick,
+        onDoubleClick=onDoubleClick,
+        onContextMenu=onContextMenu,
+        onKeyDown=onKeyDown,
+        onKeyUp=onKeyUp,
         **effective_props,
     )
 
@@ -164,6 +178,10 @@ def A(
     style: Style | None = None,
     id: str | None = None,
     onClick: MouseHandler | None = None,
+    onDoubleClick: MouseHandler | None = None,
+    onContextMenu: MouseHandler | None = None,
+    onKeyDown: KeyboardHandler | None = None,
+    onKeyUp: KeyboardHandler | None = None,
     use_router: bool = True,
     **props: tp.Any,
 ) -> Element: ...
@@ -180,6 +198,10 @@ def A(
     style: Style | None = None,
     id: str | None = None,
     onClick: MouseHandler | None = None,
+    onDoubleClick: MouseHandler | None = None,
+    onContextMenu: MouseHandler | None = None,
+    onKeyDown: KeyboardHandler | None = None,
+    onKeyUp: KeyboardHandler | None = None,
     use_router: bool = True,
     **props: tp.Any,
 ) -> ContainerElement: ...
@@ -197,6 +219,10 @@ def A(
     style: Style | None = None,
     id: str | None = None,
     onClick: MouseHandler | None = None,
+    onDoubleClick: MouseHandler | None = None,
+    onContextMenu: MouseHandler | None = None,
+    onKeyDown: KeyboardHandler | None = None,
+    onKeyUp: KeyboardHandler | None = None,
     use_router: bool = True,
     **props: tp.Any,
 ) -> Element:
@@ -236,6 +262,10 @@ def A(
         style=style,
         id=id,
         onClick=onClick,
+        onDoubleClick=onDoubleClick,
+        onContextMenu=onContextMenu,
+        onKeyDown=onKeyDown,
+        onKeyUp=onKeyUp,
         use_router=use_router,
         **props,
     )

@@ -10,7 +10,13 @@ from typing import overload
 
 from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
-from trellis.html.events import MouseHandler
+from trellis.html.events import (
+    DragHandler,
+    KeyboardHandler,
+    MouseHandler,
+    ScrollHandler,
+    WheelHandler,
+)
 
 __all__ = [
     "Article",
@@ -32,8 +38,21 @@ def Div(
     style: Style | None = None,
     id: str | None = None,
     onClick: MouseHandler | None = None,
+    onDoubleClick: MouseHandler | None = None,
+    onContextMenu: MouseHandler | None = None,
     onMouseEnter: MouseHandler | None = None,
     onMouseLeave: MouseHandler | None = None,
+    onKeyDown: KeyboardHandler | None = None,
+    onKeyUp: KeyboardHandler | None = None,
+    onScroll: ScrollHandler | None = None,
+    onWheel: WheelHandler | None = None,
+    onDragStart: DragHandler | None = None,
+    onDrag: DragHandler | None = None,
+    onDragEnd: DragHandler | None = None,
+    onDragEnter: DragHandler | None = None,
+    onDragOver: DragHandler | None = None,
+    onDragLeave: DragHandler | None = None,
+    onDrop: DragHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """A div container element."""
@@ -48,6 +67,10 @@ def _Span(
     style: Style | None = None,
     id: str | None = None,
     onClick: MouseHandler | None = None,
+    onDoubleClick: MouseHandler | None = None,
+    onContextMenu: MouseHandler | None = None,
+    onKeyDown: KeyboardHandler | None = None,
+    onKeyUp: KeyboardHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """An inline span element."""
@@ -63,6 +86,10 @@ def Span(
     style: Style | None = None,
     id: str | None = None,
     onClick: MouseHandler | None = None,
+    onDoubleClick: MouseHandler | None = None,
+    onContextMenu: MouseHandler | None = None,
+    onKeyDown: KeyboardHandler | None = None,
+    onKeyUp: KeyboardHandler | None = None,
     **props: tp.Any,
 ) -> Element: ...
 
@@ -74,6 +101,10 @@ def Span(
     style: Style | None = None,
     id: str | None = None,
     onClick: MouseHandler | None = None,
+    onDoubleClick: MouseHandler | None = None,
+    onContextMenu: MouseHandler | None = None,
+    onKeyDown: KeyboardHandler | None = None,
+    onKeyUp: KeyboardHandler | None = None,
     **props: tp.Any,
 ) -> ContainerElement: ...
 
@@ -86,6 +117,10 @@ def Span(
     style: Style | None = None,
     id: str | None = None,
     onClick: MouseHandler | None = None,
+    onDoubleClick: MouseHandler | None = None,
+    onContextMenu: MouseHandler | None = None,
+    onKeyDown: KeyboardHandler | None = None,
+    onKeyUp: KeyboardHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """An inline span element."""
@@ -95,6 +130,10 @@ def Span(
         style=style,
         id=id,
         onClick=onClick,
+        onDoubleClick=onDoubleClick,
+        onContextMenu=onContextMenu,
+        onKeyDown=onKeyDown,
+        onKeyUp=onKeyUp,
         **props,
     )
 
@@ -105,6 +144,7 @@ def Section(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
+    onScroll: ScrollHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """A section element for grouping content."""
@@ -117,6 +157,7 @@ def Article(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
+    onScroll: ScrollHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """An article element for self-contained content."""
@@ -165,6 +206,7 @@ def Main(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
+    onScroll: ScrollHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """A main content element."""
@@ -177,6 +219,7 @@ def Aside(
     className: str | None = None,
     style: Style | None = None,
     id: str | None = None,
+    onScroll: ScrollHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """An aside element for tangential content."""

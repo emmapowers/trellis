@@ -31,6 +31,66 @@ function serializeEventArg(arg: unknown): unknown {
       timestamp: syntheticEvent.timeStamp,
     };
 
+    // Wheel events (check before MouseEvent since WheelEvent extends MouseEvent)
+    if (nativeEvent instanceof WheelEvent) {
+      return {
+        ...base,
+        clientX: nativeEvent.clientX,
+        clientY: nativeEvent.clientY,
+        screenX: nativeEvent.screenX,
+        screenY: nativeEvent.screenY,
+        button: nativeEvent.button,
+        buttons: nativeEvent.buttons,
+        altKey: nativeEvent.altKey,
+        ctrlKey: nativeEvent.ctrlKey,
+        shiftKey: nativeEvent.shiftKey,
+        metaKey: nativeEvent.metaKey,
+        deltaX: nativeEvent.deltaX,
+        deltaY: nativeEvent.deltaY,
+        deltaZ: nativeEvent.deltaZ,
+        deltaMode: nativeEvent.deltaMode,
+      };
+    }
+
+    // Drag events (check before MouseEvent since DragEvent extends MouseEvent)
+    // Guard with typeof check for environments where DragEvent is not defined (e.g. jsdom)
+    if (typeof DragEvent !== "undefined" && nativeEvent instanceof DragEvent) {
+      const dt = nativeEvent.dataTransfer;
+      return {
+        ...base,
+        clientX: nativeEvent.clientX,
+        clientY: nativeEvent.clientY,
+        screenX: nativeEvent.screenX,
+        screenY: nativeEvent.screenY,
+        button: nativeEvent.button,
+        buttons: nativeEvent.buttons,
+        altKey: nativeEvent.altKey,
+        ctrlKey: nativeEvent.ctrlKey,
+        shiftKey: nativeEvent.shiftKey,
+        metaKey: nativeEvent.metaKey,
+        dataTransfer: dt ? {
+          dropEffect: dt.dropEffect,
+          effectAllowed: dt.effectAllowed,
+          types: Array.from(dt.types),
+          files: Array.from(dt.files).map(f => ({ name: f.name, size: f.size, type: f.type })),
+        } : null,
+      };
+    }
+
+    // Scroll events - extract scroll position from currentTarget
+    if (eventType === "scroll") {
+      const target = syntheticEvent.currentTarget as HTMLElement | null;
+      return {
+        ...base,
+        scrollTop: target?.scrollTop ?? 0,
+        scrollLeft: target?.scrollLeft ?? 0,
+        scrollWidth: target?.scrollWidth ?? 0,
+        scrollHeight: target?.scrollHeight ?? 0,
+        clientWidth: target?.clientWidth ?? 0,
+        clientHeight: target?.clientHeight ?? 0,
+      };
+    }
+
     // Mouse events
     if (nativeEvent instanceof MouseEvent) {
       return {
@@ -88,7 +148,7 @@ function serializeEventArg(arg: unknown): unknown {
 }
 
 /** Event handler prop names that should call preventDefault before invoking callback. */
-const PREVENT_DEFAULT_HANDLERS = new Set(["onClick", "onSubmit"]);
+const PREVENT_DEFAULT_HANDLERS = new Set(["onClick", "onSubmit", "onDragOver", "onDrop"]);
 
 /**
  * Check if a click event should be handled by the browser instead of our handler.
