@@ -77,9 +77,11 @@ def _serialize_value(
     # and provide a callback ID for updates
     if isinstance(value, Mutable):
         cb_id = _make_callback_id(element_id, prop_name)
+        version = value._owner._input_versions.get(value._attr, 0)
         return {
             "__mutable__": cb_id,
             "value": _serialize_value(value.value, session, element_id, f"{prop_name}.value"),
+            "version": version,
         }
 
     if callable(value):

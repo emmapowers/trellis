@@ -229,3 +229,67 @@ class TestMutableSnapshot:
         assert m.value == 999
         # Snapshot unchanged
         assert m.snapshot == 10
+
+
+class TestMutableVersion:
+    """Tests for version tracking in Mutable.__call__."""
+
+    def test_call_with_version_stores_on_owner(self) -> None:
+        """m(value, version) stores version on owner._input_versions[attr]."""
+
+        @dataclass
+        class State(Stateful):
+            name: str = ""
+
+        state = State()
+        m = Mutable(state, "name")
+        m("hello", 3)
+
+        assert state._input_versions["name"] == 3
+        assert m.value == "hello"
+
+    def test_call_without_version_does_not_set_version(self) -> None:
+        """m(value) leaves _input_versions empty."""
+
+        @dataclass
+        class State(Stateful):
+            name: str = ""
+
+        state = State()
+        m = Mutable(state, "name")
+        m("hello")
+
+        assert "name" not in state._input_versions
+
+    def test_on_change_receives_only_value(self) -> None:
+        """Custom on_change gets (value,), never the version; version still stored."""
+        received: list[str] = []
+
+        @dataclass
+        class State(Stateful):
+            name: str = ""
+
+        state = State()
+        m = Mutable(state, "name", on_change=lambda v: received.append(v))
+        m("hello", 5)
+
+        assert received == ["hello"]
+        assert state._input_versions["name"] == 5
+
+    def test_multiple_attrs_independent_versions(self) -> None:
+        """Two Mutables on same owner track versions independently."""
+
+        @dataclass
+        class State(Stateful):
+            first: str = ""
+            last: str = ""
+
+        state = State()
+        m_first = Mutable(state, "first")
+        m_last = Mutable(state, "last")
+
+        m_first("Alice", 3)
+        m_last("Smith", 7)
+
+        assert state._input_versions["first"] == 3
+        assert state._input_versions["last"] == 7

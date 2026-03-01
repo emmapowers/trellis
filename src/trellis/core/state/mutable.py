@@ -118,8 +118,15 @@ class Mutable(tp.Generic[T]):
         """
         return self._snapshot
 
-    def __call__(self, value: T) -> None:
-        """Set the value via call syntax (e.g., mutable_instance(new_value))."""
+    def __call__(self, value: T, _version: int | None = None) -> None:
+        """Set the value via call syntax (e.g., mutable_instance(new_value)).
+
+        Args:
+            value: The new value to set
+            _version: Optional client-side version for optimistic update tracking
+        """
+        if _version is not None:
+            self._owner._input_versions[self._attr] = _version
         self.value = value
 
     def __eq__(self, other: object) -> bool:

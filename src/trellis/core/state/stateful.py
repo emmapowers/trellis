@@ -164,6 +164,7 @@ class Stateful:
 
     _state_props: dict[str, StatePropertyInfo]
     _context_watchers: weakref.WeakSet[Element]
+    _input_versions: dict[str, int]
     _initialized: bool
 
     def __new__(cls, *args: tp.Any, **kwargs: tp.Any) -> Stateful:
@@ -192,6 +193,7 @@ class Stateful:
                 if getattr(self, "_initialized", False):
                     return  # Skip - cached instance
                 original_init(self, *a, **kw)
+                object.__setattr__(self, "_input_versions", {})
                 object.__setattr__(self, "_initialized", True)
                 object.__setattr__(self, "_context_watchers", weakref.WeakSet())
 
