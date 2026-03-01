@@ -101,6 +101,44 @@ describe("Mutable", () => {
     expect(m2.value).toBe("new"); // optimistic value preserved
   });
 
+  it("syncs localVersion from server to prevent stale accepts after reset", () => {
+    const onEvent = vi.fn();
+
+    // Simulate prior interaction: client sent up to version 5
+    const m1 = new Mutable<string>(
+      { __mutable__: "test-id", value: "old", version: 0 },
+      onEvent
+    );
+    for (let i = 0; i < 5; i++) m1.setValue(`v${i}`);
+    // localVersion is now 5
+
+    // Server acknowledges version 5
+    const m2 = new Mutable<string>(
+      { __mutable__: "test-id", value: "server-v5", version: 5 },
+      onEvent
+    );
+    expect(m2.value).toBe("server-v5");
+
+    // Tree reset — simulates resetMutableStates + fresh construction
+    resetMutableStates();
+    // Server re-renders with version 5 still stored on the Stateful
+    const m3 = new Mutable<string>(
+      { __mutable__: "test-id", value: "server-v5", version: 5 },
+      onEvent
+    );
+
+    // User types — should send version > 5, not version 1
+    m3.setValue("after-reset");
+    expect(onEvent).toHaveBeenLastCalledWith("test-id", ["after-reset", 6]);
+
+    // A stale render with version 5 should NOT clear optimistic
+    const m4 = new Mutable<string>(
+      { __mutable__: "test-id", value: "stale", version: 5 },
+      onEvent
+    );
+    expect(m4.value).toBe("after-reset");
+  });
+
   it("state persists across instances with same id", () => {
     const onEvent = vi.fn();
 

@@ -91,10 +91,13 @@ export class Mutable<T> {
     }
     this._state = state;
 
-    // Server acknowledged our version — clear optimistic state
+    // Server acknowledged our version — clear optimistic state and sync
+    // localVersion so subsequent setValue calls start above the server's
+    // version (prevents stale renders from passing the >= check).
     const serverVersion = ref.version ?? 0;
     if (serverVersion >= state.localVersion) {
       state.hasOptimistic = false;
+      state.localVersion = serverVersion;
     }
   }
 
