@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
-import inspect
-import logging
 import time
-import typing as tp
 
-from trellis.core.callback_context import callback_context
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.element import Element, props_equal
+from trellis.core.rendering.lifecycle import invoke_lifecycle_hook
 from trellis.core.rendering.patches import (
     RenderAddPatch,
     RenderPatch,
@@ -24,6 +20,7 @@ from trellis.core.rendering.session import (
     get_active_session,
     set_active_session,
 )
+from trellis.core.rendering.traits import get_trait_hooks
 from trellis.core.state.ref import Ref, _RefHolder
 from trellis.utils.logger import logger
 
@@ -167,9 +164,9 @@ def _execute_single_element(
         parent_id,
     )
 
-    # Get or create ElementState. State may already exist if Element.ref()
-    # was called before execution (which creates state to store ref_holder).
+    # Get or create ElementState.
     state = session.states.get_or_create(element_id)
+    state.element_type = type(element)
     if not state.mounted:
         state.parent_id = parent_id
         state.mounted = True
@@ -197,6 +194,12 @@ def _execute_single_element(
     old_element_id = session.active.current_element_id
     session.active.current_element_id = element_id
 
+    # Dispatch trait _before_execute hooks
+    trait_hooks = get_trait_hooks(type(element))
+    for th in trait_hooks:
+        if th.before_execute is not None:
+            th.before_execute(element, element, state, session)
+
     # Push a frame for child IDs created during execution
     session.active.frames.push(parent_id=element_id)
     try:
@@ -215,6 +218,11 @@ def _execute_single_element(
         elif state.exposed_ref is None and state.ref_holder is not None:
             if state.ref_holder:  # was previously attached
                 state.ref_holder._detach()
+
+        # Dispatch trait _after_execute hooks
+        for th in trait_hooks:
+            if th.after_execute is not None:
+                th.after_execute(element, element, state, session)
 
         # Update element in-place with child_ids (execution of children happens in _execute_tree)
         element.child_ids = new_child_ids
@@ -368,33 +376,6 @@ def _remove_element_tree(session: RenderSession, element_id: str) -> None:
     session.elements.remove(element_id)
 
 
-def _invoke_lifecycle_hook(
-    session: RenderSession,
-    element_id: str,
-    hook: tp.Any,
-    label: str,
-) -> None:
-    """Invoke a lifecycle hook (sync or async) with proper error handling."""
-    if inspect.iscoroutinefunction(hook):
-
-        async def run_async_hook(h: tp.Any = hook) -> None:
-            try:
-                with callback_context(session, element_id):
-                    await h()
-            except Exception:
-                logging.exception("Error in async %s", label)
-
-        task = asyncio.create_task(run_async_hook())
-        session._background_tasks.add(task)
-        task.add_done_callback(session._background_tasks.discard)
-    else:
-        try:
-            with callback_context(session, element_id):
-                hook()
-        except Exception:
-            logging.exception("Error in %s", label)
-
-
 def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
     """Call on_mount() for all Stateful instances on a element."""
     state = session.states.get(element_id)
@@ -412,11 +393,18 @@ def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
         if isinstance(stateful, _RefHolder):
             continue
         if hasattr(stateful, "on_mount"):
-            _invoke_lifecycle_hook(session, element_id, stateful.on_mount, "on_mount")
+            invoke_lifecycle_hook(session, element_id, stateful.on_mount, "on_mount")
 
     # Call Ref.on_mount if exposed_ref is a Ref instance
     if state.exposed_ref is not None and isinstance(state.exposed_ref, Ref):
-        _invoke_lifecycle_hook(session, element_id, state.exposed_ref.on_mount, "Ref.on_mount")
+        invoke_lifecycle_hook(session, element_id, state.exposed_ref.on_mount, "Ref.on_mount")
+
+    # Dispatch trait _on_trait_mount hooks
+    element = session.elements.get(element_id)
+    if element is not None:
+        for th in get_trait_hooks(type(element)):
+            if th.on_mount is not None:
+                th.on_mount(element, element, state, session)
 
 
 def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
@@ -425,9 +413,17 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
     if state is None:
         return
 
+    # Dispatch trait _on_trait_unmount hooks before stateful hooks.
+    # Use state.element_type since the element may already be removed from storage.
+    element = session.elements.get(element_id)
+    if state.element_type is not None:
+        for th in get_trait_hooks(state.element_type):
+            if th.on_unmount is not None:
+                th.on_unmount(element, element, state, session)
+
     # Call Ref.on_unmount if exposed_ref is a Ref instance
     if state.exposed_ref is not None and isinstance(state.exposed_ref, Ref):
-        _invoke_lifecycle_hook(session, element_id, state.exposed_ref.on_unmount, "Ref.on_unmount")
+        invoke_lifecycle_hook(session, element_id, state.exposed_ref.on_unmount, "Ref.on_unmount")
         state.exposed_ref = None
 
     # Detach ref holder on unmount
@@ -445,7 +441,7 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
         if isinstance(stateful, _RefHolder):
             continue
         if hasattr(stateful, "on_unmount"):
-            _invoke_lifecycle_hook(session, element_id, stateful.on_unmount, "on_unmount")
+            invoke_lifecycle_hook(session, element_id, stateful.on_unmount, "on_unmount")
 
 
 def _process_pending_hooks(

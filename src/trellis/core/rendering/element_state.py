@@ -8,6 +8,8 @@ from __future__ import annotations
 import typing as tp
 from dataclasses import dataclass, field
 
+S = tp.TypeVar("S")
+
 __all__ = ["ElementStateStore"]
 
 
@@ -35,6 +37,21 @@ class ElementState:
     parent_id: str | None = None
     exposed_ref: tp.Any = None
     ref_holder: tp.Any = None
+    element_type: type | None = None
+    _trait_state: dict[type, tp.Any] = field(default_factory=dict)
+
+    def trait(self, state_type: type[S]) -> S:
+        """Get or create typed trait state.
+
+        Each state_type gets a single instance, created on first access
+        and cached for subsequent calls.
+        """
+        existing: S | None = self._trait_state.get(state_type)
+        if existing is not None:
+            return existing
+        instance = state_type()
+        self._trait_state[state_type] = instance
+        return instance
 
 
 class ElementStateStore:

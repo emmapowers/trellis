@@ -1,12 +1,50 @@
 """Lifecycle hook tracking for mount/unmount.
 
 LifecycleTracker manages pending mount and unmount hooks to be called
-after the render phase completes.
+after the render phase completes. invoke_lifecycle_hook dispatches
+individual sync/async hooks with error handling.
 """
 
 from __future__ import annotations
 
-__all__ = ["LifecycleTracker"]
+import asyncio
+import inspect
+import logging
+import typing as tp
+
+from trellis.core.callback_context import callback_context
+
+if tp.TYPE_CHECKING:
+    from trellis.core.rendering.session import RenderSession
+
+__all__ = ["LifecycleTracker", "invoke_lifecycle_hook"]
+
+
+def invoke_lifecycle_hook(
+    session: RenderSession,
+    element_id: str,
+    hook: tp.Any,
+    label: str,
+) -> None:
+    """Invoke a lifecycle hook (sync or async) with proper error handling."""
+    if inspect.iscoroutinefunction(hook):
+
+        async def run_async_hook(h: tp.Any = hook) -> None:
+            try:
+                with callback_context(session, element_id):
+                    await h()
+            except Exception:
+                logging.exception("Error in async %s", label)
+
+        task = asyncio.create_task(run_async_hook())
+        session._background_tasks.add(task)
+        task.add_done_callback(session._background_tasks.discard)
+    else:
+        try:
+            with callback_context(session, element_id):
+                hook()
+        except Exception:
+            logging.exception("Error in %s", label)
 
 
 class LifecycleTracker:
