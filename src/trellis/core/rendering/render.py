@@ -21,7 +21,7 @@ from trellis.core.rendering.session import (
     set_active_session,
 )
 from trellis.core.rendering.traits import get_trait_hooks
-from trellis.core.state.ref import Ref, _RefHolder
+from trellis.core.state.ref import _RefHolder
 from trellis.utils.logger import logger
 
 __all__ = [
@@ -184,9 +184,6 @@ def _execute_single_element(
 
     state.state_call_count = 0
 
-    # Reset exposed_ref before execute so we detect if child calls set_ref()
-    state.exposed_ref = None
-
     # Get props including children if component accepts them
     props = element.props.copy()
 
@@ -211,13 +208,6 @@ def _execute_single_element(
         new_child_ids = list(frame.child_ids) if frame else []
 
         logger.debug("Execution (single) produced %d children", len(new_child_ids))
-
-        # Wire ref: connect holder to exposed ref, or detach if child stopped exposing
-        if state.exposed_ref is not None and state.ref_holder is not None:
-            state.ref_holder._attach(state.exposed_ref)
-        elif state.exposed_ref is None and state.ref_holder is not None:
-            if state.ref_holder:  # was previously attached
-                state.ref_holder._detach()
 
         # Dispatch trait _after_execute hooks
         for th in trait_hooks:
@@ -377,7 +367,7 @@ def _remove_element_tree(session: RenderSession, element_id: str) -> None:
 
 
 def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
-    """Call on_mount() for all Stateful instances on a element."""
+    """Call on_mount() for all Stateful instances, then dispatch trait mount hooks."""
     state = session.states.get(element_id)
     if state is None:
         return
@@ -390,14 +380,12 @@ def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
         logger.debug("Calling on_mount for %s (%d states)", element_id, len(items))
 
     for _, stateful in items:
+        # _RefHolder uses __getattr__ which would forward to the underlying
+        # ref's on_mount — skip it since RefTrait handles ref lifecycle
         if isinstance(stateful, _RefHolder):
             continue
         if hasattr(stateful, "on_mount"):
             invoke_lifecycle_hook(session, element_id, stateful.on_mount, "on_mount")
-
-    # Call Ref.on_mount if exposed_ref is a Ref instance
-    if state.exposed_ref is not None and isinstance(state.exposed_ref, Ref):
-        invoke_lifecycle_hook(session, element_id, state.exposed_ref.on_mount, "Ref.on_mount")
 
     # Dispatch trait _on_trait_mount hooks
     element = session.elements.get(element_id)
@@ -408,7 +396,7 @@ def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
 
 
 def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
-    """Call on_unmount() for all Stateful instances and Ref on a element."""
+    """Dispatch trait unmount hooks, then call on_unmount() for Stateful instances."""
     state = session.states.get(element_id)
     if state is None:
         return
@@ -421,15 +409,6 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
             if th.on_unmount is not None:
                 th.on_unmount(element, element, state, session)
 
-    # Call Ref.on_unmount if exposed_ref is a Ref instance
-    if state.exposed_ref is not None and isinstance(state.exposed_ref, Ref):
-        invoke_lifecycle_hook(session, element_id, state.exposed_ref.on_unmount, "Ref.on_unmount")
-        state.exposed_ref = None
-
-    # Detach ref holder on unmount
-    if state.ref_holder is not None:
-        state.ref_holder._detach()
-
     # Get states sorted by call index, reversed
     items = list(state.local_state.items())
     items.sort(key=lambda x: x[0][1], reverse=True)
@@ -438,6 +417,7 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
         logger.debug("Calling on_unmount for %s", element_id)
 
     for _, stateful in items:
+        # _RefHolder uses __getattr__ — skip, RefTrait handles ref lifecycle
         if isinstance(stateful, _RefHolder):
             continue
         if hasattr(stateful, "on_unmount"):

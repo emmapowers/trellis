@@ -26,8 +26,8 @@ class ElementState:
         state_call_count: Counter for consistent Stateful() instantiation ordering
         context: State context from `with state:` blocks
         parent_id: Parent element's ID (for context walking)
-        exposed_ref: Ref or Stateful exposed by this element via set_ref()
-        ref_holder: _RefHolder attached by a parent via Element.ref()
+        element_type: Element class type, for trait hook dispatch after removal
+        _trait_state: Per-trait state keyed by state type
     """
 
     mounted: bool = False
@@ -35,8 +35,6 @@ class ElementState:
     state_call_count: int = 0
     context: dict[type, tp.Any] = field(default_factory=dict)
     parent_id: str | None = None
-    exposed_ref: tp.Any = None
-    ref_holder: tp.Any = None
     element_type: type | None = None
     _trait_state: dict[type, tp.Any] = field(default_factory=dict)
 

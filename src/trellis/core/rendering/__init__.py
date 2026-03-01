@@ -7,7 +7,7 @@ from trellis.core.rendering.element import Element, props_equal
 from trellis.core.rendering.element_state import ElementState, ElementStateStore
 from trellis.core.rendering.element_store import ElementStore
 from trellis.core.rendering.frames import Frame, FrameStack
-from trellis.core.rendering.lifecycle import LifecycleTracker
+from trellis.core.rendering.lifecycle import LifecycleTracker, invoke_lifecycle_hook
 from trellis.core.rendering.patches import (
     PatchCollector,
     RenderAddPatch,
@@ -25,7 +25,7 @@ from trellis.core.rendering.session import (
     is_render_active,
     set_active_session,
 )
-from trellis.core.rendering.traits import KeyTrait
+from trellis.core.rendering.traits import KeyTrait, RefTraitState, TraitHooks, get_trait_hooks
 
 __all__ = [
     "ActiveRender",
@@ -40,14 +40,18 @@ __all__ = [
     "KeyTrait",
     "LifecycleTracker",
     "PatchCollector",
+    "RefTraitState",
     "RenderAddPatch",
     "RenderPatch",
     "RenderRemovePatch",
     "RenderSession",
     "RenderUpdatePatch",
     "SessionRegistry",
+    "TraitHooks",
     "get_active_session",
     "get_session_registry",
+    "get_trait_hooks",
+    "invoke_lifecycle_hook",
     "is_render_active",
     "props_equal",
     "reconcile_children",

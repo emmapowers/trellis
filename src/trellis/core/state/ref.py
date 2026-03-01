@@ -25,9 +25,7 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.rendering.session import get_active_session
-
-if tp.TYPE_CHECKING:
-    from trellis.core.rendering.element_state import ElementState
+from trellis.core.rendering.traits import RefTraitState
 
 T = tp.TypeVar("T")
 
@@ -118,7 +116,7 @@ def get_ref(ref_type: type[T]) -> _RefHolder[T]:
     element_id = session.current_element_id
     assert element_id is not None
 
-    state: ElementState = session.states.get_or_create(element_id)
+    state = session.states.get_or_create(element_id)
     call_idx = state.state_call_count
     state.state_call_count += 1
     key = (_RefHolder, call_idx)
@@ -152,10 +150,11 @@ def set_ref(ref: tp.Any) -> None:
     element_id = session.current_element_id
     assert element_id is not None
 
-    state: ElementState = session.states.get_or_create(element_id)
-    if state.exposed_ref is not None:
+    state = session.states.get_or_create(element_id)
+    ts = state.trait(RefTraitState)
+    if ts.exposed_ref is not None:
         raise RuntimeError(
             "set_ref() can only be called once per component per render. "
             "Multiple refs are not supported."
         )
-    state.exposed_ref = ref
+    ts.exposed_ref = ref
