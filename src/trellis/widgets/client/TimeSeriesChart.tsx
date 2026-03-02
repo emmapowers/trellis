@@ -1,7 +1,8 @@
-import React, { useRef, useEffect, useLayoutEffect } from "react";
+import React, { useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { colors, typography } from "@trellis/trellis-core/theme";
+import { useResolvedTheme } from "@trellis/trellis-core/chartUtils";
 
 interface SeriesConfig {
   label?: string;
@@ -22,16 +23,6 @@ interface TimeSeriesChartProps {
   style?: React.CSSProperties;
 }
 
-// Default color palette
-const defaultColors = [
-  colors.accent.primary,
-  "#22c55e", // green
-  "#f59e0b", // amber
-  "#ef4444", // red
-  "#8b5cf6", // violet
-  "#06b6d4", // cyan
-];
-
 export function TimeSeriesChart({
   data,
   series = [],
@@ -46,12 +37,24 @@ export function TimeSeriesChart({
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<uPlot | null>(null);
 
-  // Build uPlot series config
+  const seriesCount = series.length || (data && data.length > 1 ? data.length - 1 : 0);
+  const { ref: themeRef, chartColors, resolveColor, themeVersion } = useResolvedTheme(seriesCount);
+
+  // Merge themeRef + containerRef via callback ref
+  const mergedRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      themeRef(node);
+    },
+    [themeRef],
+  );
+
+  // Build uPlot series config with resolved colors
   const uplotSeries: uPlot.Series[] = [
     { label: "Time" }, // X axis
     ...series.map((s, i) => ({
       label: s.label || `Series ${i + 1}`,
-      stroke: s.stroke || defaultColors[i % defaultColors.length],
+      stroke: s.stroke || chartColors[i % chartColors.length],
       fill: s.fill,
       width: s.width || 2,
     })),
@@ -62,11 +65,15 @@ export function TimeSeriesChart({
     for (let i = 1; i < data.length; i++) {
       uplotSeries.push({
         label: `Series ${i}`,
-        stroke: defaultColors[(i - 1) % defaultColors.length],
+        stroke: chartColors[(i - 1) % chartColors.length],
         width: 2,
       });
     }
   }
+
+  const axisStroke = resolveColor(colors.text.secondary);
+  const gridStroke = resolveColor(colors.border.subtle);
+  const tickStroke = resolveColor(colors.border.default);
 
   const opts: uPlot.Options = {
     width: width || 400,
@@ -78,15 +85,15 @@ export function TimeSeriesChart({
     },
     axes: [
       {
-        stroke: colors.text.secondary,
-        grid: { stroke: colors.border.subtle },
-        ticks: { stroke: colors.border.default },
+        stroke: axisStroke,
+        grid: { stroke: gridStroke },
+        ticks: { stroke: tickStroke },
         font: `${typography.fontSize.xs}px ${typography.fontFamily}`,
       },
       {
-        stroke: colors.text.secondary,
-        grid: { stroke: colors.border.subtle },
-        ticks: { stroke: colors.border.default },
+        stroke: axisStroke,
+        grid: { stroke: gridStroke },
+        ticks: { stroke: tickStroke },
         font: `${typography.fontSize.xs}px ${typography.fontFamily}`,
       },
     ],
@@ -98,7 +105,7 @@ export function TimeSeriesChart({
     },
   };
 
-  // Create/update chart
+  // Create/update chart — re-creates on theme change via themeVersion
   useLayoutEffect(() => {
     if (!containerRef.current || !data || data.length === 0) return;
 
@@ -121,7 +128,7 @@ export function TimeSeriesChart({
         chartRef.current = null;
       }
     };
-  }, [data, series, width, height, title, show_legend, show_tooltip]);
+  }, [data, series, width, height, title, show_legend, show_tooltip, themeVersion]);
 
   // Handle resize
   useEffect(() => {
@@ -144,7 +151,7 @@ export function TimeSeriesChart({
 
   return (
     <div
-      ref={containerRef}
+      ref={mergedRef}
       className={className}
       style={{
         width: width ? `${width}px` : "100%",

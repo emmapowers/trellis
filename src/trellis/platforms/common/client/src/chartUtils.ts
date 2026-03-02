@@ -2,6 +2,8 @@
  * Chart utilities for color palette management and color manipulation.
  */
 
+import { useState, useCallback, useEffect, useMemo } from "react";
+
 const PALETTE_SIZE = 10;
 
 /**
@@ -59,4 +61,63 @@ export function withOpacity(color: string, opacity: number): string {
 
   // Unsupported format — return unchanged
   return color;
+}
+
+export interface ResolvedTheme {
+  ref: React.RefCallback<HTMLElement>;
+  chartColors: string[];
+  resolveColor: (cssVar: string) => string;
+  themeVersion: number;
+}
+
+/**
+ * Hook that resolves CSS variable chart colors to computed values.
+ *
+ * Canvas APIs (like uPlot) can't use CSS variables directly, so this hook
+ * resolves them via getComputedStyle. It watches for theme changes on the
+ * .trellis-root element and re-resolves when the theme switches.
+ */
+export function useResolvedTheme(seriesCount: number): ResolvedTheme {
+  const [themeVersion, setThemeVersion] = useState(0);
+  const [rootEl, setRootEl] = useState<Element | null>(null);
+
+  const ref = useCallback((node: HTMLElement | null) => {
+    if (node) {
+      setRootEl(node.closest(".trellis-root") || node);
+    }
+  }, []);
+
+  // Watch for data-theme attribute changes on .trellis-root
+  useEffect(() => {
+    if (!rootEl) return;
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === "attributes" && mutation.attributeName === "data-theme") {
+          setThemeVersion((v) => v + 1);
+        }
+      }
+    });
+
+    observer.observe(rootEl, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, [rootEl]);
+
+  const resolveColor = useCallback(
+    (cssVar: string): string => {
+      if (!rootEl) return cssVar;
+      // Extract variable name from var(--name) syntax
+      const match = cssVar.match(/^var\((--[\w-]+)\)$/);
+      if (!match) return cssVar;
+      return getComputedStyle(rootEl).getPropertyValue(match[1]).trim() || cssVar;
+    },
+    [rootEl, themeVersion],
+  );
+
+  const chartColors = useMemo(() => {
+    const vars = getChartColors(seriesCount);
+    return vars.map((v) => resolveColor(v));
+  }, [seriesCount, resolveColor]);
+
+  return { ref, chartColors, resolveColor, themeVersion };
 }
