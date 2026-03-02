@@ -227,3 +227,22 @@ class TestAnchorAutoRouting:
         # Should NOT have onClick handler - browser handles navigation
         on_click_data = anchor.get("props", {}).get("onClick")
         assert on_click_data is None, "A with use_router=False should not have auto onClick"
+
+    def test_download_no_onclick_handler(self, capture_patches: type[PatchCapture]) -> None:
+        """A with download should keep native browser behavior."""
+
+        @component
+        def App() -> None:
+            with RouterState():
+                A("Export", href="/reports/latest.csv", download=True)
+
+        capture = capture_patches(App)
+        capture.render()
+
+        tree = serialize_element(capture.session.root_element, capture.session)
+        anchor = find_element_by_type(tree, "a")
+        assert anchor is not None
+
+        on_click_data = anchor.get("props", {}).get("onClick")
+        assert on_click_data is None, "A with download should not have auto onClick"
+        assert "data-trellis-router-link" not in anchor.get("props", {})

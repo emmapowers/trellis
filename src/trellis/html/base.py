@@ -52,7 +52,11 @@ class HtmlContainerTrait(ContainerTrait):
 # Default element class for HTML container elements.
 # Uses HtmlContainerTrait (not plain ContainerTrait) so that the hybrid
 # text/container check is enforced for all HTML elements.
-HtmlContainerElement = type("HtmlContainerElement", (HtmlContainerTrait, Element), {})
+HtmlContainerElement = type(
+    "HtmlContainerElement",
+    (HtmlContainerTrait, ContainerElement),
+    {},
+)
 
 
 class HtmlElement(Component):

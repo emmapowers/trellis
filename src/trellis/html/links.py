@@ -137,7 +137,14 @@ def _make_a(
     # For relative URLs without custom onClick, add router navigation
     effective_onclick = onClick
     effective_props = dict(props)
-    if href and onClick is None and use_router and target != "_blank" and _is_relative_url(href):
+    if (
+        href
+        and onClick is None
+        and use_router
+        and target != "_blank"
+        and download is None
+        and _is_relative_url(href)
+    ):
         # Capture href in closure for the async callback
         nav_href = href
 

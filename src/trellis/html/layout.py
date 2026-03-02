@@ -204,7 +204,7 @@ def Aside(
     ...
 
 
-# New structural elements
+# Structural elements
 
 
 @overload

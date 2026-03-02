@@ -4,6 +4,7 @@ import pytest
 
 from trellis import html as h
 from trellis.core.components.composition import component
+from trellis.core.rendering.element import ContainerElement
 from trellis.platforms.common.serialization import parse_callback_id, serialize_element
 
 
@@ -24,6 +25,19 @@ class TestHtmlElements:
         assert div.component.name == "Div"
         assert len(div.child_ids) == 1
         assert result.session.elements.get(div.child_ids[0]).component.name == "Span"
+
+    def test_div_element_is_container_element_type(self, rendered) -> None:
+        """Container html elements create ContainerElement instances."""
+
+        @component
+        def App() -> None:
+            with h.Div():
+                pass
+
+        result = rendered(App)
+        div = result.session.elements.get(result.root_element.child_ids[0])
+
+        assert isinstance(div, ContainerElement)
 
     def test_nested_divs(self, rendered) -> None:
         """Divs can be nested."""
