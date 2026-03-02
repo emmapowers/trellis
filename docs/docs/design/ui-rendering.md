@@ -383,7 +383,7 @@ from trellis.core.rendering import Element
 @html_element("div", is_container=True)
 def Div(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: Any,
@@ -392,7 +392,7 @@ def Div(
     ...
 
 # Keys are set via fluent method:
-Div(className="container").key("my-div")
+Div(class_name="container").key("my-div")
 ```
 
 This decorator:
@@ -411,7 +411,7 @@ from trellis import html as h
 h.H1("Title", style={"color": "#333"})
 
 # Container usage
-with h.Div(className="container", style={"padding": "20px"}):
+with h.Div(class_name="container", style={"padding": "20px"}):
     h.P("Content inside div")
     h.Span("Some text")
 ```
@@ -1431,9 +1431,9 @@ h.Div(
     "name": "Div",
     "key": "e60",
     "props": {
-        "className": "container",
+        "class_name": "container",
         "style": {"padding": "20px"},
-        "onClick": {"__callback__": "e60:onClick"}
+        "on_click": {"__callback__": "e60|on_click"}
     },
     "children": []
 }
@@ -1539,14 +1539,14 @@ function transformCallback(callbackId: string) {
 function serializeEvent(event: Event): SerializedEvent {
     if (event instanceof MouseEvent) {
         return {
-            type: "MouseEvent",
-            clientX: event.clientX,
-            clientY: event.clientY,
+            type: "click",
+            client_x: event.clientX,
+            client_y: event.clientY,
             button: event.button,
-            altKey: event.altKey,
-            ctrlKey: event.ctrlKey,
-            shiftKey: event.shiftKey,
-            metaKey: event.metaKey,
+            alt_key: event.altKey,
+            ctrl_key: event.ctrlKey,
+            shift_key: event.shiftKey,
+            meta_key: event.metaKey,
         };
     }
     // ... other event types
@@ -1557,12 +1557,12 @@ function serializeEvent(event: Event): SerializedEvent {
 ```json
 {
     "type": "event",
-    "callback_id": "e42:on_click",
+    "callback_id": "e42|on_click",
     "args": [
         {
-            "type": "MouseEvent",
-            "clientX": 150,
-            "clientY": 200,
+            "type": "click",
+            "client_x": 150,
+            "client_y": 200,
             "button": 0
         }
     ]
