@@ -9,7 +9,7 @@ from __future__ import annotations
 import functools
 import typing as tp
 from collections.abc import Callable
-from typing import Literal, ParamSpec, overload
+from typing import Literal, ParamSpec, TypeVar, overload
 
 from trellis.core.components.base import Component, ElementKind
 from trellis.core.rendering.element import ContainerElement, Element
@@ -27,6 +27,7 @@ Style = dict[str, str | int | float]
 
 # ParamSpec for preserving function signatures through the decorator
 P = ParamSpec("P")
+E = TypeVar("E", bound=Element)
 
 
 class HtmlContainerTrait(ContainerTrait):
@@ -38,7 +39,7 @@ class HtmlContainerTrait(ContainerTrait):
     """
 
     def __enter__(self) -> tp.Self:
-        if self.props.get("_text"):
+        if "_text" in self.props:
             raise TypeError(
                 f"Cannot use 'with {self.component.name}(...)' with text content. "
                 f'Use either text mode ({self.component.name}("text")) or '
@@ -122,7 +123,7 @@ def html_element(
     *,
     is_container: Literal[True],
     name: str | None = None,
-    element_class: type[Element] | None = None,
+    element_class: Literal[None] = None,
 ) -> Callable[[Callable[P, tp.Any]], Callable[P, ContainerElement]]: ...
 
 
@@ -132,8 +133,18 @@ def html_element(
     *,
     is_container: Literal[False] = ...,
     name: str | None = None,
-    element_class: type[Element] | None = None,
+    element_class: Literal[None] = None,
 ) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]: ...
+
+
+@overload
+def html_element(
+    tag: str,
+    *,
+    is_container: bool = ...,
+    name: str | None = None,
+    element_class: type[E],
+) -> Callable[[Callable[P, tp.Any]], Callable[P, E]]: ...
 
 
 def html_element(
@@ -141,8 +152,8 @@ def html_element(
     *,
     is_container: bool = False,
     name: str | None = None,
-    element_class: type[Element] | None = None,
-) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]:
+    element_class: type[E] | None = None,
+) -> Callable[[Callable[P, tp.Any]], Callable[P, Element | E]]:
     """Decorator to create an HtmlElement from a function signature.
 
     This is the standard way to define HTML elements. The function body is
@@ -157,8 +168,8 @@ def html_element(
         name: Optional name override (defaults to function name). Useful for
             internal functions prefixed with underscore.
         element_class: Optional Element subclass to use for elements created by
-            this element. When is_container=True and the class doesn't already
-            have HtmlContainerTrait, it is composed dynamically.
+            this element. When is_container=True, the class must include
+            HtmlContainerTrait in its MRO.
 
     Returns:
         A decorator that creates a callable returning Elements
@@ -166,17 +177,20 @@ def html_element(
     if element_class is not None:
         resolved_element_class = element_class
         if is_container and HtmlContainerTrait not in element_class.__mro__:
-            resolved_element_class = type(
-                f"{element_class.__name__}Container",
-                (HtmlContainerTrait, element_class),
-                {},
+            raise TypeError(
+                "@html_element(is_container=True, element_class=...) requires "
+                f"element_class to include HtmlContainerTrait in its MRO. "
+                f"Got {element_class.__name__}. "
+                "Define a class like "
+                f"'class {element_class.__name__}Container(HtmlContainerTrait, "
+                f"{element_class.__name__}): ...'."
             )
     else:
         resolved_element_class = HtmlContainerElement if is_container else Element
 
     def decorator(
         func: Callable[P, tp.Any],
-    ) -> Callable[P, tp.Any]:
+    ) -> Callable[P, Element | E]:
         # Use provided name or function name
         element_name = name or func.__name__
 
@@ -189,8 +203,21 @@ def html_element(
         _singleton = _Generated(element_name, element_class=resolved_element_class)
 
         @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> tp.Any:
-            return _singleton._place(**kwargs)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element | E:
+            props = dict(kwargs)
+
+            if len(args) > 1:
+                raise TypeError(
+                    f"{element_name}() accepts at most one positional argument for text content."
+                )
+            if args:
+                if "_text" in props:
+                    raise TypeError(
+                        f"{element_name}() received both positional text and '_text' keyword argument."
+                    )
+                props["_text"] = args[0]
+
+            return _singleton._place(**props)
 
         # Expose the underlying component for introspection
         wrapper._component = _singleton  # type: ignore[attr-defined]

@@ -421,12 +421,35 @@ class TestTextElementsAsContainers:
         p = result.session.elements.get(result.root_element.child_ids[0])
         assert p.properties["_text"] == "text content"
 
+    def test_p_as_empty_text_still_works(self, rendered) -> None:
+        """P("") stays in text mode with explicit empty text."""
+
+        @component
+        def App() -> None:
+            h.P("")
+
+        result = rendered(App)
+
+        p = result.session.elements.get(result.root_element.child_ids[0])
+        assert p.properties["_text"] == ""
+
     def test_p_text_with_block_raises(self, rendered) -> None:
         """P("text") with block raises TypeError."""
 
         @component
         def App() -> None:
             with h.P("text"):
+                pass
+
+        with pytest.raises(TypeError, match=r"Cannot use.*with.*text content"):
+            rendered(App)
+
+    def test_span_empty_text_with_block_raises(self, rendered) -> None:
+        """Span("") with block raises TypeError."""
+
+        @component
+        def App() -> None:
+            with h.Span(""):
                 pass
 
         with pytest.raises(TypeError, match=r"Cannot use.*with.*text content"):

@@ -19,6 +19,7 @@ __all__ = ["ReactComponentBase", "react"]
 
 # ParamSpec for preserving function signatures through decorators
 P = ParamSpec("P")
+E = tp.TypeVar("E", bound=Element)
 
 
 def _merge_style_props(props: dict[str, tp.Any]) -> dict[str, tp.Any]:
@@ -105,7 +106,7 @@ def react(
     export_name: str | None = None,
     is_container: Literal[True],
     packages: dict[str, str] | None = None,
-    element_class: type[Element] | None = None,
+    element_class: Literal[None] = None,
 ) -> Callable[[Callable[P, tp.Any]], Callable[P, ContainerElement]]: ...
 
 
@@ -116,8 +117,19 @@ def react(
     export_name: str | None = None,
     is_container: Literal[False] = ...,
     packages: dict[str, str] | None = None,
-    element_class: type[Element] | None = None,
+    element_class: Literal[None] = None,
 ) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]: ...
+
+
+@tp.overload
+def react(
+    source: str,
+    *,
+    export_name: str | None = None,
+    is_container: bool = ...,
+    packages: dict[str, str] | None = None,
+    element_class: type[E],
+) -> Callable[[Callable[P, tp.Any]], Callable[P, E]]: ...
 
 
 def react(
@@ -126,8 +138,8 @@ def react(
     export_name: str | None = None,
     is_container: bool = False,
     packages: dict[str, str] | None = None,
-    element_class: type[Element] | None = None,
-) -> Callable[[Callable[P, tp.Any]], Callable[P, Element]]:
+    element_class: type[E] | None = None,
+) -> Callable[[Callable[P, tp.Any]], Callable[P, Element | E]]:
     """Decorator that creates a React component wrapper and registers it with the bundler.
 
     Combines component creation with module
@@ -142,12 +154,15 @@ def react(
         element_class: Element subclass to use for this component's nodes.
     """
     if element_class is not None:
-        resolved_element_class = element_class
+        resolved_element_class: type[Element] = element_class
         if is_container and ContainerTrait not in element_class.__mro__:
-            resolved_element_class = type(
-                f"{element_class.__name__}Container",
-                (ContainerTrait, element_class),
-                {},
+            raise TypeError(
+                "@react(..., is_container=True, element_class=...) requires "
+                f"element_class to include ContainerTrait in its MRO. "
+                f"Got {element_class.__name__}. "
+                "Define a class like "
+                f"'class {element_class.__name__}Container(ContainerTrait, "
+                f"{element_class.__name__}): ...'."
             )
     else:
         resolved_element_class = ContainerElement if is_container else Element
@@ -162,7 +177,7 @@ def react(
 
     def decorator(
         func: Callable[P, tp.Any],
-    ) -> Callable[P, tp.Any]:
+    ) -> Callable[P, Element | E]:
         resolved_export_name = export_name or func.__name__
 
         # Create a generated ReactComponentBase subclass
@@ -183,7 +198,7 @@ def react(
         )
 
         @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> tp.Any:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element | E:
             return _singleton._place(**_merge_style_props(dict(kwargs)))
 
         wrapper._component = _singleton  # type: ignore[attr-defined]

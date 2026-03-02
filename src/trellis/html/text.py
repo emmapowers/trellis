@@ -346,7 +346,7 @@ def P(
 
 
 def P(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -356,7 +356,7 @@ def P(
 ) -> Element:
     """A paragraph element."""
     return _P(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -387,7 +387,7 @@ def H1(
 
 
 def H1(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -397,7 +397,7 @@ def H1(
 ) -> Element:
     """A level 1 heading."""
     return _H1(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -428,7 +428,7 @@ def H2(
 
 
 def H2(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -438,7 +438,7 @@ def H2(
 ) -> Element:
     """A level 2 heading."""
     return _H2(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -469,7 +469,7 @@ def H3(
 
 
 def H3(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -479,7 +479,7 @@ def H3(
 ) -> Element:
     """A level 3 heading."""
     return _H3(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -510,7 +510,7 @@ def H4(
 
 
 def H4(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -520,7 +520,7 @@ def H4(
 ) -> Element:
     """A level 4 heading."""
     return _H4(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -551,7 +551,7 @@ def H5(
 
 
 def H5(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -561,7 +561,7 @@ def H5(
 ) -> Element:
     """A level 5 heading."""
     return _H5(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -592,7 +592,7 @@ def H6(
 
 
 def H6(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -602,7 +602,7 @@ def H6(
 ) -> Element:
     """A level 6 heading."""
     return _H6(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -633,7 +633,7 @@ def Strong(
 
 
 def Strong(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -643,7 +643,7 @@ def Strong(
 ) -> Element:
     """A strong (bold) text element."""
     return _Strong(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -674,7 +674,7 @@ def Em(
 
 
 def Em(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -684,7 +684,7 @@ def Em(
 ) -> Element:
     """An emphasis (italic) text element."""
     return _Em(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -715,7 +715,7 @@ def Code(
 
 
 def Code(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -725,7 +725,7 @@ def Code(
 ) -> Element:
     """An inline code element."""
     return _Code(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -756,7 +756,7 @@ def Pre(
 
 
 def Pre(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -766,7 +766,7 @@ def Pre(
 ) -> Element:
     """A preformatted text element."""
     return _Pre(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -797,7 +797,7 @@ def Small(
 
 
 def Small(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -807,7 +807,7 @@ def Small(
 ) -> Element:
     """A small text element."""
     return _Small(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -838,7 +838,7 @@ def Mark(
 
 
 def Mark(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -848,7 +848,7 @@ def Mark(
 ) -> Element:
     """A marked/highlighted text element."""
     return _Mark(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -879,7 +879,7 @@ def Sub(
 
 
 def Sub(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -889,7 +889,7 @@ def Sub(
 ) -> Element:
     """A subscript text element."""
     return _Sub(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -920,7 +920,7 @@ def Sup(
 
 
 def Sup(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -930,7 +930,7 @@ def Sup(
 ) -> Element:
     """A superscript text element."""
     return _Sup(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -963,7 +963,7 @@ def Abbr(
 
 
 def Abbr(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     title: str | None = None,
@@ -974,7 +974,7 @@ def Abbr(
 ) -> Element:
     """An abbreviation element."""
     return _Abbr(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         title=title,
         className=className,
         style=style,
@@ -1008,7 +1008,7 @@ def Time(
 
 
 def Time(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     dateTime: str | None = None,
@@ -1019,7 +1019,7 @@ def Time(
 ) -> Element:
     """A time element."""
     return _Time(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         dateTime=dateTime,
         className=className,
         style=style,

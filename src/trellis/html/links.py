@@ -116,7 +116,7 @@ def _A(
 
 
 def _make_a(
-    text: str,
+    text: str | None,
     *,
     href: str | None,
     target: str | None,
@@ -148,7 +148,7 @@ def _make_a(
         effective_props["data-trellis-router-link"] = "true"
 
     return _A(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         href=href,
         target=target,
         rel=rel,
@@ -208,7 +208,7 @@ def A(
 
 
 def A(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     href: str | None = None,

@@ -15,7 +15,7 @@ from trellis.core.rendering.element import Element
 from trellis.core.rendering.render import render
 from trellis.core.rendering.traits import ContainerTrait
 from trellis.core.state.stateful import Stateful
-from trellis.html.base import html_element
+from trellis.html.base import HtmlContainerTrait, html_element
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -31,6 +31,14 @@ class CustomElement(Element):
         """Set a data-testid prop."""
         self.props["data-testid"] = value
         return self
+
+
+class ContainerCustomElement(ContainerTrait, CustomElement):
+    """Custom element that supports container behavior."""
+
+
+class HtmlContainerCustomElement(HtmlContainerTrait, CustomElement):
+    """Custom element that supports HTML container behavior."""
 
 
 class TestElementClass:
@@ -173,11 +181,23 @@ class TestElementClass:
         assert type(node) is Element
 
     def test_component_is_container_with_custom_element_class(
+        self,
+    ) -> None:
+        """@component rejects custom element_class without ContainerTrait."""
+
+        with pytest.raises(TypeError, match="ContainerTrait"):
+
+            @component(is_container=True, element_class=CustomElement)
+            def MyContainer(children: list[ChildRef]) -> None:
+                for child in children:
+                    child()
+
+    def test_component_is_container_with_trait_aware_element_class(
         self, rendered: Callable[[CompositionComponent], RenderResult]
     ) -> None:
-        """@component(is_container=True, element_class=CustomElement) dynamically composes."""
+        """@component accepts custom element_class with ContainerTrait."""
 
-        @component(is_container=True, element_class=CustomElement)
+        @component(is_container=True, element_class=ContainerCustomElement)
         def MyContainer(children: list[ChildRef]) -> None:
             for child in children:
                 child()
@@ -197,17 +217,28 @@ class TestElementClass:
         assert root is not None
         container = result.session.elements.get(root.child_ids[0])
         assert container is not None
-        assert isinstance(container, CustomElement)
+        assert isinstance(container, ContainerCustomElement)
         assert isinstance(container, ContainerTrait)
         assert hasattr(container, "__enter__")
         assert len(container.child_ids) == 1
 
     def test_react_is_container_with_custom_element_class(
+        self,
+    ) -> None:
+        """@react rejects custom element_class without ContainerTrait."""
+
+        with pytest.raises(TypeError, match="ContainerTrait"):
+
+            @react("client/TestContainer.tsx", is_container=True, element_class=CustomElement)
+            def TestContainer(*, label: str = "") -> None:
+                pass
+
+    def test_react_is_container_with_trait_aware_element_class(
         self, rendered: Callable[[CompositionComponent], RenderResult]
     ) -> None:
-        """@react(is_container=True, element_class=CustomElement) dynamically composes."""
+        """@react accepts custom element_class with ContainerTrait."""
 
-        @react("client/TestContainer.tsx", is_container=True, element_class=CustomElement)
+        @react("client/TestContainer.tsx", is_container=True, element_class=ContainerCustomElement)
         def TestContainer(*, label: str = "") -> None:
             pass
 
@@ -222,15 +253,25 @@ class TestElementClass:
         assert root is not None
         container = result.session.elements.get(root.child_ids[0])
         assert container is not None
-        assert isinstance(container, CustomElement)
+        assert isinstance(container, ContainerCustomElement)
         assert isinstance(container, ContainerTrait)
 
     def test_html_element_is_container_with_custom_element_class(
+        self,
+    ) -> None:
+        """@html_element rejects custom element_class without HtmlContainerTrait."""
+
+        with pytest.raises(TypeError, match="HtmlContainerTrait"):
+
+            @html_element("div", is_container=True, element_class=CustomElement)
+            def CustomDiv(*, className: str | None = None) -> Element: ...
+
+    def test_html_element_is_container_with_trait_aware_element_class(
         self, rendered: Callable[[CompositionComponent], RenderResult]
     ) -> None:
-        """@html_element(is_container=True, element_class=CustomElement) dynamically composes."""
+        """@html_element accepts custom element_class with HtmlContainerTrait."""
 
-        @html_element("div", is_container=True, element_class=CustomElement)
+        @html_element("div", is_container=True, element_class=HtmlContainerCustomElement)
         def CustomDiv(*, className: str | None = None) -> Element: ...
 
         @component
@@ -244,5 +285,57 @@ class TestElementClass:
         assert root is not None
         container = result.session.elements.get(root.child_ids[0])
         assert container is not None
-        assert isinstance(container, CustomElement)
+        assert isinstance(container, HtmlContainerCustomElement)
+        assert isinstance(container, HtmlContainerTrait)
         assert isinstance(container, ContainerTrait)
+
+    def test_html_element_maps_positional_text_argument_to_text_prop(
+        self, rendered: Callable[[CompositionComponent], RenderResult]
+    ) -> None:
+        """@html_element maps one positional arg to _text."""
+
+        @html_element("span", is_container=True, name="CustomSpan")
+        def CustomSpan(*, _text: str | None = None, className: str | None = None) -> Element: ...
+
+        @component
+        def App() -> None:
+            CustomSpan("hello", className="test")
+
+        result = rendered(App)
+
+        root = result.root_element
+        assert root is not None
+        child = result.session.elements.get(root.child_ids[0])
+        assert child is not None
+        assert child.properties["_text"] == "hello"
+        assert child.properties["className"] == "test"
+
+    def test_html_element_rejects_multiple_positional_arguments(
+        self, rendered: Callable[[CompositionComponent], RenderResult]
+    ) -> None:
+        """@html_element raises when more than one positional arg is passed."""
+
+        @html_element("span", is_container=True, name="CustomSpan")
+        def CustomSpan(*, _text: str | None = None, className: str | None = None) -> Element: ...
+
+        @component
+        def App() -> None:
+            CustomSpan("hello", "world")
+
+        with pytest.raises(TypeError, match="at most one positional argument"):
+            rendered(App)
+
+    def test_html_element_rejects_positional_argument_with_text_keyword(
+        self, rendered: Callable[[CompositionComponent], RenderResult]
+    ) -> None:
+        """@html_element raises when both positional text and _text kwarg are passed."""
+
+        @html_element("span", is_container=True, name="CustomSpan")
+        def CustomSpan(*, _text: str | None = None, className: str | None = None) -> Element: ...
+
+        @component
+        def App() -> None:
+            CustomSpan("hello", _text="override")
+
+        with pytest.raises(TypeError, match="both positional text and '_text'"):
+            rendered(App)

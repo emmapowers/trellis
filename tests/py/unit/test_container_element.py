@@ -11,11 +11,11 @@ import weakref
 
 import pytest
 
-from trellis.core.components.composition import component
+from trellis import component
+from trellis import html as h
 from trellis.core.rendering.element import ContainerElement, Element
 from trellis.core.rendering.session import RenderSession
 from trellis.core.rendering.traits import ContainerTrait
-from trellis.html import Td
 
 
 class TestElementIsNotContextManager:
@@ -75,7 +75,7 @@ class TestContainerElementContextManager:
 
         @component
         def App() -> None:
-            with Td("text"):
+            with h.Td("text"):
                 pass
 
         with pytest.raises(TypeError, match=r"Cannot use.*with.*text content"):

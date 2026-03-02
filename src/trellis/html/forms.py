@@ -225,7 +225,7 @@ def HtmlButton(
 
 
 def HtmlButton(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     type: str = "button",
@@ -251,7 +251,7 @@ def HtmlButton(
             h.Span("Text")
     """
     return _HtmlButton(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         type=type,
         disabled=disabled,
         name=name,
@@ -267,7 +267,7 @@ def HtmlButton(
 
 
 def Option(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     value: str | None = None,
@@ -277,7 +277,7 @@ def Option(
 ) -> Element:
     """An option element for use within Select."""
     return _Option(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         value=value,
         disabled=disabled,
         selected=selected,
@@ -308,7 +308,7 @@ def HtmlLabel(
 
 
 def HtmlLabel(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     htmlFor: str | None = None,
@@ -327,7 +327,7 @@ def HtmlLabel(
             h.Input(id="name-input")
     """
     return _HtmlLabel(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         htmlFor=htmlFor,
         className=className,
         style=style,
@@ -387,7 +387,7 @@ def Legend(
 
 
 def Legend(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -397,7 +397,7 @@ def Legend(
 ) -> Element:
     """A legend element for labeling a fieldset."""
     return _Legend(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -493,7 +493,7 @@ def Output(
 
 
 def Output(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     htmlFor: str | None = None,
@@ -505,7 +505,7 @@ def Output(
 ) -> Element:
     """An output element for calculation results."""
     return _Output(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         htmlFor=htmlFor,
         name=name,
         className=className,

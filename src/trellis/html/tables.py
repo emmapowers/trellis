@@ -125,7 +125,7 @@ def Th(
 
 
 def Th(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     scope: str | None = None,
@@ -144,7 +144,7 @@ def Th(
             h.Span("*", style={"color": "red"})
     """
     return _Th(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         scope=scope,
         colSpan=colSpan,
         rowSpan=rowSpan,
@@ -179,7 +179,7 @@ def Td(
 
 
 def Td(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     colSpan: int | None = None,
@@ -197,7 +197,7 @@ def Td(
             h.Span(" and normal")
     """
     return _Td(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         colSpan=colSpan,
         rowSpan=rowSpan,
         className=className,
@@ -254,7 +254,7 @@ def Caption(
 
 
 def Caption(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -264,7 +264,7 @@ def Caption(
 ) -> Element:
     """A table caption element."""
     return _Caption(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,

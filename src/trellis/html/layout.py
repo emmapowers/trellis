@@ -116,7 +116,7 @@ def Span(
 
 
 def Span(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -131,7 +131,7 @@ def Span(
 ) -> Element:
     """An inline span element."""
     return _Span(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -274,7 +274,7 @@ def Blockquote(
 
 
 def Blockquote(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     cite: str | None = None,
@@ -285,7 +285,7 @@ def Blockquote(
 ) -> Element:
     """A blockquote element."""
     return _Blockquote(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         cite=cite,
         className=className,
         style=style,
@@ -355,7 +355,7 @@ def Summary(
 
 
 def Summary(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -365,7 +365,7 @@ def Summary(
 ) -> Element:
     """A summary element for use within Details."""
     return _Summary(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -421,7 +421,7 @@ def Figcaption(
 
 
 def Figcaption(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -431,7 +431,7 @@ def Figcaption(
 ) -> Element:
     """A figcaption element."""
     return _Figcaption(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,

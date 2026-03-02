@@ -82,7 +82,7 @@ def Li(
 
 
 def Li(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -97,7 +97,7 @@ def Li(
             h.Strong("Bold")
     """
     return _Li(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         **props,
@@ -155,7 +155,7 @@ def Dt(
 
 
 def Dt(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -165,7 +165,7 @@ def Dt(
 ) -> Element:
     """A description term element."""
     return _Dt(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
@@ -209,7 +209,7 @@ def Dd(
 
 
 def Dd(
-    text: str = "",
+    text: str | None = None,
     /,
     *,
     className: str | None = None,
@@ -219,7 +219,7 @@ def Dd(
 ) -> Element:
     """A description details element."""
     return _Dd(
-        _text=text if text else None,
+        **({"_text": text} if text is not None else {}),
         className=className,
         style=style,
         id=id,
