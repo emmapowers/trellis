@@ -17,12 +17,20 @@ Example:
 from __future__ import annotations
 
 import typing as tp
+import weakref
 from dataclasses import dataclass
+
+from trellis.core.rendering.child_ref import ChildRef
+from trellis.core.rendering.session import get_active_session
+from trellis.utils.logger import logger
 
 if tp.TYPE_CHECKING:
     from typing import Self
 
-__all__ = ["KeyTrait", "TraitHooks", "get_trait_hooks"]
+    from trellis.core.components.base import Component
+    from trellis.core.rendering.session import RenderSession
+
+__all__ = ["ContainerTrait", "KeyTrait", "TraitHooks", "get_trait_hooks"]
 
 _HOOK_NAMES = ("_before_execute", "_after_execute", "_on_trait_mount", "_on_trait_unmount")
 
@@ -82,6 +90,87 @@ def get_trait_hooks(element_class: type) -> list[TraitHooks]:
 
     _trait_hooks_cache[element_class] = result
     return result
+
+
+class ContainerTrait:
+    """Mixin providing `with` block support for collecting children.
+
+    Any element class composed with this trait can be used as a context manager
+    to collect child elements. This is the core container mechanism — subclasses
+    like HtmlContainerTrait may add domain-specific checks.
+
+    Expects the host class to have Element-compatible attributes:
+    component, _session_ref, id, props, child_ids.
+    """
+
+    # These attributes are provided by Element (or any host dataclass).
+    component: Component
+    _session_ref: weakref.ref[RenderSession]
+    id: str
+    props: dict[str, tp.Any]
+    child_ids: list[str]
+
+    def __enter__(self) -> Self:
+        """Enter a `with` block to collect children for a container component."""
+        session = get_active_session()
+        if session is None or session.active is None:
+            raise RuntimeError(
+                f"Cannot use 'with {self.component.name}()' outside of render context. "
+                f"Container components must be created during rendering, not in callbacks."
+            )
+
+        # Hybrid elements: text mode and container mode are mutually exclusive
+        if self.props.get("_text"):
+            raise TypeError(
+                f"Cannot use 'with {self.component.name}(...)' with text content. "
+                f'Use either text mode ({self.component.name}("text")) or '
+                f"container mode (with {self.component.name}(): ...)."
+            )
+
+        # Validate: can't provide children as both prop and via with block
+        if "children" in self.props:
+            raise RuntimeError(
+                f"Cannot provide 'children' prop and use 'with' block. "
+                f"Component: {self.component.name}"
+            )
+
+        # Push new frame for children created in this scope
+        session.active.frames.push(parent_id=self.id)
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: tp.Any,
+    ) -> None:
+        """Exit the `with` block, storing ChildRefs in props["children"]."""
+        session = get_active_session()
+        if session is None or session.active is None:
+            return
+
+        child_ids = session.active.frames.pop()
+
+        # Don't process children if an exception occurred
+        if exc_type is not None:
+            return
+
+        logger.debug(
+            "Container __exit__ %s: collected %d children",
+            self.component.name,
+            len(child_ids),
+        )
+
+        # Store collected child IDs (for initial render/reconciliation)
+        self.child_ids = list(child_ids)
+
+        # Create ChildRefs for the container to use during execution.
+        # These are stable references that survive container re-renders.
+        children = [ChildRef(id=cid, _session_ref=self._session_ref) for cid in child_ids]
+        self.props["children"] = children
+
+        # Re-store element with child_ids and children props set
+        session.elements.store(self)  # type: ignore[arg-type]
 
 
 class KeyTrait:

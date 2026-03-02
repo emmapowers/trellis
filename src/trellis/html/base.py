@@ -13,8 +13,10 @@ from typing import Literal, ParamSpec, overload
 
 from trellis.core.components.base import Component, ElementKind
 from trellis.core.rendering.element import ContainerElement, Element
+from trellis.core.rendering.traits import ContainerTrait
 
 __all__ = [
+    "HtmlContainerTrait",
     "HtmlElement",
     "Style",
     "html_element",
@@ -25,6 +27,24 @@ Style = dict[str, str | int | float]
 
 # ParamSpec for preserving function signatures through the decorator
 P = ParamSpec("P")
+
+
+class HtmlContainerTrait(ContainerTrait):
+    """ContainerTrait with HTML-specific hybrid text/container check.
+
+    HTML elements can be used in text mode (e.g. ``P("hello")``) or container
+    mode (e.g. ``with P(): ...``). The two modes are mutually exclusive —
+    entering a ``with`` block when ``_text`` is set raises TypeError.
+    """
+
+    def __enter__(self) -> tp.Self:
+        if self.props.get("_text"):
+            raise TypeError(
+                f"Cannot use 'with {self.component.name}(...)' with text content. "
+                f'Use either text mode ({self.component.name}("text")) or '
+                f"container mode (with {self.component.name}(): ...)."
+            )
+        return super().__enter__()
 
 
 class HtmlElement(Component):

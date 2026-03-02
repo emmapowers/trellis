@@ -24,12 +24,13 @@ from trellis.core.rendering.session import (
     is_render_active,
     set_active_session,
 )
-from trellis.core.rendering.traits import KeyTrait
+from trellis.core.rendering.traits import ContainerTrait, KeyTrait
 
 __all__ = [
     "ActiveRender",
     "ChildRef",
     "ContainerElement",
+    "ContainerTrait",
     "DirtyTracker",
     "Element",
     "ElementState",

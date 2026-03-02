@@ -4,18 +4,13 @@ import typing as tp
 import weakref
 from dataclasses import dataclass, field
 
-from trellis.core.rendering.child_ref import ChildRef
-from trellis.core.rendering.session import (
-    RenderSession,
-    get_active_session,
-)
-from trellis.core.rendering.traits import KeyTrait
+from trellis.core.rendering.traits import ContainerTrait, KeyTrait
 from trellis.core.state.mutable import Mutable
 from trellis.core.state.ref import RefTrait
-from trellis.utils.logger import logger
 
 if tp.TYPE_CHECKING:
     from trellis.core.components.base import Component
+    from trellis.core.rendering.session import RenderSession
 
 __all__ = [
     "ContainerElement",
@@ -58,70 +53,13 @@ class Element(KeyTrait, RefTrait):
 
 
 @dataclass(eq=False)
-class ContainerElement(Element):
-    """Element that supports `with` blocks for collecting children."""
+class ContainerElement(ContainerTrait, Element):
+    """Element that supports `with` blocks for collecting children.
 
-    def __enter__(self) -> ContainerElement:
-        """Enter a `with` block to collect children for a container component."""
-        session = get_active_session()
-        if session is None or session.active is None:
-            raise RuntimeError(
-                f"Cannot use 'with {self.component.name}()' outside of render context. "
-                f"Container components must be created during rendering, not in callbacks."
-            )
-
-        # Hybrid elements: text mode and container mode are mutually exclusive
-        if self.props.get("_text"):
-            raise TypeError(
-                f"Cannot use 'with {self.component.name}(...)' with text content. "
-                f'Use either text mode ({self.component.name}("text")) or '
-                f"container mode (with {self.component.name}(): ...)."
-            )
-
-        # Validate: can't provide children as both prop and via with block
-        if "children" in self.props:
-            raise RuntimeError(
-                f"Cannot provide 'children' prop and use 'with' block. "
-                f"Component: {self.component.name}"
-            )
-
-        # Push new frame for children created in this scope
-        session.active.frames.push(parent_id=self.id)
-        return self
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: tp.Any,
-    ) -> None:
-        """Exit the `with` block, storing ChildRefs in props["children"]."""
-        session = get_active_session()
-        if session is None or session.active is None:
-            return
-
-        child_ids = session.active.frames.pop()
-
-        # Don't process children if an exception occurred
-        if exc_type is not None:
-            return
-
-        logger.debug(
-            "Container __exit__ %s: collected %d children",
-            self.component.name,
-            len(child_ids),
-        )
-
-        # Store collected child IDs (for initial render/reconciliation)
-        self.child_ids = list(child_ids)
-
-        # Create ChildRefs for the container to use during execution.
-        # These are stable references that survive container re-renders.
-        children = [ChildRef(id=cid, _session_ref=self._session_ref) for cid in child_ids]
-        self.props["children"] = children
-
-        # Re-store element with child_ids and children props set
-        session.elements.store(self)
+    Convenience composition of ContainerTrait + Element. Decorators that need
+    container behavior can also dynamically compose ContainerTrait into any
+    custom element_class via type().
+    """
 
 
 def props_equal(old_props: dict[str, tp.Any], new_props: dict[str, tp.Any]) -> bool:

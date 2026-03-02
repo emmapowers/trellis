@@ -1,8 +1,8 @@
-"""Tests for ContainerElement behavior.
+"""Tests for ContainerTrait and ContainerElement behavior.
 
-Verifies that Element (leaf) and ContainerElement (container) have distinct
-context manager behavior: Element does not support `with` blocks, while
-ContainerElement does when used inside a render context.
+Verifies that Element (leaf) does not support `with` blocks, while
+ContainerTrait provides __enter__/__exit__ as a standalone mixin,
+and ContainerElement composes ContainerTrait + Element.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ import pytest
 from trellis.core.components.composition import component
 from trellis.core.rendering.element import ContainerElement, Element
 from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.traits import ContainerTrait
 from trellis.html import Td
 
 
@@ -29,15 +30,31 @@ class TestElementIsNotContextManager:
         assert not hasattr(Element, "__exit__")
 
 
+class TestContainerTrait:
+    """ContainerTrait is a standalone mixin providing __enter__/__exit__."""
+
+    def test_trait_has_enter(self) -> None:
+        """ContainerTrait has __enter__."""
+        assert hasattr(ContainerTrait, "__enter__")
+
+    def test_trait_has_exit(self) -> None:
+        """ContainerTrait has __exit__."""
+        assert hasattr(ContainerTrait, "__exit__")
+
+    def test_trait_is_not_element(self) -> None:
+        """ContainerTrait is independent of Element."""
+        assert not issubclass(ContainerTrait, Element)
+
+
 class TestContainerElementContextManager:
-    """ContainerElement supports `with` blocks in render context."""
+    """ContainerElement composes ContainerTrait + Element."""
 
     def test_container_element_has_enter(self) -> None:
-        """ContainerElement has __enter__."""
+        """ContainerElement has __enter__ from ContainerTrait."""
         assert hasattr(ContainerElement, "__enter__")
 
     def test_container_element_has_exit(self) -> None:
-        """ContainerElement has __exit__."""
+        """ContainerElement has __exit__ from ContainerTrait."""
         assert hasattr(ContainerElement, "__exit__")
 
     def test_container_enter_raises_outside_render(self, noop_component) -> None:
@@ -54,7 +71,7 @@ class TestContainerElementContextManager:
             elem.__enter__()
 
     def test_container_enter_raises_with_text_prop(self, rendered) -> None:
-        """ContainerElement.__enter__ raises TypeError when _text is set."""
+        """ContainerTrait.__enter__ raises TypeError when _text is set."""
 
         @component
         def App() -> None:
@@ -67,3 +84,7 @@ class TestContainerElementContextManager:
     def test_container_element_is_subclass(self) -> None:
         """ContainerElement is a subclass of Element."""
         assert issubclass(ContainerElement, Element)
+
+    def test_container_element_has_container_trait(self) -> None:
+        """ContainerElement includes ContainerTrait in its MRO."""
+        assert issubclass(ContainerElement, ContainerTrait)
