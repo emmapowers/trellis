@@ -65,24 +65,6 @@ def Div(
     ...
 
 
-@html_element("span", is_container=True, name="Span")
-def _Span(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    onClick: MouseHandler | None = None,
-    onDoubleClick: MouseHandler | None = None,
-    onContextMenu: MouseHandler | None = None,
-    onKeyDown: KeyboardHandler | None = None,
-    onKeyUp: KeyboardHandler | None = None,
-    **props: tp.Any,
-) -> Element:
-    """An inline span element."""
-    ...
-
-
 @overload
 def Span(
     text: str,
@@ -115,6 +97,7 @@ def Span(
 ) -> ContainerElement: ...
 
 
+@html_element("span", is_container=True)
 def Span(
     text: str | None = None,
     /,
@@ -130,18 +113,7 @@ def Span(
     **props: tp.Any,
 ) -> Element:
     """An inline span element."""
-    return _Span(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        onClick=onClick,
-        onDoubleClick=onDoubleClick,
-        onContextMenu=onContextMenu,
-        onKeyDown=onKeyDown,
-        onKeyUp=onKeyUp,
-        **props,
-    )
+    ...
 
 
 @html_element("section", is_container=True)
@@ -235,20 +207,6 @@ def Aside(
 # New structural elements
 
 
-@html_element("blockquote", is_container=True, name="Blockquote")
-def _Blockquote(
-    *,
-    _text: str | None = None,
-    cite: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A blockquote element."""
-    ...
-
-
 @overload
 def Blockquote(
     text: str,
@@ -273,6 +231,7 @@ def Blockquote(
 ) -> ContainerElement: ...
 
 
+@html_element("blockquote", is_container=True)
 def Blockquote(
     text: str | None = None,
     /,
@@ -284,14 +243,7 @@ def Blockquote(
     **props: tp.Any,
 ) -> Element:
     """A blockquote element."""
-    return _Blockquote(
-        **({"_text": text} if text is not None else {}),
-        cite=cite,
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @html_element("address", is_container=True)
@@ -319,19 +271,6 @@ def Details(
     ...
 
 
-@html_element("summary", is_container=True, name="Summary")
-def _Summary(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A summary element for use within Details."""
-    ...
-
-
 @overload
 def Summary(
     text: str,
@@ -354,6 +293,7 @@ def Summary(
 ) -> ContainerElement: ...
 
 
+@html_element("summary", is_container=True)
 def Summary(
     text: str | None = None,
     /,
@@ -364,13 +304,7 @@ def Summary(
     **props: tp.Any,
 ) -> Element:
     """A summary element for use within Details."""
-    return _Summary(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @html_element("figure", is_container=True)
@@ -385,19 +319,6 @@ def Figure(
     ...
 
 
-@html_element("figcaption", is_container=True, name="Figcaption")
-def _Figcaption(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A figcaption element."""
-    ...
-
-
 @overload
 def Figcaption(
     text: str,
@@ -420,6 +341,7 @@ def Figcaption(
 ) -> ContainerElement: ...
 
 
+@html_element("figcaption", is_container=True)
 def Figcaption(
     text: str | None = None,
     /,
@@ -430,10 +352,4 @@ def Figcaption(
     **props: tp.Any,
 ) -> Element:
     """A figcaption element."""
-    return _Figcaption(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...

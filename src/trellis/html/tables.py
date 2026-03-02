@@ -68,36 +68,6 @@ def Tr(
     ...
 
 
-# Hybrid elements need special handling
-@html_element("th", is_container=True, name="Th")
-def _Th(
-    *,
-    _text: str | None = None,
-    scope: str | None = None,
-    colSpan: int | None = None,
-    rowSpan: int | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A table header cell element."""
-    ...
-
-
-@html_element("td", is_container=True, name="Td")
-def _Td(
-    *,
-    _text: str | None = None,
-    colSpan: int | None = None,
-    rowSpan: int | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A table data cell element."""
-    ...
-
-
 @overload
 def Th(
     text: str,
@@ -124,6 +94,7 @@ def Th(
 ) -> ContainerElement: ...
 
 
+@html_element("th", is_container=True)
 def Th(
     text: str | None = None,
     /,
@@ -143,15 +114,7 @@ def Th(
             h.Span("Name")
             h.Span("*", style={"color": "red"})
     """
-    return _Th(
-        **({"_text": text} if text is not None else {}),
-        scope=scope,
-        colSpan=colSpan,
-        rowSpan=rowSpan,
-        className=className,
-        style=style,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -178,6 +141,7 @@ def Td(
 ) -> ContainerElement: ...
 
 
+@html_element("td", is_container=True)
 def Td(
     text: str | None = None,
     /,
@@ -196,14 +160,7 @@ def Td(
             h.Strong("Bold")
             h.Span(" and normal")
     """
-    return _Td(
-        **({"_text": text} if text is not None else {}),
-        colSpan=colSpan,
-        rowSpan=rowSpan,
-        className=className,
-        style=style,
-        **props,
-    )
+    ...
 
 
 @html_element("tfoot", is_container=True)
@@ -215,19 +172,6 @@ def Tfoot(
     **props: tp.Any,
 ) -> Element:
     """A table footer section element."""
-    ...
-
-
-@html_element("caption", is_container=True, name="Caption")
-def _Caption(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A table caption element."""
     ...
 
 
@@ -253,6 +197,7 @@ def Caption(
 ) -> ContainerElement: ...
 
 
+@html_element("caption", is_container=True)
 def Caption(
     text: str | None = None,
     /,
@@ -263,10 +208,4 @@ def Caption(
     **props: tp.Any,
 ) -> Element:
     """A table caption element."""
-    return _Caption(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...

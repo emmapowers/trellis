@@ -7,6 +7,7 @@ element wrappers, plus the @html_element decorator for defining elements.
 from __future__ import annotations
 
 import functools
+import inspect
 import typing as tp
 from collections.abc import Callable
 from typing import Literal, ParamSpec, TypeVar, overload
@@ -193,6 +194,17 @@ def html_element(
     ) -> Callable[P, Element | E]:
         # Use provided name or function name
         element_name = name or func.__name__
+        signature = inspect.signature(func)
+        var_keyword_param = next(
+            (
+                param.name
+                for param in signature.parameters.values()
+                if param.kind == inspect.Parameter.VAR_KEYWORD
+            ),
+            None,
+        )
+        has_text_keyword = "_text" in signature.parameters
+        has_text_positional = "text" in signature.parameters
 
         # Create a generated class with the element name
         class _Generated(HtmlElement):
@@ -204,18 +216,38 @@ def html_element(
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element | E:
-            props = dict(kwargs)
-
             if len(args) > 1:
                 raise TypeError(
                     f"{element_name}() accepts at most one positional argument for text content."
                 )
-            if args:
-                if "_text" in props:
-                    raise TypeError(
-                        f"{element_name}() received both positional text and '_text' keyword argument."
-                    )
-                props["_text"] = args[0]
+            if args and "_text" in kwargs:
+                raise TypeError(
+                    f"{element_name}() received both positional text and '_text' keyword argument."
+                )
+
+            validation_args: tuple[tp.Any, ...] = args
+            validation_kwargs = dict(kwargs)
+            if args and has_text_keyword:
+                validation_args = ()
+                validation_kwargs["_text"] = args[0]
+
+            bound = signature.bind_partial(*validation_args, **validation_kwargs)
+            if has_text_keyword or has_text_positional:
+                # Preserve previous hybrid-wrapper behavior where default props
+                # were forwarded (e.g. HtmlButton(type="button")).
+                bound.apply_defaults()
+            props = dict(bound.arguments)
+            if var_keyword_param and var_keyword_param in props:
+                var_kwargs = props.pop(var_keyword_param)
+                props.update(var_kwargs)
+
+            if "text" in props:
+                text_value = props.pop("text")
+                if text_value is not None:
+                    props["_text"] = text_value
+
+            if "_text" in props and props["_text"] is None:
+                del props["_text"]
 
             return _singleton._place(**props)
 

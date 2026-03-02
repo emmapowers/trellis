@@ -339,3 +339,18 @@ class TestElementClass:
 
         with pytest.raises(TypeError, match="both positional text and '_text'"):
             rendered(App)
+
+    def test_html_element_rejects_keyword_for_positional_only_text_parameter(
+        self, rendered: Callable[[CompositionComponent], RenderResult]
+    ) -> None:
+        """@html_element enforces positional-only text parameters."""
+
+        @html_element("span", is_container=True, name="CustomSpan")
+        def CustomSpan(text: str | None = None, /, *, className: str | None = None) -> Element: ...
+
+        @component
+        def App() -> None:
+            CustomSpan(text="hello")
+
+        with pytest.raises(TypeError, match="positional-only"):
+            rendered(App)

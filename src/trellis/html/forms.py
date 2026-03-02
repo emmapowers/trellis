@@ -140,54 +140,6 @@ def Select(
     ...
 
 
-# Hybrid elements need special handling
-@html_element("button", is_container=True, name="HtmlButton")
-def _HtmlButton(
-    *,
-    _text: str | None = None,
-    type: str = "button",
-    disabled: bool = False,
-    name: str | None = None,
-    value: str | None = None,
-    onClick: MouseHandler | None = None,
-    onKeyDown: KeyboardHandler | None = None,
-    onKeyUp: KeyboardHandler | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A native HTML button element."""
-    ...
-
-
-@html_element("option", name="Option")
-def _Option(
-    *,
-    _text: str | None = None,
-    value: str | None = None,
-    disabled: bool = False,
-    selected: bool = False,
-    **props: tp.Any,
-) -> Element:
-    """An option element for use within Select."""
-    ...
-
-
-@html_element("label", is_container=True, name="HtmlLabel")
-def _HtmlLabel(
-    *,
-    _text: str | None = None,
-    htmlFor: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A label element."""
-    ...
-
-
-# Public API for hybrid elements with positional text support
 @overload
 def HtmlButton(
     text: str,
@@ -224,6 +176,7 @@ def HtmlButton(
 ) -> ContainerElement: ...
 
 
+@html_element("button", is_container=True)
 def HtmlButton(
     text: str | None = None,
     /,
@@ -250,22 +203,10 @@ def HtmlButton(
             h.Span("Icon")
             h.Span("Text")
     """
-    return _HtmlButton(
-        **({"_text": text} if text is not None else {}),
-        type=type,
-        disabled=disabled,
-        name=name,
-        value=value,
-        onClick=onClick,
-        onKeyDown=onKeyDown,
-        onKeyUp=onKeyUp,
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
+@html_element("option")
 def Option(
     text: str | None = None,
     /,
@@ -276,13 +217,7 @@ def Option(
     **props: tp.Any,
 ) -> Element:
     """An option element for use within Select."""
-    return _Option(
-        **({"_text": text} if text is not None else {}),
-        value=value,
-        disabled=disabled,
-        selected=selected,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -307,6 +242,7 @@ def HtmlLabel(
 ) -> ContainerElement: ...
 
 
+@html_element("label", is_container=True)
 def HtmlLabel(
     text: str | None = None,
     /,
@@ -326,13 +262,7 @@ def HtmlLabel(
             h.Span("Name")
             h.Input(id="name-input")
     """
-    return _HtmlLabel(
-        **({"_text": text} if text is not None else {}),
-        htmlFor=htmlFor,
-        className=className,
-        style=style,
-        **props,
-    )
+    ...
 
 
 # New form elements
@@ -348,19 +278,6 @@ def Fieldset(
     **props: tp.Any,
 ) -> Element:
     """A fieldset element for grouping form controls."""
-    ...
-
-
-@html_element("legend", is_container=True, name="Legend")
-def _Legend(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A legend element for labeling a fieldset."""
     ...
 
 
@@ -386,6 +303,7 @@ def Legend(
 ) -> ContainerElement: ...
 
 
+@html_element("legend", is_container=True)
 def Legend(
     text: str | None = None,
     /,
@@ -396,13 +314,7 @@ def Legend(
     **props: tp.Any,
 ) -> Element:
     """A legend element for labeling a fieldset."""
-    return _Legend(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @html_element("optgroup", is_container=True)
@@ -451,21 +363,6 @@ def Meter(
     ...
 
 
-@html_element("output", is_container=True, name="Output")
-def _Output(
-    *,
-    _text: str | None = None,
-    htmlFor: str | None = None,
-    name: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """An output element for calculation results."""
-    ...
-
-
 @overload
 def Output(
     text: str,
@@ -492,6 +389,7 @@ def Output(
 ) -> ContainerElement: ...
 
 
+@html_element("output", is_container=True)
 def Output(
     text: str | None = None,
     /,
@@ -504,15 +402,7 @@ def Output(
     **props: tp.Any,
 ) -> Element:
     """An output element for calculation results."""
-    return _Output(
-        **({"_text": text} if text is not None else {}),
-        htmlFor=htmlFor,
-        name=name,
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @html_element("datalist", is_container=True)

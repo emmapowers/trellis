@@ -66,150 +66,6 @@ class TextNode(Component):
         pass
 
 
-# Text elements use decorators but need wrappers for positional text args
-@html_element("p", is_container=True, name="P")
-def _P(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A paragraph element."""
-    ...
-
-
-@html_element("h1", is_container=True, name="H1")
-def _H1(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A level 1 heading."""
-    ...
-
-
-@html_element("h2", is_container=True, name="H2")
-def _H2(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A level 2 heading."""
-    ...
-
-
-@html_element("h3", is_container=True, name="H3")
-def _H3(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A level 3 heading."""
-    ...
-
-
-@html_element("h4", is_container=True, name="H4")
-def _H4(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A level 4 heading."""
-    ...
-
-
-@html_element("h5", is_container=True, name="H5")
-def _H5(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A level 5 heading."""
-    ...
-
-
-@html_element("h6", is_container=True, name="H6")
-def _H6(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A level 6 heading."""
-    ...
-
-
-@html_element("strong", is_container=True, name="Strong")
-def _Strong(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A strong (bold) text element."""
-    ...
-
-
-@html_element("em", is_container=True, name="Em")
-def _Em(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """An emphasis (italic) text element."""
-    ...
-
-
-@html_element("code", is_container=True, name="Code")
-def _Code(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """An inline code element."""
-    ...
-
-
-@html_element("pre", is_container=True, name="Pre")
-def _Pre(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A preformatted text element."""
-    ...
-
-
 # Void elements (no children, no text)
 @html_element("br")
 def Br(
@@ -232,87 +88,6 @@ def Hr(
     **props: tp.Any,
 ) -> Element:
     """A horizontal rule element."""
-    ...
-
-
-# Additional hybrid text elements
-@html_element("small", is_container=True, name="Small")
-def _Small(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A small text element."""
-    ...
-
-
-@html_element("mark", is_container=True, name="Mark")
-def _Mark(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A marked/highlighted text element."""
-    ...
-
-
-@html_element("sub", is_container=True, name="Sub")
-def _Sub(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A subscript text element."""
-    ...
-
-
-@html_element("sup", is_container=True, name="Sup")
-def _Sup(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A superscript text element."""
-    ...
-
-
-@html_element("abbr", is_container=True, name="Abbr")
-def _Abbr(
-    *,
-    _text: str | None = None,
-    title: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """An abbreviation element."""
-    ...
-
-
-@html_element("time", is_container=True, name="Time")
-def _Time(
-    *,
-    _text: str | None = None,
-    dateTime: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A time element."""
     ...
 
 
@@ -345,6 +120,7 @@ def P(
 ) -> ContainerElement: ...
 
 
+@html_element("p", is_container=True)
 def P(
     text: str | None = None,
     /,
@@ -355,13 +131,7 @@ def P(
     **props: tp.Any,
 ) -> Element:
     """A paragraph element."""
-    return _P(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -386,6 +156,7 @@ def H1(
 ) -> ContainerElement: ...
 
 
+@html_element("h1", is_container=True)
 def H1(
     text: str | None = None,
     /,
@@ -396,13 +167,7 @@ def H1(
     **props: tp.Any,
 ) -> Element:
     """A level 1 heading."""
-    return _H1(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -427,6 +192,7 @@ def H2(
 ) -> ContainerElement: ...
 
 
+@html_element("h2", is_container=True)
 def H2(
     text: str | None = None,
     /,
@@ -437,13 +203,7 @@ def H2(
     **props: tp.Any,
 ) -> Element:
     """A level 2 heading."""
-    return _H2(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -468,6 +228,7 @@ def H3(
 ) -> ContainerElement: ...
 
 
+@html_element("h3", is_container=True)
 def H3(
     text: str | None = None,
     /,
@@ -478,13 +239,7 @@ def H3(
     **props: tp.Any,
 ) -> Element:
     """A level 3 heading."""
-    return _H3(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -509,6 +264,7 @@ def H4(
 ) -> ContainerElement: ...
 
 
+@html_element("h4", is_container=True)
 def H4(
     text: str | None = None,
     /,
@@ -519,13 +275,7 @@ def H4(
     **props: tp.Any,
 ) -> Element:
     """A level 4 heading."""
-    return _H4(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -550,6 +300,7 @@ def H5(
 ) -> ContainerElement: ...
 
 
+@html_element("h5", is_container=True)
 def H5(
     text: str | None = None,
     /,
@@ -560,13 +311,7 @@ def H5(
     **props: tp.Any,
 ) -> Element:
     """A level 5 heading."""
-    return _H5(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -591,6 +336,7 @@ def H6(
 ) -> ContainerElement: ...
 
 
+@html_element("h6", is_container=True)
 def H6(
     text: str | None = None,
     /,
@@ -601,13 +347,7 @@ def H6(
     **props: tp.Any,
 ) -> Element:
     """A level 6 heading."""
-    return _H6(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -632,6 +372,7 @@ def Strong(
 ) -> ContainerElement: ...
 
 
+@html_element("strong", is_container=True)
 def Strong(
     text: str | None = None,
     /,
@@ -642,13 +383,7 @@ def Strong(
     **props: tp.Any,
 ) -> Element:
     """A strong (bold) text element."""
-    return _Strong(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -673,6 +408,7 @@ def Em(
 ) -> ContainerElement: ...
 
 
+@html_element("em", is_container=True)
 def Em(
     text: str | None = None,
     /,
@@ -683,13 +419,7 @@ def Em(
     **props: tp.Any,
 ) -> Element:
     """An emphasis (italic) text element."""
-    return _Em(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -714,6 +444,7 @@ def Code(
 ) -> ContainerElement: ...
 
 
+@html_element("code", is_container=True)
 def Code(
     text: str | None = None,
     /,
@@ -724,13 +455,7 @@ def Code(
     **props: tp.Any,
 ) -> Element:
     """An inline code element."""
-    return _Code(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -755,6 +480,7 @@ def Pre(
 ) -> ContainerElement: ...
 
 
+@html_element("pre", is_container=True)
 def Pre(
     text: str | None = None,
     /,
@@ -765,13 +491,7 @@ def Pre(
     **props: tp.Any,
 ) -> Element:
     """A preformatted text element."""
-    return _Pre(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -796,6 +516,7 @@ def Small(
 ) -> ContainerElement: ...
 
 
+@html_element("small", is_container=True)
 def Small(
     text: str | None = None,
     /,
@@ -806,13 +527,7 @@ def Small(
     **props: tp.Any,
 ) -> Element:
     """A small text element."""
-    return _Small(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -837,6 +552,7 @@ def Mark(
 ) -> ContainerElement: ...
 
 
+@html_element("mark", is_container=True)
 def Mark(
     text: str | None = None,
     /,
@@ -847,13 +563,7 @@ def Mark(
     **props: tp.Any,
 ) -> Element:
     """A marked/highlighted text element."""
-    return _Mark(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -878,6 +588,7 @@ def Sub(
 ) -> ContainerElement: ...
 
 
+@html_element("sub", is_container=True)
 def Sub(
     text: str | None = None,
     /,
@@ -888,13 +599,7 @@ def Sub(
     **props: tp.Any,
 ) -> Element:
     """A subscript text element."""
-    return _Sub(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -919,6 +624,7 @@ def Sup(
 ) -> ContainerElement: ...
 
 
+@html_element("sup", is_container=True)
 def Sup(
     text: str | None = None,
     /,
@@ -929,13 +635,7 @@ def Sup(
     **props: tp.Any,
 ) -> Element:
     """A superscript text element."""
-    return _Sup(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -962,6 +662,7 @@ def Abbr(
 ) -> ContainerElement: ...
 
 
+@html_element("abbr", is_container=True)
 def Abbr(
     text: str | None = None,
     /,
@@ -973,14 +674,7 @@ def Abbr(
     **props: tp.Any,
 ) -> Element:
     """An abbreviation element."""
-    return _Abbr(
-        **({"_text": text} if text is not None else {}),
-        title=title,
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 @overload
@@ -1007,6 +701,7 @@ def Time(
 ) -> ContainerElement: ...
 
 
+@html_element("time", is_container=True)
 def Time(
     text: str | None = None,
     /,
@@ -1018,14 +713,7 @@ def Time(
     **props: tp.Any,
 ) -> Element:
     """A time element."""
-    return _Time(
-        **({"_text": text} if text is not None else {}),
-        dateTime=dateTime,
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
 def Text(

@@ -48,19 +48,6 @@ def Ol(
     ...
 
 
-# Hybrid element needs special handling
-@html_element("li", is_container=True, name="Li")
-def _Li(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A list item element."""
-    ...
-
-
 @overload
 def Li(
     text: str,
@@ -81,6 +68,7 @@ def Li(
 ) -> ContainerElement: ...
 
 
+@html_element("li", is_container=True)
 def Li(
     text: str | None = None,
     /,
@@ -96,12 +84,7 @@ def Li(
         with h.Li():         # Container with children
             h.Strong("Bold")
     """
-    return _Li(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        **props,
-    )
+    ...
 
 
 # Definition list elements
@@ -119,19 +102,6 @@ def Dl(
     ...
 
 
-@html_element("dt", is_container=True, name="Dt")
-def _Dt(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A description term element."""
-    ...
-
-
 @overload
 def Dt(
     text: str,
@@ -154,6 +124,7 @@ def Dt(
 ) -> ContainerElement: ...
 
 
+@html_element("dt", is_container=True)
 def Dt(
     text: str | None = None,
     /,
@@ -164,25 +135,6 @@ def Dt(
     **props: tp.Any,
 ) -> Element:
     """A description term element."""
-    return _Dt(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
-
-
-@html_element("dd", is_container=True, name="Dd")
-def _Dd(
-    *,
-    _text: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A description details element."""
     ...
 
 
@@ -208,6 +160,7 @@ def Dd(
 ) -> ContainerElement: ...
 
 
+@html_element("dd", is_container=True)
 def Dd(
     text: str | None = None,
     /,
@@ -218,10 +171,4 @@ def Dd(
     **props: tp.Any,
 ) -> Element:
     """A description details element."""
-    return _Dd(
-        **({"_text": text} if text is not None else {}),
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
