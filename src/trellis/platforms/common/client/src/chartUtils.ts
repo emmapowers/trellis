@@ -84,6 +84,8 @@ export function useResolvedTheme(seriesCount: number): ResolvedTheme {
   const ref = useCallback((node: HTMLElement | null) => {
     if (node) {
       setRootEl(node.closest(".trellis-root") || node);
+      // Bump version so consumers re-create with resolved colors
+      setThemeVersion((v) => v + 1);
     }
   }, []);
 

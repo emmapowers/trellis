@@ -72,7 +72,8 @@ export function TimeSeriesChart({
   }
 
   const axisStroke = resolveColor(colors.text.secondary);
-  const gridStroke = resolveColor(colors.border.subtle);
+  // Use border.default for grid — border.subtle has near-zero contrast on canvas
+  const gridStroke = resolveColor(colors.border.default);
   const tickStroke = resolveColor(colors.border.default);
 
   const opts: uPlot.Options = {
@@ -99,6 +100,7 @@ export function TimeSeriesChart({
     ],
     legend: {
       show: show_legend,
+      live: false,
     },
     cursor: {
       show: show_tooltip,
