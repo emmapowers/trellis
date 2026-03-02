@@ -77,6 +77,18 @@
   --trellis-shadow-md: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
   --trellis-shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
 
+  /* Chart palette */
+  --trellis-chart-1: #6366f1;
+  --trellis-chart-2: #22c55e;
+  --trellis-chart-3: #f59e0b;
+  --trellis-chart-4: #ef4444;
+  --trellis-chart-5: #8b5cf6;
+  --trellis-chart-6: #06b6d4;
+  --trellis-chart-7: #ec4899;
+  --trellis-chart-8: #14b8a6;
+  --trellis-chart-9: #f97316;
+  --trellis-chart-10: #a855f7;
+
   /* Focus ring */
   --trellis-focus-ring-color: #6366f1;
 }
@@ -151,6 +163,18 @@
   --trellis-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --trellis-shadow-md: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
   --trellis-shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+
+  /* Chart palette (brighter for dark mode) */
+  --trellis-chart-1: #818cf8;
+  --trellis-chart-2: #4ade80;
+  --trellis-chart-3: #fbbf24;
+  --trellis-chart-4: #f87171;
+  --trellis-chart-5: #a78bfa;
+  --trellis-chart-6: #22d3ee;
+  --trellis-chart-7: #f472b6;
+  --trellis-chart-8: #2dd4bf;
+  --trellis-chart-9: #fb923c;
+  --trellis-chart-10: #c084fc;
 
   /* Focus ring */
   --trellis-focus-ring-color: #818cf8;
