@@ -7,5 +7,5 @@ export type { NodeData } from "./store";
 
 // Value exports (exist at runtime)
 export { ElementKind, isCallbackRef } from "./types";
-export { renderNode, processProps } from "./renderTree";
+export { renderNode, processProps, toReactDomProps } from "./renderTree";
 export { store, useNode, useRootId, TrellisStore } from "./store";

@@ -14,6 +14,47 @@ export type WidgetComponent = React.ComponentType<any>;
 /** Widget registry for looking up components by type name. */
 export type WidgetRegistry = (typeName: string) => WidgetComponent | undefined;
 
+function camelToSnakeKey(key: string): string {
+  return key.replace(/[A-Z]/g, (char) => `_${char.toLowerCase()}`);
+}
+
+function snakeToCamelKey(key: string): string {
+  return key.replace(/_([a-z])/g, (_, char: string) => char.toUpperCase());
+}
+
+function convertDeepKeysToSnake(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(convertDeepKeysToSnake);
+  }
+
+  if (value && typeof value === "object" && value.constructor === Object) {
+    const obj = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(obj).map(([key, nestedValue]) => [
+        camelToSnakeKey(key),
+        convertDeepKeysToSnake(nestedValue),
+      ])
+    );
+  }
+
+  return value;
+}
+
+function domPropNameFromSnake(prop: string): string {
+  if (prop.startsWith("aria_") || prop.startsWith("data_")) {
+    return prop.replaceAll("_", "-");
+  }
+  return snakeToCamelKey(prop);
+}
+
+export function toReactDomProps(props: Record<string, unknown>): Record<string, unknown> {
+  const mapped: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(props)) {
+    mapped[domPropNameFromSnake(key)] = value;
+  }
+  return mapped;
+}
+
 /**
  * Extract serializable data from a DOM event.
  * Converts React SyntheticEvents to plain objects matching Python dataclasses.
@@ -33,7 +74,7 @@ function serializeEventArg(arg: unknown): unknown {
 
     // Wheel events (check before MouseEvent since WheelEvent extends MouseEvent)
     if (nativeEvent instanceof WheelEvent) {
-      return {
+      return convertDeepKeysToSnake({
         ...base,
         clientX: nativeEvent.clientX,
         clientY: nativeEvent.clientY,
@@ -49,14 +90,14 @@ function serializeEventArg(arg: unknown): unknown {
         deltaY: nativeEvent.deltaY,
         deltaZ: nativeEvent.deltaZ,
         deltaMode: nativeEvent.deltaMode,
-      };
+      });
     }
 
     // Drag events (check before MouseEvent since DragEvent extends MouseEvent)
     // Guard with typeof check for environments where DragEvent is not defined (e.g. jsdom)
     if (typeof DragEvent !== "undefined" && nativeEvent instanceof DragEvent) {
       const dt = nativeEvent.dataTransfer;
-      return {
+      return convertDeepKeysToSnake({
         ...base,
         clientX: nativeEvent.clientX,
         clientY: nativeEvent.clientY,
@@ -74,13 +115,13 @@ function serializeEventArg(arg: unknown): unknown {
           types: Array.from(dt.types),
           files: Array.from(dt.files).map(f => ({ name: f.name, size: f.size, type: f.type })),
         } : null,
-      };
+      });
     }
 
     // Scroll events - extract scroll position from currentTarget
     if (eventType === "scroll") {
       const target = syntheticEvent.currentTarget as HTMLElement | null;
-      return {
+      return convertDeepKeysToSnake({
         ...base,
         scrollTop: target?.scrollTop ?? 0,
         scrollLeft: target?.scrollLeft ?? 0,
@@ -88,12 +129,12 @@ function serializeEventArg(arg: unknown): unknown {
         scrollHeight: target?.scrollHeight ?? 0,
         clientWidth: target?.clientWidth ?? 0,
         clientHeight: target?.clientHeight ?? 0,
-      };
+      });
     }
 
     // Mouse events
     if (nativeEvent instanceof MouseEvent) {
-      return {
+      return convertDeepKeysToSnake({
         ...base,
         clientX: nativeEvent.clientX,
         clientY: nativeEvent.clientY,
@@ -105,12 +146,12 @@ function serializeEventArg(arg: unknown): unknown {
         ctrlKey: nativeEvent.ctrlKey,
         shiftKey: nativeEvent.shiftKey,
         metaKey: nativeEvent.metaKey,
-      };
+      });
     }
 
     // Keyboard events
     if (nativeEvent instanceof KeyboardEvent) {
-      return {
+      return convertDeepKeysToSnake({
         ...base,
         key: nativeEvent.key,
         code: nativeEvent.code,
@@ -119,7 +160,7 @@ function serializeEventArg(arg: unknown): unknown {
         shiftKey: nativeEvent.shiftKey,
         metaKey: nativeEvent.metaKey,
         repeat: nativeEvent.repeat,
-      };
+      });
     }
 
     // Input/Change events - extract target value
@@ -148,7 +189,7 @@ function serializeEventArg(arg: unknown): unknown {
 }
 
 /** Event handler prop names that should call preventDefault before invoking callback. */
-const PREVENT_DEFAULT_HANDLERS = new Set(["onClick", "onSubmit", "onDragOver", "onDrop"]);
+const PREVENT_DEFAULT_HANDLERS = new Set(["on_click", "on_submit", "on_drag_over", "on_drop"]);
 
 /**
  * Check if a click event should be handled by the browser instead of our handler.
@@ -196,7 +237,7 @@ export function processProps(
         // This allows Cmd+click / Ctrl+click to open in new tab.
         // Note: This check is here because anchor tags use native DOM nodes (not
         // React components), so we handle their click behavior at the prop level.
-        if (key === "onClick" && shouldLetBrowserHandleClick(args[0])) {
+        if (key === "on_click" && shouldLetBrowserHandleClick(args[0])) {
           return;
         }
 
@@ -260,10 +301,11 @@ export function renderNode(
     const { _text, ...htmlProps } = processedProps as Record<string, unknown> & {
       _text?: string;
     };
+    const domProps = toReactDomProps(htmlProps);
     const allChildren = _text != null ? [_text, ...children] : children;
     return React.createElement(
       node.type,
-      { ...htmlProps, key },
+      { ...domProps, key },
       ...allChildren
     );
   }
