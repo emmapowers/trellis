@@ -2,27 +2,27 @@
 
 Provides React-compatible event types for use with HTML element callbacks.
 Event data is automatically serialized from JavaScript and converted to
-the appropriate dataclass on the Python side.
+appropriate dataclasses on the Python side.
 
 Example:
     ```python
     from trellis.html.events import MouseEvent, ChangeEvent
 
     def handle_click(event: MouseEvent) -> None:
-        print(f"Clicked at {event.clientX}, {event.clientY}")
+        print(f"Clicked at {event.client_x}, {event.client_y}")
 
     def handle_change(event: ChangeEvent) -> None:
         print(f"New value: {event.value}")
 
-    h.Div(onClick=handle_click)
-    h.Input(onChange=handle_change)
+    h.Div(on_click=handle_click)
+    h.Input(on_change=handle_change)
     ```
 """
 
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 __all__ = [
     "EVENT_TYPE_MAP",
@@ -30,6 +30,8 @@ __all__ = [
     "ChangeEvent",
     "ChangeEventHandler",
     "ChangeHandler",
+    "DragDataTransfer",
+    "DragDataTransferFile",
     "DragEvent",
     "DragEventHandler",
     "DragHandler",
@@ -79,16 +81,16 @@ class BaseEvent:
 class MouseEvent(BaseEvent):
     """Mouse event data matching React's MouseEvent."""
 
-    clientX: int = 0
-    clientY: int = 0
-    screenX: int = 0
-    screenY: int = 0
+    client_x: int = 0
+    client_y: int = 0
+    screen_x: int = 0
+    screen_y: int = 0
     button: int = 0
     buttons: int = 0
-    altKey: bool = False
-    ctrlKey: bool = False
-    shiftKey: bool = False
-    metaKey: bool = False
+    alt_key: bool = False
+    ctrl_key: bool = False
+    shift_key: bool = False
+    meta_key: bool = False
 
 
 @dataclass(frozen=True)
@@ -97,10 +99,10 @@ class KeyboardEvent(BaseEvent):
 
     key: str = ""
     code: str = ""
-    altKey: bool = False
-    ctrlKey: bool = False
-    shiftKey: bool = False
-    metaKey: bool = False
+    alt_key: bool = False
+    ctrl_key: bool = False
+    shift_key: bool = False
+    meta_key: bool = False
     repeat: bool = False
 
 
@@ -113,14 +115,14 @@ class FocusEvent(BaseEvent):
 
 @dataclass(frozen=True)
 class FormEvent(BaseEvent):
-    """Form event data for onSubmit."""
+    """Form event data for on_submit."""
 
     pass
 
 
 @dataclass(frozen=True)
 class InputEvent(BaseEvent):
-    """Input event data for onInput."""
+    """Input event data for on_input."""
 
     data: str | None = None
     """The inserted characters (for insertions)."""
@@ -128,7 +130,7 @@ class InputEvent(BaseEvent):
 
 @dataclass(frozen=True)
 class ChangeEvent(BaseEvent):
-    """Change event data for onChange."""
+    """Change event data for on_change."""
 
     value: str = ""
     checked: bool = False
@@ -138,29 +140,48 @@ class ChangeEvent(BaseEvent):
 class ScrollEvent(BaseEvent):
     """Scroll event data from scrollable containers."""
 
-    scrollTop: float = 0.0
-    scrollLeft: float = 0.0
-    scrollWidth: float = 0.0
-    scrollHeight: float = 0.0
-    clientWidth: float = 0.0
-    clientHeight: float = 0.0
+    scroll_top: float = 0.0
+    scroll_left: float = 0.0
+    scroll_width: float = 0.0
+    scroll_height: float = 0.0
+    client_width: float = 0.0
+    client_height: float = 0.0
 
 
 @dataclass(frozen=True)
 class WheelEvent(MouseEvent):
     """Wheel event data (extends MouseEvent with delta fields)."""
 
-    deltaX: float = 0.0
-    deltaY: float = 0.0
-    deltaZ: float = 0.0
-    deltaMode: int = 0
+    delta_x: float = 0.0
+    delta_y: float = 0.0
+    delta_z: float = 0.0
+    delta_mode: int = 0
+
+
+@dataclass(frozen=True)
+class DragDataTransferFile:
+    """File metadata from a drag/drop data_transfer payload."""
+
+    name: str = ""
+    size: int = 0
+    type: str = ""
+
+
+@dataclass(frozen=True)
+class DragDataTransfer:
+    """Typed subset of browser data_transfer payload for drag events."""
+
+    drop_effect: str = "none"
+    effect_allowed: str = "none"
+    types: list[str] = field(default_factory=list)
+    files: list[DragDataTransferFile] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
 class DragEvent(MouseEvent):
-    """Drag event data (extends MouseEvent with dataTransfer)."""
+    """Drag event data (extends MouseEvent with data_transfer)."""
 
-    dataTransfer: dict[str, object] | None = None
+    data_transfer: DragDataTransfer | None = None
 
 
 # =============================================================================

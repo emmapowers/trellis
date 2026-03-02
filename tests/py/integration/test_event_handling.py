@@ -13,6 +13,9 @@ from trellis.core.state.stateful import Stateful
 from trellis.html.events import (
     BaseEvent,
     ChangeEvent,
+    DragDataTransfer,
+    DragDataTransferFile,
+    DragEvent,
     KeyboardEvent,
     MouseEvent,
 )
@@ -375,19 +378,19 @@ class TestEventConversion:
         event_dict = {
             "type": "click",
             "timestamp": 1234.5,
-            "clientX": 100,
-            "clientY": 200,
+            "client_x": 100,
+            "client_y": 200,
             "button": 0,
-            "altKey": True,
+            "alt_key": True,
         }
         result = _convert_event_arg(event_dict)
         assert isinstance(result, MouseEvent)
         assert result.type == "click"
         assert result.timestamp == 1234.5
-        assert result.clientX == 100
-        assert result.clientY == 200
+        assert result.client_x == 100
+        assert result.client_y == 200
         assert result.button == 0
-        assert result.altKey is True
+        assert result.alt_key is True
 
     def test_keyboard_event_converted(self) -> None:
         """Keyboard event dict becomes KeyboardEvent dataclass."""
@@ -396,14 +399,43 @@ class TestEventConversion:
             "timestamp": 5678.9,
             "key": "Enter",
             "code": "Enter",
-            "ctrlKey": True,
+            "ctrl_key": True,
         }
         result = _convert_event_arg(event_dict)
         assert isinstance(result, KeyboardEvent)
         assert result.type == "keydown"
         assert result.key == "Enter"
         assert result.code == "Enter"
-        assert result.ctrlKey is True
+        assert result.ctrl_key is True
+
+    def test_drag_event_converted_with_nested_dataclasses(self) -> None:
+        """Drag event converts nested data_transfer payload to typed dataclasses."""
+        event_dict = {
+            "type": "drop",
+            "client_x": 10,
+            "client_y": 20,
+            "data_transfer": {
+                "drop_effect": "copy",
+                "effect_allowed": "all",
+                "types": ["text/plain"],
+                "files": [{"name": "a.txt", "size": 12, "type": "text/plain"}],
+                "ignored_key": "ignore-me",
+            },
+        }
+
+        result = _convert_event_arg(event_dict)
+
+        assert isinstance(result, DragEvent)
+        assert result.client_x == 10
+        assert result.client_y == 20
+        assert isinstance(result.data_transfer, DragDataTransfer)
+        assert result.data_transfer is not None
+        assert result.data_transfer.drop_effect == "copy"
+        assert result.data_transfer.effect_allowed == "all"
+        assert result.data_transfer.types == ["text/plain"]
+        assert len(result.data_transfer.files) == 1
+        assert isinstance(result.data_transfer.files[0], DragDataTransferFile)
+        assert result.data_transfer.files[0].name == "a.txt"
 
     def test_change_event_converted(self) -> None:
         """Change event dict becomes ChangeEvent dataclass."""
@@ -446,13 +478,13 @@ class TestEventConversion:
         """Extra fields not in dataclass are filtered out."""
         event_dict = {
             "type": "click",
-            "clientX": 100,
+            "client_x": 100,
             "unknownField": "ignored",
             "anotherExtra": 999,
         }
         result = _convert_event_arg(event_dict)
         assert isinstance(result, MouseEvent)
-        assert result.clientX == 100
+        assert result.client_x == 100
         # Extra fields should not cause error or be present
         assert not hasattr(result, "unknownField")
 
@@ -463,20 +495,20 @@ class TestProcessCallbackArgs:
     def test_event_conversion_and_kwargs(self) -> None:
         """Events are converted and kwargs extracted in one call."""
         raw_args = [
-            {"type": "click", "clientX": 50},
+            {"type": "click", "client_x": 50},
             {"__kwargs__": True, "extra": "data"},
         ]
         args, kwargs = _process_callback_args(raw_args)
 
         assert len(args) == 1
         assert isinstance(args[0], MouseEvent)
-        assert args[0].clientX == 50
+        assert args[0].client_x == 50
         assert kwargs == {"extra": "data"}
 
     def test_multiple_events_converted(self) -> None:
         """Multiple event args are all converted."""
         raw_args = [
-            {"type": "click", "clientX": 10},
+            {"type": "click", "client_x": 10},
             {"type": "keydown", "key": "a"},
         ]
         args, kwargs = _process_callback_args(raw_args)

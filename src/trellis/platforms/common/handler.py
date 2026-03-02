@@ -11,6 +11,7 @@ import dataclasses
 import inspect
 import logging
 import traceback
+import types
 import typing as tp
 from collections.abc import Callable
 from importlib.metadata import version as get_package_version
@@ -53,6 +54,7 @@ from trellis.routing.state import RouterState
 from trellis.utils.debug import get_enabled_categories
 
 logger = logging.getLogger(__name__)
+_DICT_ARG_COUNT = 2
 
 
 def _get_version() -> str:
@@ -130,11 +132,55 @@ def _convert_event_arg(arg: tp.Any) -> tp.Any:
     event_type = arg.get("type", "")
     event_class = get_event_class(event_type)
 
-    # Filter to only fields the dataclass accepts
-    valid_fields = {f.name for f in dataclasses.fields(event_class)}
-    filtered = {k: v for k, v in arg.items() if k in valid_fields}
+    return _coerce_dataclass_instance(arg, event_class)
 
-    return event_class(**filtered)
+
+def _resolve_nested_dataclass(annotation: tp.Any) -> type[tp.Any] | None:
+    """Return nested dataclass type from an annotation if present."""
+    if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
+        return annotation
+
+    origin = tp.get_origin(annotation)
+    if origin in (tp.Union, types.UnionType):
+        for nested in tp.get_args(annotation):
+            nested_dataclass = _resolve_nested_dataclass(nested)
+            if nested_dataclass is not None:
+                return nested_dataclass
+
+    return None
+
+
+def _coerce_typed_value(value: tp.Any, annotation: tp.Any) -> tp.Any:
+    """Coerce nested event payload values based on dataclass field annotations."""
+    nested_dataclass = _resolve_nested_dataclass(annotation)
+    if nested_dataclass is not None and isinstance(value, dict):
+        return _coerce_dataclass_instance(value, nested_dataclass)
+
+    origin = tp.get_origin(annotation)
+    if origin is list and isinstance(value, list):
+        item_type = tp.get_args(annotation)[0] if tp.get_args(annotation) else tp.Any
+        return [_coerce_typed_value(item, item_type) for item in value]
+
+    if origin is dict and isinstance(value, dict):
+        args = tp.get_args(annotation)
+        value_type = args[1] if len(args) == _DICT_ARG_COUNT else tp.Any
+        return {k: _coerce_typed_value(v, value_type) for k, v in value.items()}
+
+    return value
+
+
+def _coerce_dataclass_instance(data: dict[str, tp.Any], cls: type[tp.Any]) -> tp.Any:
+    """Create a dataclass instance, recursively coercing nested dataclasses."""
+    type_hints = tp.get_type_hints(cls)
+    values: dict[str, tp.Any] = {}
+
+    for field in dataclasses.fields(cls):
+        if field.name not in data:
+            continue
+        annotation = type_hints.get(field.name, field.type)
+        values[field.name] = _coerce_typed_value(data[field.name], annotation)
+
+    return cls(**values)
 
 
 def _process_callback_args(
