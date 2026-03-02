@@ -10,8 +10,10 @@ import pytest
 from trellis.bundler.registry import ModuleRegistry
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.components.react import react
+from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.element import Element
 from trellis.core.rendering.render import render
+from trellis.core.rendering.traits import ContainerTrait
 from trellis.core.state.stateful import Stateful
 from trellis.html.base import html_element
 
@@ -169,3 +171,33 @@ class TestElementClass:
         node = result.root_element
         assert node is not None
         assert type(node) is Element
+
+    def test_component_is_container_with_custom_element_class(
+        self, rendered: Callable[[CompositionComponent], RenderResult]
+    ) -> None:
+        """@component(is_container=True, element_class=CustomElement) dynamically composes."""
+
+        @component(is_container=True, element_class=CustomElement)
+        def MyContainer(children: list[ChildRef]) -> None:
+            for child in children:
+                child()
+
+        @component
+        def Child() -> None:
+            pass
+
+        @component
+        def App() -> None:
+            with MyContainer():
+                Child()
+
+        result = rendered(App)
+
+        root = result.root_element
+        assert root is not None
+        container = result.session.elements.get(root.child_ids[0])
+        assert container is not None
+        assert isinstance(container, CustomElement)
+        assert isinstance(container, ContainerTrait)
+        assert hasattr(container, "__enter__")
+        assert len(container.child_ids) == 1

@@ -137,7 +137,7 @@ def Card(
     pass
 
 
-@component
+@component(is_container=True)
 def SplitPane(
     *,
     orientation: tp.Literal["horizontal", "vertical"] = "horizontal",

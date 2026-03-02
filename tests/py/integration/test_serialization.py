@@ -75,7 +75,7 @@ class TestSerializeNode:
         def Child() -> None:
             pass
 
-        @component
+        @component(is_container=True)
         def Parent(children: list) -> None:
             for c in children:
                 c()

@@ -218,7 +218,7 @@ class TestElementRef:
             def is_collapsed(self) -> bool:
                 return self._collapsed
 
-        @component
+        @component(is_container=True)
         def Panel(children: list | None = None) -> None:
             ref = PanelRef()
             set_ref(ref)

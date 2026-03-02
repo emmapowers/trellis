@@ -12,7 +12,7 @@ class TestContainerComponent:
     def test_with_statement_collects_children(self, rendered) -> None:
         """Children created in with block are passed to component."""
 
-        @component
+        @component(is_container=True)
         def Column(children: list[ChildRef]) -> None:
             for child in children:
                 child()
@@ -42,12 +42,12 @@ class TestContainerComponent:
     def test_nested_containers(self, rendered) -> None:
         """Nested with blocks work correctly."""
 
-        @component
+        @component(is_container=True)
         def Column(children: list[ChildRef]) -> None:
             for child in children:
                 child()
 
-        @component
+        @component(is_container=True)
         def Row(children: list[ChildRef]) -> None:
             for child in children:
                 child()
@@ -78,7 +78,7 @@ class TestContainerComponent:
         """Container component receives children as a list of ChildRefs."""
         received_children: list = []
 
-        @component
+        @component(is_container=True)
         def Column(children: list[ChildRef]) -> None:
             received_children.extend(children)
             for child in children:
@@ -116,10 +116,18 @@ class TestContainerComponent:
         with pytest.raises(TypeError, match="does not support the context manager protocol"):
             render(ctx)
 
+    def test_is_container_without_children_param_raises(self) -> None:
+        """@component(is_container=True) without children param raises TypeError."""
+        with pytest.raises(TypeError, match="children"):
+
+            @component(is_container=True)
+            def BadContainer() -> None:
+                pass
+
     def test_cannot_provide_children_prop_and_use_with(self) -> None:
         """Can't pass children as prop AND use with block."""
 
-        @component
+        @component(is_container=True)
         def Column(children: list[ChildRef]) -> None:
             for child in children:
                 child()
@@ -137,7 +145,7 @@ class TestContainerComponent:
         """Empty with block results in empty children list."""
         received_children: list[ChildRef] | None = None
 
-        @component
+        @component(is_container=True)
         def Column(children: list[ChildRef]) -> None:
             nonlocal received_children
             received_children = children
@@ -156,7 +164,7 @@ class TestContainerComponent:
     def test_child_call_mounts_element(self, rendered) -> None:
         """Calling child() mounts the element in the container."""
 
-        @component
+        @component(is_container=True)
         def Wrapper(children: list[ChildRef]) -> None:
             # Only mount first child
             if children:
@@ -185,7 +193,7 @@ class TestContainerComponent:
     def test_container_can_reorder_children(self, rendered) -> None:
         """Container can mount children in different order."""
 
-        @component
+        @component(is_container=True)
         def Reverse(children: list[ChildRef]) -> None:
             for child in reversed(children):
                 child()

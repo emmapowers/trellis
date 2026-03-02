@@ -6,7 +6,7 @@ from trellis.routing.path_matching import match_path
 from trellis.routing.state import CurrentRouteContext, RoutesContext, router
 
 
-@component
+@component(is_container=True)
 def Routes(*, children: list[ChildRef] | None = None) -> None:
     """Container for exclusive route matching.
 
@@ -61,7 +61,7 @@ def Routes(*, children: list[ChildRef] | None = None) -> None:
                 return  # Stop after first match
 
 
-@component
+@component(is_container=True)
 def Route(*, pattern: str, children: list[ChildRef] | None = None) -> None:
     """Define a route pattern and its content for use inside Routes.
 

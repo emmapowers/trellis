@@ -366,7 +366,7 @@ class TestDirtyMarkingBehavior:
         def Child() -> None:
             render_counts["child"] += 1
 
-        @component
+        @component(is_container=True)
         def Container(children: list[ChildRef] | None = None) -> None:
             render_counts["container"] += 1
             children_received.append(len(children) if children else 0)

@@ -175,7 +175,7 @@ class TestComponentOutsideRenderSession:
     def test_container_with_block_outside_render_raises(self) -> None:
         """Using 'with' on container outside render context raises RuntimeError."""
 
-        @component
+        @component(is_container=True)
         def Container(children: list) -> None:
             for c in children:
                 c()
@@ -212,7 +212,7 @@ class TestDescriptorStackCleanupOnException:
     def test_exception_in_nested_with_block_cleans_up(self) -> None:
         """Exception in nested with block doesn't corrupt stack."""
 
-        @component
+        @component(is_container=True)
         def Container(children: list) -> None:
             for c in children:
                 c()
@@ -1079,7 +1079,7 @@ class TestConditionalRendering:
         def Child() -> None:
             render_counts["child"] = render_counts.get("child", 0) + 1
 
-        @component
+        @component(is_container=True)
         def ConditionalContainer(*, children: list[ChildRef] | None = None) -> None:
             state = VisibilityState()
             container_state.append(state)
@@ -1143,7 +1143,7 @@ class TestConditionalRendering:
         def ChildC() -> None:
             render_counts["c"] = render_counts.get("c", 0) + 1
 
-        @component
+        @component(is_container=True)
         def TabContainer(*, children: list[ChildRef] | None = None) -> None:
             state = SelectionState()
             container_state.append(state)
@@ -1191,14 +1191,14 @@ class TestConditionalRendering:
         def DeepChild() -> None:
             render_counts["deep"] = render_counts.get("deep", 0) + 1
 
-        @component
+        @component(is_container=True)
         def InnerContainer(*, children: list[ChildRef] | None = None) -> None:
             render_counts["inner"] = render_counts.get("inner", 0) + 1
             if children:
                 for child in children:
                     child()
 
-        @component
+        @component(is_container=True)
         def OuterContainer(*, children: list[ChildRef] | None = None) -> None:
             state = VisibilityState()
             outer_state.append(state)
@@ -1260,7 +1260,7 @@ class TestElementRemovalStorage:
         def Child() -> None:
             pass
 
-        @component
+        @component(is_container=True)
         def Container(*, children: list[ChildRef] | None = None) -> None:
             state = VisibilityState()
             container_state.append(state)
@@ -1341,7 +1341,7 @@ class TestElementRemovalStorage:
             state = ChildState()
             child_state_instances.append(state)
 
-        @component
+        @component(is_container=True)
         def Container(*, children: list[ChildRef] | None = None) -> None:
             state = VisibilityState()
             container_state.append(state)
