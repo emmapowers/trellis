@@ -119,14 +119,6 @@ class ContainerTrait:
                 f"Container components must be created during rendering, not in callbacks."
             )
 
-        # Hybrid elements: text mode and container mode are mutually exclusive
-        if self.props.get("_text"):
-            raise TypeError(
-                f"Cannot use 'with {self.component.name}(...)' with text content. "
-                f'Use either text mode ({self.component.name}("text")) or '
-                f"container mode (with {self.component.name}(): ...)."
-            )
-
         # Validate: can't provide children as both prop and via with block
         if "children" in self.props:
             raise RuntimeError(

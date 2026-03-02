@@ -47,6 +47,12 @@ class HtmlContainerTrait(ContainerTrait):
         return super().__enter__()
 
 
+# Default element class for HTML container elements.
+# Uses HtmlContainerTrait (not plain ContainerTrait) so that the hybrid
+# text/container check is enforced for all HTML elements.
+HtmlContainerElement = type("HtmlContainerElement", (HtmlContainerTrait, Element), {})
+
+
 class HtmlElement(Component):
     """Base class for native HTML elements like div, span, button, etc.
 
@@ -146,18 +152,27 @@ def html_element(
     Args:
         tag: The HTML tag name (e.g., "div", "span", "button")
         is_container: Whether this element accepts children via `with` block.
-            When True, the element returns ContainerElement (supports `with`).
-            When False (default), returns Element (no `with` support).
+            When True, the element supports `with` blocks via HtmlContainerTrait.
+            When False (default), returns a plain Element.
         name: Optional name override (defaults to function name). Useful for
             internal functions prefixed with underscore.
         element_class: Optional Element subclass to use for elements created by
-            this element. Defaults to ContainerElement when is_container=True,
-            Element when is_container=False.
+            this element. When is_container=True and the class doesn't already
+            have HtmlContainerTrait, it is composed dynamically.
 
     Returns:
         A decorator that creates a callable returning Elements
     """
-    resolved_element_class = element_class or (ContainerElement if is_container else Element)
+    if element_class is not None:
+        resolved_element_class = element_class
+        if is_container and HtmlContainerTrait not in element_class.__mro__:
+            resolved_element_class = type(
+                f"{element_class.__name__}Container",
+                (HtmlContainerTrait, element_class),
+                {},
+            )
+    else:
+        resolved_element_class = HtmlContainerElement if is_container else Element
 
     def decorator(
         func: Callable[P, tp.Any],

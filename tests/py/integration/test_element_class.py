@@ -201,3 +201,48 @@ class TestElementClass:
         assert isinstance(container, ContainerTrait)
         assert hasattr(container, "__enter__")
         assert len(container.child_ids) == 1
+
+    def test_react_is_container_with_custom_element_class(
+        self, rendered: Callable[[CompositionComponent], RenderResult]
+    ) -> None:
+        """@react(is_container=True, element_class=CustomElement) dynamically composes."""
+
+        @react("client/TestContainer.tsx", is_container=True, element_class=CustomElement)
+        def TestContainer(*, label: str = "") -> None:
+            pass
+
+        @component
+        def App() -> None:
+            with TestContainer(label="test"):
+                pass
+
+        result = rendered(App)
+
+        root = result.root_element
+        assert root is not None
+        container = result.session.elements.get(root.child_ids[0])
+        assert container is not None
+        assert isinstance(container, CustomElement)
+        assert isinstance(container, ContainerTrait)
+
+    def test_html_element_is_container_with_custom_element_class(
+        self, rendered: Callable[[CompositionComponent], RenderResult]
+    ) -> None:
+        """@html_element(is_container=True, element_class=CustomElement) dynamically composes."""
+
+        @html_element("div", is_container=True, element_class=CustomElement)
+        def CustomDiv(*, className: str | None = None) -> Element: ...
+
+        @component
+        def App() -> None:
+            with CustomDiv(className="test"):
+                pass
+
+        result = rendered(App)
+
+        root = result.root_element
+        assert root is not None
+        container = result.session.elements.get(root.child_ids[0])
+        assert container is not None
+        assert isinstance(container, CustomElement)
+        assert isinstance(container, ContainerTrait)

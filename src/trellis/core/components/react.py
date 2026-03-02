@@ -13,6 +13,7 @@ from trellis.bundler.registry import ExportKind, registry
 from trellis.core.components.base import Component, ElementKind
 from trellis.core.components.style_props import Height, Margin, Padding, Width
 from trellis.core.rendering.element import ContainerElement, Element
+from trellis.core.rendering.traits import ContainerTrait
 
 __all__ = ["ReactComponentBase", "react"]
 
@@ -140,7 +141,16 @@ def react(
         packages: NPM packages required by this component (name -> version).
         element_class: Element subclass to use for this component's nodes.
     """
-    resolved_element_class = element_class or (ContainerElement if is_container else Element)
+    if element_class is not None:
+        resolved_element_class = element_class
+        if is_container and ContainerTrait not in element_class.__mro__:
+            resolved_element_class = type(
+                f"{element_class.__name__}Container",
+                (ContainerTrait, element_class),
+                {},
+            )
+    else:
+        resolved_element_class = ContainerElement if is_container else Element
 
     # Capture caller's directory at decoration time (before entering decorator)
     frame = inspect.currentframe()
