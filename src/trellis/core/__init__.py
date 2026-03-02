@@ -17,6 +17,7 @@ from trellis.core.components import (
 from trellis.core.rendering import (
     ActiveRender,
     ContainerElement,
+    ContainerTrait,
     DirtyTracker,
     Element,
     ElementState,
@@ -60,6 +61,7 @@ __all__ = [
     "Component",
     "CompositionComponent",
     "ContainerElement",
+    "ContainerTrait",
     "DirtyTracker",
     "Element",
     "ElementState",

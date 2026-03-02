@@ -27,7 +27,7 @@ Categories:
 """
 
 # Base types
-from trellis.html.base import HtmlElement, Style
+from trellis.html.base import HtmlContainerTrait, HtmlElement, Style
 
 # Event types
 from trellis.html.events import (
@@ -205,6 +205,7 @@ __all__ = [
     "Header",
     "Hr",
     "HtmlButton",
+    "HtmlContainerTrait",
     "HtmlElement",
     "HtmlLabel",
     "Iframe",
