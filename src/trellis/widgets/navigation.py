@@ -177,7 +177,7 @@ def Breadcrumb(
     sep_char = "\u203a" if separator == "/" else separator
 
     with Nav(
-        className=class_name or "",
+        class_name=class_name or "",
         style=nav_style,
         role="navigation",
         **{"aria-label": "Breadcrumb"},

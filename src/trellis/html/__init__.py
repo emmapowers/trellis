@@ -7,7 +7,7 @@ Example:
     ```python
     from trellis import html as h
 
-    with h.Div(className="container", style={"padding": "16px"}):
+    with h.Div(class_name="container", style={"padding": "16px"}):
         h.H1("Welcome", style={"color": "blue"})
         h.P("This is a paragraph.")
         h.A("Click here", href="/about")
@@ -35,6 +35,8 @@ from trellis.html.events import (
     ChangeEvent,
     ChangeEventHandler,
     ChangeHandler,
+    DragDataTransfer,
+    DragDataTransferFile,
     DragEvent,
     DragEventHandler,
     DragHandler,
@@ -185,6 +187,8 @@ __all__ = [
     "Details",
     "Div",
     "Dl",
+    "DragDataTransfer",
+    "DragDataTransferFile",
     "DragEvent",
     "DragEventHandler",
     "DragHandler",

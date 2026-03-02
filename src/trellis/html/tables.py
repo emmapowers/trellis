@@ -26,7 +26,7 @@ __all__ = [
 @html_element("table", is_container=True)
 def Table(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -38,7 +38,7 @@ def Table(
 @html_element("thead", is_container=True)
 def Thead(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element:
@@ -49,7 +49,7 @@ def Thead(
 @html_element("tbody", is_container=True)
 def Tbody(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element:
@@ -60,7 +60,7 @@ def Tbody(
 @html_element("tr", is_container=True)
 def Tr(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element:
@@ -74,9 +74,9 @@ def Th(
     /,
     *,
     scope: str | None = None,
-    colSpan: int | None = None,
-    rowSpan: int | None = None,
-    className: str | None = None,
+    col_span: int | None = None,
+    row_span: int | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element: ...
@@ -86,9 +86,9 @@ def Th(
 def Th(
     *,
     scope: str | None = None,
-    colSpan: int | None = None,
-    rowSpan: int | None = None,
-    className: str | None = None,
+    col_span: int | None = None,
+    row_span: int | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> ContainerElement: ...
@@ -100,9 +100,9 @@ def Th(
     /,
     *,
     scope: str | None = None,
-    colSpan: int | None = None,
-    rowSpan: int | None = None,
-    className: str | None = None,
+    col_span: int | None = None,
+    row_span: int | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element:
@@ -122,9 +122,9 @@ def Td(
     text: str,
     /,
     *,
-    colSpan: int | None = None,
-    rowSpan: int | None = None,
-    className: str | None = None,
+    col_span: int | None = None,
+    row_span: int | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element: ...
@@ -133,9 +133,9 @@ def Td(
 @overload
 def Td(
     *,
-    colSpan: int | None = None,
-    rowSpan: int | None = None,
-    className: str | None = None,
+    col_span: int | None = None,
+    row_span: int | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> ContainerElement: ...
@@ -146,9 +146,9 @@ def Td(
     text: str | None = None,
     /,
     *,
-    colSpan: int | None = None,
-    rowSpan: int | None = None,
-    className: str | None = None,
+    col_span: int | None = None,
+    row_span: int | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element:
@@ -166,7 +166,7 @@ def Td(
 @html_element("tfoot", is_container=True)
 def Tfoot(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -180,7 +180,7 @@ def Caption(
     text: str,
     /,
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -190,7 +190,7 @@ def Caption(
 @overload
 def Caption(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -202,7 +202,7 @@ def Caption(
     text: str | None = None,
     /,
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,

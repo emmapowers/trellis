@@ -80,12 +80,12 @@ def Img(
     width: int | str | None = None,
     height: int | str | None = None,
     loading: str | None = None,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    onClick: MouseHandler | None = None,
-    onDoubleClick: MouseHandler | None = None,
-    onContextMenu: MouseHandler | None = None,
+    on_click: MouseHandler | None = None,
+    on_double_click: MouseHandler | None = None,
+    on_context_menu: MouseHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """An image element."""
@@ -101,14 +101,14 @@ def _A(
     target: str | None = None,
     rel: str | None = None,
     download: str | bool | None = None,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    onClick: MouseHandler | None = None,
-    onDoubleClick: MouseHandler | None = None,
-    onContextMenu: MouseHandler | None = None,
-    onKeyDown: KeyboardHandler | None = None,
-    onKeyUp: KeyboardHandler | None = None,
+    on_click: MouseHandler | None = None,
+    on_double_click: MouseHandler | None = None,
+    on_context_menu: MouseHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """An anchor (link) element."""
@@ -122,24 +122,24 @@ def _make_a(
     target: str | None,
     rel: str | None,
     download: str | bool | None,
-    className: str | None,
+    class_name: str | None,
     style: Style | None,
     id: str | None,
-    onClick: MouseHandler | None,
-    onDoubleClick: MouseHandler | None,
-    onContextMenu: MouseHandler | None,
-    onKeyDown: KeyboardHandler | None,
-    onKeyUp: KeyboardHandler | None,
+    on_click: MouseHandler | None,
+    on_double_click: MouseHandler | None,
+    on_context_menu: MouseHandler | None,
+    on_key_down: KeyboardHandler | None,
+    on_key_up: KeyboardHandler | None,
     use_router: bool,
     **props: tp.Any,
 ) -> Element:
     """Shared implementation for A() overloads."""
-    # For relative URLs without custom onClick, add router navigation
-    effective_onclick = onClick
+    # For relative URLs without custom on_click, add router navigation
+    effective_onclick = on_click
     effective_props = dict(props)
     if (
         href
-        and onClick is None
+        and on_click is None
         and use_router
         and target != "_blank"
         and download is None
@@ -160,14 +160,14 @@ def _make_a(
         target=target,
         rel=rel,
         download=download,
-        className=className,
+        class_name=class_name,
         style=style,
         id=id,
-        onClick=effective_onclick,
-        onDoubleClick=onDoubleClick,
-        onContextMenu=onContextMenu,
-        onKeyDown=onKeyDown,
-        onKeyUp=onKeyUp,
+        on_click=effective_onclick,
+        on_double_click=on_double_click,
+        on_context_menu=on_context_menu,
+        on_key_down=on_key_down,
+        on_key_up=on_key_up,
         **effective_props,
     )
 
@@ -181,14 +181,14 @@ def A(
     target: str | None = None,
     rel: str | None = None,
     download: str | bool | None = None,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    onClick: MouseHandler | None = None,
-    onDoubleClick: MouseHandler | None = None,
-    onContextMenu: MouseHandler | None = None,
-    onKeyDown: KeyboardHandler | None = None,
-    onKeyUp: KeyboardHandler | None = None,
+    on_click: MouseHandler | None = None,
+    on_double_click: MouseHandler | None = None,
+    on_context_menu: MouseHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
     use_router: bool = True,
     **props: tp.Any,
 ) -> Element: ...
@@ -201,14 +201,14 @@ def A(
     target: str | None = None,
     rel: str | None = None,
     download: str | bool | None = None,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    onClick: MouseHandler | None = None,
-    onDoubleClick: MouseHandler | None = None,
-    onContextMenu: MouseHandler | None = None,
-    onKeyDown: KeyboardHandler | None = None,
-    onKeyUp: KeyboardHandler | None = None,
+    on_click: MouseHandler | None = None,
+    on_double_click: MouseHandler | None = None,
+    on_context_menu: MouseHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
     use_router: bool = True,
     **props: tp.Any,
 ) -> ContainerElement: ...
@@ -222,14 +222,14 @@ def A(
     target: str | None = None,
     rel: str | None = None,
     download: str | bool | None = None,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    onClick: MouseHandler | None = None,
-    onDoubleClick: MouseHandler | None = None,
-    onContextMenu: MouseHandler | None = None,
-    onKeyDown: KeyboardHandler | None = None,
-    onKeyUp: KeyboardHandler | None = None,
+    on_click: MouseHandler | None = None,
+    on_double_click: MouseHandler | None = None,
+    on_context_menu: MouseHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
     use_router: bool = True,
     **props: tp.Any,
 ) -> Element:
@@ -252,9 +252,9 @@ def A(
         href: URL to navigate to. Relative URLs use router, absolute use browser.
         target: Target window/frame (e.g., "_blank")
         rel: Relationship to linked document (e.g., "noopener")
-        className: CSS class name
+        class_name: CSS class name
         style: Inline styles
-        onClick: Custom click handler (overrides auto-routing for relative URLs)
+        on_click: Custom click handler (overrides auto-routing for relative URLs)
         use_router: Whether to use client-side router for relative URLs (default True).
             Set to False to force browser navigation for relative URLs.
         **props: Additional HTML attributes
@@ -265,14 +265,14 @@ def A(
         target=target,
         rel=rel,
         download=download,
-        className=className,
+        class_name=class_name,
         style=style,
         id=id,
-        onClick=onClick,
-        onDoubleClick=onDoubleClick,
-        onContextMenu=onContextMenu,
-        onKeyDown=onKeyDown,
-        onKeyUp=onKeyUp,
+        on_click=on_click,
+        on_double_click=on_double_click,
+        on_context_menu=on_context_menu,
+        on_key_down=on_key_down,
+        on_key_up=on_key_up,
         use_router=use_router,
         **props,
     )

@@ -112,11 +112,11 @@ class TestElementClass:
         """@html_element with element_class creates nodes of that type."""
 
         @html_element("span", element_class=CustomElement)
-        def CustomSpan(*, className: str | None = None) -> Element: ...
+        def CustomSpan(*, class_name: str | None = None) -> Element: ...
 
         @component
         def App() -> None:
-            CustomSpan(className="test")
+            CustomSpan(class_name="test")
 
         result = rendered(App)
 
@@ -264,7 +264,7 @@ class TestElementClass:
         with pytest.raises(TypeError, match="HtmlContainerTrait"):
 
             @html_element("div", is_container=True, element_class=CustomElement)
-            def CustomDiv(*, className: str | None = None) -> Element: ...
+            def CustomDiv(*, class_name: str | None = None) -> Element: ...
 
     def test_html_element_is_container_with_trait_aware_element_class(
         self, rendered: Callable[[CompositionComponent], RenderResult]
@@ -272,11 +272,11 @@ class TestElementClass:
         """@html_element accepts custom element_class with HtmlContainerTrait."""
 
         @html_element("div", is_container=True, element_class=HtmlContainerCustomElement)
-        def CustomDiv(*, className: str | None = None) -> Element: ...
+        def CustomDiv(*, class_name: str | None = None) -> Element: ...
 
         @component
         def App() -> None:
-            with CustomDiv(className="test"):
+            with CustomDiv(class_name="test"):
                 pass
 
         result = rendered(App)
@@ -295,11 +295,11 @@ class TestElementClass:
         """@html_element maps one positional arg to _text."""
 
         @html_element("span", is_container=True, name="CustomSpan")
-        def CustomSpan(*, _text: str | None = None, className: str | None = None) -> Element: ...
+        def CustomSpan(*, _text: str | None = None, class_name: str | None = None) -> Element: ...
 
         @component
         def App() -> None:
-            CustomSpan("hello", className="test")
+            CustomSpan("hello", class_name="test")
 
         result = rendered(App)
 
@@ -308,7 +308,7 @@ class TestElementClass:
         child = result.session.elements.get(root.child_ids[0])
         assert child is not None
         assert child.properties["_text"] == "hello"
-        assert child.properties["className"] == "test"
+        assert child.properties["class_name"] == "test"
 
     def test_html_element_rejects_multiple_positional_arguments(
         self, rendered: Callable[[CompositionComponent], RenderResult]
@@ -316,7 +316,7 @@ class TestElementClass:
         """@html_element raises when more than one positional arg is passed."""
 
         @html_element("span", is_container=True, name="CustomSpan")
-        def CustomSpan(*, _text: str | None = None, className: str | None = None) -> Element: ...
+        def CustomSpan(*, _text: str | None = None, class_name: str | None = None) -> Element: ...
 
         @component
         def App() -> None:
@@ -331,7 +331,7 @@ class TestElementClass:
         """@html_element raises when both positional text and _text kwarg are passed."""
 
         @html_element("span", is_container=True, name="CustomSpan")
-        def CustomSpan(*, _text: str | None = None, className: str | None = None) -> Element: ...
+        def CustomSpan(*, _text: str | None = None, class_name: str | None = None) -> Element: ...
 
         @component
         def App() -> None:
@@ -346,7 +346,7 @@ class TestElementClass:
         """@html_element enforces positional-only text parameters."""
 
         @html_element("span", is_container=True, name="CustomSpan")
-        def CustomSpan(text: str | None = None, /, *, className: str | None = None) -> Element: ...
+        def CustomSpan(text: str | None = None, /, *, class_name: str | None = None) -> Element: ...
 
         @component
         def App() -> None:
@@ -354,3 +354,12 @@ class TestElementClass:
 
         with pytest.raises(TypeError, match="positional-only"):
             rendered(App)
+
+    def test_html_element_rejects_camel_case_kwargs(self) -> None:
+        """@html_element rejects camelCase kwargs before prop passthrough."""
+
+        @html_element("span", is_container=True, name="CustomSpan")
+        def CustomSpan(*, class_name: str | None = None, **props: object) -> Element: ...
+
+        with pytest.raises(TypeError, match="camelCase keyword arguments"):
+            CustomSpan(className="bad")

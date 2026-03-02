@@ -24,7 +24,7 @@ __all__ = [
 @html_element("ul", is_container=True)
 def Ul(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -36,7 +36,7 @@ def Ul(
 @html_element("ol", is_container=True)
 def Ol(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     start: int | None = None,
@@ -53,7 +53,7 @@ def Li(
     text: str,
     /,
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element: ...
@@ -62,7 +62,7 @@ def Li(
 @overload
 def Li(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> ContainerElement: ...
@@ -73,7 +73,7 @@ def Li(
     text: str | None = None,
     /,
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element:
@@ -93,7 +93,7 @@ def Li(
 @html_element("dl", is_container=True)
 def Dl(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -107,7 +107,7 @@ def Dt(
     text: str,
     /,
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -117,7 +117,7 @@ def Dt(
 @overload
 def Dt(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -129,7 +129,7 @@ def Dt(
     text: str | None = None,
     /,
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -143,7 +143,7 @@ def Dd(
     text: str,
     /,
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -153,7 +153,7 @@ def Dd(
 @overload
 def Dd(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -165,7 +165,7 @@ def Dd(
     text: str | None = None,
     /,
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,

@@ -74,10 +74,10 @@ class HtmlElement(Component):
         from trellis import html as h
 
         # Leaf element
-        h.Button("Click me", onClick=handler)
+        h.Button("Click me", on_click=handler)
 
         # Container element
-        with h.Div(className="card", style={"padding": "20px"}):
+        with h.Div(class_name="card", style={"padding": "20px"}):
             h.H1("Title")
             h.P("Content")
         ```
@@ -220,6 +220,16 @@ def html_element(
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element | E:
+            camel_case_kwargs = [
+                key for key in kwargs if any(char.isupper() for char in key) and key != "_text"
+            ]
+            if camel_case_kwargs:
+                joined = ", ".join(sorted(camel_case_kwargs))
+                raise TypeError(
+                    f"{element_name}() received camelCase keyword arguments ({joined}). "
+                    "Use snake_case HTML props."
+                )
+
             if len(args) > 1:
                 raise TypeError(
                     f"{element_name}() accepts at most one positional argument for text content."

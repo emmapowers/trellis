@@ -91,17 +91,17 @@ class TestHtmlElements:
         assert div.properties["style"] == {"backgroundColor": "red", "padding": "10px"}
 
     def test_element_with_class_name(self, rendered) -> None:
-        """Elements accept className prop."""
+        """Elements accept class_name prop."""
 
         @component
         def App() -> None:
-            with h.Div(className="container"):
+            with h.Div(class_name="container"):
                 pass
 
         result = rendered(App)
 
         div = result.session.elements.get(result.root_element.child_ids[0])
-        assert div.properties["className"] == "container"
+        assert div.properties["class_name"] == "container"
 
     def test_text_renders_plain_text(self, rendered) -> None:
         """Text element renders plain text without wrapper."""
@@ -231,12 +231,12 @@ class TestHtmlSerialization:
         assert inner["children"][0]["type"] == "p"
 
     def test_serialize_onclick_as_callback(self, rendered) -> None:
-        """onClick handler serializes as callback reference."""
+        """on_click handler serializes as callback reference."""
         clicked = []
 
         @component
         def App() -> None:
-            with h.Div(onClick=lambda: clicked.append(True)):
+            with h.Div(on_click=lambda: clicked.append(True)):
                 pass
 
         result = rendered(App)
@@ -244,10 +244,10 @@ class TestHtmlSerialization:
         serialized = serialize_element(result.root_element, result.session)
         div_data = serialized["children"][0]
 
-        assert "__callback__" in div_data["props"]["onClick"]
+        assert "__callback__" in div_data["props"]["on_click"]
 
         # Verify callback works
-        cb_id = div_data["props"]["onClick"]["__callback__"]
+        cb_id = div_data["props"]["on_click"]["__callback__"]
         node_id, prop_name = parse_callback_id(cb_id)
         result.session.get_callback(node_id, prop_name)()
         assert clicked == [True]
@@ -632,12 +632,12 @@ class TestNewTextElements:
     def test_time_with_datetime(self, rendered) -> None:
         @component
         def App() -> None:
-            h.Time("March 1", dateTime="2026-03-01")
+            h.Time("March 1", date_time="2026-03-01")
 
         result = rendered(App)
         time_el = result.session.elements.get(result.root_element.child_ids[0])
         assert time_el.properties["_text"] == "March 1"
-        assert time_el.properties["dateTime"] == "2026-03-01"
+        assert time_el.properties["date_time"] == "2026-03-01"
 
 
 class TestNewLayoutElements:
