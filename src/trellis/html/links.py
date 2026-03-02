@@ -142,7 +142,7 @@ def _make_a(
         and on_click is None
         and use_router
         and target != "_blank"
-        and download is None
+        and (download is None or download is False)
         and _is_relative_url(href)
     ):
         # Capture href in closure for the async callback

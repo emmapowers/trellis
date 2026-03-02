@@ -246,3 +246,67 @@ class TestAnchorAutoRouting:
         on_click_data = anchor.get("props", {}).get("on_click")
         assert on_click_data is None, "A with download should not have auto on_click"
         assert "data-trellis-router-link" not in anchor.get("props", {})
+
+    def test_download_false_still_gets_router_onclick(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """A with download=False should still be router-eligible."""
+
+        @component
+        def App() -> None:
+            with RouterState():
+                A("Dashboard", href="/dashboard", download=False)
+
+        capture = capture_patches(App)
+        capture.render()
+
+        tree = serialize_element(capture.session.root_element, capture.session)
+        anchor = find_element_by_type(tree, "a")
+        assert anchor is not None
+
+        on_click_data = anchor.get("props", {}).get("on_click")
+        assert on_click_data is not None
+        assert "__callback__" in on_click_data
+        assert anchor["props"]["data-trellis-router-link"] == "true"
+
+    def test_download_filename_no_onclick_handler(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """A with download filename should keep native browser behavior."""
+
+        @component
+        def App() -> None:
+            with RouterState():
+                A("Export", href="/reports/latest.csv", download="latest.csv")
+
+        capture = capture_patches(App)
+        capture.render()
+
+        tree = serialize_element(capture.session.root_element, capture.session)
+        anchor = find_element_by_type(tree, "a")
+        assert anchor is not None
+
+        on_click_data = anchor.get("props", {}).get("on_click")
+        assert on_click_data is None
+        assert "data-trellis-router-link" not in anchor.get("props", {})
+
+    def test_download_empty_string_no_onclick_handler(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """A with empty-string download should keep native browser behavior."""
+
+        @component
+        def App() -> None:
+            with RouterState():
+                A("Export", href="/reports/latest.csv", download="")
+
+        capture = capture_patches(App)
+        capture.render()
+
+        tree = serialize_element(capture.session.root_element, capture.session)
+        anchor = find_element_by_type(tree, "a")
+        assert anchor is not None
+
+        on_click_data = anchor.get("props", {}).get("on_click")
+        assert on_click_data is None
+        assert "data-trellis-router-link" not in anchor.get("props", {})
