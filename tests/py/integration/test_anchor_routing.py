@@ -33,7 +33,7 @@ class TestAnchorAutoRouting:
     """Tests for A element auto-routing with relative URLs."""
 
     def test_relative_path_gets_onclick_handler(self, capture_patches: type[PatchCapture]) -> None:
-        """A with relative path automatically gets onClick for routing."""
+        """A with relative path automatically gets on_click for routing."""
 
         @component
         def App() -> None:
@@ -47,9 +47,9 @@ class TestAnchorAutoRouting:
         anchor = find_element_by_type(tree, "a")
         assert anchor is not None
 
-        # Should have onClick handler for router navigation
-        on_click_data = anchor.get("props", {}).get("onClick")
-        assert on_click_data is not None, "A with relative href should have onClick"
+        # Should have on_click handler for router navigation
+        on_click_data = anchor.get("props", {}).get("on_click")
+        assert on_click_data is not None, "A with relative href should have on_click"
         assert "__callback__" in on_click_data
         assert anchor["props"]["data-trellis-router-link"] == "true"
 
@@ -67,7 +67,7 @@ class TestAnchorAutoRouting:
 
         tree = serialize_element(capture.session.root_element, capture.session)
         anchor = find_element_by_type(tree, "a")
-        cb_id = anchor.get("props", {}).get("onClick")["__callback__"]
+        cb_id = anchor.get("props", {}).get("on_click")["__callback__"]
 
         event = MouseEvent(type="click")
         invoke_callback(capture.session, cb_id, event)
@@ -75,7 +75,7 @@ class TestAnchorAutoRouting:
         assert router_state.path == "/about"
 
     def test_absolute_url_no_onclick_handler(self, capture_patches: type[PatchCapture]) -> None:
-        """A with absolute URL (http/https) does NOT get auto onClick."""
+        """A with absolute URL (http/https) does NOT get auto on_click."""
 
         @component
         def App() -> None:
@@ -89,13 +89,13 @@ class TestAnchorAutoRouting:
         anchor = find_element_by_type(tree, "a")
         assert anchor is not None
 
-        # Should NOT have onClick handler - let browser handle it
-        on_click_data = anchor.get("props", {}).get("onClick")
-        assert on_click_data is None, "A with absolute URL should not have auto onClick"
+        # Should NOT have on_click handler - let browser handle it
+        on_click_data = anchor.get("props", {}).get("on_click")
+        assert on_click_data is None, "A with absolute URL should not have auto on_click"
         assert "data-trellis-router-link" not in anchor.get("props", {})
 
     def test_protocol_relative_url_no_onclick(self, capture_patches: type[PatchCapture]) -> None:
-        """A with protocol-relative URL (//host) does NOT get auto onClick."""
+        """A with protocol-relative URL (//host) does NOT get auto on_click."""
 
         @component
         def App() -> None:
@@ -107,11 +107,11 @@ class TestAnchorAutoRouting:
 
         tree = serialize_element(capture.session.root_element, capture.session)
         anchor = find_element_by_type(tree, "a")
-        on_click_data = anchor.get("props", {}).get("onClick")
+        on_click_data = anchor.get("props", {}).get("on_click")
         assert on_click_data is None
 
     def test_user_onclick_not_overridden(self, capture_patches: type[PatchCapture]) -> None:
-        """User-provided onClick is respected, not overridden."""
+        """User-provided on_click is respected, not overridden."""
         custom_handler_called = []
 
         def custom_handler(_event: object) -> None:
@@ -122,14 +122,14 @@ class TestAnchorAutoRouting:
         @component
         def App() -> None:
             with router_state:
-                A("About", href="/about", onClick=custom_handler)
+                A("About", href="/about", on_click=custom_handler)
 
         capture = capture_patches(App)
         capture.render()
 
         tree = serialize_element(capture.session.root_element, capture.session)
         anchor = find_element_by_type(tree, "a")
-        cb_id = anchor.get("props", {}).get("onClick")["__callback__"]
+        cb_id = anchor.get("props", {}).get("on_click")["__callback__"]
 
         event = MouseEvent(type="click")
         invoke_callback(capture.session, cb_id, event)
@@ -140,7 +140,7 @@ class TestAnchorAutoRouting:
         assert router_state.path == "/"
 
     def test_no_href_no_onclick(self, capture_patches: type[PatchCapture]) -> None:
-        """A without href does NOT get auto onClick."""
+        """A without href does NOT get auto on_click."""
 
         @component
         def App() -> None:
@@ -152,7 +152,7 @@ class TestAnchorAutoRouting:
 
         tree = serialize_element(capture.session.root_element, capture.session)
         anchor = find_element_by_type(tree, "a")
-        on_click_data = anchor.get("props", {}).get("onClick")
+        on_click_data = anchor.get("props", {}).get("on_click")
         assert on_click_data is None
 
     def test_works_as_container_with_children(self, capture_patches: type[PatchCapture]) -> None:
@@ -176,10 +176,10 @@ class TestAnchorAutoRouting:
         # Child should be rendered
         assert child_rendered == [True]
 
-        # Should have onClick for routing
+        # Should have on_click for routing
         tree = serialize_element(capture.session.root_element, capture.session)
         anchor = find_element_by_type(tree, "a")
-        cb_id = anchor.get("props", {}).get("onClick")["__callback__"]
+        cb_id = anchor.get("props", {}).get("on_click")["__callback__"]
 
         event = MouseEvent(type="click")
         invoke_callback(capture.session, cb_id, event)
@@ -187,7 +187,7 @@ class TestAnchorAutoRouting:
         assert router_state.path == "/users"
 
     def test_target_blank_no_onclick(self, capture_patches: type[PatchCapture]) -> None:
-        """A with target='_blank' does NOT get auto onClick even for relative URLs.
+        """A with target='_blank' does NOT get auto on_click even for relative URLs.
 
         Opening in a new tab should always use browser navigation, not the router.
         """
@@ -204,13 +204,13 @@ class TestAnchorAutoRouting:
         anchor = find_element_by_type(tree, "a")
         assert anchor is not None
 
-        # Should NOT have onClick handler - browser opens new tab
-        on_click_data = anchor.get("props", {}).get("onClick")
-        assert on_click_data is None, "A with target='_blank' should not have auto onClick"
+        # Should NOT have on_click handler - browser opens new tab
+        on_click_data = anchor.get("props", {}).get("on_click")
+        assert on_click_data is None, "A with target='_blank' should not have auto on_click"
         assert "data-trellis-router-link" not in anchor.get("props", {})
 
     def test_use_router_false_no_onclick(self, capture_patches: type[PatchCapture]) -> None:
-        """A with use_router=False does NOT get auto onClick even for relative URLs."""
+        """A with use_router=False does NOT get auto on_click even for relative URLs."""
 
         @component
         def App() -> None:
@@ -224,6 +224,89 @@ class TestAnchorAutoRouting:
         anchor = find_element_by_type(tree, "a")
         assert anchor is not None
 
-        # Should NOT have onClick handler - browser handles navigation
-        on_click_data = anchor.get("props", {}).get("onClick")
-        assert on_click_data is None, "A with use_router=False should not have auto onClick"
+        # Should NOT have on_click handler - browser handles navigation
+        on_click_data = anchor.get("props", {}).get("on_click")
+        assert on_click_data is None, "A with use_router=False should not have auto on_click"
+
+    def test_download_no_onclick_handler(self, capture_patches: type[PatchCapture]) -> None:
+        """A with download should keep native browser behavior."""
+
+        @component
+        def App() -> None:
+            with RouterState():
+                A("Export", href="/reports/latest.csv", download=True)
+
+        capture = capture_patches(App)
+        capture.render()
+
+        tree = serialize_element(capture.session.root_element, capture.session)
+        anchor = find_element_by_type(tree, "a")
+        assert anchor is not None
+
+        on_click_data = anchor.get("props", {}).get("on_click")
+        assert on_click_data is None, "A with download should not have auto on_click"
+        assert "data-trellis-router-link" not in anchor.get("props", {})
+
+    def test_download_false_still_gets_router_onclick(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """A with download=False should still be router-eligible."""
+
+        @component
+        def App() -> None:
+            with RouterState():
+                A("Dashboard", href="/dashboard", download=False)
+
+        capture = capture_patches(App)
+        capture.render()
+
+        tree = serialize_element(capture.session.root_element, capture.session)
+        anchor = find_element_by_type(tree, "a")
+        assert anchor is not None
+
+        on_click_data = anchor.get("props", {}).get("on_click")
+        assert on_click_data is not None
+        assert "__callback__" in on_click_data
+        assert anchor["props"]["data-trellis-router-link"] == "true"
+
+    def test_download_filename_no_onclick_handler(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """A with download filename should keep native browser behavior."""
+
+        @component
+        def App() -> None:
+            with RouterState():
+                A("Export", href="/reports/latest.csv", download="latest.csv")
+
+        capture = capture_patches(App)
+        capture.render()
+
+        tree = serialize_element(capture.session.root_element, capture.session)
+        anchor = find_element_by_type(tree, "a")
+        assert anchor is not None
+
+        on_click_data = anchor.get("props", {}).get("on_click")
+        assert on_click_data is None
+        assert "data-trellis-router-link" not in anchor.get("props", {})
+
+    def test_download_empty_string_no_onclick_handler(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """A with empty-string download should keep native browser behavior."""
+
+        @component
+        def App() -> None:
+            with RouterState():
+                A("Export", href="/reports/latest.csv", download="")
+
+        capture = capture_patches(App)
+        capture.render()
+
+        tree = serialize_element(capture.session.root_element, capture.session)
+        anchor = find_element_by_type(tree, "a")
+        assert anchor is not None
+
+        on_click_data = anchor.get("props", {}).get("on_click")
+        assert on_click_data is None
+        assert "data-trellis-router-link" not in anchor.get("props", {})

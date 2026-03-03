@@ -399,7 +399,7 @@ class TestHistoryMessagesFromRouterState:
             # Navigate: TestRoot -> App -> Anchor
             app = tree["children"][0]
             anchor = app["children"][0]
-            cb_id = anchor["props"]["onClick"]["__callback__"]
+            cb_id = anchor["props"]["on_click"]["__callback__"]
 
             # Pass click event - handler converts dict with "type" to MouseEvent
             await handler.handle_message(EventMessage(callback_id=cb_id, args=[{"type": "click"}]))

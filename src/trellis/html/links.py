@@ -6,10 +6,11 @@ Elements for hyperlinks and images.
 from __future__ import annotations
 
 import typing as tp
+from typing import overload
 
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
-from trellis.html.events import MouseHandler
+from trellis.html.events import KeyboardHandler, MouseHandler
 from trellis.routing.state import router
 
 __all__ = [
@@ -78,9 +79,13 @@ def Img(
     alt: str = "",
     width: int | str | None = None,
     height: int | str | None = None,
-    className: str | None = None,
+    loading: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
-    onClick: MouseHandler | None = None,
+    id: str | None = None,
+    on_click: MouseHandler | None = None,
+    on_double_click: MouseHandler | None = None,
+    on_context_menu: MouseHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """An image element."""
@@ -95,24 +100,136 @@ def _A(
     href: str | None = None,
     target: str | None = None,
     rel: str | None = None,
-    className: str | None = None,
+    download: str | bool | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
-    onClick: MouseHandler | None = None,
+    id: str | None = None,
+    on_click: MouseHandler | None = None,
+    on_double_click: MouseHandler | None = None,
+    on_context_menu: MouseHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """An anchor (link) element."""
     ...
 
 
+def _make_a(
+    text: str | None,
+    *,
+    href: str | None,
+    target: str | None,
+    rel: str | None,
+    download: str | bool | None,
+    class_name: str | None,
+    style: Style | None,
+    id: str | None,
+    on_click: MouseHandler | None,
+    on_double_click: MouseHandler | None,
+    on_context_menu: MouseHandler | None,
+    on_key_down: KeyboardHandler | None,
+    on_key_up: KeyboardHandler | None,
+    use_router: bool,
+    **props: tp.Any,
+) -> Element:
+    """Shared implementation for A() overloads."""
+    # For relative URLs without custom on_click, add router navigation
+    effective_onclick = on_click
+    effective_props = dict(props)
+    if (
+        href
+        and on_click is None
+        and use_router
+        and target != "_blank"
+        and (download is None or download is False)
+        and _is_relative_url(href)
+    ):
+        # Capture href in closure for the async callback
+        nav_href = href
+
+        async def router_click(_event: object) -> None:
+            await router().navigate(nav_href)
+
+        effective_onclick = router_click
+        effective_props["data-trellis-router-link"] = "true"
+
+    return _A(
+        **({"_text": text} if text is not None else {}),
+        href=href,
+        target=target,
+        rel=rel,
+        download=download,
+        class_name=class_name,
+        style=style,
+        id=id,
+        on_click=effective_onclick,
+        on_double_click=on_double_click,
+        on_context_menu=on_context_menu,
+        on_key_down=on_key_down,
+        on_key_up=on_key_up,
+        **effective_props,
+    )
+
+
+@overload
 def A(
-    text: str = "",
+    text: str,
+    /,
     *,
     href: str | None = None,
     target: str | None = None,
     rel: str | None = None,
-    className: str | None = None,
+    download: str | bool | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
-    onClick: MouseHandler | None = None,
+    id: str | None = None,
+    on_click: MouseHandler | None = None,
+    on_double_click: MouseHandler | None = None,
+    on_context_menu: MouseHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
+    use_router: bool = True,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def A(
+    *,
+    href: str | None = None,
+    target: str | None = None,
+    rel: str | None = None,
+    download: str | bool | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    on_click: MouseHandler | None = None,
+    on_double_click: MouseHandler | None = None,
+    on_context_menu: MouseHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
+    use_router: bool = True,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+def A(
+    text: str | None = None,
+    /,
+    *,
+    href: str | None = None,
+    target: str | None = None,
+    rel: str | None = None,
+    download: str | bool | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    on_click: MouseHandler | None = None,
+    on_double_click: MouseHandler | None = None,
+    on_context_menu: MouseHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
     use_router: bool = True,
     **props: tp.Any,
 ) -> Element:
@@ -135,33 +252,27 @@ def A(
         href: URL to navigate to. Relative URLs use router, absolute use browser.
         target: Target window/frame (e.g., "_blank")
         rel: Relationship to linked document (e.g., "noopener")
-        className: CSS class name
+        class_name: CSS class name
         style: Inline styles
-        onClick: Custom click handler (overrides auto-routing for relative URLs)
+        on_click: Custom click handler (overrides auto-routing for relative URLs)
         use_router: Whether to use client-side router for relative URLs (default True).
             Set to False to force browser navigation for relative URLs.
         **props: Additional HTML attributes
     """
-    # For relative URLs without custom onClick, add router navigation
-    effective_onclick = onClick
-    effective_props = dict(props)
-    if href and onClick is None and use_router and target != "_blank" and _is_relative_url(href):
-        # Capture href in closure for the async callback
-        nav_href = href
-
-        async def router_click(_event: object) -> None:
-            await router().navigate(nav_href)
-
-        effective_onclick = router_click
-        effective_props["data-trellis-router-link"] = "true"
-
-    return _A(
-        _text=text if text else None,
+    return _make_a(
+        text,
         href=href,
         target=target,
         rel=rel,
-        className=className,
+        download=download,
+        class_name=class_name,
         style=style,
-        onClick=effective_onclick,
-        **effective_props,
+        id=id,
+        on_click=on_click,
+        on_double_click=on_double_click,
+        on_context_menu=on_context_menu,
+        on_key_down=on_key_down,
+        on_key_up=on_key_up,
+        use_router=use_router,
+        **props,
     )

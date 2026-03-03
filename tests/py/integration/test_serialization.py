@@ -75,7 +75,7 @@ class TestSerializeNode:
         def Child() -> None:
             pass
 
-        @component
+        @component(is_container=True)
         def Parent(children: list) -> None:
             for c in children:
                 c()
@@ -205,7 +205,7 @@ class TestSerializeNode:
         @component
         def App() -> None:
             # Use HTML element with two callback props
-            with h.Div(onClick=lambda: None, onMouseEnter=lambda: None):
+            with h.Div(on_click=lambda: None, on_mouse_enter=lambda: None):
                 pass
 
         result = rendered(App)
@@ -213,7 +213,7 @@ class TestSerializeNode:
         child = result.session.elements.get(result.root_element.child_ids[0])
         child_serialized = serialize_element(child, result.session)
 
-        id_a = child_serialized["props"]["onClick"]["__callback__"]
-        id_b = child_serialized["props"]["onMouseEnter"]["__callback__"]
+        id_a = child_serialized["props"]["on_click"]["__callback__"]
+        id_b = child_serialized["props"]["on_mouse_enter"]["__callback__"]
 
         assert id_a != id_b

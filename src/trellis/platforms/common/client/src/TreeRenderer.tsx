@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { useNode, useRootId, NodeData, processProps, ElementKind, store } from "./core";
+import { useNode, useRootId, NodeData, processProps, toReactDomProps, ElementKind, store } from "./core";
 import { getWidget } from "./widgets";
 import { useTrellisClient } from "./TrellisContext";
 
@@ -110,8 +110,9 @@ function renderNodeElement(
     const { _text, ...htmlProps } = processedProps as Record<string, unknown> & {
       _text?: string;
     };
+    const domProps = toReactDomProps(htmlProps);
     const allChildren = _text != null ? [_text, ...children] : children;
-    return React.createElement(node.type, { ...htmlProps, key }, ...allChildren);
+    return React.createElement(node.type, { ...domProps, key }, ...allChildren);
   }
 
   // Custom components via widget registry

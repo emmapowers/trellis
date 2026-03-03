@@ -6,22 +6,32 @@ Elements for user input and form handling.
 from __future__ import annotations
 
 import typing as tp
+from typing import overload
 
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
 from trellis.html.events import (
     ChangeHandler,
     FocusHandler,
     FormHandler,
+    InputHandler,
+    KeyboardHandler,
     MouseHandler,
 )
 
 __all__ = [
+    "Datalist",
+    "Fieldset",
     "Form",
     "HtmlButton",
     "HtmlLabel",
     "Input",
+    "Legend",
+    "Meter",
+    "Optgroup",
     "Option",
+    "Output",
+    "Progress",
     "Select",
     "Textarea",
 ]
@@ -32,8 +42,13 @@ def Form(
     *,
     action: str | None = None,
     method: str | None = None,
-    onSubmit: FormHandler | None = None,
-    className: str | None = None,
+    enc_type: str | None = None,
+    no_validate: bool = False,
+    auto_complete: str | None = None,
+    on_submit: FormHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -49,29 +64,31 @@ def Input(
     value: str | None = None,
     placeholder: str | None = None,
     disabled: bool = False,
-    readOnly: bool = False,
+    read_only: bool = False,
     name: str | None = None,
-    onChange: ChangeHandler | None = None,
-    onFocus: FocusHandler | None = None,
-    onBlur: FocusHandler | None = None,
-    className: str | None = None,
+    checked: bool | None = None,
+    required: bool = False,
+    min: str | int | float | None = None,
+    max: str | int | float | None = None,
+    step: str | int | float | None = None,
+    pattern: str | None = None,
+    max_length: int | None = None,
+    auto_complete: str | None = None,
+    auto_focus: bool = False,
+    accept: str | None = None,
+    multiple: bool = False,
+    on_change: ChangeHandler | None = None,
+    on_input: InputHandler | None = None,
+    on_focus: FocusHandler | None = None,
+    on_blur: FocusHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
 ) -> Element:
-    """An input element.
-
-    Args:
-        type: Input type (text, password, email, number, checkbox, radio, etc.)
-        value: Current value
-        placeholder: Placeholder text
-        disabled: Whether the input is disabled
-        readOnly: Whether the input is read-only
-        name: Form field name
-        onChange: Called when the value changes
-        onFocus: Called when the input gains focus
-        onBlur: Called when the input loses focus
-    """
+    """An input element."""
     ...
 
 
@@ -83,12 +100,18 @@ def Textarea(
     rows: int | None = None,
     cols: int | None = None,
     disabled: bool = False,
-    readOnly: bool = False,
+    read_only: bool = False,
     name: str | None = None,
-    onChange: ChangeHandler | None = None,
-    onFocus: FocusHandler | None = None,
-    onBlur: FocusHandler | None = None,
-    className: str | None = None,
+    required: bool = False,
+    max_length: int | None = None,
+    auto_focus: bool = False,
+    on_change: ChangeHandler | None = None,
+    on_input: InputHandler | None = None,
+    on_focus: FocusHandler | None = None,
+    on_blur: FocusHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -103,8 +126,12 @@ def Select(
     value: str | None = None,
     disabled: bool = False,
     name: str | None = None,
-    onChange: ChangeHandler | None = None,
-    className: str | None = None,
+    required: bool = False,
+    multiple: bool = False,
+    on_change: ChangeHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -113,57 +140,55 @@ def Select(
     ...
 
 
-# Hybrid elements need special handling for text vs container mode
-@html_element("button", is_container=True, name="HtmlButton")
-def _HtmlButton(
+@overload
+def HtmlButton(
+    text: str,
+    /,
     *,
-    _text: str | None = None,
     type: str = "button",
     disabled: bool = False,
-    onClick: MouseHandler | None = None,
-    className: str | None = None,
+    name: str | None = None,
+    value: str | None = None,
+    on_click: MouseHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> Element:
-    """A native HTML button element."""
-    ...
+) -> Element: ...
 
 
-@html_element("option", name="Option")
-def _Option(
-    *,
-    _text: str | None = None,
-    value: str | None = None,
-    disabled: bool = False,
-    selected: bool = False,
-    **props: tp.Any,
-) -> Element:
-    """An option element for use within Select."""
-    ...
-
-
-@html_element("label", is_container=True, name="HtmlLabel")
-def _HtmlLabel(
-    *,
-    _text: str | None = None,
-    htmlFor: str | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A label element."""
-    ...
-
-
-# Public API for hybrid elements with positional text support
+@overload
 def HtmlButton(
-    text: str = "",
     *,
     type: str = "button",
     disabled: bool = False,
-    onClick: MouseHandler | None = None,
-    className: str | None = None,
+    name: str | None = None,
+    value: str | None = None,
+    on_click: MouseHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+@html_element("button", is_container=True)
+def HtmlButton(
+    text: str | None = None,
+    /,
+    *,
+    type: str = "button",
+    disabled: bool = False,
+    name: str | None = None,
+    value: str | None = None,
+    on_click: MouseHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -173,25 +198,18 @@ def HtmlButton(
     Note: Named HtmlButton to avoid conflict with trellis.widgets.Button.
 
     Can be used as text-only or as a container:
-        h.HtmlButton("Click me", onClick=handler)  # Text only
-        with h.HtmlButton(onClick=handler):        # Container
+        h.HtmlButton("Click me", on_click=handler)  # Text only
+        with h.HtmlButton(on_click=handler):        # Container
             h.Span("Icon")
             h.Span("Text")
     """
-    return _HtmlButton(
-        _text=text if text else None,
-        type=type,
-        disabled=disabled,
-        onClick=onClick,
-        className=className,
-        style=style,
-        id=id,
-        **props,
-    )
+    ...
 
 
+@html_element("option")
 def Option(
-    text: str = "",
+    text: str | None = None,
+    /,
     *,
     value: str | None = None,
     disabled: bool = False,
@@ -199,20 +217,38 @@ def Option(
     **props: tp.Any,
 ) -> Element:
     """An option element for use within Select."""
-    return _Option(
-        _text=text if text else None,
-        value=value,
-        disabled=disabled,
-        selected=selected,
-        **props,
-    )
+    ...
 
 
+@overload
 def HtmlLabel(
-    text: str = "",
+    text: str,
+    /,
     *,
-    htmlFor: str | None = None,
-    className: str | None = None,
+    html_for: str | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def HtmlLabel(
+    *,
+    html_for: str | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+@html_element("label", is_container=True)
+def HtmlLabel(
+    text: str | None = None,
+    /,
+    *,
+    html_for: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element:
@@ -221,15 +257,161 @@ def HtmlLabel(
     Note: Named HtmlLabel to avoid conflict with trellis.widgets.Label.
 
     Can be used as text-only or as a container:
-        h.HtmlLabel("Name:", htmlFor="name-input")  # Text only
-        with h.HtmlLabel(htmlFor="name-input"):     # Container
+        h.HtmlLabel("Name:", html_for="name-input")  # Text only
+        with h.HtmlLabel(html_for="name-input"):     # Container
             h.Span("Name")
             h.Input(id="name-input")
     """
-    return _HtmlLabel(
-        _text=text if text else None,
-        htmlFor=htmlFor,
-        className=className,
-        style=style,
-        **props,
-    )
+    ...
+
+
+# New form elements
+
+
+@html_element("fieldset", is_container=True)
+def Fieldset(
+    *,
+    disabled: bool = False,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A fieldset element for grouping form controls."""
+    ...
+
+
+@overload
+def Legend(
+    text: str,
+    /,
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Legend(
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+@html_element("legend", is_container=True)
+def Legend(
+    text: str | None = None,
+    /,
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A legend element for labeling a fieldset."""
+    ...
+
+
+@html_element("optgroup", is_container=True)
+def Optgroup(
+    *,
+    label: str | None = None,
+    disabled: bool = False,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """An option group element for organizing select options."""
+    ...
+
+
+@html_element("progress")
+def Progress(
+    *,
+    value: float | None = None,
+    max: float | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A progress indicator element."""
+    ...
+
+
+@html_element("meter")
+def Meter(
+    *,
+    value: float | None = None,
+    min: float | None = None,
+    max: float | None = None,
+    low: float | None = None,
+    high: float | None = None,
+    optimum: float | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A scalar measurement element."""
+    ...
+
+
+@overload
+def Output(
+    text: str,
+    /,
+    *,
+    html_for: str | None = None,
+    name: str | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Output(
+    *,
+    html_for: str | None = None,
+    name: str | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+@html_element("output", is_container=True)
+def Output(
+    text: str | None = None,
+    /,
+    *,
+    html_for: str | None = None,
+    name: str | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """An output element for calculation results."""
+    ...
+
+
+@html_element("datalist", is_container=True)
+def Datalist(
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A datalist element for providing autocomplete suggestions."""
+    ...

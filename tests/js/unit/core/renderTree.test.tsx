@@ -78,10 +78,10 @@ describe("processProps", () => {
     expect(onEvent).toHaveBeenCalledWith("cb_2", []);
   });
 
-  it("calls preventDefault on onClick handlers", () => {
+  it("calls preventDefault on on_click handlers", () => {
     const onEvent = vi.fn();
     const props = {
-      onClick: { __callback__: "cb_click" },
+      on_click: { __callback__: "cb_click" },
     };
 
     const result = processProps(props, onEvent);
@@ -91,16 +91,16 @@ describe("processProps", () => {
       type: "click",
     };
 
-    (result.onClick as (e: unknown) => void)(mockEvent);
+    (result.on_click as (e: unknown) => void)(mockEvent);
 
     expect(mockEvent.preventDefault).toHaveBeenCalled();
     expect(onEvent).toHaveBeenCalledWith("cb_click", [expect.anything()]);
   });
 
-  it("calls preventDefault on onSubmit handlers", () => {
+  it("calls preventDefault on on_submit handlers", () => {
     const onEvent = vi.fn();
     const props = {
-      onSubmit: { __callback__: "cb_submit" },
+      on_submit: { __callback__: "cb_submit" },
     };
 
     const result = processProps(props, onEvent);
@@ -110,7 +110,7 @@ describe("processProps", () => {
       type: "submit",
     };
 
-    (result.onSubmit as (e: unknown) => void)(mockEvent);
+    (result.on_submit as (e: unknown) => void)(mockEvent);
 
     expect(mockEvent.preventDefault).toHaveBeenCalled();
     expect(onEvent).toHaveBeenCalledWith("cb_submit", [expect.anything()]);
@@ -119,7 +119,7 @@ describe("processProps", () => {
   it("does not call preventDefault on other handlers", () => {
     const onEvent = vi.fn();
     const props = {
-      onChange: { __callback__: "cb_change" },
+      on_change: { __callback__: "cb_change" },
     };
 
     const result = processProps(props, onEvent);
@@ -129,10 +129,48 @@ describe("processProps", () => {
       type: "change",
     };
 
-    (result.onChange as (e: unknown) => void)(mockEvent);
+    (result.on_change as (e: unknown) => void)(mockEvent);
 
     expect(mockEvent.preventDefault).not.toHaveBeenCalled();
     expect(onEvent).toHaveBeenCalledWith("cb_change", [expect.anything()]);
+  });
+
+  it("serializes mouse event payloads to snake_case", () => {
+    const onEvent = vi.fn();
+    const props = {
+      on_click: { __callback__: "cb_click" },
+    };
+
+    const result = processProps(props, onEvent);
+    const nativeEvent = new MouseEvent("click", {
+      clientX: 15,
+      clientY: 25,
+      button: 0,
+      bubbles: true,
+    });
+    const mockEvent = {
+      type: "click",
+      nativeEvent,
+      currentTarget: document.createElement("button"),
+      preventDefault: vi.fn(),
+      timeStamp: 1234,
+    };
+
+    (result.on_click as (e: unknown) => void)(mockEvent);
+
+    expect(onEvent).toHaveBeenCalledWith(
+      "cb_click",
+      [
+        expect.objectContaining({
+          type: "click",
+          timestamp: 1234,
+          client_x: 15,
+          client_y: 25,
+          alt_key: false,
+          ctrl_key: false,
+        }),
+      ]
+    );
   });
 
   describe("anchor click handling", () => {
@@ -171,14 +209,14 @@ describe("processProps", () => {
 
     it("lets browser handle middle-click on anchor with href", () => {
       const onEvent = vi.fn();
-      const props = { onClick: { __callback__: "cb_click" } };
+      const props = { on_click: { __callback__: "cb_click" } };
       const result = processProps(props, onEvent);
 
       const anchor = document.createElement("a");
       anchor.href = "https://example.com";
       const mockEvent = createMouseEvent(anchor, { button: 1 });
 
-      (result.onClick as (e: unknown) => void)(mockEvent);
+      (result.on_click as (e: unknown) => void)(mockEvent);
 
       // Should NOT call preventDefault - let browser open in new tab
       expect(mockEvent.preventDefault).not.toHaveBeenCalled();
@@ -188,14 +226,14 @@ describe("processProps", () => {
 
     it("lets browser handle Cmd/Meta+click on anchor with href", () => {
       const onEvent = vi.fn();
-      const props = { onClick: { __callback__: "cb_click" } };
+      const props = { on_click: { __callback__: "cb_click" } };
       const result = processProps(props, onEvent);
 
       const anchor = document.createElement("a");
       anchor.href = "https://example.com";
       const mockEvent = createMouseEvent(anchor, { metaKey: true });
 
-      (result.onClick as (e: unknown) => void)(mockEvent);
+      (result.on_click as (e: unknown) => void)(mockEvent);
 
       expect(mockEvent.preventDefault).not.toHaveBeenCalled();
       expect(onEvent).not.toHaveBeenCalled();
@@ -203,14 +241,14 @@ describe("processProps", () => {
 
     it("lets browser handle Ctrl+click on anchor with href", () => {
       const onEvent = vi.fn();
-      const props = { onClick: { __callback__: "cb_click" } };
+      const props = { on_click: { __callback__: "cb_click" } };
       const result = processProps(props, onEvent);
 
       const anchor = document.createElement("a");
       anchor.href = "https://example.com";
       const mockEvent = createMouseEvent(anchor, { ctrlKey: true });
 
-      (result.onClick as (e: unknown) => void)(mockEvent);
+      (result.on_click as (e: unknown) => void)(mockEvent);
 
       expect(mockEvent.preventDefault).not.toHaveBeenCalled();
       expect(onEvent).not.toHaveBeenCalled();
@@ -218,14 +256,14 @@ describe("processProps", () => {
 
     it("lets browser handle Shift+click on anchor with href", () => {
       const onEvent = vi.fn();
-      const props = { onClick: { __callback__: "cb_click" } };
+      const props = { on_click: { __callback__: "cb_click" } };
       const result = processProps(props, onEvent);
 
       const anchor = document.createElement("a");
       anchor.href = "https://example.com";
       const mockEvent = createMouseEvent(anchor, { shiftKey: true });
 
-      (result.onClick as (e: unknown) => void)(mockEvent);
+      (result.on_click as (e: unknown) => void)(mockEvent);
 
       expect(mockEvent.preventDefault).not.toHaveBeenCalled();
       expect(onEvent).not.toHaveBeenCalled();
@@ -233,14 +271,14 @@ describe("processProps", () => {
 
     it("calls preventDefault on regular click on anchor with href", () => {
       const onEvent = vi.fn();
-      const props = { onClick: { __callback__: "cb_click" } };
+      const props = { on_click: { __callback__: "cb_click" } };
       const result = processProps(props, onEvent);
 
       const anchor = document.createElement("a");
       anchor.href = "https://example.com";
       const mockEvent = createMouseEvent(anchor, {});
 
-      (result.onClick as (e: unknown) => void)(mockEvent);
+      (result.on_click as (e: unknown) => void)(mockEvent);
 
       // Regular click should preventDefault and call handler
       expect(mockEvent.preventDefault).toHaveBeenCalled();
@@ -249,14 +287,14 @@ describe("processProps", () => {
 
     it("calls preventDefault on click on anchor without href", () => {
       const onEvent = vi.fn();
-      const props = { onClick: { __callback__: "cb_click" } };
+      const props = { on_click: { __callback__: "cb_click" } };
       const result = processProps(props, onEvent);
 
       const anchor = document.createElement("a");
       // No href set
       const mockEvent = createMouseEvent(anchor, { metaKey: true });
 
-      (result.onClick as (e: unknown) => void)(mockEvent);
+      (result.on_click as (e: unknown) => void)(mockEvent);
 
       // Even with modifier key, anchor without href should call handler
       expect(mockEvent.preventDefault).toHaveBeenCalled();
@@ -265,13 +303,13 @@ describe("processProps", () => {
 
     it("calls preventDefault on click on non-anchor element", () => {
       const onEvent = vi.fn();
-      const props = { onClick: { __callback__: "cb_click" } };
+      const props = { on_click: { __callback__: "cb_click" } };
       const result = processProps(props, onEvent);
 
       const button = document.createElement("button");
       const mockEvent = createMouseEvent(button, { metaKey: true });
 
-      (result.onClick as (e: unknown) => void)(mockEvent);
+      (result.on_click as (e: unknown) => void)(mockEvent);
 
       // Non-anchor elements always call preventDefault
       expect(mockEvent.preventDefault).toHaveBeenCalled();
@@ -311,7 +349,7 @@ describe("renderNode", () => {
       type: "div",
       name: "",
       key: null,
-      props: { className: "test-class" },
+      props: { class_name: "test-class" },
       children: [],
     };
 
@@ -319,6 +357,24 @@ describe("renderNode", () => {
     const { container } = render(element);
 
     expect(container.querySelector(".test-class")).toBeInTheDocument();
+  });
+
+  it("maps snake_case DOM attrs to browser prop names", () => {
+    const node: SerializedElement = {
+      kind: ElementKind.JSX_ELEMENT,
+      type: "div",
+      name: "",
+      key: null,
+      props: { class_name: "mapped", data_testid: "mapped-id", aria_label: "Mapped Label" },
+      children: [],
+    };
+
+    const element = renderNode(node, options);
+    render(element);
+
+    const mapped = screen.getByTestId("mapped-id");
+    expect(mapped).toHaveClass("mapped");
+    expect(mapped).toHaveAttribute("aria-label", "Mapped Label");
   });
 
   it("renders JSX elements with _text content", () => {
@@ -343,7 +399,7 @@ describe("renderNode", () => {
       type: "div",
       name: "",
       key: null,
-      props: { "data-testid": "parent" },
+      props: { data_testid: "parent" },
       children: [
         {
           kind: ElementKind.JSX_ELEMENT,
@@ -369,6 +425,26 @@ describe("renderNode", () => {
 
     expect(screen.getByText("Child 1")).toBeInTheDocument();
     expect(screen.getByText("Child 2")).toBeInTheDocument();
+  });
+
+  it("maps snake_case callback props to DOM event handlers", () => {
+    const node: SerializedElement = {
+      kind: ElementKind.JSX_ELEMENT,
+      type: "button",
+      name: "",
+      key: null,
+      props: {
+        _text: "Click mapped handler",
+        on_click: { __callback__: "mapped_click" },
+      },
+      children: [],
+    };
+
+    const element = renderNode(node, options);
+    render(element);
+
+    screen.getByText("Click mapped handler").click();
+    expect(mockOnEvent).toHaveBeenCalledWith("mapped_click", [expect.anything()]);
   });
 
   it("renders custom widgets from registry", () => {

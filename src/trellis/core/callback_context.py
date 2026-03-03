@@ -1,7 +1,7 @@
 """Callback context for accessing session state outside render.
 
 This module provides context management for callbacks and hooks that execute
-outside the normal render context. When a callback fires (e.g., onClick),
+outside the normal render context. When a callback fires (e.g., on_click),
 there's no active render session, but the callback may need to access
 context-based state like RouterState.
 

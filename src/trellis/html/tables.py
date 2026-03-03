@@ -6,14 +6,17 @@ Elements for creating data tables.
 from __future__ import annotations
 
 import typing as tp
+from typing import overload
 
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
 
 __all__ = [
+    "Caption",
     "Table",
     "Tbody",
     "Td",
+    "Tfoot",
     "Th",
     "Thead",
     "Tr",
@@ -23,7 +26,7 @@ __all__ = [
 @html_element("table", is_container=True)
 def Table(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -35,7 +38,7 @@ def Table(
 @html_element("thead", is_container=True)
 def Thead(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element:
@@ -46,7 +49,7 @@ def Thead(
 @html_element("tbody", is_container=True)
 def Tbody(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element:
@@ -57,7 +60,7 @@ def Tbody(
 @html_element("tr", is_container=True)
 def Tr(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element:
@@ -65,43 +68,41 @@ def Tr(
     ...
 
 
-# Hybrid elements need special handling
-@html_element("th", is_container=True, name="Th")
-def _Th(
-    *,
-    _text: str | None = None,
-    scope: str | None = None,
-    colSpan: int | None = None,
-    rowSpan: int | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A table header cell element."""
-    ...
-
-
-@html_element("td", is_container=True, name="Td")
-def _Td(
-    *,
-    _text: str | None = None,
-    colSpan: int | None = None,
-    rowSpan: int | None = None,
-    className: str | None = None,
-    style: Style | None = None,
-    **props: tp.Any,
-) -> Element:
-    """A table data cell element."""
-    ...
-
-
+@overload
 def Th(
-    text: str = "",
+    text: str,
+    /,
     *,
     scope: str | None = None,
-    colSpan: int | None = None,
-    rowSpan: int | None = None,
-    className: str | None = None,
+    col_span: int | None = None,
+    row_span: int | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Th(
+    *,
+    scope: str | None = None,
+    col_span: int | None = None,
+    row_span: int | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+@html_element("th", is_container=True)
+def Th(
+    text: str | None = None,
+    /,
+    *,
+    scope: str | None = None,
+    col_span: int | None = None,
+    row_span: int | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element:
@@ -113,23 +114,41 @@ def Th(
             h.Span("Name")
             h.Span("*", style={"color": "red"})
     """
-    return _Th(
-        _text=text if text else None,
-        scope=scope,
-        colSpan=colSpan,
-        rowSpan=rowSpan,
-        className=className,
-        style=style,
-        **props,
-    )
+    ...
 
 
+@overload
 def Td(
-    text: str = "",
+    text: str,
+    /,
     *,
-    colSpan: int | None = None,
-    rowSpan: int | None = None,
-    className: str | None = None,
+    col_span: int | None = None,
+    row_span: int | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Td(
+    *,
+    col_span: int | None = None,
+    row_span: int | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+@html_element("td", is_container=True)
+def Td(
+    text: str | None = None,
+    /,
+    *,
+    col_span: int | None = None,
+    row_span: int | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element:
@@ -141,11 +160,52 @@ def Td(
             h.Strong("Bold")
             h.Span(" and normal")
     """
-    return _Td(
-        _text=text if text else None,
-        colSpan=colSpan,
-        rowSpan=rowSpan,
-        className=className,
-        style=style,
-        **props,
-    )
+    ...
+
+
+@html_element("tfoot", is_container=True)
+def Tfoot(
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A table footer section element."""
+    ...
+
+
+@overload
+def Caption(
+    text: str,
+    /,
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Caption(
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+@html_element("caption", is_container=True)
+def Caption(
+    text: str | None = None,
+    /,
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A table caption element."""
+    ...

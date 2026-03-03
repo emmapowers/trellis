@@ -1,7 +1,10 @@
 """Tests for native HTML elements."""
 
+import pytest
+
 from trellis import html as h
 from trellis.core.components.composition import component
+from trellis.core.rendering.element import ContainerElement
 from trellis.platforms.common.serialization import parse_callback_id, serialize_element
 
 
@@ -22,6 +25,19 @@ class TestHtmlElements:
         assert div.component.name == "Div"
         assert len(div.child_ids) == 1
         assert result.session.elements.get(div.child_ids[0]).component.name == "Span"
+
+    def test_div_element_is_container_element_type(self, rendered) -> None:
+        """Container html elements create ContainerElement instances."""
+
+        @component
+        def App() -> None:
+            with h.Div():
+                pass
+
+        result = rendered(App)
+        div = result.session.elements.get(result.root_element.child_ids[0])
+
+        assert isinstance(div, ContainerElement)
 
     def test_nested_divs(self, rendered) -> None:
         """Divs can be nested."""
@@ -75,17 +91,17 @@ class TestHtmlElements:
         assert div.properties["style"] == {"backgroundColor": "red", "padding": "10px"}
 
     def test_element_with_class_name(self, rendered) -> None:
-        """Elements accept className prop."""
+        """Elements accept class_name prop."""
 
         @component
         def App() -> None:
-            with h.Div(className="container"):
+            with h.Div(class_name="container"):
                 pass
 
         result = rendered(App)
 
         div = result.session.elements.get(result.root_element.child_ids[0])
-        assert div.properties["className"] == "container"
+        assert div.properties["class_name"] == "container"
 
     def test_text_renders_plain_text(self, rendered) -> None:
         """Text element renders plain text without wrapper."""
@@ -215,12 +231,12 @@ class TestHtmlSerialization:
         assert inner["children"][0]["type"] == "p"
 
     def test_serialize_onclick_as_callback(self, rendered) -> None:
-        """onClick handler serializes as callback reference."""
+        """on_click handler serializes as callback reference."""
         clicked = []
 
         @component
         def App() -> None:
-            with h.Div(onClick=lambda: clicked.append(True)):
+            with h.Div(on_click=lambda: clicked.append(True)):
                 pass
 
         result = rendered(App)
@@ -228,10 +244,10 @@ class TestHtmlSerialization:
         serialized = serialize_element(result.root_element, result.session)
         div_data = serialized["children"][0]
 
-        assert "__callback__" in div_data["props"]["onClick"]
+        assert "__callback__" in div_data["props"]["on_click"]
 
         # Verify callback works
-        cb_id = div_data["props"]["onClick"]["__callback__"]
+        cb_id = div_data["props"]["on_click"]["__callback__"]
         node_id, prop_name = parse_callback_id(cb_id)
         result.session.get_callback(node_id, prop_name)()
         assert clicked == [True]
@@ -376,22 +392,535 @@ class TestHybridElements:
         assert len(a.child_ids) == 1
         assert result.session.elements.get(a.child_ids[0]).component.name == "Span"
 
-    def test_hybrid_no_double_collection(self, rendered) -> None:
-        """Using with on a text hybrid element doesn't double-collect."""
+    def test_hybrid_text_with_block_raises_type_error(self, rendered) -> None:
+        """Using with on a text hybrid element raises TypeError."""
 
         @component
         def App() -> None:
             with h.Div():
-                # This would double-collect without the _auto_collected fix
                 with h.Td("text"):
                     pass
 
+        with pytest.raises(TypeError, match=r"Cannot use.*with.*text content"):
+            rendered(App)
+
+
+class TestTextElementsAsContainers:
+    """Tests for text elements used as containers (hybrid mode)."""
+
+    def test_p_as_container(self, rendered) -> None:
+        """P can be used as a container with children."""
+
+        @component
+        def App() -> None:
+            with h.P():
+                h.Strong("bold")
+
         result = rendered(App)
 
+        p = result.session.elements.get(result.root_element.child_ids[0])
+        assert p.component.name == "P"
+        assert len(p.child_ids) == 1
+        assert result.session.elements.get(p.child_ids[0]).component.name == "Strong"
+
+    def test_p_as_text_still_works(self, rendered) -> None:
+        """P("text") still works as text-only."""
+
+        @component
+        def App() -> None:
+            h.P("text content")
+
+        result = rendered(App)
+
+        p = result.session.elements.get(result.root_element.child_ids[0])
+        assert p.properties["_text"] == "text content"
+
+    def test_p_as_empty_text_still_works(self, rendered) -> None:
+        """P("") stays in text mode with explicit empty text."""
+
+        @component
+        def App() -> None:
+            h.P("")
+
+        result = rendered(App)
+
+        p = result.session.elements.get(result.root_element.child_ids[0])
+        assert p.properties["_text"] == ""
+
+    def test_p_text_with_block_raises(self, rendered) -> None:
+        """P("text") with block raises TypeError."""
+
+        @component
+        def App() -> None:
+            with h.P("text"):
+                pass
+
+        with pytest.raises(TypeError, match=r"Cannot use.*with.*text content"):
+            rendered(App)
+
+    def test_span_empty_text_with_block_raises(self, rendered) -> None:
+        """Span("") with block raises TypeError."""
+
+        @component
+        def App() -> None:
+            with h.Span(""):
+                pass
+
+        with pytest.raises(TypeError, match=r"Cannot use.*with.*text content"):
+            rendered(App)
+
+    def test_span_as_container(self, rendered) -> None:
+        """Span can be used as a container."""
+
+        @component
+        def App() -> None:
+            with h.Span():
+                h.Strong("inner")
+
+        result = rendered(App)
+
+        span = result.session.elements.get(result.root_element.child_ids[0])
+        assert span.component.name == "Span"
+        assert len(span.child_ids) == 1
+
+    def test_h1_as_container(self, rendered) -> None:
+        """H1 can be used as a container."""
+
+        @component
+        def App() -> None:
+            with h.H1():
+                h.Span("styled heading")
+
+        result = rendered(App)
+
+        h1 = result.session.elements.get(result.root_element.child_ids[0])
+        assert h1.component.name == "H1"
+        assert len(h1.child_ids) == 1
+
+    def test_strong_as_container(self, rendered) -> None:
+        """Strong can be used as a container."""
+
+        @component
+        def App() -> None:
+            with h.Strong():
+                h.Em("bold and italic")
+
+        result = rendered(App)
+
+        strong = result.session.elements.get(result.root_element.child_ids[0])
+        assert strong.component.name == "Strong"
+        assert len(strong.child_ids) == 1
+
+    def test_em_as_container(self, rendered) -> None:
+        """Em can be used as a container."""
+
+        @component
+        def App() -> None:
+            with h.Em():
+                h.Strong("italic and bold")
+
+        result = rendered(App)
+
+        em = result.session.elements.get(result.root_element.child_ids[0])
+        assert em.component.name == "Em"
+        assert len(em.child_ids) == 1
+
+    def test_code_as_container(self, rendered) -> None:
+        """Code can be used as a container."""
+
+        @component
+        def App() -> None:
+            with h.Code():
+                h.Span("code content")
+
+        result = rendered(App)
+
+        code = result.session.elements.get(result.root_element.child_ids[0])
+        assert code.component.name == "Code"
+        assert len(code.child_ids) == 1
+
+    def test_pre_containing_code(self, rendered) -> None:
+        """Pre can contain Code (common pattern)."""
+
+        @component
+        def App() -> None:
+            with h.Pre():
+                h.Code("code block")
+
+        result = rendered(App)
+
+        pre = result.session.elements.get(result.root_element.child_ids[0])
+        assert pre.component.name == "Pre"
+        assert len(pre.child_ids) == 1
+        assert result.session.elements.get(pre.child_ids[0]).component.name == "Code"
+
+
+class TestNewTextElements:
+    """Tests for new text/inline elements."""
+
+    def test_br_renders_as_void(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Div():
+                h.P("Line 1")
+                h.Br()
+                h.P("Line 2")
+
+        result = rendered(App)
         div = result.session.elements.get(result.root_element.child_ids[0])
-        # Should only have one Td child, not two
-        assert len(div.child_ids) == 1
-        assert result.session.elements.get(div.child_ids[0]).component.name == "Td"
+        assert len(div.child_ids) == 3
+        br = result.session.elements.get(div.child_ids[1])
+        assert br.component.name == "Br"
+        assert len(br.child_ids) == 0
+
+    def test_hr_renders_as_void(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Div():
+                h.Hr()
+
+        result = rendered(App)
+        div = result.session.elements.get(result.root_element.child_ids[0])
+        hr = result.session.elements.get(div.child_ids[0])
+        assert hr.component.name == "Hr"
+        assert len(hr.child_ids) == 0
+
+    def test_small_hybrid(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Small("fine print")
+            with h.Small():
+                h.Em("italic fine print")
+
+        result = rendered(App)
+        text_small = result.session.elements.get(result.root_element.child_ids[0])
+        assert text_small.properties["_text"] == "fine print"
+        container_small = result.session.elements.get(result.root_element.child_ids[1])
+        assert len(container_small.child_ids) == 1
+
+    def test_mark_hybrid(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Mark("highlighted")
+
+        result = rendered(App)
+        mark = result.session.elements.get(result.root_element.child_ids[0])
+        assert mark.properties["_text"] == "highlighted"
+
+    def test_sub_sup_hybrid(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Sub("2")
+            h.Sup("n")
+
+        result = rendered(App)
+        sub = result.session.elements.get(result.root_element.child_ids[0])
+        sup = result.session.elements.get(result.root_element.child_ids[1])
+        assert sub.properties["_text"] == "2"
+        assert sup.properties["_text"] == "n"
+
+    def test_abbr_with_title(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Abbr("HTML", title="HyperText Markup Language")
+
+        result = rendered(App)
+        abbr = result.session.elements.get(result.root_element.child_ids[0])
+        assert abbr.properties["_text"] == "HTML"
+        assert abbr.properties["title"] == "HyperText Markup Language"
+
+    def test_time_with_datetime(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Time("March 1", date_time="2026-03-01")
+
+        result = rendered(App)
+        time_el = result.session.elements.get(result.root_element.child_ids[0])
+        assert time_el.properties["_text"] == "March 1"
+        assert time_el.properties["date_time"] == "2026-03-01"
+
+
+class TestNewLayoutElements:
+    """Tests for new layout/structural elements."""
+
+    def test_blockquote_hybrid(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Blockquote("A wise quote", cite="https://example.com")
+
+        result = rendered(App)
+        bq = result.session.elements.get(result.root_element.child_ids[0])
+        assert bq.properties["_text"] == "A wise quote"
+        assert bq.properties["cite"] == "https://example.com"
+
+    def test_blockquote_as_container(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Blockquote():
+                h.P("Quote paragraph")
+
+        result = rendered(App)
+        bq = result.session.elements.get(result.root_element.child_ids[0])
+        assert len(bq.child_ids) == 1
+
+    def test_address_container(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Address():
+                h.P("123 Main St")
+
+        result = rendered(App)
+        addr = result.session.elements.get(result.root_element.child_ids[0])
+        assert addr.component.name == "Address"
+        assert len(addr.child_ids) == 1
+
+    def test_details_summary(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Details(open=True):
+                h.Summary("Click to expand")
+                h.P("Hidden content")
+
+        result = rendered(App)
+        details = result.session.elements.get(result.root_element.child_ids[0])
+        assert details.component.name == "Details"
+        assert details.properties["open"] is True
+        assert len(details.child_ids) == 2
+        summary = result.session.elements.get(details.child_ids[0])
+        assert summary.component.name == "Summary"
+        assert summary.properties["_text"] == "Click to expand"
+
+    def test_figure_figcaption(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Figure():
+                h.Img(src="photo.jpg")
+                h.Figcaption("A beautiful photo")
+
+        result = rendered(App)
+        figure = result.session.elements.get(result.root_element.child_ids[0])
+        assert figure.component.name == "Figure"
+        assert len(figure.child_ids) == 2
+        caption = result.session.elements.get(figure.child_ids[1])
+        assert caption.component.name == "Figcaption"
+        assert caption.properties["_text"] == "A beautiful photo"
+
+
+class TestNewListElements:
+    """Tests for definition list elements."""
+
+    def test_dl_dt_dd(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Dl():
+                h.Dt("Term")
+                h.Dd("Definition")
+
+        result = rendered(App)
+        dl = result.session.elements.get(result.root_element.child_ids[0])
+        assert dl.component.name == "Dl"
+        assert len(dl.child_ids) == 2
+        dt = result.session.elements.get(dl.child_ids[0])
+        dd = result.session.elements.get(dl.child_ids[1])
+        assert dt.properties["_text"] == "Term"
+        assert dd.properties["_text"] == "Definition"
+
+    def test_dt_dd_as_containers(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Dl():
+                with h.Dt():
+                    h.Strong("Term")
+                with h.Dd():
+                    h.P("Definition paragraph")
+
+        result = rendered(App)
+        dl = result.session.elements.get(result.root_element.child_ids[0])
+        dt = result.session.elements.get(dl.child_ids[0])
+        dd = result.session.elements.get(dl.child_ids[1])
+        assert len(dt.child_ids) == 1
+        assert len(dd.child_ids) == 1
+
+
+class TestNewTableElements:
+    """Tests for new table elements."""
+
+    def test_tfoot_container(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Table():
+                with h.Tfoot():
+                    with h.Tr():
+                        h.Td("Total")
+
+        result = rendered(App)
+        table = result.session.elements.get(result.root_element.child_ids[0])
+        tfoot = result.session.elements.get(table.child_ids[0])
+        assert tfoot.component.name == "Tfoot"
+        assert len(tfoot.child_ids) == 1
+
+    def test_caption_hybrid(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Table():
+                h.Caption("Table title")
+
+        result = rendered(App)
+        table = result.session.elements.get(result.root_element.child_ids[0])
+        caption = result.session.elements.get(table.child_ids[0])
+        assert caption.component.name == "Caption"
+        assert caption.properties["_text"] == "Table title"
+
+
+class TestNewFormElements:
+    """Tests for new form elements."""
+
+    def test_fieldset_legend(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Fieldset():
+                h.Legend("Personal Info")
+                h.Input(type="text", name="name")
+
+        result = rendered(App)
+        fieldset = result.session.elements.get(result.root_element.child_ids[0])
+        assert fieldset.component.name == "Fieldset"
+        assert len(fieldset.child_ids) == 2
+        legend = result.session.elements.get(fieldset.child_ids[0])
+        assert legend.properties["_text"] == "Personal Info"
+
+    def test_fieldset_disabled(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Fieldset(disabled=True):
+                h.Input(type="text")
+
+        result = rendered(App)
+        fieldset = result.session.elements.get(result.root_element.child_ids[0])
+        assert fieldset.properties["disabled"] is True
+
+    def test_optgroup(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Select():
+                with h.Optgroup(label="Group 1"):
+                    h.Option("A", value="a")
+                    h.Option("B", value="b")
+
+        result = rendered(App)
+        select = result.session.elements.get(result.root_element.child_ids[0])
+        optgroup = result.session.elements.get(select.child_ids[0])
+        assert optgroup.component.name == "Optgroup"
+        assert optgroup.properties["label"] == "Group 1"
+        assert len(optgroup.child_ids) == 2
+
+    def test_progress(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Progress(value=0.7, max=1.0)
+
+        result = rendered(App)
+        progress = result.session.elements.get(result.root_element.child_ids[0])
+        assert progress.component.name == "Progress"
+        assert progress.properties["value"] == 0.7
+        assert progress.properties["max"] == 1.0
+
+    def test_meter(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Meter(value=0.6, min=0.0, max=1.0, low=0.25, high=0.75, optimum=0.5)
+
+        result = rendered(App)
+        meter = result.session.elements.get(result.root_element.child_ids[0])
+        assert meter.component.name == "Meter"
+        assert meter.properties["value"] == 0.6
+
+    def test_output_hybrid(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Output("Result: 42", name="result")
+
+        result = rendered(App)
+        output = result.session.elements.get(result.root_element.child_ids[0])
+        assert output.properties["_text"] == "Result: 42"
+        assert output.properties["name"] == "result"
+
+    def test_datalist(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Datalist(id="browsers"):
+                h.Option("Chrome", value="chrome")
+                h.Option("Firefox", value="firefox")
+
+        result = rendered(App)
+        datalist = result.session.elements.get(result.root_element.child_ids[0])
+        assert datalist.component.name == "Datalist"
+        assert len(datalist.child_ids) == 2
+
+
+class TestNewMediaElements:
+    """Tests for media/embed elements."""
+
+    def test_img_requires_src_raises_type_error(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Img()
+
+        with pytest.raises(TypeError, match="missing a required keyword-only argument: 'src'"):
+            rendered(App)
+
+    def test_video_container(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Video(controls=True, width=640, height=480):
+                h.Source(src="video.mp4", type="video/mp4")
+
+        result = rendered(App)
+        video = result.session.elements.get(result.root_element.child_ids[0])
+        assert video.component.name == "Video"
+        assert video.properties["controls"] is True
+        assert video.properties["width"] == 640
+        source = result.session.elements.get(video.child_ids[0])
+        assert source.component.name == "Source"
+        assert source.properties["src"] == "video.mp4"
+
+    def test_audio_container(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Audio(controls=True):
+                h.Source(src="song.mp3", type="audio/mpeg")
+
+        result = rendered(App)
+        audio = result.session.elements.get(result.root_element.child_ids[0])
+        assert audio.component.name == "Audio"
+        assert audio.properties["controls"] is True
+        assert len(audio.child_ids) == 1
+
+    def test_source_void(self, rendered) -> None:
+        @component
+        def App() -> None:
+            with h.Video():
+                h.Source(src="video.mp4", type="video/mp4")
+                h.Source(src="video.webm", type="video/webm")
+
+        result = rendered(App)
+        video = result.session.elements.get(result.root_element.child_ids[0])
+        assert len(video.child_ids) == 2
+        for child_id in video.child_ids:
+            source = result.session.elements.get(child_id)
+            assert len(source.child_ids) == 0
+
+    def test_iframe(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Iframe(src="https://example.com", title="Example", width=800, height=600)
+
+        result = rendered(App)
+        iframe = result.session.elements.get(result.root_element.child_ids[0])
+        assert iframe.component.name == "Iframe"
+        assert iframe.properties["src"] == "https://example.com"
+        assert iframe.properties["title"] == "Example"
+        assert iframe.properties["width"] == 800
 
 
 class TestHtmlContainerBehavior:

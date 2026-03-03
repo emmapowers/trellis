@@ -226,15 +226,15 @@ class TestMessageHandler:
         # Send event with mouse event data
         event_msg = EventMessage(
             callback_id=cb_id,
-            args=[{"type": "click", "clientX": 100, "clientY": 200}],
+            args=[{"type": "click", "client_x": 100, "client_y": 200}],
         )
         asyncio.run(handler.handle_message(event_msg))
 
         assert len(received) == 1
         event = received[0]
         assert event.type == "click"
-        assert event.clientX == 100
-        assert event.clientY == 200
+        assert event.client_x == 100
+        assert event.client_y == 200
 
     def test_cleanup_clears_callbacks(self, app_wrapper: AppWrapper) -> None:
         """cleanup() clears all registered callbacks."""

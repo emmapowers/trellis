@@ -96,8 +96,8 @@ When widgets don't meet your needs, use HTML primitives directly:
 ```python
 from trellis import html as h
 
-with h.Div(className="custom-container"):
-    h.Span(text="Custom content")
+with h.Div(class_name="custom-container"):
+    h.Span("Custom content")
 ```
 
 HTML elements provide full control over structure and styling while still participating in Trellis's reactive rendering system.

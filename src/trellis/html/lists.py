@@ -6,11 +6,15 @@ Elements for creating ordered and unordered lists.
 from __future__ import annotations
 
 import typing as tp
+from typing import overload
 
-from trellis.core.rendering.element import Element
+from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
 
 __all__ = [
+    "Dd",
+    "Dl",
+    "Dt",
     "Li",
     "Ol",
     "Ul",
@@ -20,7 +24,7 @@ __all__ = [
 @html_element("ul", is_container=True)
 def Ul(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
@@ -32,33 +36,44 @@ def Ul(
 @html_element("ol", is_container=True)
 def Ol(
     *,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     start: int | None = None,
+    reversed: bool = False,
+    type: str | None = None,
     **props: tp.Any,
 ) -> Element:
     """An ordered list element."""
     ...
 
 
-# Hybrid element needs special handling
-@html_element("li", is_container=True, name="Li")
-def _Li(
+@overload
+def Li(
+    text: str,
+    /,
     *,
-    _text: str | None = None,
-    className: str | None = None,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
-) -> Element:
-    """A list item element."""
-    ...
+) -> Element: ...
 
 
+@overload
 def Li(
-    text: str = "",
     *,
-    className: str | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+@html_element("li", is_container=True)
+def Li(
+    text: str | None = None,
+    /,
+    *,
+    class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
 ) -> Element:
@@ -69,9 +84,91 @@ def Li(
         with h.Li():         # Container with children
             h.Strong("Bold")
     """
-    return _Li(
-        _text=text if text else None,
-        className=className,
-        style=style,
-        **props,
-    )
+    ...
+
+
+# Definition list elements
+
+
+@html_element("dl", is_container=True)
+def Dl(
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A description list element."""
+    ...
+
+
+@overload
+def Dt(
+    text: str,
+    /,
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Dt(
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+@html_element("dt", is_container=True)
+def Dt(
+    text: str | None = None,
+    /,
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A description term element."""
+    ...
+
+
+@overload
+def Dd(
+    text: str,
+    /,
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def Dd(
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> ContainerElement: ...
+
+
+@html_element("dd", is_container=True)
+def Dd(
+    text: str | None = None,
+    /,
+    *,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    **props: tp.Any,
+) -> Element:
+    """A description details element."""
+    ...
