@@ -2,7 +2,7 @@
  * Chart utilities for color palette management and color manipulation.
  */
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, type RefCallback } from "react";
 
 const PALETTE_SIZE = 10;
 
@@ -64,7 +64,7 @@ export function withOpacity(color: string, opacity: number): string {
 }
 
 export interface ResolvedTheme {
-  ref: React.RefCallback<HTMLElement>;
+  ref: RefCallback<HTMLElement>;
   chartColors: string[];
   resolveColor: (cssVar: string) => string;
   themeVersion: number;

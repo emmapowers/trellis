@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { render } from "../../test-utils";
 import { LineChart } from "../../../../src/trellis/widgets/client/LineChart";
 import { BarChart } from "../../../../src/trellis/widgets/client/BarChart";
@@ -36,9 +36,9 @@ describe("LineChart", () => {
       <LineChart data={sampleData} data_keys={["a", "b"]} width={CHART_WIDTH} height={CHART_HEIGHT} />
     );
     const paths = container.querySelectorAll(".recharts-line-curve");
+    expect(paths.length).toBeGreaterThan(0);
     for (const path of paths) {
       const stroke = path.getAttribute("stroke") || "";
-      // Should use CSS variables, not hardcoded hex
       expect(stroke).toMatch(/^var\(--trellis-chart-/);
     }
   });
@@ -54,10 +54,11 @@ describe("LineChart", () => {
       />
     );
     const path = container.querySelector(".recharts-line-curve");
+    expect(path).toBeTruthy();
     expect(path?.getAttribute("stroke")).toBe("#abc123");
   });
 
-  it("tooltip has themed text color", () => {
+  it("renders tooltip wrapper", () => {
     const { container } = render(
       <LineChart data={sampleData} data_keys={["a"]} width={CHART_WIDTH} height={CHART_HEIGHT} />
     );
@@ -78,11 +79,10 @@ describe("BarChart", () => {
     const { container } = render(
       <BarChart data={sampleData} data_keys={["a", "b"]} width={CHART_WIDTH} height={CHART_HEIGHT} />
     );
-    const bars = container.querySelectorAll(".recharts-bar-rectangle path");
-    if (bars.length > 0) {
-      const fill = bars[0].getAttribute("fill") || "";
-      expect(fill).toMatch(/^var\(--trellis-chart-/);
-    }
+    // Bar rectangles don't render in jsdom, so check legend icons which carry the fill color
+    const icons = container.querySelectorAll(".recharts-legend-icon");
+    expect(icons.length).toBeGreaterThan(0);
+    expect(icons[0].getAttribute("fill")).toMatch(/^var\(--trellis-chart-/);
   });
 
   it("custom colors prop overrides defaults", () => {
@@ -95,10 +95,9 @@ describe("BarChart", () => {
         height={CHART_HEIGHT}
       />
     );
-    const bars = container.querySelectorAll(".recharts-bar-rectangle path");
-    if (bars.length > 0) {
-      expect(bars[0].getAttribute("fill")).toBe("#abc123");
-    }
+    const icons = container.querySelectorAll(".recharts-legend-icon");
+    expect(icons.length).toBeGreaterThan(0);
+    expect(icons[0].getAttribute("fill")).toBe("#abc123");
   });
 });
 
@@ -115,6 +114,7 @@ describe("AreaChart", () => {
       <AreaChart data={sampleData} data_keys={["a", "b"]} width={CHART_WIDTH} height={CHART_HEIGHT} />
     );
     const areas = container.querySelectorAll(".recharts-area-curve");
+    expect(areas.length).toBeGreaterThan(0);
     for (const area of areas) {
       const stroke = area.getAttribute("stroke") || "";
       expect(stroke).toMatch(/^var\(--trellis-chart-/);
@@ -132,6 +132,7 @@ describe("AreaChart", () => {
       />
     );
     const area = container.querySelector(".recharts-area-curve");
+    expect(area).toBeTruthy();
     expect(area?.getAttribute("stroke")).toBe("#abc123");
   });
 });
@@ -148,11 +149,10 @@ describe("PieChart", () => {
     const { container } = render(
       <PieChart data={pieData} width={CHART_WIDTH} height={CHART_HEIGHT} />
     );
-    const sectors = container.querySelectorAll(".recharts-pie-sector path");
-    if (sectors.length > 0) {
-      const fill = sectors[0].getAttribute("fill") || "";
-      expect(fill).toMatch(/^var\(--trellis-chart-/);
-    }
+    // Pie sectors don't render in jsdom, so check legend icons which carry the fill color
+    const icons = container.querySelectorAll(".recharts-legend-icon");
+    expect(icons.length).toBeGreaterThan(0);
+    expect(icons[0].getAttribute("fill")).toMatch(/^var\(--trellis-chart-/);
   });
 
   it("custom colors prop overrides defaults", () => {
@@ -164,9 +164,8 @@ describe("PieChart", () => {
         height={CHART_HEIGHT}
       />
     );
-    const sectors = container.querySelectorAll(".recharts-pie-sector path");
-    if (sectors.length > 0) {
-      expect(sectors[0].getAttribute("fill")).toBe("#aaa");
-    }
+    const icons = container.querySelectorAll(".recharts-legend-icon");
+    expect(icons.length).toBeGreaterThan(0);
+    expect(icons[0].getAttribute("fill")).toBe("#aaa");
   });
 });

@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { colors, typography } from "@trellis/trellis-core/theme";
-import { getChartColors, withOpacity } from "@trellis/trellis-core/chartUtils";
+import { getChartColors, withOpacity } from "./chartUtils";
 
 interface AreaChartProps {
   data?: Record<string, any>[];
@@ -43,7 +43,7 @@ export function AreaChart({
   className,
   style,
 }: AreaChartProps): React.ReactElement {
-  const chartColors = colorsProp || getChartColors(data_keys.length);
+  const chartColors = colorsProp?.length ? colorsProp : getChartColors(data_keys.length);
 
   const chartContent = (
     <RechartsAreaChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>

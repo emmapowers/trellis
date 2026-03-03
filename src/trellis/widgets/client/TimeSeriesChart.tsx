@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { colors, typography } from "@trellis/trellis-core/theme";
-import { useResolvedTheme } from "@trellis/trellis-core/chartUtils";
+import { useResolvedTheme } from "./chartUtils";
 
 interface SeriesConfig {
   label?: string;

@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { colors, typography } from "@trellis/trellis-core/theme";
-import { getChartColors } from "@trellis/trellis-core/chartUtils";
+import { getChartColors } from "./chartUtils";
 
 interface BarChartProps {
   data?: Record<string, any>[];
@@ -43,7 +43,7 @@ export function BarChart({
   className,
   style,
 }: BarChartProps): React.ReactElement {
-  const chartColors = colorsProp || getChartColors(data_keys.length);
+  const chartColors = colorsProp?.length ? colorsProp : getChartColors(data_keys.length);
   const isVertical = layout === "vertical";
 
   const chartContent = (

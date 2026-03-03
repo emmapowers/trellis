@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { renderHook, act, cleanup } from "@testing-library/react";
-import { getChartColors, withOpacity, useResolvedTheme } from "@trellis/trellis-core/chartUtils";
+import { getChartColors, withOpacity, useResolvedTheme } from "../../../src/trellis/widgets/client/chartUtils";
 
 describe("getChartColors", () => {
   it("returns empty array for 0", () => {

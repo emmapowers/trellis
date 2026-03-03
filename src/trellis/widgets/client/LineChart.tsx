@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { colors, typography } from "@trellis/trellis-core/theme";
-import { getChartColors } from "@trellis/trellis-core/chartUtils";
+import { getChartColors } from "./chartUtils";
 
 interface LineChartProps {
   data?: Record<string, any>[];
@@ -41,7 +41,7 @@ export function LineChart({
   className,
   style,
 }: LineChartProps): React.ReactElement {
-  const chartColors = colorsProp || getChartColors(data_keys.length);
+  const chartColors = colorsProp?.length ? colorsProp : getChartColors(data_keys.length);
 
   const chartContent = (
     <RechartsLineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>

@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { colors, typography } from "@trellis/trellis-core/theme";
-import { getChartColors } from "@trellis/trellis-core/chartUtils";
+import { getChartColors } from "./chartUtils";
 
 interface PieChartProps {
   data?: Record<string, any>[];
@@ -39,7 +39,7 @@ export function PieChart({
   className,
   style,
 }: PieChartProps): React.ReactElement {
-  const chartColors = colorsProp || getChartColors(data.length);
+  const chartColors = colorsProp?.length ? colorsProp : getChartColors(data.length);
 
   // Calculate outer radius based on height (leave room for legend)
   const outerRadius = Math.min(height / 2 - 20, 80);
