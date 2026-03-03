@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { colors, typography } from "@trellis/trellis-core/theme";
+import { getChartColors } from "./chartUtils";
 
 interface LineChartProps {
   data?: Record<string, any>[];
@@ -26,15 +27,6 @@ interface LineChartProps {
   style?: React.CSSProperties;
 }
 
-const defaultColors = [
-  colors.accent.primary,
-  "#22c55e",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#06b6d4",
-];
-
 export function LineChart({
   data = [],
   data_keys = ["value"],
@@ -49,9 +41,9 @@ export function LineChart({
   className,
   style,
 }: LineChartProps): React.ReactElement {
-  const chartColors = colorsProp || defaultColors;
+  const chartColors = colorsProp?.length ? colorsProp : getChartColors(data_keys.length);
 
-  const chart = (
+  const chartContent = (
     <RechartsLineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
       {show_grid && <CartesianGrid strokeDasharray="3 3" stroke={colors.border.subtle} />}
       <XAxis
@@ -70,10 +62,13 @@ export function LineChart({
             border: `1px solid ${colors.border.default}`,
             borderRadius: 4,
             fontSize: typography.fontSize.sm,
+            color: colors.text.primary,
           }}
         />
       )}
-      {show_legend && <Legend wrapperStyle={{ fontSize: typography.fontSize.sm }} />}
+      {show_legend && (
+        <Legend wrapperStyle={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }} />
+      )}
       {data_keys.map((key, i) => (
         <Line
           key={key}
@@ -91,40 +86,7 @@ export function LineChart({
   if (width) {
     return (
       <div className={className} style={{ width, height, ...style }}>
-        <RechartsLineChart width={width} height={height} data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-          {show_grid && <CartesianGrid strokeDasharray="3 3" stroke={colors.border.subtle} />}
-          <XAxis
-            dataKey={x_key}
-            tick={{ fontSize: typography.fontSize.xs, fill: colors.text.secondary }}
-            stroke={colors.border.default}
-          />
-          <YAxis
-            tick={{ fontSize: typography.fontSize.xs, fill: colors.text.secondary }}
-            stroke={colors.border.default}
-          />
-          {show_tooltip && (
-            <Tooltip
-              contentStyle={{
-                backgroundColor: colors.bg.surface,
-                border: `1px solid ${colors.border.default}`,
-                borderRadius: 4,
-                fontSize: typography.fontSize.sm,
-              }}
-            />
-          )}
-          {show_legend && <Legend wrapperStyle={{ fontSize: typography.fontSize.sm }} />}
-          {data_keys.map((key, i) => (
-            <Line
-              key={key}
-              type={curve_type}
-              dataKey={key}
-              stroke={chartColors[i % chartColors.length]}
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4 }}
-            />
-          ))}
-        </RechartsLineChart>
+        {React.cloneElement(chartContent, { width, height })}
       </div>
     );
   }
@@ -132,7 +94,7 @@ export function LineChart({
   return (
     <div className={className} style={{ width: "100%", minWidth: 0, height, ...style }}>
       <ResponsiveContainer width="100%" height={height}>
-        {chart}
+        {chartContent}
       </ResponsiveContainer>
     </div>
   );

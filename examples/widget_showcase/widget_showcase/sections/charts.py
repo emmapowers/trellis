@@ -1,11 +1,31 @@
 """Charts section of the widget showcase."""
 
+import time
+
 from trellis import component
 from trellis import widgets as w
 from trellis.app import theme
 
 from ..components import ExampleCard
 from ..example import example
+
+
+@example("Time Series Chart")
+def TimeSeriesExample() -> None:
+    """High-performance time-series chart using uPlot."""
+    now = int(time.time())
+    w.TimeSeriesChart(
+        data=[
+            [now, now + 60, now + 120, now + 180, now + 240],
+            [10, 25, 18, 30, 22],
+            [5, 15, 12, 20, 18],
+        ],
+        series=[
+            {"label": "CPU"},
+            {"label": "Memory"},
+        ],
+        height=150,
+    )
 
 
 @example("Line & Area Charts")
@@ -87,6 +107,7 @@ def Sparklines() -> None:
 def ChartsSection() -> None:
     """Showcase chart widgets."""
     with w.Column(gap=16):
+        ExampleCard(example=TimeSeriesExample)
         ExampleCard(example=LineAndAreaCharts)
         ExampleCard(example=BarAndPieCharts)
         ExampleCard(example=Sparklines)

@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { colors, typography } from "@trellis/trellis-core/theme";
+import { getChartColors } from "./chartUtils";
 
 interface PieChartProps {
   data?: Record<string, any>[];
@@ -24,17 +25,6 @@ interface PieChartProps {
   style?: React.CSSProperties;
 }
 
-const defaultColors = [
-  colors.accent.primary,
-  "#22c55e",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#06b6d4",
-  "#ec4899",
-  "#14b8a6",
-];
-
 export function PieChart({
   data = [],
   data_key = "value",
@@ -49,7 +39,7 @@ export function PieChart({
   className,
   style,
 }: PieChartProps): React.ReactElement {
-  const chartColors = colorsProp || defaultColors;
+  const chartColors = colorsProp?.length ? colorsProp : getChartColors(data.length);
 
   // Calculate outer radius based on height (leave room for legend)
   const outerRadius = Math.min(height / 2 - 20, 80);
@@ -81,12 +71,13 @@ export function PieChart({
             border: `1px solid ${colors.border.default}`,
             borderRadius: 4,
             fontSize: typography.fontSize.sm,
+            color: colors.text.primary,
           }}
         />
       )}
       {show_legend && (
         <Legend
-          wrapperStyle={{ fontSize: typography.fontSize.sm }}
+          wrapperStyle={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}
           layout="horizontal"
           align="center"
           verticalAlign="bottom"

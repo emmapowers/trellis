@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { colors, typography } from "@trellis/trellis-core/theme";
+import { getChartColors } from "./chartUtils";
 
 interface BarChartProps {
   data?: Record<string, any>[];
@@ -27,15 +28,6 @@ interface BarChartProps {
   style?: React.CSSProperties;
 }
 
-const defaultColors = [
-  colors.accent.primary,
-  "#22c55e",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#06b6d4",
-];
-
 export function BarChart({
   data = [],
   data_keys = ["value"],
@@ -51,7 +43,7 @@ export function BarChart({
   className,
   style,
 }: BarChartProps): React.ReactElement {
-  const chartColors = colorsProp || defaultColors;
+  const chartColors = colorsProp?.length ? colorsProp : getChartColors(data_keys.length);
   const isVertical = layout === "vertical";
 
   const chartContent = (
@@ -95,10 +87,13 @@ export function BarChart({
             border: `1px solid ${colors.border.default}`,
             borderRadius: 4,
             fontSize: typography.fontSize.sm,
+            color: colors.text.primary,
           }}
         />
       )}
-      {show_legend && <Legend wrapperStyle={{ fontSize: typography.fontSize.sm }} />}
+      {show_legend && (
+        <Legend wrapperStyle={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }} />
+      )}
       {data_keys.map((key, i) => (
         <Bar
           key={key}

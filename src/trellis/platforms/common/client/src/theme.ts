@@ -59,6 +59,11 @@ export const colors = {
     subtle: "var(--trellis-accent-subtle)",
   },
 
+  // Chart palette
+  chart: {
+    palette: Array.from({ length: 10 }, (_, i) => `var(--trellis-chart-${i + 1})`),
+  },
+
   // Neutral scale (slate)
   neutral: {
     50: "var(--trellis-neutral-50)",

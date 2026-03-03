@@ -272,7 +272,7 @@ def PieChart(
     pass
 
 
-@react("client/Sparkline.tsx", packages=_RECHARTS_PACKAGES)
+@react("client/Sparkline.tsx")
 def Sparkline(
     *,
     data: list[float] | None = None,

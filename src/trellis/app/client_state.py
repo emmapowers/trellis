@@ -89,6 +89,17 @@ class ThemeTokens:
     accent_primary: str = "var(--trellis-accent-primary)"
     accent_primary_hover: str = "var(--trellis-accent-primary-hover)"
     accent_subtle: str = "var(--trellis-accent-subtle)"
+    # Chart palette
+    chart_1: str = "var(--trellis-chart-1)"
+    chart_2: str = "var(--trellis-chart-2)"
+    chart_3: str = "var(--trellis-chart-3)"
+    chart_4: str = "var(--trellis-chart-4)"
+    chart_5: str = "var(--trellis-chart-5)"
+    chart_6: str = "var(--trellis-chart-6)"
+    chart_7: str = "var(--trellis-chart-7)"
+    chart_8: str = "var(--trellis-chart-8)"
+    chart_9: str = "var(--trellis-chart-9)"
+    chart_10: str = "var(--trellis-chart-10)"
     # Shadows
     shadow_sm: str = "var(--trellis-shadow-sm)"
     shadow_md: str = "var(--trellis-shadow-md)"
