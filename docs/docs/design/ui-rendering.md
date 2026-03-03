@@ -1361,7 +1361,7 @@ Button(text="Click", on_click=handler, variant="primary")
     "key": "e50",
     "props": {
         "text": "Click",
-        "on_click": {"__callback__": "e50:on_click"},
+        "on_click": {"__callback__": "e50|on_click"},
         "variant": "primary"
     },
     "children": []
@@ -1506,12 +1506,12 @@ class RenderTree:
         self, func: Callable, element_id: str, prop_name: str
     ) -> str:
         # Deterministic ID based on element and prop name
-        callback_id = f"{element_id}:{prop_name}"
+        callback_id = f"{element_id}|{prop_name}"
         self._callback_registry[callback_id] = func
         return callback_id
 ```
 
-**Deterministic IDs:** Callback IDs are based on element ID and property name (e.g., `e5:on_click`). This ensures:
+**Deterministic IDs:** Callback IDs are based on element ID and property name (e.g., `e5|on_click`). This ensures:
 
 - Same callback location always gets same ID (stability)
 - Callbacks are automatically overwritten on re-render
@@ -2086,7 +2086,7 @@ This section tracks which features from this design are implemented versus plann
 
 **Callbacks:**
 
-- Deterministic callback IDs (`{element_id}:{prop_name}`)
+- Deterministic callback IDs (`{element_id}|{prop_name}`)
 - Callback registration during serialization
 - Per-element callback cleanup on unmount
 

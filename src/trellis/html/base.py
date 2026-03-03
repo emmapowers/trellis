@@ -245,7 +245,7 @@ def html_element(
                 validation_args = ()
                 validation_kwargs["_text"] = args[0]
 
-            bound = signature.bind_partial(*validation_args, **validation_kwargs)
+            bound = signature.bind(*validation_args, **validation_kwargs)
             if has_text_keyword or has_text_positional:
                 # Preserve previous hybrid-wrapper behavior where default props
                 # were forwarded (e.g. HtmlButton(type="button")).
