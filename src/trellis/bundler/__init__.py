@@ -15,33 +15,19 @@ from trellis.bundler.steps import (
     TsconfigStep,
     TypeCheckStep,
 )
-from trellis.registry import (
-    CollectedModules,
-    ExportKind,
-    Module,
-    ModuleExport,
-    ModuleRegistry,
-    registry,
-)
 
 __all__ = [
     "BuildConfig",
     "BuildContext",
     "BuildStep",
     "BundleBuildStep",
-    "CollectedModules",
     "DeclarationStep",
-    "ExportKind",
     "IconAssetStep",
     "IndexHtmlRenderStep",
-    "Module",
-    "ModuleExport",
-    "ModuleRegistry",
     "PackageInstallStep",
     "RegistryGenerationStep",
     "StaticFileCopyStep",
     "TsconfigStep",
     "TypeCheckStep",
     "build",
-    "registry",
 ]

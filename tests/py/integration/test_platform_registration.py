@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from tests.helpers import HAS_PYTAURI, requires_pytauri
-from trellis.bundler import registry
 
 # Import platforms that don't require pytauri
 from trellis.platforms import browser, common, server  # noqa: F401
+from trellis.registry import registry
 
 # Desktop requires pytauri which isn't available in CI
 if HAS_PYTAURI:
