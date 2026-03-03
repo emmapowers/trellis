@@ -9,11 +9,11 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Literal, ParamSpec
 
-from trellis.bundler.registry import ExportKind, registry
 from trellis.core.components.base import Component, ElementKind
 from trellis.core.components.style_props import Height, Margin, Padding, Width
 from trellis.core.rendering.element import ContainerElement, Element
 from trellis.core.rendering.traits import ContainerTrait
+from trellis.registry import ExportKind, registry
 
 __all__ = ["ReactComponentBase", "react"]
 

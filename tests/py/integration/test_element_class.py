@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 import pytest
 
-from trellis.bundler.registry import ModuleRegistry
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.components.react import react
 from trellis.core.rendering.child_ref import ChildRef
@@ -16,6 +15,7 @@ from trellis.core.rendering.render import render
 from trellis.core.rendering.traits import ContainerTrait
 from trellis.core.state.stateful import Stateful
 from trellis.html.base import HtmlContainerTrait, html_element
+from trellis.registry import ModuleRegistry
 
 if TYPE_CHECKING:
     from collections.abc import Callable

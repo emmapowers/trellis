@@ -7,10 +7,10 @@ from unittest.mock import patch
 
 import pytest
 
-from trellis.bundler.registry import ExportKind, ModuleRegistry
 from trellis.core.components.composition import component
 from trellis.core.components.react import ReactComponentBase, react
 from trellis.core.rendering.element import Element
+from trellis.registry import ExportKind, ModuleRegistry
 
 
 @pytest.fixture(autouse=True)

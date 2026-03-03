@@ -13,7 +13,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from trellis.bundler.manifest import BuildManifest, StepManifest
-from trellis.bundler.registry import ModuleRegistry
 from trellis.bundler.steps import (
     BuildContext,
     IndexHtmlRenderStep,
@@ -22,6 +21,7 @@ from trellis.bundler.steps import (
     ShouldBuild,
     TsconfigStep,
 )
+from trellis.registry import ModuleRegistry
 
 
 @pytest.fixture

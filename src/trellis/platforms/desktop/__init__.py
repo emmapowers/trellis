@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from trellis.bundler import registry
+from trellis.registry import registry
 
 if TYPE_CHECKING:
     from trellis.platforms.desktop.platform import DesktopPlatform

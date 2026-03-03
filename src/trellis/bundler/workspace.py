@@ -10,7 +10,7 @@ from pathlib import Path
 
 from jinja2 import Template
 
-from trellis.bundler.registry import CollectedModules, ExportKind
+from trellis.registry import CollectedModules, ExportKind
 
 # JavaScript/TypeScript extensions to strip from import paths
 JS_EXTENSIONS = (".tsx", ".ts", ".jsx", ".js")

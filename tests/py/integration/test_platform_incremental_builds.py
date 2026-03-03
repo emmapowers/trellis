@@ -19,7 +19,6 @@ import pytest
 from trellis.app.config import Config
 from trellis.bundler.build import build
 from trellis.bundler.manifest import load_manifest
-from trellis.bundler.registry import ModuleRegistry
 from trellis.bundler.steps import (
     BuildStep,
     BundleBuildStep,
@@ -36,6 +35,7 @@ from trellis.platforms.browser.build_steps import (
     WheelBuildStep,
     WheelBundleStep,
 )
+from trellis.registry import ModuleRegistry
 
 # =============================================================================
 # Test Data Structures

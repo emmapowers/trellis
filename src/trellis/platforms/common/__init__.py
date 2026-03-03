@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-from trellis.bundler.registry import registry
 from trellis.platforms.common.base import Platform, PlatformArgumentError, PlatformType
 from trellis.platforms.common.handler import MessageHandler
 from trellis.platforms.common.messages import (
@@ -20,6 +19,7 @@ from trellis.platforms.common.messages import (
 )
 from trellis.platforms.common.ports import find_available_port
 from trellis.platforms.common.serialization import parse_callback_id, serialize_element
+from trellis.registry import registry
 
 # Register the trellis-core module with base_path pointing to the TypeScript
 # source directory so @trellis/trellis-core/* aliases resolve correctly.

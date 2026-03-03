@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from trellis.bundler.registry import CollectedModules, ExportKind, Module, ModuleExport
 from trellis.bundler.workspace import (
     generate_registry_ts,
     node_modules_path,
     write_registry_ts,
 )
+from trellis.registry import CollectedModules, ExportKind, Module, ModuleExport
 
 
 def test_node_modules_path_returns_workspace_node_modules(tmp_path: Path) -> None:

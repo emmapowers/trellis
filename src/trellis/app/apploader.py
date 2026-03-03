@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING
 
 from trellis.app.app import App
 from trellis.app.config import Config
-from trellis.bundler import build, registry
 from trellis.platforms.common.base import PlatformType
+from trellis.registry import registry
 
 if TYPE_CHECKING:
     from trellis.platforms.common.base import Platform
@@ -375,6 +375,9 @@ class AppLoader:
         """
         if self.config is None:
             raise RuntimeError("Config not loaded. Call load_config() first before bundle().")
+
+        # Lazy import: bundler has heavy native deps (resvg_py) unavailable in Pyodide
+        from trellis.bundler import build  # noqa: PLC0415
 
         config = self.config
         platform = self.platform

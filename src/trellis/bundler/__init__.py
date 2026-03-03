@@ -2,14 +2,6 @@
 
 from trellis.bundler.build import build
 from trellis.bundler.build_config import BuildConfig
-from trellis.bundler.registry import (
-    CollectedModules,
-    ExportKind,
-    Module,
-    ModuleExport,
-    ModuleRegistry,
-    registry,
-)
 from trellis.bundler.steps import (
     BuildContext,
     BuildStep,
@@ -22,6 +14,14 @@ from trellis.bundler.steps import (
     StaticFileCopyStep,
     TsconfigStep,
     TypeCheckStep,
+)
+from trellis.registry import (
+    CollectedModules,
+    ExportKind,
+    Module,
+    ModuleExport,
+    ModuleRegistry,
+    registry,
 )
 
 __all__ = [
