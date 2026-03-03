@@ -49,7 +49,7 @@ class ShouldBuild(StrEnum):
 
 
 if TYPE_CHECKING:
-    from trellis.bundler.registry import CollectedModules, ModuleRegistry
+    from trellis.registry import CollectedModules, ModuleRegistry
 
 
 @dataclass

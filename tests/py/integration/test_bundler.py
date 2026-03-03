@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from trellis.bundler import registry
 from trellis.bundler.packages import SYSTEM_PACKAGES, ensure_packages, get_bin
+from trellis.registry import registry
 
 
 @pytest.mark.network

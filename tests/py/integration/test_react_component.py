@@ -5,9 +5,9 @@ from unittest.mock import patch
 
 import pytest
 
-from trellis.bundler.registry import ModuleRegistry
 from trellis.core.components.composition import component
 from trellis.core.components.react import ReactComponentBase, react
+from trellis.registry import ModuleRegistry
 from trellis.widgets import Button, Column, Label, Row
 
 

@@ -12,8 +12,8 @@ from trellis.bundler.steps import BuildContext, ShouldBuild
 from trellis.bundler.workspace import node_modules_path
 
 if TYPE_CHECKING:
-    from trellis.bundler.registry import ModuleRegistry
     from trellis.bundler.steps import BuildStep
+    from trellis.registry import ModuleRegistry
 
 logger = logging.getLogger(__name__)
 

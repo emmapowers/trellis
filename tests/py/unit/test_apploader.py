@@ -648,7 +648,7 @@ class TestAppLoaderBundle:
         apploader.load_config()
         set_apploader(apploader)
 
-        with patch("trellis.app.apploader.build") as mock_build:
+        with patch("trellis.bundler.build") as mock_build:
             apploader.bundle()
 
         mock_build.assert_called_once()
@@ -669,7 +669,7 @@ class TestAppLoaderBundle:
         set_apploader(apploader)
 
         custom_dest = tmp_path / "custom_output"
-        with patch("trellis.app.apploader.build") as mock_build:
+        with patch("trellis.bundler.build") as mock_build:
             apploader.bundle(dest=custom_dest)
 
         assert mock_build.call_args.kwargs["output_dir"] == custom_dest
@@ -689,7 +689,7 @@ class TestAppLoaderBundle:
         apploader.load_config()
         set_apploader(apploader)
 
-        with patch("trellis.app.apploader.build") as mock_build:
+        with patch("trellis.bundler.build") as mock_build:
             apploader.bundle()
 
         assert mock_build.call_args.kwargs["force"] is True
@@ -711,7 +711,7 @@ class TestAppLoaderBundle:
         apploader.load_config()
         set_apploader(apploader)
 
-        with patch("trellis.app.apploader.build"):
+        with patch("trellis.bundler.build"):
             result = apploader.bundle()
 
         assert result == app_root / ".workspace"

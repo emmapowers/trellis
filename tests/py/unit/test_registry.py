@@ -1,4 +1,4 @@
-"""Unit tests for trellis.bundler.registry module."""
+"""Unit tests for trellis.registry module."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from trellis.bundler.registry import (
+from trellis.registry import (
     CollectedModules,
     ExportKind,
     Module,
@@ -94,7 +94,7 @@ class TestModuleRegistry:
         # Write a registration script that we'll execute
         module_file.write_text(
             """\
-from trellis.bundler.registry import ModuleRegistry
+from trellis.registry import ModuleRegistry
 
 def register_module(registry):
     registry.register("test-module")
@@ -290,8 +290,6 @@ class TestGlobalRegistry:
     def test_global_registry_is_singleton(self) -> None:
         """Multiple imports return same registry instance."""
         # Verify that the registry accessed via the package is the same singleton
-        # Note: trellis.bundler.registry (the attribute) is the ModuleRegistry instance,
-        # not the module, because __init__.py re-exports it
-        import trellis.bundler  # noqa: PLC0415
+        import trellis.registry  # noqa: PLC0415
 
-        assert trellis.bundler.registry is registry
+        assert trellis.registry.registry is registry

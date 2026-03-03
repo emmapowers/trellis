@@ -15,7 +15,6 @@ from PIL import Image
 
 from trellis.bundler.build import build
 from trellis.bundler.manifest import BuildManifest, StepManifest, load_manifest, save_manifest
-from trellis.bundler.registry import ModuleRegistry
 from trellis.bundler.steps import (
     BuildContext,
     BuildStep,
@@ -31,6 +30,7 @@ from trellis.bundler.steps import (
     TypeCheckStep,
     collect_ts_source_files,
 )
+from trellis.registry import ModuleRegistry
 
 
 class TestCollectTsSourceFiles:
