@@ -9,7 +9,7 @@ from trellis.toolchain.python_standalone import PythonStandalone, ensure_python_
 from trellis.toolchain.rustup import RustToolchain, ensure_rustup
 from trellis.toolchain.tauri_cli import ensure_tauri_cli
 
-MINIMUM_RUST_VERSION = "1.82.0"
+MINIMUM_RUST_VERSION = "1.93.1"
 TAURI_CLI_VERSION = "2.10.0"
 PYTHON_STANDALONE_VERSION = "3.13.1"
 # Release tag for python-build-standalone (contains the build date)

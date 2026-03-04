@@ -17,7 +17,7 @@ from trellis.toolchain.platform import get_rust_target
 
 # Imported from __init__ at runtime; defined here to avoid circular import
 # during testing. Tests patch the constant via the module where it's used.
-MINIMUM_RUST_VERSION = "1.82.0"
+MINIMUM_RUST_VERSION = "1.93.1"
 
 
 @dataclass
