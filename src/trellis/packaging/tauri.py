@@ -94,12 +94,29 @@ def generate_tauri_scaffold(*, scaffold_dir: Path, config: Config, dist_path: Pa
         dist_link.unlink()
     dist_link.symlink_to(dist_path.resolve())
 
-    # Ensure icons directory exists with a default icon
+    # Populate icons directory from bundler output or config source icon
     icons_dir = scaffold_dir / "icons"
     icons_dir.mkdir(parents=True, exist_ok=True)
-    icon_path = icons_dir / "icon.png"
-    if not icon_path.exists():
-        _generate_default_icon(icon_path)
+
+    _ICON_MAP = {
+        "favicon.icns": "icon.icns",
+        "favicon.ico": "icon.ico",
+        "favicon.png": "icon.png",
+    }
+    has_bundler_icons = False
+    for src_name, dest_name in _ICON_MAP.items():
+        src = dist_path / src_name
+        if src.exists():
+            shutil.copy2(src, icons_dir / dest_name)
+            has_bundler_icons = True
+
+    # Generate a full-size icon.png from the source icon (bundler's favicon.png is 32x32)
+    if config.icon and config.icon.exists():
+        img = Image.open(config.icon).convert("RGBA")
+        img = img.resize((512, 512), Image.Resampling.LANCZOS)
+        img.save(str(icons_dir / "icon.png"), "PNG")
+    elif not has_bundler_icons:
+        _generate_default_icon(icons_dir / "icon.png")
 
 
 def install_app_into_portable_python(
@@ -179,7 +196,12 @@ def _get_pyo3_python(pyembed_dir: Path) -> Path:
 
 
 def run_tauri_build(
-    *, tauri_cli: Path, rust: RustToolchain, scaffold_dir: Path, pyembed_dir: Path
+    *,
+    tauri_cli: Path,
+    rust: RustToolchain,
+    scaffold_dir: Path,
+    pyembed_dir: Path,
+    bundles: list[str] | None = None,
 ) -> Path:
     """Run the Tauri build process.
 
@@ -188,10 +210,14 @@ def run_tauri_build(
         rust: RustToolchain with environment configuration
         scaffold_dir: Path to the generated Tauri scaffold
         pyembed_dir: Path to the embedded Python directory
+        bundles: Bundle types to build (default: ["app"])
 
     Returns:
         Path to the build output directory
     """
+    if bundles is None:
+        bundles = ["app"]
+
     _patch_libpython_install_name(pyembed_dir)
 
     env = {
@@ -203,7 +229,7 @@ def run_tauri_build(
     }
 
     subprocess.run(
-        [str(tauri_cli), "build", "--bundles", "app"],
+        [str(tauri_cli), "build", "--bundles", *bundles],
         check=True,
         cwd=scaffold_dir,
         env=env,
@@ -213,7 +239,40 @@ def run_tauri_build(
     return scaffold_dir / "target" / "release" / "bundle"
 
 
-def build_desktop_app_bundle(config: Config, app_root: Path, output_dir: Path | None) -> Path:
+def _copy_build_output(*, bundle_dir: Path, output_dir: Path, platform: str) -> None:
+    """Copy build artifacts from Tauri's bundle directory to output_dir."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if platform == "darwin":
+        macos_dir = bundle_dir / "macos"
+        if macos_dir.exists():
+            for app in macos_dir.glob("*.app"):
+                dest = output_dir / app.name
+                if dest.exists():
+                    shutil.rmtree(dest)
+                shutil.copytree(app, dest)
+        dmg_dir = bundle_dir / "dmg"
+        if dmg_dir.exists():
+            for dmg in dmg_dir.glob("*.dmg"):
+                shutil.copy2(dmg, output_dir / dmg.name)
+    elif platform == "win32":
+        nsis_dir = bundle_dir / "nsis"
+        if nsis_dir.exists():
+            for exe in nsis_dir.glob("*.exe"):
+                shutil.copy2(exe, output_dir / exe.name)
+    elif platform == "linux":
+        deb_dir = bundle_dir / "deb"
+        if deb_dir.exists():
+            for deb in deb_dir.glob("*.deb"):
+                shutil.copy2(deb, output_dir / deb.name)
+
+
+def build_desktop_app_bundle(
+    config: Config,
+    app_root: Path,
+    output_dir: Path | None,
+    bundles: list[str] | None = None,
+) -> Path:
     """Build a desktop app bundle with Tauri.
 
     Orchestrates the full packaging pipeline:
@@ -223,14 +282,16 @@ def build_desktop_app_bundle(config: Config, app_root: Path, output_dir: Path | 
     4. Generate Tauri project scaffold
     5. Install app into portable Python
     6. Run Tauri build
+    7. Copy output to destination directory
 
     Args:
         config: Application configuration
         app_root: Path to the application root directory
-        output_dir: Custom output directory (unused — Tauri controls output location)
+        output_dir: Custom output directory (default: app_root / "dist")
+        bundles: Bundle types to build (default: ["app"])
 
     Returns:
-        Path to the build output directory
+        Path to the output directory containing the built artifacts
     """
     # 1. Ensure toolchains
     rust = ensure_rustup()
@@ -257,12 +318,18 @@ def build_desktop_app_bundle(config: Config, app_root: Path, output_dir: Path | 
     )
 
     # 4. Run Tauri build
-    return run_tauri_build(
+    bundle_dir = run_tauri_build(
         tauri_cli=tauri_cli,
         rust=rust,
         scaffold_dir=scaffold_dir,
         pyembed_dir=pyembed_dir,
+        bundles=bundles,
     )
+
+    # 5. Copy output to destination
+    dest = output_dir or (app_root / "dist")
+    _copy_build_output(bundle_dir=bundle_dir, output_dir=dest, platform=sys.platform)
+    return dest
 
 
 __all__ = [

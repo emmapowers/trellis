@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from PIL import Image
+
 from trellis.app.config import Config
 from trellis.packaging.tauri import (
     build_desktop_app_bundle,
@@ -148,6 +150,25 @@ class TestGenerateTauriScaffold:
         assert "resources" in tauri_conf["bundle"]
         assert "pyembed/" in tauri_conf["bundle"]["resources"]
 
+    def test_bundle_icon_paths_configured(self, tmp_path: Path) -> None:
+        config = Config(
+            name="myapp",
+            module="main",
+            platform=PlatformType.DESKTOP,
+        )
+        scaffold_dir = tmp_path / "src-tauri"
+        dist_path = tmp_path / "dist"
+        dist_path.mkdir()
+
+        generate_tauri_scaffold(scaffold_dir=scaffold_dir, config=config, dist_path=dist_path)
+
+        tauri_conf = json.loads((scaffold_dir / "tauri.conf.json").read_text())
+        assert "icon" in tauri_conf["bundle"]
+        icon_list = tauri_conf["bundle"]["icon"]
+        assert "icons/icon.icns" in icon_list
+        assert "icons/icon.ico" in icon_list
+        assert "icons/icon.png" in icon_list
+
     def test_defaults_identifier_and_version(self, tmp_path: Path) -> None:
         config = Config(
             name="myapp",
@@ -163,6 +184,87 @@ class TestGenerateTauriScaffold:
         tauri_conf = json.loads((scaffold_dir / "tauri.conf.json").read_text())
         assert tauri_conf["identifier"] == "com.trellis.myapp"
         assert tauri_conf["version"] == "0.1.0"
+
+
+class TestScaffoldIcons:
+    """Tests for icon handling in generate_tauri_scaffold."""
+
+    def test_copies_bundler_icons_from_dist_path(self, tmp_path: Path) -> None:
+        config = Config(
+            name="myapp",
+            module="main",
+            platform=PlatformType.DESKTOP,
+        )
+        scaffold_dir = tmp_path / "src-tauri"
+        dist_path = tmp_path / "dist"
+        dist_path.mkdir()
+
+        # Simulate bundler output
+        Image.new("RGBA", (32, 32), "red").save(str(dist_path / "favicon.ico"), "ICO")
+        Image.new("RGBA", (32, 32), "red").save(str(dist_path / "favicon.png"), "PNG")
+
+        generate_tauri_scaffold(scaffold_dir=scaffold_dir, config=config, dist_path=dist_path)
+
+        icons_dir = scaffold_dir / "icons"
+        assert (icons_dir / "icon.ico").exists()
+        assert (icons_dir / "icon.png").exists()
+
+    def test_copies_icns_when_present(self, tmp_path: Path) -> None:
+        config = Config(
+            name="myapp",
+            module="main",
+            platform=PlatformType.DESKTOP,
+        )
+        scaffold_dir = tmp_path / "src-tauri"
+        dist_path = tmp_path / "dist"
+        dist_path.mkdir()
+
+        # favicon.icns is just a binary file for Tauri's purposes
+        (dist_path / "favicon.icns").write_bytes(b"fake icns data")
+
+        generate_tauri_scaffold(scaffold_dir=scaffold_dir, config=config, dist_path=dist_path)
+
+        assert (scaffold_dir / "icons" / "icon.icns").exists()
+        assert (scaffold_dir / "icons" / "icon.icns").read_bytes() == b"fake icns data"
+
+    def test_generates_full_size_png_from_source_icon(self, tmp_path: Path) -> None:
+        icon_src = tmp_path / "my-icon.png"
+        Image.new("RGBA", (1024, 1024), "blue").save(str(icon_src), "PNG")
+
+        config = Config(
+            name="myapp",
+            module="main",
+            platform=PlatformType.DESKTOP,
+            icon=icon_src,
+        )
+        scaffold_dir = tmp_path / "src-tauri"
+        dist_path = tmp_path / "dist"
+        dist_path.mkdir()
+
+        generate_tauri_scaffold(scaffold_dir=scaffold_dir, config=config, dist_path=dist_path)
+
+        icon_png = scaffold_dir / "icons" / "icon.png"
+        assert icon_png.exists()
+        img = Image.open(icon_png)
+        assert img.size == (512, 512)
+
+    def test_falls_back_to_default_icon_when_no_icons(self, tmp_path: Path) -> None:
+        config = Config(
+            name="myapp",
+            module="main",
+            platform=PlatformType.DESKTOP,
+        )
+        scaffold_dir = tmp_path / "src-tauri"
+        dist_path = tmp_path / "dist"
+        dist_path.mkdir()
+        # No bundler icons in dist_path, no config.icon
+
+        generate_tauri_scaffold(scaffold_dir=scaffold_dir, config=config, dist_path=dist_path)
+
+        icon_png = scaffold_dir / "icons" / "icon.png"
+        assert icon_png.exists()
+        img = Image.open(icon_png)
+        assert img.size == (512, 512)
 
 
 class TestInstallAppIntoPortablePython:
@@ -217,6 +319,8 @@ class TestRunTauriBuild:
         cmd = mock_run.call_args[0][0]
         assert str(tauri_cli) in cmd
         assert "build" in cmd
+        assert "--bundles" in cmd
+        assert "app" in cmd
 
         kwargs = mock_run.call_args[1]
         assert kwargs["cwd"] == scaffold_dir
@@ -224,6 +328,28 @@ class TestRunTauriBuild:
         assert kwargs["env"]["PYTAURI_STANDALONE"] == "1"
         assert "CARGO_HOME" in kwargs["env"]
         assert "RUSTUP_HOME" in kwargs["env"]
+
+    def test_bundles_parameter_changes_subprocess_args(self, tmp_path: Path) -> None:
+        tauri_cli = tmp_path / "cargo-tauri"
+        tauri_cli.write_text("fake")
+        rust = _make_rust_toolchain(tmp_path)
+        scaffold_dir = tmp_path / "scaffold"
+        scaffold_dir.mkdir()
+        pyembed_dir = tmp_path / "pyembed"
+        pyembed_dir.mkdir()
+        (pyembed_dir / "lib").mkdir()
+
+        with patch("subprocess.run") as mock_run:
+            run_tauri_build(
+                tauri_cli=tauri_cli,
+                rust=rust,
+                scaffold_dir=scaffold_dir,
+                pyembed_dir=pyembed_dir,
+                bundles=["app", "dmg"],
+            )
+
+        cmd = mock_run.call_args[0][0]
+        assert cmd == [str(tauri_cli), "build", "--bundles", "app", "dmg"]
 
 
 class TestBuildDesktopAppBundle:
@@ -273,7 +399,7 @@ class TestBuildDesktopAppBundle:
 
         assert call_order == ["ensure_rustup", "ensure_tauri_cli", "ensure_python_standalone"]
 
-    def test_returns_output_path(self, tmp_path: Path) -> None:
+    def test_returns_default_dist_dir(self, tmp_path: Path) -> None:
         config = Config(
             name="myapp",
             module="main",
@@ -286,7 +412,8 @@ class TestBuildDesktopAppBundle:
         dist_dir = app_root / ".dist"
         dist_dir.mkdir()
 
-        expected_output = tmp_path / "output" / "myapp.dmg"
+        bundle_dir = tmp_path / "bundle"
+        bundle_dir.mkdir()
         mock_rust = _make_rust_toolchain(tmp_path)
         mock_python = MagicMock()
         mock_python.python_bin = tmp_path / "python3"
@@ -298,8 +425,123 @@ class TestBuildDesktopAppBundle:
             patch("trellis.packaging.tauri.ensure_python_standalone", return_value=mock_python),
             patch("trellis.packaging.tauri.generate_tauri_scaffold"),
             patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch("trellis.packaging.tauri.run_tauri_build", return_value=expected_output),
+            patch("trellis.packaging.tauri.run_tauri_build", return_value=bundle_dir),
         ):
             result = build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
 
-        assert result == expected_output
+        assert result == app_root / "dist"
+
+
+class TestOutputCopying:
+    """Tests for copying build output to the destination directory."""
+
+    def _setup_bundle(self, tmp_path: Path) -> tuple[Config, Path, MagicMock]:
+        config = Config(
+            name="myapp",
+            module="main",
+            platform=PlatformType.DESKTOP,
+            identifier="com.example.myapp",
+            version="1.0.0",
+        )
+        app_root = tmp_path / "app"
+        app_root.mkdir()
+        (app_root / ".dist").mkdir()
+
+        mock_rust = _make_rust_toolchain(tmp_path)
+        mock_python = MagicMock()
+        mock_python.python_bin = tmp_path / "python3"
+        mock_python.base_dir = tmp_path / "python-install"
+
+        return config, app_root, mock_rust, mock_python
+
+    def test_copies_app_to_default_dist(self, tmp_path: Path) -> None:
+        config, app_root, mock_rust, mock_python = self._setup_bundle(tmp_path)
+
+        # Create fake bundle output
+        bundle_dir = tmp_path / "scaffold" / "target" / "release" / "bundle"
+        macos_dir = bundle_dir / "macos"
+        macos_dir.mkdir(parents=True)
+        app_bundle = macos_dir / "myapp.app"
+        app_bundle.mkdir()
+        (app_bundle / "Contents").mkdir()
+        (app_bundle / "Contents" / "Info.plist").write_text("fake")
+
+        with (
+            patch("trellis.packaging.tauri.ensure_rustup", return_value=mock_rust),
+            patch("trellis.packaging.tauri.ensure_tauri_cli", return_value=tmp_path / "cli"),
+            patch(
+                "trellis.packaging.tauri.ensure_python_standalone",
+                return_value=mock_python,
+            ),
+            patch("trellis.packaging.tauri.generate_tauri_scaffold"),
+            patch("trellis.packaging.tauri.install_app_into_portable_python"),
+            patch("trellis.packaging.tauri.run_tauri_build", return_value=bundle_dir),
+            patch("sys.platform", "darwin"),
+        ):
+            result = build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
+
+        assert result == app_root / "dist"
+        assert (result / "myapp.app" / "Contents" / "Info.plist").exists()
+
+    def test_copies_app_to_custom_output_dir(self, tmp_path: Path) -> None:
+        config, app_root, mock_rust, mock_python = self._setup_bundle(tmp_path)
+        custom_dest = tmp_path / "custom-out"
+
+        bundle_dir = tmp_path / "scaffold" / "target" / "release" / "bundle"
+        macos_dir = bundle_dir / "macos"
+        macos_dir.mkdir(parents=True)
+        app_bundle = macos_dir / "myapp.app"
+        app_bundle.mkdir()
+        (app_bundle / "Contents").mkdir()
+
+        with (
+            patch("trellis.packaging.tauri.ensure_rustup", return_value=mock_rust),
+            patch("trellis.packaging.tauri.ensure_tauri_cli", return_value=tmp_path / "cli"),
+            patch(
+                "trellis.packaging.tauri.ensure_python_standalone",
+                return_value=mock_python,
+            ),
+            patch("trellis.packaging.tauri.generate_tauri_scaffold"),
+            patch("trellis.packaging.tauri.install_app_into_portable_python"),
+            patch("trellis.packaging.tauri.run_tauri_build", return_value=bundle_dir),
+            patch("sys.platform", "darwin"),
+        ):
+            result = build_desktop_app_bundle(
+                config=config, app_root=app_root, output_dir=custom_dest
+            )
+
+        assert result == custom_dest
+        assert (custom_dest / "myapp.app").exists()
+
+    def test_copies_dmg_when_present(self, tmp_path: Path) -> None:
+        config, app_root, mock_rust, mock_python = self._setup_bundle(tmp_path)
+
+        bundle_dir = tmp_path / "scaffold" / "target" / "release" / "bundle"
+        macos_dir = bundle_dir / "macos"
+        macos_dir.mkdir(parents=True)
+        app_bundle = macos_dir / "myapp.app"
+        app_bundle.mkdir()
+        dmg_dir = bundle_dir / "dmg"
+        dmg_dir.mkdir(parents=True)
+        (dmg_dir / "myapp_1.0.0_aarch64.dmg").write_text("fake dmg")
+
+        with (
+            patch("trellis.packaging.tauri.ensure_rustup", return_value=mock_rust),
+            patch("trellis.packaging.tauri.ensure_tauri_cli", return_value=tmp_path / "cli"),
+            patch(
+                "trellis.packaging.tauri.ensure_python_standalone",
+                return_value=mock_python,
+            ),
+            patch("trellis.packaging.tauri.generate_tauri_scaffold"),
+            patch("trellis.packaging.tauri.install_app_into_portable_python"),
+            patch("trellis.packaging.tauri.run_tauri_build", return_value=bundle_dir),
+            patch("sys.platform", "darwin"),
+        ):
+            result = build_desktop_app_bundle(
+                config=config,
+                app_root=app_root,
+                output_dir=None,
+                bundles=["app", "dmg"],
+            )
+
+        assert (result / "myapp_1.0.0_aarch64.dmg").exists()
