@@ -11,7 +11,7 @@ export { ConnectionState };
 
 /** Generate a UUID, falling back to getRandomValues in non-secure contexts. */
 function generateUUID(): string {
-  if (globalThis.crypto?.randomUUID) {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
     return crypto.randomUUID();
   }
   const bytes = new Uint8Array(16);
