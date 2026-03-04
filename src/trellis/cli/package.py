@@ -23,11 +23,19 @@ _cli_config_vars = [v for v in get_config_vars() if not v.hidden]
     "--dest",
     type=click.Path(path_type=Path),
     default=None,
-    help="Output directory for the packaged app bundle (default: {app_root}/package)",
+    help="Output directory for the packaged app bundle (default: {app_root}/dist)",
+)
+@click.option(
+    "--dmg",
+    is_flag=True,
+    default=False,
+    help="Also create a DMG disk image (macOS only)",
 )
 @pass_cli_context
 @configvar_options(_cli_config_vars)
-def package_app(ctx: CliContext, /, dest: Path | None = None, **cli_kwargs: Any) -> None:
+def package_app(
+    ctx: CliContext, /, dest: Path | None = None, dmg: bool = False, **cli_kwargs: Any
+) -> None:
     """Build a desktop app bundle with Tauri."""
     if "platform" in cli_kwargs:
         cli_kwargs["platform"] = PlatformType(cli_kwargs["platform"])
@@ -58,11 +66,14 @@ def package_app(ctx: CliContext, /, dest: Path | None = None, **cli_kwargs: Any)
         click.echo(f"Packaging {config.name} for desktop...")
         apploader.bundle()
 
+        bundles = ["app", "dmg"] if dmg else None
+
         try:
             output_path = build_desktop_app_bundle(
                 config=config,
                 app_root=resolved_path,
                 output_dir=dest,
+                bundles=bundles,
             )
         except (
             RuntimeError,
