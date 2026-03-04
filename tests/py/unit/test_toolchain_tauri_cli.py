@@ -55,11 +55,10 @@ class TestEnsureTauriCli:
 
         assert result == binary_path
 
-    def test_downloads_and_extracts_tgz(self, tmp_path: Path) -> None:
-        """Downloads and extracts .tgz archive on macOS/Linux."""
+    def test_downloads_and_extracts_tgz_on_linux(self, tmp_path: Path) -> None:
+        """Downloads and extracts .tgz archive on Linux."""
         rust = _make_rust_toolchain(tmp_path)
 
-        # Create a mock .tgz with the tauri cli binary
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tf:
             data = b"fake tauri cli binary"
@@ -70,6 +69,34 @@ class TestEnsureTauriCli:
 
         mock_response = MagicMock()
         mock_response.iter_bytes.return_value = [tar_content]
+        mock_response.__enter__ = MagicMock(return_value=mock_response)
+        mock_response.__exit__ = MagicMock(return_value=False)
+
+        with (
+            patch("trellis.toolchain.tauri_cli.BIN_DIR", tmp_path),
+            patch("trellis.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
+            patch(
+                "trellis.toolchain.tauri_cli.get_rust_target",
+                return_value="x86_64-unknown-linux-gnu",
+            ),
+            patch("httpx.stream", return_value=mock_response),
+        ):
+            result = ensure_tauri_cli(rust)
+
+        assert result.exists()
+        assert result.name == "cargo-tauri"
+
+    def test_downloads_and_extracts_zip_on_macos(self, tmp_path: Path) -> None:
+        """Downloads and extracts .zip archive on macOS."""
+        rust = _make_rust_toolchain(tmp_path)
+
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w") as zf:
+            zf.writestr("cargo-tauri", "fake tauri cli binary")
+        zip_content = zip_buffer.getvalue()
+
+        mock_response = MagicMock()
+        mock_response.iter_bytes.return_value = [zip_content]
         mock_response.__enter__ = MagicMock(return_value=mock_response)
         mock_response.__exit__ = MagicMock(return_value=False)
 
@@ -113,8 +140,8 @@ class TestEnsureTauriCli:
         assert result.exists()
         assert result.name == "cargo-tauri.exe"
 
-    def test_url_format(self, tmp_path: Path) -> None:
-        """Verifies correct GitHub release URL."""
+    def test_url_format_linux_uses_tgz(self, tmp_path: Path) -> None:
+        """Verifies correct GitHub release URL for Linux (.tgz)."""
         rust = _make_rust_toolchain(tmp_path)
 
         tar_buffer = io.BytesIO()
@@ -144,6 +171,38 @@ class TestEnsureTauriCli:
         expected_url = (
             "https://github.com/tauri-apps/tauri/releases/download/"
             "tauri-cli-v2.10.0/cargo-tauri-x86_64-unknown-linux-gnu.tgz"
+        )
+        actual_url = mock_stream.call_args[0][1]
+        assert actual_url == expected_url
+
+    def test_url_format_macos_uses_zip(self, tmp_path: Path) -> None:
+        """Verifies correct GitHub release URL for macOS (.zip)."""
+        rust = _make_rust_toolchain(tmp_path)
+
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w") as zf:
+            zf.writestr("cargo-tauri", "fake")
+        zip_content = zip_buffer.getvalue()
+
+        mock_response = MagicMock()
+        mock_response.iter_bytes.return_value = [zip_content]
+        mock_response.__enter__ = MagicMock(return_value=mock_response)
+        mock_response.__exit__ = MagicMock(return_value=False)
+
+        with (
+            patch("trellis.toolchain.tauri_cli.BIN_DIR", tmp_path),
+            patch("trellis.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
+            patch(
+                "trellis.toolchain.tauri_cli.get_rust_target",
+                return_value="aarch64-apple-darwin",
+            ),
+            patch("httpx.stream", return_value=mock_response) as mock_stream,
+        ):
+            ensure_tauri_cli(rust)
+
+        expected_url = (
+            "https://github.com/tauri-apps/tauri/releases/download/"
+            "tauri-cli-v2.10.0/cargo-tauri-aarch64-apple-darwin.zip"
         )
         actual_url = mock_stream.call_args[0][1]
         assert actual_url == expected_url
@@ -202,7 +261,8 @@ class TestEnsureTauriCli:
             patch("trellis.toolchain.tauri_cli.BIN_DIR", tmp_path),
             patch("trellis.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
             patch(
-                "trellis.toolchain.tauri_cli.get_rust_target", return_value="aarch64-apple-darwin"
+                "trellis.toolchain.tauri_cli.get_rust_target",
+                return_value="x86_64-unknown-linux-gnu",
             ),
             patch("httpx.stream", return_value=mock_response),
         ):
