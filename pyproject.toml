@@ -146,7 +146,7 @@ disallow_untyped_defs = true
 warn_redundant_casts = true
 warn_no_return = true
 warn_unreachable = true
-exclude = ["docs/"]
+exclude = ["docs/", "dist/", "\\.trellis-build/"]
 
 # Decorators like @html_element and @react_component_base replace the function
 # body entirely, so the stub functions legitimately have empty bodies.
