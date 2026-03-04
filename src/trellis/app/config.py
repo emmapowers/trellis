@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
 from dataclasses import dataclass, field, fields
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from trellis.app.configvars import (
     ConfigVar,
@@ -144,6 +143,36 @@ _WINDOW_SIZE = ConfigVar(
     help="Desktop window size: 'maximized' or 'WIDTHxHEIGHT' (e.g., '1024x768')",
 )
 
+# Packaging settings (category="packaging" -> TRELLIS_PACKAGING_*)
+_IDENTIFIER: ConfigVar[str | None] = ConfigVar(
+    "identifier",
+    default=None,
+    category="packaging",
+    type_hint=str,
+    help="Reverse-domain identifier (e.g., 'com.example.myapp')",
+)
+_VERSION: ConfigVar[str | None] = ConfigVar(
+    "version",
+    default=None,
+    category="packaging",
+    type_hint=str,
+    help="Application version (semver, e.g., '1.0.0')",
+)
+_UPDATE_URL: ConfigVar[str | None] = ConfigVar(
+    "update_url",
+    default=None,
+    category="packaging",
+    type_hint=str,
+    help="Tauri updater endpoint URL",
+)
+_UPDATE_PUBKEY: ConfigVar[str | None] = ConfigVar(
+    "update_pubkey",
+    default=None,
+    category="packaging",
+    type_hint=str,
+    help="Ed25519 public key for update signature verification",
+)
+
 
 @dataclass
 class Config:
@@ -179,6 +208,10 @@ class Config:
         host: Server bind address
         port: Server port (None for auto-select)
         window_size: Desktop window size ('maximized' or 'WIDTHxHEIGHT')
+        identifier: Reverse-domain bundle identifier (e.g., 'com.example.myapp')
+        version: Application version string (semver)
+        update_url: Tauri updater endpoint URL
+        update_pubkey: Ed25519 public key for update verification
     """
 
     # Required fields
@@ -208,35 +241,11 @@ class Config:
     # Desktop settings
     window_size: str = "maximized"
 
-    # Packaging
-    collect_bundle_extras: Callable[[Path, list[str]], None] | None = field(
-        default=None, repr=False
-    )
-
-    if TYPE_CHECKING:
-
-        def __init__(
-            self,
-            *,
-            name: str,
-            module: str,
-            python_path: list[Path | str] = ...,
-            platform: PlatformType = ...,
-            force_build: bool = ...,
-            watch: bool = ...,
-            batch_delay: float = ...,
-            hot_reload: bool = ...,
-            routing_mode: RoutingMode | None = ...,
-            debug: str = ...,
-            assets_dir: Path | str | None = ...,
-            icon: Path | str | None = ...,
-            title: str | None = ...,
-            library: bool = ...,
-            host: str = ...,
-            port: int | None = ...,
-            window_size: str = ...,
-            collect_bundle_extras: Callable[[Path, list[str]], None] | None = ...,
-        ) -> None: ...
+    # Packaging settings
+    identifier: str | None = None
+    version: str | None = None
+    update_url: str | None = None
+    update_pubkey: str | None = None
 
     def __post_init__(self) -> None:
         """Resolve all fields through ConfigVar system and validate."""
@@ -274,6 +283,12 @@ class Config:
         # Desktop settings
         self.window_size = _WINDOW_SIZE.resolve(self.window_size)
 
+        # Packaging settings
+        self.identifier = _IDENTIFIER.resolve(self.identifier)
+        self.version = _VERSION.resolve(self.version)
+        self.update_url = _UPDATE_URL.resolve(self.update_url)
+        self.update_pubkey = _UPDATE_PUBKEY.resolve(self.update_pubkey)
+
     def to_json(self) -> str:
         """Serialize this Config to a JSON string.
 
@@ -286,8 +301,6 @@ class Config:
         data: dict[str, Any] = {}
         for f in fields(self):
             value = getattr(self, f.name)
-            if callable(value) or f.repr is False:
-                continue
             if isinstance(value, StrEnum):
                 data[f.name] = value.value
             elif isinstance(value, Path):
