@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -87,7 +88,7 @@ class DesktopPlatform(DesktopStandalonePlatform):
                 RegistryGenerationStep(),
                 BundleBuildStep(output_name="bundle"),
                 StaticFileCopyStep(),
-                IconAssetStep(icon_path=config.icon, include_icns=True),
+                IconAssetStep(icon_path=config.icon, include_icns=sys.platform == "darwin"),
                 IndexHtmlRenderStep(template_path, {"title": config.title}),
             ],
         )
