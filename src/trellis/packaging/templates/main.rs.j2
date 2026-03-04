@@ -1,0 +1,9 @@
+use pyo3::prelude::*;
+use pytauri::standalone::{PythonInterpreterBuilder, PythonInterpreterEnv, PythonScript};
+
+fn main() {
+    PythonInterpreterBuilder::new()
+        .env(PythonInterpreterEnv::Standalone)
+        .script(PythonScript::Module("{{ module }}".to_string()))
+        .run();
+}
