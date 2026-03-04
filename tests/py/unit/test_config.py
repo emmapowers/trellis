@@ -324,6 +324,10 @@ class TestConfigToJson:
             "host",
             "port",
             "window_size",
+            "identifier",
+            "version",
+            "update_url",
+            "update_pubkey",
         }
         assert set(result.keys()) == expected_fields
 
