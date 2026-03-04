@@ -1,0 +1,23 @@
+[package]
+name = "{{ name }}"
+version = "{{ version }}"
+edition = "2021"
+
+[lib]
+name = "{{ name | replace('-', '_') }}_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-window-state = "2"
+tauri-plugin-opener = "2"
+pytauri = { version = "0.8" }
+{% if update_url %}
+
+[dependencies.tauri-plugin-updater]
+version = "2"
+{% endif %}
