@@ -1,0 +1,41 @@
+use pyo3::wrap_pymodule;
+use pytauri::standalone::{PythonInterpreterBuilder, PythonInterpreterEnv, PythonScript};
+
+use {{ name | replace('-', '_') }}_lib::_ext_mod;
+
+fn main() {
+    let current_exe = std::env::current_exe().expect("failed to get current exe path");
+
+    #[cfg(target_os = "macos")]
+    let pyembed_dir = current_exe
+        .parent()
+        .expect("failed to get parent dir")
+        .join("../Resources/pyembed");
+    #[cfg(target_os = "linux")]
+    let pyembed_dir = current_exe
+        .parent()
+        .expect("failed to get parent dir")
+        .join("../lib/{{ product_name }}/pyembed");
+    #[cfg(target_os = "windows")]
+    let pyembed_dir = current_exe
+        .parent()
+        .expect("failed to get parent dir")
+        .join("pyembed");
+
+    let pyembed_dir = pytauri::standalone::dunce::simplified(&pyembed_dir).to_owned();
+    let env = PythonInterpreterEnv::Standalone(pyembed_dir.into());
+
+    // Tell the trellis standalone entry point which user module contains the App.
+    std::env::set_var("TRELLIS_APP_MODULE", "{{ module }}");
+    let script = PythonScript::Module("trellis.app.standalone_entry".into());
+
+    let interpreter = PythonInterpreterBuilder::new(
+        env,
+        script,
+        |py| wrap_pymodule!(_ext_mod)(py),
+    )
+    .build()
+    .expect("failed to build Python interpreter");
+
+    std::process::exit(interpreter.run());
+}

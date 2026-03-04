@@ -48,7 +48,6 @@ dependencies = [
 desktop = [
     "pytauri-wheel>=0.8.0",
     "pydantic>=2.12",
-    "pyinstaller>=6.12",
 ]
 
 [project.urls]
@@ -147,7 +146,7 @@ disallow_untyped_defs = true
 warn_redundant_casts = true
 warn_no_return = true
 warn_unreachable = true
-exclude = ["docs/"]
+exclude = ["docs/", "dist/", "\\.trellis-build/"]
 
 # Decorators like @html_element and @react_component_base replace the function
 # body entirely, so the stub functions legitimately have empty bodies.
@@ -169,10 +168,11 @@ ignore_missing_imports = true
 module = ["trellis.platforms.desktop.*"]
 disable_error_code = ["untyped-decorator"]
 
-# PyInstaller has no type stubs
+# Packaging module has cross-platform sys.platform branches that are
+# unreachable on the CI host platform (Linux) but valid on macOS/Windows.
 [[tool.mypy.overrides]]
-module = ["PyInstaller", "PyInstaller.*"]
-ignore_missing_imports = true
+module = ["trellis.packaging.*"]
+disable_error_code = ["unreachable"]
 
 # resvg-py has no type stubs
 [[tool.mypy.overrides]]

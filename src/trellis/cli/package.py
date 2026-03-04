@@ -12,10 +12,7 @@ from trellis.app import AppLoader, resolve_app_root, set_apploader
 from trellis.app.configvars import cli_context, get_config_vars
 from trellis.cli import CliContext, pass_cli_context, trellis
 from trellis.cli.options import configvar_options
-from trellis.packaging.pyinstaller import (
-    PackagePlatformError,
-    build_desktop_app_bundle,
-)
+from trellis.packaging.tauri import build_desktop_app_bundle
 from trellis.platforms.common.base import PlatformType
 
 _cli_config_vars = [v for v in get_config_vars() if not v.hidden]
@@ -26,12 +23,31 @@ _cli_config_vars = [v for v in get_config_vars() if not v.hidden]
     "--dest",
     type=click.Path(path_type=Path),
     default=None,
-    help="Output directory for the packaged app bundle (default: {app_root}/package)",
+    help="Output directory for the packaged app bundle (default: {app_root}/dist)",
+)
+@click.option(
+    "--dmg",
+    is_flag=True,
+    default=False,
+    help="Also create a DMG disk image (macOS only)",
+)
+@click.option(
+    "--bundles",
+    type=str,
+    default=None,
+    help="Comma-separated bundle types (e.g. deb,appimage,rpm). Default: platform-specific.",
 )
 @pass_cli_context
 @configvar_options(_cli_config_vars)
-def package_app(ctx: CliContext, /, dest: Path | None = None, **cli_kwargs: Any) -> None:
-    """Build a desktop app bundle with PyInstaller."""
+def package_app(
+    ctx: CliContext,
+    /,
+    dest: Path | None = None,
+    dmg: bool = False,
+    bundles: str | None = None,
+    **cli_kwargs: Any,
+) -> None:
+    """Build a desktop app bundle with Tauri."""
     if "platform" in cli_kwargs:
         cli_kwargs["platform"] = PlatformType(cli_kwargs["platform"])
 
@@ -61,18 +77,24 @@ def package_app(ctx: CliContext, /, dest: Path | None = None, **cli_kwargs: Any)
         click.echo(f"Packaging {config.name} for desktop...")
         apploader.bundle()
 
+        bundle_list: list[str] | None = None
+        if bundles:
+            bundle_list = [b.strip() for b in bundles.split(",")]
+        elif dmg:
+            bundle_list = ["app", "dmg"]
+
         try:
-            executable_path = build_desktop_app_bundle(
+            output_path = build_desktop_app_bundle(
                 config=config,
                 app_root=resolved_path,
                 output_dir=dest,
+                bundles=bundle_list,
             )
         except (
-            PackagePlatformError,
             RuntimeError,
             ValueError,
             subprocess.CalledProcessError,
         ) as e:
             raise click.UsageError(str(e)) from None
 
-        click.echo(f"Package complete: {executable_path}")
+        click.echo(f"Package complete: {output_path}")

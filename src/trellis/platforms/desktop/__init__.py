@@ -12,6 +12,7 @@ from trellis.registry import registry
 
 if TYPE_CHECKING:
     from trellis.platforms.desktop.platform import DesktopPlatform
+    from trellis.platforms.desktop.standalone_platform import DesktopStandalonePlatform
 
 # Register the trellis-desktop module
 registry.register(
@@ -30,7 +31,13 @@ def __getattr__(name: str) -> Any:
         from trellis.platforms.desktop.platform import DesktopPlatform  # noqa: PLC0415
 
         return DesktopPlatform
+    if name == "DesktopStandalonePlatform":
+        from trellis.platforms.desktop.standalone_platform import (  # noqa: PLC0415
+            DesktopStandalonePlatform,
+        )
+
+        return DesktopStandalonePlatform
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
-__all__ = ["DesktopPlatform"]
+__all__ = ["DesktopPlatform", "DesktopStandalonePlatform"]

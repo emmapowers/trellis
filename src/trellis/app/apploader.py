@@ -200,6 +200,10 @@ class AppLoader:
                 "Use: config = Config(name=..., module=...)"
             )
 
+        # Resolve relative icon path against app root
+        if config.icon is not None and not config.icon.is_absolute():
+            config.icon = self.path / config.icon
+
         self.config = config
 
     def import_module(self) -> ModuleType:
@@ -339,9 +343,16 @@ class AppLoader:
 
             self._platform = ServerPlatform()
         elif platform_type == PlatformType.DESKTOP:
-            from trellis.platforms.desktop import DesktopPlatform  # noqa: PLC0415
+            if getattr(sys, "_pytauri_standalone", False):
+                from trellis.platforms.desktop.standalone_platform import (  # noqa: PLC0415
+                    DesktopStandalonePlatform,
+                )
 
-            self._platform = DesktopPlatform()
+                self._platform = DesktopStandalonePlatform()
+            else:
+                from trellis.platforms.desktop import DesktopPlatform  # noqa: PLC0415
+
+                self._platform = DesktopPlatform()
         elif platform_type == PlatformType.BROWSER:
             if _is_pyodide():
                 from trellis.platforms.browser import BrowserPlatform  # noqa: PLC0415

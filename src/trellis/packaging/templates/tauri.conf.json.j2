@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "{{ product_name }}",
+  "version": "{{ version }}",
+  "identifier": "{{ identifier }}",
+  "build": {
+    "frontendDist": "./dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "{{ window_title }}",
+        "width": {{ window_width }},
+        "height": {{ window_height }},
+        "visible": false
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "icon": [
+{% for icon in icon_paths %}      "{{ icon }}"{% if not loop.last %},{% endif %}
+
+{% endfor %}    ],
+    "resources": [
+      "pyembed/"
+    ]
+  }{% if update_url %},
+  "plugins": {
+    "updater": {
+      "endpoints": ["{{ update_url }}"],
+      "pubkey": "{{ update_pubkey }}"
+    }
+  }{% endif %}
+}

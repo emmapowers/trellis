@@ -21,6 +21,9 @@ mypy = ">=1.15,<2"
 pydoc-markdown = ">=4.8,<5"
 types-Pillow = ">=10.0"
 
+[system-requirements]
+libc = { family = "glibc", version = "2.35" }
+
 # Feature for desktop extras (pytauri-wheel)
 [feature.desktop.pypi-dependencies]
 trellis = { path = ".", editable = true, extras = ["desktop"] }
@@ -28,7 +31,7 @@ trellis = { path = ".", editable = true, extras = ["desktop"] }
 # Environments
 [environments]
 default = ["desktop"]
-ci = []
+ci = ["desktop"]
 
 [tasks]
 # Formatting

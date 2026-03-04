@@ -30,12 +30,12 @@ def test_package_rejects_non_desktop_platform(write_app: WriteApp) -> None:
     assert "desktop" in result.output.lower()
 
 
-def test_package_builds_bundle_and_invokes_pyinstaller(
+def test_package_builds_bundle_and_invokes_tauri(
     write_app: WriteApp,
     reset_apploader: None,
 ) -> None:
     app_root = write_app(name="desktop-app", module="main", platform="DESKTOP")
-    expected_path = app_root / "package" / "desktop-app.app"
+    expected_path = app_root / "package" / "desktop-app"
     runner = CliRunner()
 
     with (
@@ -57,7 +57,7 @@ def test_package_accepts_platform_override_and_bakes_desktop_config(
     reset_apploader: None,
 ) -> None:
     app_root = write_app(name="override-app", module="main", platform="SERVER")
-    expected_path = app_root / "package" / "override-app.app"
+    expected_path = app_root / "package" / "override-app"
     runner = CliRunner()
 
     with (

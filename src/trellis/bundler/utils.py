@@ -33,8 +33,8 @@ def safe_extract(tar: tarfile.TarFile, dest: Path) -> None:
     """Safely extract a tarball, preventing path traversal attacks.
 
     Validates that all extracted paths stay within the destination directory.
-    This prevents malicious tarballs from writing files outside the intended
-    directory via paths like "../../../etc/passwd".
+    Symlinks are allowed if their target resolves within the destination
+    (i.e. relative symlinks that stay inside the archive).
 
     Args:
         tar: The tarfile to extract
@@ -45,15 +45,27 @@ def safe_extract(tar: tarfile.TarFile, dest: Path) -> None:
     """
     dest = dest.resolve()
     for member in tar.getmembers():
-        # Reject symlinks and hardlinks to prevent link-based escapes
-        if member.issym() or member.islnk():
-            raise ValueError(f"Tarball contains link entry: {member.name}")
         # Reject device files and FIFOs
         if member.ischr() or member.isblk() or member.isfifo():
             raise ValueError(f"Tarball contains device/fifo entry: {member.name}")
+
         member_path = (dest / member.name).resolve()
         if not member_path.is_relative_to(dest):
             raise ValueError(f"Tarball contains path traversal: {member.name}")
+
+        if member.issym():
+            # Resolve the symlink target relative to the member's parent directory
+            link_dir = (dest / member.name).parent
+            target_path = (link_dir / member.linkname).resolve()
+            if not target_path.is_relative_to(dest):
+                raise ValueError(f"Symlink escapes destination: {member.name} -> {member.linkname}")
+        elif member.islnk():
+            # Hardlink target must also be within dest
+            target_path = (dest / member.linkname).resolve()
+            if not target_path.is_relative_to(dest):
+                raise ValueError(
+                    f"Hardlink escapes destination: {member.name} -> {member.linkname}"
+                )
     tar.extractall(dest, filter="data")
 
 
