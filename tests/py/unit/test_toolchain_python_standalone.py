@@ -25,7 +25,7 @@ class TestEnsurePythonStandalone:
         ):
             # Create fake cached installation
             install_dir = tmp_path / "python-standalone-3.13.1"
-            bin_dir = install_dir / "python" / "install" / "bin"
+            bin_dir = install_dir / "python" / "bin"
             bin_dir.mkdir(parents=True)
             python_bin = bin_dir / "python3"
             python_bin.write_text("fake python")
@@ -33,23 +33,14 @@ class TestEnsurePythonStandalone:
             result = ensure_python_standalone()
 
         assert result.python_bin == python_bin
-        assert result.base_dir == install_dir / "python" / "install"
+        assert result.base_dir == install_dir / "python"
 
     def test_downloads_and_extracts(self, tmp_path: Path) -> None:
         """Downloads and extracts tarball when not cached."""
-        # Create a mock tarball with python binary
-        inner_tar_buffer = io.BytesIO()
-        with tarfile.open(fileobj=inner_tar_buffer, mode="w") as inner_tf:
-            # python/install/bin/python3
-            data = b"fake python binary"
-            info = tarfile.TarInfo(name="python/install/bin/python3")
-            info.size = len(data)
-            inner_tf.addfile(info, io.BytesIO(data))
-
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tf:
             data = b"fake python binary"
-            info = tarfile.TarInfo(name="python/install/bin/python3")
+            info = tarfile.TarInfo(name="python/bin/python3")
             info.size = len(data)
             tf.addfile(info, io.BytesIO(data))
         tar_content = tar_buffer.getvalue()
@@ -78,7 +69,7 @@ class TestEnsurePythonStandalone:
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tf:
             data = b"fake"
-            info = tarfile.TarInfo(name="python/install/bin/python3")
+            info = tarfile.TarInfo(name="python/bin/python3")
             info.size = len(data)
             tf.addfile(info, io.BytesIO(data))
         tar_content = tar_buffer.getvalue()
@@ -110,7 +101,7 @@ class TestEnsurePythonStandalone:
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tf:
             data = b"fake"
-            info = tarfile.TarInfo(name="python/install/python.exe")
+            info = tarfile.TarInfo(name="python/python.exe")
             info.size = len(data)
             tf.addfile(info, io.BytesIO(data))
         tar_content = tar_buffer.getvalue()
@@ -139,7 +130,7 @@ class TestEnsurePythonStandalone:
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tf:
             data = b"fake"
-            info = tarfile.TarInfo(name="python/install/bin/python3")
+            info = tarfile.TarInfo(name="python/bin/python3")
             info.size = len(data)
             tf.addfile(info, io.BytesIO(data))
         tar_content = tar_buffer.getvalue()

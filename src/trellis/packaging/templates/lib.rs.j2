@@ -1,3 +1,19 @@
-use pytauri::ext_mod;
+use pyo3::prelude::*;
 
-ext_mod!(pymodule_export, context_factory, builder_factory);
+#[pymodule(gil_used = false)]
+#[pyo3(name = "_ext_mod")]
+pub mod _ext_mod {
+    use super::*;
+
+    #[pymodule_init]
+    fn init(module: &Bound<'_, PyModule>) -> PyResult<()> {
+        pytauri::pymodule_export(
+            module,
+            |_args, _kwargs| Ok(tauri::generate_context!()),
+            |_args, _kwargs| {
+                let builder = tauri::Builder::default();
+                Ok(builder)
+            },
+        )
+    }
+}

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -16,7 +18,15 @@ from trellis.toolchain.rustup import RustToolchain
 if TYPE_CHECKING:
     from trellis.app.config import Config
 
+from PIL import Image
+
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
+
+
+def _generate_default_icon(path: Path) -> None:
+    """Generate a simple default 512x512 icon PNG."""
+    img = Image.new("RGBA", (512, 512), (46, 125, 50, 255))
+    img.save(path, "PNG")
 
 
 def _parse_window_size(window_size: str) -> tuple[int, int]:
@@ -42,12 +52,17 @@ def generate_tauri_scaffold(*, scaffold_dir: Path, config: Config, dist_path: Pa
         keep_trailing_newline=True,
     )
 
-    identifier = config.identifier or f"com.trellis.{config.name}"
+    raw_slug = re.sub(r"[^a-z0-9-]", "-", config.name.lower()).strip("-")
+    identifier = config.identifier or f"com.trellis.{raw_slug}"
     version = config.version or "0.1.0"
     window_width, window_height = _parse_window_size(config.window_size)
 
+    # Cargo package names: lowercase, alphanumeric/hyphens/underscores only
+    cargo_name = re.sub(r"[^a-z0-9_-]", "-", config.name.lower())
+    cargo_name = re.sub(r"-+", "-", cargo_name).strip("-")
+
     template_vars = {
-        "name": config.name,
+        "name": cargo_name,
         "product_name": config.title or config.name,
         "version": version,
         "identifier": identifier,
@@ -79,6 +94,13 @@ def generate_tauri_scaffold(*, scaffold_dir: Path, config: Config, dist_path: Pa
         dist_link.unlink()
     dist_link.symlink_to(dist_path.resolve())
 
+    # Ensure icons directory exists with a default icon
+    icons_dir = scaffold_dir / "icons"
+    icons_dir.mkdir(parents=True, exist_ok=True)
+    icon_path = icons_dir / "icon.png"
+    if not icon_path.exists():
+        _generate_default_icon(icon_path)
+
 
 def install_app_into_portable_python(
     *, python_bin: Path, app_root: Path, pyembed_dir: Path
@@ -91,7 +113,16 @@ def install_app_into_portable_python(
     pyembed_dir.mkdir(parents=True, exist_ok=True)
 
     subprocess.run(
-        [str(python_bin), "-m", "pip", "install", "--no-warn-script-location", str(app_root)],
+        [
+            str(python_bin),
+            "-m",
+            "pip",
+            "install",
+            "--no-warn-script-location",
+            "--no-cache-dir",
+            str(app_root),
+            "pytauri-wheel>=0.8.0",
+        ],
         check=True,
     )
 
@@ -107,25 +138,72 @@ def install_app_into_portable_python(
     shutil.copytree(src_dir, pyembed_dir)
 
 
-def run_tauri_build(*, tauri_cli: Path, rust: RustToolchain, scaffold_dir: Path) -> Path:
+def _patch_libpython_install_name(pyembed_dir: Path) -> None:
+    """Patch libpython's install_name on macOS to use @rpath.
+
+    python-build-standalone ships libpython with an absolute install_name.
+    Without @rpath in the dylib's install_name, the RPATH set on the
+    executable is ignored by dyld.
+    """
+    if sys.platform != "darwin":
+        return
+
+    lib_dir = pyembed_dir / "lib"
+    for dylib in lib_dir.glob("libpython*.dylib"):
+        if dylib.is_symlink():
+            continue
+        subprocess.run(
+            ["install_name_tool", "-id", f"@rpath/{dylib.name}", str(dylib)],
+            check=True,
+        )
+
+
+def _get_rustflags(pyembed_dir: Path) -> str:
+    """Get RUSTFLAGS for linking against the embedded Python."""
+    lib_dir = pyembed_dir / "lib"
+    flags = f"-L {lib_dir}"
+
+    if sys.platform == "darwin":
+        flags += " -C link-arg=-Wl,-rpath,@executable_path/../Resources/pyembed/lib"
+    elif sys.platform == "linux":
+        flags += " -C link-arg=-Wl,-rpath,$ORIGIN/pyembed/lib"
+
+    return flags
+
+
+def _get_pyo3_python(pyembed_dir: Path) -> Path:
+    """Get the path to the Python binary in pyembed."""
+    if sys.platform == "win32":
+        return pyembed_dir / "python.exe"
+    return pyembed_dir / "bin" / "python3"
+
+
+def run_tauri_build(
+    *, tauri_cli: Path, rust: RustToolchain, scaffold_dir: Path, pyembed_dir: Path
+) -> Path:
     """Run the Tauri build process.
 
     Args:
         tauri_cli: Path to the cargo-tauri binary
         rust: RustToolchain with environment configuration
         scaffold_dir: Path to the generated Tauri scaffold
+        pyembed_dir: Path to the embedded Python directory
 
     Returns:
         Path to the build output directory
     """
+    _patch_libpython_install_name(pyembed_dir)
+
     env = {
         **os.environ,
         **rust.env(),
         "PYTAURI_STANDALONE": "1",
+        "PYO3_PYTHON": str(_get_pyo3_python(pyembed_dir)),
+        "RUSTFLAGS": _get_rustflags(pyembed_dir),
     }
 
     subprocess.run(
-        [str(tauri_cli), "build"],
+        [str(tauri_cli), "build", "--bundles", "app"],
         check=True,
         cwd=scaffold_dir,
         env=env,
@@ -183,6 +261,7 @@ def build_desktop_app_bundle(config: Config, app_root: Path, output_dir: Path | 
         tauri_cli=tauri_cli,
         rust=rust,
         scaffold_dir=scaffold_dir,
+        pyembed_dir=pyembed_dir,
     )
 
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import subprocess
 import tarfile
 import zipfile
@@ -12,6 +13,8 @@ import httpx
 from trellis.bundler.utils import BIN_DIR, safe_extract
 from trellis.toolchain.platform import get_rust_target
 from trellis.toolchain.rustup import RustToolchain
+
+logger = logging.getLogger(__name__)
 
 TAURI_CLI_VERSION = "2.10.0"
 
@@ -38,8 +41,10 @@ def ensure_tauri_cli(rust: RustToolchain) -> Path:
     if binary_path.exists():
         return binary_path
 
-    # Try prebuilt binary from GitHub releases
-    ext = "zip" if is_windows else "tgz"
+    # Try prebuilt binary from GitHub releases.
+    # macOS and Windows use .zip; Linux uses .tgz
+    is_linux = "linux" in target
+    ext = "tgz" if is_linux else "zip"
     url = (
         f"https://github.com/tauri-apps/tauri/releases/download/"
         f"tauri-cli-v{TAURI_CLI_VERSION}/cargo-tauri-{target}.{ext}"
@@ -57,7 +62,7 @@ def ensure_tauri_cli(rust: RustToolchain) -> Path:
 
         extract_dir.mkdir(parents=True, exist_ok=True)
 
-        if is_windows:
+        if ext == "zip":
             with zipfile.ZipFile(archive_path, "r") as zf:
                 for member in zf.infolist():
                     member_path = (extract_dir / member.filename).resolve()
@@ -77,8 +82,12 @@ def ensure_tauri_cli(rust: RustToolchain) -> Path:
         return binary_path
 
     except Exception:
+        logger.warning(
+            "Prebuilt Tauri CLI download failed for %s, falling back to cargo install",
+            target,
+            exc_info=True,
+        )
         archive_path.unlink(missing_ok=True)
-        # Fall back to cargo install
         return _cargo_install_tauri_cli(rust)
 
 

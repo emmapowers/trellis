@@ -9,7 +9,7 @@ import pytest
 
 from trellis.toolchain import MINIMUM_RUST_VERSION
 from trellis.toolchain.platform import get_rust_target
-from trellis.toolchain.rustup import _check_rustc_version, ensure_rustup
+from trellis.toolchain.rustup import RustToolchain, _check_rustc_version, ensure_rustup
 
 
 class TestGetRustTarget:
@@ -81,6 +81,33 @@ class TestCheckRustcVersion:
     def test_rejects_unparseable_output(self) -> None:
         output = "not rustc at all"
         assert _check_rustc_version(output) is False
+
+
+class TestRustToolchainEnv:
+    """Tests for RustToolchain.env() method."""
+
+    def test_includes_rustup_toolchain(self, tmp_path: Path) -> None:
+        """env() includes RUSTUP_TOOLCHAIN so rustup proxy knows which toolchain to use."""
+        toolchain = RustToolchain(
+            cargo_home=tmp_path / "cargo",
+            rustup_home=tmp_path / "rustup",
+            cargo_bin=tmp_path / "cargo" / "bin" / "cargo",
+            rustc_bin=tmp_path / "cargo" / "bin" / "rustc",
+            rustc_version="1.86.0",
+        )
+        env = toolchain.env()
+        assert env["RUSTUP_TOOLCHAIN"] == "1.86.0"
+
+    def test_defaults_to_minimum_version(self, tmp_path: Path) -> None:
+        """Without explicit rustc_version, defaults to MINIMUM_RUST_VERSION."""
+        toolchain = RustToolchain(
+            cargo_home=tmp_path / "cargo",
+            rustup_home=tmp_path / "rustup",
+            cargo_bin=tmp_path / "cargo" / "bin" / "cargo",
+            rustc_bin=tmp_path / "cargo" / "bin" / "rustc",
+        )
+        env = toolchain.env()
+        assert env["RUSTUP_TOOLCHAIN"] == MINIMUM_RUST_VERSION
 
 
 class TestEnsureRustup:

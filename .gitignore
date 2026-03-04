@@ -63,3 +63,4 @@ docs/static/trellis/
 .trellis
 .workspace
 .dist
+.trellis-build

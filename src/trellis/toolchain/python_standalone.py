@@ -38,10 +38,10 @@ def ensure_python_standalone() -> PythonStandalone:
     install_dir = BIN_DIR / f"python-standalone-{PYTHON_STANDALONE_VERSION}"
 
     if is_windows:
-        python_bin = install_dir / "python" / "install" / "python.exe"
+        python_bin = install_dir / "python" / "python.exe"
     else:
-        python_bin = install_dir / "python" / "install" / "bin" / "python3"
-    base_dir = install_dir / "python" / "install"
+        python_bin = install_dir / "python" / "bin" / "python3"
+    base_dir = install_dir / "python"
 
     if python_bin.exists():
         return PythonStandalone(python_bin=python_bin, base_dir=base_dir)

@@ -15,7 +15,9 @@ tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-window-state = "2"
 tauri-plugin-opener = "2"
-pytauri = { version = "0.8" }
+tauri-plugin-pytauri = "0.8"
+pytauri = { version = "0.8", features = ["standalone", "plugin-dialog", "plugin-window-state", "plugin-opener"] }
+pyo3 = "0.25"
 {% if update_url %}
 
 [dependencies.tauri-plugin-updater]

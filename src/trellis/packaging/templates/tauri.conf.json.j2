@@ -4,7 +4,7 @@
   "version": "{{ version }}",
   "identifier": "{{ identifier }}",
   "build": {
-    "frontendDist": "../dist"
+    "frontendDist": "./dist"
   },
   "app": {
     "withGlobalTauri": true,
@@ -19,9 +19,9 @@
   },
   "bundle": {
     "active": true,
-    "resources": {
-      "pyembed/**": "./"
-    }
+    "resources": [
+      "pyembed/"
+    ]
   }{% if update_url %},
   "plugins": {
     "updater": {

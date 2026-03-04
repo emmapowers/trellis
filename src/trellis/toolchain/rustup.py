@@ -28,14 +28,33 @@ class RustToolchain:
     rustup_home: Path
     cargo_bin: Path
     rustc_bin: Path
+    rustc_version: str = MINIMUM_RUST_VERSION
 
     def env(self) -> dict[str, str]:
-        """Return environment variables for this toolchain."""
+        """Return environment variables for this toolchain.
+
+        Includes RUSTUP_TOOLCHAIN so that rustup proxy binaries (e.g.
+        ~/.cargo/bin/cargo) know which toolchain to invoke even when
+        no default toolchain is configured.
+        """
         return {
             "CARGO_HOME": str(self.cargo_home),
             "RUSTUP_HOME": str(self.rustup_home),
+            "RUSTUP_TOOLCHAIN": self.rustc_version,
             "PATH": str(self.cargo_home / "bin") + os.pathsep + os.environ.get("PATH", ""),
         }
+
+
+def _parse_rustc_version(output: str) -> str | None:
+    """Extract the version string from ``rustc --version`` output.
+
+    Returns:
+        The version string (e.g. ``"1.86.0"``) or ``None`` if unparseable.
+    """
+    match = re.search(r"rustc (\d+\.\d+\.\d+)", output)
+    if match is None:
+        return None
+    return match.group(1)
 
 
 def _check_rustc_version(output: str) -> bool:
@@ -47,10 +66,10 @@ def _check_rustc_version(output: str) -> bool:
     Returns:
         True if the version is >= MINIMUM_RUST_VERSION
     """
-    match = re.search(r"rustc (\d+\.\d+\.\d+)", output)
-    if match is None:
+    version = _parse_rustc_version(output)
+    if version is None:
         return False
-    return Version(match.group(1)) >= Version(MINIMUM_RUST_VERSION)
+    return Version(version) >= Version(MINIMUM_RUST_VERSION)
 
 
 def _try_system_rustc() -> RustToolchain | None:
@@ -65,7 +84,8 @@ def _try_system_rustc() -> RustToolchain | None:
         capture_output=True,
         text=True,
     )
-    if not _check_rustc_version(result.stdout):
+    version = _parse_rustc_version(result.stdout)
+    if version is None or Version(version) < Version(MINIMUM_RUST_VERSION):
         return None
 
     cargo_path = shutil.which("cargo")
@@ -84,6 +104,7 @@ def _try_system_rustc() -> RustToolchain | None:
         rustup_home=rustup_home,
         cargo_bin=cargo,
         rustc_bin=rustc,
+        rustc_version=version,
     )
 
 
@@ -197,12 +218,14 @@ def ensure_rustup() -> RustToolchain:
                 capture_output=True,
                 text=True,
             )
-            if _check_rustc_version(result.stdout):
+            version = _parse_rustc_version(result.stdout)
+            if version is not None and Version(version) >= Version(MINIMUM_RUST_VERSION):
                 return RustToolchain(
                     cargo_home=cargo_home,
                     rustup_home=rustup_home,
                     cargo_bin=cargo,
                     rustc_bin=rustc,
+                    rustc_version=version,
                 )
 
     # 2. Check system rustc

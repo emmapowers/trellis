@@ -146,7 +146,7 @@ class TestGenerateTauriScaffold:
         tauri_conf = json.loads((scaffold_dir / "tauri.conf.json").read_text())
         assert "bundle" in tauri_conf
         assert "resources" in tauri_conf["bundle"]
-        assert "pyembed/**" in tauri_conf["bundle"]["resources"]
+        assert "pyembed/" in tauri_conf["bundle"]["resources"]
 
     def test_defaults_identifier_and_version(self, tmp_path: Path) -> None:
         config = Config(
@@ -201,12 +201,16 @@ class TestRunTauriBuild:
         rust = _make_rust_toolchain(tmp_path)
         scaffold_dir = tmp_path / "scaffold"
         scaffold_dir.mkdir()
+        pyembed_dir = tmp_path / "pyembed"
+        pyembed_dir.mkdir()
+        (pyembed_dir / "lib").mkdir()
 
         with patch("subprocess.run") as mock_run:
             run_tauri_build(
                 tauri_cli=tauri_cli,
                 rust=rust,
                 scaffold_dir=scaffold_dir,
+                pyembed_dir=pyembed_dir,
             )
 
         mock_run.assert_called_once()
