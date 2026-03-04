@@ -12,10 +12,7 @@ from trellis.app import AppLoader, resolve_app_root, set_apploader
 from trellis.app.configvars import cli_context, get_config_vars
 from trellis.cli import CliContext, pass_cli_context, trellis
 from trellis.cli.options import configvar_options
-from trellis.packaging.pyinstaller import (
-    PackagePlatformError,
-    build_desktop_app_bundle,
-)
+from trellis.packaging.tauri import build_desktop_app_bundle
 from trellis.platforms.common.base import PlatformType
 
 _cli_config_vars = [v for v in get_config_vars() if not v.hidden]
@@ -31,7 +28,7 @@ _cli_config_vars = [v for v in get_config_vars() if not v.hidden]
 @pass_cli_context
 @configvar_options(_cli_config_vars)
 def package_app(ctx: CliContext, /, dest: Path | None = None, **cli_kwargs: Any) -> None:
-    """Build a desktop app bundle with PyInstaller."""
+    """Build a desktop app bundle with Tauri."""
     if "platform" in cli_kwargs:
         cli_kwargs["platform"] = PlatformType(cli_kwargs["platform"])
 
@@ -62,17 +59,16 @@ def package_app(ctx: CliContext, /, dest: Path | None = None, **cli_kwargs: Any)
         apploader.bundle()
 
         try:
-            executable_path = build_desktop_app_bundle(
+            output_path = build_desktop_app_bundle(
                 config=config,
                 app_root=resolved_path,
                 output_dir=dest,
             )
         except (
-            PackagePlatformError,
             RuntimeError,
             ValueError,
             subprocess.CalledProcessError,
         ) as e:
             raise click.UsageError(str(e)) from None
 
-        click.echo(f"Package complete: {executable_path}")
+        click.echo(f"Package complete: {output_path}")
