@@ -168,6 +168,12 @@ ignore_missing_imports = true
 module = ["trellis.platforms.desktop.*"]
 disable_error_code = ["untyped-decorator"]
 
+# Packaging module has cross-platform sys.platform branches that are
+# unreachable on the CI host platform (Linux) but valid on macOS/Windows.
+[[tool.mypy.overrides]]
+module = ["trellis.packaging.*"]
+disable_error_code = ["unreachable"]
+
 # resvg-py has no type stubs
 [[tool.mypy.overrides]]
 module = ["resvg_py"]
