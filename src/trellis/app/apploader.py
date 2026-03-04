@@ -200,6 +200,10 @@ class AppLoader:
                 "Use: config = Config(name=..., module=...)"
             )
 
+        # Resolve relative icon path against app root
+        if config.icon is not None and not config.icon.is_absolute():
+            config.icon = self.path / config.icon
+
         self.config = config
 
     def import_module(self) -> ModuleType:
