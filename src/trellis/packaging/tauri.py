@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from sysconfig import get_config_var
 from typing import TYPE_CHECKING
 
 import jinja2
@@ -74,20 +75,6 @@ def generate_tauri_scaffold(*, scaffold_dir: Path, config: Config, dist_path: Pa
         "update_pubkey": config.update_pubkey or "",
     }
 
-    file_map = {
-        "Cargo.toml.j2": "Cargo.toml",
-        "tauri.conf.json.j2": "tauri.conf.json",
-        "lib.rs.j2": "src/lib.rs",
-        "main.rs.j2": "src/main.rs",
-        "build.rs.j2": "build.rs",
-        "capabilities_default.json.j2": "capabilities/default.json",
-    }
-
-    for template_name, output_name in file_map.items():
-        template = env.get_template(template_name)
-        content = template.render(**template_vars)
-        (scaffold_dir / output_name).write_text(content)
-
     # Symlink dist directory so Tauri can find frontend assets
     dist_link = scaffold_dir / "dist"
     if dist_link.exists() or dist_link.is_symlink():
@@ -117,6 +104,26 @@ def generate_tauri_scaffold(*, scaffold_dir: Path, config: Config, dist_path: Pa
         img.save(str(icons_dir / "icon.png"), "PNG")
     elif not has_bundler_icons:
         _generate_default_icon(icons_dir / "icon.png")
+
+    # Only list icons that actually exist in the tauri config
+    template_vars["icon_paths"] = [
+        f"icons/{f.name}" for f in sorted(icons_dir.iterdir()) if f.is_file()
+    ]
+
+    # Render templates (after icons so icon_paths is populated)
+    file_map = {
+        "Cargo.toml.j2": "Cargo.toml",
+        "tauri.conf.json.j2": "tauri.conf.json",
+        "lib.rs.j2": "src/lib.rs",
+        "main.rs.j2": "src/main.rs",
+        "build.rs.j2": "build.rs",
+        "capabilities_default.json.j2": "capabilities/default.json",
+    }
+
+    for template_name, output_name in file_map.items():
+        template = env.get_template(template_name)
+        content = template.render(**template_vars)
+        (scaffold_dir / output_name).write_text(content)
 
 
 def install_app_into_portable_python(
@@ -162,7 +169,8 @@ def _patch_libpython_install_name(pyembed_dir: Path) -> None:
     Without @rpath in the dylib's install_name, the RPATH set on the
     executable is ignored by dyld.
     """
-    if sys.platform != "darwin":
+    _platform = sys.platform
+    if _platform != "darwin":
         return
 
     lib_dir = pyembed_dir / "lib"
@@ -175,17 +183,83 @@ def _patch_libpython_install_name(pyembed_dir: Path) -> None:
         )
 
 
-def _get_rustflags(pyembed_dir: Path) -> str:
-    """Get RUSTFLAGS for linking against the embedded Python."""
+def _get_rustflags(pyembed_dir: Path) -> str | None:
+    """Get RUSTFLAGS for linking against the embedded Python.
+
+    Returns None on Linux where flags are set via .cargo/config.toml instead,
+    to support spaces in product_name within rpath values.
+    """
+    _platform = sys.platform
+    if _platform == "linux":
+        # All flags handled by .cargo/config.toml on Linux
+        return None
+
     lib_dir = pyembed_dir / "lib"
     flags = f"-L {lib_dir}"
 
-    if sys.platform == "darwin":
+    if _platform == "darwin":
         flags += " -C link-arg=-Wl,-rpath,@executable_path/../Resources/pyembed/lib"
-    elif sys.platform == "linux":
-        flags += " -C link-arg=-Wl,-rpath,$ORIGIN/pyembed/lib"
 
     return flags
+
+
+def _get_linux_system_lib_flags() -> list[str]:
+    """Get -L flags for system library paths on Linux."""
+    flags: list[str] = []
+    result = subprocess.run(
+        ["pkg-config", "--libs-only-L", "gtk+-3.0", "webkit2gtk-4.1"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    pkg_config_dirs = result.stdout.strip()
+    if not pkg_config_dirs:
+        # pkg-config returns no -L flags when libs are in standard paths
+        multiarch = get_config_var("MULTIARCH") or ""
+        for lib_path in [f"/usr/lib/{multiarch}", "/usr/lib"]:
+            if Path(lib_path).is_dir():
+                flags.extend(["-L", lib_path])
+    else:
+        # pkg-config returns e.g. "-L/usr/lib/x86_64-linux-gnu"
+        for part in pkg_config_dirs.split():
+            flags.extend(["-L", part.removeprefix("-L")])
+
+    return flags
+
+
+def _generate_cargo_config(*, scaffold_dir: Path, pyembed_dir: Path, product_name: str) -> None:
+    """Generate .cargo/config.toml with linker flags for Linux.
+
+    Uses config.toml instead of RUSTFLAGS to handle spaces in product_name
+    (rpath values containing spaces can't be passed via RUSTFLAGS).
+    """
+    if sys.platform != "linux":
+        return
+
+    cargo_dir = scaffold_dir / ".cargo"
+    cargo_dir.mkdir(parents=True, exist_ok=True)
+
+    lib_dir = pyembed_dir / "lib"
+    rpath = f"$ORIGIN/../lib/{product_name}/pyembed/lib"
+
+    rustflags = [
+        "-L",
+        str(lib_dir),
+        "-C",
+        f"link-arg=-Wl,-rpath,{rpath}",
+    ]
+    rustflags.extend(_get_linux_system_lib_flags())
+
+    # Format as TOML array
+    flags_toml = ", ".join(f'"{f}"' for f in rustflags)
+
+    lines: list[str] = []
+    for target in ("x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"):
+        lines.append(f"[target.{target}]")
+        lines.append(f"rustflags = [{flags_toml}]")
+        lines.append("")
+
+    (cargo_dir / "config.toml").write_text("\n".join(lines) + "\n")
 
 
 def _get_pyo3_python(pyembed_dir: Path) -> Path:
@@ -195,12 +269,54 @@ def _get_pyo3_python(pyembed_dir: Path) -> Path:
     return pyembed_dir / "bin" / "python3"
 
 
+_LINUX_REQUIRED_LIBS = [
+    ("gtk+-3.0", "libgtk-3-dev"),
+    ("webkit2gtk-4.1", "libwebkit2gtk-4.1-dev"),
+    ("javascriptcoregtk-4.1", "libjavascriptcoregtk-4.1-dev"),
+    ("libsoup-3.0", "libsoup-3.0-dev"),
+    ("librsvg-2.0", "librsvg2-dev"),
+]
+
+
+def _check_linux_system_deps() -> None:
+    """Check that required system libraries are available on Linux.
+
+    Raises RuntimeError with install instructions if any are missing.
+    """
+    if sys.platform != "linux":
+        return
+
+    missing: list[tuple[str, str]] = []
+    for pkg_config_name, apt_package in _LINUX_REQUIRED_LIBS:
+        result = subprocess.run(
+            ["pkg-config", "--exists", pkg_config_name],
+            check=False,
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            missing.append((pkg_config_name, apt_package))
+
+    if not missing:
+        return
+
+    apt_packages = " ".join(pkg for _, pkg in missing)
+    lib_list = "\n".join(f"  - {name} ({pkg})" for name, pkg in missing)
+    raise RuntimeError(
+        f"Missing system libraries required to build a Tauri desktop app:\n"
+        f"{lib_list}\n\n"
+        f"Install them with:\n"
+        f"  sudo apt-get install {apt_packages}\n\n"
+        f"For other distros, see: https://v2.tauri.app/start/prerequisites/#linux"
+    )
+
+
 def run_tauri_build(
     *,
     tauri_cli: Path,
     rust: RustToolchain,
     scaffold_dir: Path,
     pyembed_dir: Path,
+    product_name: str,
     bundles: list[str] | None = None,
 ) -> Path:
     """Run the Tauri build process.
@@ -210,29 +326,56 @@ def run_tauri_build(
         rust: RustToolchain with environment configuration
         scaffold_dir: Path to the generated Tauri scaffold
         pyembed_dir: Path to the embedded Python directory
+        product_name: Display name of the application (used for resource paths)
         bundles: Bundle types to build (default: ["app"])
 
     Returns:
         Path to the build output directory
     """
     if bundles is None:
-        bundles = ["app"]
+        if sys.platform == "darwin":
+            bundles = ["app"]
+        elif sys.platform == "win32":
+            bundles = ["nsis"]
+        else:
+            bundles = ["deb"]
 
     _patch_libpython_install_name(pyembed_dir)
+    _generate_cargo_config(
+        scaffold_dir=scaffold_dir, pyembed_dir=pyembed_dir, product_name=product_name
+    )
+
+    # LD_LIBRARY_PATH lets linuxdeploy find libpython and vendored libs
+    # during AppImage bundling
+    lib_paths = [str(pyembed_dir / "lib")]
+    # Add vendored .libs directories (e.g. pillow.libs) so linuxdeploy
+    # can resolve transitive native dependencies
+    site_packages = pyembed_dir / "lib" / "python3.13" / "site-packages"
+    if site_packages.is_dir():
+        lib_paths.extend(str(d) for d in site_packages.glob("*.libs"))
+    if existing := os.environ.get("LD_LIBRARY_PATH"):
+        lib_paths.append(existing)
+    ld_library_path = ":".join(lib_paths)
 
     env = {
         **os.environ,
         **rust.env(),
         "PYTAURI_STANDALONE": "1",
         "PYO3_PYTHON": str(_get_pyo3_python(pyembed_dir)),
-        "RUSTFLAGS": _get_rustflags(pyembed_dir),
+        "LD_LIBRARY_PATH": ld_library_path,
+        "APPIMAGE_EXTRACT_AND_RUN": "1",
+        "NO_STRIP": "true",
+        "DEPLOY_GTK_VERSION": "3",
     }
+    rustflags = _get_rustflags(pyembed_dir)
+    if rustflags is not None:
+        env["RUSTFLAGS"] = rustflags
 
     subprocess.run(
         [str(tauri_cli), "build", "--bundles", *bundles],
-        check=True,
         cwd=scaffold_dir,
         env=env,
+        check=True,
     )
 
     # Tauri outputs bundles to target/release/bundle/
@@ -261,10 +404,15 @@ def _copy_build_output(*, bundle_dir: Path, output_dir: Path, platform: str) -> 
             for exe in nsis_dir.glob("*.exe"):
                 shutil.copy2(exe, output_dir / exe.name)
     elif platform == "linux":
-        deb_dir = bundle_dir / "deb"
-        if deb_dir.exists():
-            for deb in deb_dir.glob("*.deb"):
-                shutil.copy2(deb, output_dir / deb.name)
+        for subdir, glob_pattern in [
+            ("appimage", "*.AppImage"),
+            ("deb", "*.deb"),
+            ("rpm", "*.rpm"),
+        ]:
+            pkg_dir = bundle_dir / subdir
+            if pkg_dir.exists():
+                for pkg in pkg_dir.glob(glob_pattern):
+                    shutil.copy2(pkg, output_dir / pkg.name)
 
 
 def build_desktop_app_bundle(
@@ -293,6 +441,8 @@ def build_desktop_app_bundle(
     Returns:
         Path to the output directory containing the built artifacts
     """
+    _check_linux_system_deps()
+
     # 1. Ensure toolchains
     rust = ensure_rustup()
     tauri_cli = ensure_tauri_cli(rust)
@@ -318,11 +468,13 @@ def build_desktop_app_bundle(
     )
 
     # 4. Run Tauri build
+    product_name = config.title or config.name
     bundle_dir = run_tauri_build(
         tauri_cli=tauri_cli,
         rust=rust,
         scaffold_dir=scaffold_dir,
         pyembed_dir=pyembed_dir,
+        product_name=product_name,
         bundles=bundles,
     )
 

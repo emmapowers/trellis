@@ -8,7 +8,6 @@ platforms = ["osx-arm64", "linux-64"]
 [dependencies]
 python = "3.13.*"
 pip = ">=24,<26"
-rust = ">=1.80"
 black = ">=25.1.0,<26"
 ruff = ">=0.8,<1"
 pytest = ">=8,<9"

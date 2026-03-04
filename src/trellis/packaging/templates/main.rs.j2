@@ -11,7 +11,12 @@ fn main() {
         .parent()
         .expect("failed to get parent dir")
         .join("../Resources/pyembed");
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "linux")]
+    let pyembed_dir = current_exe
+        .parent()
+        .expect("failed to get parent dir")
+        .join("../lib/{{ product_name }}/pyembed");
+    #[cfg(target_os = "windows")]
     let pyembed_dir = current_exe
         .parent()
         .expect("failed to get parent dir")

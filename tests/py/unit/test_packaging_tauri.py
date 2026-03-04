@@ -6,10 +6,14 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from PIL import Image
 
 from trellis.app.config import Config
 from trellis.packaging.tauri import (
+    _LINUX_REQUIRED_LIBS,
+    _check_linux_system_deps,
+    _generate_cargo_config,
     build_desktop_app_bundle,
     generate_tauri_scaffold,
     install_app_into_portable_python,
@@ -165,8 +169,10 @@ class TestGenerateTauriScaffold:
         tauri_conf = json.loads((scaffold_dir / "tauri.conf.json").read_text())
         assert "icon" in tauri_conf["bundle"]
         icon_list = tauri_conf["bundle"]["icon"]
-        assert "icons/icon.icns" in icon_list
-        assert "icons/icon.ico" in icon_list
+        # Only icons that actually exist should be listed
+        assert "icons/icon.png" in icon_list
+        for icon in icon_list:
+            assert (scaffold_dir / icon).exists()
         assert "icons/icon.png" in icon_list
 
     def test_defaults_identifier_and_version(self, tmp_path: Path) -> None:
@@ -313,21 +319,55 @@ class TestRunTauriBuild:
                 rust=rust,
                 scaffold_dir=scaffold_dir,
                 pyembed_dir=pyembed_dir,
+                product_name="myapp",
             )
 
-        mock_run.assert_called_once()
-        cmd = mock_run.call_args[0][0]
+        # Find the tauri build call (not the pkg-config call)
+        tauri_call = [c for c in mock_run.call_args_list if str(tauri_cli) in str(c)]
+        assert len(tauri_call) == 1
+        cmd = tauri_call[0][0][0]
         assert str(tauri_cli) in cmd
         assert "build" in cmd
         assert "--bundles" in cmd
-        assert "app" in cmd
 
-        kwargs = mock_run.call_args[1]
+        kwargs = tauri_call[0][1]
         assert kwargs["cwd"] == scaffold_dir
         assert "PYTAURI_STANDALONE" in kwargs["env"]
         assert kwargs["env"]["PYTAURI_STANDALONE"] == "1"
         assert "CARGO_HOME" in kwargs["env"]
         assert "RUSTUP_HOME" in kwargs["env"]
+
+    @pytest.mark.parametrize(
+        ("platform", "expected_bundle"),
+        [("darwin", "app"), ("win32", "nsis"), ("linux", "deb")],
+    )
+    def test_default_bundle_type_per_platform(
+        self, tmp_path: Path, platform: str, expected_bundle: str
+    ) -> None:
+        tauri_cli = tmp_path / "cargo-tauri"
+        tauri_cli.write_text("fake")
+        rust = _make_rust_toolchain(tmp_path)
+        scaffold_dir = tmp_path / "scaffold"
+        scaffold_dir.mkdir()
+        pyembed_dir = tmp_path / "pyembed"
+        pyembed_dir.mkdir()
+        (pyembed_dir / "lib").mkdir()
+
+        with (
+            patch("subprocess.run") as mock_run,
+            patch("trellis.packaging.tauri.sys") as mock_sys,
+        ):
+            mock_sys.platform = platform
+            run_tauri_build(
+                tauri_cli=tauri_cli,
+                rust=rust,
+                scaffold_dir=scaffold_dir,
+                pyembed_dir=pyembed_dir,
+                product_name="myapp",
+            )
+
+        cmd = mock_run.call_args[0][0]
+        assert cmd == [str(tauri_cli), "build", "--bundles", expected_bundle]
 
     def test_bundles_parameter_changes_subprocess_args(self, tmp_path: Path) -> None:
         tauri_cli = tmp_path / "cargo-tauri"
@@ -345,6 +385,7 @@ class TestRunTauriBuild:
                 rust=rust,
                 scaffold_dir=scaffold_dir,
                 pyembed_dir=pyembed_dir,
+                product_name="myapp",
                 bundles=["app", "dmg"],
             )
 
@@ -388,6 +429,7 @@ class TestBuildDesktopAppBundle:
             return mock_python
 
         with (
+            patch("trellis.packaging.tauri._check_linux_system_deps"),
             patch("trellis.packaging.tauri.ensure_rustup", side_effect=track_rustup),
             patch("trellis.packaging.tauri.ensure_tauri_cli", side_effect=track_tauri_cli),
             patch("trellis.packaging.tauri.ensure_python_standalone", side_effect=track_python),
@@ -420,6 +462,7 @@ class TestBuildDesktopAppBundle:
         mock_python.base_dir = tmp_path / "python-install"
 
         with (
+            patch("trellis.packaging.tauri._check_linux_system_deps"),
             patch("trellis.packaging.tauri.ensure_rustup", return_value=mock_rust),
             patch("trellis.packaging.tauri.ensure_tauri_cli", return_value=tmp_path / "cli"),
             patch("trellis.packaging.tauri.ensure_python_standalone", return_value=mock_python),
@@ -545,3 +588,103 @@ class TestOutputCopying:
             )
 
         assert (result / "myapp_1.0.0_aarch64.dmg").exists()
+
+
+class TestCheckLinuxSystemDeps:
+    """Tests for _check_linux_system_deps preflight check."""
+
+    def test_skipped_on_non_linux(self) -> None:
+        with patch("trellis.packaging.tauri.sys") as mock_sys:
+            mock_sys.platform = "darwin"
+            _check_linux_system_deps()  # Should not raise
+
+    def test_passes_when_all_libs_present(self) -> None:
+        with (
+            patch("trellis.packaging.tauri.sys") as mock_sys,
+            patch("trellis.packaging.tauri.subprocess.run") as mock_run,
+        ):
+            mock_sys.platform = "linux"
+            mock_run.return_value = MagicMock(returncode=0)
+            _check_linux_system_deps()  # Should not raise
+
+        assert mock_run.call_count == len(_LINUX_REQUIRED_LIBS)
+
+    def test_raises_with_install_instructions_when_libs_missing(self) -> None:
+        def fake_pkg_config(cmd: list[str], **kwargs: object) -> MagicMock:
+            # Simulate libsoup-3.0 and javascriptcoregtk-4.1 missing
+            pkg = cmd[2]
+            missing = {"libsoup-3.0", "javascriptcoregtk-4.1"}
+            return MagicMock(returncode=1 if pkg in missing else 0)
+
+        with (
+            patch("trellis.packaging.tauri.sys") as mock_sys,
+            patch("trellis.packaging.tauri.subprocess.run", side_effect=fake_pkg_config),
+        ):
+            mock_sys.platform = "linux"
+            with pytest.raises(RuntimeError, match="Missing system libraries") as exc_info:
+                _check_linux_system_deps()
+
+        msg = str(exc_info.value)
+        assert "libsoup-3.0" in msg
+        assert "javascriptcoregtk-4.1" in msg
+        assert "sudo apt-get install" in msg
+        assert "libsoup-3.0-dev" in msg
+        assert "libjavascriptcoregtk-4.1-dev" in msg
+        # Libraries that are present should NOT appear in the error
+        assert "libgtk-3-dev" not in msg
+
+    def test_error_includes_tauri_docs_link(self) -> None:
+        with (
+            patch("trellis.packaging.tauri.sys") as mock_sys,
+            patch(
+                "trellis.packaging.tauri.subprocess.run",
+                return_value=MagicMock(returncode=1),
+            ),
+        ):
+            mock_sys.platform = "linux"
+            with pytest.raises(RuntimeError, match=r"tauri\.app") as exc_info:
+                _check_linux_system_deps()
+
+        assert "https://v2.tauri.app/start/prerequisites/#linux" in str(exc_info.value)
+
+
+class TestGenerateCargoConfig:
+    """Tests for _generate_cargo_config."""
+
+    def test_generates_config_on_linux(self, tmp_path: Path) -> None:
+        scaffold_dir = tmp_path / "src-tauri"
+        scaffold_dir.mkdir()
+        pyembed_dir = tmp_path / "pyembed"
+        pyembed_dir.mkdir()
+        (pyembed_dir / "lib").mkdir()
+
+        with patch("trellis.packaging.tauri.sys") as mock_sys:
+            mock_sys.platform = "linux"
+            _generate_cargo_config(
+                scaffold_dir=scaffold_dir,
+                pyembed_dir=pyembed_dir,
+                product_name="My App",
+            )
+
+        config_path = scaffold_dir / ".cargo" / "config.toml"
+        assert config_path.exists()
+        content = config_path.read_text()
+        assert "My App" in content
+        assert "$ORIGIN/../lib/My App/pyembed/lib" in content
+        assert "x86_64-unknown-linux-gnu" in content
+        assert "aarch64-unknown-linux-gnu" in content
+
+    def test_skipped_on_non_linux(self, tmp_path: Path) -> None:
+        scaffold_dir = tmp_path / "src-tauri"
+        scaffold_dir.mkdir()
+        pyembed_dir = tmp_path / "pyembed"
+
+        with patch("trellis.packaging.tauri.sys") as mock_sys:
+            mock_sys.platform = "darwin"
+            _generate_cargo_config(
+                scaffold_dir=scaffold_dir,
+                pyembed_dir=pyembed_dir,
+                product_name="My App",
+            )
+
+        assert not (scaffold_dir / ".cargo" / "config.toml").exists()

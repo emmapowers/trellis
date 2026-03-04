@@ -67,7 +67,7 @@ class TestCheckRustcVersion:
     """Tests for _check_rustc_version function."""
 
     def test_parses_standard_version(self) -> None:
-        output = "rustc 1.86.0 (05f9846f8 2025-03-31)"
+        output = "rustc 1.93.1 (05f9846f8 2025-03-31)"
         assert _check_rustc_version(output) is True
 
     def test_rejects_old_version(self) -> None:
