@@ -32,7 +32,7 @@ trellis = { path = ".", editable = true, extras = ["desktop"] }
 # Environments
 [environments]
 default = ["desktop"]
-ci = []
+ci = ["desktop"]
 
 [tasks]
 # Formatting
