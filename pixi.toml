@@ -8,6 +8,7 @@ platforms = ["osx-arm64", "linux-64"]
 [dependencies]
 python = "3.13.*"
 pip = ">=24,<26"
+rust = ">=1.80"
 black = ">=25.1.0,<26"
 ruff = ">=0.8,<1"
 pytest = ">=8,<9"
@@ -20,6 +21,9 @@ trellis = { path = ".", editable = true }
 mypy = ">=1.15,<2"
 pydoc-markdown = ">=4.8,<5"
 types-Pillow = ">=10.0"
+
+[system-requirements]
+libc = { family = "glibc", version = "2.35" }
 
 # Feature for desktop extras (pytauri-wheel)
 [feature.desktop.pypi-dependencies]
