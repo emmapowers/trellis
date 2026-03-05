@@ -13,6 +13,9 @@ from trellis.core.components import (
     react,
 )
 
+# keys
+from trellis.core.keys import KeyFilter, KeySequence, parse_key_filter, sequence
+
 # rendering
 from trellis.core.rendering import (
     ActiveRender,
@@ -70,6 +73,8 @@ __all__ = [
     "Frame",
     "FrameStack",
     "Height",
+    "KeyFilter",
+    "KeySequence",
     "KeyTrait",
     "LifecycleTracker",
     "Margin",
@@ -95,10 +100,12 @@ __all__ = [
     "get_ref",
     "is_render_active",
     "mutable",
+    "parse_key_filter",
     "props_equal",
     "react",
     "reconcile_children",
     "render",
+    "sequence",
     "set_active_session",
     "set_ref",
 ]
