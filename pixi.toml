@@ -20,6 +20,7 @@ trellis = { path = ".", editable = true }
 mypy = ">=1.15,<2"
 pydoc-markdown = ">=4.8,<5"
 types-Pillow = ">=10.0"
+basedpyright = ">=1.38.2, <2"
 
 # Feature for desktop extras (pytauri-wheel)
 [feature.desktop.pypi-dependencies]
