@@ -9,6 +9,9 @@ from trellis.core.components import (
     react,
 )
 
+# keys
+from trellis.core.keys import KeyFilter, KeySequence, parse_key_filter, sequence
+
 # state
 from trellis.core.protocol import (
     Message,
@@ -78,6 +81,9 @@ __all__ = [
     "ElementStore",
     "Frame",
     "FrameStack",
+    "Height",
+    "KeyFilter",
+    "KeySequence",
     "KeyTrait",
     "LifecycleTracker",
     "Message",
@@ -108,12 +114,14 @@ __all__ = [
     "is_render_active",
     "listen",
     "mutable",
+    "parse_key_filter",
     "props_equal",
     "react",
     "reconcile_children",
     "register_message_types",
     "render",
     "send",
+    "sequence",
     "set_message_handler",
     "set_ref",
     "set_render_session",

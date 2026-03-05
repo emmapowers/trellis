@@ -26,6 +26,9 @@ from trellis.core import (
     ElementStore,
     Frame,
     FrameStack,
+    Height,
+    KeyFilter,
+    KeySequence,
     LifecycleTracker,
     Mutable,
     PatchCollector,
@@ -52,12 +55,14 @@ from trellis.core import (
     react,
     reconcile_children,
     render,
+    sequence,
     set_ref,
     set_render_session,
 )
 from trellis.core.state import state_var
 from trellis.routing import Route, RouterState, Routes, router
 from trellis.state import load, on_mount
+from trellis.widgets.hot_key import HotKey
 
 __version__ = "0.1.0"
 __all__ = [
@@ -74,6 +79,10 @@ __all__ = [
     "ElementStore",
     "Frame",
     "FrameStack",
+    "Height",
+    "HotKey",
+    "KeyFilter",
+    "KeySequence",
     "LifecycleTracker",
     "Mutable",
     "PatchCollector",
@@ -106,6 +115,7 @@ __all__ = [
     "reconcile_children",
     "render",
     "router",
+    "sequence",
     "set_ref",
     "set_render_session",
     "state_var",

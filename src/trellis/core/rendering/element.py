@@ -4,6 +4,7 @@ import typing as tp
 import weakref
 from dataclasses import dataclass, field
 
+from trellis.core.rendering.on_key_trait import OnKeyTrait
 from trellis.core.rendering.traits import ContainerTrait, KeyTrait
 from trellis.core.state.mutable import Mutable
 from trellis.core.state.ref import RefTrait
@@ -20,7 +21,7 @@ __all__ = [
 
 
 @dataclass(eq=False)
-class Element(KeyTrait, RefTrait):
+class Element(OnKeyTrait, KeyTrait, RefTrait):
     """Tree node representing a component invocation (leaf — no `with` block)."""
 
     component: Component
