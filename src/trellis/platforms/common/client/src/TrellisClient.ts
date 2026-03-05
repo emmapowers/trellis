@@ -27,9 +27,15 @@ function generateUUID(): string {
  * Both WebSocket (server) and Channel (desktop) clients implement this interface.
  * This allows the common TreeRenderer and widgets to work with any transport.
  */
+/** Timeout for key event responses before assuming "not handled". */
+const KEY_EVENT_TIMEOUT_MS = 5000;
+
 export interface TrellisClient {
   /** Send an event to the backend to invoke a callback. */
   sendEvent(callbackId: string, args: unknown[]): void;
+
+  /** Send a key event and wait for handled/pass response. */
+  sendKeyEvent(callbackId: string, requestId: string, args: unknown[]): Promise<boolean>;
 }
 
 /**
@@ -103,6 +109,28 @@ export abstract class BaseTrellisClient implements TrellisClient {
   /** Get current path from router manager. */
   getCurrentPath(): string {
     return this.routerManager.getCurrentPath();
+  }
+
+  /**
+   * Send a key event and wait for the server's handled/pass response.
+   *
+   * Piggybacks on existing sendEvent transport — the server extracts the
+   * request_id from the first arg and sends back a KeyEventResponseMessage.
+   */
+  sendKeyEvent(callbackId: string, requestId: string, args: unknown[]): Promise<boolean> {
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        this.handler.pendingKeyEvents.delete(requestId);
+        resolve(false);
+      }, KEY_EVENT_TIMEOUT_MS);
+
+      this.handler.pendingKeyEvents.set(requestId, (handled: boolean) => {
+        clearTimeout(timeout);
+        resolve(handled);
+      });
+
+      this.sendEvent(callbackId, [requestId, ...args]);
+    });
   }
 
   /** Clean up resources. */

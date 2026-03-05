@@ -15,6 +15,7 @@ export const MessageType = {
   HISTORY_FORWARD: "history_forward",
   URL_CHANGED: "url_changed",
   RELOAD: "reload",
+  KEY_EVENT_RESPONSE: "key_event_response",
 } as const;
 
 // ============================================================================
@@ -115,6 +116,13 @@ export interface ReloadMessage {
   type: typeof MessageType.RELOAD;
 }
 
+/** Server response to a key event — tells client whether the handler consumed the event. */
+export interface KeyEventResponseMessage {
+  type: typeof MessageType.KEY_EVENT_RESPONSE;
+  request_id: string;
+  handled: boolean;
+}
+
 export type Message =
   | HelloMessage
   | HelloResponseMessage
@@ -125,4 +133,5 @@ export type Message =
   | HistoryBackMessage
   | HistoryForwardMessage
   | UrlChangedMessage
-  | ReloadMessage;
+  | ReloadMessage
+  | KeyEventResponseMessage;

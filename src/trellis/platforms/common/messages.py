@@ -112,6 +112,18 @@ class ReloadMessage(Message, tag="reload"):
     ...
 
 
+class KeyEventResponseMessage(msgspec.Struct, tag="key_event_response", tag_field="type"):
+    """Server response to a key event, telling the client whether it was handled.
+
+    Sent from server to client after a key event callback completes.
+    The client uses this to decide whether to re-dispatch the event
+    (if the handler returned False/pass) or swallow it (if handled).
+    """
+
+    request_id: str
+    handled: bool
+
+
 register_message_types(
     HelloMessage,
     HelloResponseMessage,
