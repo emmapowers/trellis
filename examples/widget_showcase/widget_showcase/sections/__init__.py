@@ -7,6 +7,7 @@ from .data import DataDisplaySection
 from .feedback import FeedbackSection
 from .forms import FormInputsSection
 from .icons import IconsSection
+from .keyboard import KeyboardSection
 from .layout import LayoutSection
 from .navigation import NavigationSection
 from .progress import ProgressSection
@@ -23,6 +24,7 @@ __all__ = [
     "FeedbackSection",
     "FormInputsSection",
     "IconsSection",
+    "KeyboardSection",
     "LayoutSection",
     "NavigationSection",
     "ProgressSection",

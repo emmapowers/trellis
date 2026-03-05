@@ -14,6 +14,7 @@ from .sections.data import DataDisplaySection
 from .sections.feedback import FeedbackSection
 from .sections.forms import FormInputsSection
 from .sections.icons import IconsSection
+from .sections.keyboard import KeyboardSection
 from .sections.layout import LayoutSection
 from .sections.navigation import NavigationSection
 from .sections.progress import ProgressSection
@@ -40,6 +41,7 @@ _BASE_TABS: list[ShowcaseTab] = [
     ("navigation", "Navigation", IconName.COMPASS, NavigationSection),
     ("feedback", "Feedback", IconName.BELL, FeedbackSection),
     ("actions", "Actions", IconName.MENU, ActionsSection),
+    ("keyboard", "Keyboard", IconName.HASH, KeyboardSection),
 ]
 
 
