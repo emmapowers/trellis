@@ -6,10 +6,44 @@
  * affected nodes re-render when patches arrive.
  */
 
-import React from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useNode, useRootId, NodeData, processProps, toReactDomProps, ElementKind, store } from "./core";
+import { KeyBindingRegistry } from "./core/keyBindingRegistry";
+import {
+  isTextInput,
+  matchesKeyFilter,
+  SerializedKeyBinding,
+  SerializedSequenceBinding,
+} from "./core/keyFilters";
+import { KeyState } from "./core/keyState";
 import { getWidget } from "./widgets";
 import { useTrellisClient } from "./TrellisContext";
+import { TrellisClient } from "./TrellisClient";
+
+/**
+ * Shared key state and binding registry, created once per TreeRenderer.
+ */
+function useKeyBindingRegistry(client: TrellisClient) {
+  const ref = useRef<{ keyState: KeyState; registry: KeyBindingRegistry } | null>(null);
+  if (!ref.current) {
+    const keyState = new KeyState();
+    const registry = new KeyBindingRegistry(
+      keyState,
+      (callbackId, requestId, args) =>
+        client.sendKeyEvent(callbackId, requestId, args)
+    );
+    ref.current = { keyState, registry };
+  }
+
+  useEffect(() => {
+    return () => {
+      ref.current?.registry.dispose();
+      ref.current?.keyState.dispose();
+    };
+  }, []);
+
+  return ref.current;
+}
 
 /**
  * Root component that renders the Trellis tree.
@@ -17,13 +51,27 @@ import { useTrellisClient } from "./TrellisContext";
  */
 export function TreeRenderer(): React.ReactElement | null {
   const rootId = useRootId();
+  const client = useTrellisClient();
+  const { keyState, registry } = useKeyBindingRegistry(client);
 
   if (!rootId) {
     return null;
   }
 
-  return <NodeRenderer id={rootId} />;
+  return (
+    <KeyBindingContext.Provider value={{ keyState, registry, client }}>
+      <NodeRenderer id={rootId} />
+    </KeyBindingContext.Provider>
+  );
 }
+
+interface KeyBindingContextValue {
+  keyState: KeyState;
+  registry: KeyBindingRegistry;
+  client: TrellisClient;
+}
+
+const KeyBindingContext = React.createContext<KeyBindingContextValue | null>(null);
 
 interface NodeRendererProps {
   id: string;
@@ -55,6 +103,7 @@ const NodeRenderer = React.memo(function NodeRenderer({
 }: NodeRendererProps): React.ReactElement | null {
   const node = useNode(id);
   const client = useTrellisClient();
+  const keyCtx = React.useContext(KeyBindingContext);
 
   if (!node) {
     return null;
@@ -86,8 +135,182 @@ const NodeRenderer = React.memo(function NodeRenderer({
     );
   });
 
-  return renderNodeElement(node, processedProps, children, id);
+  let rendered = renderNodeElement(node, processedProps, children, id);
+
+  // Wrap with on_key handler div if __key_filters__ present
+  const rawKeyFilters = node.props.__key_filters__ as unknown[] | undefined;
+  if (rawKeyFilters && rawKeyFilters.length > 0 && keyCtx) {
+    rendered = (
+      <OnKeyWrapper
+        keyFilters={rawKeyFilters}
+        keyState={keyCtx.keyState}
+        client={keyCtx.client}
+      >
+        {rendered}
+      </OnKeyWrapper>
+    );
+  }
+
+  // Register/unregister global key filters with the binding registry
+  const rawGlobalFilters = node.props.__global_key_filters__ as unknown[] | undefined;
+  if (rawGlobalFilters && keyCtx) {
+    rendered = (
+      <GlobalKeyRegistrar
+        elementId={id}
+        globalFilters={rawGlobalFilters}
+        registry={keyCtx.registry}
+      >
+        {rendered}
+      </GlobalKeyRegistrar>
+    );
+  }
+
+  return rendered;
 });
+
+/**
+ * Wrapper div for focus-scoped .on_key() handlers.
+ * Uses display:contents so it doesn't affect layout.
+ */
+function OnKeyWrapper({
+  keyFilters,
+  keyState,
+  client,
+  children,
+}: {
+  keyFilters: unknown[];
+  keyState: KeyState;
+  client: TrellisClient;
+  children: React.ReactElement;
+}): React.ReactElement {
+  const handler = useMemo(() => {
+    return createOnKeyHandler(keyFilters, keyState, client);
+  }, [keyFilters, keyState, client]);
+
+  return (
+    <div style={{ display: "contents" }} onKeyDown={handler} onKeyUp={handler}>
+      {children}
+    </div>
+  );
+}
+
+function createOnKeyHandler(
+  rawBindings: unknown[],
+  keyState: KeyState,
+  client: TrellisClient,
+): (event: React.KeyboardEvent) => void {
+  return (event: React.KeyboardEvent) => {
+    const native = event.nativeEvent;
+    // Skip re-dispatched events
+    if ((native as any).__trellis_redispatch__) return;
+    if (native.isComposing) return;
+
+    const eventType = native.type as "keydown" | "keyup";
+
+    for (const raw of rawBindings) {
+      const entry = raw as Record<string, unknown>;
+      if ((entry.event_type as string) !== eventType) continue;
+      if (
+        (entry.ignore_in_inputs as boolean) &&
+        isTextInput(document.activeElement)
+      )
+        continue;
+
+      // Sequence binding
+      if (entry.sequence) {
+        const seq = entry.sequence as { steps: any[]; timeout_ms: number };
+        const handlerRef = entry.handler as { __callback__: string };
+        const bindingId = `onkey-seq-${handlerRef.__callback__}`;
+        const complete = keyState.advanceSequence(
+          bindingId,
+          seq.steps,
+          seq.timeout_ms,
+          native
+        );
+        if (complete) {
+          event.preventDefault();
+          event.stopPropagation();
+          fireOnKeyEvent(client, handlerRef.__callback__, native, event);
+          return;
+        }
+        continue;
+      }
+
+      // Single filter binding
+      const filter = entry.filter as any;
+      if (!filter || !matchesKeyFilter(native, filter)) continue;
+
+      const handlerRef = entry.handler as { __callback__: string };
+      const bindingId = `onkey-${handlerRef.__callback__}`;
+      const shouldFire = keyState.shouldFire(
+        bindingId,
+        entry.require_reset as boolean,
+        native
+      );
+
+      // Always preventDefault for matched bindings
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (!shouldFire) return; // Repeat suppressed
+
+      fireOnKeyEvent(client, handlerRef.__callback__, native, event);
+      return;
+    }
+  };
+}
+
+async function fireOnKeyEvent(
+  client: TrellisClient,
+  callbackId: string,
+  native: KeyboardEvent,
+  reactEvent: React.KeyboardEvent
+): Promise<void> {
+  const requestId = crypto.randomUUID();
+  const serialized = {
+    type: native.type,
+    key: native.key,
+    code: native.code,
+    alt_key: native.altKey,
+    ctrl_key: native.ctrlKey,
+    shift_key: native.shiftKey,
+    meta_key: native.metaKey,
+    repeat: native.repeat,
+    timestamp: native.timeStamp,
+  };
+  const handled = await client.sendKeyEvent(callbackId, requestId, [serialized]);
+
+  if (!handled) {
+    // Re-dispatch event from wrapper div so DOM bubbling resumes to parent
+    const clone = new KeyboardEvent(native.type, native);
+    (clone as any).__trellis_redispatch__ = true;
+    reactEvent.currentTarget?.dispatchEvent(clone);
+  }
+}
+
+/**
+ * Registers/unregisters global key filters with the KeyBindingRegistry.
+ */
+function GlobalKeyRegistrar({
+  elementId,
+  globalFilters,
+  registry,
+  children,
+}: {
+  elementId: string;
+  globalFilters: unknown[];
+  registry: KeyBindingRegistry;
+  children: React.ReactElement;
+}): React.ReactElement {
+  useEffect(() => {
+    registry.updateElement(elementId, globalFilters);
+    return () => {
+      registry.removeElement(elementId);
+    };
+  }, [elementId, globalFilters, registry]);
+
+  return children;
+}
 
 /**
  * Render a node to a React element based on its kind.
