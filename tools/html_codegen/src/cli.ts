@@ -15,6 +15,10 @@ export interface RunCliOptions {
   repo_root?: string;
 }
 
+function default_repo_root(): string {
+  return join(import.meta.dirname, "..", "..", "..");
+}
+
 function help_text(): string {
   return [
     "html-codegen",
@@ -60,7 +64,7 @@ async function compute_target_summary(
 }
 
 export async function runCli(argv: string[], options: RunCliOptions = {}): Promise<CliResult> {
-  const repo_root = options.repo_root ?? process.cwd();
+  const repo_root = options.repo_root ?? default_repo_root();
 
   if (argv.includes("--help") || argv.includes("-h") || argv.length === 0) {
     return {
