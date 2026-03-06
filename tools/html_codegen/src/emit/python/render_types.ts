@@ -21,14 +21,12 @@ export function render_type_expr(type_expr: TypeExpr): string {
       if (type_expr.name === "bool") return "bool";
       return "None";
     case "union":
-      return `Literal[${type_expr.options
-        .map((option) => {
-          if (option.kind !== "literal") {
-            throw new Error("Only literal unions are currently supported.");
-          }
-          return render_literal(option.value);
-        })
-        .join(", ")}]`;
+      if (type_expr.options.every((option) => option.kind === "literal")) {
+        return `Literal[${type_expr.options
+          .map((option) => render_literal(option.value))
+          .join(", ")}]`;
+      }
+      return type_expr.options.map((option) => render_type_expr(option)).join(" | ");
     case "array":
       return `list[${render_type_expr(type_expr.item)}]`;
     case "reference":
