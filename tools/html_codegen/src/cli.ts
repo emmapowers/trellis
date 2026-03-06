@@ -1,9 +1,18 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+
+import { build_trellis_html_module } from "./emit/targets/trellis_html.js";
+import { build_ir_document } from "./pipeline/build.js";
 import { render_diff_summary } from "./report/diff_report.js";
 
 export interface CliResult {
   exit_code: number;
   stdout: string;
   stderr: string;
+}
+
+export interface RunCliOptions {
+  repo_root?: string;
 }
 
 function help_text(): string {
@@ -17,7 +26,42 @@ function help_text(): string {
   ].join("\n");
 }
 
-export async function runCli(argv: string[]): Promise<CliResult> {
+async function compute_target_summary(
+  repo_root: string,
+): Promise<{
+  target_path: string;
+  target_content: string;
+  summary: { changed: number; added: number; removed: number };
+}> {
+  const document = await build_ir_document();
+  const payload = build_trellis_html_module(document);
+  const target_path = join(repo_root, payload.path);
+  const target_content = payload.content;
+
+  let existing_content: string | undefined;
+  try {
+    existing_content = await readFile(target_path, "utf-8");
+  } catch {
+    existing_content = undefined;
+  }
+
+  const summary =
+    existing_content === undefined
+      ? { changed: 0, added: 1, removed: 0 }
+      : existing_content === target_content
+        ? { changed: 0, added: 0, removed: 0 }
+        : { changed: 1, added: 0, removed: 0 };
+
+  return {
+    target_path,
+    target_content,
+    summary,
+  };
+}
+
+export async function runCli(argv: string[], options: RunCliOptions = {}): Promise<CliResult> {
+  const repo_root = options.repo_root ?? process.cwd();
+
   if (argv.includes("--help") || argv.includes("-h") || argv.length === 0) {
     return {
       exit_code: 0,
@@ -28,27 +72,25 @@ export async function runCli(argv: string[]): Promise<CliResult> {
 
   const command = argv[0];
   if (command === "compare") {
+    const { summary } = await compute_target_summary(repo_root);
+    const has_diff = summary.changed + summary.added + summary.removed > 0;
     return {
-      exit_code: 0,
-      stdout: render_diff_summary({
-        changed: 0,
-        added: 0,
-        removed: 0,
-      }),
+      exit_code: has_diff ? 1 : 0,
+      stdout: render_diff_summary(summary),
       stderr: "",
     };
   }
 
   if (command === "write") {
+    const { target_path, target_content, summary } = await compute_target_summary(repo_root);
+    await mkdir(dirname(target_path), { recursive: true });
+    await writeFile(target_path, target_content, "utf-8");
+
     return {
       exit_code: 0,
       stdout: [
         "wrote generated outputs",
-        render_diff_summary({
-          changed: 0,
-          added: 0,
-          removed: 0,
-        }),
+        render_diff_summary(summary),
       ].join("\n"),
       stderr: "",
     };
