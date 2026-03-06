@@ -12,6 +12,7 @@ from trellis.bundler.steps import (
     PackageInstallStep,
     RegistryGenerationStep,
     StaticFileCopyStep,
+    TailwindBuildStep,
     TsconfigStep,
     TypeCheckStep,
 )
@@ -27,6 +28,7 @@ __all__ = [
     "PackageInstallStep",
     "RegistryGenerationStep",
     "StaticFileCopyStep",
+    "TailwindBuildStep",
     "TsconfigStep",
     "TypeCheckStep",
     "build",

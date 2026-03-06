@@ -241,6 +241,81 @@ class RegistryGenerationStep(BuildStep):
         step_manifest.metadata["collected_hash"] = self._compute_collected_hash(ctx)
 
 
+class TailwindBuildStep(BuildStep):
+    """Compile a checked-in Tailwind entry stylesheet into a workspace artifact."""
+
+    def __init__(
+        self,
+        *,
+        source_key: str,
+        output_name: str,
+        source_path: Path | None = None,
+        alias_import_path: str | None = None,
+    ) -> None:
+        self.source_key = source_key
+        self.output_name = output_name
+        self.source_path = source_path
+        self.alias_import_path = alias_import_path
+
+    @property
+    def name(self) -> str:
+        return "tailwind-build"
+
+    def _get_source_path(self, ctx: BuildContext) -> Path:
+        source_path = ctx.build_data.get(self.source_key, self.source_path)
+        if source_path is None:
+            raise ValueError(
+                f"TailwindBuildStep requires build_data['{self.source_key}'] or source_path"
+            )
+        return Path(source_path).resolve()
+
+    def _get_output_path(self, ctx: BuildContext) -> Path:
+        return (ctx.workspace / self.output_name).resolve()
+
+    def _apply_generated_output(self, ctx: BuildContext, output_path: Path) -> None:
+        ctx.generated_files["theme_css"] = output_path
+        if self.alias_import_path is not None:
+            ctx.esbuild_args.append(f"--alias:{self.alias_import_path}={output_path}")
+
+    def should_build(
+        self, ctx: BuildContext, step_manifest: StepManifest | None
+    ) -> ShouldBuild | None:
+        """Check if the compiled Tailwind output is up to date."""
+        if step_manifest is None:
+            return ShouldBuild.BUILD
+
+        source_path = self._get_source_path(ctx)
+        output_path = self._get_output_path(ctx)
+
+        if is_rebuild_needed([source_path], [output_path]):
+            return ShouldBuild.BUILD
+
+        self._apply_generated_output(ctx, output_path)
+        return ShouldBuild.SKIP
+
+    def run(self, ctx: BuildContext) -> None:
+        source_path = self._get_source_path(ctx)
+        output_path = self._get_output_path(ctx)
+        tailwind = get_bin(node_modules_path(ctx.workspace), "tailwindcss")
+
+        ctx.exec_in_build_env(
+            [
+                str(tailwind),
+                "-i",
+                str(source_path),
+                "-o",
+                str(output_path),
+            ]
+        )
+
+        self._apply_generated_output(ctx, output_path)
+
+        step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
+        step_manifest.source_paths.add(source_path)
+        step_manifest.dest_files.add(output_path)
+        step_manifest.metadata["generated_file"] = str(output_path)
+
+
 class TsconfigStep(BuildStep):
     """Generate tsconfig.json with path aliases for type checking.
 

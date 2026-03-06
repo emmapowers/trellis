@@ -9,8 +9,6 @@
 import { initRegistry } from "@trellis/_registry";
 initRegistry();
 
-import "@trellis/trellis-core/theme.css"; // Theme CSS variables
-
 // Set up shared console (filtering, etc.) before other imports
 import { addConsoleHandler } from "@trellis/trellis-core/console";
 import { pyInvoke } from "tauri-plugin-pytauri-api";

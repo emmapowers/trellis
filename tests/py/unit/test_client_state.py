@@ -1,10 +1,8 @@
-"""Unit tests for ClientState and theme functionality."""
-
-import dataclasses
+"""Unit tests for runtime theme-mode behavior."""
 
 import pytest
 
-from trellis.app import ClientState, ThemeMode, ThemeTokens, theme
+from trellis.app import ClientState, ThemeMode
 
 
 class TestClientStateTheme:
@@ -93,28 +91,6 @@ class TestClientStateTheme:
         assert state.theme_setting == ThemeMode.LIGHT
         state.set_mode(ThemeMode.SYSTEM)
         assert state.theme_setting == ThemeMode.SYSTEM
-
-
-class TestThemeTokens:
-    """Tests for ThemeTokens dataclass."""
-
-    def test_tokens_are_css_variables(self) -> None:
-        """Theme tokens should be CSS variable references."""
-        assert theme.bg_page == "var(--trellis-bg-page)"
-        assert theme.text_primary == "var(--trellis-text-primary)"
-        assert theme.accent_primary == "var(--trellis-accent-primary)"
-
-    def test_tokens_are_frozen(self) -> None:
-        """Theme tokens should be immutable."""
-        with pytest.raises(dataclasses.FrozenInstanceError):
-            theme.bg_page = "something else"  # type: ignore
-
-    def test_all_tokens_have_css_variable_values(self) -> None:
-        """All theme tokens should have CSS variable values."""
-        tokens = ThemeTokens()
-        for field in dataclasses.fields(tokens):
-            value = getattr(tokens, field.name)
-            assert value.startswith("var(--trellis-"), f"{field.name} should be a CSS var"
 
 
 class TestClientStateOutsideRenderContext:

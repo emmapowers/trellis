@@ -1,7 +1,6 @@
 """Trellis application entry point.
 
-This module provides the Trellis class for creating and running applications,
-along with theming infrastructure (ClientState, ThemeProvider, TrellisApp).
+This module provides application and runtime theme-mode infrastructure.
 """
 
 from trellis.app.app import App
@@ -20,8 +19,6 @@ from trellis.app.apploader import (
 from trellis.app.client_state import (
     ClientState,
     ThemeMode,
-    ThemeTokens,
-    theme,
 )
 from trellis.app.config import Config
 from trellis.app.theme_provider import ThemeProvider
@@ -34,7 +31,6 @@ __all__ = [
     "Config",
     "ThemeMode",
     "ThemeProvider",
-    "ThemeTokens",
     "TrellisApp",
     "find_app_path",
     "get_app",
@@ -45,5 +41,4 @@ __all__ = [
     "get_workspace_dir",
     "resolve_app_root",
     "set_apploader",
-    "theme",
 ]

@@ -3,13 +3,11 @@
 Canonical import style for applications::
 
     from trellis import App, component, Stateful
-    from trellis import widgets as w
     from trellis import html as h
-    from trellis.widgets import IconName
 
 The trellis package exports core rendering primitives (component, Stateful, etc.)
-plus App. Widgets and HTML elements are accessed via their respective
-submodules. Icons are available via ``trellis.widgets.IconName``.
+plus App. Additional package boundaries such as ``trellis.html``,
+``trellis.theme``, and ``trellis.widgets`` live under the main package.
 """
 
 from trellis.app import App

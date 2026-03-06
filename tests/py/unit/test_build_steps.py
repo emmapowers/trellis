@@ -26,6 +26,7 @@ from trellis.bundler.steps import (
     RegistryGenerationStep,
     ShouldBuild,
     StaticFileCopyStep,
+    TailwindBuildStep,
     TsconfigStep,
     TypeCheckStep,
     collect_ts_source_files,
@@ -581,6 +582,14 @@ class TestPackageInstallStep:
 
         mock_ensure.assert_called_once_with({"react": "18.2.0"}, build_context.workspace)
 
+    def test_does_not_mutate_esbuild_aliases(self, build_context: BuildContext) -> None:
+        """PackageInstallStep should not patch module resolution with package aliases."""
+        with patch("trellis.bundler.steps.ensure_packages"):
+            step = PackageInstallStep()
+            step.run(build_context)
+
+        assert build_context.esbuild_args == []
+
 
 class TestPackageInstallStepShouldBuild:
     """Tests for PackageInstallStep.should_build() with new signature."""
@@ -642,6 +651,16 @@ class TestPackageInstallStepShouldBuild:
         step_manifest = build_context.manifest.steps["package-install"]
         expected_packages = {"react": "18.2.0"}
         assert step_manifest.metadata["packages"] == expected_packages
+
+    def test_skip_does_not_mutate_esbuild_aliases(self, build_context: BuildContext) -> None:
+        """Skipping package install should not mutate esbuild alias configuration."""
+        prev_step_manifest = StepManifest(metadata={"packages": {"react": "18.2.0"}})
+
+        step = PackageInstallStep()
+        result = step.should_build(build_context, prev_step_manifest)
+
+        assert result == ShouldBuild.SKIP
+        assert build_context.esbuild_args == []
 
 
 class TestRegistryGenerationStep:
@@ -2825,3 +2844,95 @@ class TestBuildOrchestration:
         assert should_build_called == []
         # Step runs because there's no previous manifest to skip to
         assert step_ran == [True]
+
+
+class TestTailwindBuildStep:
+    """Tests for TailwindBuildStep."""
+
+    @pytest.fixture
+    def build_context(self, tmp_path: Path) -> BuildContext:
+        """Create a BuildContext with a Tailwind input stylesheet."""
+        registry = ModuleRegistry()
+        collected = registry.collect()
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+
+        source_css = tmp_path / "theme" / "index.css"
+        source_css.parent.mkdir(parents=True)
+        source_css.write_text('@import "tailwindcss";')
+
+        node_modules = workspace / "node_modules"
+        (node_modules / ".bin").mkdir(parents=True)
+
+        ctx = BuildContext(
+            registry=registry,
+            entry_point=tmp_path / "main.tsx",
+            workspace=workspace,
+            collected=collected,
+            dist_dir=dist_dir,
+            manifest=BuildManifest(),
+        )
+        ctx.build_data["theme_css_source"] = source_css
+        return ctx
+
+    def test_has_name_tailwind_build(self) -> None:
+        """TailwindBuildStep.name is 'tailwind-build'."""
+        step = TailwindBuildStep(source_key="theme_css_source", output_name="theme.css")
+
+        assert step.name == "tailwind-build"
+
+    def test_runs_tailwind_cli(self, build_context: BuildContext) -> None:
+        """TailwindBuildStep invokes the Tailwind CLI with input and output flags."""
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+
+            step = TailwindBuildStep(source_key="theme_css_source", output_name="theme.css")
+            step.run(build_context)
+
+        cmd = mock_run.call_args[0][0]
+        assert "-i" in cmd
+        assert str(build_context.build_data["theme_css_source"]) in cmd
+        assert "-o" in cmd
+        assert str(build_context.workspace / "theme.css") in cmd
+
+    def test_sets_generated_theme_css(self, build_context: BuildContext) -> None:
+        """TailwindBuildStep stores the generated CSS path in ctx.generated_files."""
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+
+            step = TailwindBuildStep(source_key="theme_css_source", output_name="theme.css")
+            step.run(build_context)
+
+        assert build_context.generated_files["theme_css"] == build_context.workspace / "theme.css"
+
+    def test_tracks_source_and_output_in_manifest(self, build_context: BuildContext) -> None:
+        """TailwindBuildStep records its source and output in the manifest."""
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+
+            step = TailwindBuildStep(source_key="theme_css_source", output_name="theme.css")
+            step.run(build_context)
+
+        step_manifest = build_context.manifest.steps["tailwind-build"]
+        assert build_context.build_data["theme_css_source"] in step_manifest.source_paths
+        assert build_context.workspace / "theme.css" in step_manifest.dest_files
+
+    def test_restores_generated_theme_css_when_skip(self, build_context: BuildContext) -> None:
+        """should_build restores generated_files when the step is up to date."""
+        source_css = build_context.build_data["theme_css_source"]
+        output_css = build_context.workspace / "theme.css"
+        output_css.write_text("/* compiled */")
+        prev_manifest = StepManifest(
+            source_paths={source_css},
+            dest_files={output_css},
+            metadata={"generated_file": str(output_css)},
+        )
+
+        step = TailwindBuildStep(source_key="theme_css_source", output_name="theme.css")
+        result = step.should_build(build_context, prev_manifest)
+
+        assert result == ShouldBuild.SKIP
+        assert build_context.generated_files["theme_css"] == output_css

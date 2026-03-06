@@ -29,8 +29,6 @@ import type { TrellisAppProps } from "@trellis/trellis-browser/client/src/Trelli
 import { createShadowRoot, setupEventForwarding } from "@trellis/trellis-browser/client/src/shadow-dom";
 
 // Import CSS so esbuild bundles it into index.css
-import "@trellis/trellis-core/theme.css";
-
 // Re-export types for consumers
 export type { TrellisAppProps };
 
@@ -122,7 +120,9 @@ export function mount(
     update(newProps: Partial<TrellisAppProps>) {
       // Update theme on mount point
       if (newProps.themeMode) {
-        mountPoint.dataset.theme = resolveTheme(newProps.themeMode);
+        const nextTheme = resolveTheme(newProps.themeMode);
+        mountPoint.classList.toggle("dark", nextTheme === "dark");
+        mountPoint.style.colorScheme = nextTheme;
       }
       currentProps = { ...currentProps, ...newProps };
       render();

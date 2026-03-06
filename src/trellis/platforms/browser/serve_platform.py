@@ -34,6 +34,7 @@ from trellis.bundler import (
     PackageInstallStep,
     RegistryGenerationStep,
     StaticFileCopyStep,
+    TailwindBuildStep,
     TsconfigStep,
 )
 from trellis.platforms.browser.build_steps import (
@@ -44,6 +45,7 @@ from trellis.platforms.browser.build_steps import (
 )
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform
+from trellis.theme import THEME_CSS_IMPORT, THEME_CSS_SOURCE
 
 __all__ = ["BrowserServePlatform"]
 
@@ -96,6 +98,12 @@ class BrowserServePlatform(Platform):
                 steps=[
                     PackageInstallStep(),
                     RegistryGenerationStep(),
+                    TailwindBuildStep(
+                        source_key="theme_css_source",
+                        source_path=THEME_CSS_SOURCE,
+                        output_name="theme.css",
+                        alias_import_path=THEME_CSS_IMPORT,
+                    ),
                     TsconfigStep(),
                     WheelBuildStep(app_root),
                     DependencyResolveStep(),
@@ -114,6 +122,12 @@ class BrowserServePlatform(Platform):
             steps=[
                 PackageInstallStep(),
                 RegistryGenerationStep(),
+                TailwindBuildStep(
+                    source_key="theme_css_source",
+                    source_path=THEME_CSS_SOURCE,
+                    output_name="theme.css",
+                    alias_import_path=THEME_CSS_IMPORT,
+                ),
                 WheelBuildStep(app_root),
                 DependencyResolveStep(),
                 WheelBundleStep(config_json=config.to_json()),

@@ -19,6 +19,7 @@ from trellis.bundler.steps import (
     PackageInstallStep,
     RegistryGenerationStep,
     StaticFileCopyStep,
+    TailwindBuildStep,
     TsconfigStep,
 )
 from trellis.platforms.browser.build_steps import (
@@ -77,6 +78,7 @@ class TestServerGetBuildConfig:
         assert step_types == [
             PackageInstallStep,
             RegistryGenerationStep,
+            TailwindBuildStep,
             BundleBuildStep,
             StaticFileCopyStep,
             IconAssetStep,
@@ -136,6 +138,7 @@ class TestDesktopGetBuildConfig:
         assert step_types == [
             PackageInstallStep,
             RegistryGenerationStep,
+            TailwindBuildStep,
             BundleBuildStep,
             StaticFileCopyStep,
             IconAssetStep,
@@ -185,6 +188,7 @@ class TestBrowserServeGetBuildConfig:
         assert step_types == [
             PackageInstallStep,
             RegistryGenerationStep,
+            TailwindBuildStep,
             WheelBuildStep,
             DependencyResolveStep,
             WheelBundleStep,
@@ -230,6 +234,7 @@ class TestBrowserServeGetBuildConfig:
         assert step_types == [
             PackageInstallStep,
             RegistryGenerationStep,
+            TailwindBuildStep,
             TsconfigStep,
             WheelBuildStep,
             DependencyResolveStep,

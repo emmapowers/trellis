@@ -195,7 +195,7 @@ def HtmlButton(
 ) -> Element:
     """A native HTML button element.
 
-    Note: Named HtmlButton to avoid conflict with trellis.widgets.Button.
+    Named ``HtmlButton`` to make the native HTML intent explicit.
 
     Can be used as text-only or as a container:
         h.HtmlButton("Click me", on_click=handler)  # Text only
@@ -254,7 +254,7 @@ def HtmlLabel(
 ) -> Element:
     """A label element.
 
-    Note: Named HtmlLabel to avoid conflict with trellis.widgets.Label.
+    Named ``HtmlLabel`` to make the native HTML intent explicit.
 
     Can be used as text-only or as a container:
         h.HtmlLabel("Name:", html_for="name-input")  # Text only

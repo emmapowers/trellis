@@ -1,0 +1,25 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-mira",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "../../src/trellis/theme/client/index.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "lucide",
+  "rtl": false,
+  "aliases": {
+    "components": "@trellis/trellis-widgets/components",
+    "utils": "@trellis/trellis-widgets/lib/utils",
+    "ui": "@trellis/trellis-widgets/shadcn/ui",
+    "lib": "@trellis/trellis-widgets/lib",
+    "hooks": "@trellis/trellis-widgets/hooks"
+  },
+  "menuColor": "default",
+  "menuAccent": "subtle",
+  "registries": {}
+}

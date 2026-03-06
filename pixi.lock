@@ -2500,7 +2500,7 @@ packages:
 - pypi: .
   name: trellis
   version: 0.1.0
-  sha256: 371a9dd6631c317a36a7d20c8236622ef96b609da1bb2e1fe4494c7d61a256f0
+  sha256: a0d8c753c84046709ff0b1f398166ce5ff433fb456534d991d701a26b3e9923d
   requires_dist:
   - rich>=13.9
   - pygments>=2.19

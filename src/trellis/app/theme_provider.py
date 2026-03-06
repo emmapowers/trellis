@@ -1,10 +1,7 @@
-"""ThemeProvider widget for CSS-based theming.
+"""ThemeProvider widget for runtime theme-mode application.
 
-The ThemeProvider manages the data-theme attribute on the trellis-root element,
-enabling CSS selectors like `[data-theme="dark"]` for styling widgets.
-
-The React component listens for OS theme changes (via matchMedia) and calls
-back to Python to update the theme state, regardless of current mode.
+The ThemeProvider manages shadcn-compatible root theme classes on the
+``.trellis-root`` element and keeps Python in sync with OS theme changes.
 """
 
 from __future__ import annotations
@@ -25,16 +22,16 @@ def ThemeProvider(
     on_theme_mode_change: Callable[[Literal["system", "light", "dark"]], None] | None = None,
     key: str | None = None,
 ) -> None:
-    """Theme provider that manages the data-theme attribute on trellis-root.
+    """Theme provider that manages shadcn-compatible theme classes on trellis-root.
 
-    Updates the data-theme attribute on the trellis-root element based on
-    theme, and listens for OS theme changes when theme_setting is "system".
+    Updates the ``.dark`` class on the trellis-root element based on ``theme``
+    and listens for OS theme changes when ``theme_setting`` is ``"system"``.
 
     Args:
         theme_setting: The user's theme mode preference ("system", "light", or "dark").
             When "system", the component listens for OS theme changes.
         theme: The actual theme to apply ("light" or "dark").
-            This is what gets set as the data-theme attribute.
+            This controls whether the trellis root carries the ``dark`` class.
         root_id: ID of the trellis-root element. If not provided, finds
             the element by .trellis-root class.
         on_system_theme_change: Callback invoked when OS theme changes.
