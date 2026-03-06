@@ -120,7 +120,9 @@ export function mount(
     update(newProps: Partial<TrellisAppProps>) {
       // Update theme on mount point
       if (newProps.themeMode) {
-        mountPoint.dataset.theme = resolveTheme(newProps.themeMode);
+        const nextTheme = resolveTheme(newProps.themeMode);
+        mountPoint.classList.toggle("dark", nextTheme === "dark");
+        mountPoint.style.colorScheme = nextTheme;
       }
       currentProps = { ...currentProps, ...newProps };
       render();

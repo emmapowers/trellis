@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
-import { render } from "../test-utils";
+import { cleanup, render } from "../test-utils";
 import { ThemeProvider } from "../../../src/trellis/app/client/ThemeProvider";
 
 vi.mock("@trellis/trellis-core/TrellisContext", () => ({
@@ -42,6 +42,8 @@ describe("ThemeProvider", () => {
   });
 
   afterEach(() => {
+    cleanup();
+    document.body.innerHTML = "";
     vi.clearAllMocks();
   });
 
@@ -55,6 +57,9 @@ describe("ThemeProvider", () => {
 
   it("notifies callback when the system theme changes", () => {
     const onSystemThemeChange = vi.fn();
+    const root = document.createElement("div");
+    root.className = "trellis-root";
+    document.body.appendChild(root);
 
     render(
       <ThemeProvider
@@ -71,8 +76,25 @@ describe("ThemeProvider", () => {
     expect(onSystemThemeChange).toHaveBeenCalledWith("dark");
   });
 
+  it("applies the dark class to the trellis root for dark mode", () => {
+    const root = document.createElement("div");
+    root.className = "trellis-root";
+    document.body.appendChild(root);
+
+    render(
+      <ThemeProvider theme_setting="dark" theme="dark">
+        <div>content</div>
+      </ThemeProvider>
+    );
+
+    expect(root.classList.contains("dark")).toBe(true);
+  });
+
   it("keeps notifying system theme changes in explicit mode", () => {
     const onSystemThemeChange = vi.fn();
+    const root = document.createElement("div");
+    root.className = "trellis-root dark";
+    document.body.appendChild(root);
 
     render(
       <ThemeProvider
@@ -87,5 +109,19 @@ describe("ThemeProvider", () => {
     simulateSystemThemeChange(false);
 
     expect(onSystemThemeChange).toHaveBeenCalledWith("light");
+  });
+
+  it("removes the dark class from the trellis root for light mode", () => {
+    const root = document.createElement("div");
+    root.className = "trellis-root dark";
+    document.body.appendChild(root);
+
+    render(
+      <ThemeProvider theme_setting="light" theme="light">
+        <div>content</div>
+      </ThemeProvider>
+    );
+
+    expect(root.classList.contains("dark")).toBe(false);
   });
 });

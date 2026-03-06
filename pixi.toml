@@ -44,8 +44,13 @@ mypy-ci = { cmd = "mypy src/trellis", description = "Run mypy (full check)" }
 # Testing
 test = { cmd = "pytest tests/py", description = "Run Python tests" }
 test-cov = { cmd = "pytest tests/py --cov=src/trellis --cov-report=term-missing", description = "Run Python tests with coverage" }
-install-js-test-deps = { cmd = "npm install", cwd = "tests/js", description = "Install JavaScript test dependencies" }
-test-js = { cmd = "npm test", cwd = "tests/js", depends-on = ["install-js-test-deps"], description = "Run JavaScript unit tests" }
+install-js-test-deps = { cmd = "bun install", cwd = "tests/js", description = "Install JavaScript test dependencies" }
+test-js = { cmd = "bun run test", cwd = "tests/js", depends-on = ["install-js-test-deps"], description = "Run JavaScript unit tests" }
+widgets-install = { cmd = "bun install", cwd = "frontend/trellis-widgets", description = "Install shadcn and Tailwind tooling dependencies" }
+widgets-typecheck = { cmd = "bun run typecheck", cwd = "frontend/trellis-widgets", depends-on = ["widgets-install"], description = "Type-check widget client sources" }
+widgets-shadcn-init = { cmd = "bun run init -- --preset a1D5BVE8", cwd = "frontend/trellis-widgets", depends-on = ["widgets-install"], description = "Initialize shadcn in the widget tooling package" }
+widgets-shadcn-add = { cmd = "bun run add", cwd = "frontend/trellis-widgets", depends-on = ["widgets-install"], description = "Add a shadcn component to the widget source tree (pass extra args after --)" }
+widgets-tailwind = { cmd = "bun run tailwind", cwd = "frontend/trellis-widgets", depends-on = ["widgets-install"], description = "Run the Tailwind CLI in the widget tooling package" }
 
 # Composite lint/test tasks
 cleanup = { depends-on = ["fmt", "ruff-fix"], description = "Run formatters with auto-fix" }
@@ -62,14 +67,14 @@ sliders = { cmd = "python examples/all_sliders_all_the_time.py", description = "
 breakfast = { cmd = "python -m examples.breakfast_todo", description = "Run breakfast todo app" }
 
 # Playground
-build-playground = { cmd = "npm run build", cwd = "docs/static/playground", description = "Build playground" }
+build-playground = { cmd = "bun run build", cwd = "docs/static/playground", description = "Build playground" }
 playground = { cmd = "python -c \"import http.server, socketserver, socket; s=socket.socket(); s.bind(('',0)); port=s.getsockname()[1]; s.close(); print(f'\\n  Playground: http://localhost:{port}/playground/\\n'); http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler, port=port, bind='127.0.0.1')\"", cwd = "docs/static", depends-on = ["build-playground"], description = "Run playground server" }
 
 # Documentation
 generate-api-docs = { cmd = "pydoc-markdown", description = "Generate API docs" }
 generate-example-pages = { cmd = "python scripts/generate-example-pages.py", description = "Generate example pages" }
-build-docs = { cmd = "npm run build", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "generate-example-pages"], description = "Build documentation site" }
-serve-docs = { cmd = "npm run start", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "generate-example-pages"], description = "Serve docs locally with hot reload" }
+build-docs = { cmd = "bun run build", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "generate-example-pages"], description = "Build documentation site" }
+serve-docs = { cmd = "bun run start", cwd = "docs", depends-on = ["generate-api-docs", "build-playground", "generate-example-pages"], description = "Serve docs locally with hot reload" }
 watch-api-docs = { cmd = "watchfiles 'pixi run generate-api-docs' src/trellis", description = "Watch Python source and regenerate API docs" }
 
 [target.unix.activation]

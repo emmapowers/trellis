@@ -48,16 +48,18 @@ describe("Shadow DOM utilities", () => {
       expect(container.shadowRoot?.contains(mountPoint)).toBe(true);
     });
 
-    it("sets light theme by default", () => {
+    it("uses light mode by default", () => {
       const { mountPoint } = createShadowRoot(container);
 
-      expect(mountPoint.dataset.theme).toBe("light");
+      expect(mountPoint.classList.contains("dark")).toBe(false);
+      expect(mountPoint.style.colorScheme).toBe("light");
     });
 
-    it("sets dark theme when specified", () => {
+    it("uses dark mode when specified", () => {
       const { mountPoint } = createShadowRoot(container, { theme: "dark" });
 
-      expect(mountPoint.dataset.theme).toBe("dark");
+      expect(mountPoint.classList.contains("dark")).toBe(true);
+      expect(mountPoint.style.colorScheme).toBe("dark");
     });
   });
 
@@ -197,9 +199,12 @@ describe("Shadow DOM React mounting", () => {
   it("theme can be updated on mount point", () => {
     const { mountPoint } = createShadowRoot(container, { theme: "light" });
 
-    expect(mountPoint.dataset.theme).toBe("light");
+    expect(mountPoint.classList.contains("dark")).toBe(false);
+    expect(mountPoint.style.colorScheme).toBe("light");
 
-    mountPoint.dataset.theme = "dark";
-    expect(mountPoint.dataset.theme).toBe("dark");
+    mountPoint.classList.toggle("dark", true);
+    mountPoint.style.colorScheme = "dark";
+    expect(mountPoint.classList.contains("dark")).toBe(true);
+    expect(mountPoint.style.colorScheme).toBe("dark");
   });
 });

@@ -18,6 +18,8 @@ export default defineConfig({
       // @trellis/* aliases (matches esbuild build aliases)
       "@trellis/trellis-browser": path.resolve(__dirname, "../../src/trellis/platforms/browser"),
       "@trellis/trellis-core": path.resolve(__dirname, "../../src/trellis/platforms/common/client/src"),
+      "@trellis/trellis-theme": path.resolve(__dirname, "../../src/trellis/theme"),
+      "@trellis/trellis-widgets": path.resolve(__dirname, "../../src/trellis/widgets/client"),
       "@trellis/trellis-server": path.resolve(__dirname, "../../src/trellis/platforms/server"),
       "@trellis/trellis-desktop": path.resolve(__dirname, "../../src/trellis/platforms/desktop"),
       // Tauri plugins (mocked for test environment)
@@ -31,7 +33,11 @@ export default defineConfig({
       "markdown-it": path.resolve(__dirname, "node_modules/markdown-it"),
       "dompurify": path.resolve(__dirname, "node_modules/dompurify"),
       "@msgpack/msgpack": path.resolve(__dirname, "node_modules/@msgpack/msgpack"),
+      "@base-ui/react": path.resolve(__dirname, "node_modules/@base-ui/react"),
+      "class-variance-authority": path.resolve(__dirname, "node_modules/class-variance-authority"),
+      "clsx": path.resolve(__dirname, "node_modules/clsx"),
       "recharts": path.resolve(__dirname, "node_modules/recharts"),
+      "tailwind-merge": path.resolve(__dirname, "node_modules/tailwind-merge"),
       "uplot": path.resolve(__dirname, "node_modules/uplot"),
     },
   },

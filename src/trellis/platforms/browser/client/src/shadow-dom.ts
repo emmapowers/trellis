@@ -33,7 +33,8 @@ export function createShadowRoot(
   // Create the mount point for React
   const mountPoint = document.createElement("div");
   mountPoint.className = "trellis-root";
-  mountPoint.dataset.theme = theme;
+  mountPoint.classList.toggle("dark", theme === "dark");
+  mountPoint.style.colorScheme = theme;
   // Ensure mount point fills the shadow host
   mountPoint.style.width = "100%";
   mountPoint.style.height = "100%";

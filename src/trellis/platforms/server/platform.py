@@ -26,6 +26,7 @@ from trellis.bundler import (
     PackageInstallStep,
     RegistryGenerationStep,
     StaticFileCopyStep,
+    TailwindBuildStep,
 )
 from trellis.platforms.common import find_available_port
 from trellis.platforms.common.base import Platform
@@ -33,6 +34,7 @@ from trellis.platforms.server.handler import router as ws_router
 from trellis.platforms.server.middleware import RequestLoggingMiddleware
 from trellis.platforms.server.routes import create_static_dir, register_spa_fallback
 from trellis.platforms.server.routes import router as http_router
+from trellis.theme import THEME_CSS_IMPORT, THEME_CSS_SOURCE
 from trellis.utils.hot_reload import get_or_create_hot_reload
 
 _console = Console()
@@ -77,6 +79,12 @@ class ServerPlatform(Platform):
             steps=[
                 PackageInstallStep(),
                 RegistryGenerationStep(),
+                TailwindBuildStep(
+                    source_key="theme_css_source",
+                    source_path=THEME_CSS_SOURCE,
+                    output_name="theme.css",
+                    alias_import_path=THEME_CSS_IMPORT,
+                ),
                 BundleBuildStep(output_name="bundle"),
                 StaticFileCopyStep(),
                 IconAssetStep(icon_path=config.icon),

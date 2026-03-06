@@ -26,11 +26,13 @@ from trellis.bundler import (
     PackageInstallStep,
     RegistryGenerationStep,
     StaticFileCopyStep,
+    TailwindBuildStep,
 )
 from trellis.desktop.dialogs import _clear_dialog_runtime, _set_dialog_runtime
 from trellis.platforms.common.base import Platform
 from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
+from trellis.theme import THEME_CSS_IMPORT, THEME_CSS_SOURCE
 from trellis.utils.hot_reload import get_or_create_hot_reload
 
 if TYPE_CHECKING:
@@ -135,6 +137,12 @@ class DesktopPlatform(Platform):
             steps=[
                 PackageInstallStep(),
                 RegistryGenerationStep(),
+                TailwindBuildStep(
+                    source_key="theme_css_source",
+                    source_path=THEME_CSS_SOURCE,
+                    output_name="theme.css",
+                    alias_import_path=THEME_CSS_IMPORT,
+                ),
                 BundleBuildStep(output_name="bundle"),
                 StaticFileCopyStep(),
                 IconAssetStep(icon_path=config.icon, include_icns=True),

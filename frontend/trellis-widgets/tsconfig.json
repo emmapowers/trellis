@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "baseUrl": ".",
+    "paths": {
+      "@trellis/trellis-widgets/*": ["../../src/trellis/widgets/client/*"],
+      "@trellis/trellis-theme/*": ["../../src/trellis/theme/client/*"],
+      "*": ["./node_modules/*"]
+    },
+    "types": ["react", "react-dom"]
+  },
+  "include": [
+    "../../src/trellis/widgets/client/components/**/*.ts",
+    "../../src/trellis/widgets/client/components/**/*.tsx",
+    "../../src/trellis/widgets/client/lib/**/*.ts",
+    "../../src/trellis/widgets/client/shadcn/**/*.ts",
+    "../../src/trellis/widgets/client/shadcn/**/*.tsx"
+  ]
+}

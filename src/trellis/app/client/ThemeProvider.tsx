@@ -13,8 +13,8 @@ interface ThemeProviderProps {
 /**
  * ThemeProvider manages the theme for a Trellis app.
  *
- * It updates the data-theme attribute on the trellis-root element based on
- * theme, and listens for OS theme changes to keep Python in sync.
+ * It updates the trellis-root element with shadcn-compatible theme classes
+ * and listens for OS theme changes to keep Python in sync.
  *
  * The trellis-root element should already exist in the DOM (created by the HTML
  * template or host page) with the .trellis-root class applied.
@@ -62,7 +62,8 @@ export function ThemeProvider({
         hostThemeMode === "light" || hostThemeMode === "dark"
           ? hostThemeMode
           : theme;
-      rootEl.dataset.theme = themeToApply;
+      rootEl.classList.toggle("dark", themeToApply === "dark");
+      rootEl.style.colorScheme = themeToApply;
     }
   }, [theme, root_id, hostThemeMode]);
 
