@@ -75,13 +75,14 @@ const PUBLIC_EVENT_PROP_NAMES = [
 ] as const;
 
 const PUBLIC_HANDLER_PAYLOAD_NAMES = [
+  "Event",
+  "UIEvent",
   "MouseEvent",
   "KeyboardEvent",
   "FocusEvent",
-  "FormEvent",
+  "SubmitEvent",
   "InputEvent",
   "ChangeEvent",
-  "ScrollEvent",
   "WheelEvent",
   "DragEvent",
 ] as const;
@@ -187,22 +188,29 @@ const SLICE_CONFIG: SliceElementConfig[] = [
 
 const DATACLASS_CONFIGS: DataclassConfig[] = [
   {
-    name: "BaseEvent",
+    name: "Event",
     source_interface: "Event",
     fields: [
       { source_name: "type", default: "" },
-      { name_source: "timestamp", name_python: "timestamp", type_expr: primitive("float"), default: 0.0 },
+      { source_name: "timeStamp", default: 0.0 },
+      { source_name: "bubbles", default: false },
+      { source_name: "cancelable", default: false },
+      { source_name: "defaultPrevented", default: false },
+      { source_name: "eventPhase", default: 0 },
+      { source_name: "isTrusted", default: false },
     ],
-    source: {
-      winner: "webref",
-      contributors: ["webref", "trellis_policy"],
-      reason: "runtime_payload",
-      source_version: "@webref/idl",
-    },
+    source: webref_source("idl_payload"),
+  },
+  {
+    name: "UIEvent",
+    base: "Event",
+    source_interface: "UIEvent",
+    fields: [{ source_name: "detail", default: 0 }],
+    source: webref_source("idl_payload"),
   },
   {
     name: "MouseEvent",
-    base: "BaseEvent",
+    base: "UIEvent",
     source_interface: "MouseEvent",
     fields: [
       { source_name: "clientX", default: 0 },
@@ -220,60 +228,51 @@ const DATACLASS_CONFIGS: DataclassConfig[] = [
   },
   {
     name: "KeyboardEvent",
-    base: "BaseEvent",
+    base: "UIEvent",
     source_interface: "KeyboardEvent",
     fields: [
       { source_name: "key", default: "" },
       { source_name: "code", default: "" },
+      { source_name: "location", default: 0 },
       { source_name: "altKey", default: false },
       { source_name: "ctrlKey", default: false },
       { source_name: "shiftKey", default: false },
       { source_name: "metaKey", default: false },
       { source_name: "repeat", default: false },
+      { source_name: "isComposing", default: false },
     ],
     source: webref_source("idl_payload"),
   },
   {
     name: "FocusEvent",
-    base: "BaseEvent",
+    base: "Event",
     source_interface: "FocusEvent",
     fields: [],
     source: webref_source("idl_payload"),
   },
   {
-    name: "FormEvent",
-    base: "BaseEvent",
+    name: "SubmitEvent",
+    base: "Event",
+    source_interface: "SubmitEvent",
     fields: [],
-    source: trellis_source("runtime_payload"),
+    source: webref_source("idl_payload"),
   },
   {
     name: "InputEvent",
-    base: "BaseEvent",
+    base: "Event",
     source_interface: "InputEvent",
-    fields: [{ source_name: "data", default: null }],
+    fields: [
+      { source_name: "data", default: null },
+      { source_name: "isComposing", default: false },
+      { source_name: "inputType", default: "" },
+    ],
     source: webref_source("idl_payload"),
   },
   {
     name: "ChangeEvent",
-    base: "BaseEvent",
-    fields: [
-      { name_source: "value", name_python: "value", type_expr: primitive("str"), default: "" },
-      { name_source: "checked", name_python: "checked", type_expr: primitive("bool"), default: false },
-    ],
-    source: trellis_source("runtime_payload"),
-  },
-  {
-    name: "ScrollEvent",
-    base: "BaseEvent",
-    fields: [
-      { name_source: "scrollTop", name_python: "scroll_top", type_expr: primitive("float"), default: 0.0 },
-      { name_source: "scrollLeft", name_python: "scroll_left", type_expr: primitive("float"), default: 0.0 },
-      { name_source: "scrollWidth", name_python: "scroll_width", type_expr: primitive("float"), default: 0.0 },
-      { name_source: "scrollHeight", name_python: "scroll_height", type_expr: primitive("float"), default: 0.0 },
-      { name_source: "clientWidth", name_python: "client_width", type_expr: primitive("float"), default: 0.0 },
-      { name_source: "clientHeight", name_python: "client_height", type_expr: primitive("float"), default: 0.0 },
-    ],
-    source: trellis_source("runtime_payload"),
+    base: "Event",
+    fields: [],
+    source: react_source(),
   },
   {
     name: "WheelEvent",
@@ -288,16 +287,16 @@ const DATACLASS_CONFIGS: DataclassConfig[] = [
     source: webref_source("idl_payload"),
   },
   {
-    name: "DragDataTransferFile",
+    name: "File",
     fields: [
       { name_source: "name", name_python: "name", type_expr: primitive("str"), default: "" },
       { name_source: "size", name_python: "size", type_expr: primitive("int"), default: 0 },
       { name_source: "type", name_python: "type", type_expr: primitive("str"), default: "" },
     ],
-    source: trellis_source("runtime_payload"),
+    source: webref_source("runtime_payload"),
   },
   {
-    name: "DragDataTransfer",
+    name: "DataTransfer",
     fields: [
       { name_source: "dropEffect", name_python: "drop_effect", type_expr: primitive("str"), default: "none" },
       {
@@ -315,23 +314,18 @@ const DATACLASS_CONFIGS: DataclassConfig[] = [
       {
         name_source: "files",
         name_python: "files",
-        type_expr: { kind: "array", item: { kind: "reference", name: "DragDataTransferFile" } },
+        type_expr: { kind: "array", item: { kind: "reference", name: "File" } },
         default_factory: "list",
       },
     ],
-    source: trellis_source("runtime_payload"),
+    source: webref_source("runtime_payload"),
   },
   {
     name: "DragEvent",
     base: "MouseEvent",
     source_interface: "DragEvent",
     fields: [{ source_name: "dataTransfer", default: null }],
-    source: {
-      winner: "webref",
-      contributors: ["webref", "trellis_policy"],
-      reason: "runtime_payload",
-      source_version: "@webref/idl",
-    },
+    source: webref_source("idl_payload"),
   },
 ];
 
@@ -350,15 +344,6 @@ function webref_source(reason: string): SourceProvenance {
     contributors: ["webref"],
     reason,
     source_version: "@webref/idl",
-  };
-}
-
-function trellis_source(reason: string): SourceProvenance {
-  return {
-    winner: "trellis_policy",
-    contributors: ["react_ts", "trellis_policy"],
-    reason,
-    source_version: "local",
   };
 }
 
@@ -435,7 +420,7 @@ function build_event_handler_def(payload_name: (typeof PUBLIC_HANDLER_PAYLOAD_NA
   return {
     payload_name,
     typed_handler_name: `${payload_name}Handler`,
-    handler_name: `${payload_name.replace(/Event$/, "")}Handler`,
+    handler_name: `${payload_name}Handler`,
     source: react_source(),
   };
 }
@@ -451,6 +436,7 @@ function build_dataclass_field(
   config: DataclassFieldConfig,
   payload_fields: DataclassFieldDef[],
   dataclass_name: string,
+  fallback_source: SourceProvenance,
 ): DataclassFieldDef {
   if (config.type_expr) {
     return {
@@ -459,7 +445,7 @@ function build_dataclass_field(
       type_expr: config.type_expr,
       default: config.default,
       default_factory: config.default_factory,
-      source: trellis_source("runtime_payload"),
+      source: fallback_source,
     };
   }
 
@@ -495,7 +481,9 @@ function build_dataclass_def(
     name: config.name,
     base: config.base,
     frozen: true,
-    fields: config.fields.map((field) => build_dataclass_field(field, payload_fields, config.name)),
+    fields: config.fields.map((field) =>
+      build_dataclass_field(field, payload_fields, config.name, config.source),
+    ),
     source: config.source,
   };
 }
@@ -518,7 +506,17 @@ function build_element(
 
 export async function build_ir_document(): Promise<IrDocument> {
   const react_surface = await extract_react_surface();
-  const needed_payload_interfaces = ["Event", "MouseEvent", "KeyboardEvent", "FocusEvent", "InputEvent", "WheelEvent", "DragEvent"];
+  const needed_payload_interfaces = [
+    "Event",
+    "UIEvent",
+    "MouseEvent",
+    "KeyboardEvent",
+    "FocusEvent",
+    "InputEvent",
+    "SubmitEvent",
+    "WheelEvent",
+    "DragEvent",
+  ];
   const webref_payloads = await extract_webref_event_payloads(needed_payload_interfaces);
   const webref_payload_fields = new Map<string, DataclassFieldDef[]>(
     [...webref_payloads.entries()].map(([name, payload]) => [

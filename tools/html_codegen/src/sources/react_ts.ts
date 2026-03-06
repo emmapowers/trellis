@@ -259,29 +259,23 @@ function payload_name_for_binding(
   react_event_interface: string,
 ): string {
   if (prop_name === "onScroll") {
-    return "ScrollEvent";
+    return "UIEvent";
   }
   if (prop_name === "onSubmit") {
-    return "FormEvent";
+    return "SubmitEvent";
   }
   if (react_event_interface === "SyntheticEvent") {
-    return "BaseEvent";
+    return "Event";
   }
   return react_event_interface;
 }
 
 function typed_handler_name_for_payload(payload_name: string): string {
-  if (payload_name === "BaseEvent") {
-    return "EventHandler";
-  }
   return `${payload_name}Handler`;
 }
 
 function handler_name_for_payload(payload_name: string): string {
-  if (payload_name === "BaseEvent") {
-    return "EventHandler";
-  }
-  return `${payload_name.replace(/Event$/, "")}Handler`;
+  return typed_handler_name_for_payload(payload_name);
 }
 
 function parse_react_event_binding(

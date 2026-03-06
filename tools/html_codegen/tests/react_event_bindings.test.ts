@@ -13,7 +13,7 @@ describe("react event bindings", () => {
       react_event_interface: "MouseEvent",
       payload_name: "MouseEvent",
       typed_handler_name: "MouseEventHandler",
-      handler_name: "MouseHandler",
+      handler_name: "MouseEventHandler",
     });
 
     expect(bindings.get("onChange")).toEqual({
@@ -23,7 +23,7 @@ describe("react event bindings", () => {
       react_event_interface: "ChangeEvent",
       payload_name: "ChangeEvent",
       typed_handler_name: "ChangeEventHandler",
-      handler_name: "ChangeHandler",
+      handler_name: "ChangeEventHandler",
     });
 
     expect(bindings.get("onScroll")).toEqual({
@@ -31,9 +31,9 @@ describe("react event bindings", () => {
       dom_event_name: "scroll",
       react_handler_alias: "UIEventHandler",
       react_event_interface: "UIEvent",
-      payload_name: "ScrollEvent",
-      typed_handler_name: "ScrollEventHandler",
-      handler_name: "ScrollHandler",
+      payload_name: "UIEvent",
+      typed_handler_name: "UIEventHandler",
+      handler_name: "UIEventHandler",
     });
 
     expect(bindings.get("onSubmit")).toEqual({
@@ -41,9 +41,9 @@ describe("react event bindings", () => {
       dom_event_name: "submit",
       react_handler_alias: "SubmitEventHandler",
       react_event_interface: "SubmitEvent",
-      payload_name: "FormEvent",
-      typed_handler_name: "FormEventHandler",
-      handler_name: "FormHandler",
+      payload_name: "SubmitEvent",
+      typed_handler_name: "SubmitEventHandler",
+      handler_name: "SubmitEventHandler",
     });
   });
 });

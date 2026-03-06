@@ -84,7 +84,12 @@ function serializeEventArg(arg: unknown): unknown {
 
     const base = {
       type: eventType,
-      timestamp: syntheticEvent.timeStamp,
+      timeStamp: syntheticEvent.timeStamp,
+      bubbles: syntheticEvent.bubbles,
+      cancelable: syntheticEvent.cancelable,
+      defaultPrevented: syntheticEvent.defaultPrevented,
+      eventPhase: syntheticEvent.eventPhase,
+      isTrusted: syntheticEvent.isTrusted,
     };
 
     // Wheel events (check before MouseEvent since WheelEvent extends MouseEvent)
@@ -105,6 +110,15 @@ function serializeEventArg(arg: unknown): unknown {
         deltaY: nativeEvent.deltaY,
         deltaZ: nativeEvent.deltaZ,
         deltaMode: nativeEvent.deltaMode,
+      });
+    }
+
+    if (typeof InputEvent !== "undefined" && nativeEvent instanceof InputEvent) {
+      return convertDeepKeysToSnake({
+        ...base,
+        data: nativeEvent.data,
+        isComposing: nativeEvent.isComposing,
+        inputType: nativeEvent.inputType,
       });
     }
 
@@ -133,20 +147,6 @@ function serializeEventArg(arg: unknown): unknown {
       });
     }
 
-    // Scroll events - extract scroll position from currentTarget
-    if (eventType === "scroll") {
-      const target = syntheticEvent.currentTarget as HTMLElement | null;
-      return convertDeepKeysToSnake({
-        ...base,
-        scrollTop: target?.scrollTop ?? 0,
-        scrollLeft: target?.scrollLeft ?? 0,
-        scrollWidth: target?.scrollWidth ?? 0,
-        scrollHeight: target?.scrollHeight ?? 0,
-        clientWidth: target?.clientWidth ?? 0,
-        clientHeight: target?.clientHeight ?? 0,
-      });
-    }
-
     // Mouse events
     if (nativeEvent instanceof MouseEvent) {
       return convertDeepKeysToSnake({
@@ -170,33 +170,18 @@ function serializeEventArg(arg: unknown): unknown {
         ...base,
         key: nativeEvent.key,
         code: nativeEvent.code,
+        location: nativeEvent.location,
         altKey: nativeEvent.altKey,
         ctrlKey: nativeEvent.ctrlKey,
         shiftKey: nativeEvent.shiftKey,
         metaKey: nativeEvent.metaKey,
         repeat: nativeEvent.repeat,
+        isComposing: nativeEvent.isComposing,
       });
     }
 
-    // Input/Change events - extract target value
-    if (
-      "target" in syntheticEvent &&
-      syntheticEvent.target &&
-      typeof syntheticEvent.target === "object"
-    ) {
-      const target = syntheticEvent.target as
-        | HTMLInputElement
-        | HTMLTextAreaElement
-        | HTMLSelectElement;
-      return {
-        ...base,
-        value: target.value ?? "",
-        checked: "checked" in target ? target.checked : false,
-      };
-    }
-
     // Generic event fallback
-    return base;
+    return convertDeepKeysToSnake(base);
   }
 
   // Non-event args pass through as-is

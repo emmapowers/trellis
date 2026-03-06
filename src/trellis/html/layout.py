@@ -11,11 +11,11 @@ from typing import overload
 from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
 from trellis.html.events import (
-    DragHandler,
-    KeyboardHandler,
-    MouseHandler,
-    ScrollHandler,
-    WheelHandler,
+    DragEventHandler,
+    KeyboardEventHandler,
+    MouseEventHandler,
+    UIEventHandler,
+    WheelEventHandler,
 )
 
 __all__ = [
@@ -43,22 +43,22 @@ def Div(
     class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_mouse_enter: MouseHandler | None = None,
-    on_mouse_leave: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
-    on_scroll: ScrollHandler | None = None,
-    on_wheel: WheelHandler | None = None,
-    on_drag_start: DragHandler | None = None,
-    on_drag: DragHandler | None = None,
-    on_drag_end: DragHandler | None = None,
-    on_drag_enter: DragHandler | None = None,
-    on_drag_over: DragHandler | None = None,
-    on_drag_leave: DragHandler | None = None,
-    on_drop: DragHandler | None = None,
+    on_click: MouseEventHandler | None = None,
+    on_double_click: MouseEventHandler | None = None,
+    on_context_menu: MouseEventHandler | None = None,
+    on_mouse_enter: MouseEventHandler | None = None,
+    on_mouse_leave: MouseEventHandler | None = None,
+    on_key_down: KeyboardEventHandler | None = None,
+    on_key_up: KeyboardEventHandler | None = None,
+    on_scroll: UIEventHandler | None = None,
+    on_wheel: WheelEventHandler | None = None,
+    on_drag_start: DragEventHandler | None = None,
+    on_drag: DragEventHandler | None = None,
+    on_drag_end: DragEventHandler | None = None,
+    on_drag_enter: DragEventHandler | None = None,
+    on_drag_over: DragEventHandler | None = None,
+    on_drag_leave: DragEventHandler | None = None,
+    on_drop: DragEventHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """A div container element."""
@@ -73,11 +73,11 @@ def Span(
     class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
+    on_click: MouseEventHandler | None = None,
+    on_double_click: MouseEventHandler | None = None,
+    on_context_menu: MouseEventHandler | None = None,
+    on_key_down: KeyboardEventHandler | None = None,
+    on_key_up: KeyboardEventHandler | None = None,
     **props: tp.Any,
 ) -> Element: ...
 
@@ -88,11 +88,11 @@ def Span(
     class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
+    on_click: MouseEventHandler | None = None,
+    on_double_click: MouseEventHandler | None = None,
+    on_context_menu: MouseEventHandler | None = None,
+    on_key_down: KeyboardEventHandler | None = None,
+    on_key_up: KeyboardEventHandler | None = None,
     **props: tp.Any,
 ) -> ContainerElement: ...
 
@@ -105,11 +105,11 @@ def Span(
     class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
+    on_click: MouseEventHandler | None = None,
+    on_double_click: MouseEventHandler | None = None,
+    on_context_menu: MouseEventHandler | None = None,
+    on_key_down: KeyboardEventHandler | None = None,
+    on_key_up: KeyboardEventHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """An inline span element."""
@@ -122,7 +122,7 @@ def Section(
     class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    on_scroll: ScrollHandler | None = None,
+    on_scroll: UIEventHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """A section element for grouping content."""
@@ -135,7 +135,7 @@ def Article(
     class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    on_scroll: ScrollHandler | None = None,
+    on_scroll: UIEventHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """An article element for self-contained content."""
@@ -184,7 +184,7 @@ def Main(
     class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    on_scroll: ScrollHandler | None = None,
+    on_scroll: UIEventHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """A main content element."""
@@ -197,7 +197,7 @@ def Aside(
     class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    on_scroll: ScrollHandler | None = None,
+    on_scroll: UIEventHandler | None = None,
     **props: tp.Any,
 ) -> Element:
     """An aside element for tangential content."""

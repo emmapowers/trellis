@@ -14,7 +14,7 @@ describe("trellis events target", () => {
           name_source: "onClick",
           name_python: "on_click",
           dom_event_name: "click",
-          handler_name: "MouseHandler",
+          handler_name: "MouseEventHandler",
           payload_name: "MouseEvent",
           source: {
             winner: "react_ts",
@@ -28,7 +28,7 @@ describe("trellis events target", () => {
         {
           payload_name: "MouseEvent",
           typed_handler_name: "MouseEventHandler",
-          handler_name: "MouseHandler",
+          handler_name: "MouseEventHandler",
           source: {
             winner: "react_ts",
             contributors: ["react_ts"],
@@ -39,7 +39,7 @@ describe("trellis events target", () => {
       ],
       dataclasses: [
         {
-          name: "BaseEvent",
+          name: "Event",
           frozen: true,
           fields: [
             {
@@ -55,8 +55,8 @@ describe("trellis events target", () => {
               },
             },
             {
-              name_source: "timestamp",
-              name_python: "timestamp",
+              name_source: "timeStamp",
+              name_python: "time_stamp",
               type_expr: { kind: "primitive", name: "float" },
               default: 0,
               source: {
@@ -75,9 +75,34 @@ describe("trellis events target", () => {
           },
         },
         {
+          name: "UIEvent",
+          frozen: true,
+          base: "Event",
+          fields: [
+            {
+              name_source: "detail",
+              name_python: "detail",
+              type_expr: { kind: "primitive", name: "int" },
+              default: 0,
+              source: {
+                winner: "webref",
+                contributors: ["webref"],
+                reason: "idl_payload",
+                source_version: "@webref/idl",
+              },
+            },
+          ],
+          source: {
+            winner: "webref",
+            contributors: ["webref"],
+            reason: "idl_payload",
+            source_version: "@webref/idl",
+          },
+        },
+        {
           name: "MouseEvent",
           frozen: true,
-          base: "BaseEvent",
+          base: "UIEvent",
           fields: [
             {
               name_source: "clientX",
@@ -117,12 +142,13 @@ describe("trellis events target", () => {
 
     const payload = build_trellis_events_module(ir);
     expect(payload.path).toBe("src/trellis/html/events.py");
-    expect(payload.content).toContain("class BaseEvent");
-    expect(payload.content).toContain("class MouseEvent(BaseEvent)");
+    expect(payload.content).toContain("class Event");
+    expect(payload.content).toContain("class UIEvent(Event)");
+    expect(payload.content).toContain("class MouseEvent(UIEvent)");
     expect(payload.content).toContain("MouseEventHandler = Callable[[MouseEvent], None]");
-    expect(payload.content).toContain("MouseHandler = EventHandler | MouseEventHandler");
+    expect(payload.content).not.toContain("MouseHandler =");
     expect(payload.content).toContain("alt_key: bool = False");
     expect(payload.content).toContain('"click": MouseEvent');
-    expect(payload.content).toContain("def get_event_class(event_type: str) -> type[BaseEvent]:");
+    expect(payload.content).toContain("def get_event_class(event_type: str) -> type[Event]:");
   });
 });

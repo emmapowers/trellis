@@ -11,11 +11,11 @@ from trellis.core.components.composition import component
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
 from trellis.html.events import (
-    BaseEvent,
     ChangeEvent,
-    DragDataTransfer,
-    DragDataTransferFile,
+    DataTransfer,
     DragEvent,
+    Event,
+    File,
     KeyboardEvent,
     MouseEvent,
 )
@@ -377,7 +377,7 @@ class TestEventConversion:
         """Mouse event dict becomes MouseEvent dataclass."""
         event_dict = {
             "type": "click",
-            "timestamp": 1234.5,
+            "time_stamp": 1234.5,
             "client_x": 100,
             "client_y": 200,
             "button": 0,
@@ -386,7 +386,7 @@ class TestEventConversion:
         result = _convert_event_arg(event_dict)
         assert isinstance(result, MouseEvent)
         assert result.type == "click"
-        assert result.timestamp == 1234.5
+        assert result.time_stamp == 1234.5
         assert result.client_x == 100
         assert result.client_y == 200
         assert result.button == 0
@@ -396,7 +396,7 @@ class TestEventConversion:
         """Keyboard event dict becomes KeyboardEvent dataclass."""
         event_dict = {
             "type": "keydown",
-            "timestamp": 5678.9,
+            "time_stamp": 5678.9,
             "key": "Enter",
             "code": "Enter",
             "ctrl_key": True,
@@ -428,37 +428,34 @@ class TestEventConversion:
         assert isinstance(result, DragEvent)
         assert result.client_x == 10
         assert result.client_y == 20
-        assert isinstance(result.data_transfer, DragDataTransfer)
+        assert isinstance(result.data_transfer, DataTransfer)
         assert result.data_transfer is not None
         assert result.data_transfer.drop_effect == "copy"
         assert result.data_transfer.effect_allowed == "all"
         assert result.data_transfer.types == ["text/plain"]
         assert len(result.data_transfer.files) == 1
-        assert isinstance(result.data_transfer.files[0], DragDataTransferFile)
+        assert isinstance(result.data_transfer.files[0], File)
         assert result.data_transfer.files[0].name == "a.txt"
 
     def test_change_event_converted(self) -> None:
         """Change event dict becomes ChangeEvent dataclass."""
         event_dict = {
             "type": "change",
-            "timestamp": 9999.0,
-            "value": "hello",
-            "checked": False,
+            "time_stamp": 9999.0,
         }
         result = _convert_event_arg(event_dict)
         assert isinstance(result, ChangeEvent)
         assert result.type == "change"
-        assert result.value == "hello"
-        assert result.checked is False
+        assert result.time_stamp == 9999.0
 
     def test_unknown_event_type_fallback(self) -> None:
-        """Unknown event type falls back to BaseEvent."""
+        """Unknown event type falls back to Event."""
         event_dict = {
             "type": "custom-event",
-            "timestamp": 1000.0,
+            "time_stamp": 1000.0,
         }
         result = _convert_event_arg(event_dict)
-        assert isinstance(result, BaseEvent)
+        assert isinstance(result, Event)
         assert result.type == "custom-event"
 
     def test_non_event_dict_unchanged(self) -> None:
@@ -523,7 +520,7 @@ class TestProcessCallbackArgs:
         raw_args = [
             "string",
             42,
-            {"type": "change", "value": "test"},
+            {"type": "change", "time_stamp": 100.0},
             {"__kwargs__": True, "opt": True},
         ]
         args, kwargs = _process_callback_args(raw_args)
@@ -531,7 +528,7 @@ class TestProcessCallbackArgs:
         assert args[0] == "string"
         assert args[1] == 42
         assert isinstance(args[2], ChangeEvent)
-        assert args[2].value == "test"
+        assert args[2].time_stamp == 100.0
         assert kwargs == {"opt": True}
 
 
@@ -557,7 +554,7 @@ class TestAsyncCallbackDetection:
     def test_async_callback_with_args(self) -> None:
         """Async callback with args is correctly identified."""
 
-        async def async_with_args(event: ChangeEvent, *, option: bool = False) -> None:
+        async def async_with_args(event: Event, *, option: bool = False) -> None:
             pass
 
         assert inspect.iscoroutinefunction(async_with_args)

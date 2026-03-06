@@ -154,6 +154,11 @@ describe("processProps", () => {
       currentTarget: document.createElement("button"),
       preventDefault: vi.fn(),
       timeStamp: 1234,
+      bubbles: true,
+      cancelable: false,
+      defaultPrevented: false,
+      eventPhase: 0,
+      isTrusted: false,
     };
 
     (result.on_click as (e: unknown) => void)(mockEvent);
@@ -163,11 +168,53 @@ describe("processProps", () => {
       [
         expect.objectContaining({
           type: "click",
-          timestamp: 1234,
+          time_stamp: 1234,
+          bubbles: true,
+          cancelable: false,
+          default_prevented: false,
+          event_phase: 0,
+          is_trusted: false,
           client_x: 15,
           client_y: 25,
           alt_key: false,
           ctrl_key: false,
+        }),
+      ]
+    );
+  });
+
+  it("serializes input events with source-native fields", () => {
+    const onEvent = vi.fn();
+    const props = {
+      on_input: { __callback__: "cb_input" },
+    };
+
+    const result = processProps(props, onEvent);
+    const nativeEvent = new InputEvent("input", {
+      data: "x",
+      bubbles: true,
+    });
+    const input = document.createElement("input");
+    const mockEvent = {
+      type: "input",
+      nativeEvent,
+      target: input,
+      currentTarget: input,
+      preventDefault: vi.fn(),
+      timeStamp: 4567,
+    };
+
+    (result.on_input as (e: unknown) => void)(mockEvent);
+
+    expect(onEvent).toHaveBeenCalledWith(
+      "cb_input",
+      [
+        expect.objectContaining({
+          type: "input",
+          time_stamp: 4567,
+          data: "x",
+          is_composing: false,
+          input_type: "",
         }),
       ]
     );

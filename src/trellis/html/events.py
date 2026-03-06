@@ -7,49 +7,50 @@ from dataclasses import dataclass, field
 
 __all__ = [
     "EVENT_TYPE_MAP",
-    "BaseEvent",
     "ChangeEvent",
     "ChangeEventHandler",
-    "ChangeHandler",
-    "DragDataTransfer",
-    "DragDataTransferFile",
+    "DataTransfer",
     "DragEvent",
     "DragEventHandler",
-    "DragHandler",
+    "Event",
     "EventHandler",
+    "File",
     "FocusEvent",
     "FocusEventHandler",
-    "FocusHandler",
-    "FormEvent",
-    "FormEventHandler",
-    "FormHandler",
     "InputEvent",
     "InputEventHandler",
-    "InputHandler",
     "KeyboardEvent",
     "KeyboardEventHandler",
-    "KeyboardHandler",
     "MouseEvent",
     "MouseEventHandler",
-    "MouseHandler",
-    "ScrollEvent",
-    "ScrollEventHandler",
-    "ScrollHandler",
+    "SubmitEvent",
+    "SubmitEventHandler",
+    "UIEvent",
+    "UIEventHandler",
     "WheelEvent",
     "WheelEventHandler",
-    "WheelHandler",
     "get_event_class",
 ]
 
 
 @dataclass(frozen=True)
-class BaseEvent:
+class Event:
     type: str = ""
-    timestamp: float = 0.0
+    time_stamp: float = 0.0
+    bubbles: bool = False
+    cancelable: bool = False
+    default_prevented: bool = False
+    event_phase: int = 0
+    is_trusted: bool = False
 
 
 @dataclass(frozen=True)
-class MouseEvent(BaseEvent):
+class UIEvent(Event):
+    detail: int = 0
+
+
+@dataclass(frozen=True)
+class MouseEvent(UIEvent):
     client_x: int = 0
     client_y: int = 0
     screen_x: int = 0
@@ -63,45 +64,38 @@ class MouseEvent(BaseEvent):
 
 
 @dataclass(frozen=True)
-class KeyboardEvent(BaseEvent):
+class KeyboardEvent(UIEvent):
     key: str = ""
     code: str = ""
+    location: int = 0
     alt_key: bool = False
     ctrl_key: bool = False
     shift_key: bool = False
     meta_key: bool = False
     repeat: bool = False
+    is_composing: bool = False
 
 
 @dataclass(frozen=True)
-class FocusEvent(BaseEvent):
+class FocusEvent(Event):
     pass
 
 
 @dataclass(frozen=True)
-class FormEvent(BaseEvent):
+class SubmitEvent(Event):
     pass
 
 
 @dataclass(frozen=True)
-class InputEvent(BaseEvent):
+class InputEvent(Event):
     data: str | None = None
+    is_composing: bool = False
+    input_type: str = ""
 
 
 @dataclass(frozen=True)
-class ChangeEvent(BaseEvent):
-    value: str = ""
-    checked: bool = False
-
-
-@dataclass(frozen=True)
-class ScrollEvent(BaseEvent):
-    scroll_top: float = 0.0
-    scroll_left: float = 0.0
-    scroll_width: float = 0.0
-    scroll_height: float = 0.0
-    client_width: float = 0.0
-    client_height: float = 0.0
+class ChangeEvent(Event):
+    pass
 
 
 @dataclass(frozen=True)
@@ -113,49 +107,38 @@ class WheelEvent(MouseEvent):
 
 
 @dataclass(frozen=True)
-class DragDataTransferFile:
+class File:
     name: str = ""
     size: int = 0
     type: str = ""
 
 
 @dataclass(frozen=True)
-class DragDataTransfer:
+class DataTransfer:
     drop_effect: str = "none"
     effect_allowed: str = "none"
     types: list[str] = field(default_factory=list)
-    files: list[DragDataTransferFile] = field(default_factory=list)
+    files: list[File] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
 class DragEvent(MouseEvent):
-    data_transfer: DragDataTransfer | None = None
+    data_transfer: DataTransfer | None = None
 
 
-EventHandler = Callable[[], None] | Callable[[], Awaitable[None]]
-
+EventHandler = Callable[[Event], None] | Callable[[Event], Awaitable[None]]
+UIEventHandler = Callable[[UIEvent], None] | Callable[[UIEvent], Awaitable[None]]
 MouseEventHandler = Callable[[MouseEvent], None] | Callable[[MouseEvent], Awaitable[None]]
 KeyboardEventHandler = Callable[[KeyboardEvent], None] | Callable[[KeyboardEvent], Awaitable[None]]
 FocusEventHandler = Callable[[FocusEvent], None] | Callable[[FocusEvent], Awaitable[None]]
-FormEventHandler = Callable[[FormEvent], None] | Callable[[FormEvent], Awaitable[None]]
+SubmitEventHandler = Callable[[SubmitEvent], None] | Callable[[SubmitEvent], Awaitable[None]]
 InputEventHandler = Callable[[InputEvent], None] | Callable[[InputEvent], Awaitable[None]]
 ChangeEventHandler = Callable[[ChangeEvent], None] | Callable[[ChangeEvent], Awaitable[None]]
-ScrollEventHandler = Callable[[ScrollEvent], None] | Callable[[ScrollEvent], Awaitable[None]]
 WheelEventHandler = Callable[[WheelEvent], None] | Callable[[WheelEvent], Awaitable[None]]
 DragEventHandler = Callable[[DragEvent], None] | Callable[[DragEvent], Awaitable[None]]
 
-MouseHandler = EventHandler | MouseEventHandler
-KeyboardHandler = EventHandler | KeyboardEventHandler
-FocusHandler = EventHandler | FocusEventHandler
-FormHandler = EventHandler | FormEventHandler
-InputHandler = EventHandler | InputEventHandler
-ChangeHandler = EventHandler | ChangeEventHandler
-ScrollHandler = EventHandler | ScrollEventHandler
-WheelHandler = EventHandler | WheelEventHandler
-DragHandler = EventHandler | DragEventHandler
 
-
-EVENT_TYPE_MAP: dict[str, type[BaseEvent]] = {
+EVENT_TYPE_MAP: dict[str, type[Event]] = {
     "blur": FocusEvent,
     "change": ChangeEvent,
     "click": MouseEvent,
@@ -179,11 +162,11 @@ EVENT_TYPE_MAP: dict[str, type[BaseEvent]] = {
     "mouseout": MouseEvent,
     "mouseover": MouseEvent,
     "mouseup": MouseEvent,
-    "scroll": ScrollEvent,
-    "submit": FormEvent,
+    "scroll": UIEvent,
+    "submit": SubmitEvent,
     "wheel": WheelEvent,
 }
 
 
-def get_event_class(event_type: str) -> type[BaseEvent]:
-    return EVENT_TYPE_MAP.get(event_type, BaseEvent)
+def get_event_class(event_type: str) -> type[Event]:
+    return EVENT_TYPE_MAP.get(event_type, Event)

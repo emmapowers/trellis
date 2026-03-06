@@ -11,7 +11,7 @@ from typing import Literal, overload
 from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html._generated_runtime import _A, Img
 from trellis.html.base import Style
-from trellis.html.events import KeyboardHandler, MouseHandler
+from trellis.html.events import KeyboardEventHandler, MouseEventHandler
 from trellis.routing.state import router
 
 __all__ = [
@@ -86,11 +86,11 @@ def _make_a(
     class_name: str | None,
     style: Style | None,
     id: str | None,
-    on_click: MouseHandler | None,
-    on_double_click: MouseHandler | None,
-    on_context_menu: MouseHandler | None,
-    on_key_down: KeyboardHandler | None,
-    on_key_up: KeyboardHandler | None,
+    on_click: MouseEventHandler | None,
+    on_double_click: MouseEventHandler | None,
+    on_context_menu: MouseEventHandler | None,
+    on_key_down: KeyboardEventHandler | None,
+    on_key_up: KeyboardEventHandler | None,
     use_router: bool,
     data: Mapping[str, DataValue] | None,
 ) -> Element:
@@ -147,11 +147,11 @@ def A(
     class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
+    on_click: MouseEventHandler | None = None,
+    on_double_click: MouseEventHandler | None = None,
+    on_context_menu: MouseEventHandler | None = None,
+    on_key_down: KeyboardEventHandler | None = None,
+    on_key_up: KeyboardEventHandler | None = None,
     use_router: bool = True,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
@@ -167,11 +167,11 @@ def A(
     class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
+    on_click: MouseEventHandler | None = None,
+    on_double_click: MouseEventHandler | None = None,
+    on_context_menu: MouseEventHandler | None = None,
+    on_key_down: KeyboardEventHandler | None = None,
+    on_key_up: KeyboardEventHandler | None = None,
     use_router: bool = True,
     data: Mapping[str, DataValue] | None = None,
 ) -> ContainerElement: ...
@@ -188,11 +188,11 @@ def A(
     class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
+    on_click: MouseEventHandler | None = None,
+    on_double_click: MouseEventHandler | None = None,
+    on_context_menu: MouseEventHandler | None = None,
+    on_key_down: KeyboardEventHandler | None = None,
+    on_key_up: KeyboardEventHandler | None = None,
     use_router: bool = True,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element | ContainerElement:

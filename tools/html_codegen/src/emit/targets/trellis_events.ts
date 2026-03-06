@@ -12,41 +12,20 @@ export interface TrellisModulePayload {
   content: string;
 }
 
-const EVENTS_ALL_EXPORTS = [
-  "EVENT_TYPE_MAP",
-  "BaseEvent",
-  "ChangeEvent",
-  "ChangeEventHandler",
-  "ChangeHandler",
-  "DragDataTransfer",
-  "DragDataTransferFile",
-  "DragEvent",
-  "DragEventHandler",
-  "DragHandler",
-  "EventHandler",
-  "FocusEvent",
-  "FocusEventHandler",
-  "FocusHandler",
-  "FormEvent",
-  "FormEventHandler",
-  "FormHandler",
-  "InputEvent",
-  "InputEventHandler",
-  "InputHandler",
-  "KeyboardEvent",
-  "KeyboardEventHandler",
-  "KeyboardHandler",
-  "MouseEvent",
-  "MouseEventHandler",
-  "MouseHandler",
-  "ScrollEvent",
-  "ScrollEventHandler",
-  "ScrollHandler",
-  "WheelEvent",
-  "WheelEventHandler",
-  "WheelHandler",
-  "get_event_class",
-] as const;
+function exported_names(document: IrDocument): string[] {
+  const names = new Set<string>();
+  for (const dataclass_def of document.dataclasses) {
+    names.add(dataclass_def.name);
+  }
+  for (const event_handler of document.event_handlers) {
+    names.add(event_handler.typed_handler_name);
+  }
+  const middle_names = [...names].sort(
+    (left, right) =>
+      left.toLowerCase().localeCompare(right.toLowerCase()) || left.localeCompare(right),
+  );
+  return ["EVENT_TYPE_MAP", ...middle_names, "get_event_class"];
+}
 
 function is_float_type(field: DataclassFieldDef): boolean {
   return (
@@ -106,10 +85,6 @@ function render_typed_handler(handler: EventHandlerDef): string {
   return `${handler.typed_handler_name} = Callable[[${handler.payload_name}], None] | Callable[[${handler.payload_name}], Awaitable[None]]`;
 }
 
-function render_handler_union(handler: EventHandlerDef): string {
-  return `${handler.handler_name} = EventHandler | ${handler.typed_handler_name}`;
-}
-
 function unique_event_payload_map(events: EventDef[]): Array<[string, string]> {
   const payloads = new Map<string, string>();
   for (const event of events) {
@@ -121,10 +96,10 @@ function unique_event_payload_map(events: EventDef[]): Array<[string, string]> {
 function emit_trellis_events_module(document: IrDocument): string {
   const rendered_dataclasses = document.dataclasses.map((entry) => render_dataclass(entry)).join("\n\n\n");
   const typed_handlers = document.event_handlers.map((entry) => render_typed_handler(entry)).join("\n");
-  const handler_unions = document.event_handlers.map((entry) => render_handler_union(entry)).join("\n");
   const event_map_lines = unique_event_payload_map(document.events).map(
     ([dom_event_name, payload_name]) => `    "${dom_event_name}": ${payload_name},`,
   );
+  const root_event_name = document.dataclasses.find((entry) => !entry.base)?.name ?? "Event";
 
   return `"""Generated typed event definitions for HTML elements."""
 
@@ -134,27 +109,23 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 
 __all__ = [
-${EVENTS_ALL_EXPORTS.map((name) => `    "${name}",`).join("\n")}
+${exported_names(document).map((name) => `    "${name}",`).join("\n")}
 ]
 
 
 ${rendered_dataclasses}
 
 
-EventHandler = Callable[[], None] | Callable[[], Awaitable[None]]
-
 ${typed_handlers}
 
-${handler_unions}
 
-
-EVENT_TYPE_MAP: dict[str, type[BaseEvent]] = {
+EVENT_TYPE_MAP: dict[str, type[${root_event_name}]] = {
 ${event_map_lines.join("\n")}
 }
 
 
-def get_event_class(event_type: str) -> type[BaseEvent]:
-    return EVENT_TYPE_MAP.get(event_type, BaseEvent)
+def get_event_class(event_type: str) -> type[${root_event_name}]:
+    return EVENT_TYPE_MAP.get(event_type, ${root_event_name})
 `.trimEnd() + "\n";
 }
 

@@ -57,9 +57,6 @@ function union(...options: TypeExpr[]): TypeExpr {
 }
 
 function to_snake_case(name: string): string {
-  if (name === "timeStamp") {
-    return "timestamp";
-  }
   return name
     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
     .replace(/-/g, "_")
@@ -76,17 +73,20 @@ function parse_scalar_idl_type(type_name: string): TypeExpr | undefined {
   if (["double", "float", "unrestricted double", "unrestricted float"].includes(type_name)) {
     return primitive("float");
   }
+  if (type_name === "DOMHighResTimeStamp") {
+    return primitive("float");
+  }
   if (type_name === "boolean") {
     return primitive("bool");
   }
   if (type_name === "DataTransfer") {
-    return reference("DragDataTransfer");
+    return reference("DataTransfer");
   }
   if (type_name === "File") {
-    return reference("DragDataTransferFile");
+    return reference("File");
   }
   if (type_name === "FileList") {
-    return { kind: "array", item: reference("DragDataTransferFile") };
+    return { kind: "array", item: reference("File") };
   }
   return undefined;
 }

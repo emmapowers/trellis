@@ -43,6 +43,54 @@ function input_type_alias(document: IrDocument): string {
   return ["InputType = Literal[", ...options, "]"].join("\n");
 }
 
+function collect_references(type_expr: TypeExpr, names: Set<string>): void {
+  if (type_expr.kind === "reference") {
+    names.add(type_expr.name);
+    return;
+  }
+  if (type_expr.kind === "nullable" || type_expr.kind === "array") {
+    collect_references(type_expr.item, names);
+    return;
+  }
+  if (type_expr.kind === "union") {
+    for (const option of type_expr.options) {
+      collect_references(option, names);
+    }
+    return;
+  }
+  if (type_expr.kind === "callable") {
+    for (const param of type_expr.params) {
+      collect_references(param, names);
+    }
+    collect_references(type_expr.returns, names);
+    return;
+  }
+  if (type_expr.kind === "object") {
+    for (const field of Object.values(type_expr.fields)) {
+      collect_references(field, names);
+    }
+  }
+}
+
+function event_handler_imports(document: IrDocument): string[] {
+  const attributes_by_id = index_attributes(document.attributes);
+  const names = new Set<string>();
+
+  for (const element of document.elements.filter((entry) => entry.namespace === "html")) {
+    for (const attribute_id of element.attributes) {
+      const attribute = attributes_by_id.get(attribute_id);
+      if (!attribute) {
+        continue;
+      }
+      collect_references(attribute.type_expr, names);
+    }
+  }
+
+  return [...names]
+    .filter((name) => name.endsWith("Handler"))
+    .sort((left, right) => left.localeCompare(right));
+}
+
 function parameter_annotation(element: ElementDef, attribute: AttributeDef): string {
   if (element.tag_name === "input" && attribute.name_python === "type") {
     return "InputType";
@@ -117,10 +165,23 @@ function render_element_function(
 
 function emit_trellis_html_module(document: IrDocument): string {
   const attributes_by_id = index_attributes(document.attributes);
+  const handler_imports = event_handler_imports(document);
   const rendered_elements = document.elements
     .filter((element) => element.namespace === "html")
     .map((element) => render_element_function(element, attributes_by_id))
     .join("\n\n\n");
+
+  const events_import_block =
+    handler_imports.length === 0
+      ? ""
+      : `from trellis.html.events import (
+${handler_imports.map((name) => `    ${name},`).join("\n")}
+)`;
+  const first_party_imports = [
+    "from trellis.core.rendering.element import Element",
+    "from trellis.html.base import Style, html_element",
+    ...(events_import_block ? [events_import_block] : []),
+  ].join("\n");
 
   return `"""Generated runtime-aligned HTML wrappers.
 
@@ -133,18 +194,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Literal
 
-from trellis.core.rendering.element import Element
-from trellis.html.base import Style, html_element
-from trellis.html.events import (
-    ChangeHandler,
-    DragHandler,
-    FocusHandler,
-    InputHandler,
-    KeyboardHandler,
-    MouseHandler,
-    ScrollHandler,
-    WheelHandler,
-)
+${first_party_imports}
 
 __all__ = [
     "_A",

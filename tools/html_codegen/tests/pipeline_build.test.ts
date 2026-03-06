@@ -12,9 +12,18 @@ describe("pipeline build", () => {
     expect(ir.attributes.some((attribute) => attribute.name_python === "src")).toBe(true);
     expect(ir.attributes.some((attribute) => attribute.name_python === "on_click")).toBe(true);
     expect(ir.events.some((event) => event.name_python === "on_click")).toBe(true);
-    expect(ir.event_handlers.some((event_handler) => event_handler.handler_name === "MouseHandler")).toBe(
+    expect(
+      ir.event_handlers.some((event_handler) => event_handler.handler_name === "MouseEventHandler"),
+    ).toBe(true);
+    expect(ir.dataclasses.some((dataclass_def) => dataclass_def.name === "Event")).toBe(true);
+    expect(ir.dataclasses.some((dataclass_def) => dataclass_def.name === "UIEvent")).toBe(true);
+    expect(ir.dataclasses.some((dataclass_def) => dataclass_def.name === "SubmitEvent")).toBe(
       true,
     );
+    expect(ir.dataclasses.some((dataclass_def) => dataclass_def.name === "DataTransfer")).toBe(
+      true,
+    );
+    expect(ir.dataclasses.some((dataclass_def) => dataclass_def.name === "File")).toBe(true);
     expect(ir.dataclasses.some((dataclass_def) => dataclass_def.name === "MouseEvent")).toBe(true);
     expect(ir.dataclasses.some((dataclass_def) => dataclass_def.name === "DragEvent")).toBe(true);
 
@@ -26,7 +35,7 @@ describe("pipeline build", () => {
     expect(click_event).toMatchObject({
       dom_event_name: "click",
       payload_name: "MouseEvent",
-      handler_name: "MouseHandler",
+      handler_name: "MouseEventHandler",
     });
 
     const input_type = ir.attributes.find((attribute) => attribute.id === "html:input:type");
