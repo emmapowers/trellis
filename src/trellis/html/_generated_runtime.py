@@ -1,15 +1,15 @@
 """Generated runtime-aligned HTML wrappers.
 
 This module is intentionally scoped to the first generated HTML slice:
-A, Div, Img, and Input.
+_A, Div, Img, and Input.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal, overload
+from typing import Literal
 
-from trellis.core.rendering.element import ContainerElement, Element
+from trellis.core.rendering.element import Element
 from trellis.html.base import Style, html_element
 from trellis.html.events import (
     ChangeHandler,
@@ -21,10 +21,9 @@ from trellis.html.events import (
     ScrollHandler,
     WheelHandler,
 )
-from trellis.routing.state import router
 
 __all__ = [
-    "A",
+    "_A",
     "Div",
     "Img",
     "Input",
@@ -57,55 +56,25 @@ InputType = Literal[
 ]
 
 
-def _is_relative_url(href: str) -> bool:
-    """Check if a URL should use client-side router navigation."""
-    if href.startswith(("//", "#", "?")):
-        return False
-
-    non_relative_prefixes = (
-        "http://",
-        "https://",
-        "mailto:",
-        "tel:",
-        "javascript:",
-        "data:",
-        "file:",
-        "ftp://",
-    )
-    if href.startswith(non_relative_prefixes):
-        return False
-
-    colon_pos = href.find(":")
-    if colon_pos > 0:
-        before_colon = href[:colon_pos]
-        if (
-            before_colon.isascii()
-            and before_colon.replace("+", "").replace("-", "").replace(".", "").isalnum()
-        ):
-            after_colon = href[colon_pos + 1 :]
-            if after_colon.startswith("//") or not after_colon[:1].isdigit():
-                return False
-
-    return True
-
-
-@html_element("img")
-def Img(
+@html_element("a", is_container=True, name="A")
+def _A(
     *,
-    src: str,
-    alt: str = "",
-    width: int | str | None = None,
-    height: int | str | None = None,
-    loading: str | None = None,
+    _text: str | None = None,
+    href: str | None = None,
+    target: Literal["_self", "_blank", "_parent", "_top"] | None = None,
+    rel: str | None = None,
+    download: str | bool | None = None,
     class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
     on_click: MouseHandler | None = None,
     on_double_click: MouseHandler | None = None,
     on_context_menu: MouseHandler | None = None,
+    on_key_down: KeyboardHandler | None = None,
+    on_key_up: KeyboardHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """A generated image element."""
+    """Generated raw a binding."""
     ...
 
 
@@ -133,7 +102,27 @@ def Div(
     on_drop: DragHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """A generated div element."""
+    """Generated raw div binding."""
+    ...
+
+
+@html_element("img")
+def Img(
+    *,
+    src: str,
+    alt: str | None = None,
+    width: int | float | str | None = None,
+    height: int | float | str | None = None,
+    loading: Literal["eager", "lazy"] | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    on_click: MouseHandler | None = None,
+    on_double_click: MouseHandler | None = None,
+    on_context_menu: MouseHandler | None = None,
+    data: Mapping[str, DataValue] | None = None,
+) -> Element:
+    """Generated raw img binding."""
     ...
 
 
@@ -141,22 +130,22 @@ def Div(
 def Input(
     *,
     type: InputType = "text",
-    value: str | None = None,
+    value: str | list[str] | int | float | None = None,
     placeholder: str | None = None,
-    disabled: bool = False,
-    read_only: bool = False,
+    disabled: bool | None = None,
+    read_only: bool | None = None,
     name: str | None = None,
     checked: bool | None = None,
-    required: bool = False,
-    min: str | int | float | None = None,
-    max: str | int | float | None = None,
-    step: str | int | float | None = None,
+    required: bool | None = None,
+    min: int | float | str | None = None,
+    max: int | float | str | None = None,
+    step: int | float | str | None = None,
     pattern: str | None = None,
-    max_length: int | None = None,
-    auto_complete: str | None = None,
-    auto_focus: bool = False,
+    max_length: int | float | None = None,
+    auto_complete: Literal["", "off", "on"] | None = None,
+    auto_focus: bool | None = None,
     accept: str | None = None,
-    multiple: bool = False,
+    multiple: bool | None = None,
     on_change: ChangeHandler | None = None,
     on_input: InputHandler | None = None,
     on_focus: FocusHandler | None = None,
@@ -168,165 +157,5 @@ def Input(
     id: str | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """A generated input element."""
+    """Generated raw input binding."""
     ...
-
-
-@html_element("a", is_container=True, name="A")
-def _A(
-    *,
-    _text: str | None = None,
-    href: str | None = None,
-    target: str | None = None,
-    rel: str | None = None,
-    download: str | bool | None = None,
-    class_name: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
-    data: Mapping[str, DataValue] | None = None,
-) -> Element:
-    """A generated anchor element."""
-    ...
-
-
-def _make_a(
-    text: str | None,
-    *,
-    href: str | None,
-    target: str | None,
-    rel: str | None,
-    download: str | bool | None,
-    class_name: str | None,
-    style: Style | None,
-    id: str | None,
-    on_click: MouseHandler | None,
-    on_double_click: MouseHandler | None,
-    on_context_menu: MouseHandler | None,
-    on_key_down: KeyboardHandler | None,
-    on_key_up: KeyboardHandler | None,
-    use_router: bool,
-    data: Mapping[str, DataValue] | None,
-) -> Element:
-    """Shared implementation for generated A() overloads."""
-    effective_onclick = on_click
-    effective_data = dict(data) if data is not None else None
-    if (
-        href
-        and on_click is None
-        and use_router
-        and target != "_blank"
-        and (download is None or download is False)
-        and _is_relative_url(href)
-    ):
-        nav_href = href
-
-        async def router_click(_event: object) -> None:
-            await router().navigate(nav_href)
-
-        effective_onclick = router_click
-        if effective_data is None:
-            effective_data = {}
-        effective_data["trellis-router-link"] = "true"
-
-    return _A(
-        _text=text,
-        href=href,
-        target=target,
-        rel=rel,
-        download=download,
-        class_name=class_name,
-        style=style,
-        id=id,
-        on_click=effective_onclick,
-        on_double_click=on_double_click,
-        on_context_menu=on_context_menu,
-        on_key_down=on_key_down,
-        on_key_up=on_key_up,
-        data=effective_data,
-    )
-
-
-@overload
-def A(
-    text: str,
-    /,
-    *,
-    href: str | None = None,
-    target: str | None = None,
-    rel: str | None = None,
-    download: str | bool | None = None,
-    class_name: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
-    use_router: bool = True,
-    data: Mapping[str, DataValue] | None = None,
-) -> Element: ...
-
-
-@overload
-def A(
-    *,
-    href: str | None = None,
-    target: str | None = None,
-    rel: str | None = None,
-    download: str | bool | None = None,
-    class_name: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
-    use_router: bool = True,
-    data: Mapping[str, DataValue] | None = None,
-) -> ContainerElement: ...
-
-
-def A(
-    text: str | None = None,
-    /,
-    *,
-    href: str | None = None,
-    target: str | None = None,
-    rel: str | None = None,
-    download: str | bool | None = None,
-    class_name: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
-    use_router: bool = True,
-    data: Mapping[str, DataValue] | None = None,
-) -> Element | ContainerElement:
-    """A generated anchor element with router-aware relative href handling."""
-    return _make_a(
-        text,
-        href=href,
-        target=target,
-        rel=rel,
-        download=download,
-        class_name=class_name,
-        style=style,
-        id=id,
-        on_click=on_click,
-        on_double_click=on_double_click,
-        on_context_menu=on_context_menu,
-        on_key_down=on_key_down,
-        on_key_up=on_key_up,
-        use_router=use_router,
-        data=data,
-    )

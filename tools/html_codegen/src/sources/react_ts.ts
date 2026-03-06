@@ -10,6 +10,118 @@ export interface ReactSurface {
   elements: Map<string, ReactElementSurface>;
 }
 
+interface InterfaceDef {
+  extends_names: string[];
+  properties: Map<string, { optional: boolean; type_string: string }>;
+}
+
+type AliasMap = Map<string, string>;
+
+const EVENT_HANDLER_TYPES = new Map<string, string>([
+  ["onBlur", "FocusHandler"],
+  ["onChange", "ChangeHandler"],
+  ["onClick", "MouseHandler"],
+  ["onContextMenu", "MouseHandler"],
+  ["onDoubleClick", "MouseHandler"],
+  ["onDrag", "DragHandler"],
+  ["onDragEnd", "DragHandler"],
+  ["onDragEnter", "DragHandler"],
+  ["onDragLeave", "DragHandler"],
+  ["onDragOver", "DragHandler"],
+  ["onDragStart", "DragHandler"],
+  ["onDrop", "DragHandler"],
+  ["onFocus", "FocusHandler"],
+  ["onInput", "InputHandler"],
+  ["onKeyDown", "KeyboardHandler"],
+  ["onKeyUp", "KeyboardHandler"],
+  ["onMouseEnter", "MouseHandler"],
+  ["onMouseLeave", "MouseHandler"],
+  ["onScroll", "ScrollHandler"],
+  ["onWheel", "WheelHandler"],
+]);
+
+function primitive(name: "str" | "int" | "float" | "bool" | "none"): TypeExpr {
+  return { kind: "primitive", name };
+}
+
+function nullable(item: TypeExpr): TypeExpr {
+  return { kind: "nullable", item };
+}
+
+function reference(name: string): TypeExpr {
+  return { kind: "reference", name };
+}
+
+function union(...options: TypeExpr[]): TypeExpr {
+  return { kind: "union", options };
+}
+
+function normalize_ws(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function strip_comments(value: string): string {
+  return value
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/.*$/gm, "");
+}
+
+function split_top_level(value: string, delimiter: string): string[] {
+  const parts: string[] = [];
+  let depth_paren = 0;
+  let depth_bracket = 0;
+  let depth_brace = 0;
+  let current = "";
+
+  for (let index = 0; index < value.length; index += 1) {
+    const char = value[index];
+    if (char === "(") depth_paren += 1;
+    if (char === ")") depth_paren -= 1;
+    if (char === "[") depth_bracket += 1;
+    if (char === "]") depth_bracket -= 1;
+    if (char === "{") depth_brace += 1;
+    if (char === "}") depth_brace -= 1;
+
+    if (
+      char === delimiter &&
+      depth_paren === 0 &&
+      depth_bracket === 0 &&
+      depth_brace === 0
+    ) {
+      const part = current.trim();
+      if (part) {
+        parts.push(part);
+      }
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  const trailing = current.trim();
+  if (trailing) {
+    parts.push(trailing);
+  }
+
+  return parts;
+}
+
+function extract_interface_header(source: string, interface_name: string): string | undefined {
+  const marker = `interface ${interface_name}`;
+  const start = source.indexOf(marker);
+  if (start === -1) {
+    return undefined;
+  }
+
+  const open_brace = source.indexOf("{", start);
+  if (open_brace === -1) {
+    return undefined;
+  }
+
+  return source.slice(start, open_brace);
+}
+
 function extract_interface_block(source: string, interface_name: string): string {
   const marker = `interface ${interface_name}`;
   const start = source.indexOf(marker);
@@ -39,6 +151,72 @@ function extract_interface_block(source: string, interface_name: string): string
   return "";
 }
 
+function extract_interface_names(header: string | undefined): string[] {
+  if (!header || !header.includes("extends")) {
+    return [];
+  }
+
+  const extends_block = header.slice(header.indexOf("extends") + "extends".length);
+  return split_top_level(extends_block, ",")
+    .map((entry) => entry.replace(/^React\./, "").replace(/<[\s\S]*>/g, "").trim())
+    .filter(Boolean);
+}
+
+function extract_interface_properties(
+  block: string,
+): Map<string, { optional: boolean; type_string: string }> {
+  const properties = new Map<string, { optional: boolean; type_string: string }>();
+  const stripped = strip_comments(block);
+  for (const statement of split_top_level(stripped, ";")) {
+    const entry = normalize_ws(statement);
+    if (!entry || entry.startsWith("[") || entry.includes("(") && entry.indexOf("(") < entry.indexOf(":")) {
+      continue;
+    }
+
+    const match = entry.match(/^([A-Za-z_$][A-Za-z0-9_$]*)(\?)?:\s*([\s\S]+)$/);
+    if (!match) {
+      continue;
+    }
+    properties.set(match[1], {
+      optional: match[2] === "?",
+      type_string: match[3].trim(),
+    });
+  }
+
+  return properties;
+}
+
+function collect_interface_defs(
+  source: string,
+  interface_names: Iterable<string>,
+): Map<string, InterfaceDef> {
+  const defs = new Map<string, InterfaceDef>();
+  const queue = [...interface_names];
+
+  while (queue.length > 0) {
+    const interface_name = queue.shift();
+    if (!interface_name || defs.has(interface_name)) {
+      continue;
+    }
+
+    const header = extract_interface_header(source, interface_name);
+    const block = extract_interface_block(source, interface_name);
+    if (!header || !block) {
+      continue;
+    }
+
+    const extends_names = extract_interface_names(header);
+    defs.set(interface_name, {
+      extends_names,
+      properties: extract_interface_properties(block),
+    });
+
+    queue.push(...extends_names);
+  }
+
+  return defs;
+}
+
 function extract_dom_event_names(source: string): Set<string> {
   const block = extract_interface_block(source, "DOMAttributes<T>");
   const event_names = new Set<string>();
@@ -51,65 +229,220 @@ function extract_dom_event_names(source: string): Set<string> {
   return event_names;
 }
 
-function extract_intrinsic_elements(source: string): string[] {
+function extract_intrinsic_interfaces(source: string): Map<string, string> {
   const block = extract_interface_block(source, "IntrinsicElements");
-  const element_names: string[] = [];
-  const element_regex = /^\s*([a-z][A-Za-z0-9_-]*)\??:\s*/gm;
+  const element_interfaces = new Map<string, string>();
+  const element_regex =
+    /^\s*([a-z][A-Za-z0-9_-]*)\??:\s*React\.DetailedHTMLProps<React\.([A-Za-z0-9_]+)</gm;
   let match = element_regex.exec(block);
   while (match) {
-    element_names.push(match[1]);
+    element_interfaces.set(match[1], match[2]);
     match = element_regex.exec(block);
   }
-  return element_names;
+  return element_interfaces;
 }
 
-function extract_string_literal_union(
-  source: string,
+function extract_alias_sources(source: string): AliasMap {
+  const aliases = new Map<string, string>();
+  const alias_regex = /type\s+([A-Za-z0-9_]+)\s*=([\s\S]*?);/g;
+
+  let match = alias_regex.exec(source);
+  while (match) {
+    aliases.set(match[1], match[2].trim());
+    match = alias_regex.exec(source);
+  }
+
+  return aliases;
+}
+
+function map_event_handler_type(prop_name: string): TypeExpr | undefined {
+  const handler_name = EVENT_HANDLER_TYPES.get(prop_name);
+  if (!handler_name) {
+    return undefined;
+  }
+  return reference(handler_name);
+}
+
+function array_item_type(type_name: string): TypeExpr | undefined {
+  if (type_name === "string") {
+    return primitive("str");
+  }
+  return undefined;
+}
+
+function normalize_union_option(option: string): string {
+  return normalize_ws(option.replace(/^\((.*)\)$/, "$1"));
+}
+
+function resolve_alias_type(
   alias_name: string,
+  aliases: AliasMap,
+  cache: Map<string, TypeExpr | undefined>,
 ): TypeExpr | undefined {
-  const alias_regex = new RegExp(`type\\s+${alias_name}\\s*=([\\s\\S]*?);`);
-  const alias_match = source.match(alias_regex);
-  if (!alias_match) {
+  if (cache.has(alias_name)) {
+    return cache.get(alias_name);
+  }
+
+  const alias_source = aliases.get(alias_name);
+  if (!alias_source) {
     return undefined;
   }
-  const body = alias_match[1];
-  const literal_regex = /"([^"]+)"/g;
-  const options: TypeExpr[] = [];
-  let literal_match = literal_regex.exec(body);
-  while (literal_match) {
-    options.push({
+
+  // Seed the cache before recursion so self-references settle to fallback behavior.
+  cache.set(alias_name, undefined);
+  const resolved = parse_type_expr(alias_source, aliases, alias_name, cache);
+  cache.set(alias_name, resolved ?? primitive("str"));
+  return cache.get(alias_name);
+}
+
+function parse_named_type(
+  type_name: string,
+  aliases: AliasMap,
+  prop_name: string,
+  cache: Map<string, TypeExpr | undefined>,
+): TypeExpr | undefined {
+  if (prop_name === "style" && type_name === "CSSProperties") {
+    return reference("Style");
+  }
+
+  if (type_name === "string") {
+    return primitive("str");
+  }
+  if (type_name === "number") {
+    return union(primitive("int"), primitive("float"));
+  }
+  if (type_name === "boolean" || type_name === "Booleanish") {
+    return primitive("bool");
+  }
+  if (type_name === "null") {
+    return primitive("none");
+  }
+  if (type_name === "any") {
+    if (prop_name === "download") {
+      return union(primitive("str"), primitive("bool"));
+    }
+    return primitive("str");
+  }
+
+  const array_match = type_name.match(/^(?:readonly\s+)?(.+)\[\]$/);
+  if (array_match) {
+    const item = array_item_type(array_match[1].trim());
+    if (item) {
+      return { kind: "array", item };
+    }
+  }
+
+  if (aliases.has(type_name)) {
+    return resolve_alias_type(type_name, aliases, cache);
+  }
+
+  if (type_name.startsWith('"') && type_name.endsWith('"')) {
+    return {
       kind: "literal",
-      value: literal_match[1],
-    });
-    literal_match = literal_regex.exec(body);
+      value: type_name.slice(1, -1),
+    };
   }
-  if (options.length === 0) {
+
+  if (type_name.includes("=>")) {
+    return map_event_handler_type(prop_name);
+  }
+
+  if (type_name.endsWith("EventHandler") || type_name.includes("EventHandler<")) {
+    return map_event_handler_type(prop_name);
+  }
+
+  return undefined;
+}
+
+function parse_type_expr(
+  type_string: string,
+  aliases: AliasMap,
+  prop_name: string,
+  cache: Map<string, TypeExpr | undefined>,
+): TypeExpr | undefined {
+  const normalized = normalize_ws(type_string);
+  const union_parts = split_top_level(normalized, "|").map(normalize_union_option);
+  const is_nullable = union_parts.includes("undefined");
+  const filtered_parts = union_parts.filter(
+    (option) => option !== "undefined" && option !== "(string & {})" && option !== "string & {}",
+  );
+
+  const parsed_options = filtered_parts
+    .map((option) => parse_named_type(option, aliases, prop_name, cache))
+    .filter((option): option is TypeExpr => option !== undefined);
+
+  if (parsed_options.length === 0) {
     return undefined;
   }
-  return {
-    kind: "union",
-    options,
-  };
+
+  const base_expr =
+    parsed_options.length === 1 ? parsed_options[0] : union(...parsed_options);
+
+  return is_nullable ? nullable(base_expr) : base_expr;
+}
+
+function collect_interface_properties_recursive(
+  interface_name: string,
+  defs: Map<string, InterfaceDef>,
+  aliases: AliasMap,
+  properties: Map<string, TypeExpr>,
+  visited: Set<string>,
+): void {
+  if (visited.has(interface_name)) {
+    return;
+  }
+  visited.add(interface_name);
+
+  const def = defs.get(interface_name);
+  if (!def) {
+    return;
+  }
+
+  for (const parent_name of def.extends_names) {
+    collect_interface_properties_recursive(parent_name, defs, aliases, properties, visited);
+  }
+
+  for (const [prop_name, property] of def.properties) {
+    const event_handler = map_event_handler_type(prop_name);
+    if (event_handler) {
+      properties.set(prop_name, nullable(event_handler));
+      continue;
+    }
+
+    const parsed = parse_type_expr(property.type_string, aliases, prop_name, new Map());
+    if (parsed) {
+      if (property.optional && parsed.kind !== "nullable") {
+        properties.set(prop_name, nullable(parsed));
+      } else {
+        properties.set(prop_name, parsed);
+      }
+    }
+  }
 }
 
 export async function extract_react_surface(): Promise<ReactSurface> {
   const types_path = resolve_react_types_path();
   const source = await read_source(types_path);
   const global_events = extract_dom_event_names(source);
-  const intrinsic_elements = extract_intrinsic_elements(source);
-  const input_type_union = extract_string_literal_union(source, "HTMLInputTypeAttribute");
+  const intrinsic_interfaces = extract_intrinsic_interfaces(source);
+  const aliases = extract_alias_sources(source);
+  const interface_defs = collect_interface_defs(source, intrinsic_interfaces.values());
 
   const elements = new Map<string, ReactElementSurface>();
-  for (const element_name of intrinsic_elements) {
+  for (const [element_name, interface_name] of intrinsic_interfaces) {
+    const attributes = new Map<string, TypeExpr>();
+    collect_interface_properties_recursive(
+      interface_name,
+      interface_defs,
+      aliases,
+      attributes,
+      new Set<string>(),
+    );
+
     elements.set(element_name, {
-      attributes: new Map<string, TypeExpr>(),
+      attributes,
       events: new Set(global_events),
     });
-  }
-
-  const input = elements.get("input");
-  if (input && input_type_union) {
-    input.attributes.set("type", input_type_union);
   }
 
   return {

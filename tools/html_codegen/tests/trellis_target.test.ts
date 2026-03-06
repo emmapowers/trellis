@@ -4,15 +4,15 @@ import { build_trellis_html_module } from "../src/emit/targets/trellis_html.js";
 import type { IrDocument } from "../src/ir/types.js";
 
 describe("trellis target", () => {
-  it("builds a real trellis-style python module payload", () => {
+  it("builds raw generated bindings without custom link policy", () => {
     const ir: IrDocument = {
       elements: [
         {
           namespace: "html",
           tag_name: "a",
-          python_name: "A",
+          python_name: "_A",
           is_container: true,
-          attributes: [],
+          attributes: ["html:a:href", "html:global:class_name"],
           events: [],
           source: {
             winner: "react_ts",
@@ -26,7 +26,7 @@ describe("trellis target", () => {
           tag_name: "div",
           python_name: "Div",
           is_container: true,
-          attributes: [],
+          attributes: ["html:global:class_name"],
           events: [],
           source: {
             winner: "react_ts",
@@ -40,7 +40,7 @@ describe("trellis target", () => {
           tag_name: "img",
           python_name: "Img",
           is_container: false,
-          attributes: [],
+          attributes: ["html:img:src"],
           events: [],
           source: {
             winner: "react_ts",
@@ -54,7 +54,7 @@ describe("trellis target", () => {
           tag_name: "input",
           python_name: "Input",
           is_container: false,
-          attributes: [],
+          attributes: ["html:input:type"],
           events: [],
           source: {
             winner: "react_ts",
@@ -64,7 +64,74 @@ describe("trellis target", () => {
           },
         },
       ],
-      attributes: [],
+      attributes: [
+        {
+          id: "html:a:href",
+          name_source: "href",
+          name_python: "href",
+          applies_to: "element",
+          type_expr: { kind: "nullable", item: { kind: "primitive", name: "str" } },
+          required: false,
+          category: "standard",
+          source: {
+            winner: "react_ts",
+            contributors: ["react_ts"],
+            reason: "runtime_precedence",
+            source_version: "@types/react@19.2.14",
+          },
+        },
+        {
+          id: "html:global:class_name",
+          name_source: "className",
+          name_python: "class_name",
+          applies_to: "global",
+          type_expr: { kind: "nullable", item: { kind: "primitive", name: "str" } },
+          required: false,
+          category: "standard",
+          source: {
+            winner: "react_ts",
+            contributors: ["react_ts"],
+            reason: "runtime_precedence",
+            source_version: "@types/react@19.2.14",
+          },
+        },
+        {
+          id: "html:img:src",
+          name_source: "src",
+          name_python: "src",
+          applies_to: "element",
+          type_expr: { kind: "nullable", item: { kind: "primitive", name: "str" } },
+          required: false,
+          category: "standard",
+          source: {
+            winner: "react_ts",
+            contributors: ["react_ts"],
+            reason: "runtime_precedence",
+            source_version: "@types/react@19.2.14",
+          },
+        },
+        {
+          id: "html:input:type",
+          name_source: "type",
+          name_python: "type",
+          applies_to: "element",
+          type_expr: {
+            kind: "union",
+            options: [
+              { kind: "literal", value: "text" },
+              { kind: "literal", value: "email" },
+            ],
+          },
+          required: false,
+          category: "standard",
+          source: {
+            winner: "react_ts",
+            contributors: ["react_ts"],
+            reason: "runtime_precedence",
+            source_version: "@types/react@19.2.14",
+          },
+        },
+      ],
       events: [],
       attribute_patterns: [],
     };
@@ -79,14 +146,17 @@ describe("trellis target", () => {
     expect(payload.content).toContain("DataValue = str | int | float | bool | None");
     expect(payload.content).toContain("InputType =");
     expect(payload.content).toContain('type: InputType = "text"');
-    expect(payload.content).toContain("from typing import Literal, overload");
+    expect(payload.content).toContain("from typing import Literal");
+    expect(payload.content).not.toContain("overload");
     expect(payload.content).toContain("data: Mapping[str, DataValue] | None = None");
     expect(payload.content).toContain("def _A(");
-    expect(payload.content).toContain("def A(");
     expect(payload.content).toContain("def Div(");
     expect(payload.content).toContain("def Img(");
     expect(payload.content).toContain("def Input(");
     expect(payload.content).not.toContain("**props: tp.Any");
+    expect(payload.content).not.toContain("def A(");
+    expect(payload.content).not.toContain("def _make_a(");
+    expect(payload.content).not.toContain("from trellis.routing.state import router");
     expect(payload.content).not.toContain("def Svg(");
     expect(payload.content).not.toContain("def Animate(");
   });

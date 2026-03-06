@@ -14,6 +14,12 @@ from trellis.platforms.common.serialization import parse_callback_id, serialize_
 from trellis.routing import RouterState
 
 
+def has_router_link_marker(anchor: dict[str, tp.Any]) -> bool:
+    """Return whether serialized anchor props contain the router-link data marker."""
+    data = anchor.get("props", {}).get("data")
+    return isinstance(data, dict) and data.get("trellis-router-link") == "true"
+
+
 def invoke_callback(session: RenderSession, cb_id: str, *args: tp.Any) -> None:
     """Invoke a callback with proper callback_context.
 
@@ -51,7 +57,7 @@ class TestAnchorAutoRouting:
         on_click_data = anchor.get("props", {}).get("on_click")
         assert on_click_data is not None, "A with relative href should have on_click"
         assert "__callback__" in on_click_data
-        assert anchor["props"]["data-trellis-router-link"] == "true"
+        assert has_router_link_marker(anchor)
 
     def test_relative_path_click_navigates(self, capture_patches: type[PatchCapture]) -> None:
         """Clicking A with relative path navigates via router."""
@@ -92,7 +98,7 @@ class TestAnchorAutoRouting:
         # Should NOT have on_click handler - let browser handle it
         on_click_data = anchor.get("props", {}).get("on_click")
         assert on_click_data is None, "A with absolute URL should not have auto on_click"
-        assert "data-trellis-router-link" not in anchor.get("props", {})
+        assert not has_router_link_marker(anchor)
 
     def test_protocol_relative_url_no_onclick(self, capture_patches: type[PatchCapture]) -> None:
         """A with protocol-relative URL (//host) does NOT get auto on_click."""
@@ -207,7 +213,7 @@ class TestAnchorAutoRouting:
         # Should NOT have on_click handler - browser opens new tab
         on_click_data = anchor.get("props", {}).get("on_click")
         assert on_click_data is None, "A with target='_blank' should not have auto on_click"
-        assert "data-trellis-router-link" not in anchor.get("props", {})
+        assert not has_router_link_marker(anchor)
 
     def test_use_router_false_no_onclick(self, capture_patches: type[PatchCapture]) -> None:
         """A with use_router=False does NOT get auto on_click even for relative URLs."""
@@ -245,7 +251,7 @@ class TestAnchorAutoRouting:
 
         on_click_data = anchor.get("props", {}).get("on_click")
         assert on_click_data is None, "A with download should not have auto on_click"
-        assert "data-trellis-router-link" not in anchor.get("props", {})
+        assert not has_router_link_marker(anchor)
 
     def test_download_false_still_gets_router_onclick(
         self, capture_patches: type[PatchCapture]
@@ -267,7 +273,7 @@ class TestAnchorAutoRouting:
         on_click_data = anchor.get("props", {}).get("on_click")
         assert on_click_data is not None
         assert "__callback__" in on_click_data
-        assert anchor["props"]["data-trellis-router-link"] == "true"
+        assert has_router_link_marker(anchor)
 
     def test_download_filename_no_onclick_handler(
         self, capture_patches: type[PatchCapture]
@@ -288,7 +294,7 @@ class TestAnchorAutoRouting:
 
         on_click_data = anchor.get("props", {}).get("on_click")
         assert on_click_data is None
-        assert "data-trellis-router-link" not in anchor.get("props", {})
+        assert not has_router_link_marker(anchor)
 
     def test_download_empty_string_no_onclick_handler(
         self, capture_patches: type[PatchCapture]
@@ -309,4 +315,4 @@ class TestAnchorAutoRouting:
 
         on_click_data = anchor.get("props", {}).get("on_click")
         assert on_click_data is None
-        assert "data-trellis-router-link" not in anchor.get("props", {})
+        assert not has_router_link_marker(anchor)

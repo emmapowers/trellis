@@ -5,11 +5,12 @@ Elements for hyperlinks and images.
 
 from __future__ import annotations
 
-import typing as tp
-from typing import overload
+from collections.abc import Mapping
+from typing import Literal, overload
 
 from trellis.core.rendering.element import ContainerElement, Element
-from trellis.html.base import Style, html_element
+from trellis.html._generated_runtime import _A, Img
+from trellis.html.base import Style
 from trellis.html.events import KeyboardHandler, MouseHandler
 from trellis.routing.state import router
 
@@ -17,6 +18,9 @@ __all__ = [
     "A",
     "Img",
 ]
+
+DataValue = str | int | float | bool | None
+AnchorTarget = Literal["_self", "_blank", "_parent", "_top"]
 
 
 def _is_relative_url(href: str) -> bool:
@@ -72,54 +76,11 @@ def _is_relative_url(href: str) -> bool:
     return True
 
 
-@html_element("img")
-def Img(
-    *,
-    src: str,
-    alt: str = "",
-    width: int | str | None = None,
-    height: int | str | None = None,
-    loading: str | None = None,
-    class_name: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    **props: tp.Any,
-) -> Element:
-    """An image element."""
-    ...
-
-
-# Hybrid element needs special handling
-@html_element("a", is_container=True, name="A")
-def _A(
-    *,
-    _text: str | None = None,
-    href: str | None = None,
-    target: str | None = None,
-    rel: str | None = None,
-    download: str | bool | None = None,
-    class_name: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
-    **props: tp.Any,
-) -> Element:
-    """An anchor (link) element."""
-    ...
-
-
 def _make_a(
     text: str | None,
     *,
     href: str | None,
-    target: str | None,
+    target: AnchorTarget | None,
     rel: str | None,
     download: str | bool | None,
     class_name: str | None,
@@ -131,12 +92,12 @@ def _make_a(
     on_key_down: KeyboardHandler | None,
     on_key_up: KeyboardHandler | None,
     use_router: bool,
-    **props: tp.Any,
+    data: Mapping[str, DataValue] | None,
 ) -> Element:
     """Shared implementation for A() overloads."""
     # For relative URLs without custom on_click, add router navigation
     effective_onclick = on_click
-    effective_props = dict(props)
+    effective_data = dict(data) if data is not None else None
     if (
         href
         and on_click is None
@@ -152,10 +113,12 @@ def _make_a(
             await router().navigate(nav_href)
 
         effective_onclick = router_click
-        effective_props["data-trellis-router-link"] = "true"
+        if effective_data is None:
+            effective_data = {}
+        effective_data["trellis-router-link"] = "true"
 
     return _A(
-        **({"_text": text} if text is not None else {}),
+        _text=text,
         href=href,
         target=target,
         rel=rel,
@@ -168,7 +131,7 @@ def _make_a(
         on_context_menu=on_context_menu,
         on_key_down=on_key_down,
         on_key_up=on_key_up,
-        **effective_props,
+        data=effective_data,
     )
 
 
@@ -178,7 +141,7 @@ def A(
     /,
     *,
     href: str | None = None,
-    target: str | None = None,
+    target: AnchorTarget | None = None,
     rel: str | None = None,
     download: str | bool | None = None,
     class_name: str | None = None,
@@ -190,7 +153,7 @@ def A(
     on_key_down: KeyboardHandler | None = None,
     on_key_up: KeyboardHandler | None = None,
     use_router: bool = True,
-    **props: tp.Any,
+    data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
 
 
@@ -198,7 +161,7 @@ def A(
 def A(
     *,
     href: str | None = None,
-    target: str | None = None,
+    target: AnchorTarget | None = None,
     rel: str | None = None,
     download: str | bool | None = None,
     class_name: str | None = None,
@@ -210,7 +173,7 @@ def A(
     on_key_down: KeyboardHandler | None = None,
     on_key_up: KeyboardHandler | None = None,
     use_router: bool = True,
-    **props: tp.Any,
+    data: Mapping[str, DataValue] | None = None,
 ) -> ContainerElement: ...
 
 
@@ -219,7 +182,7 @@ def A(
     /,
     *,
     href: str | None = None,
-    target: str | None = None,
+    target: AnchorTarget | None = None,
     rel: str | None = None,
     download: str | bool | None = None,
     class_name: str | None = None,
@@ -231,8 +194,8 @@ def A(
     on_key_down: KeyboardHandler | None = None,
     on_key_up: KeyboardHandler | None = None,
     use_router: bool = True,
-    **props: tp.Any,
-) -> Element:
+    data: Mapping[str, DataValue] | None = None,
+) -> Element | ContainerElement:
     """An anchor (link) element.
 
     For relative URLs (paths without http://, https://, or //), automatically
@@ -257,7 +220,7 @@ def A(
         on_click: Custom click handler (overrides auto-routing for relative URLs)
         use_router: Whether to use client-side router for relative URLs (default True).
             Set to False to force browser navigation for relative URLs.
-        **props: Additional HTML attributes
+        data: Custom data-* attributes keyed by DOM suffix (e.g. ``{"test-id": "x"}``)
     """
     return _make_a(
         text,
@@ -274,5 +237,5 @@ def A(
         on_key_down=on_key_down,
         on_key_up=on_key_up,
         use_router=use_router,
-        **props,
+        data=data,
     )
