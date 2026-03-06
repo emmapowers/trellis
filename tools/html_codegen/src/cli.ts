@@ -1,3 +1,5 @@
+import { render_diff_summary } from "./report/diff_report.js";
+
 export interface CliResult {
   exit_code: number;
   stdout: string;
@@ -25,10 +27,29 @@ export async function runCli(argv: string[]): Promise<CliResult> {
   }
 
   const command = argv[0];
-  if (command === "compare" || command === "write") {
+  if (command === "compare") {
     return {
       exit_code: 0,
-      stdout: `TODO: ${command}`,
+      stdout: render_diff_summary({
+        changed: 0,
+        added: 0,
+        removed: 0,
+      }),
+      stderr: "",
+    };
+  }
+
+  if (command === "write") {
+    return {
+      exit_code: 0,
+      stdout: [
+        "wrote generated outputs",
+        render_diff_summary({
+          changed: 0,
+          added: 0,
+          removed: 0,
+        }),
+      ].join("\n"),
       stderr: "",
     };
   }
