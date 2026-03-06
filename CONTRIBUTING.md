@@ -20,6 +20,19 @@ just lint       # Check linting (no fix)
 just ci         # Full CI checks
 ```
 
+## HTML Codegen Tool
+
+The HTML codegen tool is a manual developer workflow:
+
+```bash
+cd tools/html_codegen
+npm install
+npm run codegen:compare
+npm run codegen:write
+```
+
+After writing outputs, run normal project verification (`pixi run lint`, `pixi run test`) and commit the resulting diffs.
+
 ## Code Style
 
 - Formatting: Ruff (100 char line length)
