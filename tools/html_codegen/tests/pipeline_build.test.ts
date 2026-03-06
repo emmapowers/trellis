@@ -13,8 +13,8 @@ describe("pipeline build", () => {
     expect(ir.attributes.some((attribute) => attribute.name_python === "on_click")).toBe(true);
 
     const image_src = ir.attributes.find((attribute) => attribute.id === "html:img:src");
-    expect(image_src?.required).toBe(true);
-    expect(image_src?.type_expr.kind).toBe("primitive");
+    expect(image_src?.required).toBe(false);
+    expect(image_src?.type_expr.kind).toBe("nullable");
 
     const input_type = ir.attributes.find((attribute) => attribute.id === "html:input:type");
     expect(input_type?.required).toBe(false);

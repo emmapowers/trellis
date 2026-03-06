@@ -861,13 +861,15 @@ class TestNewFormElements:
 class TestNewMediaElements:
     """Tests for media/embed elements."""
 
-    def test_img_requires_src_raises_type_error(self, rendered) -> None:
+    def test_img_allows_missing_src(self, rendered) -> None:
         @component
         def App() -> None:
             h.Img()
 
-        with pytest.raises(TypeError, match="missing a required keyword-only argument: 'src'"):
-            rendered(App)
+        result = rendered(App)
+        image = result.session.elements.get(result.root_element.child_ids[0])
+        assert image.component.name == "Img"
+        assert "src" not in image.properties
 
     def test_video_container(self, rendered) -> None:
         @component

@@ -100,8 +100,8 @@ describe("trellis target", () => {
           name_source: "src",
           name_python: "src",
           applies_to: "element",
-          type_expr: { kind: "primitive", name: "str" },
-          required: true,
+          type_expr: { kind: "nullable", item: { kind: "primitive", name: "str" } },
+          required: false,
           category: "standard",
           source: {
             winner: "react_ts",
@@ -153,6 +153,7 @@ describe("trellis target", () => {
     expect(payload.content).toContain("def _A(");
     expect(payload.content).toContain("def Div(");
     expect(payload.content).toContain("def Img(");
+    expect(payload.content).toContain("src: str | None = None");
     expect(payload.content).toContain("def Input(");
     expect(payload.content).not.toContain("**props: tp.Any");
     expect(payload.content).not.toContain("def A(");

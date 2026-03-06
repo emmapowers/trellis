@@ -65,7 +65,7 @@ const SLICE_CONFIG: SliceElementConfig[] = [
     python_name: "Img",
     is_container: false,
     props: [
-      { name: "src", required: true },
+      { name: "src" },
       { name: "alt" },
       { name: "width" },
       { name: "height" },

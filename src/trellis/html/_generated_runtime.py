@@ -109,7 +109,7 @@ def Div(
 @html_element("img")
 def Img(
     *,
-    src: str,
+    src: str | None = None,
     alt: str | None = None,
     width: int | float | str | None = None,
     height: int | float | str | None = None,
