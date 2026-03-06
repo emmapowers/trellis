@@ -118,38 +118,38 @@ export class KeyBindingRegistry {
   ): void {
     if (event.isComposing) return;
 
+    const inTextInput = isTextInput(document.activeElement);
+
+    // Pass 1: Check sequence bindings first. A sequence that completes
+    // takes priority over single bindings (e.g. Mod+K,Mod+S wins over Mod+S).
     for (let i = 0; i < this.bindings.length; i++) {
-      const { binding, depth } = this.bindings[i];
-
+      const { binding } = this.bindings[i];
+      if (!isSequenceBinding(binding)) continue;
       if (binding.event_type !== eventType) continue;
-      if (
-        binding.ignore_in_inputs &&
-        isTextInput(document.activeElement)
-      )
-        continue;
+      if (binding.ignore_in_inputs && inTextInput) continue;
 
-      if (isSequenceBinding(binding)) {
-        const bindingId = `global-seq-${binding.handler.__callback__}`;
-        const complete = this.keyState.advanceSequence(
-          bindingId,
-          binding.sequence.steps,
-          binding.sequence.timeout_ms,
-          event
-        );
-        if (complete) {
-          event.preventDefault();
-          event.stopPropagation();
-          this.fireAndChain(
-            binding.handler.__callback__,
-            event,
-            i
-          );
-          return;
-        }
-        continue;
+      const bindingId = `global-seq-${binding.handler.__callback__}`;
+      const complete = this.keyState.advanceSequence(
+        bindingId,
+        binding.sequence.steps,
+        binding.sequence.timeout_ms,
+        event
+      );
+      if (complete) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.fireAndChain(binding.handler.__callback__, event, i);
+        return;
       }
+    }
 
-      // Single key binding
+    // Pass 2: Check single key bindings.
+    for (let i = 0; i < this.bindings.length; i++) {
+      const { binding } = this.bindings[i];
+      if (isSequenceBinding(binding)) continue;
+      if (binding.event_type !== eventType) continue;
+      if (binding.ignore_in_inputs && inTextInput) continue;
+
       if (!matchesKeyFilter(event, binding.filter)) continue;
 
       const bindingId = `global-${binding.handler.__callback__}`;

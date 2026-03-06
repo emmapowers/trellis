@@ -213,8 +213,7 @@ function createOnKeyHandler(
       if (
         (entry.ignore_in_inputs as boolean) &&
         isTextInput(document.activeElement)
-      )
-        continue;
+      ) continue;
 
       // Sequence binding
       if (entry.sequence) {
@@ -252,7 +251,7 @@ function createOnKeyHandler(
       event.preventDefault();
       event.stopPropagation();
 
-      if (!shouldFire) return; // Repeat suppressed
+      if (!shouldFire) return;
 
       fireOnKeyEvent(client, handlerRef.__callback__, native, event);
       return;
