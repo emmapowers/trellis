@@ -13,9 +13,13 @@
   "devDependencies": {
     "@types/node": "^24.6.0",
     "@types/react": "^19.2.14",
+    "@webref/elements": "^2.7.0",
+    "@webref/events": "^1.22.0",
+    "@webref/idl": "^3.73.2",
     "tsx": "^4.20.5",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4",
+    "webidl2": "^24.5.0",
     "zod": "^4.1.12"
   }
 }
