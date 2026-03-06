@@ -31,6 +31,8 @@ npm run codegen:compare
 npm run codegen:write
 ```
 
+`codegen:write` updates both `src/trellis/html/_generated_runtime.py` and `src/trellis/html/events.py`.
+
 After writing outputs, run normal project verification (`pixi run lint`, `pixi run test`) and commit the resulting diffs.
 
 ## Code Style

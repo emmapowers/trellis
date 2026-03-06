@@ -17,7 +17,7 @@ npm run codegen:write
 ```
 
 - `compare`: show a diff summary without writing files.
-- `write`: write generated outputs and print a diff summary.
+- `write`: write generated outputs (`src/trellis/html/_generated_runtime.py` and `src/trellis/html/events.py`) and print a diff summary.
 
 ## Typical Workflow
 

@@ -1,60 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { ir_schema } from "../src/ir/schema.js";
+import { build_trellis_events_module } from "../src/emit/targets/trellis_events.js";
+import type { IrDocument } from "../src/ir/types.js";
 
-describe("ir schema", () => {
-  it("rejects attribute without provenance winner", () => {
-    const parsed = ir_schema.safeParse({
+describe("trellis events target", () => {
+  it("builds a generated events module with dataclasses, handlers, and event map", () => {
+    const ir: IrDocument = {
       elements: [],
-      attributes: [
-        {
-          id: "html:div:id",
-          name_source: "id",
-          name_python: "id",
-        },
-      ],
-      events: [],
-      attribute_patterns: [],
-    });
-
-    expect(parsed.success).toBe(false);
-  });
-
-  it("accepts a minimal valid document", () => {
-    const parsed = ir_schema.safeParse({
-      elements: [
-        {
-          namespace: "html",
-          tag_name: "div",
-          python_name: "Div",
-          is_container: true,
-          attributes: ["html:global:id"],
-          events: ["html:global:on_click"],
-          source: {
-            winner: "react_ts",
-            contributors: ["react_ts"],
-            reason: "runtime_precedence",
-            source_version: "@types/react@19.2.14",
-          },
-        },
-      ],
-      attributes: [
-        {
-          id: "html:global:id",
-          name_source: "id",
-          name_python: "id",
-          applies_to: "global",
-          type_expr: { kind: "primitive", name: "str" },
-          required: false,
-          category: "standard",
-          source: {
-            winner: "react_ts",
-            contributors: ["react_ts"],
-            reason: "runtime_precedence",
-            source_version: "@types/react@19.2.14",
-          },
-        },
-      ],
+      attributes: [],
       events: [
         {
           id: "html:global:on_click",
@@ -101,24 +54,48 @@ describe("ir schema", () => {
                 source_version: "@webref/idl",
               },
             },
+            {
+              name_source: "timestamp",
+              name_python: "timestamp",
+              type_expr: { kind: "primitive", name: "float" },
+              default: 0,
+              source: {
+                winner: "trellis_policy",
+                contributors: ["react_ts", "trellis_policy"],
+                reason: "runtime_payload",
+                source_version: "local",
+              },
+            },
           ],
           source: {
             winner: "webref",
-            contributors: ["webref"],
-            reason: "idl_payload",
+            contributors: ["webref", "trellis_policy"],
+            reason: "runtime_payload",
             source_version: "@webref/idl",
           },
         },
         {
           name: "MouseEvent",
-          base: "BaseEvent",
           frozen: true,
+          base: "BaseEvent",
           fields: [
             {
               name_source: "clientX",
               name_python: "client_x",
               type_expr: { kind: "primitive", name: "int" },
               default: 0,
+              source: {
+                winner: "webref",
+                contributors: ["webref"],
+                reason: "idl_payload",
+                source_version: "@webref/idl",
+              },
+            },
+            {
+              name_source: "altKey",
+              name_python: "alt_key",
+              type_expr: { kind: "primitive", name: "bool" },
+              default: false,
               source: {
                 winner: "webref",
                 contributors: ["webref"],
@@ -135,26 +112,17 @@ describe("ir schema", () => {
           },
         },
       ],
-      attribute_patterns: [
-        {
-          name: "data",
-          python_param_name: "data",
-          dom_prefix: "data-",
-          key_style: "dom_suffix",
-          value_type_expr: {
-            kind: "union",
-            options: [
-              { kind: "primitive", name: "str" },
-              { kind: "primitive", name: "int" },
-              { kind: "primitive", name: "float" },
-              { kind: "primitive", name: "bool" },
-              { kind: "primitive", name: "none" },
-            ],
-          },
-        },
-      ],
-    });
+      attribute_patterns: [],
+    };
 
-    expect(parsed.success).toBe(true);
+    const payload = build_trellis_events_module(ir);
+    expect(payload.path).toBe("src/trellis/html/events.py");
+    expect(payload.content).toContain("class BaseEvent");
+    expect(payload.content).toContain("class MouseEvent(BaseEvent)");
+    expect(payload.content).toContain("MouseEventHandler = Callable[[MouseEvent], None]");
+    expect(payload.content).toContain("MouseHandler = EventHandler | MouseEventHandler");
+    expect(payload.content).toContain("alt_key: bool = False");
+    expect(payload.content).toContain('"click": MouseEvent');
+    expect(payload.content).toContain("def get_event_class(event_type: str) -> type[BaseEvent]:");
   });
 });

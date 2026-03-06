@@ -172,6 +172,8 @@ npm run codegen:compare
 npm run codegen:write
 ```
 
+`codegen:write` updates both `src/trellis/html/_generated_runtime.py` and `src/trellis/html/events.py`.
+
 **Project structure:**
 
 ```text

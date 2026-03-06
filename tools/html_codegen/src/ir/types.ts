@@ -1,4 +1,4 @@
-export type SourceWinner = "react_ts" | "webref";
+export type SourceWinner = "react_ts" | "webref" | "trellis_policy";
 
 export interface SourceProvenance {
   winner: SourceWinner;
@@ -58,8 +58,33 @@ export interface EventDef {
   id: string;
   name_source: string;
   name_python: string;
-  handler_signature: string;
-  event_payload: string;
+  dom_event_name: string;
+  handler_name: string;
+  payload_name: string;
+  source: SourceProvenance;
+}
+
+export interface EventHandlerDef {
+  payload_name: string;
+  typed_handler_name: string;
+  handler_name: string;
+  source: SourceProvenance;
+}
+
+export interface DataclassFieldDef {
+  name_source: string;
+  name_python: string;
+  type_expr: TypeExpr;
+  default?: string | number | boolean | null;
+  default_factory?: "list";
+  source: SourceProvenance;
+}
+
+export interface DataclassDef {
+  name: string;
+  base?: string;
+  frozen: boolean;
+  fields: DataclassFieldDef[];
   source: SourceProvenance;
 }
 
@@ -85,5 +110,7 @@ export interface IrDocument {
   elements: ElementDef[];
   attributes: AttributeDef[];
   events: EventDef[];
+  event_handlers: EventHandlerDef[];
+  dataclasses: DataclassDef[];
   attribute_patterns: AttributePatternDef[];
 }

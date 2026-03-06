@@ -134,6 +134,8 @@ describe("trellis target", () => {
         },
       ],
       events: [],
+      event_handlers: [],
+      dataclasses: [],
       attribute_patterns: [],
     };
 

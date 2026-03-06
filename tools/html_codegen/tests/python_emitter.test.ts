@@ -61,6 +61,8 @@ describe("python emitter", () => {
         },
       ],
       events: [],
+      event_handlers: [],
+      dataclasses: [],
       attribute_patterns: [],
     };
 

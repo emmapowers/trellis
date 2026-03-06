@@ -14,9 +14,14 @@ describe("write mode", () => {
     expect(result.exit_code).toBe(0);
 
     const generated_path = join(repo_root, "src", "trellis", "html", "_generated_runtime.py");
+    const events_path = join(repo_root, "src", "trellis", "html", "events.py");
     await expect(access(generated_path)).resolves.toBeUndefined();
+    await expect(access(events_path)).resolves.toBeUndefined();
 
     const content = await readFile(generated_path, "utf-8");
     expect(content).toContain("def Div(");
+
+    const events_content = await readFile(events_path, "utf-8");
+    expect(events_content).toContain("class MouseEvent");
   });
 });

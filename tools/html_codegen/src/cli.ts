@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
+import { build_trellis_events_module } from "./emit/targets/trellis_events.js";
 import { build_trellis_html_module } from "./emit/targets/trellis_html.js";
 import { build_ir_document } from "./pipeline/build.js";
 import { render_diff_summary } from "./report/diff_report.js";
@@ -33,32 +34,34 @@ function help_text(): string {
 async function compute_target_summary(
   repo_root: string,
 ): Promise<{
-  target_path: string;
-  target_content: string;
+  targets: Array<{ path: string; content: string }>;
   summary: { changed: number; added: number; removed: number };
 }> {
   const document = await build_ir_document();
-  const payload = build_trellis_html_module(document);
-  const target_path = join(repo_root, payload.path);
-  const target_content = payload.content;
+  const payloads = [build_trellis_html_module(document), build_trellis_events_module(document)];
+  const targets = payloads.map((payload) => ({
+    path: join(repo_root, payload.path),
+    content: payload.content,
+  }));
 
-  let existing_content: string | undefined;
-  try {
-    existing_content = await readFile(target_path, "utf-8");
-  } catch {
-    existing_content = undefined;
+  const summary = { changed: 0, added: 0, removed: 0 };
+  for (const target of targets) {
+    let existing_content: string | undefined;
+    try {
+      existing_content = await readFile(target.path, "utf-8");
+    } catch {
+      existing_content = undefined;
+    }
+
+    if (existing_content === undefined) {
+      summary.added += 1;
+    } else if (existing_content !== target.content) {
+      summary.changed += 1;
+    }
   }
 
-  const summary =
-    existing_content === undefined
-      ? { changed: 0, added: 1, removed: 0 }
-      : existing_content === target_content
-        ? { changed: 0, added: 0, removed: 0 }
-        : { changed: 1, added: 0, removed: 0 };
-
   return {
-    target_path,
-    target_content,
+    targets,
     summary,
   };
 }
@@ -86,9 +89,11 @@ export async function runCli(argv: string[], options: RunCliOptions = {}): Promi
   }
 
   if (command === "write") {
-    const { target_path, target_content, summary } = await compute_target_summary(repo_root);
-    await mkdir(dirname(target_path), { recursive: true });
-    await writeFile(target_path, target_content, "utf-8");
+    const { targets, summary } = await compute_target_summary(repo_root);
+    for (const target of targets) {
+      await mkdir(dirname(target.path), { recursive: true });
+      await writeFile(target.path, target.content, "utf-8");
+    }
 
     return {
       exit_code: 0,

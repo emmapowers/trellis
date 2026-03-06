@@ -52,6 +52,8 @@ export function resolve_ir(input: NormalizeInput): IrDocument {
     elements: [],
     attributes,
     events: [],
+    event_handlers: [],
+    dataclasses: [],
     attribute_patterns: [],
   };
 }

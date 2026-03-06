@@ -24,6 +24,8 @@ describe("policy validation", () => {
         },
       ],
       events: [],
+      event_handlers: [],
+      dataclasses: [],
       attribute_patterns: [],
     });
 

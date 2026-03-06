@@ -6,8 +6,19 @@ interface ReactElementSurface {
   events: Set<string>;
 }
 
+export interface ReactEventBinding {
+  prop_name: string;
+  dom_event_name: string;
+  react_handler_alias: string;
+  react_event_interface: string;
+  payload_name: string;
+  typed_handler_name: string;
+  handler_name: string;
+}
+
 export interface ReactSurface {
   elements: Map<string, ReactElementSurface>;
+  event_bindings: Map<string, ReactEventBinding>;
 }
 
 interface InterfaceDef {
@@ -16,29 +27,6 @@ interface InterfaceDef {
 }
 
 type AliasMap = Map<string, string>;
-
-const EVENT_HANDLER_TYPES = new Map<string, string>([
-  ["onBlur", "FocusHandler"],
-  ["onChange", "ChangeHandler"],
-  ["onClick", "MouseHandler"],
-  ["onContextMenu", "MouseHandler"],
-  ["onDoubleClick", "MouseHandler"],
-  ["onDrag", "DragHandler"],
-  ["onDragEnd", "DragHandler"],
-  ["onDragEnter", "DragHandler"],
-  ["onDragLeave", "DragHandler"],
-  ["onDragOver", "DragHandler"],
-  ["onDragStart", "DragHandler"],
-  ["onDrop", "DragHandler"],
-  ["onFocus", "FocusHandler"],
-  ["onInput", "InputHandler"],
-  ["onKeyDown", "KeyboardHandler"],
-  ["onKeyUp", "KeyboardHandler"],
-  ["onMouseEnter", "MouseHandler"],
-  ["onMouseLeave", "MouseHandler"],
-  ["onScroll", "ScrollHandler"],
-  ["onWheel", "WheelHandler"],
-]);
 
 function primitive(name: "str" | "int" | "float" | "bool" | "none"): TypeExpr {
   return { kind: "primitive", name };
@@ -258,12 +246,96 @@ function extract_alias_sources(source: string): AliasMap {
   return aliases;
 }
 
-function map_event_handler_type(prop_name: string): TypeExpr | undefined {
-  const handler_name = EVENT_HANDLER_TYPES.get(prop_name);
-  if (!handler_name) {
+function event_dom_name(prop_name: string): string {
+  const base_name = prop_name.slice(2);
+  if (base_name === "DoubleClick") {
+    return "dblclick";
+  }
+  return base_name.toLowerCase();
+}
+
+function payload_name_for_binding(
+  prop_name: string,
+  react_event_interface: string,
+): string {
+  if (prop_name === "onScroll") {
+    return "ScrollEvent";
+  }
+  if (prop_name === "onSubmit") {
+    return "FormEvent";
+  }
+  if (react_event_interface === "SyntheticEvent") {
+    return "BaseEvent";
+  }
+  return react_event_interface;
+}
+
+function typed_handler_name_for_payload(payload_name: string): string {
+  if (payload_name === "BaseEvent") {
+    return "EventHandler";
+  }
+  return `${payload_name}Handler`;
+}
+
+function handler_name_for_payload(payload_name: string): string {
+  if (payload_name === "BaseEvent") {
+    return "EventHandler";
+  }
+  return `${payload_name.replace(/Event$/, "")}Handler`;
+}
+
+function parse_react_event_binding(
+  prop_name: string,
+  type_string: string,
+): ReactEventBinding | undefined {
+  const normalized = normalize_ws(type_string);
+  const match =
+    normalized.match(/^([A-Za-z0-9_]+EventHandler)(?:<[\s\S]*>)?$/) ??
+    normalized.match(/^EventHandler<([A-Za-z0-9_]+Event)(?:<[\s\S]*>)?>$/);
+  if (!match) {
     return undefined;
   }
-  return reference(handler_name);
+
+  const react_handler_alias = match[1] ?? "EventHandler";
+  const react_event_interface = react_handler_alias.replace(/Handler$/, "");
+  const payload_name = payload_name_for_binding(prop_name, react_event_interface);
+
+  return {
+    prop_name,
+    dom_event_name: event_dom_name(prop_name),
+    react_handler_alias,
+    react_event_interface,
+    payload_name,
+    typed_handler_name: typed_handler_name_for_payload(payload_name),
+    handler_name: handler_name_for_payload(payload_name),
+  };
+}
+
+export async function extract_react_event_bindings(): Promise<Map<string, ReactEventBinding>> {
+  const types_path = resolve_react_types_path();
+  const source = await read_source(types_path);
+  const dom_attributes = extract_interface_properties(extract_interface_block(source, "DOMAttributes<T>"));
+  const bindings = new Map<string, ReactEventBinding>();
+
+  for (const [prop_name, property] of dom_attributes) {
+    if (!prop_name.startsWith("on")) {
+      continue;
+    }
+
+    const union_parts = split_top_level(normalize_ws(property.type_string), "|")
+      .map(normalize_union_option)
+      .filter((option) => option !== "undefined");
+    if (union_parts.length !== 1) {
+      continue;
+    }
+
+    const binding = parse_react_event_binding(prop_name, union_parts[0]);
+    if (binding) {
+      bindings.set(prop_name, binding);
+    }
+  }
+
+  return bindings;
 }
 
 function array_item_type(type_name: string): TypeExpr | undefined {
@@ -346,12 +418,9 @@ function parse_named_type(
     };
   }
 
-  if (type_name.includes("=>")) {
-    return map_event_handler_type(prop_name);
-  }
-
-  if (type_name.endsWith("EventHandler") || type_name.includes("EventHandler<")) {
-    return map_event_handler_type(prop_name);
+  const event_binding = parse_react_event_binding(prop_name, type_name);
+  if (event_binding) {
+    return reference(event_binding.handler_name);
   }
 
   return undefined;
@@ -389,6 +458,7 @@ function collect_interface_properties_recursive(
   defs: Map<string, InterfaceDef>,
   aliases: AliasMap,
   properties: Map<string, TypeExpr>,
+  event_bindings: Map<string, ReactEventBinding>,
   visited: Set<string>,
 ): void {
   if (visited.has(interface_name)) {
@@ -402,13 +472,20 @@ function collect_interface_properties_recursive(
   }
 
   for (const parent_name of def.extends_names) {
-    collect_interface_properties_recursive(parent_name, defs, aliases, properties, visited);
+    collect_interface_properties_recursive(
+      parent_name,
+      defs,
+      aliases,
+      properties,
+      event_bindings,
+      visited,
+    );
   }
 
   for (const [prop_name, property] of def.properties) {
-    const event_handler = map_event_handler_type(prop_name);
-    if (event_handler) {
-      properties.set(prop_name, nullable(event_handler));
+    const event_binding = event_bindings.get(prop_name);
+    if (event_binding) {
+      properties.set(prop_name, nullable(reference(event_binding.handler_name)));
       continue;
     }
 
@@ -430,6 +507,7 @@ export async function extract_react_surface(): Promise<ReactSurface> {
   const intrinsic_interfaces = extract_intrinsic_interfaces(source);
   const aliases = extract_alias_sources(source);
   const interface_defs = collect_interface_defs(source, intrinsic_interfaces.values());
+  const event_bindings = await extract_react_event_bindings();
 
   const elements = new Map<string, ReactElementSurface>();
   for (const [element_name, interface_name] of intrinsic_interfaces) {
@@ -439,6 +517,7 @@ export async function extract_react_surface(): Promise<ReactSurface> {
       interface_defs,
       aliases,
       attributes,
+      event_bindings,
       new Set<string>(),
     );
 
@@ -450,5 +529,6 @@ export async function extract_react_surface(): Promise<ReactSurface> {
 
   return {
     elements,
+    event_bindings,
   };
 }
