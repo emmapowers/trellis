@@ -5,7 +5,11 @@ interface SliceElementConfig {
   tag_name: "a" | "div" | "img" | "input";
   python_name: "_A" | "Div" | "Img" | "Input";
   is_container: boolean;
-  prop_names: string[];
+  props: Array<{
+    name: string;
+    required?: boolean;
+    default?: string | number | boolean | null;
+  }>;
 }
 
 const GLOBAL_PROP_NAMES = new Set(["className", "id", "style"]);
@@ -15,96 +19,96 @@ const SLICE_CONFIG: SliceElementConfig[] = [
     tag_name: "a",
     python_name: "_A",
     is_container: true,
-    prop_names: [
-      "href",
-      "target",
-      "rel",
-      "download",
-      "className",
-      "style",
-      "id",
-      "onClick",
-      "onDoubleClick",
-      "onContextMenu",
-      "onKeyDown",
-      "onKeyUp",
+    props: [
+      { name: "href" },
+      { name: "target" },
+      { name: "rel" },
+      { name: "download" },
+      { name: "className" },
+      { name: "style" },
+      { name: "id" },
+      { name: "onClick" },
+      { name: "onDoubleClick" },
+      { name: "onContextMenu" },
+      { name: "onKeyDown" },
+      { name: "onKeyUp" },
     ],
   },
   {
     tag_name: "div",
     python_name: "Div",
     is_container: true,
-    prop_names: [
-      "className",
-      "style",
-      "id",
-      "onClick",
-      "onDoubleClick",
-      "onContextMenu",
-      "onMouseEnter",
-      "onMouseLeave",
-      "onKeyDown",
-      "onKeyUp",
-      "onScroll",
-      "onWheel",
-      "onDragStart",
-      "onDrag",
-      "onDragEnd",
-      "onDragEnter",
-      "onDragOver",
-      "onDragLeave",
-      "onDrop",
+    props: [
+      { name: "className" },
+      { name: "style" },
+      { name: "id" },
+      { name: "onClick" },
+      { name: "onDoubleClick" },
+      { name: "onContextMenu" },
+      { name: "onMouseEnter" },
+      { name: "onMouseLeave" },
+      { name: "onKeyDown" },
+      { name: "onKeyUp" },
+      { name: "onScroll" },
+      { name: "onWheel" },
+      { name: "onDragStart" },
+      { name: "onDrag" },
+      { name: "onDragEnd" },
+      { name: "onDragEnter" },
+      { name: "onDragOver" },
+      { name: "onDragLeave" },
+      { name: "onDrop" },
     ],
   },
   {
     tag_name: "img",
     python_name: "Img",
     is_container: false,
-    prop_names: [
-      "src",
-      "alt",
-      "width",
-      "height",
-      "loading",
-      "className",
-      "style",
-      "id",
-      "onClick",
-      "onDoubleClick",
-      "onContextMenu",
+    props: [
+      { name: "src", required: true },
+      { name: "alt" },
+      { name: "width" },
+      { name: "height" },
+      { name: "loading" },
+      { name: "className" },
+      { name: "style" },
+      { name: "id" },
+      { name: "onClick" },
+      { name: "onDoubleClick" },
+      { name: "onContextMenu" },
     ],
   },
   {
     tag_name: "input",
     python_name: "Input",
     is_container: false,
-    prop_names: [
-      "type",
-      "value",
-      "placeholder",
-      "disabled",
-      "readOnly",
-      "name",
-      "checked",
-      "required",
-      "min",
-      "max",
-      "step",
-      "pattern",
-      "maxLength",
-      "autoComplete",
-      "autoFocus",
-      "accept",
-      "multiple",
-      "onChange",
-      "onInput",
-      "onFocus",
-      "onBlur",
-      "onKeyDown",
-      "onKeyUp",
-      "className",
-      "style",
-      "id",
+    props: [
+      { name: "type", default: "text" },
+      { name: "value" },
+      { name: "placeholder" },
+      { name: "disabled" },
+      { name: "readOnly" },
+      { name: "name" },
+      { name: "checked" },
+      { name: "required" },
+      { name: "min" },
+      { name: "max" },
+      { name: "step" },
+      { name: "pattern" },
+      { name: "maxLength" },
+      { name: "autoComplete" },
+      { name: "autoFocus" },
+      { name: "accept" },
+      { name: "multiple" },
+      { name: "onChange" },
+      { name: "onInput" },
+      { name: "onFocus" },
+      { name: "onBlur" },
+      { name: "onKeyDown" },
+      { name: "onKeyUp" },
+      { name: "className" },
+      { name: "style" },
+      { name: "id" },
     ],
   },
 ];
@@ -133,12 +137,15 @@ function to_snake_case(name: string): string {
     .toLowerCase();
 }
 
-function with_type_overrides(tag_name: string, prop_name: string, type_expr: TypeExpr): TypeExpr {
-  if (tag_name === "img" && prop_name === "src" && type_expr.kind === "nullable") {
-    return type_expr.item;
+function normalize_attribute_type(
+  prop: SliceElementConfig["props"][number],
+  type_expr: TypeExpr,
+): TypeExpr {
+  if (type_expr.kind !== "nullable") {
+    return type_expr;
   }
 
-  if (tag_name === "input" && prop_name === "type" && type_expr.kind === "nullable") {
+  if (prop.required || prop.default !== undefined) {
     return type_expr.item;
   }
 
@@ -147,9 +154,10 @@ function with_type_overrides(tag_name: string, prop_name: string, type_expr: Typ
 
 function build_attribute_def(
   tag_name: string,
-  prop_name: string,
+  prop: SliceElementConfig["props"][number],
   type_expr: TypeExpr,
 ): AttributeDef {
+  const prop_name = prop.name;
   const name_python = to_snake_case(prop_name);
   const is_global = GLOBAL_PROP_NAMES.has(prop_name);
 
@@ -158,8 +166,9 @@ function build_attribute_def(
     name_source: prop_name,
     name_python,
     applies_to: is_global ? "global" : "element",
-    type_expr: with_type_overrides(tag_name, prop_name, type_expr),
-    required: false,
+    type_expr: normalize_attribute_type(prop, type_expr),
+    required: prop.required ?? false,
+    default: prop.default,
     category: "standard",
     source: react_source(),
   };
@@ -188,13 +197,13 @@ export async function build_ir_document(): Promise<IrDocument> {
       throw new Error(`Missing react surface for <${config.tag_name}>.`);
     }
 
-    const attribute_ids = config.prop_names.map((prop_name) => {
-      const type_expr = surface.attributes.get(prop_name);
+    const attribute_ids = config.props.map((prop) => {
+      const type_expr = surface.attributes.get(prop.name);
       if (!type_expr) {
-        throw new Error(`Missing react prop ${config.tag_name}.${prop_name}.`);
+        throw new Error(`Missing react prop ${config.tag_name}.${prop.name}.`);
       }
 
-      const attribute = build_attribute_def(config.tag_name, prop_name, type_expr);
+      const attribute = build_attribute_def(config.tag_name, prop, type_expr);
       attributes_by_id.set(attribute.id, attribute);
       return attribute.id;
     });

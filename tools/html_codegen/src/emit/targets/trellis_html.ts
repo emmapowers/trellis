@@ -51,8 +51,17 @@ function parameter_annotation(element: ElementDef, attribute: AttributeDef): str
 }
 
 function parameter_default(element: ElementDef, attribute: AttributeDef): string | undefined {
-  if (element.tag_name === "input" && attribute.name_python === "type") {
-    return '"text"';
+  if (attribute.default !== undefined) {
+    if (typeof attribute.default === "string") {
+      return JSON.stringify(attribute.default);
+    }
+    if (attribute.default === null) {
+      return "None";
+    }
+    return String(attribute.default);
+  }
+  if (attribute.required) {
+    return undefined;
   }
   if (attribute.type_expr.kind === "nullable") {
     return "None";

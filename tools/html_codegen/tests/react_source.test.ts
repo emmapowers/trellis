@@ -11,6 +11,18 @@ describe("react source extraction", () => {
     expect(anchor?.attributes.get("href")?.kind).toBe("nullable");
     expect(anchor?.attributes.get("target")?.kind).toBe("nullable");
     expect(anchor?.attributes.get("onClick")?.kind).toBe("nullable");
+    expect(anchor?.attributes.get("target")).toEqual({
+      kind: "nullable",
+      item: {
+        kind: "union",
+        options: [
+          { kind: "literal", value: "_self" },
+          { kind: "literal", value: "_blank" },
+          { kind: "literal", value: "_parent" },
+          { kind: "literal", value: "_top" },
+        ],
+      },
+    });
 
     const div = surface.elements.get("div");
     expect(div).toBeDefined();
@@ -22,6 +34,17 @@ describe("react source extraction", () => {
     expect(image).toBeDefined();
     expect(image?.attributes.get("src")?.kind).toBe("nullable");
     expect(image?.attributes.get("loading")?.kind).toBe("nullable");
+    expect(image?.attributes.get("width")).toEqual({
+      kind: "nullable",
+      item: {
+        kind: "union",
+        options: [
+          { kind: "primitive", name: "int" },
+          { kind: "primitive", name: "float" },
+          { kind: "primitive", name: "str" },
+        ],
+      },
+    });
 
     const input = surface.elements.get("input");
     expect(input).toBeDefined();
@@ -29,5 +52,20 @@ describe("react source extraction", () => {
     expect(input?.attributes.get("readOnly")?.kind).toBe("nullable");
     expect(input?.attributes.get("autoComplete")?.kind).toBe("nullable");
     expect(input?.attributes.get("onChange")?.kind).toBe("nullable");
+    expect(input?.attributes.get("value")).toEqual({
+      kind: "nullable",
+      item: {
+        kind: "union",
+        options: [
+          { kind: "primitive", name: "str" },
+          {
+            kind: "array",
+            item: { kind: "primitive", name: "str" },
+          },
+          { kind: "primitive", name: "int" },
+          { kind: "primitive", name: "float" },
+        ],
+      },
+    });
   });
 });

@@ -100,8 +100,8 @@ describe("trellis target", () => {
           name_source: "src",
           name_python: "src",
           applies_to: "element",
-          type_expr: { kind: "nullable", item: { kind: "primitive", name: "str" } },
-          required: false,
+          type_expr: { kind: "primitive", name: "str" },
+          required: true,
           category: "standard",
           source: {
             winner: "react_ts",
@@ -123,6 +123,7 @@ describe("trellis target", () => {
             ],
           },
           required: false,
+          default: "text",
           category: "standard",
           source: {
             winner: "react_ts",

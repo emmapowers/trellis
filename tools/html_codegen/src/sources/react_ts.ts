@@ -53,7 +53,10 @@ function reference(name: string): TypeExpr {
 }
 
 function union(...options: TypeExpr[]): TypeExpr {
-  return { kind: "union", options };
+  return {
+    kind: "union",
+    options: options.flatMap((option) => (option.kind === "union" ? option.options : [option])),
+  };
 }
 
 function normalize_ws(value: string): string {
