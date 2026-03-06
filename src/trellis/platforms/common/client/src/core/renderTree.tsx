@@ -47,9 +47,24 @@ function domPropNameFromSnake(prop: string): string {
   return snakeToCamelKey(prop);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 export function toReactDomProps(props: Record<string, unknown>): Record<string, unknown> {
   const mapped: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(props)) {
+    if (key === "data") {
+      if (!isRecord(value)) {
+        continue;
+      }
+
+      for (const [suffix, dataValue] of Object.entries(value)) {
+        mapped[`data-${suffix}`] = dataValue;
+      }
+      continue;
+    }
+
     mapped[domPropNameFromSnake(key)] = value;
   }
   return mapped;

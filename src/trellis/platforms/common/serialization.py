@@ -15,6 +15,7 @@ Two modes:
 from __future__ import annotations
 
 import typing as tp
+from collections.abc import Mapping
 
 from trellis.core.components.composition import CompositionComponent
 from trellis.core.state.mutable import Mutable
@@ -95,7 +96,7 @@ def _serialize_value(
             _serialize_value(v, session, element_id, f"{prop_name}[{i}]")
             for i, v in enumerate(value)
         ]
-    if isinstance(value, dict):
+    if isinstance(value, Mapping):
         return {
             k: _serialize_value(v, session, element_id, f"{prop_name}.{k}")
             for k, v in value.items()

@@ -71,18 +71,22 @@ describe("trellis target", () => {
 
     const payload = build_trellis_html_module(ir);
     expect(payload.path).toContain("src/trellis/html");
+    expect(payload.content).toContain("from collections.abc import Mapping");
     expect(payload.content).toContain('@html_element("a", is_container=True, name="A")');
     expect(payload.content).toContain('@html_element("div", is_container=True)');
     expect(payload.content).toContain('@html_element("img")');
     expect(payload.content).toContain('@html_element("input")');
+    expect(payload.content).toContain("DataValue = str | int | float | bool | None");
     expect(payload.content).toContain("InputType =");
     expect(payload.content).toContain('type: InputType = "text"');
     expect(payload.content).toContain("from typing import Literal, overload");
+    expect(payload.content).toContain("data: Mapping[str, DataValue] | None = None");
     expect(payload.content).toContain("def _A(");
     expect(payload.content).toContain("def A(");
     expect(payload.content).toContain("def Div(");
     expect(payload.content).toContain("def Img(");
     expect(payload.content).toContain("def Input(");
+    expect(payload.content).not.toContain("**props: tp.Any");
     expect(payload.content).not.toContain("def Svg(");
     expect(payload.content).not.toContain("def Animate(");
   });

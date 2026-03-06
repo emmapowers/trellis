@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { render, screen } from "../../test-utils";
-import { processProps, renderNode } from "@common/core/renderTree";
+import { processProps, renderNode, toReactDomProps } from "@common/core/renderTree";
 import { ElementKind, SerializedElement } from "@common/core/types";
 
 describe("processProps", () => {
@@ -357,6 +357,21 @@ describe("renderNode", () => {
     const { container } = render(element);
 
     expect(container.querySelector(".test-class")).toBeInTheDocument();
+  });
+
+  it("expands data mappings to data-* DOM props", () => {
+    const domProps = toReactDomProps({
+      class_name: "test-class",
+      data: {
+        "test-id": "abc",
+        enabled: true,
+      },
+    });
+
+    expect(domProps.className).toBe("test-class");
+    expect(domProps["data-test-id"]).toBe("abc");
+    expect(domProps["data-enabled"]).toBe(true);
+    expect(domProps.data).toBeUndefined();
   });
 
   it("maps snake_case DOM attrs to browser prop names", () => {

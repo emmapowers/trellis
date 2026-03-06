@@ -45,7 +45,7 @@ A, Div, Img, and Input.
 
 from __future__ import annotations
 
-import typing as tp
+from collections.abc import Mapping
 from typing import Literal, overload
 
 from trellis.core.rendering.element import ContainerElement, Element
@@ -69,6 +69,7 @@ __all__ = [
     "Input",
 ]
 
+DataValue = str | int | float | bool | None
 ${rendered_input_type_alias}
 
 
@@ -118,7 +119,7 @@ def Img(
     on_click: MouseHandler | None = None,
     on_double_click: MouseHandler | None = None,
     on_context_menu: MouseHandler | None = None,
-    **props: tp.Any,
+    data: Mapping[str, DataValue] | None = None,
 ) -> Element:
     """A generated image element."""
     ...
@@ -146,7 +147,7 @@ def Div(
     on_drag_over: DragHandler | None = None,
     on_drag_leave: DragHandler | None = None,
     on_drop: DragHandler | None = None,
-    **props: tp.Any,
+    data: Mapping[str, DataValue] | None = None,
 ) -> Element:
     """A generated div element."""
     ...
@@ -181,7 +182,7 @@ def Input(
     class_name: str | None = None,
     style: Style | None = None,
     id: str | None = None,
-    **props: tp.Any,
+    data: Mapping[str, DataValue] | None = None,
 ) -> Element:
     """A generated input element."""
     ...
@@ -203,7 +204,7 @@ def _A(
     on_context_menu: MouseHandler | None = None,
     on_key_down: KeyboardHandler | None = None,
     on_key_up: KeyboardHandler | None = None,
-    **props: tp.Any,
+    data: Mapping[str, DataValue] | None = None,
 ) -> Element:
     """A generated anchor element."""
     ...
@@ -225,11 +226,11 @@ def _make_a(
     on_key_down: KeyboardHandler | None,
     on_key_up: KeyboardHandler | None,
     use_router: bool,
-    **props: tp.Any,
+    data: Mapping[str, DataValue] | None,
 ) -> Element:
     """Shared implementation for generated A() overloads."""
     effective_onclick = on_click
-    effective_props = dict(props)
+    effective_data = dict(data) if data is not None else None
     if (
         href
         and on_click is None
@@ -244,10 +245,12 @@ def _make_a(
             await router().navigate(nav_href)
 
         effective_onclick = router_click
-        effective_props["data-trellis-router-link"] = "true"
+        if effective_data is None:
+            effective_data = {}
+        effective_data["trellis-router-link"] = "true"
 
     return _A(
-        **({"_text": text} if text is not None else {}),
+        _text=text,
         href=href,
         target=target,
         rel=rel,
@@ -260,7 +263,7 @@ def _make_a(
         on_context_menu=on_context_menu,
         on_key_down=on_key_down,
         on_key_up=on_key_up,
-        **effective_props,
+        data=effective_data,
     )
 
 
@@ -282,7 +285,7 @@ def A(
     on_key_down: KeyboardHandler | None = None,
     on_key_up: KeyboardHandler | None = None,
     use_router: bool = True,
-    **props: tp.Any,
+    data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
 
 
@@ -302,7 +305,7 @@ def A(
     on_key_down: KeyboardHandler | None = None,
     on_key_up: KeyboardHandler | None = None,
     use_router: bool = True,
-    **props: tp.Any,
+    data: Mapping[str, DataValue] | None = None,
 ) -> ContainerElement: ...
 
 
@@ -323,7 +326,7 @@ def A(
     on_key_down: KeyboardHandler | None = None,
     on_key_up: KeyboardHandler | None = None,
     use_router: bool = True,
-    **props: tp.Any,
+    data: Mapping[str, DataValue] | None = None,
 ) -> Element | ContainerElement:
     """A generated anchor element with router-aware relative href handling."""
     return _make_a(
@@ -341,7 +344,7 @@ def A(
         on_key_down=on_key_down,
         on_key_up=on_key_up,
         use_router=use_router,
-        **props,
+        data=data,
     )
 `;
 }
