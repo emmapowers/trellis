@@ -11,9 +11,11 @@ function index_attributes(attributes: AttributeDef[]): Map<string, AttributeDef>
 
 export function emit_python_module(document: IrDocument): string {
   const lines: string[] = [
-    "from typing import Any, Callable, Literal",
+    "from typing import Any, Callable, Literal, Mapping",
     "",
     "from trellis.core.rendering.element import Element",
+    "",
+    "DataValue = str | int | float | bool | None",
     "",
   ];
 

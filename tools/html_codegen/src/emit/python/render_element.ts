@@ -13,6 +13,7 @@ export function render_element_function(
   lines.push(`def ${element.python_name}(`);
   lines.push("    *,");
   lines.push(...args);
+  lines.push("    data: Mapping[str, DataValue] | None = None,");
   lines.push(") -> Element:");
   lines.push(`    \"\"\"Generated ${element.tag_name} element.\"\"\"`);
   lines.push("    ...");
