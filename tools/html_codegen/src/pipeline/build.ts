@@ -2,6 +2,9 @@ import type { AttributeDef, IrDocument, TypeExpr } from "../ir/types.js";
 import { extract_react_surface } from "../sources/react_ts.js";
 
 function to_pascal_case(tag_name: string): string {
+  if (tag_name === "i") {
+    return "Italic";
+  }
   return tag_name
     .split(/[-_]/g)
     .map((part) => part.slice(0, 1).toUpperCase() + part.slice(1))
