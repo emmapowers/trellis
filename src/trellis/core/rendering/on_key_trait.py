@@ -62,9 +62,19 @@ def _resolve_ignore_in_inputs(ignore: bool | None, filter: KeyFilter | KeySequen
     return True
 
 
-def _serialize_binding(binding: KeyBindingSpec, index: int) -> dict[str, tp.Any]:
-    """Serialize a single binding for client consumption."""
-    ignore = _resolve_ignore_in_inputs(binding.ignore_in_inputs, binding.filter)
+def _serialize_binding(
+    binding: KeyBindingSpec, index: int, *, focus_scoped: bool = False
+) -> dict[str, tp.Any]:
+    """Serialize a single binding for client consumption.
+
+    When focus_scoped=True (on_key), defaults ignore_in_inputs to False — the
+    whole point is to handle keys on the focused element.
+    When focus_scoped=False (HotKey), uses smart defaults via _resolve_ignore_in_inputs.
+    """
+    if focus_scoped:
+        ignore = binding.ignore_in_inputs if binding.ignore_in_inputs is not None else False
+    else:
+        ignore = _resolve_ignore_in_inputs(binding.ignore_in_inputs, binding.filter)
 
     result: dict[str, tp.Any] = {
         "event_type": binding.event_type,
@@ -142,5 +152,5 @@ class OnKeyTrait:
         ts = state.trait(OnKeyTraitState)
         ts.bindings = bindings
 
-        serialized = [_serialize_binding(b, i) for i, b in enumerate(bindings)]
+        serialized = [_serialize_binding(b, i, focus_scoped=True) for i, b in enumerate(bindings)]
         element.props["__key_filters__"] = serialized

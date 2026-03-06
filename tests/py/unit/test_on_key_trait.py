@@ -76,6 +76,18 @@ class TestOnKeySerialization:
         assert f["require_reset"] is False
         assert f["ignore_in_inputs"] is True
 
+    def test_default_ignore_in_inputs_is_false(self, rendered):
+        """Focus-scoped bindings default to ignore_in_inputs=False."""
+
+        @component
+        def Comp():
+            Label(text="test").on_key("K", _noop)
+
+        result = rendered(Comp)
+        label_el = result.session.elements.get(result.root_element.child_ids[0])
+        f = label_el.props["__key_filters__"][0]
+        assert f["ignore_in_inputs"] is False
+
     def test_disabled_excluded(self, rendered):
         @component
         def Comp():
