@@ -1,24 +1,6 @@
 """Client state for Trellis apps.
 
-Provides ClientState for reactive client state management including theme,
-device type, OS, and browser info. Also exports theme tokens (CSS variable
-references) for use in widget styles.
-
-Example:
-    ```python
-    from trellis.app import ClientState
-    from trellis.app import theme
-
-    @component
-    def MyComponent():
-        state = ClientState.from_context()
-        if state.is_dark:
-            w.Label(text="Dark mode is active")
-        w.Button(text="Toggle", on_click=state.toggle)
-
-        # Use theme tokens in styles
-        h.Div(style={"background": theme.bg_surface, "color": theme.text_primary})
-    ```
+Provides runtime theme-mode state for system/light/dark handling.
 """
 
 from __future__ import annotations
@@ -46,95 +28,13 @@ class ThemeMode(StrEnum):
 
 
 # =============================================================================
-# Theme tokens - CSS variable references for use in styles
-# =============================================================================
-
-
-@dataclass(frozen=True)
-class ThemeTokens:
-    """CSS variable references matching theme.css exactly.
-
-    Use these tokens in inline styles to reference theme colors that
-    adapt to light/dark mode. All values are CSS var() references.
-
-    Example:
-        h.Div(style={"background": theme.bg_surface, "color": theme.text_primary})
-    """
-
-    # Backgrounds
-    bg_page: str = "var(--trellis-bg-page)"
-    bg_surface: str = "var(--trellis-bg-surface)"
-    bg_surface_raised: str = "var(--trellis-bg-surface-raised)"
-    bg_surface_hover: str = "var(--trellis-bg-surface-hover)"
-    bg_input: str = "var(--trellis-bg-input)"
-    bg_interactive: str = "var(--trellis-bg-interactive)"
-    bg_interactive_hover: str = "var(--trellis-bg-interactive-hover)"
-    # Borders
-    border_default: str = "var(--trellis-border-default)"
-    border_subtle: str = "var(--trellis-border-subtle)"
-    border_strong: str = "var(--trellis-border-strong)"
-    border_focus: str = "var(--trellis-border-focus)"
-    # Text
-    text_primary: str = "var(--trellis-text-primary)"
-    text_secondary: str = "var(--trellis-text-secondary)"
-    text_muted: str = "var(--trellis-text-muted)"
-    text_inverse: str = "var(--trellis-text-inverse)"
-    # Semantic
-    success: str = "var(--trellis-success)"
-    error: str = "var(--trellis-error)"
-    error_hover: str = "var(--trellis-error-hover)"
-    warning: str = "var(--trellis-warning)"
-    info: str = "var(--trellis-info)"
-    # Accent
-    accent_primary: str = "var(--trellis-accent-primary)"
-    accent_primary_hover: str = "var(--trellis-accent-primary-hover)"
-    accent_subtle: str = "var(--trellis-accent-subtle)"
-    # Chart palette
-    chart_1: str = "var(--trellis-chart-1)"
-    chart_2: str = "var(--trellis-chart-2)"
-    chart_3: str = "var(--trellis-chart-3)"
-    chart_4: str = "var(--trellis-chart-4)"
-    chart_5: str = "var(--trellis-chart-5)"
-    chart_6: str = "var(--trellis-chart-6)"
-    chart_7: str = "var(--trellis-chart-7)"
-    chart_8: str = "var(--trellis-chart-8)"
-    chart_9: str = "var(--trellis-chart-9)"
-    chart_10: str = "var(--trellis-chart-10)"
-    # Shadows
-    shadow_sm: str = "var(--trellis-shadow-sm)"
-    shadow_md: str = "var(--trellis-shadow-md)"
-    shadow_lg: str = "var(--trellis-shadow-lg)"
-    # Focus
-    focus_ring_color: str = "var(--trellis-focus-ring-color)"
-
-
-# Singleton instance for use in styles
-theme = ThemeTokens()
-
-
-# =============================================================================
 # ClientState - reactive state for the client
 # =============================================================================
 
 
 @dataclass(kw_only=True)
 class ClientState(Stateful):
-    """Reactive client state including theme, device info, and more.
-
-    Tracks both the user's theme mode preference (system/light/dark) and the
-    resolved theme that should actually be applied. When mode is SYSTEM,
-    the resolved theme follows the OS preference and updates automatically.
-
-    Also provides access to device information detected at connection time.
-
-    Attributes:
-        mode: The user's theme mode preference (SYSTEM, LIGHT, or DARK)
-        system_theme: The OS theme preference detected from the client
-        device_type: Device type (web, desktop, mobile)
-        os: Operating system
-        browser: Browser name
-        root_element_id: ID of the trellis-root element in the DOM
-    """
+    """Reactive runtime theme-mode state for the current client."""
 
     # Theme state
     theme_setting: ThemeMode = ThemeMode.SYSTEM

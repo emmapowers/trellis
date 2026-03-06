@@ -5,12 +5,14 @@ import { RoutingMode } from "@common/RouterManager";
 describe("BrowserClient", () => {
   let originalHistory: History;
   let originalLocation: Location;
+  let originalMatchMedia: typeof window.matchMedia;
   let mockPushState: Mock;
 
   beforeEach(() => {
     // Store originals
     originalHistory = window.history;
     originalLocation = window.location;
+    originalMatchMedia = window.matchMedia;
 
     // Mock history
     mockPushState = vi.fn();
@@ -33,6 +35,12 @@ describe("BrowserClient", () => {
       writable: true,
       configurable: true,
     });
+
+    Object.defineProperty(window, "matchMedia", {
+      value: vi.fn().mockReturnValue({ matches: true }),
+      writable: true,
+      configurable: true,
+    });
   });
 
   afterEach(() => {
@@ -44,6 +52,11 @@ describe("BrowserClient", () => {
     });
     Object.defineProperty(window, "location", {
       value: originalLocation,
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(window, "matchMedia", {
+      value: originalMatchMedia,
       writable: true,
       configurable: true,
     });
@@ -117,6 +130,27 @@ describe("BrowserClient", () => {
 
       // @ts-expect-error - accessing private property for testing
       expect(client.routerManager.getCurrentPath()).toBe("/users/123");
+
+      client.disconnect();
+    });
+  });
+
+  describe("sendHello", () => {
+    it("sends the detected system theme and optional host theme mode", () => {
+      const client = new BrowserClient();
+      const sendCallback = vi.fn();
+      client.setSendCallback(sendCallback);
+
+      client.sendHello("dark");
+
+      expect(sendCallback).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "hello",
+          system_theme: "dark",
+          theme_mode: "dark",
+          path: "/",
+        })
+      );
 
       client.disconnect();
     });

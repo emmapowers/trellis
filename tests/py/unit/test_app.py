@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import importlib
+
 from trellis.app.app import App
 from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent, component
@@ -168,3 +170,19 @@ class TestAppExport:
         # Should be usable
         app = AppFromPackage(Root)
         assert app.top is Root
+
+
+class TestThemeRewriteBoundary:
+    """Tests for the new rewrite package boundaries."""
+
+    def test_trellis_theme_package_exists(self) -> None:
+        """trellis.theme should exist as a package boundary."""
+        theme_package = importlib.import_module("trellis.theme")
+        assert theme_package.__name__ == "trellis.theme"
+
+    def test_trellis_app_does_not_export_legacy_design_tokens(self) -> None:
+        """trellis.app should not expose the removed design-system token API."""
+        import trellis.app as app_package  # noqa: PLC0415
+
+        assert not hasattr(app_package, "theme")
+        assert not hasattr(app_package, "ThemeTokens")

@@ -76,7 +76,7 @@ target-version = ["py312", "py313"]
 [tool.ruff]
 line-length = 100
 target-version = "py313"
-exclude = ["docs/", "examples/*/pyproject.toml"]
+exclude = ["docs/"]
 
 [tool.ruff.lint]
 select = [
@@ -129,16 +129,9 @@ ban-relative-imports = "all"
     "TC002",    # pytest type annotations are common in tests
     "TID252",   # relative imports in test helpers
 ]
-"examples/**" = [
-    "TID252",   # relative imports in examples are fine
-]
 
 [tool.mypy]
 python_version = "3.13"
-# Each example directory has a trellis_config.py file. Without explicit_package_bases,
-# mypy sees these as duplicate "trellis_config" modules. With it enabled, each directory
-# passed on the command line becomes a separate namespace root.
-explicit_package_bases = true
 mypy_path = ["src"]
 strict = true
 warn_return_any = true
@@ -152,7 +145,7 @@ exclude = ["docs/"]
 # Decorators like @html_element and @react_component_base replace the function
 # body entirely, so the stub functions legitimately have empty bodies.
 [[tool.mypy.overrides]]
-module = ["trellis.html.*", "trellis.widgets.*", "trellis.app.theme_provider"]
+module = ["trellis.html.*", "trellis.app.theme_provider"]
 disable_error_code = ["empty-body"]
 
 # Desktop platform has optional pytauri dependency

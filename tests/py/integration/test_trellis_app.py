@@ -1,6 +1,5 @@
 """Integration tests for TrellisApp wrapper component."""
 
-from trellis import widgets as w
 from trellis.app import ClientState, ThemeMode, TrellisApp
 from trellis.core.components.composition import component
 from trellis.core.rendering import RenderSession, render
@@ -73,13 +72,12 @@ class TestTrellisApp:
 
     def test_renders_app_content(self) -> None:
         """TrellisApp should render the app component's content."""
-        label_rendered = False
+        app_rendered = False
 
         @component
         def MyApp() -> None:
-            nonlocal label_rendered
-            w.Label(text="Hello")
-            label_rendered = True
+            nonlocal app_rendered
+            app_rendered = True
 
         @component
         def Root() -> None:
@@ -88,7 +86,7 @@ class TestTrellisApp:
         tree = RenderSession(Root)
         render(tree)
 
-        assert label_rendered is True
+        assert app_rendered is True
 
     def test_client_state_theme_accessible(self) -> None:
         """ClientState theme properties should be accessible in app."""

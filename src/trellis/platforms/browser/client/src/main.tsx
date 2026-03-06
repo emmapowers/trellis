@@ -9,7 +9,6 @@
 import { initRegistry } from "@trellis/_registry";
 initRegistry();
 
-import "@trellis/trellis-core/theme.css"; // Theme CSS variables
 import "@trellis/trellis-core/console"; // Set up console filtering
 import React from "react";
 import { createRoot } from "react-dom/client";
