@@ -246,7 +246,7 @@ def html_element(
             bound = signature.bind(*validation_args, **validation_kwargs)
             if has_text_keyword or has_text_positional:
                 # Preserve previous hybrid-wrapper behavior where default props
-                # were forwarded (e.g. HtmlButton(type="button")).
+                # were forwarded (e.g. Button(type="button")).
                 bound.apply_defaults()
             props = dict(bound.arguments)
             if var_keyword_param and var_keyword_param in props:

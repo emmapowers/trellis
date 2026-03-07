@@ -12,9 +12,7 @@ from trellis.core.components.composition import component
 from trellis.core.components.react import react
 from trellis.core.components.style_props import Height, Margin, Padding, Width
 from trellis.core.state.mutable import Mutable
-from trellis.html.layout import Nav, Span
-from trellis.html.links import A
-from trellis.html.lists import Li, Ol
+from trellis.html import A, Li, Nav, Ol, Span
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -180,7 +178,7 @@ def Breadcrumb(
         class_name=class_name or "",
         style=nav_style,
         role="navigation",
-        **{"aria-label": "Breadcrumb"},
+        aria_label="Breadcrumb",
     ):
         with Ol(
             style={
@@ -206,8 +204,6 @@ def Breadcrumb(
                 ):
                     # Separator before non-first items
                     if i > 0:
-                        # aria-hidden passed as kwarg for accessibility
-                        aria_props: dict[str, tp.Any] = {"aria-hidden": "true"}
                         Span(
                             sep_char,
                             style={
@@ -216,7 +212,7 @@ def Breadcrumb(
                                 "display": "flex",
                                 "alignItems": "center",
                             },
-                            **aria_props,
+                            aria_hidden=True,
                         )
 
                     # Content: link for navigable items, span for current page

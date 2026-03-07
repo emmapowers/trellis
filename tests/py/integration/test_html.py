@@ -775,6 +775,29 @@ class TestNewTableElements:
 class TestNewFormElements:
     """Tests for new form elements."""
 
+    def test_button_and_label_use_generated_public_names(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Label("Name", html_for="name-input")
+            with h.Label(html_for="nested-name-input"):
+                h.Input(id="nested-name-input", type="text")
+            h.Button("Save", type="submit")
+
+        result = rendered(App)
+        label = result.session.elements.get(result.root_element.child_ids[0])
+        nested_label = result.session.elements.get(result.root_element.child_ids[1])
+        button = result.session.elements.get(result.root_element.child_ids[2])
+
+        assert label.component.name == "Label"
+        assert label.properties["_text"] == "Name"
+        assert label.properties["html_for"] == "name-input"
+        assert nested_label.component.name == "Label"
+        assert nested_label.properties["html_for"] == "nested-name-input"
+        assert len(nested_label.child_ids) == 1
+        assert button.component.name == "Button"
+        assert button.properties["_text"] == "Save"
+        assert button.properties["type"] == "submit"
+
     def test_fieldset_legend(self, rendered) -> None:
         @component
         def App() -> None:

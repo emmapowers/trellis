@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import importlib
 import inspect
+
+import pytest
 
 from trellis import html as h
 from trellis.html._generated_runtime import _A
 from trellis.html._generated_runtime import Audio as RawAudio
+from trellis.html._generated_runtime import Button as RawButton
+from trellis.html._generated_runtime import Label as RawLabel
 from trellis.html._generated_runtime import Nav as RawNav
 
 
@@ -44,3 +49,27 @@ def test_generated_runtime_exposes_audio_and_aria_signatures() -> None:
     assert "controls" in audio_parameters
     assert "src" in audio_parameters
     assert "aria_label" in nav_parameters
+
+
+def test_public_html_uses_generated_button_and_label_names() -> None:
+    """Public HTML exports should use generated Button/Label names directly."""
+    assert h.Button is RawButton
+    assert h.Label is RawLabel
+    assert not hasattr(h, "HtmlButton")
+    assert not hasattr(h, "HtmlLabel")
+
+
+@pytest.mark.parametrize(
+    "module_name",
+    [
+        "trellis.html.forms",
+        "trellis.html.layout",
+        "trellis.html.lists",
+        "trellis.html.media",
+        "trellis.html.tables",
+    ],
+)
+def test_public_html_category_modules_are_removed(module_name: str) -> None:
+    """HTML category modules are internal-only and no longer importable."""
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module(module_name)

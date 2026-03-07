@@ -20,13 +20,83 @@ Categories:
             Abbr, Time
     - Lists: Ul, Ol, Li, Dl, Dt, Dd
     - Links: A, Img
-    - Forms: Form, Input, HtmlButton, Textarea, Select, Option, HtmlLabel,
+    - Forms: Form, Input, Button, Textarea, Select, Option, Label,
              Fieldset, Legend, Optgroup, Progress, Meter, Output, Datalist
     - Tables: Table, Thead, Tbody, Tfoot, Tr, Th, Td, Caption
     - Media: Video, Audio, Source, Iframe
 """
 
 # Base types
+# Generated HTML elements
+from trellis.html._generated_runtime import (
+    H1,
+    H2,
+    H3,
+    H4,
+    H5,
+    H6,
+    Abbr,
+    Address,
+    Article,
+    Aside,
+    Audio,
+    Blockquote,
+    Br,
+    Button,
+    Caption,
+    Code,
+    Datalist,
+    Dd,
+    Details,
+    Div,
+    Dl,
+    Dt,
+    Em,
+    Fieldset,
+    Figcaption,
+    Figure,
+    Footer,
+    Form,
+    Header,
+    Hr,
+    Iframe,
+    Img,
+    Input,
+    Label,
+    Legend,
+    Li,
+    Main,
+    Mark,
+    Meter,
+    Nav,
+    Ol,
+    Optgroup,
+    Option,
+    Output,
+    P,
+    Pre,
+    Progress,
+    Section,
+    Select,
+    Small,
+    Source,
+    Span,
+    Strong,
+    Sub,
+    Summary,
+    Sup,
+    Table,
+    Tbody,
+    Td,
+    Textarea,
+    Tfoot,
+    Th,
+    Thead,
+    Time,
+    Tr,
+    Ul,
+    Video,
+)
 from trellis.html.base import HtmlContainerTrait, HtmlElement, Style
 
 # Event types
@@ -52,103 +122,8 @@ from trellis.html.events import (
     WheelEvent,
     WheelEventHandler,
 )
-
-# Form elements
-from trellis.html.forms import (
-    Datalist,
-    Fieldset,
-    Form,
-    HtmlButton,
-    HtmlLabel,
-    Input,
-    Legend,
-    Meter,
-    Optgroup,
-    Option,
-    Output,
-    Progress,
-    Select,
-    Textarea,
-)
-
-# Layout elements
-from trellis.html.layout import (
-    Address,
-    Article,
-    Aside,
-    Blockquote,
-    Details,
-    Div,
-    Figcaption,
-    Figure,
-    Footer,
-    Header,
-    Main,
-    Nav,
-    Section,
-    Span,
-    Summary,
-)
-
-# Link and media elements
-from trellis.html.links import (
-    A,
-    Img,
-)
-
-# List elements
-from trellis.html.lists import (
-    Dd,
-    Dl,
-    Dt,
-    Li,
-    Ol,
-    Ul,
-)
-
-# Media elements
-from trellis.html.media import (
-    Audio,
-    Iframe,
-    Source,
-    Video,
-)
-
-# Table elements
-from trellis.html.tables import (
-    Caption,
-    Table,
-    Tbody,
-    Td,
-    Tfoot,
-    Th,
-    Thead,
-    Tr,
-)
-
-# Text elements
-from trellis.html.text import (
-    H1,
-    H2,
-    H3,
-    H4,
-    H5,
-    H6,
-    Abbr,
-    Br,
-    Code,
-    Em,
-    Hr,
-    Mark,
-    P,
-    Pre,
-    Small,
-    Strong,
-    Sub,
-    Sup,
-    Text,
-    Time,
-)
+from trellis.html.links import A
+from trellis.html.text import Text
 
 __all__ = [
     "H1",
@@ -165,6 +140,7 @@ __all__ = [
     "Audio",
     "Blockquote",
     "Br",
+    "Button",
     "Caption",
     "Code",
     "DataTransfer",
@@ -189,10 +165,8 @@ __all__ = [
     "Form",
     "Header",
     "Hr",
-    "HtmlButton",
     "HtmlContainerTrait",
     "HtmlElement",
-    "HtmlLabel",
     "Iframe",
     "Img",
     "Input",
@@ -200,6 +174,7 @@ __all__ = [
     "InputEventHandler",
     "KeyboardEvent",
     "KeyboardEventHandler",
+    "Label",
     "Legend",
     "Li",
     "Main",
