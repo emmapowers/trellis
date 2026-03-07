@@ -8,8 +8,8 @@ from __future__ import annotations
 import typing as tp
 from typing import overload
 
-from trellis.core.rendering.element import ContainerElement, Element
-from trellis.html.base import Style, html_element
+from trellis.core.rendering.element import Element
+from trellis.html.base import HtmlContainerElement, Style, html_element
 
 __all__ = [
     "Caption",
@@ -91,7 +91,7 @@ def Th(
     class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("th", is_container=True)
@@ -138,7 +138,7 @@ def Td(
     class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("td", is_container=True)
@@ -194,7 +194,7 @@ def Caption(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("caption", is_container=True)

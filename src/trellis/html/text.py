@@ -9,8 +9,8 @@ import typing as tp
 from typing import overload
 
 from trellis.core.components.base import Component, ElementKind
-from trellis.core.rendering.element import ContainerElement, Element
-from trellis.html.base import Style, html_element
+from trellis.core.rendering.element import Element
+from trellis.html.base import HtmlContainerElement, Style, html_element
 
 __all__ = [
     "H1",
@@ -117,7 +117,7 @@ def P(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("p", is_container=True)
@@ -153,7 +153,7 @@ def H1(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("h1", is_container=True)
@@ -189,7 +189,7 @@ def H2(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("h2", is_container=True)
@@ -225,7 +225,7 @@ def H3(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("h3", is_container=True)
@@ -261,7 +261,7 @@ def H4(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("h4", is_container=True)
@@ -297,7 +297,7 @@ def H5(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("h5", is_container=True)
@@ -333,7 +333,7 @@ def H6(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("h6", is_container=True)
@@ -369,7 +369,7 @@ def Strong(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("strong", is_container=True)
@@ -405,7 +405,7 @@ def Em(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("em", is_container=True)
@@ -441,7 +441,7 @@ def Code(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("code", is_container=True)
@@ -477,7 +477,7 @@ def Pre(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("pre", is_container=True)
@@ -513,7 +513,7 @@ def Small(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("small", is_container=True)
@@ -549,7 +549,7 @@ def Mark(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("mark", is_container=True)
@@ -585,7 +585,7 @@ def Sub(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("sub", is_container=True)
@@ -621,7 +621,7 @@ def Sup(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("sup", is_container=True)
@@ -659,7 +659,7 @@ def Abbr(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("abbr", is_container=True)
@@ -698,7 +698,7 @@ def Time(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("time", is_container=True)

@@ -10,7 +10,7 @@ from collections.abc import Mapping
 from typing import Literal
 
 from trellis.core.rendering.element import Element
-from trellis.html.base import Style, html_element
+from trellis.html.base import HtmlContainerElement, Style, html_element
 from trellis.html.events import (
     DragEventHandler,
     EventHandler,
@@ -73,7 +73,7 @@ def _A(
     on_key_down: KeyboardEventHandler | None = None,
     on_key_up: KeyboardEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
-) -> Element:
+) -> HtmlContainerElement:
     """Generated raw a binding."""
     ...
 
@@ -101,7 +101,7 @@ def Div(
     on_drag_leave: DragEventHandler | None = None,
     on_drop: DragEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
-) -> Element:
+) -> HtmlContainerElement:
     """Generated raw div binding."""
     ...
 

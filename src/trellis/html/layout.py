@@ -8,8 +8,8 @@ from __future__ import annotations
 import typing as tp
 from typing import overload
 
-from trellis.core.rendering.element import ContainerElement, Element
-from trellis.html.base import Style, html_element
+from trellis.core.rendering.element import Element
+from trellis.html.base import HtmlContainerElement, Style, html_element
 from trellis.html.events import (
     DragEventHandler,
     KeyboardEventHandler,
@@ -94,7 +94,7 @@ def Span(
     on_key_down: KeyboardEventHandler | None = None,
     on_key_up: KeyboardEventHandler | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("span", is_container=True)
@@ -228,7 +228,7 @@ def Blockquote(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("blockquote", is_container=True)
@@ -290,7 +290,7 @@ def Summary(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("summary", is_container=True)
@@ -338,7 +338,7 @@ def Figcaption(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("figcaption", is_container=True)

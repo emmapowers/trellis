@@ -159,7 +159,7 @@ function render_element_function(
   }
 
   lines.push("    data: Mapping[str, DataValue] | None = None,");
-  lines.push(") -> Element:");
+  lines.push(`) -> ${element.is_container ? "HtmlContainerElement" : "Element"}:`);
   lines.push(`    """Generated raw ${element.tag_name} binding."""`);
   lines.push("    ...");
 
@@ -182,7 +182,7 @@ ${handler_imports.map((name) => `    ${name},`).join("\n")}
 )`;
   const first_party_imports = [
     "from trellis.core.rendering.element import Element",
-    "from trellis.html.base import Style, html_element",
+    "from trellis.html.base import HtmlContainerElement, Style, html_element",
     ...(events_import_block ? [events_import_block] : []),
   ].join("\n");
 

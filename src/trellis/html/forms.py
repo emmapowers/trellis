@@ -8,8 +8,8 @@ from __future__ import annotations
 import typing as tp
 from typing import overload
 
-from trellis.core.rendering.element import ContainerElement, Element
-from trellis.html.base import Style, html_element
+from trellis.core.rendering.element import Element
+from trellis.html.base import HtmlContainerElement, Style, html_element
 from trellis.html.events import (
     EventHandler,
     FocusEventHandler,
@@ -173,7 +173,7 @@ def HtmlButton(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("button", is_container=True)
@@ -239,7 +239,7 @@ def HtmlLabel(
     class_name: str | None = None,
     style: Style | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("label", is_container=True)
@@ -300,7 +300,7 @@ def Legend(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("legend", is_container=True)
@@ -386,7 +386,7 @@ def Output(
     style: Style | None = None,
     id: str | None = None,
     **props: tp.Any,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 @html_element("output", is_container=True)

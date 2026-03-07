@@ -8,9 +8,9 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Literal, overload
 
-from trellis.core.rendering.element import ContainerElement, Element
+from trellis.core.rendering.element import Element
 from trellis.html._generated_runtime import _A, Img
-from trellis.html.base import Style
+from trellis.html.base import HtmlContainerElement, Style
 from trellis.html.events import KeyboardEventHandler, MouseEventHandler
 from trellis.routing.state import router
 
@@ -174,7 +174,7 @@ def A(
     on_key_up: KeyboardEventHandler | None = None,
     use_router: bool = True,
     data: Mapping[str, DataValue] | None = None,
-) -> ContainerElement: ...
+) -> HtmlContainerElement: ...
 
 
 def A(
@@ -195,7 +195,7 @@ def A(
     on_key_up: KeyboardEventHandler | None = None,
     use_router: bool = True,
     data: Mapping[str, DataValue] | None = None,
-) -> Element | ContainerElement:
+) -> Element | HtmlContainerElement:
     """An anchor (link) element.
 
     For relative URLs (paths without http://, https://, or //), automatically

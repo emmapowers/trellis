@@ -17,6 +17,7 @@ from trellis.core.rendering.element import ContainerElement, Element
 from trellis.core.rendering.traits import ContainerTrait
 
 __all__ = [
+    "HtmlContainerElement",
     "HtmlContainerTrait",
     "HtmlElement",
     "Style",
@@ -49,14 +50,10 @@ class HtmlContainerTrait(ContainerTrait):
         return super().__enter__()
 
 
-# Default element class for HTML container elements.
-# Uses HtmlContainerTrait (not plain ContainerTrait) so that the hybrid
-# text/container check is enforced for all HTML elements.
-HtmlContainerElement = type(
-    "HtmlContainerElement",
-    (HtmlContainerTrait, ContainerElement),
-    {},
-)
+class HtmlContainerElement(HtmlContainerTrait, ContainerElement):
+    """HTML container element with hybrid text/container enforcement."""
+
+    pass
 
 
 class HtmlElement(Component):
@@ -129,7 +126,7 @@ def html_element(
     is_container: Literal[True],
     name: str | None = None,
     element_class: Literal[None] = None,
-) -> Callable[[Callable[P, tp.Any]], Callable[P, ContainerElement]]: ...
+) -> Callable[[Callable[P, tp.Any]], Callable[P, HtmlContainerElement]]: ...
 
 
 @overload
@@ -179,6 +176,7 @@ def html_element(
     Returns:
         A decorator that creates a callable returning Elements
     """
+    resolved_element_class: type[Element] | type[E]
     if element_class is not None:
         resolved_element_class = element_class
         if is_container and HtmlContainerTrait not in element_class.__mro__:
