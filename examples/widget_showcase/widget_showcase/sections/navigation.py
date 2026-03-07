@@ -1,6 +1,8 @@
 """Navigation section of the widget showcase."""
 
-from trellis import Stateful, component, mutable
+from typing import cast
+
+from trellis import component, mutable, state
 from trellis import widgets as w
 from trellis.widgets import IconName
 
@@ -8,18 +10,12 @@ from ..components import ExampleCard
 from ..example import example
 
 
-class TabsState(Stateful):
-    """State for tabs example."""
-
-    selected_tab: str = "overview"
-
-
-@example("Tabs", includes=[TabsState])
+@example("Tabs")
 def TabsExample() -> None:
     """Tabbed content navigation."""
-    state = TabsState()
+    selected_tab = state("overview")
     with w.Tabs(
-        selected=mutable(state.selected_tab),
+        selected=mutable(selected_tab.value),
     ):
         with w.Tab(id="overview", label="Overview", icon=IconName.HOME):
             w.Label(text="Overview tab content goes here.")
@@ -42,16 +38,10 @@ def BreadcrumbExample() -> None:
     )
 
 
-class TreeState(Stateful):
-    """State for tree example."""
-
-    selected_node: str | None = None
-
-
-@example("Tree", includes=[TreeState])
+@example("Tree")
 def TreeExample() -> None:
     """Hierarchical data navigation."""
-    state = TreeState()
+    selected_node = state(cast(str | None, None))
     w.Tree(
         data=[
             {
@@ -72,31 +62,24 @@ def TreeExample() -> None:
             },
             {"id": "README.md", "label": "README.md"},
         ],
-        selected=state.selected_node,
-        on_select=lambda n: setattr(state, "selected_node", n),
+        selected=selected_node.value,
+        on_select=selected_node.set,
     )
 
-
-class CollapsibleState(Stateful):
-    """State for collapsible example."""
-
-    expanded: bool = False
-    experimental_features: bool = False
-
-
-@example("Collapsible", includes=[CollapsibleState])
+@example("Collapsible")
 def CollapsibleExample() -> None:
     """Expandable content section."""
-    state = CollapsibleState()
+    expanded = state(False)
+    experimental_features = state(False)
     with w.Collapsible(
         title="Advanced Settings",
-        expanded=mutable(state.expanded),
+        expanded=mutable(expanded.value),
         icon=IconName.SETTINGS,
     ):
         with w.Column(gap=8):
             w.Label(text="This content can be collapsed.")
             w.Checkbox(
-                checked=mutable(state.experimental_features),
+                checked=mutable(experimental_features.value),
                 label="Enable experimental features",
             )
 

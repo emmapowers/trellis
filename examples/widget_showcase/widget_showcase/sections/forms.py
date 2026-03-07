@@ -1,94 +1,82 @@
 """Form inputs section of the widget showcase."""
 
-from trellis import Stateful, component, mutable
+from trellis import component, mutable, state
 from trellis import widgets as w
 
 from ..components import ExampleCard
 from ..example import example
 
 
-class FormState(Stateful):
-    """State for form inputs example."""
-
-    text_value: str = ""
-    number_value: int = 50
-    select_value: str = "option1"
-    checkbox_value: bool = False
-    slider_value: float = 50
-
-
-class MultilineFormState(Stateful):
-    """State for multiline input example."""
-
-    text_value: str = "Line one\nLine two"
-
-
-@example("Form Inputs", includes=[FormState])
+@example("Form Inputs")
 def FormInputs() -> None:
     """Interactive form controls with two-way data binding."""
-    state = FormState()
-    with state:
-        with w.Column(gap=12):
-            with w.Row(gap=8, align="center"):
-                w.Label(text="Text:", width=80)
-                w.TextInput(
-                    value=mutable(state.text_value),
-                    placeholder="Enter text...",
-                    width=200,
-                )
+    text_value = state("")
+    number_value = state(50)
+    select_value = state("option1")
+    checkbox_value = state(False)
+    slider_value = state(50.0)
 
-            with w.Row(gap=8, align="center"):
-                w.Label(text="Number:", width=80)
-                w.NumberInput(
-                    value=mutable(state.number_value),
-                    min=0,
-                    max=100,
-                    width=200,
-                )
+    with w.Column(gap=12):
+        with w.Row(gap=8, align="center"):
+            w.Label(text="Text:", width=80)
+            w.TextInput(
+                value=mutable(text_value.value),
+                placeholder="Enter text...",
+                width=200,
+            )
 
-            with w.Row(gap=8, align="center"):
-                w.Label(text="Select:", width=80)
-                w.Select(
-                    value=mutable(state.select_value),
-                    options=[
-                        {"value": "option1", "label": "Option 1"},
-                        {"value": "option2", "label": "Option 2"},
-                        {"value": "option3", "label": "Option 3"},
-                    ],
-                    width=200,
-                )
+        with w.Row(gap=8, align="center"):
+            w.Label(text="Number:", width=80)
+            w.NumberInput(
+                value=mutable(number_value.value),
+                min=0,
+                max=100,
+                width=200,
+            )
 
-            with w.Row(gap=8, align="center"):
-                w.Label(text="Toggle:", width=80)
-                w.Checkbox(
-                    checked=mutable(state.checkbox_value),
-                    label="Enable feature",
-                )
+        with w.Row(gap=8, align="center"):
+            w.Label(text="Select:", width=80)
+            w.Select(
+                value=mutable(select_value.value),
+                options=[
+                    {"value": "option1", "label": "Option 1"},
+                    {"value": "option2", "label": "Option 2"},
+                    {"value": "option3", "label": "Option 3"},
+                ],
+                width=200,
+            )
 
-            with w.Row(gap=8, align="center"):
-                w.Label(text="Slider:", width=80)
-                w.Slider(
-                    value=mutable(state.slider_value),
-                    min=0,
-                    max=100,
-                    width=200,
-                )
-                w.Label(text=f"{int(state.slider_value)}", width=40)
+        with w.Row(gap=8, align="center"):
+            w.Label(text="Toggle:", width=80)
+            w.Checkbox(
+                checked=mutable(checkbox_value.value),
+                label="Enable feature",
+            )
+
+        with w.Row(gap=8, align="center"):
+            w.Label(text="Slider:", width=80)
+            w.Slider(
+                value=mutable(slider_value.value),
+                min=0,
+                max=100,
+                width=200,
+            )
+            w.Label(text=f"{int(slider_value.value)}", width=40)
 
 
-@example("Multiline Input", includes=[MultilineFormState])
+@example("Multiline Input")
 def MultilineFormInput() -> None:
     """Multi-line text input with mutable state binding."""
-    state = MultilineFormState()
-    with state:
-        with w.Column(gap=8):
-            w.MultilineInput(
-                value=mutable(state.text_value),
-                placeholder="Write multiple lines...",
-                rows=6,
-                width=440,
-            )
-            w.Label(text=f"Length: {len(state.text_value)} chars")
+    text_value = state("Line one\nLine two")
+
+    with w.Column(gap=8):
+        w.MultilineInput(
+            value=mutable(text_value.value),
+            placeholder="Write multiple lines...",
+            rows=6,
+            width=440,
+        )
+        w.Label(text=f"Length: {len(text_value.value)} chars")
 
 
 @component

@@ -59,6 +59,7 @@ from trellis.core import (
     set_ref,
 )
 from trellis.routing import Route, RouterState, Routes, router
+from trellis.state import state
 
 __version__ = "0.1.0"
 __all__ = [
@@ -108,6 +109,7 @@ __all__ = [
     "reconcile_children",
     "render",
     "router",
+    "state",
     "set_active_session",
     "set_ref",
 ]
