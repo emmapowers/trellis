@@ -41,7 +41,7 @@ def BreadcrumbExample() -> None:
 @example("Tree")
 def TreeExample() -> None:
     """Hierarchical data navigation."""
-    selected_node = state(cast(str | None, None))
+    selected_node = state(cast("str | None", None))
     w.Tree(
         data=[
             {
@@ -65,6 +65,7 @@ def TreeExample() -> None:
         selected=selected_node.value,
         on_select=selected_node.set,
     )
+
 
 @example("Collapsible")
 def CollapsibleExample() -> None:

@@ -9,15 +9,14 @@ from typing import TYPE_CHECKING
 import pytest
 
 from trellis import component, mount, state
+from trellis.state import mount as package_mount
 
 if TYPE_CHECKING:
     from tests.conftest import PatchCapture
 
 
 class TestMountHelper:
-    def test_sync_function_runs_once_on_mount(
-        self, capture_patches: "type[PatchCapture]"
-    ) -> None:
+    def test_sync_function_runs_once_on_mount(self, capture_patches: type[PatchCapture]) -> None:
         """mount(sync_fn) runs once after the first mount."""
         calls: list[str] = []
 
@@ -34,7 +33,7 @@ class TestMountHelper:
         assert calls == ["mounted"]
 
     def test_async_function_runs_on_mount_and_can_update_state_later(
-        self, capture_patches: "type[PatchCapture]"
+        self, capture_patches: type[PatchCapture]
     ) -> None:
         """mount(async_fn) can update state after the initial render."""
         done = asyncio.Event()
@@ -64,7 +63,7 @@ class TestMountHelper:
         assert observed == ["idle", "ready"]
 
     def test_sync_generator_runs_setup_and_cleanup_on_unmount(
-        self, capture_patches: "type[PatchCapture]"
+        self, capture_patches: type[PatchCapture]
     ) -> None:
         """mount(sync_generator) runs setup on mount and cleanup on unmount."""
         show_child = [True]
@@ -94,7 +93,7 @@ class TestMountHelper:
         assert events == ["setup", "cleanup"]
 
     def test_async_generator_runs_setup_and_cleanup_on_unmount(
-        self, capture_patches: "type[PatchCapture]"
+        self, capture_patches: type[PatchCapture]
     ) -> None:
         """mount(async_generator) runs async setup and cleanup once each."""
         show_child = [True]
@@ -135,7 +134,7 @@ class TestMountHelper:
         assert events == ["setup", "cleanup"]
 
     def test_rerender_does_not_rerun_mount_logic_for_same_slot(
-        self, capture_patches: "type[PatchCapture]"
+        self, capture_patches: type[PatchCapture]
     ) -> None:
         """A mounted slot keeps its first callable and does not rerun on rerender."""
         calls: list[str] = []
@@ -161,7 +160,7 @@ class TestMountHelper:
         assert calls == ["first"]
 
     def test_remount_creates_a_fresh_lifecycle_run(
-        self, capture_patches: "type[PatchCapture]"
+        self, capture_patches: type[PatchCapture]
     ) -> None:
         """Unmounting and remounting a slot captures a fresh callable."""
         show_child = [True]
@@ -196,7 +195,7 @@ class TestMountHelper:
 
     def test_generator_without_yield_logs_error_and_does_not_leak_cleanup(
         self,
-        capture_patches: "type[PatchCapture]",
+        capture_patches: type[PatchCapture],
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         """A generator that never yields logs an error and stores no cleanup."""
@@ -231,7 +230,7 @@ class TestMountHelper:
 
     def test_generator_with_multiple_yields_logs_error(
         self,
-        capture_patches: "type[PatchCapture]",
+        capture_patches: type[PatchCapture],
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         """A generator that yields twice logs an error during cleanup."""
@@ -267,16 +266,13 @@ class TestMountHelper:
 
     def test_mount_is_reexported_from_root_and_package(self, rendered) -> None:
         """trellis and trellis.state both export mount()."""
-        from trellis import mount as root_mount
-        from trellis.state import mount as package_mount
-
         calls: list[str] = []
 
         @component
         def App() -> None:
-            root_mount(lambda: calls.append("mounted"))
+            mount(lambda: calls.append("mounted"))
 
         rendered(App)
 
-        assert root_mount is package_mount
+        assert mount is package_mount
         assert calls == ["mounted"]

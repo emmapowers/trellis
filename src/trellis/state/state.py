@@ -26,7 +26,7 @@ class StateCell[T]:
 
     __slots__ = ("_backing",)
 
-    def __init__(self, backing: "_StateValue") -> None:
+    def __init__(self, backing: _StateValue) -> None:
         self._backing = backing
 
     @property

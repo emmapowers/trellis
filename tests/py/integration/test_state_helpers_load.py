@@ -9,6 +9,7 @@ import pytest
 
 from trellis import component, load
 from trellis.state import Failed, Load, Loading, Ready
+from trellis.state import load as package_load
 
 if TYPE_CHECKING:
     from tests.conftest import PatchCapture
@@ -27,7 +28,7 @@ def _snapshot(result: Load[object]) -> tuple[type[Load[object]], object | None]:
 
 
 class TestLoadHelper:
-    def test_initial_state_is_loading(self, capture_patches: "type[PatchCapture]") -> None:
+    def test_initial_state_is_loading(self, capture_patches: type[PatchCapture]) -> None:
         """load() returns Loading on the initial render."""
         started = asyncio.Event()
         observed: list[Load[int]] = []
@@ -55,9 +56,7 @@ class TestLoadHelper:
         assert observed[0].failed is False
         assert observed[0].get(9) == 9
 
-    def test_successful_completion_yields_ready(
-        self, capture_patches: "type[PatchCapture]"
-    ) -> None:
+    def test_successful_completion_yields_ready(self, capture_patches: type[PatchCapture]) -> None:
         """A successful loader transitions from Loading to Ready."""
         release = asyncio.Event()
         observed: list[Load[str]] = []
@@ -86,7 +85,7 @@ class TestLoadHelper:
         assert observed[1].get("fallback") == "ready"
         assert observed[1].value == "ready"
 
-    def test_failure_yields_failed(self, capture_patches: "type[PatchCapture]") -> None:
+    def test_failure_yields_failed(self, capture_patches: type[PatchCapture]) -> None:
         """A failing loader transitions from Loading to Failed."""
         release = asyncio.Event()
         observed: list[Load[int]] = []
@@ -115,7 +114,7 @@ class TestLoadHelper:
         assert observed[1].get(11) == 11
         assert str(observed[1].error) == "boom"
 
-    def test_reload_forces_a_fresh_fetch(self, capture_patches: "type[PatchCapture]") -> None:
+    def test_reload_forces_a_fresh_fetch(self, capture_patches: type[PatchCapture]) -> None:
         """reload() starts a fresh request for the same slot."""
         release_events = [asyncio.Event(), asyncio.Event()]
         started_events = [asyncio.Event(), asyncio.Event()]
@@ -165,7 +164,7 @@ class TestLoadHelper:
         ]
 
     def test_arg_and_kwarg_changes_restart_load_without_key(
-        self, capture_patches: "type[PatchCapture]"
+        self, capture_patches: type[PatchCapture]
     ) -> None:
         """Changing explicit args/kwargs restarts the load when key is omitted."""
         query = {"value": 2, "multiplier": 3}
@@ -219,7 +218,7 @@ class TestLoadHelper:
         ]
 
     def test_key_overrides_arg_comparison_semantics(
-        self, capture_patches: "type[PatchCapture]"
+        self, capture_patches: type[PatchCapture]
     ) -> None:
         """When key is set, only the key controls automatic reload semantics."""
         value = {"current": 1}
@@ -274,11 +273,13 @@ class TestLoadHelper:
         ]
 
     def test_equality_comparison_exceptions_raise_clear_type_error(
-        self, capture_patches: "type[PatchCapture]"
+        self, capture_patches: type[PatchCapture]
     ) -> None:
         """Comparison failures instruct the caller to provide key=... explicitly."""
 
         class Uncomparable:
+            __hash__ = object.__hash__
+
             def __eq__(self, other: object) -> bool:
                 raise RuntimeError("cannot compare")
 
@@ -306,7 +307,7 @@ class TestLoadHelper:
         asyncio.run(test())
 
     def test_stale_completions_do_not_overwrite_newer_results(
-        self, capture_patches: "type[PatchCapture]"
+        self, capture_patches: type[PatchCapture]
     ) -> None:
         """Older completions are ignored after reload or identity changes."""
         query = {"value": "slow"}
@@ -357,13 +358,6 @@ class TestLoadHelper:
 
     def test_load_is_reexported_from_root_and_package(self, rendered) -> None:
         """trellis reexports load, and trellis.state exports the helper types."""
-        from trellis import load as root_load
-        from trellis.state import Failed as package_failed
-        from trellis.state import Load as package_load_type
-        from trellis.state import Loading as package_loading
-        from trellis.state import Ready as package_ready
-        from trellis.state import load as package_load
-
         observed: list[Load[int]] = []
 
         async def fetch_value() -> int:
@@ -372,7 +366,7 @@ class TestLoadHelper:
 
         @component
         def App() -> None:
-            observed.append(root_load(fetch_value))
+            observed.append(load(fetch_value))
 
         async def test() -> None:
             rendered(App)
@@ -380,9 +374,5 @@ class TestLoadHelper:
 
         asyncio.run(test())
 
-        assert root_load is package_load
-        assert package_load_type is Load
-        assert package_loading is Loading
-        assert package_ready is Ready
-        assert package_failed is Failed
+        assert load is package_load
         assert isinstance(observed[0], Loading)

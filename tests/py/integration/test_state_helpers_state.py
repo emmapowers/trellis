@@ -10,6 +10,7 @@ from trellis import widgets as w
 from trellis.core.rendering.session import RenderSession
 from trellis.platforms.common.serialization import parse_callback_id
 from trellis.state import StateCell
+from trellis.state import state as package_state
 
 if TYPE_CHECKING:
     from tests.conftest import PatchCapture
@@ -24,7 +25,7 @@ def _get_callback(session: RenderSession, callback_id: str):
 
 class TestStateHelper:
     def test_state_value_persists_across_rerenders(
-        self, capture_patches: "type[PatchCapture]"
+        self, capture_patches: type[PatchCapture]
     ) -> None:
         """state(initial) returns a stable cell whose value survives rerenders."""
         observed_values: list[int] = []
@@ -48,7 +49,7 @@ class TestStateHelper:
         assert cell_ids[0] == cell_ids[1]
 
     def test_state_factory_called_once_per_mount_and_recreates_on_remount(
-        self, capture_patches: "type[PatchCapture]"
+        self, capture_patches: type[PatchCapture]
     ) -> None:
         """state(factory=...) runs once per mount and again after remount."""
         show_child = [True]
@@ -93,7 +94,7 @@ class TestStateHelper:
         assert cell_ids[2] != cell_ids[0]
 
     def test_multiple_state_calls_are_slot_stable_and_independent(
-        self, capture_patches: "type[PatchCapture]"
+        self, capture_patches: type[PatchCapture]
     ) -> None:
         """Multiple state() calls in one component keep stable, independent slots."""
         first_ids: list[int] = []
@@ -158,18 +159,13 @@ class TestStateHelper:
 
     def test_state_is_reexported_from_root_and_package(self, rendered) -> None:
         """trellis and trellis.state expose the helper API."""
-        from trellis import state as root_state
-        from trellis.state import StateCell as package_state_cell
-        from trellis.state import state as package_state
-
         captured: list[StateCell[str]] = []
 
         @component
         def App() -> None:
-            captured.append(root_state("hello"))
+            captured.append(state("hello"))
 
         rendered(App)
 
-        assert root_state is package_state
-        assert package_state_cell is StateCell
+        assert state is package_state
         assert isinstance(captured[0], StateCell)

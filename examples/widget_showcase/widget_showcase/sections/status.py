@@ -1,8 +1,8 @@
 """Status indicators and badges section of the widget showcase."""
 
 import asyncio
-from contextlib import suppress
 import typing as tp
+from contextlib import suppress
 
 from trellis import component, mount, state
 from trellis import widgets as w
@@ -39,7 +39,7 @@ def MountLifecycle() -> None:
     pulse_count = state(0)
     active = state(False)
 
-    async def heartbeat() -> tp.AsyncGenerator[None, None]:
+    async def heartbeat() -> tp.AsyncGenerator[None]:
         active.set(True)
 
         async def tick() -> None:

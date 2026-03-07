@@ -34,7 +34,7 @@ class Load[T]:
 
     __slots__ = ("_controller",)
 
-    def __init__(self, controller: "_LoadController") -> None:
+    def __init__(self, controller: _LoadController) -> None:
         self._controller = controller
 
     @property
@@ -102,7 +102,7 @@ class _LoadController(Stateful):
     _generation = 0
     _has_request = False
     _key = _NO_KEY
-    _kwargs = {}
+    _kwargs = None
     _session_ref = None
 
     def __init__(self) -> None:
@@ -128,7 +128,9 @@ class _LoadController(Stateful):
         """Update the semantic inputs for this slot and restart if needed."""
         session = get_active_session()
         if session is None or not session.is_executing():
-            raise RuntimeError("load() can only be called during component execution (render context).")
+            raise RuntimeError(
+                "load() can only be called during component execution (render context)."
+            )
 
         self._session_ref = weakref.ref(session)
         self._element_id = session.current_element_id
@@ -204,7 +206,9 @@ class _LoadController(Stateful):
         args = self._args
         kwargs = dict(self._kwargs)
         self._active_task = session.track_background_task(
-            asyncio.create_task(self._run_request(fn, args, kwargs, generation, session, element_id))
+            asyncio.create_task(
+                self._run_request(fn, args, kwargs, generation, session, element_id)
+            )
         )
 
     async def _run_request(

@@ -58,7 +58,7 @@ class _MountState(Stateful):
         await tp.cast("tp.Callable[[], tp.Awaitable[None]]", self._fn)()
 
     def _run_generator_setup(self) -> None:
-        generator = tp.cast("tp.Callable[[], tp.Generator[object, None, None]]", self._fn)()
+        generator = tp.cast("tp.Callable[[], tp.Generator[object]]", self._fn)()
         try:
             next(generator)
         except StopIteration:
@@ -68,7 +68,7 @@ class _MountState(Stateful):
 
         self._cleanup = generator
 
-    def _run_generator_cleanup(self, generator: tp.Generator[object, None, None]) -> None:
+    def _run_generator_cleanup(self, generator: tp.Generator[object]) -> None:
         try:
             next(generator)
         except StopIteration:
@@ -80,7 +80,7 @@ class _MountState(Stateful):
 
     async def _run_async_generator_setup(self) -> None:
         generator = tp.cast(
-            "tp.Callable[[], tp.AsyncGenerator[object, None]]",
+            "tp.Callable[[], tp.AsyncGenerator[object]]",
             self._fn,
         )()
         try:
@@ -94,7 +94,7 @@ class _MountState(Stateful):
 
     async def _run_async_generator_cleanup(
         self,
-        generator: tp.AsyncGenerator[object, None],
+        generator: tp.AsyncGenerator[object],
     ) -> None:
         try:
             await anext(generator)
@@ -112,6 +112,8 @@ def mount(
     """Register setup/cleanup logic for the current element lifetime."""
     session = get_active_session()
     if session is None or not session.is_executing():
-        raise RuntimeError("mount() can only be called during component execution (render context).")
+        raise RuntimeError(
+            "mount() can only be called during component execution (render context)."
+        )
 
     _MountState(fn)

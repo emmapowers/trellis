@@ -3,8 +3,8 @@
 import asyncio
 
 from trellis import component, load, mutable, state
-from trellis.state import Failed, Ready
 from trellis import widgets as w
+from trellis.state import Failed, Ready
 from trellis.widgets import IconName
 
 from ..components import ExampleCard
