@@ -166,7 +166,7 @@ describe("trellis events target", () => {
     };
 
     const payload = build_trellis_events_module(ir, "2026-03-07T12:00:00.000Z");
-    expect(payload.path).toBe("src/trellis/html/events.py");
+    expect(payload.path).toBe("src/trellis/html/_generated_events.py");
     expect(payload.content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(payload.content).toContain("class Event");
     expect(payload.content).toContain("class UIEvent(Event)");

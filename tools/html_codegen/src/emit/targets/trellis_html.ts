@@ -466,7 +466,7 @@ function emit_family_module(
   const events_import_block =
     handler_imports.length === 0
       ? ""
-      : `from trellis.html.events import (
+      : `from trellis.html._generated_events import (
 ${handler_imports.map((name) => `    ${name},`).join("\n")}
 )`;
   const first_party_imports = [

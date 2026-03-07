@@ -67,9 +67,17 @@ def test_public_html_uses_generated_button_and_label_names() -> None:
         "trellis.html.lists",
         "trellis.html.media",
         "trellis.html.tables",
+        "trellis.html.events",
     ],
 )
 def test_public_html_category_modules_are_removed(module_name: str) -> None:
     """HTML category modules are internal-only and no longer importable."""
     with pytest.raises(ModuleNotFoundError):
         importlib.import_module(module_name)
+
+
+def test_public_html_still_exports_generated_event_types() -> None:
+    """Event types remain publicly available from trellis.html."""
+    assert h.MouseEvent.__name__ == "MouseEvent"
+    assert "Callable" in repr(h.EventHandler)
+    assert "Event" in repr(h.EventHandler)

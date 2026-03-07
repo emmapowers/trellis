@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
@@ -130,6 +130,7 @@ async function compute_target_summary(
   generated_at: string,
 ): Promise<{
   targets: Array<{ path: string; content: string }>;
+  stale_paths: string[];
   summary: { changed: number; added: number; removed: number };
 }> {
   const formatter_root = default_repo_root();
@@ -148,6 +149,28 @@ async function compute_target_summary(
   );
 
   const summary = { changed: 0, added: 0, removed: 0 };
+  const expected_paths = new Set(targets.map((target) => target.path));
+  const generated_dir = join(repo_root, "src", "trellis", "html");
+  const stale_paths: string[] = [];
+
+  try {
+    const existing_names = await readdir(generated_dir);
+    for (const name of existing_names) {
+      const is_generated_file =
+        (name.startsWith("_generated_") && name.endsWith(".py")) || name === "events.py";
+      if (!is_generated_file) {
+        continue;
+      }
+
+      const path = join(generated_dir, name);
+      if (!expected_paths.has(path)) {
+        stale_paths.push(path);
+      }
+    }
+  } catch {
+    // Directory may not exist yet in compare mode.
+  }
+
   for (const target of targets) {
     let existing_content: string | undefined;
     try {
@@ -165,8 +188,10 @@ async function compute_target_summary(
       summary.changed += 1;
     }
   }
+  summary.removed = stale_paths.length;
 
   return {
+    stale_paths,
     targets,
     summary,
   };
@@ -197,7 +222,7 @@ export async function runCli(argv: string[], options: RunCliOptions = {}): Promi
   }
 
   if (command === "write") {
-    const { targets, summary } = await compute_target_summary(
+    const { targets, stale_paths, summary } = await compute_target_summary(
       repo_root,
       format_python,
       generated_at,
@@ -205,6 +230,9 @@ export async function runCli(argv: string[], options: RunCliOptions = {}): Promi
     for (const target of targets) {
       await mkdir(dirname(target.path), { recursive: true });
       await writeFile(target.path, target.content, "utf-8");
+    }
+    for (const stale_path of stale_paths) {
+      await rm(stale_path, { force: true });
     }
 
     return {

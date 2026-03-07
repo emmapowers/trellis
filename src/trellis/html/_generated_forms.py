@@ -1,6 +1,6 @@
 """Generated HTML forms elements.
 
-Generated at: 2026-03-07T21:02:13.251Z
+Generated at: 2026-03-07T21:11:25.358Z
 """
 
 from __future__ import annotations
@@ -9,8 +9,7 @@ from collections.abc import Mapping
 from typing import Literal, overload
 
 from trellis.core.rendering.element import Element
-from trellis.html.base import HtmlContainerElement, Style, html_element
-from trellis.html.events import (
+from trellis.html._generated_events import (
     DragEventHandler,
     EventHandler,
     FocusEventHandler,
@@ -21,6 +20,7 @@ from trellis.html.events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html.base import HtmlContainerElement, Style, html_element
 
 __all__ = [
     "Button",

@@ -9,9 +9,9 @@ from collections.abc import Mapping
 from typing import Literal, overload
 
 from trellis.core.rendering.element import Element
+from trellis.html._generated_events import KeyboardEventHandler, MouseEventHandler
 from trellis.html._generated_runtime import _A, Img
 from trellis.html.base import HtmlContainerElement, Style
-from trellis.html.events import KeyboardEventHandler, MouseEventHandler
 from trellis.routing.state import router
 
 __all__ = [

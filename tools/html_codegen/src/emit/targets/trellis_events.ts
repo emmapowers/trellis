@@ -138,7 +138,7 @@ export function build_trellis_events_module(
   generated_at: string,
 ): TrellisModulePayload {
   return {
-    path: "src/trellis/html/events.py",
+    path: "src/trellis/html/_generated_events.py",
     content: emit_trellis_events_module(document, generated_at),
   };
 }

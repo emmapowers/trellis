@@ -28,7 +28,7 @@ from trellis.core.rendering.patches import (
 )
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession, get_session_registry
-from trellis.html.events import get_event_class
+from trellis.html._generated_events import get_event_class
 from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.messages import (
     AddPatch,

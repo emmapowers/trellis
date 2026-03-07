@@ -28,6 +28,29 @@ Categories:
 
 # Base types
 # Generated HTML elements
+# Event types
+from trellis.html._generated_events import (
+    DataTransfer,
+    DragEvent,
+    DragEventHandler,
+    Event,
+    EventHandler,
+    File,
+    FocusEvent,
+    FocusEventHandler,
+    InputEvent,
+    InputEventHandler,
+    KeyboardEvent,
+    KeyboardEventHandler,
+    MouseEvent,
+    MouseEventHandler,
+    SubmitEvent,
+    SubmitEventHandler,
+    UIEvent,
+    UIEventHandler,
+    WheelEvent,
+    WheelEventHandler,
+)
 from trellis.html._generated_runtime import (
     H1,
     H2,
@@ -98,30 +121,6 @@ from trellis.html._generated_runtime import (
     Video,
 )
 from trellis.html.base import HtmlContainerTrait, HtmlElement, Style
-
-# Event types
-from trellis.html.events import (
-    DataTransfer,
-    DragEvent,
-    DragEventHandler,
-    Event,
-    EventHandler,
-    File,
-    FocusEvent,
-    FocusEventHandler,
-    InputEvent,
-    InputEventHandler,
-    KeyboardEvent,
-    KeyboardEventHandler,
-    MouseEvent,
-    MouseEventHandler,
-    SubmitEvent,
-    SubmitEventHandler,
-    UIEvent,
-    UIEventHandler,
-    WheelEvent,
-    WheelEventHandler,
-)
 from trellis.html.links import A
 from trellis.html.text import Text
 

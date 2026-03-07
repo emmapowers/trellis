@@ -1,4 +1,4 @@
-import { access, mkdtemp, readFile } from "node:fs/promises";
+import { access, mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -9,6 +9,8 @@ import { runCli } from "../src/cli.js";
 describe("write mode", () => {
   it("writes generated module output", async () => {
     const repo_root = await mkdtemp(join(tmpdir(), "html-codegen-"));
+    await mkdir(join(repo_root, "src", "trellis", "html"), { recursive: true });
+    await writeFile(join(repo_root, "src", "trellis", "html", "events.py"), '"""stale"""\\n', "utf-8");
 
     const result = await runCli(["write"], {
       format_python: false,
@@ -26,11 +28,12 @@ describe("write mode", () => {
       "html",
       "_generated_image_and_multimedia.py",
     );
-    const events_path = join(repo_root, "src", "trellis", "html", "events.py");
+    const events_path = join(repo_root, "src", "trellis", "html", "_generated_events.py");
     await expect(access(generated_path)).resolves.toBeUndefined();
     await expect(access(forms_path)).resolves.toBeUndefined();
     await expect(access(media_path)).resolves.toBeUndefined();
     await expect(access(events_path)).resolves.toBeUndefined();
+    await expect(access(join(repo_root, "src", "trellis", "html", "events.py"))).rejects.toThrow();
 
     const content = await readFile(generated_path, "utf-8");
     expect(content).toContain("Generated at: 2026-03-07T12:00:00.000Z");

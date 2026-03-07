@@ -8,7 +8,7 @@ from tests.conftest import PatchCapture, find_element_by_type
 from trellis.core.callback_context import callback_context
 from trellis.core.components.composition import component
 from trellis.core.rendering.session import RenderSession
-from trellis.html.events import MouseEvent
+from trellis.html import MouseEvent
 from trellis.html.links import A
 from trellis.platforms.common.serialization import parse_callback_id, serialize_element
 from trellis.routing import RouterState

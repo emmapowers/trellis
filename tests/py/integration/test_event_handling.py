@@ -10,7 +10,7 @@ from tests.conftest import PatchCapture, get_button_element
 from trellis.core.components.composition import component
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
-from trellis.html.events import (
+from trellis.html import (
     DataTransfer,
     DragEvent,
     Event,
