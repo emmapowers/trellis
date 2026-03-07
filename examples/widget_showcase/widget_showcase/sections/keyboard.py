@@ -1,7 +1,8 @@
 """Keyboard handling section of the widget showcase."""
 
 import typing as tp
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from threading import Timer
 
 from trellis import HotKey, Stateful, component, mutable, sequence
 from trellis import html as h
@@ -11,93 +12,67 @@ from trellis.app import theme
 from ..components import ExampleCard
 from ..example import example
 
-
-@dataclass
-class KeyLogState(Stateful):
-    """Shared state for keyboard demos — holds an event log."""
-
-    log: list[str] = field(default_factory=list)
+# How long the action indicator stays visible (seconds)
+_INDICATOR_DURATION = 2.0
 
 
 @dataclass
-class ToggleState(Stateful):
-    """State for the enabled-toggle demo."""
+class ActionState(Stateful):
+    """State for a single action indicator that auto-clears."""
 
-    log: list[str] = field(default_factory=list)
-    active: bool = False
+    label: str = ""
 
 
-def _log_action(state: KeyLogState | ToggleState, action: str) -> tp.Callable[[], bool]:
-    """Create a handler that appends to the log and returns True (handled)."""
+def _flash(state: ActionState, label: str) -> tp.Callable[[], bool]:
+    """Create a handler that briefly shows a label, then clears it."""
 
     def handler() -> bool:
-        state.log = [*state.log[-4:], action]
+        state.label = label
+        Timer(_INDICATOR_DURATION, _clear, args=(state,)).start()
         return True
 
     return handler
 
 
+def _clear(state: ActionState) -> None:
+    state.label = ""
+
+
 @component
-def ActionFeed(*, log: list[str]) -> None:
-    """Compact activity feed showing recent keyboard events."""
-    if not log:
-        with h.Div(
-            style={
-                "padding": "8px 12px",
-                "borderRadius": "6px",
-                "border": f"1px dashed {theme.border_default}",
-                "color": theme.text_muted,
-                "fontSize": "12px",
-                "letterSpacing": "0.02em",
-            },
-        ):
-            w.Label(
-                text="Waiting for input\u2026",
-                font_size=12,
-                color=theme.text_muted,
-                italic=True,
-            )
+def ActionIndicator(*, state: ActionState) -> None:
+    """Inline indicator that appears below a widget when an action fires."""
+    if not state.label:
         return
 
     with h.Div(
         style={
-            "display": "flex",
-            "flexDirection": "column",
-            "gap": "2px",
+            "display": "inline-flex",
+            "alignItems": "center",
+            "gap": "6px",
+            "padding": "3px 10px",
+            "borderRadius": "4px",
+            "background": theme.accent_subtle,
+            "marginTop": "4px",
         },
     ):
-        for i, entry in enumerate(log):
-            is_latest = i == len(log) - 1
-            with h.Div(
-                style={
-                    "display": "flex",
-                    "alignItems": "center",
-                    "gap": "8px",
-                    "padding": "4px 10px",
-                    "borderRadius": "4px",
-                    "background": theme.accent_subtle if is_latest else "transparent",
-                },
-            ):
-                # Accent dot for latest entry
-                if is_latest:
-                    with h.Div(
-                        style={
-                            "width": "5px",
-                            "height": "5px",
-                            "borderRadius": "50%",
-                            "background": theme.accent_primary,
-                            "flexShrink": "0",
-                        },
-                    ):
-                        pass
-                w.Label(
-                    text=entry,
-                    font_size=12,
-                    color=theme.text_primary if is_latest else theme.text_muted,
-                    style={
-                        "fontFamily": "ui-monospace, SFMono-Regular, Menlo, monospace",
-                    },
-                )
+        with h.Div(
+            style={
+                "width": "5px",
+                "height": "5px",
+                "borderRadius": "50%",
+                "background": theme.accent_primary,
+                "flexShrink": "0",
+            },
+        ):
+            pass
+        w.Label(
+            text=state.label,
+            font_size=12,
+            color=theme.accent_primary,
+            style={
+                "fontFamily": "ui-monospace, SFMono-Regular, Menlo, monospace",
+            },
+        )
 
 
 @component
@@ -127,11 +102,7 @@ def Kbd(*, keys: str) -> None:
     ):
         for part in parts:
             if part == "+":
-                w.Label(
-                    text="+",
-                    font_size=11,
-                    color=theme.text_muted,
-                )
+                w.Label(text="+", font_size=11, color=theme.text_muted)
             else:
                 with h.Div(
                     style={
@@ -152,117 +123,120 @@ def Kbd(*, keys: str) -> None:
                         font_size=11,
                         color=theme.text_primary,
                         style={
-                            "fontFamily": ("ui-monospace, SFMono-Regular, Menlo, monospace"),
+                            "fontFamily": "ui-monospace, SFMono-Regular, Menlo, monospace",
                             "lineHeight": "1",
                         },
                     )
 
 
-@example("Focus-scoped (.on_key)", includes=[KeyLogState, ActionFeed, KeyHint, Kbd])
+@component
+def SequenceHint(*, keys: list[str], label: str) -> None:
+    """Key sequence hint: [key1] then [key2] description."""
+    with h.Div(
+        style={
+            "display": "flex",
+            "alignItems": "center",
+            "gap": "8px",
+        },
+    ):
+        for i, key in enumerate(keys):
+            if i > 0:
+                w.Label(text="then", font_size=11, color=theme.text_muted)
+            Kbd(keys=key)
+        w.Label(text=label, font_size=13, color=theme.text_secondary)
+
+
+@example(
+    "Focus-scoped (.on_key)",
+    includes=[ActionState, ActionIndicator, KeyHint, Kbd],
+)
 def FocusScopedDemo() -> None:
     """Key handlers that fire only when the element has focus."""
-    state = KeyLogState()
+    submit = ActionState()
+    cancel = ActionState()
 
     with w.Column(gap=12):
-        with w.Column(gap=6):
+        with w.Column(gap=4):
             KeyHint(keys="Enter", label="Submit (Shift+Enter does not trigger)")
             w.TextInput(placeholder="Focus and press Enter").on_key(
-                "Enter", _log_action(state, "submitted")
+                "Enter", _flash(submit, "submitted")
             )
+            ActionIndicator(state=submit)
 
-        with w.Column(gap=6):
+        with w.Column(gap=4):
             KeyHint(keys="Escape", label="Cancel")
             w.TextInput(placeholder="Focus and press Escape").on_key(
-                "Escape", _log_action(state, "cancelled")
+                "Escape", _flash(cancel, "cancelled")
             )
+            ActionIndicator(state=cancel)
 
-        ActionFeed(log=state.log)
 
-
-@example("Mount-scoped (HotKey)", includes=[KeyLogState, ActionFeed, KeyHint, Kbd])
+@example(
+    "Mount-scoped (HotKey)",
+    includes=[ActionState, ActionIndicator, KeyHint, Kbd],
+)
 def MountScopedDemo() -> None:
     """Global shortcuts that fire regardless of focus."""
-    state = KeyLogState()
+    save = ActionState()
+    search = ActionState()
 
     with w.Column(gap=12):
-        with w.Column(gap=6):
+        with w.Column(gap=4):
             KeyHint(keys="Mod+S", label="Save (global — works anywhere on page)")
-            HotKey(filter="Mod+S", handler=_log_action(state, "saved"))
+            HotKey(filter="Mod+S", handler=_flash(save, "saved"))
+            ActionIndicator(state=save)
 
-        with w.Column(gap=6):
+        with w.Column(gap=4):
             KeyHint(keys="K", label="Search (ignored when typing in inputs)")
-            HotKey(filter="K", handler=_log_action(state, "search opened"))
+            HotKey(filter="K", handler=_flash(search, "search opened"))
             w.TextInput(placeholder="Type here — K won't trigger")
+            ActionIndicator(state=search)
 
-        ActionFeed(log=state.log)
 
-
-@example("Enabled Toggle", includes=[ToggleState, ActionFeed, KeyHint, Kbd])
+@example(
+    "Enabled Toggle",
+    includes=[ActionState, ActionIndicator, KeyHint, Kbd],
+)
 def EnabledToggleDemo() -> None:
     """Hotkey that can be toggled on/off at runtime."""
-    state = ToggleState()
 
-    def handler() -> bool:
-        state.log = [*state.log[-4:], "Mod+D fired"]
-        return True
+    @dataclass
+    class ToggleState(Stateful):
+        active: bool = False
+
+    toggle = ToggleState()
+    action = ActionState()
 
     with w.Column(gap=12):
         with w.Row(gap=12, align="center"):
             KeyHint(keys="Mod+D", label="")
-            w.Checkbox(
-                label="Enable shortcut",
-                checked=mutable(state.active),
-            )
-        HotKey(filter="Mod+D", handler=handler, enabled=state.active)
-
-        ActionFeed(log=state.log)
+            w.Checkbox(label="Enable shortcut", checked=mutable(toggle.active))
+        HotKey(filter="Mod+D", handler=_flash(action, "Mod+D fired"), enabled=toggle.active)
+        ActionIndicator(state=action)
 
 
-@example("Sequences", includes=[KeyLogState, ActionFeed, KeyHint, Kbd])
+@example(
+    "Sequences",
+    includes=[ActionState, ActionIndicator, SequenceHint, Kbd],
+)
 def SequenceDemo() -> None:
     """Multi-key sequences and chords."""
-    state = KeyLogState()
+    goto = ActionState()
+    chord = ActionState()
 
     with w.Column(gap=12):
-        with w.Column(gap=6):
-            with h.Div(
-                style={
-                    "display": "flex",
-                    "alignItems": "center",
-                    "gap": "8px",
-                },
-            ):
-                Kbd(keys="G")
-                w.Label(text="then", font_size=11, color=theme.text_muted)
-                Kbd(keys="G")
-                w.Label(text="Go to top", font_size=13, color=theme.text_secondary)
-            HotKey(
-                filter=sequence("G", "G"),
-                handler=_log_action(state, "go to top"),
-            )
+        with w.Column(gap=4):
+            SequenceHint(keys=["G", "G"], label="Go to top")
+            HotKey(filter=sequence("G", "G"), handler=_flash(goto, "go to top"))
+            ActionIndicator(state=goto)
 
-        with w.Column(gap=6):
-            with h.Div(
-                style={
-                    "display": "flex",
-                    "alignItems": "center",
-                    "gap": "8px",
-                },
-            ):
-                Kbd(keys="Mod+K")
-                w.Label(text="then", font_size=11, color=theme.text_muted)
-                Kbd(keys="Mod+S")
-                w.Label(
-                    text="Command palette save",
-                    font_size=13,
-                    color=theme.text_secondary,
-                )
+        with w.Column(gap=4):
+            SequenceHint(keys=["Mod+K", "Mod+S"], label="Command palette save")
             HotKey(
                 filter=sequence("Mod+K", "Mod+S"),
-                handler=_log_action(state, "command palette: save"),
+                handler=_flash(chord, "command palette: save"),
             )
-
-        ActionFeed(log=state.log)
+            ActionIndicator(state=chord)
 
 
 @component
