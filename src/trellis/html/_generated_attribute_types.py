@@ -1,6 +1,6 @@
 """Generated HTML attribute type aliases.
 
-Generated at: 2026-03-07T21:23:05.532Z
+Generated at: 2026-03-07T23:17:37.126Z
 """
 
 from __future__ import annotations

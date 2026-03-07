@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
+import typing as tp
 
 import pytest
 
@@ -105,3 +106,25 @@ def test_public_html_still_exports_generated_event_types() -> None:
     assert h.MouseEvent.__name__ == "MouseEvent"
     assert "Callable" in repr(h.EventHandler)
     assert "Event" in repr(h.EventHandler)
+
+
+def test_public_html_style_annotations_use_typed_style_runtime() -> None:
+    """Generated HTML signatures should accept typed styles and raw DOM-style dicts."""
+    div_hints = tp.get_type_hints(h.Div, include_extras=True)
+    anchor_hints = tp.get_type_hints(h.A, include_extras=True)
+
+    assert div_hints["style"] == h.StyleInput | None
+    assert anchor_hints["style"] == h.StyleInput | None
+
+
+def test_public_html_exports_style_input() -> None:
+    """The HTML namespace should expose the public style input alias."""
+    assert "StyleInput" in h.__all__
+
+
+def test_base_module_no_longer_exports_legacy_style_alias() -> None:
+    """The old dict Style alias should not remain in html.base."""
+    from trellis.html import base
+
+    assert "Style" not in base.__all__
+    assert not hasattr(base, "Style")

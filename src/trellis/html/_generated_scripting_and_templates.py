@@ -1,6 +1,6 @@
 """Generated HTML scripting and templates elements.
 
-Generated at: 2026-03-07T21:23:05.532Z
+Generated at: 2026-03-07T23:17:37.126Z
 """
 
 from __future__ import annotations
@@ -46,7 +46,8 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
-from trellis.html.base import HtmlContainerElement, Style, html_element
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement, html_element
 
 __all__ = [
     "Noscript",
@@ -160,7 +161,7 @@ def Noscript(
     security: str | None = None,
     slot: str | None = None,
     spell_check: bool | None = None,
-    style: Style | None = None,
+    style: StyleInput | None = None,
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
@@ -315,7 +316,7 @@ def Script(
     slot: str | None = None,
     spell_check: bool | None = None,
     src: str | None = None,
-    style: Style | None = None,
+    style: StyleInput | None = None,
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
@@ -467,7 +468,7 @@ def Script(
     slot: str | None = None,
     spell_check: bool | None = None,
     src: str | None = None,
-    style: Style | None = None,
+    style: StyleInput | None = None,
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
@@ -621,7 +622,7 @@ def Script(
     slot: str | None = None,
     spell_check: bool | None = None,
     src: str | None = None,
-    style: Style | None = None,
+    style: StyleInput | None = None,
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
@@ -766,7 +767,7 @@ def Slot(
     security: str | None = None,
     slot: str | None = None,
     spell_check: bool | None = None,
-    style: Style | None = None,
+    style: StyleInput | None = None,
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
@@ -909,7 +910,7 @@ def Template(
     security: str | None = None,
     slot: str | None = None,
     spell_check: bool | None = None,
-    style: Style | None = None,
+    style: StyleInput | None = None,
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,

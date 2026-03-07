@@ -712,11 +712,8 @@ ${attribute_type_import_names.map((name) => `    ${name},`).join("\n")}
 )`;
   const first_party_imports = [
     "from trellis.core.rendering.element import Element",
-    `from trellis.html.base import ${
-      needs_container_type
-        ? "HtmlContainerElement, Style, html_element"
-        : "Style, html_element"
-    }`,
+    "from trellis.html._style_runtime import StyleInput",
+    `from trellis.html.base import ${needs_container_type ? "HtmlContainerElement, html_element" : "html_element"}`,
     ...(attribute_types_import ? [attribute_types_import] : []),
     ...(events_import_block ? [events_import_block] : []),
   ].join("\n");

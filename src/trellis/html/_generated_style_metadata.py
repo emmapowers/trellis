@@ -1,6 +1,6 @@
 """Generated CSS style metadata.
 
-Generated at: 2026-03-07T23:10:37.698Z
+Generated at: 2026-03-07T23:17:37.126Z
 """
 
 from __future__ import annotations

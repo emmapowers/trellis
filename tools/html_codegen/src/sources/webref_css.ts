@@ -144,6 +144,8 @@ function value_aliases(): Map<string, TypeExpr> {
     ["ShadowValue", reference("CssValue")],
     ["TransformValue", reference("CssValue")],
     ["TransitionValue", reference("CssValue")],
+    ["Opacity", primitive("float")],
+    ["ZIndex", union(primitive("int"), literal("auto"))],
     ["PrefersColorScheme", keyword_union(["light", "dark"])],
     ["PrefersReducedMotion", keyword_union(["reduce", "no-preference"])],
     ["PointerCapability", keyword_union(["none", "coarse", "fine"])],

@@ -32,7 +32,7 @@ export function render_type_expr(type_expr: TypeExpr): string {
     case "reference":
       return type_expr.name;
     case "style_object":
-      return "Style";
+      return "StyleInput";
     case "nullable":
       return `${render_type_expr(type_expr.item)} | None`;
     case "callable":

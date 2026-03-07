@@ -20,12 +20,8 @@ __all__ = [
     "HtmlContainerElement",
     "HtmlContainerTrait",
     "HtmlElement",
-    "Style",
     "html_element",
 ]
-
-# Type alias for inline styles
-Style = dict[str, str | int | float]
 
 # ParamSpec for preserving function signatures through the decorator
 P = ParamSpec("P")

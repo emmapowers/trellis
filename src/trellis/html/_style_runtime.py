@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import typing as tp
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from trellis.html._css_primitives import (
@@ -13,9 +14,19 @@ from trellis.html._css_primitives import (
     CssTime,
     CssValue,
 )
-from trellis.html._generated_style_types import MediaRule, _GeneratedStyleFields
+from trellis.html._generated_style_types import (
+    HeightValue,
+    MediaRule,
+    SpacingShorthand,
+    WidthValue,
+    _GeneratedStyleFields,
+)
 
-StyleScalar = str | int | float | CssValue
+StyleScalar: tp.TypeAlias = str | int | float | CssValue
+RawStyleMapping: tp.TypeAlias = Mapping[str, tp.Any]
+WidthInput: tp.TypeAlias = WidthValue | int | float
+HeightInput: tp.TypeAlias = HeightValue | int | float
+SpacingInput: tp.TypeAlias = SpacingShorthand | int | float
 
 
 @dataclass(kw_only=True)
@@ -33,8 +44,11 @@ class Style(_GeneratedStyleFields):
     before: Style | None = None
     after: Style | None = None
     selection: Style | None = None
-    media: list[MediaRule] | dict[str, Style] | None = None
-    selectors: dict[str, Style] | None = None
+    media: list[MediaRule] | dict[str, StyleInput] | None = None
+    selectors: dict[str, StyleInput] | None = None
+
+
+StyleInput: tp.TypeAlias = Style | RawStyleMapping
 
 
 def _format_number(value: int | float) -> str:

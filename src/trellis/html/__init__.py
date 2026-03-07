@@ -123,6 +123,7 @@ from trellis.html._generated_runtime import (
 )
 from trellis.html._style_runtime import (
     Style,
+    StyleInput,
     border,
     calc,
     clamp,
@@ -229,6 +230,7 @@ __all__ = [
     "Span",
     "Strong",
     "Style",
+    "StyleInput",
     "Sub",
     "SubmitEvent",
     "SubmitEventHandler",

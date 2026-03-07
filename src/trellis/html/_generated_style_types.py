@@ -1,12 +1,12 @@
 """Generated CSS style type declarations.
 
-Generated at: 2026-03-07T23:10:37.698Z
+Generated at: 2026-03-07T23:17:37.126Z
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from trellis.html._css_primitives import (
     CssAngle,
@@ -16,6 +16,9 @@ from trellis.html._css_primitives import (
     CssTime,
     CssValue,
 )
+
+if TYPE_CHECKING:
+    from trellis.html._style_runtime import Style
 
 Length = CssLength
 Percent = CssPercent
@@ -68,6 +71,8 @@ LineHeightValue = LengthPercentage | float | Literal["normal"] | CssValue
 ShadowValue = CssValue
 TransformValue = CssValue
 TransitionValue = CssValue
+Opacity = float
+ZIndex = int | Literal["auto"]
 Orientation = Literal["portrait", "landscape"]
 PrefersColorScheme = Literal["light", "dark"]
 PrefersReducedMotion = Literal["reduce", "no-preference"]

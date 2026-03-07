@@ -44,7 +44,8 @@ from trellis.html._generated_events import (
     WheelEventHandler,
 )
 from trellis.html._generated_runtime import _A, Img
-from trellis.html.base import HtmlContainerElement, Style
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 from trellis.routing.state import router
 
 __all__ = [
@@ -218,7 +219,7 @@ def A(
     security: str | None = None,
     slot: str | None = None,
     spell_check: bool | None = None,
-    style: Style | None = None,
+    style: StyleInput | None = None,
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
@@ -368,7 +369,7 @@ def A(
     security: str | None = None,
     slot: str | None = None,
     spell_check: bool | None = None,
-    style: Style | None = None,
+    style: StyleInput | None = None,
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
@@ -519,7 +520,7 @@ def A(
     security: str | None = None,
     slot: str | None = None,
     spell_check: bool | None = None,
-    style: Style | None = None,
+    style: StyleInput | None = None,
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
