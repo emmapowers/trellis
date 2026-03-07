@@ -23,6 +23,13 @@ class ActionState(Stateful):
     label: str = ""
 
 
+@dataclass
+class ToggleState(Stateful):
+    """State for the enabled-toggle demo."""
+
+    active: bool = False
+
+
 def _flash(state: ActionState, label: str) -> tp.Callable[[], bool]:
     """Create a handler that briefly shows a label, then clears it."""
 
@@ -155,20 +162,18 @@ def FocusScopedDemo() -> None:
     submit = ActionState()
     cancel = ActionState()
 
-    with w.Column(gap=12):
-        with w.Column(gap=4):
-            KeyHint(keys="Enter", label="Submit (Shift+Enter does not trigger)")
-            w.TextInput(placeholder="Focus and press Enter").on_key(
-                "Enter", _flash(submit, "submitted")
-            )
-            ActionIndicator(state=submit)
+    with w.Column(gap=8):
+        KeyHint(keys="Enter", label="Submit (Shift+Enter does not trigger)")
+        w.TextInput(placeholder="Focus and press Enter").on_key(
+            "Enter", _flash(submit, "submitted")
+        )
+        ActionIndicator(state=submit)
 
-        with w.Column(gap=4):
-            KeyHint(keys="Escape", label="Cancel")
-            w.TextInput(placeholder="Focus and press Escape").on_key(
-                "Escape", _flash(cancel, "cancelled")
-            )
-            ActionIndicator(state=cancel)
+        KeyHint(keys="Escape", label="Cancel")
+        w.TextInput(placeholder="Focus and press Escape").on_key(
+            "Escape", _flash(cancel, "cancelled")
+        )
+        ActionIndicator(state=cancel)
 
 
 @example(
@@ -195,15 +200,10 @@ def MountScopedDemo() -> None:
 
 @example(
     "Enabled Toggle",
-    includes=[ActionState, ActionIndicator, KeyHint, Kbd],
+    includes=[ToggleState, ActionState, ActionIndicator, KeyHint, Kbd],
 )
 def EnabledToggleDemo() -> None:
     """Hotkey that can be toggled on/off at runtime."""
-
-    @dataclass
-    class ToggleState(Stateful):
-        active: bool = False
-
     toggle = ToggleState()
     action = ActionState()
 
@@ -231,10 +231,10 @@ def SequenceDemo() -> None:
             ActionIndicator(state=goto)
 
         with w.Column(gap=4):
-            SequenceHint(keys=["Mod+K", "Mod+S"], label="Command palette save")
+            SequenceHint(keys=["Mod+K", "Mod+L"], label="Command palette link")
             HotKey(
-                filter=sequence("Mod+K", "Mod+S"),
-                handler=_flash(chord, "command palette: save"),
+                filter=sequence("Mod+K", "Mod+L"),
+                handler=_flash(chord, "command palette: link"),
             )
             ActionIndicator(state=chord)
 
