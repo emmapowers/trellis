@@ -365,6 +365,58 @@ describe("processProps", () => {
   });
 });
 
+
+
+describe("compiled CSS runtime props", () => {
+  beforeEach(() => {
+    document.head.innerHTML = "";
+  });
+
+  it("maps DOM-style inline CSS to React style props", () => {
+    const props = toReactDomProps({
+      style: {
+        "border-radius": "8px",
+        "background-color": "red",
+      },
+    });
+
+    expect(props.style).toEqual({
+      borderRadius: "8px",
+      backgroundColor: "red",
+    });
+  });
+
+  it("injects compiled style rules once and strips internal props from html nodes", () => {
+    const node: SerializedElement = {
+      kind: ElementKind.JSX_ELEMENT,
+      type: "div",
+      name: "Div",
+      key: "node-1",
+      props: {
+        class_name: "existing tcss_demo",
+        _style_rules: ".tcss_demo:hover{color:red}",
+        style: { color: "black" },
+      },
+      children: [],
+    };
+
+    renderNode(node, {
+      onEvent: vi.fn(),
+      getWidget: () => undefined,
+    });
+
+    const styleNode = document.head.querySelector('style[data-trellis-dynamic-styles="true"]');
+    expect(styleNode?.textContent).toContain('.tcss_demo:hover{color:red}');
+
+    const domProps = toReactDomProps({
+      class_name: "existing tcss_demo",
+      style: { color: "black" },
+    });
+    expect(domProps.className).toBe("existing tcss_demo");
+  });
+});
+
+
 describe("renderNode", () => {
   const mockGetWidget = vi.fn();
   const mockOnEvent = vi.fn();

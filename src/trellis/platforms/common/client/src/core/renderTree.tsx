@@ -22,6 +22,10 @@ function snakeToCamelKey(key: string): string {
   return key.replace(/_([a-z])/g, (_, char: string) => char.toUpperCase());
 }
 
+function cssNameToCamelKey(key: string): string {
+  return key.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+}
+
 function convertDeepKeysToSnake(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(convertDeepKeysToSnake);
@@ -51,9 +55,83 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function normalizeInlineStyle(value: unknown): unknown {
+  if (!isRecord(value)) {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, nestedValue]) => [
+      cssNameToCamelKey(key),
+      normalizeInlineStyle(nestedValue),
+    ])
+  );
+}
+
+let dynamicStyleElement: HTMLStyleElement | null = null;
+const injectedStyleRules = new Set<string>();
+
+function ensureDynamicStyleElement(): HTMLStyleElement | null {
+  if (typeof document === "undefined") {
+    return null;
+  }
+  if (dynamicStyleElement && document.head.contains(dynamicStyleElement)) {
+    return dynamicStyleElement;
+  }
+  if (dynamicStyleElement && !document.head.contains(dynamicStyleElement)) {
+    dynamicStyleElement = null;
+    injectedStyleRules.clear();
+  }
+
+  dynamicStyleElement = document.head.querySelector('style[data-trellis-dynamic-styles="true"]');
+  if (dynamicStyleElement) {
+    return dynamicStyleElement;
+  }
+
+  const style = document.createElement("style");
+  style.setAttribute("data-trellis-dynamic-styles", "true");
+  document.head.appendChild(style);
+  dynamicStyleElement = style;
+  return dynamicStyleElement;
+}
+
+function injectDynamicStyleRules(styleRules: unknown): void {
+  if (typeof styleRules !== "string" || styleRules.length === 0 || injectedStyleRules.has(styleRules)) {
+    return;
+  }
+
+  const style = ensureDynamicStyleElement();
+  if (!style) {
+    return;
+  }
+
+  style.appendChild(document.createTextNode(styleRules));
+  injectedStyleRules.add(styleRules);
+}
+
+export function applyCompiledStyleProps(
+  props: Record<string, unknown>
+): Record<string, unknown> {
+  const { _style_rules, ...rest } = props as Record<string, unknown> & {
+    _style_rules?: unknown;
+  };
+
+  injectDynamicStyleRules(_style_rules);
+  return rest;
+}
+
 export function toReactDomProps(props: Record<string, unknown>): Record<string, unknown> {
   const mapped: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(props)) {
+    if (key === "_style_rules") {
+      continue;
+    }
+
+    if (key === "style") {
+      mapped.style = normalizeInlineStyle(value);
+      continue;
+    }
+
     if (key === "data") {
       if (!isRecord(value)) {
         continue;
@@ -284,7 +362,7 @@ export function renderNode(
   );
 
   // Process props (transforms callback refs to functions)
-  const processedProps = processProps(node.props, onEvent);
+  const processedProps = applyCompiledStyleProps(processProps(node.props, onEvent));
 
   // Plain text nodes
   if (node.kind === ElementKind.TEXT) {

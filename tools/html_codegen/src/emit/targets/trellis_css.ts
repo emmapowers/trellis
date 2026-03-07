@@ -10,9 +10,50 @@ function sort_by_name<T extends { name?: string; python_name?: string }>(items: 
   );
 }
 
+const CSS_ALIAS_PRIORITY = [
+  "Length",
+  "Percent",
+  "LengthPercentage",
+  "TimeValue",
+  "AngleValue",
+  "ColorValue",
+  "Display",
+  "Position",
+  "Overflow",
+  "TextAlign",
+  "FontWeight",
+  "FlexDirection",
+  "FlexWrap",
+  "JustifyContent",
+  "AlignItems",
+  "WidthValue",
+  "HeightValue",
+  "BorderRadiusValue",
+  "SpacingShorthand",
+  "GapValue",
+  "LineHeightValue",
+  "ShadowValue",
+  "TransformValue",
+  "TransitionValue",
+  "Orientation",
+  "PrefersColorScheme",
+  "PrefersReducedMotion",
+  "PointerCapability",
+  "HoverCapability",
+] as const;
+
 function emit_aliases(aliases: CssValueAliasDef[]): string[] {
+  const priority = new Map<string, number>(CSS_ALIAS_PRIORITY.map((name, index) => [name, index]));
   const lines: string[] = [];
-  for (const alias of sort_by_name(aliases)) {
+  const ordered_aliases = [...aliases].sort((left, right) => {
+    const left_priority = priority.get(left.name) ?? Number.MAX_SAFE_INTEGER;
+    const right_priority = priority.get(right.name) ?? Number.MAX_SAFE_INTEGER;
+    if (left_priority !== right_priority) {
+      return left_priority - right_priority;
+    }
+    return left.name.localeCompare(right.name);
+  });
+  for (const alias of ordered_aliases) {
     lines.push(`${alias.name} = ${render_type_expr(alias.type_expr)}`);
   }
   return lines;
@@ -31,11 +72,11 @@ function emit_style_fields(properties: CssPropertyDef[]): string[] {
 
 function emit_media_rule(media_features: CssMediaFeatureDef[]): string[] {
   const lines = ["@dataclass(frozen=True, kw_only=True)", "class MediaRule:"];
+  lines.push('    style: "Style"');
   for (const feature of [...media_features].sort((left, right) => left.python_name.localeCompare(right.python_name))) {
     lines.push(`    ${feature.python_name}: ${feature.value_type_name} | None = None`);
   }
   lines.push('    query: str | None = None');
-  lines.push('    style: "Style"');
   return lines;
 }
 

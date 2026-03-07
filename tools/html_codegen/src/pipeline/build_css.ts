@@ -19,6 +19,7 @@ export async function build_css_document(): Promise<CssDocument> {
     left.css_name.localeCompare(right.css_name),
   );
   const value_aliases: CssValueAliasDef[] = [...surface.value_aliases.entries()]
+    .filter(([name]) => !["CssValue", "CssLength", "CssPercent", "CssColor", "CssTime", "CssAngle"].includes(name))
     .map(([name, type_expr]): CssValueAliasDef => ({
       name,
       type_expr,

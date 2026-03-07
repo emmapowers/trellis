@@ -36,6 +36,46 @@ const SHORTHAND_PROPERTIES = new Set([
   "transition",
 ]);
 
+const PYTHON_KEYWORDS = new Set([
+  "and",
+  "as",
+  "assert",
+  "async",
+  "await",
+  "break",
+  "case",
+  "class",
+  "continue",
+  "def",
+  "del",
+  "elif",
+  "else",
+  "except",
+  "false",
+  "finally",
+  "for",
+  "from",
+  "global",
+  "if",
+  "import",
+  "in",
+  "is",
+  "lambda",
+  "match",
+  "nonlocal",
+  "none",
+  "not",
+  "or",
+  "pass",
+  "raise",
+  "return",
+  "true",
+  "try",
+  "while",
+  "with",
+  "yield",
+]);
+
 function source(reason: string, contributors: string[] = ["webref", "csstype"]): SourceProvenance {
   return {
     winner: "webref",
@@ -65,7 +105,8 @@ function union(...options: TypeExpr[]): TypeExpr {
 }
 
 function to_snake_case(name: string): string {
-  return name.replace(/-/g, "_");
+  const snake = name.replace(/-/g, "_");
+  return PYTHON_KEYWORDS.has(snake) ? `${snake}_` : snake;
 }
 
 function keyword_union(values: string[]): TypeExpr {
