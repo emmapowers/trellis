@@ -163,16 +163,13 @@ def FocusScopedDemo() -> None:
     cancel = ActionState()
 
     with w.Column(gap=8):
-        KeyHint(keys="Enter", label="Submit (Shift+Enter does not trigger)")
-        w.TextInput(placeholder="Focus and press Enter").on_key(
+        with w.Row(gap=12):
+            KeyHint(keys="Enter", label="Submit (Shift+Enter inserts newline)")
+            KeyHint(keys="Escape", label="Cancel")
+        w.MultilineInput(placeholder="Try Enter, Shift+Enter, and Escape", rows=3).on_key(
             "Enter", _flash(submit, "submitted")
-        )
+        ).on_key("Escape", _flash(cancel, "cancelled"))
         ActionIndicator(state=submit)
-
-        KeyHint(keys="Escape", label="Cancel")
-        w.TextInput(placeholder="Focus and press Escape").on_key(
-            "Escape", _flash(cancel, "cancelled")
-        )
         ActionIndicator(state=cancel)
 
 
