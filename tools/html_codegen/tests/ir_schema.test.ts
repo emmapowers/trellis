@@ -28,6 +28,7 @@ describe("ir schema", () => {
           tag_name: "div",
           python_name: "Div",
           is_container: true,
+          text_behavior: "none",
           attributes: ["html:global:id"],
           events: ["html:global:on_click"],
           source: {

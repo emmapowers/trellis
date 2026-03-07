@@ -105,6 +105,7 @@ const element_schema = z.object({
   tag_name: z.string().min(1),
   python_name: z.string().regex(/^[A-Z][A-Za-z0-9]*$/),
   is_container: z.boolean(),
+  text_behavior: z.enum(["none", "public_helper", "internal_text_prop"]),
   attributes: z.array(z.string()),
   events: z.array(z.string()),
   source: source_provenance_schema,

@@ -12,6 +12,7 @@ describe("python emitter", () => {
           tag_name: "input",
           python_name: "Input",
           is_container: false,
+          text_behavior: "none",
           attributes: ["html:input:type", "html:global:class_name"],
           events: [],
           source: {

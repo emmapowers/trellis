@@ -23,6 +23,7 @@ interface SliceElementConfig {
   tag_name: "a" | "div" | "img" | "input";
   python_name: "_A" | "Div" | "Img" | "Input";
   is_container: boolean;
+  text_behavior: "none" | "public_helper" | "internal_text_prop";
   props: SlicePropConfig[];
 }
 
@@ -91,6 +92,7 @@ const SLICE_CONFIG: SliceElementConfig[] = [
     tag_name: "a",
     python_name: "_A",
     is_container: true,
+    text_behavior: "internal_text_prop",
     props: [
       { name: "href" },
       { name: "target" },
@@ -110,6 +112,7 @@ const SLICE_CONFIG: SliceElementConfig[] = [
     tag_name: "div",
     python_name: "Div",
     is_container: true,
+    text_behavior: "none",
     props: [
       { name: "className" },
       { name: "style" },
@@ -136,6 +139,7 @@ const SLICE_CONFIG: SliceElementConfig[] = [
     tag_name: "img",
     python_name: "Img",
     is_container: false,
+    text_behavior: "none",
     props: [
       { name: "src" },
       { name: "alt" },
@@ -154,6 +158,7 @@ const SLICE_CONFIG: SliceElementConfig[] = [
     tag_name: "input",
     python_name: "Input",
     is_container: false,
+    text_behavior: "none",
     props: [
       { name: "type", default: "text" },
       { name: "value" },
@@ -491,6 +496,7 @@ function build_element(
     tag_name: config.tag_name,
     python_name: config.python_name,
     is_container: config.is_container,
+    text_behavior: config.text_behavior,
     attributes: attribute_ids,
     events: event_ids,
     source: react_source(),

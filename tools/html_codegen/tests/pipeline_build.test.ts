@@ -8,6 +8,12 @@ describe("pipeline build", () => {
 
     expect(ir.elements.map((element) => element.python_name)).toEqual(["_A", "Div", "Img", "Input"]);
     expect(ir.elements.every((element) => element.namespace === "html")).toBe(true);
+    expect(ir.elements.map((element) => element.text_behavior)).toEqual([
+      "internal_text_prop",
+      "none",
+      "none",
+      "none",
+    ]);
     expect(ir.attributes.some((attribute) => attribute.name_python === "href")).toBe(true);
     expect(ir.attributes.some((attribute) => attribute.name_python === "src")).toBe(true);
     expect(ir.attributes.some((attribute) => attribute.name_python === "on_click")).toBe(true);

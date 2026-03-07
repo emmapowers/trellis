@@ -129,11 +129,59 @@ function render_parameter(element: ElementDef, attribute: AttributeDef): string 
   return `    ${attribute.name_python}: ${annotation} = ${default_value},`;
 }
 
+function render_attribute_parameters(
+  element: ElementDef,
+  attributes_by_id: Map<string, AttributeDef>,
+): string[] {
+  const lines: string[] = [];
+  for (const attribute_id of element.attributes) {
+    const attribute = attributes_by_id.get(attribute_id);
+    if (!attribute) {
+      continue;
+    }
+    lines.push(render_parameter(element, attribute));
+  }
+  return lines;
+}
+
+function render_public_helper_overloads(
+  element: ElementDef,
+  attributes_by_id: Map<string, AttributeDef>,
+): string[] {
+  if (element.text_behavior !== "public_helper" || !element.is_container) {
+    return [];
+  }
+
+  const attribute_parameters = render_attribute_parameters(element, attributes_by_id);
+  return [
+    "@overload",
+    `def ${element.python_name}(`,
+    "    text: str,",
+    "    /,",
+    "    *,",
+    ...attribute_parameters,
+    "    data: Mapping[str, DataValue] | None = None,",
+    ") -> Element: ...",
+    "",
+    "",
+    "@overload",
+    `def ${element.python_name}(`,
+    "    *,",
+    ...attribute_parameters,
+    "    data: Mapping[str, DataValue] | None = None,",
+    ") -> HtmlContainerElement: ...",
+    "",
+    "",
+  ];
+}
+
 function render_element_function(
   element: ElementDef,
   attributes_by_id: Map<string, AttributeDef>,
 ): string {
   const lines: string[] = [];
+  lines.push(...render_public_helper_overloads(element, attributes_by_id));
+
   const decorator_args = [`"${element.tag_name}"`];
 
   if (element.is_container) {
@@ -145,21 +193,23 @@ function render_element_function(
 
   lines.push(`@html_element(${decorator_args.join(", ")})`);
   lines.push(`def ${element.python_name}(`);
-  lines.push("    *,");
-  if (element.python_name === "_A") {
+  if (element.text_behavior === "public_helper") {
+    lines.push("    text: str | None = None,");
+    lines.push("    /,");
+    lines.push("    *,");
+  } else {
+    lines.push("    *,");
+  }
+  if (element.text_behavior === "internal_text_prop") {
     lines.push("    _text: str | None = None,");
   }
 
-  for (const attribute_id of element.attributes) {
-    const attribute = attributes_by_id.get(attribute_id);
-    if (!attribute) {
-      continue;
-    }
-    lines.push(render_parameter(element, attribute));
-  }
+  lines.push(...render_attribute_parameters(element, attributes_by_id));
 
   lines.push("    data: Mapping[str, DataValue] | None = None,");
-  lines.push(`) -> ${element.is_container ? "HtmlContainerElement" : "Element"}:`);
+  const return_type =
+    element.text_behavior === "public_helper" ? "Element" : element.is_container ? "HtmlContainerElement" : "Element";
+  lines.push(`) -> ${return_type}:`);
   lines.push(`    """Generated raw ${element.tag_name} binding."""`);
   lines.push("    ...");
 
@@ -169,10 +219,15 @@ function render_element_function(
 function emit_trellis_html_module(document: IrDocument): string {
   const attributes_by_id = index_attributes(document.attributes);
   const handler_imports = event_handler_imports(document);
-  const rendered_elements = document.elements
-    .filter((element) => element.namespace === "html")
+  const html_elements = document.elements.filter((element) => element.namespace === "html");
+  const rendered_elements = html_elements
     .map((element) => render_element_function(element, attributes_by_id))
     .join("\n\n\n");
+  const typing_imports = ["Literal"];
+  if (html_elements.some((element) => element.text_behavior === "public_helper" && element.is_container)) {
+    typing_imports.push("overload");
+  }
+  const exported_names = html_elements.map((element) => `    "${element.python_name}",`).join("\n");
 
   const events_import_block =
     handler_imports.length === 0
@@ -195,15 +250,12 @@ _A, Div, Img, and Input.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal
+from typing import ${typing_imports.join(", ")}
 
 ${first_party_imports}
 
 __all__ = [
-    "_A",
-    "Div",
-    "Img",
-    "Input",
+${exported_names}
 ]
 
 DataValue = str | int | float | bool | None

@@ -96,6 +96,7 @@ export interface ElementDef {
   tag_name: string;
   python_name: string;
   is_container: boolean;
+  text_behavior: "none" | "public_helper" | "internal_text_prop";
   attributes: string[];
   events: string[];
   source: SourceProvenance;

@@ -12,6 +12,7 @@ describe("trellis target", () => {
           tag_name: "a",
           python_name: "_A",
           is_container: true,
+          text_behavior: "internal_text_prop",
           attributes: ["html:a:href", "html:global:class_name", "html:global:style"],
           events: [],
           source: {
@@ -26,6 +27,7 @@ describe("trellis target", () => {
           tag_name: "div",
           python_name: "Div",
           is_container: true,
+          text_behavior: "none",
           attributes: ["html:global:class_name", "html:global:style"],
           events: [],
           source: {
@@ -40,6 +42,7 @@ describe("trellis target", () => {
           tag_name: "img",
           python_name: "Img",
           is_container: false,
+          text_behavior: "none",
           attributes: ["html:img:src", "html:global:style"],
           events: [],
           source: {
@@ -54,6 +57,7 @@ describe("trellis target", () => {
           tag_name: "input",
           python_name: "Input",
           is_container: false,
+          text_behavior: "none",
           attributes: ["html:input:type", "html:global:style"],
           events: [],
           source: {
@@ -179,5 +183,102 @@ describe("trellis target", () => {
     expect(payload.content).not.toContain("from trellis.routing.state import router");
     expect(payload.content).not.toContain("def Svg(");
     expect(payload.content).not.toContain("def Animate(");
+  });
+
+  it("emits public text helpers without exposing _text", () => {
+    const ir: IrDocument = {
+      elements: [
+        {
+          namespace: "html",
+          tag_name: "p",
+          python_name: "P",
+          is_container: true,
+          text_behavior: "public_helper",
+          attributes: ["html:global:class_name", "html:global:style"],
+          events: [],
+          source: {
+            winner: "react_ts",
+            contributors: ["react_ts"],
+            reason: "runtime_precedence",
+            source_version: "@types/react@19.2.14",
+          },
+        },
+        {
+          namespace: "html",
+          tag_name: "option",
+          python_name: "Option",
+          is_container: false,
+          text_behavior: "public_helper",
+          attributes: ["html:option:value"],
+          events: [],
+          source: {
+            winner: "react_ts",
+            contributors: ["react_ts"],
+            reason: "runtime_precedence",
+            source_version: "@types/react@19.2.14",
+          },
+        },
+      ],
+      attributes: [
+        {
+          id: "html:global:class_name",
+          name_source: "className",
+          name_python: "class_name",
+          applies_to: "global",
+          type_expr: { kind: "nullable", item: { kind: "primitive", name: "str" } },
+          required: false,
+          category: "standard",
+          source: {
+            winner: "react_ts",
+            contributors: ["react_ts"],
+            reason: "runtime_precedence",
+            source_version: "@types/react@19.2.14",
+          },
+        },
+        {
+          id: "html:global:style",
+          name_source: "style",
+          name_python: "style",
+          applies_to: "global",
+          type_expr: { kind: "nullable", item: { kind: "style_object" } },
+          required: false,
+          category: "standard",
+          source: {
+            winner: "react_ts",
+            contributors: ["react_ts"],
+            reason: "runtime_precedence",
+            source_version: "@types/react@19.2.14",
+          },
+        },
+        {
+          id: "html:option:value",
+          name_source: "value",
+          name_python: "value",
+          applies_to: "element",
+          type_expr: { kind: "nullable", item: { kind: "primitive", name: "str" } },
+          required: false,
+          category: "standard",
+          source: {
+            winner: "react_ts",
+            contributors: ["react_ts"],
+            reason: "runtime_precedence",
+            source_version: "@types/react@19.2.14",
+          },
+        },
+      ],
+      events: [],
+      event_handlers: [],
+      dataclasses: [],
+      attribute_patterns: [],
+    };
+
+    const payload = build_trellis_html_module(ir);
+    expect(payload.content).toContain("from typing import Literal, overload");
+    expect(payload.content).toContain("def P(");
+    expect(payload.content).toContain("text: str,");
+    expect(payload.content).toContain(") -> HtmlContainerElement: ...");
+    expect(payload.content).toContain('def Option(\n    text: str | None = None,');
+    expect(payload.content).not.toContain("def Option(\n    _text:");
+    expect(payload.content).not.toContain('def P(\n    _text:');
   });
 });
