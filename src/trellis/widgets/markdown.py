@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from trellis.core.components.react import react
-from trellis.core.components.style_props import Margin, Width
+from trellis.html._style_runtime import SpacingInput, StyleInput, WidthInput
 
 _MARKDOWN_PACKAGES = {
     "@types/markdown-it": "14.1.2",
@@ -17,10 +17,10 @@ def Markdown(
     content: str = "",
     *,
     base_path: str | None = None,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     class_name: str | None = None,
-    style: dict[str, object] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Render markdown content in an isolated shadow DOM container.
 

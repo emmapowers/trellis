@@ -9,7 +9,7 @@ import typing as tp
 from typing import Literal
 
 from trellis.core.components.react import react
-from trellis.core.components.style_props import Margin, Padding, Width
+from trellis.html._style_runtime import SpacingInput, StyleInput, WidthInput
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -20,19 +20,19 @@ _ARIA_PACKAGES = {"react-aria": "3.35.0", "react-stately": "3.33.0"}
 @react("client/Menu.tsx", is_container=True, packages=_ARIA_PACKAGES)
 def Menu(
     *,
-    padding: Padding | int | None = None,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    padding: SpacingInput | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Menu container for menu items.
 
     Args:
-        padding: Padding inside the menu (Padding dataclass or int for all sides).
-        margin: Margin around the menu (Margin dataclass).
-        width: Width of the menu (Width dataclass, int for pixels, or str for CSS).
+        padding: Padding inside the menu (CSS padding value).
+        margin: Margin around the menu (CSS margin value).
+        width: Width of the menu (CSS width value).
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
@@ -48,10 +48,10 @@ def MenuItem(
     on_click: Callable[[], None] | None = None,
     disabled: bool = False,
     shortcut: str | None = None,
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Individual menu item.
 
@@ -61,7 +61,7 @@ def MenuItem(
         on_click: Callback when clicked
         disabled: Whether item is disabled
         shortcut: Keyboard shortcut hint (display only)
-        margin: Margin around the menu item (Margin dataclass).
+        margin: Margin around the menu item (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
@@ -72,12 +72,12 @@ def MenuItem(
 @react("client/Menu.tsx", export_name="MenuDivider")
 def MenuDivider(
     *,
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
 ) -> None:
     """Horizontal divider between menu items.
 
     Args:
-        margin: Margin around the divider (Margin dataclass).
+        margin: Margin around the divider (CSS margin value).
     """
     pass
 
@@ -87,21 +87,21 @@ def Toolbar(
     *,
     variant: Literal["default", "minimal"] = "default",
     orientation: Literal["horizontal", "vertical"] = "horizontal",
-    padding: Padding | int | None = None,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    padding: SpacingInput | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Toolbar container for action buttons with keyboard navigation.
 
     Args:
         variant: Visual style variant
         orientation: Layout direction (horizontal or vertical)
-        padding: Padding inside the toolbar (Padding dataclass or int for all sides).
-        margin: Margin around the toolbar (Margin dataclass).
-        width: Width of the toolbar (Width dataclass, int for pixels, or str for CSS).
+        padding: Padding inside the toolbar (CSS padding value).
+        margin: Margin around the toolbar (CSS margin value).
+        width: Width of the toolbar (CSS width value).
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles

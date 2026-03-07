@@ -22,11 +22,11 @@ from trellis.html._generated_style_types import (
     _GeneratedStyleFields,
 )
 
-StyleScalar: tp.TypeAlias = str | int | float | CssValue
-RawStyleMapping: tp.TypeAlias = Mapping[str, tp.Any]
-WidthInput: tp.TypeAlias = WidthValue | int | float
-HeightInput: tp.TypeAlias = HeightValue | int | float
-SpacingInput: tp.TypeAlias = SpacingShorthand | int | float
+type StyleScalar = str | int | float | CssValue
+type RawStyleMapping = Mapping[str, tp.Any]
+type WidthInput = WidthValue | int | float
+type HeightInput = HeightValue | int | float
+type SpacingInput = SpacingShorthand | int | float
 
 
 @dataclass(kw_only=True)
@@ -48,7 +48,7 @@ class Style(_GeneratedStyleFields):
     selectors: dict[str, StyleInput] | None = None
 
 
-StyleInput: tp.TypeAlias = Style | RawStyleMapping
+type StyleInput = Style | RawStyleMapping
 
 
 def _format_number(value: int | float) -> str:
@@ -76,39 +76,39 @@ def color(value: str) -> CssColor:
 
 
 def px(value: int | float) -> CssLength:
-    return tp.cast(CssLength, _wrap_value(CssLength, value, "px"))
+    return tp.cast("CssLength", _wrap_value(CssLength, value, "px"))
 
 
 def rem(value: int | float) -> CssLength:
-    return tp.cast(CssLength, _wrap_value(CssLength, value, "rem"))
+    return tp.cast("CssLength", _wrap_value(CssLength, value, "rem"))
 
 
 def em(value: int | float) -> CssLength:
-    return tp.cast(CssLength, _wrap_value(CssLength, value, "em"))
+    return tp.cast("CssLength", _wrap_value(CssLength, value, "em"))
 
 
 def vw(value: int | float) -> CssLength:
-    return tp.cast(CssLength, _wrap_value(CssLength, value, "vw"))
+    return tp.cast("CssLength", _wrap_value(CssLength, value, "vw"))
 
 
 def vh(value: int | float) -> CssLength:
-    return tp.cast(CssLength, _wrap_value(CssLength, value, "vh"))
+    return tp.cast("CssLength", _wrap_value(CssLength, value, "vh"))
 
 
 def pct(value: int | float) -> CssPercent:
-    return tp.cast(CssPercent, _wrap_value(CssPercent, value, "%"))
+    return tp.cast("CssPercent", _wrap_value(CssPercent, value, "%"))
 
 
 def sec(value: int | float) -> CssTime:
-    return tp.cast(CssTime, _wrap_value(CssTime, value, "s"))
+    return tp.cast("CssTime", _wrap_value(CssTime, value, "s"))
 
 
 def ms(value: int | float) -> CssTime:
-    return tp.cast(CssTime, _wrap_value(CssTime, value, "ms"))
+    return tp.cast("CssTime", _wrap_value(CssTime, value, "ms"))
 
 
 def deg(value: int | float) -> CssAngle:
-    return tp.cast(CssAngle, _wrap_value(CssAngle, value, "deg"))
+    return tp.cast("CssAngle", _wrap_value(CssAngle, value, "deg"))
 
 
 def rgb(red: int, green: int, blue: int) -> CssColor:
@@ -136,11 +136,15 @@ def calc(expression: str) -> CssValue:
 
 
 def min_(*values: StyleScalar) -> CssValue:
-    return CssValue(f"min({', '.join(_serialize_helper_value(value, auto_px=False) for value in values)})")
+    return CssValue(
+        f"min({', '.join(_serialize_helper_value(value, auto_px=False) for value in values)})"
+    )
 
 
 def max_(*values: StyleScalar) -> CssValue:
-    return CssValue(f"max({', '.join(_serialize_helper_value(value, auto_px=False) for value in values)})")
+    return CssValue(
+        f"max({', '.join(_serialize_helper_value(value, auto_px=False) for value in values)})"
+    )
 
 
 def clamp(minimum: StyleScalar, preferred: StyleScalar, maximum: StyleScalar) -> CssValue:
@@ -179,7 +183,9 @@ def scale(value: int | float) -> CssValue:
 
 
 def rotate(value: CssAngle | int | float) -> CssValue:
-    serialized = _serialize_helper_value(value if isinstance(value, CssAngle) else deg(value), auto_px=False)
+    serialized = _serialize_helper_value(
+        value if isinstance(value, CssAngle) else deg(value), auto_px=False
+    )
     return CssValue(f"rotate({serialized})")
 
 
@@ -206,10 +212,18 @@ def media(
 ) -> MediaRule:
     return MediaRule(
         style=style,
-        min_width=tp.cast(tp.Any, min_width if not isinstance(min_width, (int, float)) else px(min_width)),
-        max_width=tp.cast(tp.Any, max_width if not isinstance(max_width, (int, float)) else px(max_width)),
-        min_height=tp.cast(tp.Any, min_height if not isinstance(min_height, (int, float)) else px(min_height)),
-        max_height=tp.cast(tp.Any, max_height if not isinstance(max_height, (int, float)) else px(max_height)),
+        min_width=tp.cast(
+            "tp.Any", min_width if not isinstance(min_width, (int, float)) else px(min_width)
+        ),
+        max_width=tp.cast(
+            "tp.Any", max_width if not isinstance(max_width, (int, float)) else px(max_width)
+        ),
+        min_height=tp.cast(
+            "tp.Any", min_height if not isinstance(min_height, (int, float)) else px(min_height)
+        ),
+        max_height=tp.cast(
+            "tp.Any", max_height if not isinstance(max_height, (int, float)) else px(max_height)
+        ),
         orientation=orientation,
         hover=hover,
         pointer=pointer,

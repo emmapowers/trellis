@@ -1,6 +1,7 @@
 """UI components for the todo app."""
 
-from trellis import Padding, component, mutable
+from trellis import component, mutable
+from trellis import html as h
 from trellis import widgets as w
 from trellis.app import theme
 
@@ -36,7 +37,7 @@ def TodoItem(todo: Todo) -> None:
     with w.Row(
         gap=12,
         align="center",
-        padding=Padding(x=12, y=10),
+        padding=h.padding(10, 12),
     ):
         w.Checkbox(checked=mutable(todo.completed))
 
@@ -44,7 +45,7 @@ def TodoItem(todo: Todo) -> None:
             text=todo.text,
             flex=1,
             style={
-                "textDecoration": "line-through" if todo.completed else "none",
+                "text-decoration": "line-through" if todo.completed else "none",
                 "color": theme.text_muted if todo.completed else None,
             },
         )
@@ -80,7 +81,7 @@ def TodoFooter() -> None:
     """Footer with count, filters, and clear completed button."""
     state = TodosState.from_context()
 
-    with w.Row(gap=12, align="center", justify="between", padding=Padding(x=12, y=10)):
+    with w.Row(gap=12, align="center", justify="between", padding=h.padding(10, 12)):
         # Item count
         count_text = f"{state.active_count} item{'s' if state.active_count != 1 else ''} left"
         w.Label(text=count_text, color=theme.text_secondary, font_size=12)

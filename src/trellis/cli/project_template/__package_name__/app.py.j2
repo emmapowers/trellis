@@ -1,4 +1,5 @@
-from trellis import App, Margin, Padding, component
+from trellis import App, component
+from trellis import html as h
 from trellis import widgets as w
 from trellis.app import theme
 from trellis.widgets import IconName
@@ -11,11 +12,11 @@ def Root():
         with w.Row(
             align="center",
             gap=12,
-            padding=Padding(x=24, y=16),
+            padding=h.padding(16, 24),
             style={
-                "borderBottom": f"1px solid {theme.border_default}",
-                "backgroundColor": theme.bg_surface,
-                "flexShrink": "0",
+                "border-bottom": f"1px solid {theme.border_default}",
+                "background-color": theme.bg_surface,
+                "flex-shrink": "0",
             },
         ):
             w.Icon(name=IconName.LAYOUT_DASHBOARD, size=24, color=theme.accent_primary)
@@ -27,7 +28,7 @@ def Root():
             align="center",
             justify="center",
             padding=24,
-            style={"backgroundColor": theme.bg_page},
+            style={"background-color": theme.bg_page},
         ):
             with w.Card(padding=32, width=480):
                 with w.Column(gap=20, align="center"):
@@ -39,7 +40,7 @@ def Root():
                     w.Heading(
                         text="Welcome to {{ title }}",
                         level=2,
-                        margin=Margin(bottom=0),
+                        style={"margin-bottom": "0"},
                     )
                     w.Label(
                         text="Your app is set up and ready to go.",

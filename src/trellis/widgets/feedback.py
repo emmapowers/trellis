@@ -9,8 +9,8 @@ import typing as tp
 from typing import Literal
 
 from trellis.core.components.react import react
-from trellis.core.components.style_props import Margin, Padding, Width
 from trellis.core.state.mutable import Mutable
+from trellis.html._style_runtime import SpacingInput, StyleInput, WidthInput
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -22,12 +22,12 @@ def Collapsible(
     title: str = "",
     expanded: bool | Mutable[bool] = True,
     icon: str | None = None,
-    padding: Padding | int | None = None,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    padding: SpacingInput | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Collapsible content section.
 
@@ -35,9 +35,9 @@ def Collapsible(
         title: Section title
         expanded: Whether content is visible. Use mutable(state.prop) for two-way binding.
         icon: Optional icon for the header
-        padding: Padding inside the collapsible (Padding dataclass or int for all sides).
-        margin: Margin around the collapsible (Margin dataclass).
-        width: Width of the collapsible (Width dataclass, int for pixels, or str for CSS).
+        padding: Padding inside the collapsible (CSS padding value).
+        margin: Margin around the collapsible (CSS margin value).
+        width: Width of the collapsible (CSS width value).
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
@@ -54,12 +54,12 @@ def Callout(
     icon: str | None = None,
     dismissible: bool = False,
     on_dismiss: Callable[[], None] | None = None,
-    padding: Padding | int | None = None,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    padding: SpacingInput | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Prominent status message or alert.
 
@@ -69,9 +69,9 @@ def Callout(
         icon: Optional icon (defaults based on intent if not provided)
         dismissible: Whether to show dismiss button
         on_dismiss: Callback when dismissed
-        padding: Padding inside the callout (Padding dataclass or int for all sides).
-        margin: Margin around the callout (Margin dataclass).
-        width: Width of the callout (Width dataclass, int for pixels, or str for CSS).
+        padding: Padding inside the callout (CSS padding value).
+        margin: Margin around the callout (CSS margin value).
+        width: Width of the callout (CSS width value).
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles

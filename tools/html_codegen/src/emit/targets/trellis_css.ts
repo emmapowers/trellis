@@ -1,4 +1,10 @@
-import type { CssDocument, CssMediaFeatureDef, CssPropertyDef, CssValueAliasDef } from "../../ir/types.js";
+import type {
+  CssDocument,
+  CssMediaFeatureDef,
+  CssPropertyDef,
+  CssValueAliasDef,
+  TypeExpr,
+} from "../../ir/types.js";
 import { render_type_expr } from "../python/render_types.js";
 import { render_generated_module_docstring } from "./generated_metadata.js";
 
@@ -44,6 +50,18 @@ const CSS_ALIAS_PRIORITY = [
   "HoverCapability",
 ] as const;
 
+const CSS_VALUE_CAPABLE_ALIASES = new Set([
+  "WidthValue",
+  "HeightValue",
+  "BorderRadiusValue",
+  "SpacingShorthand",
+  "GapValue",
+  "LineHeightValue",
+  "ShadowValue",
+  "TransformValue",
+  "TransitionValue",
+]);
+
 function emit_aliases(aliases: CssValueAliasDef[]): string[] {
   const priority = new Map<string, number>(CSS_ALIAS_PRIORITY.map((name, index) => [name, index]));
   const lines: string[] = [];
@@ -61,10 +79,82 @@ function emit_aliases(aliases: CssValueAliasDef[]): string[] {
   return lines;
 }
 
+function flatten_union(type_expr: TypeExpr): TypeExpr[] {
+  if (type_expr.kind === "union") {
+    return type_expr.options.flatMap(flatten_union);
+  }
+  return [type_expr];
+}
+
+function append_type_expr(base: TypeExpr, addition: TypeExpr): TypeExpr {
+  const options = [...flatten_union(base)];
+  const rendered = new Set(options.map((option) => JSON.stringify(option)));
+  const additions = flatten_union(addition);
+  for (const option of additions) {
+    const key = JSON.stringify(option);
+    if (rendered.has(key)) {
+      continue;
+    }
+    rendered.add(key);
+    options.push(option);
+  }
+
+  if (options.length === 1) {
+    return options[0]!;
+  }
+  return { kind: "union", options };
+}
+
+function qualify_field_primitives(type_expr: TypeExpr): TypeExpr {
+  switch (type_expr.kind) {
+    case "primitive":
+      if (type_expr.name === "none") {
+        return type_expr;
+      }
+      return { kind: "reference", name: `builtins.${type_expr.name}` };
+    case "union":
+      return {
+        kind: "union",
+        options: type_expr.options.map(qualify_field_primitives),
+      };
+    case "array":
+      return {
+        kind: "array",
+        item: qualify_field_primitives(type_expr.item),
+      };
+    case "nullable":
+      return {
+        kind: "nullable",
+        item: qualify_field_primitives(type_expr.item),
+      };
+    default:
+      return type_expr;
+  }
+}
+
+function field_type_expr(property: CssPropertyDef): TypeExpr {
+  let type_expr = qualify_field_primitives(property.type_expr);
+  if (property.is_shorthand && !CSS_VALUE_CAPABLE_ALIASES.has(property.value_type_name)) {
+    type_expr = append_type_expr(type_expr, { kind: "reference", name: "CssValue" });
+  }
+  if (property.accepts_auto_px) {
+    type_expr = append_type_expr(type_expr, {
+      kind: "union",
+      options: [
+        { kind: "reference", name: "builtins.int" },
+        { kind: "reference", name: "builtins.float" },
+      ],
+    });
+  }
+  return type_expr;
+}
+
 function emit_style_fields(properties: CssPropertyDef[]): string[] {
   const lines = ["@dataclass(kw_only=True)", "class _GeneratedStyleFields:"];
   for (const property of [...properties].sort((left, right) => left.python_name.localeCompare(right.python_name))) {
-    lines.push(`    ${property.python_name}: ${property.value_type_name} | None = None`);
+    lines.push(
+      `    ${property.python_name}: ${render_type_expr(field_type_expr(property))} | None = None`,
+    );
   }
   if (properties.length === 0) {
     lines.push("    pass");
@@ -74,7 +164,7 @@ function emit_style_fields(properties: CssPropertyDef[]): string[] {
 
 function emit_media_rule(media_features: CssMediaFeatureDef[]): string[] {
   const lines = ["@dataclass(frozen=True, kw_only=True)", "class MediaRule:"];
-  lines.push('    style: "Style"');
+  lines.push("    style: Style");
   for (const feature of [...media_features].sort((left, right) => left.python_name.localeCompare(right.python_name))) {
     lines.push(`    ${feature.python_name}: ${feature.value_type_name} | None = None`);
   }
@@ -89,6 +179,8 @@ function emit_types_module(document: CssDocument, generated_at: string): string 
   return [
     render_generated_module_docstring("Generated CSS style type declarations.", generated_at),
     "from __future__ import annotations",
+    "",
+    "import builtins",
     "",
     "from dataclasses import dataclass",
     "from typing import TYPE_CHECKING, Literal",

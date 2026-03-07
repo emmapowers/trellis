@@ -31,13 +31,7 @@ function sample_css_document(): CssDocument {
         css_name: "width",
         python_name: "width",
         value_type_name: "WidthValue",
-        type_expr: {
-          kind: "union",
-          options: [
-            { kind: "reference", name: "LengthPercentage" },
-            { kind: "literal", value: "auto" },
-          ],
-        },
+        type_expr: { kind: "reference", name: "WidthValue" },
         accepts_auto_px: true,
         is_shorthand: false,
         source: {
@@ -50,10 +44,38 @@ function sample_css_document(): CssDocument {
       {
         css_name: "margin",
         python_name: "margin",
-        value_type_name: "MarginValue",
+        value_type_name: "SpacingShorthand",
         type_expr: { kind: "reference", name: "SpacingShorthand" },
         accepts_auto_px: true,
         is_shorthand: true,
+        source: {
+          winner: "webref",
+          contributors: ["webref", "csstype"],
+          reason: "css_property",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
+      {
+        css_name: "border",
+        python_name: "border",
+        value_type_name: "ColorValue",
+        type_expr: { kind: "reference", name: "ColorValue" },
+        accepts_auto_px: false,
+        is_shorthand: true,
+        source: {
+          winner: "webref",
+          contributors: ["webref", "csstype"],
+          reason: "css_property",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
+      {
+        css_name: "opacity",
+        python_name: "opacity",
+        value_type_name: "Opacity",
+        type_expr: { kind: "primitive", name: "float" },
+        accepts_auto_px: false,
+        is_shorthand: false,
         source: {
           winner: "webref",
           contributors: ["webref", "csstype"],
@@ -155,9 +177,17 @@ describe("trellis css target", () => {
 
     const types_module = modules.find((module) => module.path.endsWith("_generated_style_types.py"));
     expect(types_module?.content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
+    expect(types_module?.content).toContain("import builtins");
     expect(types_module?.content).toContain("Display = Literal[");
     expect(types_module?.content).toContain("class _GeneratedStyleFields:");
-    expect(types_module?.content).toContain("width: WidthValue | None = None");
+    expect(types_module?.content).toContain("border: ColorValue | CssValue | None = None");
+    expect(types_module?.content).toContain(
+      "width: WidthValue | builtins.int | builtins.float | None = None",
+    );
+    expect(types_module?.content).toContain(
+      "margin: SpacingShorthand | builtins.int | builtins.float | None = None",
+    );
+    expect(types_module?.content).toContain("opacity: builtins.float | None = None");
     expect(types_module?.content).toContain("class MediaRule:");
     expect(types_module?.content).toContain("prefers_color_scheme: PrefersColorScheme | None = None");
 

@@ -11,9 +11,9 @@ from trellis.app import App, theme
 # =============================================================================
 
 STYLE_COUNT_DISPLAY = {
-    "backgroundColor": theme.bg_surface,
-    "borderRadius": "6px",
-    "textAlign": "center",
+    "background-color": theme.bg_surface,
+    "border-radius": "6px",
+    "text-align": "center",
     "border": f"1px solid {theme.border_default}",
 }
 
@@ -31,7 +31,7 @@ INITIAL_COUNT = 5
 @component
 def Header(title: str, subtitle: str) -> None:
     """Page header with title and subtitle."""
-    with w.Column(align="center", gap=4, margin=Margin(bottom=24)):
+    with w.Column(align="center", gap=4, style={"margin-bottom": "24px"}):
         w.Label(text=title, font_size=20, bold=True)
         w.Label(text=subtitle, font_size=13, color=theme.text_secondary)
 
@@ -45,7 +45,7 @@ def CounterControls(
     max_val: int = 10,
 ) -> None:
     """Counter display with increment/decrement buttons."""
-    with w.Row(gap=16, align="center", justify="center", margin=Margin(bottom=24)):
+    with w.Row(gap=16, align="center", justify="center", style={"margin-bottom": "24px"}):
         w.Button(
             text="-",
             on_click=on_decrement,
@@ -54,12 +54,12 @@ def CounterControls(
             size="lg",
         )
 
-        with w.Column(width=120, padding=Padding(x=32, y=16), style=STYLE_COUNT_DISPLAY):
+        with w.Column(width=120, padding=h.padding(16, 32), style=STYLE_COUNT_DISPLAY):
             w.Label(
                 text=str(count),
                 font_size=36,
                 bold=True,
-                style={"fontVariantNumeric": "tabular-nums"},
+                style={"font-variant-numeric": "tabular-nums"},
             )
 
         w.Button(
@@ -74,7 +74,7 @@ def CounterControls(
 @component
 def RangeLabels(min_val: int, max_val: int) -> None:
     """Min/max range labels."""
-    with w.Row(justify="between", margin=Margin(bottom=24)):
+    with w.Row(justify="between", style={"margin-bottom": "24px"}):
         w.Label(text=f"Min: {min_val}", font_size=12, color=theme.text_secondary)
         w.Label(text=f"Max: {max_val}", font_size=12, color=theme.text_secondary)
 

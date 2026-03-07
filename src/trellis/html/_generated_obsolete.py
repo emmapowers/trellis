@@ -1,6 +1,6 @@
 """Generated HTML obsolete elements elements.
 
-Generated at: 2026-03-07T23:17:37.126Z
+Generated at: 2026-03-07T23:41:03.418Z
 """
 
 from __future__ import annotations

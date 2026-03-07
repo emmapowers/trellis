@@ -169,8 +169,7 @@ function infer_alias_name(css_name: string, feature: CssFeature): string {
   if (css_name === "color" || css_name.endsWith("-color") || css_name === "background-color") {
     return "ColorValue";
   }
-  if (css_name === "width" || css_name.endsWith("-width")) return "WidthValue";
-  if (css_name === "height" || css_name.endsWith("-height")) return "HeightValue";
+  if (css_name === "line-height") return "LineHeightValue";
   if (css_name.includes("radius")) return "BorderRadiusValue";
   if (
     css_name === "margin" ||
@@ -183,7 +182,8 @@ function infer_alias_name(css_name: string, feature: CssFeature): string {
     return "SpacingShorthand";
   }
   if (css_name === "gap" || css_name.endsWith("-gap")) return "GapValue";
-  if (css_name === "line-height") return "LineHeightValue";
+  if (css_name === "width" || css_name.endsWith("-width")) return "WidthValue";
+  if (css_name === "height" || css_name.endsWith("-height")) return "HeightValue";
   if (css_name === "opacity") return "Opacity";
   if (css_name === "z-index") return "ZIndex";
 
@@ -253,9 +253,18 @@ function infer_type_expr(alias_name: string): TypeExpr {
   }
 }
 
-function accepts_auto_px(feature: CssFeature): boolean {
+function accepts_auto_px(feature: CssFeature, value_type_name: string): boolean {
   const syntax = feature.syntax ?? "";
-  return syntax.includes("<length") || syntax.includes("<length-percentage");
+  if (syntax.includes("<length") || syntax.includes("<length-percentage")) {
+    return true;
+  }
+  return new Set([
+    "WidthValue",
+    "HeightValue",
+    "BorderRadiusValue",
+    "SpacingShorthand",
+    "GapValue",
+  ]).has(value_type_name);
 }
 
 function is_property_shorthand(css_name: string, feature: CssFeature): boolean {
@@ -269,7 +278,7 @@ function build_property_def(css_name: string, feature: CssFeature): CssPropertyD
     python_name: to_snake_case(css_name),
     value_type_name,
     type_expr: infer_type_expr(value_type_name),
-    accepts_auto_px: accepts_auto_px(feature),
+    accepts_auto_px: accepts_auto_px(feature, value_type_name),
     is_shorthand: is_property_shorthand(css_name, feature),
     source: source("css_property"),
   };

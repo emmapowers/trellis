@@ -51,7 +51,6 @@ from trellis.html._generated_events import (
     WheelEvent,
     WheelEventHandler,
 )
-from trellis.html._generated_style_types import MediaRule
 from trellis.html._generated_runtime import (
     H1,
     H2,
@@ -121,6 +120,7 @@ from trellis.html._generated_runtime import (
     Ul,
     Video,
 )
+from trellis.html._generated_style_types import MediaRule
 from trellis.html._style_runtime import (
     Style,
     StyleInput,
@@ -211,8 +211,8 @@ __all__ = [
     "Li",
     "Main",
     "Mark",
-    "Meter",
     "MediaRule",
+    "Meter",
     "MouseEvent",
     "MouseEventHandler",
     "Nav",

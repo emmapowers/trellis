@@ -40,7 +40,8 @@ from dataclasses import dataclass
 
 from trellis.core.components.composition import component
 from trellis.core.components.react import react
-from trellis.core.components.style_props import Height, Margin, Width
+from trellis.html._style_compiler import merge_style_inputs, merge_widget_style_props
+from trellis.html._style_runtime import HeightInput, SpacingInput, StyleInput, WidthInput
 from trellis.widgets.icons import IconName
 
 __all__ = ["Table", "TableColumn"]
@@ -122,7 +123,7 @@ def _TableInner(
     compact: bool = True,
     bordered: bool = False,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Internal React table component.
 
@@ -140,12 +141,12 @@ def Table(
     striped: bool = False,
     compact: bool = True,
     bordered: bool = False,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
-    height: Height | int | str | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
+    height: HeightInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Data table widget with custom cell rendering support.
 
@@ -166,7 +167,7 @@ def Table(
         compact: Use compact row height and font size. Defaults to True.
         bordered: Show cell borders and rounded corners. Defaults to False.
         margin: Margin around the table.
-        width: Table width (Width dataclass, int for pixels, or str for CSS).
+        width: Table width (CSS width value).
         height: Table height (enables vertical scrolling if content overflows).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
@@ -222,28 +223,16 @@ def Table(
         for c in cols
     ]
 
-    # Build combined style
-    combined_style: dict[str, tp.Any] = {}
-    if margin is not None:
-        combined_style.update(margin.to_style())
-    if width is not None:
-        if isinstance(width, Width):
-            combined_style.update(width.to_style())
-        elif isinstance(width, int):
-            combined_style["width"] = f"{width}px"
-        else:
-            combined_style["width"] = width
-    if height is not None:
-        if isinstance(height, Height):
-            combined_style.update(height.to_style())
-        elif isinstance(height, int):
-            combined_style["height"] = f"{height}px"
-        else:
-            combined_style["height"] = height
-    if flex is not None:
-        combined_style["flex"] = flex
-    if style:
-        combined_style.update(style)
+    table_props = merge_widget_style_props(
+        {
+            "margin": margin,
+            "width": width,
+            "height": height,
+            "flex": flex,
+            "style": merge_style_inputs(None, style),
+        },
+        frozenset({"margin", "width", "height", "flex"}),
+    )
 
     # Render the inner table with cell slot children
     with _TableInner(
@@ -253,7 +242,7 @@ def Table(
         compact=compact,
         bordered=bordered,
         class_name=class_name,
-        style=combined_style or None,
+        style=tp.cast("StyleInput | None", table_props.get("style")),
     ):
         # Generate cell slots for columns with custom renderers
         for row_index, row in enumerate(data):

@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from trellis import Margin, Padding, Route, Routes, component, router
+from trellis import Route, Routes, component, router
 from trellis import html as h
 from trellis import widgets as w
 from trellis.app import App, theme
@@ -17,7 +17,7 @@ def RouterDemo() -> None:
         Header()
 
         # Main content
-        with w.Column(flex=1, padding=Padding(x=24, y=20), style={"overflow": "auto"}):
+        with w.Column(flex=1, padding=h.padding(20, 24), style={"overflow": "auto"}):
             with w.Row(gap=0):
                 w.Button(
                     text="",
@@ -35,13 +35,13 @@ def RouterDemo() -> None:
                     disabled=not router().can_go_forward,
                     variant="ghost",
                     size="sm",
-                    style={"width": "16px", "padding": "0px", "marginRight": "4px"},
+                    style={"width": "16px", "padding": "0px", "margin-right": "4px"},
                 )
                 # Breadcrumb navigation
                 BreadcrumbNav()
 
             # Route content
-            with w.Card(padding=24, margin=Margin(top=16)):
+            with w.Card(padding=24, style={"margin-top": "16px"}):
                 with Routes():
                     with Route(pattern="/"):
                         HomePage()
@@ -61,11 +61,11 @@ def Header() -> None:
     with w.Row(
         align="center",
         gap=16,
-        padding=Padding(x=24, y=12),
+        padding=h.padding(12, 24),
         style={
-            "borderBottom": f"1px solid {theme.border_default}",
-            "backgroundColor": theme.bg_surface,
-            "flexShrink": "0",
+            "border-bottom": f"1px solid {theme.border_default}",
+            "background-color": theme.bg_surface,
+            "flex-shrink": "0",
         },
     ):
         # Logo/title
@@ -148,7 +148,7 @@ def HomePage() -> None:
         w.Divider()
 
         w.Label(text="Quick Links", bold=True)
-        with w.Row(gap=8, margin=Margin(top=4)):
+        with w.Row(gap=8, style={"margin-top": "4px"}):
             w.Button(
                 text="Alice", icon=IconName.USER, variant="outline", size="sm", href="/users/1"
             )
@@ -181,7 +181,7 @@ def AboutPage() -> None:
         w.Divider()
 
         w.Label(text="Features", bold=True)
-        with w.Column(gap=8, margin=Margin(top=8)):
+        with w.Column(gap=8, style={"margin-top": "8px"}):
             FeatureItem(icon=IconName.COMPASS, text="Path-based routing with pattern matching")
             FeatureItem(icon=IconName.CODE, text="URL parameters (/users/:id)")
             FeatureItem(icon=IconName.CLOCK, text="Browser history integration")
@@ -259,7 +259,7 @@ def UserDetailPage() -> None:
                 DetailRow(label="Role", value=user["role"], icon=IconName.TAG)
                 DetailRow(label="ID", value=user_id, icon=IconName.HASH)
 
-            with w.Row(margin=Margin(top=8)):
+            with w.Row(style={"margin-top": "8px"}):
                 w.Button(
                     text="Back to Users",
                     icon=IconName.ARROW_LEFT,
@@ -300,7 +300,7 @@ def NotFoundPage() -> None:
         w.Heading(text="Page Not Found", level=3)
         w.Label(text=f'The path "{state.path}" does not exist.', color=theme.text_secondary)
 
-        with w.Row(margin=Margin(top=8)):
+        with w.Row(style={"margin-top": "8px"}):
             w.Button(
                 text="Go Home",
                 icon=IconName.HOME,

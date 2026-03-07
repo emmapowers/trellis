@@ -15,6 +15,9 @@ from trellis.html._style_runtime import Style
 
 StyleDict = dict[str, tp.Any]
 CompiledStyle = tuple[StyleDict, str | None, str | None]
+WidgetStyleField = tp.Literal[
+    "margin", "padding", "width", "height", "flex", "text_align", "font_weight"
+]
 
 _PSEUDO_FIELDS = {
     "hover": ":hover",
@@ -31,7 +34,43 @@ _PSEUDO_FIELDS = {
     "selection": "::selection",
 }
 
-_CSS_NAME_BY_FIELD_REVERSED = {css_name: field_name for field_name, css_name in CSS_NAME_BY_FIELD.items()}
+_CSS_NAME_BY_FIELD_REVERSED = {
+    css_name: field_name for field_name, css_name in CSS_NAME_BY_FIELD.items()
+}
+_FONT_WEIGHT_KEYWORDS = {"normal": 400, "medium": 500, "semibold": 600, "bold": 700}
+
+
+def merge_widget_style_props(
+    props: dict[str, tp.Any],
+    style_fields: frozenset[WidgetStyleField],
+) -> dict[str, tp.Any]:
+    result = dict(props)
+    style_updates: dict[str, tp.Any] = {}
+
+    for field_name in ("margin", "padding", "width", "height", "flex"):
+        if field_name in style_fields and field_name in result:
+            value = result.pop(field_name)
+            if value is not None:
+                style_updates[field_name] = value
+
+    if "text_align" in style_fields and "text_align" in result:
+        value = result.pop("text_align")
+        if value is not None:
+            style_updates["text_align"] = value
+
+    if "font_weight" in style_fields and "font_weight" in result:
+        value = result.pop("font_weight")
+        if value is not None:
+            if isinstance(value, str):
+                value = _FONT_WEIGHT_KEYWORDS.get(value, value)
+            style_updates["font_weight"] = value
+
+    merged_style = result.pop("style", None)
+    if style_updates:
+        merged_style = merge_style_inputs(merged_style, Style(**style_updates))
+    if merged_style is not None:
+        result["style"] = merged_style
+    return result
 
 
 def compile_style_props(props: dict[str, tp.Any]) -> dict[str, tp.Any]:
@@ -70,6 +109,21 @@ def compile_style(style_input: tp.Any) -> CompiledStyle:
     return inline, class_name, css_text
 
 
+def merge_style_inputs(
+    base_style: tp.Any,
+    overlay_style: tp.Any,
+) -> Mapping[str, tp.Any] | None:
+    base_mapping = _style_input_to_mapping(base_style)
+    overlay_mapping = _style_input_to_mapping(overlay_style)
+
+    if not base_mapping and not overlay_mapping:
+        return None
+
+    merged = dict(base_mapping)
+    merged.update(overlay_mapping)
+    return merged
+
+
 def _normalize_style(style_input: tp.Any) -> tuple[StyleDict, list[dict[str, tp.Any]]]:
     inline: StyleDict = {}
     nested_rules: list[dict[str, tp.Any]] = []
@@ -88,7 +142,20 @@ def _normalize_style(style_input: tp.Any) -> tuple[StyleDict, list[dict[str, tp.
     raise TypeError(f"Unsupported style value: {style_input!r}")
 
 
-def _consume_style_object(style: Style, inline: StyleDict, nested_rules: list[dict[str, tp.Any]]) -> None:
+def _style_input_to_mapping(style_input: tp.Any) -> dict[str, tp.Any]:
+    inline, nested_rules = _normalize_style(style_input)
+    mapping = dict(inline)
+    for rule in nested_rules:
+        if "media" in rule:
+            mapping[f"@media {rule['media']}"] = _nested_rule_to_mapping(rule)
+        elif "selector" in rule:
+            mapping[rule["selector"]] = _nested_rule_to_mapping(rule)
+    return mapping
+
+
+def _consume_style_object(
+    style: Style, inline: StyleDict, nested_rules: list[dict[str, tp.Any]]
+) -> None:
     for field in fields(style):
         value = getattr(style, field.name)
         if value is None:
@@ -102,7 +169,11 @@ def _consume_style_object(style: Style, inline: StyleDict, nested_rules: list[di
         if field.name in _PSEUDO_FIELDS:
             nested_inline, nested_children = _normalize_style(value)
             nested_rules.append(
-                {"selector": _PSEUDO_FIELDS[field.name], "inline": nested_inline, "children": nested_children}
+                {
+                    "selector": _PSEUDO_FIELDS[field.name],
+                    "inline": nested_inline,
+                    "children": nested_children,
+                }
             )
             continue
 
@@ -111,18 +182,24 @@ def _consume_style_object(style: Style, inline: StyleDict, nested_rules: list[di
                 for query, nested_style in value.items():
                     media_query = query.removeprefix("@media ").strip()
                     nested_inline, nested_children = _normalize_style(nested_style)
-                    nested_rules.append({"media": media_query, "inline": nested_inline, "children": nested_children})
+                    nested_rules.append(
+                        {"media": media_query, "inline": nested_inline, "children": nested_children}
+                    )
             else:
                 for rule in value:
                     query = _media_query(rule)
                     nested_inline, nested_children = _normalize_style(rule.style)
-                    nested_rules.append({"media": query, "inline": nested_inline, "children": nested_children})
+                    nested_rules.append(
+                        {"media": query, "inline": nested_inline, "children": nested_children}
+                    )
             continue
 
         if field.name == "selectors":
             for selector, nested_style in value.items():
                 nested_inline, nested_children = _normalize_style(nested_style)
-                nested_rules.append({"selector": selector, "inline": nested_inline, "children": nested_children})
+                nested_rules.append(
+                    {"selector": selector, "inline": nested_inline, "children": nested_children}
+                )
             continue
 
         css_name = CSS_NAME_BY_FIELD.get(field.name)
@@ -140,13 +217,19 @@ def _consume_raw_mapping(
         if key.startswith("@media "):
             nested_inline, nested_children = _normalize_style(value)
             nested_rules.append(
-                {"media": key.removeprefix("@media ").strip(), "inline": nested_inline, "children": nested_children}
+                {
+                    "media": key.removeprefix("@media ").strip(),
+                    "inline": nested_inline,
+                    "children": nested_children,
+                }
             )
             continue
 
         if key.startswith(":") or key.startswith("&"):
             nested_inline, nested_children = _normalize_style(value)
-            nested_rules.append({"selector": key, "inline": nested_inline, "children": nested_children})
+            nested_rules.append(
+                {"selector": key, "inline": nested_inline, "children": nested_children}
+            )
             continue
 
         auto_px = _CSS_NAME_BY_FIELD_REVERSED.get(key, "") in AUTO_PX_FIELDS
@@ -231,3 +314,13 @@ def _resolve_selector(base_selector: str, selector: str) -> str:
 
 def _css_text(value: str | int | float) -> str:
     return str(value)
+
+
+def _nested_rule_to_mapping(rule: dict[str, tp.Any]) -> dict[str, tp.Any]:
+    mapping = dict(rule.get("inline", {}))
+    for child in rule.get("children", []):
+        if "media" in child:
+            mapping[f"@media {child['media']}"] = _nested_rule_to_mapping(child)
+        elif "selector" in child:
+            mapping[child["selector"]] = _nested_rule_to_mapping(child)
+    return mapping

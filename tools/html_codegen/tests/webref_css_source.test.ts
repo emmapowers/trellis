@@ -21,6 +21,7 @@ describe("webref css source extraction", () => {
 
     expect(surface.properties.get("margin")?.is_shorthand).toBe(true);
     expect(surface.properties.get("padding")?.is_shorthand).toBe(true);
+    expect(surface.properties.get("border")?.is_shorthand).toBe(true);
     expect(surface.properties.get("box-shadow")?.is_shorthand).toBe(true);
 
     expect(surface.properties.get("color")?.value_type_name).toBe("ColorValue");

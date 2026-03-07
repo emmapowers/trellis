@@ -10,9 +10,10 @@ from typing import Literal
 
 from trellis.core.components.composition import component
 from trellis.core.components.react import react
-from trellis.core.components.style_props import Height, Margin, Padding, Width
 from trellis.core.state.mutable import Mutable
-from trellis.html import A, Li, Nav, Ol, Span
+from trellis.html import A, Li, Nav, Ol, Span, Style, color, px, raw, rem
+from trellis.html._style_compiler import merge_style_inputs, merge_widget_style_props
+from trellis.html._style_runtime import HeightInput, SpacingInput, StyleInput, WidthInput
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -31,11 +32,11 @@ def Tabs(
     selected: str | Mutable[str] | None = None,
     variant: Literal["line", "enclosed", "pills"] = "line",
     size: Literal["sm", "md"] = "md",
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Tab container for organizing content.
 
@@ -43,8 +44,8 @@ def Tabs(
         selected: ID of the currently selected tab. Use mutable(state.prop) for two-way binding.
         variant: Visual style variant
         size: Size variant
-        margin: Margin around the tabs (Margin dataclass).
-        width: Width of the tabs container (Width dataclass, int for pixels, or str for CSS).
+        margin: Margin around the tabs (CSS margin value).
+        width: Width of the tabs container (CSS width value).
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
@@ -60,9 +61,9 @@ def Tab(
     label: str,
     icon: str | None = None,
     disabled: bool = False,
-    padding: Padding | int | None = None,
+    padding: SpacingInput | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Individual tab within a Tabs container.
 
@@ -71,7 +72,7 @@ def Tab(
         label: Display label
         icon: Optional icon name
         disabled: Whether the tab is disabled
-        padding: Padding inside the tab content (Padding dataclass or int for all sides).
+        padding: Padding inside the tab content (CSS padding value).
         class_name: Additional CSS classes
         style: Inline styles
         key: Unique key for reconciliation
@@ -88,12 +89,12 @@ def Tree(
     on_select: Callable[[str], None] | None = None,
     on_expand: Callable[[str, bool], None] | None = None,
     show_icons: bool = True,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
-    height: Height | int | str | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
+    height: HeightInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Hierarchical tree view.
 
@@ -104,9 +105,9 @@ def Tree(
         on_select: Callback when a node is selected
         on_expand: Callback when a node is expanded/collapsed (id, is_expanded)
         show_icons: Whether to show folder/file icons
-        margin: Margin around the tree (Margin dataclass).
-        width: Width of the tree (Width dataclass, int for pixels, or str for CSS).
-        height: Height of the tree (Height dataclass, int for pixels, or str for CSS).
+        margin: Margin around the tree (CSS margin value).
+        width: Width of the tree (CSS width value).
+        height: Height of the tree (CSS height value).
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
@@ -120,10 +121,10 @@ def Breadcrumb(
     *,
     items: list[dict[str, str]] | None = None,
     separator: str = "/",
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Navigation breadcrumb trail with router-integrated links.
 
@@ -134,7 +135,7 @@ def Breadcrumb(
     Args:
         items: Breadcrumb items as [{label, href?}, ...]
         separator: Separator character between items ("/" renders as chevron)
-        margin: Margin around the breadcrumb (Margin dataclass).
+        margin: Margin around the breadcrumb (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
@@ -148,27 +149,24 @@ def Breadcrumb(
     """
     items_list = items or []
 
-    # Build nav styles
-    nav_style: dict[str, tp.Any] = {
-        "display": "flex",
-        "alignItems": "center",
-        "fontFamily": _FONT_FAMILY,
-        "fontSize": "0.875rem",
-        "lineHeight": "1.5",
-    }
-    if margin:
-        if margin.top is not None:
-            nav_style["marginTop"] = f"{margin.top}px"
-        if margin.right is not None:
-            nav_style["marginRight"] = f"{margin.right}px"
-        if margin.bottom is not None:
-            nav_style["marginBottom"] = f"{margin.bottom}px"
-        if margin.left is not None:
-            nav_style["marginLeft"] = f"{margin.left}px"
-    if flex is not None:
-        nav_style["flex"] = flex
-    if style:
-        nav_style.update(style)
+    nav_style = merge_style_inputs(
+        Style(
+            display="flex",
+            align_items="center",
+            font_family=raw(_FONT_FAMILY),
+            font_size=rem(0.875),
+            line_height=raw("1.5"),
+        ),
+        style,
+    )
+    nav_props = merge_widget_style_props(
+        {
+            "margin": margin,
+            "flex": flex,
+            "style": nav_style,
+        },
+        frozenset({"margin", "flex"}),
+    )
 
     # Use chevron character when separator is "/"
     # U+203A SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
@@ -176,42 +174,36 @@ def Breadcrumb(
 
     with Nav(
         class_name=class_name or "",
-        style=nav_style,
+        style=tp.cast("StyleInput | None", nav_props.get("style")),
         role="navigation",
         aria_label="Breadcrumb",
     ):
         with Ol(
-            style={
-                "display": "flex",
-                "alignItems": "center",
-                "gap": "4px",
-                "listStyle": "none",
-                "margin": "0",
-                "padding": "0",
-            }
+            style=Style(
+                display="flex",
+                align_items="center",
+                gap=px(4),
+                list_style=raw("none"),
+                margin=px(0),
+                padding=px(0),
+            )
         ):
             for i, item in enumerate(items_list):
                 is_last = i == len(items_list) - 1
                 label = item.get("label", "")
                 href = item.get("href")
 
-                with Li(
-                    style={
-                        "display": "flex",
-                        "alignItems": "center",
-                        "gap": "4px",
-                    }
-                ):
+                with Li(style=Style(display="flex", align_items="center", gap=px(4))):
                     # Separator before non-first items
                     if i > 0:
                         Span(
                             sep_char,
-                            style={
-                                "color": "var(--text-muted, #6b7280)",
-                                "userSelect": "none",
-                                "display": "flex",
-                                "alignItems": "center",
-                            },
+                            style=Style(
+                                color=color("var(--text-muted, #6b7280)"),
+                                user_select=raw("none"),
+                                display="flex",
+                                align_items="center",
+                            ),
                             aria_hidden=True,
                         )
 
@@ -221,25 +213,23 @@ def Breadcrumb(
                     if is_last:
                         Span(
                             label,
-                            style={
-                                "color": "var(--text-primary, #1f2937)",
-                                "fontWeight": "500",
-                            },
+                            style=Style(
+                                color=color("var(--text-primary, #1f2937)"),
+                                font_weight=500,
+                            ),
                         )
                     elif href:
                         A(
                             label,
                             href=href,
-                            style={
-                                "color": "var(--text-secondary, #6b7280)",
-                                "textDecoration": "none",
-                            },
+                            style=Style(
+                                color=color("var(--text-secondary, #6b7280)"),
+                                text_decoration=raw("none"),
+                            ),
                         )
                     else:
                         # No href but not last - span with link-like styling
                         Span(
                             label,
-                            style={
-                                "color": "var(--text-secondary, #6b7280)",
-                            },
+                            style=Style(color=color("var(--text-secondary, #6b7280)")),
                         )

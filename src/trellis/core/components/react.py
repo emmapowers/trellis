@@ -10,9 +10,9 @@ from pathlib import Path
 from typing import Literal, ParamSpec
 
 from trellis.core.components.base import Component, ElementKind
-from trellis.core.components.style_props import Height, Margin, Padding, Width
 from trellis.core.rendering.element import ContainerElement, Element
 from trellis.core.rendering.traits import ContainerTrait
+from trellis.html._style_compiler import WidgetStyleField, merge_widget_style_props
 from trellis.registry import ExportKind, registry
 
 __all__ = ["ReactComponentBase", "react"]
@@ -22,51 +22,31 @@ P = ParamSpec("P")
 E = tp.TypeVar("E", bound=Element)
 
 
-def _merge_style_props(props: dict[str, tp.Any]) -> dict[str, tp.Any]:
-    """Convert ergonomic style props to style dict entries."""
-    result = dict(props)
-    style: dict[str, tp.Any] = dict(props.get("style") or {})
+def _style_prop_names(func: Callable[P, tp.Any]) -> frozenset[WidgetStyleField]:
+    names: set[WidgetStyleField] = set()
 
-    # Handle margin - only convert dataclass instances
-    if "margin" in result and isinstance(result["margin"], Margin):
-        style.update(result.pop("margin").to_style())
+    for parameter in inspect.signature(func).parameters.values():
+        annotation = func.__annotations__.get(parameter.name)
+        if annotation is None:
+            continue
+        annotation_text = str(annotation)
 
-    # Handle padding - only convert dataclass instances
-    if "padding" in result and isinstance(result["padding"], Padding):
-        style.update(result.pop("padding").to_style())
+        if parameter.name in {"flex", "text_align", "font_weight"}:
+            names.add(tp.cast("WidgetStyleField", parameter.name))
+            continue
 
-    # Handle width - convert dataclass or plain values (most widgets don't have width prop)
-    if "width" in result:
-        width = result.pop("width")
-        if isinstance(width, Width):
-            style.update(width.to_style())
-        elif isinstance(width, int):
-            style["width"] = f"{width}px"
-        elif isinstance(width, str):
-            style["width"] = width
+        if parameter.name in {"margin", "padding"} and "SpacingInput" in annotation_text:
+            names.add(tp.cast("WidgetStyleField", parameter.name))
+            continue
 
-    # Handle height - only convert dataclass instances (ProgressBar has its own height)
-    if "height" in result and isinstance(result["height"], Height):
-        style.update(result.pop("height").to_style())
+        if parameter.name == "width" and "WidthInput" in annotation_text:
+            names.add("width")
+            continue
 
-    # Handle flex
-    if "flex" in result:
-        style["flex"] = result.pop("flex")
+        if parameter.name == "height" and "HeightInput" in annotation_text:
+            names.add("height")
 
-    # Handle text_align
-    if "text_align" in result:
-        style["textAlign"] = result.pop("text_align")
-
-    # Handle font_weight
-    if "font_weight" in result:
-        fw = result.pop("font_weight")
-        weight_map = {"normal": 400, "medium": 500, "semibold": 600, "bold": 700}
-        style["fontWeight"] = weight_map.get(fw, fw) if isinstance(fw, str) else fw
-
-    if style:
-        result["style"] = style
-
-    return result
+    return frozenset(names)
 
 
 class ReactComponentBase(Component):
@@ -179,6 +159,7 @@ def react(
         func: Callable[P, tp.Any],
     ) -> Callable[P, Element | E]:
         resolved_export_name = export_name or func.__name__
+        style_prop_names = _style_prop_names(func)
 
         # Create a generated ReactComponentBase subclass
         class _Generated(ReactComponentBase):
@@ -199,7 +180,7 @@ def react(
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element | E:
-            return _singleton._place(**_merge_style_props(dict(kwargs)))
+            return _singleton._place(**merge_widget_style_props(dict(kwargs), style_prop_names))
 
         wrapper._component = _singleton  # type: ignore[attr-defined]
 

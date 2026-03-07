@@ -124,7 +124,7 @@ def test_public_html_exports_style_input() -> None:
 
 def test_base_module_no_longer_exports_legacy_style_alias() -> None:
     """The old dict Style alias should not remain in html.base."""
-    from trellis.html import base
+    base = importlib.import_module("trellis.html.base")
 
     assert "Style" not in base.__all__
     assert not hasattr(base, "Style")

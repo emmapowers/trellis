@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from trellis import Height, Margin, Stateful, callback, component, mutable
+from trellis import Stateful, callback, component, mutable
+from trellis import html as h
 from trellis import widgets as w
 from trellis.app import App, theme
 
@@ -43,17 +44,16 @@ def ControlPanel() -> None:
     def handle_num_change(value: float) -> None:
         state.set_num_sliders(int(value))
 
-    with w.Card(padding=16, width=400, margin=Margin(bottom=16)):
+    with w.Card(padding=16, width=400, style={"margin-bottom": "16px"}):
         w.Label(
             text="Slider Performance Test",
             font_size=16,
             bold=True,
-            margin=Margin(bottom=12),
             text_align="center",
-            style={"display": "block"},
+            style={"display": "block", "margin-bottom": "12px"},
         )
 
-        with w.Row(gap=8, align="center", margin=Margin(bottom=8)):
+        with w.Row(gap=8, align="center", style={"margin-bottom": "8px"}):
             w.Label(text="Num Sliders:", color=theme.text_secondary, width=100)
             # Uses callback() for custom processing (clamping via set_num_sliders)
             w.NumberInput(
@@ -62,7 +62,7 @@ def ControlPanel() -> None:
                 width=80,
             )
 
-        with w.Row(gap=8, align="center", margin=Margin(bottom=8)):
+        with w.Row(gap=8, align="center", style={"margin-bottom": "8px"}):
             w.Label(text="Value:", color=theme.text_secondary, width=100)
             w.NumberInput(
                 value=mutable(state.value),
@@ -81,8 +81,7 @@ def SliderColumn() -> None:
     with w.Card(
         padding=16,
         width=400,
-        height=Height(max="60vh"),
-        style={"overflowY": "auto"},
+        style=h.Style(max_height=h.vh(60), overflow_y="auto"),
     ):
         with w.Column(gap=4):
             for i in range(state.num_sliders):
@@ -99,14 +98,14 @@ def SliderColumn() -> None:
                         min=1,
                         max=100,
                         step=1,
-                        style={"flex": "1"},
+                        style={"flex": 1},
                     ).key(f"slider-{i}")
                     w.Label(
                         text=str(int(state.value)),
                         font_size=13,
                         bold=True,
                         width=36,
-                        style={"fontVariantNumeric": "tabular-nums"},
+                        style={"font-variant-numeric": "tabular-nums"},
                     )
 
 
