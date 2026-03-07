@@ -19,15 +19,15 @@ def test_media_functions_use_snake_case_autoplay() -> None:
     assert "autoPlay" not in audio_parameters
 
 
-def test_text_helper_signatures_use_internal_text_name() -> None:
-    """Hybrid helper signatures should expose internal_text in inspection."""
+def test_text_helper_signatures_use_inner_text_name() -> None:
+    """Hybrid helper signatures should expose inner_text in inspection."""
     p_parameters = inspect.signature(h.P).parameters
     anchor_parameters = inspect.signature(h.A).parameters
     raw_anchor_parameters = inspect.signature(_A).parameters
 
-    assert "internal_text" in p_parameters
-    assert "internal_text" in anchor_parameters
-    assert "internal_text" in raw_anchor_parameters
+    assert "inner_text" in p_parameters
+    assert "inner_text" in anchor_parameters
+    assert "inner_text" in raw_anchor_parameters
     assert "text" not in p_parameters
     assert "text" not in anchor_parameters
     assert "text" not in raw_anchor_parameters

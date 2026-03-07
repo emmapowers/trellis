@@ -171,7 +171,7 @@ describe("trellis target", () => {
     expect(payload.content).toContain("from typing import Literal, overload");
     expect(payload.content).toContain("data: Mapping[str, DataValue] | None = None");
     expect(payload.content).toContain("def _A(");
-    expect(payload.content).toContain("internal_text: str | None = None,");
+    expect(payload.content).toContain("inner_text: str | None = None,");
     expect(payload.content).toContain("def Div(");
     expect(payload.content).toContain("def Img(");
     expect(payload.content).toContain("src: str | None = None");
@@ -276,9 +276,9 @@ describe("trellis target", () => {
     const payload = build_trellis_html_module(ir);
     expect(payload.content).toContain("from typing import Literal, overload");
     expect(payload.content).toContain("def P(");
-    expect(payload.content).toContain("internal_text: str,");
+    expect(payload.content).toContain("inner_text: str,");
     expect(payload.content).toContain(") -> HtmlContainerElement: ...");
-    expect(payload.content).toContain('def Option(\n    internal_text: str | None = None,');
+    expect(payload.content).toContain('def Option(\n    inner_text: str | None = None,');
     expect(payload.content).not.toContain("def Option(\n    _text:");
     expect(payload.content).not.toContain('def P(\n    _text:');
   });

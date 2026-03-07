@@ -100,7 +100,7 @@ _text_node = TextNode("Text")
 
 @overload
 def P(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -122,7 +122,7 @@ def P(
 
 @html_element("p", is_container=True)
 def P(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -136,7 +136,7 @@ def P(
 
 @overload
 def H1(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -158,7 +158,7 @@ def H1(
 
 @html_element("h1", is_container=True)
 def H1(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -172,7 +172,7 @@ def H1(
 
 @overload
 def H2(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -194,7 +194,7 @@ def H2(
 
 @html_element("h2", is_container=True)
 def H2(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -208,7 +208,7 @@ def H2(
 
 @overload
 def H3(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -230,7 +230,7 @@ def H3(
 
 @html_element("h3", is_container=True)
 def H3(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -244,7 +244,7 @@ def H3(
 
 @overload
 def H4(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -266,7 +266,7 @@ def H4(
 
 @html_element("h4", is_container=True)
 def H4(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -280,7 +280,7 @@ def H4(
 
 @overload
 def H5(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -302,7 +302,7 @@ def H5(
 
 @html_element("h5", is_container=True)
 def H5(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -316,7 +316,7 @@ def H5(
 
 @overload
 def H6(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -338,7 +338,7 @@ def H6(
 
 @html_element("h6", is_container=True)
 def H6(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -352,7 +352,7 @@ def H6(
 
 @overload
 def Strong(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -374,7 +374,7 @@ def Strong(
 
 @html_element("strong", is_container=True)
 def Strong(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -388,7 +388,7 @@ def Strong(
 
 @overload
 def Em(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -410,7 +410,7 @@ def Em(
 
 @html_element("em", is_container=True)
 def Em(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -424,7 +424,7 @@ def Em(
 
 @overload
 def Code(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -446,7 +446,7 @@ def Code(
 
 @html_element("code", is_container=True)
 def Code(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -460,7 +460,7 @@ def Code(
 
 @overload
 def Pre(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -482,7 +482,7 @@ def Pre(
 
 @html_element("pre", is_container=True)
 def Pre(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -496,7 +496,7 @@ def Pre(
 
 @overload
 def Small(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -518,7 +518,7 @@ def Small(
 
 @html_element("small", is_container=True)
 def Small(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -532,7 +532,7 @@ def Small(
 
 @overload
 def Mark(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -554,7 +554,7 @@ def Mark(
 
 @html_element("mark", is_container=True)
 def Mark(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -568,7 +568,7 @@ def Mark(
 
 @overload
 def Sub(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -590,7 +590,7 @@ def Sub(
 
 @html_element("sub", is_container=True)
 def Sub(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -604,7 +604,7 @@ def Sub(
 
 @overload
 def Sup(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -626,7 +626,7 @@ def Sup(
 
 @html_element("sup", is_container=True)
 def Sup(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -640,7 +640,7 @@ def Sup(
 
 @overload
 def Abbr(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     title: str | None = None,
@@ -664,7 +664,7 @@ def Abbr(
 
 @html_element("abbr", is_container=True)
 def Abbr(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     title: str | None = None,
@@ -679,7 +679,7 @@ def Abbr(
 
 @overload
 def Time(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     date_time: str | None = None,
@@ -703,7 +703,7 @@ def Time(
 
 @html_element("time", is_container=True)
 def Time(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     date_time: str | None = None,

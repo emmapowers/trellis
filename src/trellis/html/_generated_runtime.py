@@ -58,7 +58,7 @@ InputType = Literal[
 
 @overload
 def _A(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     href: str | None = None,
@@ -98,7 +98,7 @@ def _A(
 
 @html_element("a", is_container=True, name="A")
 def _A(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     href: str | None = None,

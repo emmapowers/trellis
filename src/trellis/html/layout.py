@@ -67,7 +67,7 @@ def Div(
 
 @overload
 def Span(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -99,7 +99,7 @@ def Span(
 
 @html_element("span", is_container=True)
 def Span(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -209,7 +209,7 @@ def Aside(
 
 @overload
 def Blockquote(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     cite: str | None = None,
@@ -233,7 +233,7 @@ def Blockquote(
 
 @html_element("blockquote", is_container=True)
 def Blockquote(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     cite: str | None = None,
@@ -273,7 +273,7 @@ def Details(
 
 @overload
 def Summary(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -295,7 +295,7 @@ def Summary(
 
 @html_element("summary", is_container=True)
 def Summary(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -321,7 +321,7 @@ def Figure(
 
 @overload
 def Figcaption(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -343,7 +343,7 @@ def Figcaption(
 
 @html_element("figcaption", is_container=True)
 def Figcaption(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,

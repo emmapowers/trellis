@@ -142,7 +142,7 @@ def Select(
 
 @overload
 def HtmlButton(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     type: str = "button",
@@ -178,7 +178,7 @@ def HtmlButton(
 
 @html_element("button", is_container=True)
 def HtmlButton(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     type: str = "button",
@@ -208,7 +208,7 @@ def HtmlButton(
 
 @html_element("option")
 def Option(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     value: str | None = None,
@@ -222,7 +222,7 @@ def Option(
 
 @overload
 def HtmlLabel(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     html_for: str | None = None,
@@ -244,7 +244,7 @@ def HtmlLabel(
 
 @html_element("label", is_container=True)
 def HtmlLabel(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     html_for: str | None = None,
@@ -283,7 +283,7 @@ def Fieldset(
 
 @overload
 def Legend(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -305,7 +305,7 @@ def Legend(
 
 @html_element("legend", is_container=True)
 def Legend(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -365,7 +365,7 @@ def Meter(
 
 @overload
 def Output(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     html_for: str | None = None,
@@ -391,7 +391,7 @@ def Output(
 
 @html_element("output", is_container=True)
 def Output(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     html_for: str | None = None,

@@ -156,7 +156,7 @@ function render_public_helper_overloads(
   return [
     "@overload",
     `def ${element.python_name}(`,
-    "    internal_text: str,",
+    "    inner_text: str,",
     "    /,",
     "    *,",
     ...attribute_parameters,
@@ -194,7 +194,7 @@ function render_element_function(
   lines.push(`@html_element(${decorator_args.join(", ")})`);
   lines.push(`def ${element.python_name}(`);
   if (element.text_behavior === "public_helper") {
-    lines.push("    internal_text: str | None = None,");
+    lines.push("    inner_text: str | None = None,");
     lines.push("    /,");
     lines.push("    *,");
   } else {

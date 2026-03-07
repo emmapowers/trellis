@@ -50,7 +50,7 @@ def Ol(
 
 @overload
 def Li(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -70,7 +70,7 @@ def Li(
 
 @html_element("li", is_container=True)
 def Li(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -104,7 +104,7 @@ def Dl(
 
 @overload
 def Dt(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -126,7 +126,7 @@ def Dt(
 
 @html_element("dt", is_container=True)
 def Dt(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
@@ -140,7 +140,7 @@ def Dt(
 
 @overload
 def Dd(
-    internal_text: str,
+    inner_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -162,7 +162,7 @@ def Dd(
 
 @html_element("dd", is_container=True)
 def Dd(
-    internal_text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
     class_name: str | None = None,
