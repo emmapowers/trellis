@@ -17,6 +17,46 @@ if tp.TYPE_CHECKING:
 
 
 @component
+def Kbd(*, keys: str) -> None:
+    """Render a keyboard shortcut as styled key caps."""
+    parts = keys.replace("+", " + ").split()
+    with h.Div(
+        style={
+            "display": "inline-flex",
+            "alignItems": "center",
+            "gap": "3px",
+        },
+    ):
+        for part in parts:
+            if part == "+":
+                w.Label(text="+", font_size=11, color=theme.text_muted)
+            else:
+                with h.Div(
+                    style={
+                        "display": "inline-flex",
+                        "alignItems": "center",
+                        "justifyContent": "center",
+                        "minWidth": "22px",
+                        "height": "22px",
+                        "padding": "0 5px",
+                        "borderRadius": "4px",
+                        "border": f"1px solid {theme.border_default}",
+                        "background": theme.bg_surface_raised,
+                        "boxShadow": f"0 1px 0 {theme.border_default}",
+                    },
+                ):
+                    w.Label(
+                        text=part,
+                        font_size=11,
+                        color=theme.text_primary,
+                        style={
+                            "fontFamily": "ui-monospace, SFMono-Regular, Menlo, monospace",
+                            "lineHeight": "1",
+                        },
+                    )
+
+
+@component
 def CodeBlock(*, code: str) -> None:
     """Display code in a monospace styled block.
 
