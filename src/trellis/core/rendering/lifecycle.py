@@ -43,15 +43,24 @@ def invoke_lifecycle_hook(
             except Exception:
                 logging.exception("Error in async %s", label)
 
-        task = asyncio.create_task(run_async_hook())
-        session._background_tasks.add(task)
-        task.add_done_callback(session._background_tasks.discard)
+        session.track_background_task(asyncio.create_task(run_async_hook()))
     else:
         try:
             with callback_context(session, element_id):
-                hook()
+                result = hook()
         except Exception:
             logging.exception("Error in %s", label)
+            return
+
+        if inspect.isawaitable(result):
+
+            async def run_async_result(async_result: tp.Awaitable[tp.Any] = result) -> None:
+                try:
+                    await async_result
+                except Exception:
+                    logging.exception("Error in async %s", label)
+
+            session.track_background_task(asyncio.create_task(run_async_result()))
 
 
 class LifecycleTracker:

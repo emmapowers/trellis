@@ -79,13 +79,19 @@ class RenderSession:
     render_count: int = 0
 
     # Background tasks for async lifecycle hooks (prevents GC)
-    _background_tasks: set[asyncio.Task[None]] = field(default_factory=set)
+    _background_tasks: set[asyncio.Task[tp.Any]] = field(default_factory=set)
 
     # Initial URL path from client HelloMessage (for routing)
     initial_path: str = "/"
 
     def __post_init__(self) -> None:
         self.dirty.set_lock(self.lock)
+
+    def track_background_task[T](self, task: asyncio.Task[T]) -> asyncio.Task[T]:
+        """Track a background task for the lifetime of this session."""
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
+        return task
 
     @property
     def root_element(self) -> Element | None:
