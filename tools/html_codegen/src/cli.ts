@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
 import { build_trellis_events_module } from "./emit/targets/trellis_events.js";
-import { build_trellis_html_module } from "./emit/targets/trellis_html.js";
+import { build_trellis_html_modules } from "./emit/targets/trellis_html.js";
 import { build_ir_document } from "./pipeline/build.js";
 import { render_diff_summary } from "./report/diff_report.js";
 
@@ -70,7 +70,7 @@ async function format_python_source(
     await new Promise<void>((resolve, reject) => {
       const child = spawn(
         "pixi",
-        ["run", "ruff", "check", "--select", "RUF022", "--fix", temp_path],
+        ["run", "ruff", "check", "--select", "RUF022,I001", "--fix", temp_path],
         {
           cwd: formatter_root,
           stdio: ["ignore", "pipe", "pipe"],
@@ -123,7 +123,7 @@ async function compute_target_summary(
 }> {
   const formatter_root = default_repo_root();
   const document = await build_ir_document();
-  const payloads = [build_trellis_html_module(document), build_trellis_events_module(document)];
+  const payloads = [...build_trellis_html_modules(document), build_trellis_events_module(document)];
   const targets = await Promise.all(
     payloads.map(async (payload) => ({
       path: join(repo_root, payload.path),

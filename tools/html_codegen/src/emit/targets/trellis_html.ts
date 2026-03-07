@@ -6,6 +6,153 @@ export interface TrellisModulePayload {
   content: string;
 }
 
+interface HtmlFamily {
+  module_name: string;
+  title: string;
+  tags: Set<string>;
+}
+
+const HTML_FAMILIES: HtmlFamily[] = [
+  {
+    module_name: "document_metadata",
+    title: "document metadata",
+    tags: new Set([
+      "base",
+      "body",
+      "head",
+      "html",
+      "link",
+      "meta",
+      "style",
+      "title",
+    ]),
+  },
+  {
+    module_name: "sectioning_and_layout",
+    title: "sectioning and layout",
+    tags: new Set([
+      "address",
+      "article",
+      "aside",
+      "blockquote",
+      "center",
+      "details",
+      "dialog",
+      "div",
+      "figcaption",
+      "figure",
+      "footer",
+      "header",
+      "hgroup",
+      "main",
+      "nav",
+      "search",
+      "section",
+      "summary",
+    ]),
+  },
+  {
+    module_name: "text_content",
+    title: "text content",
+    tags: new Set([
+      "abbr",
+      "b",
+      "bdi",
+      "bdo",
+      "big",
+      "br",
+      "cite",
+      "code",
+      "data",
+      "del",
+      "dfn",
+      "em",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "hr",
+      "i",
+      "ins",
+      "kbd",
+      "mark",
+      "p",
+      "pre",
+      "q",
+      "rp",
+      "rt",
+      "ruby",
+      "s",
+      "samp",
+      "small",
+      "span",
+      "strong",
+      "sub",
+      "sup",
+      "time",
+      "u",
+      "wbr",
+    ]),
+  },
+  {
+    module_name: "lists",
+    title: "lists",
+    tags: new Set(["dd", "dl", "dt", "li", "menu", "ol", "ul"]),
+  },
+  {
+    module_name: "forms",
+    title: "forms",
+    tags: new Set([
+      "button",
+      "datalist",
+      "fieldset",
+      "form",
+      "input",
+      "label",
+      "legend",
+      "meter",
+      "optgroup",
+      "option",
+      "output",
+      "progress",
+      "select",
+      "textarea",
+    ]),
+  },
+  {
+    module_name: "table_content",
+    title: "table content",
+    tags: new Set(["caption", "col", "colgroup", "table", "tbody", "td", "tfoot", "th", "thead", "tr"]),
+  },
+  {
+    module_name: "image_and_multimedia",
+    title: "image and multimedia",
+    tags: new Set(["area", "audio", "img", "map", "picture", "source", "track", "video"]),
+  },
+  {
+    module_name: "embedded_content",
+    title: "embedded content",
+    tags: new Set(["canvas", "embed", "iframe", "object", "param"]),
+  },
+  {
+    module_name: "interactive_elements",
+    title: "interactive elements",
+    tags: new Set(["a"]),
+  },
+  {
+    module_name: "scripting_and_templates",
+    title: "scripting and templates",
+    tags: new Set(["noscript", "script", "slot", "template"]),
+  },
+  {
+    module_name: "obsolete",
+    title: "obsolete elements",
+    tags: new Set(["keygen", "menuitem"]),
+  },
+];
+
 function index_attributes(attributes: AttributeDef[]): Map<string, AttributeDef> {
   const by_id = new Map<string, AttributeDef>();
   for (const attribute of attributes) {
@@ -14,7 +161,13 @@ function index_attributes(attributes: AttributeDef[]): Map<string, AttributeDef>
   return by_id;
 }
 
-function input_type_expr(document: IrDocument): TypeExpr | undefined {
+function input_type_expr(
+  document: IrDocument,
+  elements: ElementDef[],
+): TypeExpr | undefined {
+  if (!elements.some((element) => element.tag_name === "input")) {
+    return undefined;
+  }
   const attributes_by_id = index_attributes(document.attributes);
   return attributes_by_id.get("html:input:type")?.type_expr;
 }
@@ -32,10 +185,10 @@ function literal_alias_body(type_expr: TypeExpr | undefined): string | undefined
   return undefined;
 }
 
-function input_type_alias(document: IrDocument): string {
-  const alias_body = literal_alias_body(input_type_expr(document));
+function input_type_alias(document: IrDocument, elements: ElementDef[]): string | undefined {
+  const alias_body = literal_alias_body(input_type_expr(document, elements));
   if (!alias_body) {
-    return "InputType = str";
+    return undefined;
   }
 
   const body = alias_body.slice("Literal[".length, -1);
@@ -75,11 +228,14 @@ function collect_references(type_expr: TypeExpr, names: Set<string>): void {
   }
 }
 
-function event_handler_imports(document: IrDocument): string[] {
+function event_handler_imports(
+  document: IrDocument,
+  elements: ElementDef[],
+): string[] {
   const attributes_by_id = index_attributes(document.attributes);
   const names = new Set<string>();
 
-  for (const element of document.elements.filter((entry) => entry.namespace === "html")) {
+  for (const element of elements) {
     for (const attribute_id of element.attributes) {
       const attribute = attributes_by_id.get(attribute_id);
       if (!attribute) {
@@ -260,26 +416,46 @@ function render_element_function(
   lines.push(...render_attribute_parameters(element, attributes_by_id));
 
   lines.push("    data: Mapping[str, DataValue] | None = None,");
-  const return_type = element.text_behavior === "public_helper" ? "Element" : element.is_container ? "HtmlContainerElement" : "Element";
+  const return_type =
+    element.text_behavior === "public_helper"
+      ? "Element"
+      : element.is_container
+        ? "HtmlContainerElement"
+        : "Element";
   lines.push(`) -> ${return_type}:`);
-  lines.push(`    """Generated raw ${element.tag_name} binding."""`);
+  lines.push(`    """<${element.tag_name} />"""`);
   lines.push("    ...");
 
   return lines.join("\n");
 }
 
-function emit_trellis_html_module(document: IrDocument): string {
+function family_for_tag(tag_name: string): HtmlFamily {
+  for (const family of HTML_FAMILIES) {
+    if (family.tags.has(tag_name)) {
+      return family;
+    }
+  }
+  throw new Error(`No HTML family configured for <${tag_name}>.`);
+}
+
+function emit_family_module(
+  document: IrDocument,
+  family: HtmlFamily,
+  elements: ElementDef[],
+): TrellisModulePayload {
   const attributes_by_id = index_attributes(document.attributes);
-  const handler_imports = event_handler_imports(document);
-  const html_elements = document.elements.filter((element) => element.namespace === "html");
-  const rendered_elements = html_elements
+  const handler_imports = event_handler_imports(document, elements);
+  const rendered_elements = elements
     .map((element) => render_element_function(element, attributes_by_id))
     .join("\n\n\n");
   const typing_imports = ["Literal"];
-  if (html_elements.some((element) => element.text_behavior === "public_helper" && element.is_container)) {
+  if (elements.some((element) => element.text_behavior === "public_helper" && element.is_container)) {
     typing_imports.push("overload");
   }
-  const exported_names = html_elements
+  const needs_container_type = elements.some(
+    (element) => element.is_container || (element.text_behavior === "public_helper" && element.is_container),
+  );
+  const exported_names = elements
     .map((element) => element.python_name)
     .sort()
     .map((name) => `    "${name}",`)
@@ -293,33 +469,99 @@ ${handler_imports.map((name) => `    ${name},`).join("\n")}
 )`;
   const first_party_imports = [
     "from trellis.core.rendering.element import Element",
-    "from trellis.html.base import HtmlContainerElement, Style, html_element",
+    `from trellis.html.base import ${
+      needs_container_type
+        ? "HtmlContainerElement, Style, html_element"
+        : "Style, html_element"
+    }`,
     ...(events_import_block ? [events_import_block] : []),
   ].join("\n");
+  const inputAlias = input_type_alias(document, elements);
 
-  return `"""Generated runtime-aligned HTML wrappers."""
+  const parts = [
+    `"""Generated HTML ${family.title} elements."""`,
+    "",
+    "from __future__ import annotations",
+    "",
+    "from collections.abc import Mapping",
+    `from typing import ${typing_imports.join(", ")}`,
+    "",
+    first_party_imports,
+    "",
+    "__all__ = [",
+    exported_names,
+    "]",
+    "",
+    "DataValue = str | int | float | bool | None",
+    ...(inputAlias ? ["", inputAlias] : []),
+    "",
+    "",
+    rendered_elements,
+  ];
+
+  return {
+    path: `src/trellis/html/_generated_${family.module_name}.py`,
+    content: `${parts.join("\n").trimEnd()}\n`,
+  };
+}
+
+function emit_runtime_aggregator(
+  family_modules: Array<{ family: HtmlFamily; elements: ElementDef[] }>,
+): TrellisModulePayload {
+  const nonEmptyFamilies = family_modules.filter((entry) => entry.elements.length > 0);
+  const importBlocks = nonEmptyFamilies.map((entry) => {
+    const names = entry.elements
+      .map((element) => element.python_name)
+      .sort()
+      .map((name) => `    ${name},`)
+      .join("\n");
+    return `from trellis.html._generated_${entry.family.module_name} import (
+${names}
+)`;
+  });
+
+  const exportedNames = nonEmptyFamilies
+    .flatMap((entry) => entry.elements.map((element) => element.python_name))
+    .sort()
+    .map((name) => `    "${name}",`)
+    .join("\n");
+
+  return {
+    path: "src/trellis/html/_generated_runtime.py",
+    content: `"""Generated HTML runtime exports."""
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import ${typing_imports.join(", ")}
-
-${first_party_imports}
+${importBlocks.join("\n\n")}
 
 __all__ = [
-${exported_names}
+${exportedNames}
 ]
-
-DataValue = str | int | float | bool | None
-${input_type_alias(document)}
-
-
-${rendered_elements}`.trimEnd() + "\n";
+`,
+  };
 }
 
-export function build_trellis_html_module(document: IrDocument): TrellisModulePayload {
-  return {
-    path: "src/trellis/html/_generated_runtime.py",
-    content: emit_trellis_html_module(document),
-  };
+export function build_trellis_html_modules(document: IrDocument): TrellisModulePayload[] {
+  const html_elements = document.elements
+    .filter((element) => element.namespace === "html")
+    .slice()
+    .sort((left, right) => left.python_name.localeCompare(right.python_name));
+
+  const grouped = new Map<string, { family: HtmlFamily; elements: ElementDef[] }>();
+  for (const family of HTML_FAMILIES) {
+    grouped.set(family.module_name, { family, elements: [] });
+  }
+
+  for (const element of html_elements) {
+    const family = family_for_tag(element.tag_name);
+    grouped.get(family.module_name)?.elements.push(element);
+  }
+
+  const familyModules = HTML_FAMILIES.map((family) => grouped.get(family.module_name)!)
+    .filter((entry) => entry.elements.length > 0);
+
+  return [
+    emit_runtime_aggregator(familyModules),
+    ...familyModules.map((entry) => emit_family_module(document, entry.family, entry.elements)),
+  ];
 }
