@@ -13,6 +13,9 @@ from trellis.core.components import (
     react,
 )
 
+# keys
+from trellis.core.keys import KeyFilter, KeySequence, parse_key_filter, sequence
+
 # rendering
 from trellis.core.rendering import (
     ActiveRender,
@@ -33,9 +36,9 @@ from trellis.core.rendering import (
     RenderRemovePatch,
     RenderSession,
     RenderUpdatePatch,
+    diff_props,
     get_active_session,
     is_render_active,
-    props_equal,
     reconcile_children,
     render,
     set_active_session,
@@ -70,6 +73,8 @@ __all__ = [
     "Frame",
     "FrameStack",
     "Height",
+    "KeyFilter",
+    "KeySequence",
     "KeyTrait",
     "LifecycleTracker",
     "Margin",
@@ -91,14 +96,16 @@ __all__ = [
     "callback",
     "component",
     "convert_to_tracked",
+    "diff_props",
     "get_active_session",
     "get_ref",
     "is_render_active",
     "mutable",
-    "props_equal",
+    "parse_key_filter",
     "react",
     "reconcile_children",
     "render",
+    "sequence",
     "set_active_session",
     "set_ref",
 ]

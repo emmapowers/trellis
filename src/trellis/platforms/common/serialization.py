@@ -17,6 +17,7 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.components.composition import CompositionComponent
+from trellis.core.rendering.element import _RemovedType
 from trellis.core.state.mutable import Mutable
 
 if tp.TYPE_CHECKING:
@@ -163,7 +164,10 @@ def _serialize_props(
     for key, value in props.items():
         if key == "child_ids":
             continue
-        result[key] = _serialize_value(value, session, element_id, key)
+        if isinstance(value, _RemovedType):
+            result[key] = {"__removed__": True}
+        else:
+            result[key] = _serialize_value(value, session, element_id, key)
     return result
 
 
@@ -179,6 +183,33 @@ def _serialize_element_props(element: Element, session: RenderSession) -> dict[s
     Returns:
         Serialized props dict
     """
+    # Key filter props are always serialized, even for CompositionComponents,
+    # since they carry callbacks the client needs for keyboard handling.
+    key_filter_props = _extract_key_filter_props(element, session)
+
     if isinstance(element.component, CompositionComponent):
-        return {}
-    return _serialize_props(element.properties, session, element.id)
+        return key_filter_props
+    result = _serialize_props(element.properties, session, element.id)
+    result.update(key_filter_props)
+    return result
+
+
+_KEY_FILTER_PROPS = ("__key_filters__", "__global_key_filters__")
+
+
+def _extract_key_filter_props(element: Element, session: RenderSession) -> dict[str, tp.Any]:
+    """Extract and serialize key filter props from an element."""
+    result: dict[str, tp.Any] = {}
+    for prop_name in _KEY_FILTER_PROPS:
+        bindings = element.props.get(prop_name)
+        if bindings is None:
+            continue
+        serialized_bindings = []
+        for i, binding in enumerate(bindings):
+            serialized = {}
+            for key, value in binding.items():
+                path = f"{prop_name}[{i}].{key}"
+                serialized[key] = _serialize_value(value, session, element.id, path)
+            serialized_bindings.append(serialized)
+        result[prop_name] = serialized_bindings
+    return result

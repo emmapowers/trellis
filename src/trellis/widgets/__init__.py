@@ -31,7 +31,9 @@ from trellis.widgets.charts import (
 )
 from trellis.widgets.data import Stat, Tag
 from trellis.widgets.feedback import Callout, Collapsible
+from trellis.widgets.hot_key import HotKey
 from trellis.widgets.icons import Icon, IconName
+from trellis.widgets.kbd import Kbd
 from trellis.widgets.layout import Card, Column, Row, SplitPane
 from trellis.widgets.markdown import Markdown
 from trellis.widgets.navigation import Breadcrumb, Tab, Tabs, Tree
@@ -51,8 +53,10 @@ __all__ = [
     "Column",
     "Divider",
     "Heading",
+    "HotKey",
     "Icon",
     "IconName",
+    "Kbd",
     "Label",
     "LineChart",
     "Markdown",

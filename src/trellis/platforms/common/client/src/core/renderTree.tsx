@@ -224,12 +224,17 @@ function shouldLetBrowserHandleClick(event: unknown): boolean {
  * For mutable refs, wraps them in a Mutable<T> object that components can
  * explicitly handle via `.value` and `.setValue()`.
  */
+/** Prop keys that are internal to the key handling system and should not be passed to components. */
+const KEY_FILTER_PROPS = new Set(["__key_filters__", "__global_key_filters__"]);
+
 export function processProps(
   props: Record<string, unknown>,
   onEvent: EventHandler
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(props)) {
+    // Skip internal key filter props — handled by TreeRenderer
+    if (KEY_FILTER_PROPS.has(key)) continue;
     if (isCallbackRef(value)) {
       const shouldPreventDefault = PREVENT_DEFAULT_HANDLERS.has(key);
       result[key] = (...args: unknown[]) => {

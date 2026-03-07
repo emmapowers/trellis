@@ -27,6 +27,8 @@ from trellis.core import (
     Frame,
     FrameStack,
     Height,
+    KeyFilter,
+    KeySequence,
     LifecycleTracker,
     Margin,
     Mutable,
@@ -47,18 +49,20 @@ from trellis.core import (
     callback,
     component,
     convert_to_tracked,
+    diff_props,
     get_active_session,
     get_ref,
     is_render_active,
     mutable,
-    props_equal,
     react,
     reconcile_children,
     render,
+    sequence,
     set_active_session,
     set_ref,
 )
 from trellis.routing import Route, RouterState, Routes, router
+from trellis.widgets.hot_key import HotKey
 
 __version__ = "0.1.0"
 __all__ = [
@@ -76,6 +80,9 @@ __all__ = [
     "Frame",
     "FrameStack",
     "Height",
+    "HotKey",
+    "KeyFilter",
+    "KeySequence",
     "LifecycleTracker",
     "Margin",
     "Mutable",
@@ -99,15 +106,16 @@ __all__ = [
     "callback",
     "component",
     "convert_to_tracked",
+    "diff_props",
     "get_active_session",
     "get_ref",
     "is_render_active",
     "mutable",
-    "props_equal",
     "react",
     "reconcile_children",
     "render",
     "router",
+    "sequence",
     "set_active_session",
     "set_ref",
 ]

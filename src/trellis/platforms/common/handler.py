@@ -38,6 +38,7 @@ from trellis.platforms.common.messages import (
     HistoryBack,
     HistoryForward,
     HistoryPush,
+    KeyEventResponseMessage,
     Message,
     Patch,
     PatchMessage,
@@ -454,6 +455,12 @@ class MessageHandler:
         router_state._on_go_back = on_go_back
         router_state._on_go_forward = on_go_forward
 
+    def _is_key_event_callback(self, prop_name: str) -> bool:
+        """Check if a callback prop path is a key event handler."""
+        return prop_name.startswith("__key_filters__") or prop_name.startswith(
+            "__global_key_filters__"
+        )
+
     async def _invoke_callback(self, callback_id: str, args: list[tp.Any]) -> None:
         """Invoke callback with event conversion.
 
@@ -470,6 +477,12 @@ class MessageHandler:
         callback = session.get_callback(element_id, prop_name)
         if callback is None:
             raise KeyError(f"Callback not found: {callback_id}")
+
+        # Key event callbacks use a request-response protocol:
+        # first arg is request_id, handler return value determines handled status.
+        if self._is_key_event_callback(prop_name):
+            await self._invoke_key_callback(callback_id, element_id, callback, args)
+            return
 
         processed_args, kwargs = _process_callback_args(args)
         logger.debug("Invoking callback %s with %d args", callback_id, len(processed_args))
@@ -488,6 +501,43 @@ class MessageHandler:
             # Sync: call with callback context
             with callback_context(session, element_id):
                 callback(*processed_args, **kwargs)
+
+    async def _invoke_key_callback(
+        self,
+        callback_id: str,
+        element_id: str,
+        callback: tp.Callable[..., tp.Any],
+        args: list[tp.Any],
+    ) -> None:
+        """Invoke a key event callback and send handled/pass response.
+
+        Key event args: [request_id, ...event_data]
+        Handler return: True/None = handled, False = pass
+        """
+        assert self.session is not None
+        session = self.session
+
+        if not args:
+            logger.warning("Key event callback %s received no args", callback_id)
+            return
+
+        request_id = args[0]
+
+        handled = True
+        try:
+            with callback_context(session, element_id):
+                if inspect.iscoroutinefunction(callback):
+                    result = await callback()
+                else:
+                    result = callback()
+            # None or True = handled, False = pass
+            if result is False:
+                handled = False
+        except Exception:
+            logger.exception("Error in key callback %s", callback_id)
+            handled = False
+
+        await self.send_message(KeyEventResponseMessage(request_id=request_id, handled=handled))
 
     # -------------------------------------------------------------------------
     # Render loop - batches updates at 30fps

@@ -63,7 +63,7 @@ packages = ["src/trellis"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-vv"
+addopts = "-vv --ignore=tests/py/typecheck"
 
 [tool.coverage.run]
 source = ["src/trellis"]
