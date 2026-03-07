@@ -10,7 +10,7 @@ describe("write mode", () => {
   it("writes generated module output", async () => {
     const repo_root = await mkdtemp(join(tmpdir(), "html-codegen-"));
 
-    const result = await runCli(["write"], { repo_root });
+    const result = await runCli(["write"], { format_python: false, repo_root });
     expect(result.exit_code).toBe(0);
 
     const generated_path = join(repo_root, "src", "trellis", "html", "_generated_runtime.py");

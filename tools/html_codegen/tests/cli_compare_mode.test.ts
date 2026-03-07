@@ -4,7 +4,7 @@ import { runCli } from "../src/cli.js";
 
 describe("compare mode", () => {
   it("returns a diff summary", async () => {
-    const result = await runCli(["compare"]);
+    const result = await runCli(["compare"], { format_python: false });
     expect([0, 1]).toContain(result.exit_code);
     expect(result.stdout).toContain("diff summary");
   });

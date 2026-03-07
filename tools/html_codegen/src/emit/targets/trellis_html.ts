@@ -101,6 +101,41 @@ function parameter_annotation(element: ElementDef, attribute: AttributeDef): str
   return render_type_expr(attribute.type_expr);
 }
 
+function render_multiline_literal_union(type_expr: TypeExpr): string[] {
+  if (type_expr.kind !== "union" || !type_expr.options.every((option) => option.kind === "literal")) {
+    return [render_type_expr(type_expr)];
+  }
+
+  return [
+    "Literal[",
+    ...type_expr.options.map((option) => `    ${JSON.stringify(option.value)},`),
+    "]",
+  ];
+}
+
+function multiline_parameter_annotation(element: ElementDef, attribute: AttributeDef): string[] {
+  if (element.tag_name === "input" && attribute.name_python === "type") {
+    return ["InputType"];
+  }
+
+  if (
+    attribute.type_expr.kind === "nullable" &&
+    attribute.type_expr.item.kind === "union" &&
+    attribute.type_expr.item.options.every((option) => option.kind === "literal")
+  ) {
+    return ["(", ...render_multiline_literal_union(attribute.type_expr.item), "    | None", ")"];
+  }
+
+  if (
+    attribute.type_expr.kind === "union" &&
+    attribute.type_expr.options.every((option) => option.kind === "literal")
+  ) {
+    return render_multiline_literal_union(attribute.type_expr);
+  }
+
+  return [render_type_expr(attribute.type_expr)];
+}
+
 function parameter_default(element: ElementDef, attribute: AttributeDef): string | undefined {
   if (attribute.default !== undefined) {
     if (typeof attribute.default === "string") {
@@ -123,10 +158,31 @@ function parameter_default(element: ElementDef, attribute: AttributeDef): string
 function render_parameter(element: ElementDef, attribute: AttributeDef): string {
   const annotation = parameter_annotation(element, attribute);
   const default_value = parameter_default(element, attribute);
-  if (default_value === undefined) {
-    return `    ${attribute.name_python}: ${annotation},`;
+  const single_line = `    ${attribute.name_python}: ${annotation}${
+    default_value === undefined ? "," : ` = ${default_value},`
+  }`;
+
+  if (single_line.length <= 88) {
+    return single_line;
   }
-  return `    ${attribute.name_python}: ${annotation} = ${default_value},`;
+
+  const annotation_lines = multiline_parameter_annotation(element, attribute);
+  if (annotation_lines.length === 1) {
+    return single_line;
+  }
+
+  if (default_value === undefined) {
+    return [
+      `    ${attribute.name_python}: ${annotation_lines[0]}`,
+      ...annotation_lines.slice(1, -1).map((line) => `    ${line}`),
+      `    ${annotation_lines.at(-1)!},`,
+    ].join("\n");
+  }
+  return [
+    `    ${attribute.name_python}: ${annotation_lines[0]}`,
+    ...annotation_lines.slice(1, -1).map((line) => `    ${line}`),
+    `    ${annotation_lines.at(-1)!} = ${default_value},`,
+  ].join("\n");
 }
 
 function render_attribute_parameters(
@@ -223,7 +279,11 @@ function emit_trellis_html_module(document: IrDocument): string {
   if (html_elements.some((element) => element.text_behavior === "public_helper" && element.is_container)) {
     typing_imports.push("overload");
   }
-  const exported_names = html_elements.map((element) => `    "${element.python_name}",`).join("\n");
+  const exported_names = html_elements
+    .map((element) => element.python_name)
+    .sort()
+    .map((name) => `    "${name}",`)
+    .join("\n");
 
   const events_import_block =
     handler_imports.length === 0
@@ -237,11 +297,7 @@ ${handler_imports.map((name) => `    ${name},`).join("\n")}
     ...(events_import_block ? [events_import_block] : []),
   ].join("\n");
 
-  return `"""Generated runtime-aligned HTML wrappers.
-
-This module is intentionally scoped to the first generated HTML slice:
-_A, Div, Img, and Input.
-"""
+  return `"""Generated runtime-aligned HTML wrappers."""
 
 from __future__ import annotations
 

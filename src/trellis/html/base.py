@@ -261,7 +261,17 @@ def html_element(
             if "_text" in props and props["_text"] is None:
                 del props["_text"]
 
-            return _singleton._place(**props)
+            normalized_props: dict[str, tp.Any] = {}
+            for key, value in props.items():
+                normalized_key = key.removesuffix("_")
+                if normalized_key in normalized_props:
+                    raise TypeError(
+                        f"{element_name}() received duplicate keyword arguments after "
+                        f"normalization ({normalized_key})."
+                    )
+                normalized_props[normalized_key] = value
+
+            return _singleton._place(**normalized_props)
 
         # Expose the underlying component for introspection
         wrapper._component = _singleton  # type: ignore[attr-defined]

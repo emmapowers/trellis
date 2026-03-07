@@ -3,17 +3,18 @@ import { describe, expect, it } from "vitest";
 import { build_ir_document } from "../src/pipeline/build.js";
 
 describe("pipeline build", () => {
-  it("builds only the first real html slice", async () => {
+  it("builds the full html element policy surface", async () => {
     const ir = await build_ir_document();
 
-    expect(ir.elements.map((element) => element.python_name)).toEqual(["_A", "Div", "Img", "Input"]);
+    expect(ir.elements).toHaveLength(116);
     expect(ir.elements.every((element) => element.namespace === "html")).toBe(true);
-    expect(ir.elements.map((element) => element.text_behavior)).toEqual([
-      "public_helper",
-      "none",
-      "none",
-      "none",
-    ]);
+    expect(ir.elements.some((element) => element.tag_name === "webview")).toBe(false);
+    expect(ir.elements.some((element) => element.tag_name === "noindex")).toBe(false);
+    expect(ir.elements.some((element) => element.python_name === "P")).toBe(true);
+    expect(ir.elements.some((element) => element.python_name === "Option")).toBe(true);
+    expect(ir.elements.some((element) => element.python_name === "Script")).toBe(true);
+    expect(ir.elements.some((element) => element.python_name === "StyleTag")).toBe(true);
+    expect(ir.elements.some((element) => element.python_name === "Textarea")).toBe(true);
     expect(ir.attributes.some((attribute) => attribute.name_python === "href")).toBe(true);
     expect(ir.attributes.some((attribute) => attribute.name_python === "src")).toBe(true);
     expect(ir.attributes.some((attribute) => attribute.name_python === "on_click")).toBe(true);
@@ -61,5 +62,69 @@ describe("pipeline build", () => {
     expect(input_type?.required).toBe(false);
     expect(input_type?.default).toBe("text");
     expect(input_type?.type_expr.kind).toBe("union");
+
+    expect(ir.attributes.find((attribute) => attribute.id === "html:link:as_")?.name_source).toBe("as");
+    expect(ir.attributes.find((attribute) => attribute.id === "html:script:async_")?.name_source).toBe(
+      "async",
+    );
+    expect(ir.attributes.find((attribute) => attribute.id === "html:div:is_")?.name_source).toBe("is");
+    expect(ir.attributes.find((attribute) => attribute.id === "html:object:data_")?.name_source).toBe(
+      "data",
+    );
+
+    function find_element(tag_name: string) {
+      return ir.elements.find((element) => element.tag_name === tag_name);
+    }
+
+    expect(find_element("a")).toMatchObject({
+      python_name: "_A",
+      is_container: true,
+      text_behavior: "public_helper",
+    });
+    expect(find_element("div")).toMatchObject({
+      python_name: "Div",
+      is_container: true,
+      text_behavior: "none",
+    });
+    expect(find_element("img")).toMatchObject({
+      python_name: "Img",
+      is_container: false,
+      text_behavior: "none",
+    });
+    expect(find_element("option")).toMatchObject({
+      python_name: "Option",
+      is_container: false,
+      text_behavior: "public_helper",
+    });
+    expect(find_element("textarea")).toMatchObject({
+      python_name: "Textarea",
+      is_container: false,
+      text_behavior: "none",
+    });
+    expect(find_element("iframe")).toMatchObject({
+      python_name: "Iframe",
+      is_container: false,
+      text_behavior: "none",
+    });
+    expect(find_element("script")).toMatchObject({
+      python_name: "Script",
+      is_container: true,
+      text_behavior: "public_helper",
+    });
+    expect(find_element("style")).toMatchObject({
+      python_name: "StyleTag",
+      is_container: true,
+      text_behavior: "public_helper",
+    });
+    expect(find_element("picture")).toMatchObject({
+      python_name: "Picture",
+      is_container: true,
+      text_behavior: "none",
+    });
+    expect(find_element("progress")).toMatchObject({
+      python_name: "Progress",
+      is_container: true,
+      text_behavior: "none",
+    });
   });
 });

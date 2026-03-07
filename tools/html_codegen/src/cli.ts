@@ -1,5 +1,7 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { spawn } from "node:child_process";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { basename, dirname, join } from "node:path";
 
 import { build_trellis_events_module } from "./emit/targets/trellis_events.js";
 import { build_trellis_html_module } from "./emit/targets/trellis_html.js";
@@ -13,7 +15,88 @@ export interface CliResult {
 }
 
 export interface RunCliOptions {
+  format_python?: boolean;
   repo_root?: string;
+}
+
+async function format_python_source(
+  formatter_root: string,
+  path: string,
+  content: string,
+): Promise<string> {
+  if (!path.endsWith(".py")) {
+    return content;
+  }
+
+  const black_formatted = await new Promise<string>((resolve, reject) => {
+    const child = spawn(
+      "pixi",
+      ["run", "black", "--quiet", "--stdin-filename", path, "-"],
+      {
+        cwd: formatter_root,
+        stdio: ["pipe", "pipe", "pipe"],
+      },
+    );
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => {
+      stdout += chunk;
+    });
+
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (chunk: string) => {
+      stderr += chunk;
+    });
+
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve(stdout);
+        return;
+      }
+      reject(new Error(`black failed for ${path}: ${stderr || `exit code ${code}`}`));
+    });
+
+    child.stdin.end(content);
+  });
+
+  const temp_dir = await mkdtemp(join(tmpdir(), "html-codegen-format-"));
+  const temp_path = join(temp_dir, basename(path));
+  try {
+    await writeFile(temp_path, black_formatted, "utf-8");
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn(
+        "pixi",
+        ["run", "ruff", "check", "--select", "RUF022", "--fix", temp_path],
+        {
+          cwd: formatter_root,
+          stdio: ["ignore", "pipe", "pipe"],
+        },
+      );
+
+      let stderr = "";
+      child.stderr.setEncoding("utf8");
+      child.stderr.on("data", (chunk: string) => {
+        stderr += chunk;
+      });
+
+      child.on("error", reject);
+      child.on("close", (code) => {
+        if (code === 0) {
+          resolve();
+          return;
+        }
+        reject(new Error(`ruff failed for ${path}: ${stderr || `exit code ${code}`}`));
+      });
+    });
+
+    return await readFile(temp_path, "utf-8");
+  } finally {
+    await rm(temp_dir, { force: true, recursive: true });
+  }
 }
 
 function default_repo_root(): string {
@@ -33,16 +116,22 @@ function help_text(): string {
 
 async function compute_target_summary(
   repo_root: string,
+  format_python: boolean,
 ): Promise<{
   targets: Array<{ path: string; content: string }>;
   summary: { changed: number; added: number; removed: number };
 }> {
+  const formatter_root = default_repo_root();
   const document = await build_ir_document();
   const payloads = [build_trellis_html_module(document), build_trellis_events_module(document)];
-  const targets = payloads.map((payload) => ({
-    path: join(repo_root, payload.path),
-    content: payload.content,
-  }));
+  const targets = await Promise.all(
+    payloads.map(async (payload) => ({
+      path: join(repo_root, payload.path),
+      content: format_python
+        ? await format_python_source(formatter_root, payload.path, payload.content)
+        : payload.content,
+    })),
+  );
 
   const summary = { changed: 0, added: 0, removed: 0 };
   for (const target of targets) {
@@ -67,6 +156,7 @@ async function compute_target_summary(
 }
 
 export async function runCli(argv: string[], options: RunCliOptions = {}): Promise<CliResult> {
+  const format_python = options.format_python ?? true;
   const repo_root = options.repo_root ?? default_repo_root();
 
   if (argv.includes("--help") || argv.includes("-h") || argv.length === 0) {
@@ -79,7 +169,7 @@ export async function runCli(argv: string[], options: RunCliOptions = {}): Promi
 
   const command = argv[0];
   if (command === "compare") {
-    const { summary } = await compute_target_summary(repo_root);
+    const { summary } = await compute_target_summary(repo_root, format_python);
     const has_diff = summary.changed + summary.added + summary.removed > 0;
     return {
       exit_code: has_diff ? 1 : 0,
@@ -89,7 +179,7 @@ export async function runCli(argv: string[], options: RunCliOptions = {}): Promi
   }
 
   if (command === "write") {
-    const { targets, summary } = await compute_target_summary(repo_root);
+    const { targets, summary } = await compute_target_summary(repo_root, format_python);
     for (const target of targets) {
       await mkdir(dirname(target.path), { recursive: true });
       await writeFile(target.path, target.content, "utf-8");

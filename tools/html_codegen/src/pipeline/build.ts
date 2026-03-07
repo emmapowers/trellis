@@ -13,18 +13,11 @@ import type { ReactEventBinding } from "../sources/react_ts.js";
 import { extract_react_surface } from "../sources/react_ts.js";
 import { extract_webref_event_payloads } from "../sources/webref_event_payloads.js";
 
-interface SlicePropConfig {
-  name: string;
-  required?: boolean;
-  default?: string | number | boolean | null;
-}
-
-interface SliceElementConfig {
-  tag_name: "a" | "div" | "img" | "input";
-  python_name: "_A" | "Div" | "Img" | "Input";
+interface ElementPolicy {
+  tag_name: string;
+  python_name: string;
   is_container: boolean;
   text_behavior: "none" | "public_helper" | "internal_text_prop";
-  props: SlicePropConfig[];
 }
 
 interface DataclassFieldConfig {
@@ -87,108 +80,136 @@ const PUBLIC_HANDLER_PAYLOAD_NAMES = [
   "DragEvent",
 ] as const;
 
-const SLICE_CONFIG: SliceElementConfig[] = [
-  {
-    tag_name: "a",
-    python_name: "_A",
-    is_container: true,
-    text_behavior: "public_helper",
-    props: [
-      { name: "href" },
-      { name: "target" },
-      { name: "rel" },
-      { name: "download" },
-      { name: "className" },
-      { name: "style" },
-      { name: "id" },
-      { name: "onClick" },
-      { name: "onDoubleClick" },
-      { name: "onContextMenu" },
-      { name: "onKeyDown" },
-      { name: "onKeyUp" },
-    ],
-  },
-  {
-    tag_name: "div",
-    python_name: "Div",
-    is_container: true,
-    text_behavior: "none",
-    props: [
-      { name: "className" },
-      { name: "style" },
-      { name: "id" },
-      { name: "onClick" },
-      { name: "onDoubleClick" },
-      { name: "onContextMenu" },
-      { name: "onMouseEnter" },
-      { name: "onMouseLeave" },
-      { name: "onKeyDown" },
-      { name: "onKeyUp" },
-      { name: "onScroll" },
-      { name: "onWheel" },
-      { name: "onDragStart" },
-      { name: "onDrag" },
-      { name: "onDragEnd" },
-      { name: "onDragEnter" },
-      { name: "onDragOver" },
-      { name: "onDragLeave" },
-      { name: "onDrop" },
-    ],
-  },
-  {
-    tag_name: "img",
-    python_name: "Img",
-    is_container: false,
-    text_behavior: "none",
-    props: [
-      { name: "src" },
-      { name: "alt" },
-      { name: "width" },
-      { name: "height" },
-      { name: "loading" },
-      { name: "className" },
-      { name: "style" },
-      { name: "id" },
-      { name: "onClick" },
-      { name: "onDoubleClick" },
-      { name: "onContextMenu" },
-    ],
-  },
-  {
-    tag_name: "input",
-    python_name: "Input",
-    is_container: false,
-    text_behavior: "none",
-    props: [
-      { name: "type", default: "text" },
-      { name: "value" },
-      { name: "placeholder" },
-      { name: "disabled" },
-      { name: "readOnly" },
-      { name: "name" },
-      { name: "checked" },
-      { name: "required" },
-      { name: "min" },
-      { name: "max" },
-      { name: "step" },
-      { name: "pattern" },
-      { name: "maxLength" },
-      { name: "autoComplete" },
-      { name: "autoFocus" },
-      { name: "accept" },
-      { name: "multiple" },
-      { name: "onChange" },
-      { name: "onInput" },
-      { name: "onFocus" },
-      { name: "onBlur" },
-      { name: "onKeyDown" },
-      { name: "onKeyUp" },
-      { name: "className" },
-      { name: "style" },
-      { name: "id" },
-    ],
-  },
-];
+const EXCLUDED_HTML_TAGS = new Set(["noindex", "webview"]);
+
+const NON_CONTAINER_TAGS = new Set([
+  "area",
+  "base",
+  "br",
+  "col",
+  "embed",
+  "hr",
+  "iframe",
+  "img",
+  "input",
+  "keygen",
+  "link",
+  "menuitem",
+  "meta",
+  "option",
+  "param",
+  "source",
+  "textarea",
+  "track",
+  "wbr",
+]);
+
+const PUBLIC_TEXT_HELPER_TAGS = new Set([
+  "a",
+  "abbr",
+  "b",
+  "bdi",
+  "bdo",
+  "big",
+  "blockquote",
+  "button",
+  "caption",
+  "cite",
+  "code",
+  "data",
+  "dd",
+  "del",
+  "dfn",
+  "dt",
+  "em",
+  "figcaption",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "i",
+  "ins",
+  "kbd",
+  "label",
+  "legend",
+  "li",
+  "mark",
+  "option",
+  "output",
+  "p",
+  "pre",
+  "q",
+  "rp",
+  "rt",
+  "ruby",
+  "s",
+  "samp",
+  "script",
+  "small",
+  "span",
+  "strong",
+  "style",
+  "sub",
+  "summary",
+  "sup",
+  "td",
+  "th",
+  "time",
+  "title",
+  "u",
+]);
+
+const PYTHON_NAME_OVERRIDES = new Map([
+  ["a", "_A"],
+  ["i", "Italic"],
+  ["style", "StyleTag"],
+]);
+
+const ATTRIBUTE_DEFAULTS = new Map<string, string | number | boolean | null>([["input:type", "text"]]);
+
+const PYTHON_KEYWORDS = new Set([
+  "and",
+  "as",
+  "assert",
+  "async",
+  "await",
+  "break",
+  "case",
+  "class",
+  "continue",
+  "def",
+  "del",
+  "elif",
+  "else",
+  "except",
+  "false",
+  "finally",
+  "for",
+  "from",
+  "global",
+  "if",
+  "import",
+  "in",
+  "is",
+  "lambda",
+  "match",
+  "nonlocal",
+  "none",
+  "not",
+  "or",
+  "pass",
+  "raise",
+  "return",
+  "true",
+  "try",
+  "while",
+  "with",
+  "yield",
+]);
+
+const RESERVED_PARAMETER_NAMES = new Set(["data", "inner_text"]);
 
 const DATACLASS_CONFIGS: DataclassConfig[] = [
   {
@@ -360,12 +381,53 @@ function to_snake_case(name: string): string {
     .toLowerCase();
 }
 
-function normalize_attribute_type(prop: SlicePropConfig, type_expr: TypeExpr): TypeExpr {
+function to_python_param_name(name: string): string {
+  const snake_name = to_snake_case(name);
+  if (PYTHON_KEYWORDS.has(snake_name) || RESERVED_PARAMETER_NAMES.has(snake_name)) {
+    return `${snake_name}_`;
+  }
+  return snake_name;
+}
+
+function to_python_element_name(tag_name: string): string {
+  const override = PYTHON_NAME_OVERRIDES.get(tag_name);
+  if (override) {
+    return override;
+  }
+
+  return tag_name
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
+}
+
+function build_element_policy(tag_name: string): ElementPolicy | undefined {
+  if (EXCLUDED_HTML_TAGS.has(tag_name)) {
+    return undefined;
+  }
+
+  return {
+    tag_name,
+    python_name: to_python_element_name(tag_name),
+    is_container: !NON_CONTAINER_TAGS.has(tag_name),
+    text_behavior: PUBLIC_TEXT_HELPER_TAGS.has(tag_name) ? "public_helper" : "none",
+  };
+}
+
+function attribute_default(tag_name: string, prop_name: string): string | number | boolean | null | undefined {
+  return ATTRIBUTE_DEFAULTS.get(`${tag_name}:${prop_name}`);
+}
+
+function normalize_attribute_type(
+  type_expr: TypeExpr,
+  required: boolean,
+  default_value: string | number | boolean | null | undefined,
+): TypeExpr {
   if (type_expr.kind !== "nullable") {
     return type_expr;
   }
 
-  if (prop.required || prop.default !== undefined) {
+  if (required || default_value !== undefined) {
     return type_expr.item;
   }
 
@@ -377,26 +439,47 @@ function is_event_prop(prop_name: string): boolean {
 }
 
 function event_id_for_prop(prop_name: string): string {
-  return `html:global:${to_snake_case(prop_name)}`;
+  return `html:global:${to_python_param_name(prop_name)}`;
+}
+
+function is_supported_event_prop(prop_name: string): boolean {
+  return PUBLIC_EVENT_PROP_NAMES.includes(prop_name as (typeof PUBLIC_EVENT_PROP_NAMES)[number]);
+}
+
+function is_supported_prop(prop_name: string): boolean {
+  if (!is_event_prop(prop_name)) {
+    return true;
+  }
+  return is_supported_event_prop(prop_name);
+}
+
+function compare_prop_names(left: string, right: string): number {
+  const left_is_event = is_event_prop(left);
+  const right_is_event = is_event_prop(right);
+  if (left_is_event !== right_is_event) {
+    return left_is_event ? 1 : -1;
+  }
+  return left.localeCompare(right);
 }
 
 function build_attribute_def(
   tag_name: string,
-  prop: SlicePropConfig,
+  prop_name: string,
   type_expr: TypeExpr,
+  required = false,
+  default_value: string | number | boolean | null | undefined = undefined,
 ): AttributeDef {
-  const prop_name = prop.name;
-  const name_python = to_snake_case(prop_name);
+  const name_python = to_python_param_name(prop_name);
   const is_global = GLOBAL_PROP_NAMES.has(prop_name);
 
   return {
     id: is_global ? `html:global:${name_python}` : `html:${tag_name}:${name_python}`,
     name_source: prop_name,
-    name_python,
+    name_python: to_python_param_name(prop_name),
     applies_to: is_global ? "global" : "element",
-    type_expr: normalize_attribute_type(prop, type_expr),
-    required: prop.required ?? false,
-    default: prop.default,
+    type_expr: normalize_attribute_type(type_expr, required, default_value),
+    required,
+    default: default_value,
     category: "standard",
     source: react_source(),
   };
@@ -406,7 +489,7 @@ function build_event_def(binding: ReactEventBinding): EventDef {
   return {
     id: event_id_for_prop(binding.prop_name),
     name_source: binding.prop_name,
-    name_python: to_snake_case(binding.prop_name),
+    name_python: to_python_param_name(binding.prop_name),
     dom_event_name: binding.dom_event_name,
     handler_name: binding.handler_name,
     payload_name: binding.payload_name,
@@ -439,7 +522,7 @@ function build_dataclass_field(
   if (config.type_expr) {
     return {
       name_source: config.name_source ?? config.name_python ?? "field",
-      name_python: config.name_python ?? to_snake_case(config.name_source ?? "field"),
+      name_python: config.name_python ?? to_python_param_name(config.name_source ?? "field"),
       type_expr: config.type_expr,
       default: config.default,
       default_factory: config.default_factory,
@@ -486,11 +569,7 @@ function build_dataclass_def(
   };
 }
 
-function build_element(
-  config: SliceElementConfig,
-  attribute_ids: string[],
-  event_ids: string[],
-): ElementDef {
+function build_element(config: ElementPolicy, attribute_ids: string[], event_ids: string[]): ElementDef {
   return {
     namespace: "html",
     tag_name: config.tag_name,
@@ -536,7 +615,12 @@ export async function build_ir_document(): Promise<IrDocument> {
     events_by_id.set(event_id_for_prop(prop_name), build_event_def(binding));
   }
 
-  for (const config of SLICE_CONFIG) {
+  const element_policies = [...react_surface.elements.keys()]
+    .map((tag_name) => build_element_policy(tag_name))
+    .filter((policy): policy is ElementPolicy => policy !== undefined)
+    .sort((left, right) => left.tag_name.localeCompare(right.tag_name));
+
+  for (const config of element_policies) {
     const surface = react_surface.elements.get(config.tag_name);
     if (!surface) {
       throw new Error(`Missing react surface for <${config.tag_name}>.`);
@@ -545,18 +629,31 @@ export async function build_ir_document(): Promise<IrDocument> {
     const attribute_ids: string[] = [];
     const event_ids: string[] = [];
 
-    for (const prop of config.props) {
-      const type_expr = surface.attributes.get(prop.name);
+    const prop_names = [...surface.attributes.keys()]
+      .filter((prop_name) => is_supported_prop(prop_name))
+      .sort(compare_prop_names);
+
+    for (const prop_name of prop_names) {
+      const type_expr = surface.attributes.get(prop_name);
       if (!type_expr) {
-        throw new Error(`Missing react prop ${config.tag_name}.${prop.name}.`);
+        throw new Error(`Missing react prop ${config.tag_name}.${prop_name}.`);
       }
 
-      const attribute = build_attribute_def(config.tag_name, prop, type_expr);
-      attributes_by_id.set(attribute.id, attribute);
+      const attribute = build_attribute_def(
+        config.tag_name,
+        prop_name,
+        type_expr,
+        false,
+        attribute_default(config.tag_name, prop_name),
+      );
+
+      if (!attributes_by_id.has(attribute.id)) {
+        attributes_by_id.set(attribute.id, attribute);
+      }
       attribute_ids.push(attribute.id);
 
-      if (is_event_prop(prop.name)) {
-        event_ids.push(event_id_for_prop(prop.name));
+      if (is_event_prop(prop_name)) {
+        event_ids.push(event_id_for_prop(prop_name));
       }
     }
 
