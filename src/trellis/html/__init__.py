@@ -31,8 +31,6 @@ from trellis.html.base import HtmlContainerTrait, HtmlElement, Style
 
 # Event types
 from trellis.html.events import (
-    ChangeEvent,
-    ChangeEventHandler,
     DataTransfer,
     DragEvent,
     DragEventHandler,
@@ -168,8 +166,6 @@ __all__ = [
     "Blockquote",
     "Br",
     "Caption",
-    "ChangeEvent",
-    "ChangeEventHandler",
     "Code",
     "DataTransfer",
     "Datalist",

@@ -21,9 +21,9 @@ describe("react event bindings", () => {
       dom_event_name: "change",
       react_handler_alias: "ChangeEventHandler",
       react_event_interface: "ChangeEvent",
-      payload_name: "ChangeEvent",
-      typed_handler_name: "ChangeEventHandler",
-      handler_name: "ChangeEventHandler",
+      payload_name: "Event",
+      typed_handler_name: "EventHandler",
+      handler_name: "EventHandler",
     });
 
     expect(bindings.get("onScroll")).toEqual({

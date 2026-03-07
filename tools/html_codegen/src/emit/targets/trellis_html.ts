@@ -48,6 +48,9 @@ function collect_references(type_expr: TypeExpr, names: Set<string>): void {
     names.add(type_expr.name);
     return;
   }
+  if (type_expr.kind === "style_object") {
+    return;
+  }
   if (type_expr.kind === "nullable" || type_expr.kind === "array") {
     collect_references(type_expr.item, names);
     return;

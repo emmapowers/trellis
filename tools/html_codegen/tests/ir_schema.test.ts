@@ -54,6 +54,21 @@ describe("ir schema", () => {
             source_version: "@types/react@19.2.14",
           },
         },
+        {
+          id: "html:global:style",
+          name_source: "style",
+          name_python: "style",
+          applies_to: "global",
+          type_expr: { kind: "style_object" },
+          required: false,
+          category: "standard",
+          source: {
+            winner: "react_ts",
+            contributors: ["react_ts"],
+            reason: "runtime_precedence",
+            source_version: "@types/react@19.2.14",
+          },
+        },
       ],
       events: [
         {
@@ -61,7 +76,7 @@ describe("ir schema", () => {
           name_source: "onClick",
           name_python: "on_click",
           dom_event_name: "click",
-          handler_name: "MouseHandler",
+          handler_name: "MouseEventHandler",
           payload_name: "MouseEvent",
           source: {
             winner: "react_ts",
@@ -75,7 +90,7 @@ describe("ir schema", () => {
         {
           payload_name: "MouseEvent",
           typed_handler_name: "MouseEventHandler",
-          handler_name: "MouseHandler",
+          handler_name: "MouseEventHandler",
           source: {
             winner: "react_ts",
             contributors: ["react_ts"],
@@ -86,7 +101,7 @@ describe("ir schema", () => {
       ],
       dataclasses: [
         {
-          name: "BaseEvent",
+          name: "Event",
           frozen: true,
           fields: [
             {
@@ -111,7 +126,7 @@ describe("ir schema", () => {
         },
         {
           name: "MouseEvent",
-          base: "BaseEvent",
+          base: "Event",
           frozen: true,
           fields: [
             {

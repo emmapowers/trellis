@@ -28,6 +28,12 @@ describe("react source extraction", () => {
     expect(div).toBeDefined();
     expect(div?.attributes.get("className")?.kind).toBe("nullable");
     expect(div?.attributes.get("style")?.kind).toBe("nullable");
+    expect(div?.attributes.get("style")).toEqual({
+      kind: "nullable",
+      item: {
+        kind: "style_object",
+      },
+    });
     expect(div?.attributes.get("onScroll")?.kind).toBe("nullable");
 
     const image = surface.elements.get("img");

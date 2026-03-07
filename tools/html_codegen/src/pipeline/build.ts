@@ -82,7 +82,6 @@ const PUBLIC_HANDLER_PAYLOAD_NAMES = [
   "FocusEvent",
   "SubmitEvent",
   "InputEvent",
-  "ChangeEvent",
   "WheelEvent",
   "DragEvent",
 ] as const;
@@ -267,12 +266,6 @@ const DATACLASS_CONFIGS: DataclassConfig[] = [
       { source_name: "inputType", default: "" },
     ],
     source: webref_source("idl_payload"),
-  },
-  {
-    name: "ChangeEvent",
-    base: "Event",
-    fields: [],
-    source: react_source(),
   },
   {
     name: "WheelEvent",

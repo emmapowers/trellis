@@ -7,8 +7,6 @@ from dataclasses import dataclass, field
 
 __all__ = [
     "EVENT_TYPE_MAP",
-    "ChangeEvent",
-    "ChangeEventHandler",
     "DataTransfer",
     "DragEvent",
     "DragEventHandler",
@@ -94,11 +92,6 @@ class InputEvent(Event):
 
 
 @dataclass(frozen=True)
-class ChangeEvent(Event):
-    pass
-
-
-@dataclass(frozen=True)
 class WheelEvent(MouseEvent):
     delta_x: float = 0.0
     delta_y: float = 0.0
@@ -133,14 +126,13 @@ KeyboardEventHandler = Callable[[KeyboardEvent], None] | Callable[[KeyboardEvent
 FocusEventHandler = Callable[[FocusEvent], None] | Callable[[FocusEvent], Awaitable[None]]
 SubmitEventHandler = Callable[[SubmitEvent], None] | Callable[[SubmitEvent], Awaitable[None]]
 InputEventHandler = Callable[[InputEvent], None] | Callable[[InputEvent], Awaitable[None]]
-ChangeEventHandler = Callable[[ChangeEvent], None] | Callable[[ChangeEvent], Awaitable[None]]
 WheelEventHandler = Callable[[WheelEvent], None] | Callable[[WheelEvent], Awaitable[None]]
 DragEventHandler = Callable[[DragEvent], None] | Callable[[DragEvent], Awaitable[None]]
 
 
 EVENT_TYPE_MAP: dict[str, type[Event]] = {
     "blur": FocusEvent,
-    "change": ChangeEvent,
+    "change": Event,
     "click": MouseEvent,
     "contextmenu": MouseEvent,
     "dblclick": MouseEvent,

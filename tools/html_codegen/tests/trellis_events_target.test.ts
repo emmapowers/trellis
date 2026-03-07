@@ -23,8 +23,33 @@ describe("trellis events target", () => {
             source_version: "@types/react@19.2.14",
           },
         },
+        {
+          id: "html:global:on_change",
+          name_source: "onChange",
+          name_python: "on_change",
+          dom_event_name: "change",
+          handler_name: "EventHandler",
+          payload_name: "Event",
+          source: {
+            winner: "react_ts",
+            contributors: ["react_ts"],
+            reason: "runtime_precedence",
+            source_version: "@types/react@19.2.14",
+          },
+        },
       ],
       event_handlers: [
+        {
+          payload_name: "Event",
+          typed_handler_name: "EventHandler",
+          handler_name: "EventHandler",
+          source: {
+            winner: "react_ts",
+            contributors: ["react_ts"],
+            reason: "runtime_precedence",
+            source_version: "@types/react@19.2.14",
+          },
+        },
         {
           payload_name: "MouseEvent",
           typed_handler_name: "MouseEventHandler",
@@ -145,10 +170,13 @@ describe("trellis events target", () => {
     expect(payload.content).toContain("class Event");
     expect(payload.content).toContain("class UIEvent(Event)");
     expect(payload.content).toContain("class MouseEvent(UIEvent)");
+    expect(payload.content).not.toContain("class ChangeEvent");
+    expect(payload.content).toContain("EventHandler = Callable[[Event], None]");
     expect(payload.content).toContain("MouseEventHandler = Callable[[MouseEvent], None]");
     expect(payload.content).not.toContain("MouseHandler =");
     expect(payload.content).toContain("alt_key: bool = False");
     expect(payload.content).toContain('"click": MouseEvent');
+    expect(payload.content).toContain('"change": Event');
     expect(payload.content).toContain("def get_event_class(event_type: str) -> type[Event]:");
   });
 });

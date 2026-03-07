@@ -38,6 +38,19 @@ describe("pipeline build", () => {
       handler_name: "MouseEventHandler",
     });
 
+    const change_event = ir.events.find((event) => event.id === "html:global:on_change");
+    expect(change_event).toMatchObject({
+      dom_event_name: "change",
+      payload_name: "Event",
+      handler_name: "EventHandler",
+    });
+
+    const style_attribute = ir.attributes.find((attribute) => attribute.id === "html:global:style");
+    expect(style_attribute?.type_expr).toEqual({
+      kind: "nullable",
+      item: { kind: "style_object" },
+    });
+
     const input_type = ir.attributes.find((attribute) => attribute.id === "html:input:type");
     expect(input_type?.required).toBe(false);
     expect(input_type?.default).toBe("text");

@@ -31,6 +31,8 @@ export function render_type_expr(type_expr: TypeExpr): string {
       return `list[${render_type_expr(type_expr.item)}]`;
     case "reference":
       return type_expr.name;
+    case "style_object":
+      return "Style";
     case "nullable":
       return `${render_type_expr(type_expr.item)} | None`;
     case "callable":

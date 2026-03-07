@@ -36,6 +36,9 @@ const type_expr_schema: z.ZodType = z.lazy(() =>
       name: z.string().min(1),
     }),
     z.object({
+      kind: z.literal("style_object"),
+    }),
+    z.object({
       kind: z.literal("nullable"),
       item: type_expr_schema,
     }),

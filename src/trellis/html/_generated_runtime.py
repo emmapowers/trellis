@@ -12,8 +12,8 @@ from typing import Literal
 from trellis.core.rendering.element import Element
 from trellis.html.base import Style, html_element
 from trellis.html.events import (
-    ChangeEventHandler,
     DragEventHandler,
+    EventHandler,
     FocusEventHandler,
     InputEventHandler,
     KeyboardEventHandler,
@@ -146,7 +146,7 @@ def Input(
     auto_focus: bool | None = None,
     accept: str | None = None,
     multiple: bool | None = None,
-    on_change: ChangeEventHandler | None = None,
+    on_change: EventHandler | None = None,
     on_input: InputEventHandler | None = None,
     on_focus: FocusEventHandler | None = None,
     on_blur: FocusEventHandler | None = None,

@@ -29,6 +29,9 @@ export type TypeExpr =
       name: string;
     }
   | {
+      kind: "style_object";
+    }
+  | {
       kind: "nullable";
       item: TypeExpr;
     }

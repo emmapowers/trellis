@@ -11,7 +11,7 @@ from typing import overload
 from trellis.core.rendering.element import ContainerElement, Element
 from trellis.html.base import Style, html_element
 from trellis.html.events import (
-    ChangeEventHandler,
+    EventHandler,
     FocusEventHandler,
     InputEventHandler,
     KeyboardEventHandler,
@@ -77,7 +77,7 @@ def Input(
     auto_focus: bool = False,
     accept: str | None = None,
     multiple: bool = False,
-    on_change: ChangeEventHandler | None = None,
+    on_change: EventHandler | None = None,
     on_input: InputEventHandler | None = None,
     on_focus: FocusEventHandler | None = None,
     on_blur: FocusEventHandler | None = None,
@@ -105,7 +105,7 @@ def Textarea(
     required: bool = False,
     max_length: int | None = None,
     auto_focus: bool = False,
-    on_change: ChangeEventHandler | None = None,
+    on_change: EventHandler | None = None,
     on_input: InputEventHandler | None = None,
     on_focus: FocusEventHandler | None = None,
     on_blur: FocusEventHandler | None = None,
@@ -128,7 +128,7 @@ def Select(
     name: str | None = None,
     required: bool = False,
     multiple: bool = False,
-    on_change: ChangeEventHandler | None = None,
+    on_change: EventHandler | None = None,
     on_key_down: KeyboardEventHandler | None = None,
     on_key_up: KeyboardEventHandler | None = None,
     class_name: str | None = None,

@@ -258,6 +258,9 @@ function payload_name_for_binding(
   prop_name: string,
   react_event_interface: string,
 ): string {
+  if (prop_name === "onChange") {
+    return "Event";
+  }
   if (prop_name === "onScroll") {
     return "UIEvent";
   }
@@ -371,7 +374,7 @@ function parse_named_type(
   cache: Map<string, TypeExpr | undefined>,
 ): TypeExpr | undefined {
   if (prop_name === "style" && type_name === "CSSProperties") {
-    return reference("Style");
+    return { kind: "style_object" };
   }
 
   if (type_name === "string") {

@@ -12,7 +12,7 @@ describe("trellis target", () => {
           tag_name: "a",
           python_name: "_A",
           is_container: true,
-          attributes: ["html:a:href", "html:global:class_name"],
+          attributes: ["html:a:href", "html:global:class_name", "html:global:style"],
           events: [],
           source: {
             winner: "react_ts",
@@ -26,7 +26,7 @@ describe("trellis target", () => {
           tag_name: "div",
           python_name: "Div",
           is_container: true,
-          attributes: ["html:global:class_name"],
+          attributes: ["html:global:class_name", "html:global:style"],
           events: [],
           source: {
             winner: "react_ts",
@@ -40,7 +40,7 @@ describe("trellis target", () => {
           tag_name: "img",
           python_name: "Img",
           is_container: false,
-          attributes: ["html:img:src"],
+          attributes: ["html:img:src", "html:global:style"],
           events: [],
           source: {
             winner: "react_ts",
@@ -54,7 +54,7 @@ describe("trellis target", () => {
           tag_name: "input",
           python_name: "Input",
           is_container: false,
-          attributes: ["html:input:type"],
+          attributes: ["html:input:type", "html:global:style"],
           events: [],
           source: {
             winner: "react_ts",
@@ -86,6 +86,21 @@ describe("trellis target", () => {
           name_python: "class_name",
           applies_to: "global",
           type_expr: { kind: "nullable", item: { kind: "primitive", name: "str" } },
+          required: false,
+          category: "standard",
+          source: {
+            winner: "react_ts",
+            contributors: ["react_ts"],
+            reason: "runtime_precedence",
+            source_version: "@types/react@19.2.14",
+          },
+        },
+        {
+          id: "html:global:style",
+          name_source: "style",
+          name_python: "style",
+          applies_to: "global",
+          type_expr: { kind: "nullable", item: { kind: "style_object" } },
           required: false,
           category: "standard",
           source: {
@@ -157,6 +172,7 @@ describe("trellis target", () => {
     expect(payload.content).toContain("def Img(");
     expect(payload.content).toContain("src: str | None = None");
     expect(payload.content).toContain("def Input(");
+    expect(payload.content).toContain("style: Style | None = None");
     expect(payload.content).not.toContain("**props: tp.Any");
     expect(payload.content).not.toContain("def A(");
     expect(payload.content).not.toContain("def _make_a(");

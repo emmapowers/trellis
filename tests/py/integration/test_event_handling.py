@@ -11,7 +11,6 @@ from trellis.core.components.composition import component
 from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
 from trellis.html.events import (
-    ChangeEvent,
     DataTransfer,
     DragEvent,
     Event,
@@ -438,13 +437,13 @@ class TestEventConversion:
         assert result.data_transfer.files[0].name == "a.txt"
 
     def test_change_event_converted(self) -> None:
-        """Change event dict becomes ChangeEvent dataclass."""
+        """Change event dict becomes Event dataclass."""
         event_dict = {
             "type": "change",
             "time_stamp": 9999.0,
         }
         result = _convert_event_arg(event_dict)
-        assert isinstance(result, ChangeEvent)
+        assert isinstance(result, Event)
         assert result.type == "change"
         assert result.time_stamp == 9999.0
 
@@ -527,7 +526,7 @@ class TestProcessCallbackArgs:
 
         assert args[0] == "string"
         assert args[1] == 42
-        assert isinstance(args[2], ChangeEvent)
+        assert isinstance(args[2], Event)
         assert args[2].time_stamp == 100.0
         assert kwargs == {"opt": True}
 
