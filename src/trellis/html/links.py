@@ -117,8 +117,24 @@ def _make_a(
             effective_data = {}
         effective_data["trellis-router-link"] = "true"
 
+    if text is None:
+        return _A(
+            href=href,
+            target=target,
+            rel=rel,
+            download=download,
+            class_name=class_name,
+            style=style,
+            id=id,
+            on_click=effective_onclick,
+            on_double_click=on_double_click,
+            on_context_menu=on_context_menu,
+            on_key_down=on_key_down,
+            on_key_up=on_key_up,
+            data=effective_data,
+        )
     return _A(
-        _text=text,
+        text,
         href=href,
         target=target,
         rel=rel,

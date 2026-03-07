@@ -200,15 +200,11 @@ function render_element_function(
   } else {
     lines.push("    *,");
   }
-  if (element.text_behavior === "internal_text_prop") {
-    lines.push("    _text: str | None = None,");
-  }
 
   lines.push(...render_attribute_parameters(element, attributes_by_id));
 
   lines.push("    data: Mapping[str, DataValue] | None = None,");
-  const return_type =
-    element.text_behavior === "public_helper" ? "Element" : element.is_container ? "HtmlContainerElement" : "Element";
+  const return_type = element.text_behavior === "public_helper" ? "Element" : element.is_container ? "HtmlContainerElement" : "Element";
   lines.push(`) -> ${return_type}:`);
   lines.push(`    """Generated raw ${element.tag_name} binding."""`);
   lines.push("    ...");

@@ -92,7 +92,7 @@ const SLICE_CONFIG: SliceElementConfig[] = [
     tag_name: "a",
     python_name: "_A",
     is_container: true,
-    text_behavior: "internal_text_prop",
+    text_behavior: "public_helper",
     props: [
       { name: "href" },
       { name: "target" },

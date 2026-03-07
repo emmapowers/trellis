@@ -12,7 +12,7 @@ describe("trellis target", () => {
           tag_name: "a",
           python_name: "_A",
           is_container: true,
-          text_behavior: "internal_text_prop",
+          text_behavior: "public_helper",
           attributes: ["html:a:href", "html:global:class_name", "html:global:style"],
           events: [],
           source: {
@@ -168,10 +168,10 @@ describe("trellis target", () => {
     expect(payload.content).toContain("DataValue = str | int | float | bool | None");
     expect(payload.content).toContain("InputType =");
     expect(payload.content).toContain('type: InputType = "text"');
-    expect(payload.content).toContain("from typing import Literal");
-    expect(payload.content).not.toContain("overload");
+    expect(payload.content).toContain("from typing import Literal, overload");
     expect(payload.content).toContain("data: Mapping[str, DataValue] | None = None");
     expect(payload.content).toContain("def _A(");
+    expect(payload.content).toContain("text: str | None = None,");
     expect(payload.content).toContain("def Div(");
     expect(payload.content).toContain("def Img(");
     expect(payload.content).toContain("src: str | None = None");
@@ -181,6 +181,7 @@ describe("trellis target", () => {
     expect(payload.content).not.toContain("def A(");
     expect(payload.content).not.toContain("def _make_a(");
     expect(payload.content).not.toContain("from trellis.routing.state import router");
+    expect(payload.content).not.toContain("    _text:");
     expect(payload.content).not.toContain("def Svg(");
     expect(payload.content).not.toContain("def Animate(");
   });

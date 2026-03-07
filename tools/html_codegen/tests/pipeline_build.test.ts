@@ -9,7 +9,7 @@ describe("pipeline build", () => {
     expect(ir.elements.map((element) => element.python_name)).toEqual(["_A", "Div", "Img", "Input"]);
     expect(ir.elements.every((element) => element.namespace === "html")).toBe(true);
     expect(ir.elements.map((element) => element.text_behavior)).toEqual([
-      "internal_text_prop",
+      "public_helper",
       "none",
       "none",
       "none",

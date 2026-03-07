@@ -7,7 +7,7 @@ _A, Div, Img, and Input.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal
+from typing import Literal, overload
 
 from trellis.core.rendering.element import Element
 from trellis.html.base import HtmlContainerElement, Style, html_element
@@ -56,10 +56,11 @@ InputType = Literal[
 ]
 
 
-@html_element("a", is_container=True, name="A")
+@overload
 def _A(
+    text: str,
+    /,
     *,
-    _text: str | None = None,
     href: str | None = None,
     target: Literal["_self", "_blank", "_parent", "_top"] | None = None,
     rel: str | None = None,
@@ -73,7 +74,47 @@ def _A(
     on_key_down: KeyboardEventHandler | None = None,
     on_key_up: KeyboardEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
-) -> HtmlContainerElement:
+) -> Element: ...
+
+
+@overload
+def _A(
+    *,
+    href: str | None = None,
+    target: Literal["_self", "_blank", "_parent", "_top"] | None = None,
+    rel: str | None = None,
+    download: str | bool | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    on_click: MouseEventHandler | None = None,
+    on_double_click: MouseEventHandler | None = None,
+    on_context_menu: MouseEventHandler | None = None,
+    on_key_down: KeyboardEventHandler | None = None,
+    on_key_up: KeyboardEventHandler | None = None,
+    data: Mapping[str, DataValue] | None = None,
+) -> HtmlContainerElement: ...
+
+
+@html_element("a", is_container=True, name="A")
+def _A(
+    text: str | None = None,
+    /,
+    *,
+    href: str | None = None,
+    target: Literal["_self", "_blank", "_parent", "_top"] | None = None,
+    rel: str | None = None,
+    download: str | bool | None = None,
+    class_name: str | None = None,
+    style: Style | None = None,
+    id: str | None = None,
+    on_click: MouseEventHandler | None = None,
+    on_double_click: MouseEventHandler | None = None,
+    on_context_menu: MouseEventHandler | None = None,
+    on_key_down: KeyboardEventHandler | None = None,
+    on_key_up: KeyboardEventHandler | None = None,
+    data: Mapping[str, DataValue] | None = None,
+) -> Element:
     """Generated raw a binding."""
     ...
 
