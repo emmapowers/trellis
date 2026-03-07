@@ -59,7 +59,7 @@ from trellis.core import (
     set_ref,
 )
 from trellis.routing import Route, RouterState, Routes, router
-from trellis.state import mount, state
+from trellis.state import load, mount, state
 
 __version__ = "0.1.0"
 __all__ = [
@@ -103,6 +103,7 @@ __all__ = [
     "get_active_session",
     "get_ref",
     "is_render_active",
+    "load",
     "mutable",
     "mount",
     "props_equal",
