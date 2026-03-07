@@ -3,8 +3,10 @@ import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promis
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
+import { build_trellis_css_modules } from "./emit/targets/trellis_css.js";
 import { build_trellis_events_module } from "./emit/targets/trellis_events.js";
 import { build_trellis_html_modules } from "./emit/targets/trellis_html.js";
+import { build_css_document } from "./pipeline/build_css.js";
 import { build_ir_document } from "./pipeline/build.js";
 import { render_diff_summary } from "./report/diff_report.js";
 
@@ -135,8 +137,10 @@ async function compute_target_summary(
 }> {
   const formatter_root = default_repo_root();
   const document = await build_ir_document();
+  const css_document = await build_css_document();
   const payloads = [
     ...build_trellis_html_modules(document, generated_at),
+    ...build_trellis_css_modules(css_document, generated_at),
     build_trellis_events_module(document, generated_at),
   ];
   const targets = await Promise.all(

@@ -118,3 +118,34 @@ export interface IrDocument {
   dataclasses: DataclassDef[];
   attribute_patterns: AttributePatternDef[];
 }
+
+export interface CssValueAliasDef {
+  name: string;
+  type_expr: TypeExpr;
+  source: SourceProvenance;
+}
+
+export interface CssPropertyDef {
+  css_name: string;
+  python_name: string;
+  value_type_name: string;
+  type_expr: TypeExpr;
+  accepts_auto_px: boolean;
+  is_shorthand: boolean;
+  source: SourceProvenance;
+}
+
+export interface CssMediaFeatureDef {
+  css_name: string;
+  python_name: string;
+  value_type_name: string;
+  type_expr: TypeExpr;
+  accepts_auto_px: boolean;
+  source: SourceProvenance;
+}
+
+export interface CssDocument {
+  properties: CssPropertyDef[];
+  media_features: CssMediaFeatureDef[];
+  value_aliases: CssValueAliasDef[];
+}
