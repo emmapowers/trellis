@@ -1,5 +1,6 @@
 import type { AttributeDef, ElementDef, IrDocument, TypeExpr } from "../../ir/types.js";
 import { render_type_expr } from "../python/render_types.js";
+import { render_generated_module_docstring } from "./generated_metadata.js";
 
 export interface TrellisModulePayload {
   path: string;
@@ -442,6 +443,7 @@ function emit_family_module(
   document: IrDocument,
   family: HtmlFamily,
   elements: ElementDef[],
+  generated_at: string,
 ): TrellisModulePayload {
   const attributes_by_id = index_attributes(document.attributes);
   const handler_imports = event_handler_imports(document, elements);
@@ -479,7 +481,7 @@ ${handler_imports.map((name) => `    ${name},`).join("\n")}
   const inputAlias = input_type_alias(document, elements);
 
   const parts = [
-    `"""Generated HTML ${family.title} elements."""`,
+    render_generated_module_docstring(`Generated HTML ${family.title} elements.`, generated_at),
     "",
     "from __future__ import annotations",
     "",
@@ -507,6 +509,7 @@ ${handler_imports.map((name) => `    ${name},`).join("\n")}
 
 function emit_runtime_aggregator(
   family_modules: Array<{ family: HtmlFamily; elements: ElementDef[] }>,
+  generated_at: string,
 ): TrellisModulePayload {
   const nonEmptyFamilies = family_modules.filter((entry) => entry.elements.length > 0);
   const importBlocks = nonEmptyFamilies.map((entry) => {
@@ -528,7 +531,7 @@ ${names}
 
   return {
     path: "src/trellis/html/_generated_runtime.py",
-    content: `"""Generated HTML runtime exports."""
+    content: `${render_generated_module_docstring("Generated HTML runtime exports.", generated_at)}
 
 from __future__ import annotations
 
@@ -541,7 +544,10 @@ ${exportedNames}
   };
 }
 
-export function build_trellis_html_modules(document: IrDocument): TrellisModulePayload[] {
+export function build_trellis_html_modules(
+  document: IrDocument,
+  generated_at: string,
+): TrellisModulePayload[] {
   const html_elements = document.elements
     .filter((element) => element.namespace === "html")
     .slice()
@@ -561,7 +567,9 @@ export function build_trellis_html_modules(document: IrDocument): TrellisModuleP
     .filter((entry) => entry.elements.length > 0);
 
   return [
-    emit_runtime_aggregator(familyModules),
-    ...familyModules.map((entry) => emit_family_module(document, entry.family, entry.elements)),
+    emit_runtime_aggregator(familyModules, generated_at),
+    ...familyModules.map((entry) =>
+      emit_family_module(document, entry.family, entry.elements, generated_at),
+    ),
   ];
 }

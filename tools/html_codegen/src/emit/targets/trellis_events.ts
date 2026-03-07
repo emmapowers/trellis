@@ -6,6 +6,7 @@ import type {
   IrDocument,
 } from "../../ir/types.js";
 import { render_type_expr } from "../python/render_types.js";
+import { render_generated_module_docstring } from "./generated_metadata.js";
 
 export interface TrellisModulePayload {
   path: string;
@@ -93,7 +94,7 @@ function unique_event_payload_map(events: EventDef[]): Array<[string, string]> {
   return [...payloads.entries()].sort(([left], [right]) => left.localeCompare(right));
 }
 
-function emit_trellis_events_module(document: IrDocument): string {
+function emit_trellis_events_module(document: IrDocument, generated_at: string): string {
   const rendered_dataclasses = document.dataclasses.map((entry) => render_dataclass(entry)).join("\n\n\n");
   const typed_handlers = document.event_handlers.map((entry) => render_typed_handler(entry)).join("\n");
   const event_map_lines = unique_event_payload_map(document.events).map(
@@ -101,7 +102,10 @@ function emit_trellis_events_module(document: IrDocument): string {
   );
   const root_event_name = document.dataclasses.find((entry) => !entry.base)?.name ?? "Event";
 
-  return `"""Generated typed event definitions for HTML elements."""
+  return `${render_generated_module_docstring(
+    "Generated typed event definitions for HTML elements.",
+    generated_at,
+  )}
 
 from __future__ import annotations
 
@@ -129,9 +133,12 @@ def get_event_class(event_type: str) -> type[${root_event_name}]:
 `.trimEnd() + "\n";
 }
 
-export function build_trellis_events_module(document: IrDocument): TrellisModulePayload {
+export function build_trellis_events_module(
+  document: IrDocument,
+  generated_at: string,
+): TrellisModulePayload {
   return {
     path: "src/trellis/html/events.py",
-    content: emit_trellis_events_module(document),
+    content: emit_trellis_events_module(document, generated_at),
   };
 }

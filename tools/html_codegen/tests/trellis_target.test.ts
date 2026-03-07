@@ -306,7 +306,7 @@ function moduleByPath(payloads: TrellisModulePayload[], pathSuffix: string): Tre
 
 describe("trellis target", () => {
   it("splits generated html bindings into mdn-style family modules", () => {
-    const payloads = build_trellis_html_modules(sample_ir());
+    const payloads = build_trellis_html_modules(sample_ir(), "2026-03-07T12:00:00.000Z");
 
     expect(payloads.map((payload) => payload.path)).toEqual(
       expect.arrayContaining([
@@ -321,6 +321,7 @@ describe("trellis target", () => {
     );
 
     const runtime = moduleByPath(payloads, "_generated_runtime.py").content;
+    expect(runtime).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(runtime).toContain("from trellis.html._generated_interactive_elements import (");
     expect(runtime).toContain("    _A,");
     expect(runtime).toContain("from trellis.html._generated_sectioning_and_layout import (");
@@ -336,18 +337,21 @@ describe("trellis target", () => {
     expect(runtime).not.toContain("def Div(");
 
     const layout = moduleByPath(payloads, "_generated_sectioning_and_layout.py").content;
+    expect(layout).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(layout).toContain('@html_element("div", is_container=True)');
     expect(layout).toContain("def Div(");
     expect(layout).toContain("aria_label: str | None = None");
     expect(layout).toContain('"""<div />"""');
 
     const interactive = moduleByPath(payloads, "_generated_interactive_elements.py").content;
+    expect(interactive).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(interactive).toContain('@html_element("a", is_container=True, name="A")');
     expect(interactive).toContain("def _A(");
     expect(interactive).toContain("inner_text: str | None = None,");
     expect(interactive).toContain('"""<a />"""');
 
     const media = moduleByPath(payloads, "_generated_image_and_multimedia.py").content;
+    expect(media).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(media).toContain("def Audio(");
     expect(media).toContain("auto_play: bool | None = None");
     expect(media).toContain("controls: bool | None = None");
@@ -355,18 +359,20 @@ describe("trellis target", () => {
     expect(media).toContain('"""<audio />"""');
 
     const forms = moduleByPath(payloads, "_generated_forms.py").content;
+    expect(forms).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(forms).toContain("InputType =");
     expect(forms).toContain('type: InputType = "text"');
     expect(forms).toContain('def Option(\n    inner_text: str | None = None,');
     expect(forms).toContain('"""<option />"""');
 
     const tables = moduleByPath(payloads, "_generated_table_content.py").content;
+    expect(tables).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(tables).toContain("def Table(");
     expect(tables).toContain('"""<table />"""');
   });
 
   it("does not expose _text or fallback props in generated family modules", () => {
-    const payloads = build_trellis_html_modules(sample_ir());
+    const payloads = build_trellis_html_modules(sample_ir(), "2026-03-07T12:00:00.000Z");
     const familyModules = payloads.filter((payload) => payload.path.includes("_generated_") && !payload.path.endsWith("_generated_runtime.py"));
     const combined = familyModules.map((payload) => payload.content).join("\n");
 

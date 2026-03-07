@@ -16,7 +16,17 @@ export interface CliResult {
 
 export interface RunCliOptions {
   format_python?: boolean;
+  generated_at?: string;
   repo_root?: string;
+}
+
+const GENERATED_AT_PREFIX = "Generated at: ";
+
+function normalize_generated_metadata(content: string): string {
+  return content.replace(
+    /^Generated at: .+$/m,
+    `${GENERATED_AT_PREFIX}<normalized>`,
+  );
 }
 
 async function format_python_source(
@@ -117,13 +127,17 @@ function help_text(): string {
 async function compute_target_summary(
   repo_root: string,
   format_python: boolean,
+  generated_at: string,
 ): Promise<{
   targets: Array<{ path: string; content: string }>;
   summary: { changed: number; added: number; removed: number };
 }> {
   const formatter_root = default_repo_root();
   const document = await build_ir_document();
-  const payloads = [...build_trellis_html_modules(document), build_trellis_events_module(document)];
+  const payloads = [
+    ...build_trellis_html_modules(document, generated_at),
+    build_trellis_events_module(document, generated_at),
+  ];
   const targets = await Promise.all(
     payloads.map(async (payload) => ({
       path: join(repo_root, payload.path),
@@ -144,7 +158,10 @@ async function compute_target_summary(
 
     if (existing_content === undefined) {
       summary.added += 1;
-    } else if (existing_content !== target.content) {
+    } else if (
+      normalize_generated_metadata(existing_content) !==
+      normalize_generated_metadata(target.content)
+    ) {
       summary.changed += 1;
     }
   }
@@ -157,6 +174,7 @@ async function compute_target_summary(
 
 export async function runCli(argv: string[], options: RunCliOptions = {}): Promise<CliResult> {
   const format_python = options.format_python ?? true;
+  const generated_at = options.generated_at ?? new Date().toISOString();
   const repo_root = options.repo_root ?? default_repo_root();
 
   if (argv.includes("--help") || argv.includes("-h") || argv.length === 0) {
@@ -169,7 +187,7 @@ export async function runCli(argv: string[], options: RunCliOptions = {}): Promi
 
   const command = argv[0];
   if (command === "compare") {
-    const { summary } = await compute_target_summary(repo_root, format_python);
+    const { summary } = await compute_target_summary(repo_root, format_python, generated_at);
     const has_diff = summary.changed + summary.added + summary.removed > 0;
     return {
       exit_code: has_diff ? 1 : 0,
@@ -179,7 +197,11 @@ export async function runCli(argv: string[], options: RunCliOptions = {}): Promi
   }
 
   if (command === "write") {
-    const { targets, summary } = await compute_target_summary(repo_root, format_python);
+    const { targets, summary } = await compute_target_summary(
+      repo_root,
+      format_python,
+      generated_at,
+    );
     for (const target of targets) {
       await mkdir(dirname(target.path), { recursive: true });
       await writeFile(target.path, target.content, "utf-8");
