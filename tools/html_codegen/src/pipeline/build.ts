@@ -470,7 +470,8 @@ function build_attribute_def(
   default_value: string | number | boolean | null | undefined = undefined,
 ): AttributeDef {
   const name_python = to_python_param_name(prop_name);
-  const is_global = GLOBAL_PROP_NAMES.has(prop_name);
+  const is_aria = prop_name.startsWith("aria-");
+  const is_global = GLOBAL_PROP_NAMES.has(prop_name) || is_aria;
 
   return {
     id: is_global ? `html:global:${name_python}` : `html:${tag_name}:${name_python}`,
@@ -480,7 +481,7 @@ function build_attribute_def(
     type_expr: normalize_attribute_type(type_expr, required, default_value),
     required,
     default: default_value,
-    category: "standard",
+    category: is_aria ? "aria" : "standard",
     source: react_source(),
   };
 }

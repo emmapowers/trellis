@@ -17,6 +17,7 @@ describe("pipeline build", () => {
     expect(ir.elements.some((element) => element.python_name === "Textarea")).toBe(true);
     expect(ir.attributes.some((attribute) => attribute.name_python === "href")).toBe(true);
     expect(ir.attributes.some((attribute) => attribute.name_python === "src")).toBe(true);
+    expect(ir.attributes.some((attribute) => attribute.name_python === "aria_label")).toBe(true);
     expect(ir.attributes.some((attribute) => attribute.name_python === "on_click")).toBe(true);
     expect(ir.events.some((event) => event.name_python === "on_click")).toBe(true);
     expect(
@@ -57,6 +58,20 @@ describe("pipeline build", () => {
       kind: "nullable",
       item: { kind: "style_object" },
     });
+
+    const aria_label_attribute = ir.attributes.find(
+      (attribute) => attribute.id === "html:global:aria_label",
+    );
+    expect(aria_label_attribute).toMatchObject({
+      name_source: "aria-label",
+      name_python: "aria_label",
+      applies_to: "global",
+      category: "aria",
+    });
+
+    const audio_auto_play = ir.attributes.find((attribute) => attribute.id === "html:audio:auto_play");
+    expect(audio_auto_play?.name_source).toBe("autoPlay");
+    expect(audio_auto_play?.type_expr.kind).toBe("nullable");
 
     const input_type = ir.attributes.find((attribute) => attribute.id === "html:input:type");
     expect(input_type?.required).toBe(false);

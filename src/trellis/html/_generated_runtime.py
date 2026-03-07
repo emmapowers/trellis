@@ -172,6 +172,105 @@ def _A(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -387,6 +486,105 @@ def _A(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -604,6 +802,105 @@ def _A(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -823,6 +1120,105 @@ def Abbr(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -1017,6 +1413,105 @@ def Abbr(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -1213,6 +1708,105 @@ def Abbr(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -1409,6 +2003,105 @@ def Address(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -1606,6 +2299,105 @@ def Area(
     about: str | None = None,
     access_key: str | None = None,
     alt: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -1823,6 +2615,105 @@ def Article(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -2019,6 +2910,105 @@ def Aside(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -2213,6 +3203,302 @@ def Aside(
 @html_element("audio", is_container=True)
 def Audio(
     *,
+    about: str | None = None,
+    access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
+    auto_capitalize: (
+        Literal[
+            "off",
+            "none",
+            "on",
+            "sentences",
+            "words",
+            "characters",
+        ]
+        | None
+    ) = None,
+    auto_correct: str | None = None,
+    auto_focus: bool | None = None,
+    auto_play: bool | None = None,
+    auto_save: str | None = None,
+    class_name: str | None = None,
+    color: str | None = None,
+    content: str | None = None,
+    content_editable: bool | Literal["inherit"] | Literal["plaintext-only"] | None = None,
+    context_menu: str | None = None,
+    controls: bool | None = None,
+    controls_list: str | None = None,
+    cross_origin: Literal["anonymous", "use-credentials", ""] | None = None,
+    datatype: str | None = None,
+    default_checked: bool | None = None,
+    default_value: str | int | float | list[str] | None = None,
+    dir: str | None = None,
+    draggable: bool | None = None,
+    enter_key_hint: (
+        Literal[
+            "enter",
+            "done",
+            "go",
+            "next",
+            "previous",
+            "search",
+            "send",
+        ]
+        | None
+    ) = None,
+    exportparts: str | None = None,
+    hidden: bool | None = None,
+    id: str | None = None,
+    inert: bool | None = None,
+    inlist: str | None = None,
+    input_mode: (
+        Literal[
+            "none",
+            "text",
+            "tel",
+            "url",
+            "email",
+            "numeric",
+            "decimal",
+            "search",
+        ]
+        | None
+    ) = None,
+    is_: str | None = None,
+    item_id: str | None = None,
+    item_prop: str | None = None,
+    item_ref: str | None = None,
+    item_scope: bool | None = None,
+    item_type: str | None = None,
+    lang: str | None = None,
+    loop: bool | None = None,
+    media_group: str | None = None,
+    muted: bool | None = None,
+    nonce: str | None = None,
+    part: str | None = None,
+    plays_inline: bool | None = None,
+    popover: Literal["", "auto", "manual", "hint"] | None = None,
+    popover_target: str | None = None,
+    popover_target_action: Literal["toggle", "show", "hide"] | None = None,
+    prefix: str | None = None,
+    preload: str | None = None,
+    property: str | None = None,
+    radio_group: str | None = None,
+    rel: str | None = None,
+    resource: str | None = None,
+    results: int | float | None = None,
+    rev: str | None = None,
+    role: (
+        Literal[
+            "alert",
+            "alertdialog",
+            "application",
+            "article",
+            "banner",
+            "button",
+            "cell",
+            "checkbox",
+            "columnheader",
+            "combobox",
+            "complementary",
+            "contentinfo",
+            "definition",
+            "dialog",
+            "directory",
+            "document",
+            "feed",
+            "figure",
+            "form",
+            "grid",
+            "gridcell",
+            "group",
+            "heading",
+            "img",
+            "link",
+            "list",
+            "listbox",
+            "listitem",
+            "log",
+            "main",
+            "marquee",
+            "math",
+            "menu",
+            "menubar",
+            "menuitem",
+            "menuitemcheckbox",
+            "menuitemradio",
+            "navigation",
+            "none",
+            "note",
+            "option",
+            "presentation",
+            "progressbar",
+            "radio",
+            "radiogroup",
+            "region",
+            "row",
+            "rowgroup",
+            "rowheader",
+            "scrollbar",
+            "search",
+            "searchbox",
+            "separator",
+            "slider",
+            "spinbutton",
+            "status",
+            "switch",
+            "tab",
+            "table",
+            "tablist",
+            "tabpanel",
+            "term",
+            "textbox",
+            "timer",
+            "toolbar",
+            "tooltip",
+            "tree",
+            "treegrid",
+            "treeitem",
+        ]
+        | None
+    ) = None,
+    security: str | None = None,
+    slot: str | None = None,
+    spell_check: bool | None = None,
+    src: str | None = None,
+    style: Style | None = None,
+    suppress_content_editable_warning: bool | None = None,
+    suppress_hydration_warning: bool | None = None,
+    tab_index: int | float | None = None,
+    title: str | None = None,
+    translate: Literal["yes", "no"] | None = None,
+    typeof: str | None = None,
+    unselectable: Literal["on", "off"] | None = None,
+    vocab: str | None = None,
+    on_blur: FocusEventHandler | None = None,
+    on_change: EventHandler | None = None,
+    on_click: MouseEventHandler | None = None,
+    on_context_menu: MouseEventHandler | None = None,
+    on_double_click: MouseEventHandler | None = None,
+    on_drag: DragEventHandler | None = None,
+    on_drag_end: DragEventHandler | None = None,
+    on_drag_enter: DragEventHandler | None = None,
+    on_drag_leave: DragEventHandler | None = None,
+    on_drag_over: DragEventHandler | None = None,
+    on_drag_start: DragEventHandler | None = None,
+    on_drop: DragEventHandler | None = None,
+    on_focus: FocusEventHandler | None = None,
+    on_input: InputEventHandler | None = None,
+    on_key_down: KeyboardEventHandler | None = None,
+    on_key_up: KeyboardEventHandler | None = None,
+    on_mouse_down: MouseEventHandler | None = None,
+    on_mouse_enter: MouseEventHandler | None = None,
+    on_mouse_leave: MouseEventHandler | None = None,
+    on_mouse_move: MouseEventHandler | None = None,
+    on_mouse_out: MouseEventHandler | None = None,
+    on_mouse_over: MouseEventHandler | None = None,
+    on_mouse_up: MouseEventHandler | None = None,
+    on_scroll: UIEventHandler | None = None,
+    on_submit: SubmitEventHandler | None = None,
+    on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
     """Generated raw audio binding."""
@@ -2226,6 +3512,105 @@ def B(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -2420,6 +3805,105 @@ def B(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -2616,6 +4100,105 @@ def B(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -2812,6 +4395,105 @@ def Base(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -3012,6 +4694,105 @@ def Bdi(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -3206,6 +4987,105 @@ def Bdi(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -3402,6 +5282,105 @@ def Bdi(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -3600,6 +5579,105 @@ def Bdo(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -3794,6 +5872,105 @@ def Bdo(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -3990,6 +6167,105 @@ def Bdo(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -4188,6 +6464,105 @@ def Big(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -4382,6 +6757,105 @@ def Big(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -4578,6 +7052,105 @@ def Big(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -4776,6 +7349,105 @@ def Blockquote(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -4971,6 +7643,105 @@ def Blockquote(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -5168,6 +7939,105 @@ def Blockquote(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -5365,6 +8235,105 @@ def Body(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -5561,6 +8530,105 @@ def Br(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -5759,6 +8827,105 @@ def Button(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -5963,6 +9130,105 @@ def Button(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -6169,6 +9435,105 @@ def Button(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -6375,6 +9740,105 @@ def Canvas(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -6575,6 +10039,105 @@ def Caption(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -6769,6 +10332,105 @@ def Caption(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -6965,6 +10627,105 @@ def Caption(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -7161,6 +10922,105 @@ def Center(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -7359,6 +11219,105 @@ def Cite(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -7553,6 +11512,105 @@ def Cite(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -7749,6 +11807,105 @@ def Cite(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -7947,6 +12104,105 @@ def Code(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -8141,6 +12397,105 @@ def Code(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -8337,6 +12692,105 @@ def Code(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -8533,6 +12987,105 @@ def Col(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -8731,6 +13284,105 @@ def Colgroup(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -8930,6 +13582,105 @@ def Data(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -9125,6 +13876,105 @@ def Data(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -9322,6 +14172,105 @@ def Data(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -9519,6 +14468,105 @@ def Datalist(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -9717,6 +14765,105 @@ def Dd(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -9911,6 +15058,105 @@ def Dd(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -10107,6 +15353,105 @@ def Dd(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -10305,6 +15650,105 @@ def Del(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -10501,6 +15945,105 @@ def Del(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -10699,6 +16242,105 @@ def Del(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -10897,6 +16539,105 @@ def Details(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -11097,6 +16838,105 @@ def Dfn(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -11291,6 +17131,105 @@ def Dfn(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -11487,6 +17426,105 @@ def Dfn(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -11683,6 +17721,105 @@ def Dialog(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -11881,6 +18018,105 @@ def Div(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -12077,6 +18313,105 @@ def Dl(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -12275,6 +18610,105 @@ def Dt(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -12469,6 +18903,105 @@ def Dt(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -12665,6 +19198,105 @@ def Dt(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -12863,6 +19495,105 @@ def Em(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -13057,6 +19788,105 @@ def Em(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -13253,6 +20083,105 @@ def Em(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -13449,6 +20378,105 @@ def Embed(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -13649,6 +20677,105 @@ def Fieldset(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -13850,6 +20977,105 @@ def Figcaption(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -14044,6 +21270,105 @@ def Figcaption(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -14240,6 +21565,105 @@ def Figcaption(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -14436,6 +21860,105 @@ def Figure(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -14632,6 +22155,105 @@ def Footer(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -14830,6 +22452,105 @@ def Form(
     accept_charset: str | None = None,
     access_key: str | None = None,
     action: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -15034,6 +22755,105 @@ def H1(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -15228,6 +23048,105 @@ def H1(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -15424,6 +23343,105 @@ def H1(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -15622,6 +23640,105 @@ def H2(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -15816,6 +23933,105 @@ def H2(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -16012,6 +24228,105 @@ def H2(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -16210,6 +24525,105 @@ def H3(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -16404,6 +24818,105 @@ def H3(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -16600,6 +25113,105 @@ def H3(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -16798,6 +25410,105 @@ def H4(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -16992,6 +25703,105 @@ def H4(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -17188,6 +25998,105 @@ def H4(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -17386,6 +26295,105 @@ def H5(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -17580,6 +26588,105 @@ def H5(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -17776,6 +26883,105 @@ def H5(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -17974,6 +27180,105 @@ def H6(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -18168,6 +27473,105 @@ def H6(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -18364,6 +27768,105 @@ def H6(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -18560,6 +28063,105 @@ def Head(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -18756,6 +28358,105 @@ def Header(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -18952,6 +28653,105 @@ def Hgroup(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -19148,6 +28948,105 @@ def Hr(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -19344,6 +29243,105 @@ def Html(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -19543,6 +29541,105 @@ def Italic(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -19737,6 +29834,105 @@ def Italic(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -19933,6 +30129,105 @@ def Italic(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -20132,6 +30427,105 @@ def Iframe(
     allow: str | None = None,
     allow_full_screen: bool | None = None,
     allow_transparency: bool | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -20355,6 +30749,105 @@ def Img(
     about: str | None = None,
     access_key: str | None = None,
     alt: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -20577,6 +31070,105 @@ def Input(
     accept: str | None = None,
     access_key: str | None = None,
     alt: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -20803,6 +31395,105 @@ def Ins(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -20999,6 +31690,105 @@ def Ins(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -21197,6 +31987,105 @@ def Ins(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -21397,6 +32286,105 @@ def Kbd(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -21591,6 +32579,105 @@ def Kbd(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -21787,6 +32874,105 @@ def Kbd(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -21983,6 +33169,105 @@ def Keygen(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -22187,6 +33472,105 @@ def Label(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -22383,6 +33767,105 @@ def Label(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -22581,6 +34064,105 @@ def Label(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -22781,6 +34363,105 @@ def Legend(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -22975,6 +34656,105 @@ def Legend(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -23171,6 +34951,105 @@ def Legend(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -23369,6 +35248,105 @@ def Li(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -23564,6 +35542,105 @@ def Li(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -23761,6 +35838,105 @@ def Li(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -23958,6 +36134,105 @@ def Link(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     as_: str | None = None,
     auto_capitalize: (
         Literal[
@@ -24182,6 +36457,105 @@ def Main(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -24378,6 +36752,105 @@ def Map(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -24577,6 +37050,105 @@ def Mark(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -24771,6 +37343,105 @@ def Mark(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -24967,6 +37638,105 @@ def Mark(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -25163,6 +37933,105 @@ def Menu(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -25360,6 +38229,105 @@ def Menuitem(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -25556,6 +38524,105 @@ def Meta(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -25756,6 +38823,105 @@ def Meter(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -25959,6 +39125,105 @@ def Nav(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -26155,6 +39420,105 @@ def Noscript(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -26351,6 +39715,105 @@ def Object(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -26556,6 +40019,105 @@ def Ol(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -26755,6 +40317,105 @@ def Optgroup(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -26955,6 +40616,105 @@ def Option(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -27157,6 +40917,105 @@ def Output(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -27354,6 +41213,105 @@ def Output(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -27553,6 +41511,105 @@ def Output(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -27754,6 +41811,105 @@ def P(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -27948,6 +42104,105 @@ def P(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -28144,6 +42399,105 @@ def P(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -28340,6 +42694,105 @@ def Param(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -28538,6 +42991,105 @@ def Picture(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -28736,6 +43288,105 @@ def Pre(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -28930,6 +43581,105 @@ def Pre(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -29126,6 +43876,105 @@ def Pre(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -29322,6 +44171,105 @@ def Progress(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -29522,6 +44470,105 @@ def Q(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -29717,6 +44764,105 @@ def Q(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -29914,6 +45060,105 @@ def Q(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -30113,6 +45358,105 @@ def Rp(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -30307,6 +45651,105 @@ def Rp(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -30503,6 +45946,105 @@ def Rp(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -30701,6 +46243,105 @@ def Rt(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -30895,6 +46536,105 @@ def Rt(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -31091,6 +46831,105 @@ def Rt(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -31289,6 +47128,105 @@ def Ruby(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -31483,6 +47421,105 @@ def Ruby(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -31679,6 +47716,105 @@ def Ruby(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -31877,6 +48013,105 @@ def S(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -32071,6 +48306,105 @@ def S(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -32267,6 +48601,105 @@ def S(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -32465,6 +48898,105 @@ def Samp(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -32659,6 +49191,105 @@ def Samp(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -32855,6 +49486,105 @@ def Samp(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -33053,6 +49783,105 @@ def Script(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     async_: bool | None = None,
     auto_capitalize: (
         Literal[
@@ -33271,6 +50100,105 @@ def Script(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     async_: bool | None = None,
     auto_capitalize: (
         Literal[
@@ -33491,6 +50419,105 @@ def Script(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     async_: bool | None = None,
     auto_capitalize: (
         Literal[
@@ -33711,6 +50738,105 @@ def Search(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -33907,6 +51033,105 @@ def Section(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -34103,6 +51328,105 @@ def Select(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -34307,6 +51631,105 @@ def Slot(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -34506,6 +51929,105 @@ def Small(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -34700,6 +52222,105 @@ def Small(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -34896,6 +52517,105 @@ def Small(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -35092,6 +52812,105 @@ def Source(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -35297,6 +53116,105 @@ def Span(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -35491,6 +53409,105 @@ def Span(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -35687,6 +53704,105 @@ def Span(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -35885,6 +54001,105 @@ def Strong(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -36079,6 +54294,105 @@ def Strong(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -36275,6 +54589,105 @@ def Strong(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -36473,6 +54886,105 @@ def StyleTag(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -36673,6 +55185,105 @@ def StyleTag(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -36875,6 +55486,105 @@ def StyleTag(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -37079,6 +55789,105 @@ def Sub(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -37273,6 +56082,105 @@ def Sub(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -37469,6 +56377,105 @@ def Sub(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -37667,6 +56674,105 @@ def Summary(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -37861,6 +56967,105 @@ def Summary(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -38057,6 +57262,105 @@ def Summary(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -38255,6 +57559,105 @@ def Sup(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -38449,6 +57852,105 @@ def Sup(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -38645,6 +58147,105 @@ def Sup(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -38842,6 +58443,105 @@ def Table(
     about: str | None = None,
     access_key: str | None = None,
     align: Literal["left", "center", "right"] | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -39046,6 +58746,105 @@ def Tbody(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -39246,6 +59045,105 @@ def Td(
     about: str | None = None,
     access_key: str | None = None,
     align: Literal["left", "center", "right", "justify", "char"] | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -39449,6 +59347,105 @@ def Td(
     about: str | None = None,
     access_key: str | None = None,
     align: Literal["left", "center", "right", "justify", "char"] | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -39654,6 +59651,105 @@ def Td(
     about: str | None = None,
     access_key: str | None = None,
     align: Literal["left", "center", "right", "justify", "char"] | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -39857,6 +59953,105 @@ def Template(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -40053,6 +60248,105 @@ def Textarea(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -40263,6 +60557,105 @@ def Tfoot(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -40463,6 +60856,105 @@ def Th(
     about: str | None = None,
     access_key: str | None = None,
     align: Literal["left", "center", "right", "justify", "char"] | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -40663,6 +61155,105 @@ def Th(
     about: str | None = None,
     access_key: str | None = None,
     align: Literal["left", "center", "right", "justify", "char"] | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -40865,6 +61456,105 @@ def Th(
     about: str | None = None,
     access_key: str | None = None,
     align: Literal["left", "center", "right", "justify", "char"] | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -41065,6 +61755,105 @@ def Thead(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -41263,6 +62052,105 @@ def Time(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -41458,6 +62346,105 @@ def Time(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -41655,6 +62642,105 @@ def Time(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -41854,6 +62940,105 @@ def Title(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -42048,6 +63233,105 @@ def Title(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -42244,6 +63528,105 @@ def Title(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -42440,6 +63823,105 @@ def Tr(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -42636,6 +64118,105 @@ def Track(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -42839,6 +64420,105 @@ def U(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -43033,6 +64713,105 @@ def U(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -43229,6 +65008,105 @@ def U(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -43425,6 +65303,105 @@ def Ul(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -43621,6 +65598,105 @@ def Video(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",
@@ -43832,6 +65908,105 @@ def Wbr(
     *,
     about: str | None = None,
     access_key: str | None = None,
+    aria_activedescendant: str | None = None,
+    aria_atomic: bool | None = None,
+    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_braillelabel: str | None = None,
+    aria_brailleroledescription: str | None = None,
+    aria_busy: bool | None = None,
+    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_colcount: int | float | None = None,
+    aria_colindex: int | float | None = None,
+    aria_colindextext: str | None = None,
+    aria_colspan: int | float | None = None,
+    aria_controls: str | None = None,
+    aria_current: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["page"]
+        | Literal["step"]
+        | Literal["location"]
+        | Literal["date"]
+        | Literal["time"]
+        | None
+    ) = None,
+    aria_describedby: str | None = None,
+    aria_description: str | None = None,
+    aria_details: str | None = None,
+    aria_disabled: bool | None = None,
+    aria_dropeffect: (
+        Literal[
+            "none",
+            "copy",
+            "execute",
+            "link",
+            "move",
+            "popup",
+        ]
+        | None
+    ) = None,
+    aria_errormessage: str | None = None,
+    aria_expanded: bool | None = None,
+    aria_flowto: str | None = None,
+    aria_grabbed: bool | None = None,
+    aria_haspopup: (
+        bool
+        | Literal["false"]
+        | Literal["true"]
+        | Literal["menu"]
+        | Literal["listbox"]
+        | Literal["tree"]
+        | Literal["grid"]
+        | Literal["dialog"]
+        | None
+    ) = None,
+    aria_hidden: bool | None = None,
+    aria_invalid: (
+        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
+    ) = None,
+    aria_keyshortcuts: str | None = None,
+    aria_label: str | None = None,
+    aria_labelledby: str | None = None,
+    aria_level: int | float | None = None,
+    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_modal: bool | None = None,
+    aria_multiline: bool | None = None,
+    aria_multiselectable: bool | None = None,
+    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_owns: str | None = None,
+    aria_placeholder: str | None = None,
+    aria_posinset: int | float | None = None,
+    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_readonly: bool | None = None,
+    aria_relevant: (
+        Literal[
+            "additions",
+            "additions removals",
+            "additions text",
+            "all",
+            "removals",
+            "removals additions",
+            "removals text",
+            "text",
+            "text additions",
+            "text removals",
+        ]
+        | None
+    ) = None,
+    aria_required: bool | None = None,
+    aria_roledescription: str | None = None,
+    aria_rowcount: int | float | None = None,
+    aria_rowindex: int | float | None = None,
+    aria_rowindextext: str | None = None,
+    aria_rowspan: int | float | None = None,
+    aria_selected: bool | None = None,
+    aria_setsize: int | float | None = None,
+    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_valuemax: int | float | None = None,
+    aria_valuemin: int | float | None = None,
+    aria_valuenow: int | float | None = None,
+    aria_valuetext: str | None = None,
     auto_capitalize: (
         Literal[
             "off",

@@ -27,6 +27,11 @@ describe("react source extraction", () => {
     const div = surface.elements.get("div");
     expect(div).toBeDefined();
     expect(div?.attributes.get("className")?.kind).toBe("nullable");
+    expect(div?.attributes.get("aria-label")?.kind).toBe("nullable");
+    expect(div?.attributes.get("aria-hidden")).toEqual({
+      kind: "nullable",
+      item: { kind: "primitive", name: "bool" },
+    });
     expect(div?.attributes.get("style")?.kind).toBe("nullable");
     expect(div?.attributes.get("style")).toEqual({
       kind: "nullable",
@@ -73,5 +78,11 @@ describe("react source extraction", () => {
         ],
       },
     });
+
+    const audio = surface.elements.get("audio");
+    expect(audio).toBeDefined();
+    expect(audio?.attributes.get("autoPlay")?.kind).toBe("nullable");
+    expect(audio?.attributes.get("controls")?.kind).toBe("nullable");
+    expect(audio?.attributes.get("src")?.kind).toBe("nullable");
   });
 });

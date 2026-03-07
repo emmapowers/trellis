@@ -113,16 +113,16 @@ function extract_interface_header(source: string, interface_name: string): strin
   return source.slice(start, open_brace);
 }
 
-function extract_interface_block(source: string, interface_name: string): string {
+function extract_interface_block(source: string, interface_name: string): string | undefined {
   const marker = `interface ${interface_name}`;
   const start = source.indexOf(marker);
   if (start === -1) {
-    return "";
+    return undefined;
   }
 
   const open_brace = source.indexOf("{", start);
   if (open_brace === -1) {
-    return "";
+    return undefined;
   }
 
   let depth = 0;
@@ -139,7 +139,7 @@ function extract_interface_block(source: string, interface_name: string): string
       }
     }
   }
-  return "";
+  return undefined;
 }
 
 function extract_interface_names(header: string | undefined): string[] {
@@ -154,9 +154,12 @@ function extract_interface_names(header: string | undefined): string[] {
 }
 
 function extract_interface_properties(
-  block: string,
+  block: string | undefined,
 ): Map<string, { optional: boolean; type_string: string }> {
   const properties = new Map<string, { optional: boolean; type_string: string }>();
+  if (block === undefined) {
+    return properties;
+  }
   const stripped = strip_comments(block);
   for (const statement of split_top_level(stripped, ";")) {
     const entry = normalize_ws(statement);
@@ -164,13 +167,15 @@ function extract_interface_properties(
       continue;
     }
 
-    const match = entry.match(/^([A-Za-z_$][A-Za-z0-9_$]*)(\?)?:\s*([\s\S]+)$/);
+    const match = entry.match(
+      /^(?:"([^"]+)"|([A-Za-z_$][A-Za-z0-9_$]*))(\?)?:\s*([\s\S]+)$/,
+    );
     if (!match) {
       continue;
     }
-    properties.set(match[1], {
-      optional: match[2] === "?",
-      type_string: match[3].trim(),
+    properties.set(match[1] ?? match[2], {
+      optional: match[3] === "?",
+      type_string: match[4].trim(),
     });
   }
 
@@ -192,7 +197,7 @@ function collect_interface_defs(
 
     const header = extract_interface_header(source, interface_name);
     const block = extract_interface_block(source, interface_name);
-    if (!header || !block) {
+    if (!header || block === undefined) {
       continue;
     }
 
@@ -209,7 +214,7 @@ function collect_interface_defs(
 }
 
 function extract_dom_event_names(source: string): Set<string> {
-  const block = extract_interface_block(source, "DOMAttributes<T>");
+  const block = extract_interface_block(source, "DOMAttributes<T>") ?? "";
   const event_names = new Set<string>();
   const event_regex = /^\s*(on[A-Z][A-Za-z0-9]*)\??:\s*/gm;
   let match = event_regex.exec(block);
@@ -221,7 +226,7 @@ function extract_dom_event_names(source: string): Set<string> {
 }
 
 function extract_intrinsic_interfaces(source: string): Map<string, string> {
-  const block = extract_interface_block(source, "IntrinsicElements");
+  const block = extract_interface_block(source, "IntrinsicElements") ?? "";
   const element_interfaces = new Map<string, string>();
   const element_regex =
     /^\s*([a-z][A-Za-z0-9_-]*)\??:\s*React\.DetailedHTMLProps<React\.([A-Za-z0-9_]+)</gm;
