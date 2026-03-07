@@ -48,7 +48,7 @@ class RenderUpdatePatch:
 
     Attributes:
         element_id: ID of the element that changed
-        props: Serialized props dict if props changed, None otherwise
+        props: Props diff dict (changed/added values, removed keys as _REMOVED sentinel), None if unchanged
         children: New child order if changed, None otherwise
     """
 

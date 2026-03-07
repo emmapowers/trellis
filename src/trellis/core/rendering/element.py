@@ -14,9 +14,10 @@ if tp.TYPE_CHECKING:
     from trellis.core.rendering.session import RenderSession
 
 __all__ = [
+    "_REMOVED",
     "ContainerElement",
     "Element",
-    "props_equal",
+    "diff_props",
 ]
 
 
@@ -63,29 +64,49 @@ class ContainerElement(ContainerTrait, Element):
     """
 
 
-def props_equal(old_props: dict[str, tp.Any], new_props: dict[str, tp.Any]) -> bool:
-    """Compare props without serialization.
+class _RemovedType:
+    """Sentinel marking a prop as removed in a diff."""
 
-    Maintains the same semantics as serialized comparison:
+    _instance = None
+
+    def __new__(cls) -> _RemovedType:
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __repr__(self) -> str:
+        return "_REMOVED"
+
+
+_REMOVED = _RemovedType()
+
+_MISSING = object()
+
+
+def diff_props(old_props: dict[str, tp.Any], new_props: dict[str, tp.Any]) -> dict[str, tp.Any]:
+    """Compute the diff between old and new props dicts.
+
+    Returns only changed/added/removed keys:
+    - Added or changed keys map to their new value
+    - Removed keys map to _REMOVED sentinel
+
+    Maintains the same semantics as the old props_equal:
     - All callables are considered equal (they serialize to {"__callback__": ...})
-    - Mutables compare by owner identity and attr name (their __eq__)
+    - Mutables compare by snapshot (their __eq__)
     - Other values compare normally
-
-    Args:
-        old_props: Previous props dict
-        new_props: New props dict
-
-    Returns:
-        True if props are semantically equal for rendering purposes
     """
-    if len(old_props) != len(new_props):
-        return False
-    if old_props.keys() != new_props.keys():
-        return False
-    for key, old_val in old_props.items():
-        if not _values_equal(old_val, new_props[key]):
-            return False
-    return True
+    diff: dict[str, tp.Any] = {}
+
+    for key, new_val in new_props.items():
+        old_val = old_props.get(key, _MISSING)
+        if old_val is _MISSING or not _values_equal(old_val, new_val):
+            diff[key] = new_val
+
+    for key in old_props:
+        if key not in new_props:
+            diff[key] = _REMOVED
+
+    return diff
 
 
 def _values_equal(old: tp.Any, new: tp.Any) -> bool:

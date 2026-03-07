@@ -3,7 +3,7 @@
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.dirty_tracker import DirtyTracker
-from trellis.core.rendering.element import ContainerElement, Element, props_equal
+from trellis.core.rendering.element import ContainerElement, Element, diff_props
 from trellis.core.rendering.element_state import ElementState, ElementStateStore
 from trellis.core.rendering.element_store import ElementStore
 from trellis.core.rendering.frames import Frame, FrameStack
@@ -48,10 +48,10 @@ __all__ = [
     "RenderRemovePatch",
     "RenderSession",
     "RenderUpdatePatch",
+    "diff_props",
     "get_active_session",
     "get_session_registry",
     "is_render_active",
-    "props_equal",
     "reconcile_children",
     "render",
     "set_active_session",

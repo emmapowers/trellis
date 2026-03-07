@@ -17,6 +17,7 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.components.composition import CompositionComponent
+from trellis.core.rendering.element import _RemovedType
 from trellis.core.state.mutable import Mutable
 
 if tp.TYPE_CHECKING:
@@ -163,7 +164,10 @@ def _serialize_props(
     for key, value in props.items():
         if key == "child_ids":
             continue
-        result[key] = _serialize_value(value, session, element_id, key)
+        if isinstance(value, _RemovedType):
+            result[key] = {"__removed__": True}
+        else:
+            result[key] = _serialize_value(value, session, element_id, key)
     return result
 
 

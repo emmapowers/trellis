@@ -6,7 +6,7 @@ import time
 
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.child_ref import ChildRef
-from trellis.core.rendering.element import Element, props_equal
+from trellis.core.rendering.element import Element, diff_props
 from trellis.core.rendering.lifecycle import invoke_lifecycle_hook
 from trellis.core.rendering.patches import (
     RenderAddPatch,
@@ -450,17 +450,17 @@ def _emit_update_patch_if_changed(session: RenderSession, element_id: str) -> No
     if not old_element:
         return
 
-    # Compare props without serialization
-    props_changed = not props_equal(old_element.props, element.props)
+    # Compute prop diff (only changed/added/removed keys)
+    props_diff = diff_props(old_element.props, element.props)
     # Check if children order changed
     children_changed = old_element.child_ids != element.child_ids
 
     # Emit update patch if anything changed
-    if props_changed or children_changed:
+    if props_diff or children_changed:
         session.active.patches.emit(
             RenderUpdatePatch(
                 element_id=element_id,
-                props=dict(element.props) if props_changed else None,
+                props=props_diff or None,
                 children=tuple(element.child_ids) if children_changed else None,
             )
         )

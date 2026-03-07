@@ -100,7 +100,20 @@ describe("TrellisStore", () => {
       expect(node?.props.color).toBe("red"); // unchanged
     });
 
-    it("removes props when set to null", () => {
+    it("removes props with __removed__ sentinel", () => {
+      const patch: UpdatePatch = {
+        op: "update",
+        id: "e1",
+        props: { color: { __removed__: true } },
+      };
+      store.applyPatches([patch]);
+
+      const node = store.getNode("e1");
+      expect(node?.props.color).toBeUndefined();
+      expect(node?.props.text).toBe("Hello");
+    });
+
+    it("sets prop to null when value is null (not removal)", () => {
       const patch: UpdatePatch = {
         op: "update",
         id: "e1",
@@ -109,7 +122,7 @@ describe("TrellisStore", () => {
       store.applyPatches([patch]);
 
       const node = store.getNode("e1");
-      expect(node?.props.color).toBeUndefined();
+      expect(node?.props.color).toBeNull();
       expect(node?.props.text).toBe("Hello");
     });
 
