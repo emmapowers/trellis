@@ -9,7 +9,7 @@ from trellis import html as h
 from trellis import widgets as w
 from trellis.app import theme
 
-from ..components import ExampleCard, Kbd
+from ..components import ExampleCard
 from ..example import example
 
 # How long the action indicator stays visible (seconds)
@@ -92,7 +92,7 @@ def KeyHint(*, keys: str, label: str) -> None:
             "gap": "8px",
         },
     ):
-        Kbd(keys=keys)
+        w.Kbd(keys=keys)
         w.Label(text=label, font_size=13, color=theme.text_secondary)
 
 
@@ -109,13 +109,13 @@ def SequenceHint(*, keys: list[str], label: str) -> None:
         for i, key in enumerate(keys):
             if i > 0:
                 w.Label(text="then", font_size=11, color=theme.text_muted)
-            Kbd(keys=key)
+            w.Kbd(keys=key)
         w.Label(text=label, font_size=13, color=theme.text_secondary)
 
 
 @example(
     "Focus-scoped (.on_key)",
-    includes=[ActionState, ActionIndicator, KeyHint, Kbd],
+    includes=[ActionState, ActionIndicator, KeyHint],
 )
 def FocusScopedDemo() -> None:
     """Key handlers that fire only when the element has focus."""
@@ -135,7 +135,7 @@ def FocusScopedDemo() -> None:
 
 @example(
     "Mount-scoped (HotKey)",
-    includes=[ActionState, ActionIndicator, KeyHint, Kbd],
+    includes=[ActionState, ActionIndicator, KeyHint],
 )
 def MountScopedDemo() -> None:
     """Global shortcuts that fire regardless of focus."""
@@ -157,7 +157,7 @@ def MountScopedDemo() -> None:
 
 @example(
     "Enabled Toggle",
-    includes=[ToggleState, ActionState, ActionIndicator, KeyHint, Kbd],
+    includes=[ToggleState, ActionState, ActionIndicator, KeyHint],
 )
 def EnabledToggleDemo() -> None:
     """Hotkey that can be toggled on/off at runtime."""
@@ -174,7 +174,7 @@ def EnabledToggleDemo() -> None:
 
 @example(
     "Sequences",
-    includes=[ActionState, ActionIndicator, SequenceHint, Kbd],
+    includes=[ActionState, ActionIndicator, SequenceHint],
 )
 def SequenceDemo() -> None:
     """Multi-key sequences and chords."""

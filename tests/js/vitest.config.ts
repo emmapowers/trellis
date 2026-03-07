@@ -12,6 +12,7 @@ export default defineConfig({
     alias: {
       // Map source imports to the actual source directory
       "@common": path.resolve(__dirname, "../../src/trellis/platforms/common/client/src"),
+      "@widgets": path.resolve(__dirname, "../../src/trellis/widgets/client"),
       "@browser": path.resolve(__dirname, "../../src/trellis/platforms/browser/client/src"),
       // Mock the pre-built worker bundle for tests (must come before general @trellis/* aliases)
       "@trellis/trellis-browser/pyodide.worker-bundle": path.resolve(__dirname, "mocks/pyodide.worker-bundle.ts"),

@@ -12,7 +12,6 @@ from trellis.core.hotkey_types import Hotkey
 from trellis.platforms.common.base import PlatformType
 from trellis.widgets import IconName, ThemeSwitcher
 
-from .components import Kbd
 from .sections.actions import ActionsSection
 from .sections.buttons import ButtonsSection
 from .sections.charts import ChartsSection
@@ -322,11 +321,11 @@ def HelpPanel(*, tabs: list[ShowcaseTab], on_close: object) -> None:
             ]
             if _resolve_platform() == PlatformType.DESKTOP:
                 if sys.platform == "darwin":
-                    nav_shortcuts.append(("Cmd+Left", "Back"))
-                    nav_shortcuts.append(("Cmd+Right", "Forward"))
+                    nav_shortcuts.append(("Meta+ArrowLeft", "Back"))
+                    nav_shortcuts.append(("Meta+ArrowRight", "Forward"))
                 else:
-                    nav_shortcuts.append(("Alt+Left", "Back"))
-                    nav_shortcuts.append(("Alt+Right", "Forward"))
+                    nav_shortcuts.append(("Alt+ArrowLeft", "Back"))
+                    nav_shortcuts.append(("Alt+ArrowRight", "Forward"))
             _HelpSection(title="Navigation", shortcuts=nav_shortcuts)
 
             # Section jump
@@ -378,7 +377,7 @@ def _ShortcutKeys(*, keys: str) -> None:
         for i, part in enumerate(parts):
             if i > 0:
                 w.Label(text="\u2192", font_size=10, color=theme.text_muted)
-            Kbd(keys=part)
+            w.Kbd(keys=part)
 
 
 @component
