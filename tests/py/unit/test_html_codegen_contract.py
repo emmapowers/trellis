@@ -40,6 +40,30 @@ def test_text_helper_signatures_use_inner_text_name() -> None:
     assert "text" not in raw_anchor_parameters
 
 
+def test_public_anchor_signature_matches_generated_anchor_except_use_router() -> None:
+    """Public A should track the generated _A surface plus use_router."""
+    public_parameters = list(inspect.signature(h.A).parameters.values())
+    raw_parameters = list(inspect.signature(_A).parameters.values())
+
+    expected_raw_names = [parameter.name for parameter in raw_parameters]
+    expected_public_names = [*expected_raw_names[:-1], "use_router", expected_raw_names[-1]]
+    assert [parameter.name for parameter in public_parameters] == expected_public_names
+
+    public_by_name = {parameter.name: parameter for parameter in public_parameters}
+    raw_by_name = {parameter.name: parameter for parameter in raw_parameters}
+
+    for name, raw_parameter in raw_by_name.items():
+        public_parameter = public_by_name[name]
+        assert public_parameter.kind is raw_parameter.kind
+        assert public_parameter.default == raw_parameter.default
+        assert public_parameter.annotation == raw_parameter.annotation
+
+    use_router = public_by_name["use_router"]
+    assert use_router.kind is inspect.Parameter.KEYWORD_ONLY
+    assert use_router.default is True
+    assert use_router.annotation == "bool"
+
+
 def test_generated_runtime_exposes_audio_and_aria_signatures() -> None:
     """Generated runtime should expose audio media props and aria_* attrs."""
     audio_parameters = inspect.signature(RawAudio).parameters
