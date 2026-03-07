@@ -206,7 +206,7 @@ def html_element(
             None,
         )
         has_text_keyword = "_text" in signature.parameters
-        has_text_positional = "text" in signature.parameters
+        has_text_positional = "internal_text" in signature.parameters
 
         # Create a generated class with the element name
         class _Generated(HtmlElement):
@@ -253,8 +253,8 @@ def html_element(
                 var_kwargs = props.pop(var_keyword_param)
                 props.update(var_kwargs)
 
-            if "text" in props:
-                text_value = props.pop("text")
+            if "internal_text" in props:
+                text_value = props.pop("internal_text")
                 if text_value is not None:
                     props["_text"] = text_value
 

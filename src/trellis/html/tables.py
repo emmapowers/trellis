@@ -70,7 +70,7 @@ def Tr(
 
 @overload
 def Th(
-    text: str,
+    internal_text: str,
     /,
     *,
     scope: str | None = None,
@@ -96,7 +96,7 @@ def Th(
 
 @html_element("th", is_container=True)
 def Th(
-    text: str | None = None,
+    internal_text: str | None = None,
     /,
     *,
     scope: str | None = None,
@@ -119,7 +119,7 @@ def Th(
 
 @overload
 def Td(
-    text: str,
+    internal_text: str,
     /,
     *,
     col_span: int | None = None,
@@ -143,7 +143,7 @@ def Td(
 
 @html_element("td", is_container=True)
 def Td(
-    text: str | None = None,
+    internal_text: str | None = None,
     /,
     *,
     col_span: int | None = None,
@@ -177,7 +177,7 @@ def Tfoot(
 
 @overload
 def Caption(
-    text: str,
+    internal_text: str,
     /,
     *,
     class_name: str | None = None,
@@ -199,7 +199,7 @@ def Caption(
 
 @html_element("caption", is_container=True)
 def Caption(
-    text: str | None = None,
+    internal_text: str | None = None,
     /,
     *,
     class_name: str | None = None,

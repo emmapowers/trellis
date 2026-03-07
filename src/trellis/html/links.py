@@ -77,7 +77,7 @@ def _is_relative_url(href: str) -> bool:
 
 
 def _make_a(
-    text: str | None,
+    internal_text: str | None,
     *,
     href: str | None,
     target: AnchorTarget | None,
@@ -117,7 +117,7 @@ def _make_a(
             effective_data = {}
         effective_data["trellis-router-link"] = "true"
 
-    if text is None:
+    if internal_text is None:
         return _A(
             href=href,
             target=target,
@@ -134,7 +134,7 @@ def _make_a(
             data=effective_data,
         )
     return _A(
-        text,
+        internal_text,
         href=href,
         target=target,
         rel=rel,
@@ -153,7 +153,7 @@ def _make_a(
 
 @overload
 def A(
-    text: str,
+    internal_text: str,
     /,
     *,
     href: str | None = None,
@@ -194,7 +194,7 @@ def A(
 
 
 def A(
-    text: str | None = None,
+    internal_text: str | None = None,
     /,
     *,
     href: str | None = None,
@@ -227,7 +227,7 @@ def A(
             h.Span("Link text")
 
     Args:
-        text: Text content for the link
+        internal_text: Text content for the link
         href: URL to navigate to. Relative URLs use router, absolute use browser.
         target: Target window/frame (e.g., "_blank")
         rel: Relationship to linked document (e.g., "noopener")
@@ -239,7 +239,7 @@ def A(
         data: Custom data-* attributes keyed by DOM suffix (e.g. ``{"test-id": "x"}``)
     """
     return _make_a(
-        text,
+        internal_text,
         href=href,
         target=target,
         rel=rel,
