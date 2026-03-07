@@ -30,7 +30,12 @@ function sample_ir(): IrDocument {
         python_name: "Div",
         is_container: true,
         text_behavior: "none",
-        attributes: ["html:global:class_name", "html:global:style", "html:global:aria_label"],
+        attributes: [
+          "html:global:class_name",
+          "html:global:style",
+          "html:global:aria_autocomplete",
+          "html:global:aria_label",
+        ],
         events: [],
         source: {
           winner: "react_ts",
@@ -90,7 +95,11 @@ function sample_ir(): IrDocument {
         python_name: "P",
         is_container: true,
         text_behavior: "public_helper",
-        attributes: ["html:global:class_name", "html:global:style"],
+        attributes: [
+          "html:global:class_name",
+          "html:global:style",
+          "html:global:aria_autocomplete",
+        ],
         events: [],
         source: {
           winner: "react_ts",
@@ -169,6 +178,32 @@ function sample_ir(): IrDocument {
         type_expr: { kind: "nullable", item: { kind: "style_object" } },
         required: false,
         category: "standard",
+        source: {
+          winner: "react_ts",
+          contributors: ["react_ts"],
+          reason: "runtime_precedence",
+          source_version: "@types/react@19.2.14",
+        },
+      },
+      {
+        id: "html:global:aria_autocomplete",
+        name_source: "aria-autocomplete",
+        name_python: "aria_autocomplete",
+        applies_to: "global",
+        type_expr: {
+          kind: "nullable",
+          item: {
+            kind: "union",
+            options: [
+              { kind: "literal", value: "none" },
+              { kind: "literal", value: "inline" },
+              { kind: "literal", value: "list" },
+              { kind: "literal", value: "both" },
+            ],
+          },
+        },
+        required: false,
+        category: "aria",
         source: {
           winner: "react_ts",
           contributors: ["react_ts"],
@@ -310,6 +345,7 @@ describe("trellis target", () => {
 
     expect(payloads.map((payload) => payload.path)).toEqual(
       expect.arrayContaining([
+        "src/trellis/html/_generated_attribute_types.py",
         "src/trellis/html/_generated_runtime.py",
         "src/trellis/html/_generated_forms.py",
         "src/trellis/html/_generated_image_and_multimedia.py",
@@ -336,10 +372,17 @@ describe("trellis target", () => {
     expect(runtime).toContain("    Table,");
     expect(runtime).not.toContain("def Div(");
 
+    const attributeTypes = moduleByPath(payloads, "_generated_attribute_types.py").content;
+    expect(attributeTypes).toContain("Generated at: 2026-03-07T12:00:00.000Z");
+    expect(attributeTypes).toContain("AriaAutocomplete = Literal[");
+    expect(attributeTypes).toContain("InputType = Literal[");
+
     const layout = moduleByPath(payloads, "_generated_sectioning_and_layout.py").content;
     expect(layout).toContain("Generated at: 2026-03-07T12:00:00.000Z");
+    expect(layout).toContain("from trellis.html._generated_attribute_types import AriaAutocomplete");
     expect(layout).toContain('@html_element("div", is_container=True)');
     expect(layout).toContain("def Div(");
+    expect(layout).toContain("aria_autocomplete: AriaAutocomplete | None = None");
     expect(layout).toContain("aria_label: str | None = None");
     expect(layout).toContain('"""<div />"""');
 
@@ -360,7 +403,7 @@ describe("trellis target", () => {
 
     const forms = moduleByPath(payloads, "_generated_forms.py").content;
     expect(forms).toContain("Generated at: 2026-03-07T12:00:00.000Z");
-    expect(forms).toContain("InputType =");
+    expect(forms).toContain("from trellis.html._generated_attribute_types import InputType");
     expect(forms).toContain('type: InputType = "text"');
     expect(forms).toContain('def Option(\n    inner_text: str | None = None,');
     expect(forms).toContain('"""<option />"""');
@@ -369,6 +412,10 @@ describe("trellis target", () => {
     expect(tables).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(tables).toContain("def Table(");
     expect(tables).toContain('"""<table />"""');
+
+    const text = moduleByPath(payloads, "_generated_text_content.py").content;
+    expect(text).toContain("from trellis.html._generated_attribute_types import AriaAutocomplete");
+    expect(text).toContain("aria_autocomplete: AriaAutocomplete | None = None");
   });
 
   it("does not expose _text or fallback props in generated family modules", () => {

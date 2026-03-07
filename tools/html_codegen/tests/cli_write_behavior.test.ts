@@ -20,6 +20,13 @@ describe("write mode", () => {
     expect(result.exit_code).toBe(0);
 
     const generated_path = join(repo_root, "src", "trellis", "html", "_generated_runtime.py");
+    const attribute_types_path = join(
+      repo_root,
+      "src",
+      "trellis",
+      "html",
+      "_generated_attribute_types.py",
+    );
     const forms_path = join(repo_root, "src", "trellis", "html", "_generated_forms.py");
     const media_path = join(
       repo_root,
@@ -30,6 +37,7 @@ describe("write mode", () => {
     );
     const events_path = join(repo_root, "src", "trellis", "html", "_generated_events.py");
     await expect(access(generated_path)).resolves.toBeUndefined();
+    await expect(access(attribute_types_path)).resolves.toBeUndefined();
     await expect(access(forms_path)).resolves.toBeUndefined();
     await expect(access(media_path)).resolves.toBeUndefined();
     await expect(access(events_path)).resolves.toBeUndefined();
@@ -43,6 +51,10 @@ describe("write mode", () => {
     const forms_content = await readFile(forms_path, "utf-8");
     expect(forms_content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(forms_content).toContain("def Input(");
+
+    const attribute_types_content = await readFile(attribute_types_path, "utf-8");
+    expect(attribute_types_content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
+    expect(attribute_types_content).toContain("InputType = Literal[");
 
     const media_content = await readFile(media_path, "utf-8");
     expect(media_content).toContain("Generated at: 2026-03-07T12:00:00.000Z");

@@ -1,14 +1,35 @@
 """Generated HTML obsolete elements elements.
 
-Generated at: 2026-03-07T21:11:25.358Z
+Generated at: 2026-03-07T21:23:05.532Z
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal
 
 from trellis.core.rendering.element import Element
+from trellis.html._generated_attribute_types import (
+    AriaAutocomplete,
+    AriaChecked,
+    AriaCurrent,
+    AriaDropeffect,
+    AriaHaspopup,
+    AriaInvalid,
+    AriaLive,
+    AriaOrientation,
+    AriaPressed,
+    AriaRelevant,
+    AriaSort,
+    AutoCapitalize,
+    ContentEditable,
+    EnterKeyHint,
+    InputMode,
+    Popover,
+    PopoverTargetAction,
+    Role,
+    Translate,
+    Unselectable,
+)
 from trellis.html._generated_events import (
     DragEventHandler,
     EventHandler,
@@ -37,90 +58,44 @@ def Keygen(
     access_key: str | None = None,
     aria_activedescendant: str | None = None,
     aria_atomic: bool | None = None,
-    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_autocomplete: AriaAutocomplete | None = None,
     aria_braillelabel: str | None = None,
     aria_brailleroledescription: str | None = None,
     aria_busy: bool | None = None,
-    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_checked: AriaChecked | None = None,
     aria_colcount: int | float | None = None,
     aria_colindex: int | float | None = None,
     aria_colindextext: str | None = None,
     aria_colspan: int | float | None = None,
     aria_controls: str | None = None,
-    aria_current: (
-        bool
-        | Literal["false"]
-        | Literal["true"]
-        | Literal["page"]
-        | Literal["step"]
-        | Literal["location"]
-        | Literal["date"]
-        | Literal["time"]
-        | None
-    ) = None,
+    aria_current: AriaCurrent | None = None,
     aria_describedby: str | None = None,
     aria_description: str | None = None,
     aria_details: str | None = None,
     aria_disabled: bool | None = None,
-    aria_dropeffect: (
-        Literal[
-            "none",
-            "copy",
-            "execute",
-            "link",
-            "move",
-            "popup",
-        ]
-        | None
-    ) = None,
+    aria_dropeffect: AriaDropeffect | None = None,
     aria_errormessage: str | None = None,
     aria_expanded: bool | None = None,
     aria_flowto: str | None = None,
     aria_grabbed: bool | None = None,
-    aria_haspopup: (
-        bool
-        | Literal["false"]
-        | Literal["true"]
-        | Literal["menu"]
-        | Literal["listbox"]
-        | Literal["tree"]
-        | Literal["grid"]
-        | Literal["dialog"]
-        | None
-    ) = None,
+    aria_haspopup: AriaHaspopup | None = None,
     aria_hidden: bool | None = None,
-    aria_invalid: (
-        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
-    ) = None,
+    aria_invalid: AriaInvalid | None = None,
     aria_keyshortcuts: str | None = None,
     aria_label: str | None = None,
     aria_labelledby: str | None = None,
     aria_level: int | float | None = None,
-    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_live: AriaLive | None = None,
     aria_modal: bool | None = None,
     aria_multiline: bool | None = None,
     aria_multiselectable: bool | None = None,
-    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_orientation: AriaOrientation | None = None,
     aria_owns: str | None = None,
     aria_placeholder: str | None = None,
     aria_posinset: int | float | None = None,
-    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_pressed: AriaPressed | None = None,
     aria_readonly: bool | None = None,
-    aria_relevant: (
-        Literal[
-            "additions",
-            "additions removals",
-            "additions text",
-            "all",
-            "removals",
-            "removals additions",
-            "removals text",
-            "text",
-            "text additions",
-            "text removals",
-        ]
-        | None
-    ) = None,
+    aria_relevant: AriaRelevant | None = None,
     aria_required: bool | None = None,
     aria_roledescription: str | None = None,
     aria_rowcount: int | float | None = None,
@@ -129,22 +104,12 @@ def Keygen(
     aria_rowspan: int | float | None = None,
     aria_selected: bool | None = None,
     aria_setsize: int | float | None = None,
-    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_sort: AriaSort | None = None,
     aria_valuemax: int | float | None = None,
     aria_valuemin: int | float | None = None,
     aria_valuenow: int | float | None = None,
     aria_valuetext: str | None = None,
-    auto_capitalize: (
-        Literal[
-            "off",
-            "none",
-            "on",
-            "sentences",
-            "words",
-            "characters",
-        ]
-        | None
-    ) = None,
+    auto_capitalize: AutoCapitalize | None = None,
     auto_correct: str | None = None,
     auto_focus: bool | None = None,
     auto_save: str | None = None,
@@ -152,7 +117,7 @@ def Keygen(
     class_name: str | None = None,
     color: str | None = None,
     content: str | None = None,
-    content_editable: bool | Literal["inherit"] | Literal["plaintext-only"] | None = None,
+    content_editable: ContentEditable | None = None,
     context_menu: str | None = None,
     datatype: str | None = None,
     default_checked: bool | None = None,
@@ -160,37 +125,14 @@ def Keygen(
     dir: str | None = None,
     disabled: bool | None = None,
     draggable: bool | None = None,
-    enter_key_hint: (
-        Literal[
-            "enter",
-            "done",
-            "go",
-            "next",
-            "previous",
-            "search",
-            "send",
-        ]
-        | None
-    ) = None,
+    enter_key_hint: EnterKeyHint | None = None,
     exportparts: str | None = None,
     form: str | None = None,
     hidden: bool | None = None,
     id: str | None = None,
     inert: bool | None = None,
     inlist: str | None = None,
-    input_mode: (
-        Literal[
-            "none",
-            "text",
-            "tel",
-            "url",
-            "email",
-            "numeric",
-            "decimal",
-            "search",
-        ]
-        | None
-    ) = None,
+    input_mode: InputMode | None = None,
     is_: str | None = None,
     item_id: str | None = None,
     item_prop: str | None = None,
@@ -203,9 +145,9 @@ def Keygen(
     name: str | None = None,
     nonce: str | None = None,
     part: str | None = None,
-    popover: Literal["", "auto", "manual", "hint"] | None = None,
+    popover: Popover | None = None,
     popover_target: str | None = None,
-    popover_target_action: Literal["toggle", "show", "hide"] | None = None,
+    popover_target_action: PopoverTargetAction | None = None,
     prefix: str | None = None,
     property: str | None = None,
     radio_group: str | None = None,
@@ -213,80 +155,7 @@ def Keygen(
     resource: str | None = None,
     results: int | float | None = None,
     rev: str | None = None,
-    role: (
-        Literal[
-            "alert",
-            "alertdialog",
-            "application",
-            "article",
-            "banner",
-            "button",
-            "cell",
-            "checkbox",
-            "columnheader",
-            "combobox",
-            "complementary",
-            "contentinfo",
-            "definition",
-            "dialog",
-            "directory",
-            "document",
-            "feed",
-            "figure",
-            "form",
-            "grid",
-            "gridcell",
-            "group",
-            "heading",
-            "img",
-            "link",
-            "list",
-            "listbox",
-            "listitem",
-            "log",
-            "main",
-            "marquee",
-            "math",
-            "menu",
-            "menubar",
-            "menuitem",
-            "menuitemcheckbox",
-            "menuitemradio",
-            "navigation",
-            "none",
-            "note",
-            "option",
-            "presentation",
-            "progressbar",
-            "radio",
-            "radiogroup",
-            "region",
-            "row",
-            "rowgroup",
-            "rowheader",
-            "scrollbar",
-            "search",
-            "searchbox",
-            "separator",
-            "slider",
-            "spinbutton",
-            "status",
-            "switch",
-            "tab",
-            "table",
-            "tablist",
-            "tabpanel",
-            "term",
-            "textbox",
-            "timer",
-            "toolbar",
-            "tooltip",
-            "tree",
-            "treegrid",
-            "treeitem",
-        ]
-        | None
-    ) = None,
+    role: Role | None = None,
     security: str | None = None,
     slot: str | None = None,
     spell_check: bool | None = None,
@@ -295,9 +164,9 @@ def Keygen(
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
     title: str | None = None,
-    translate: Literal["yes", "no"] | None = None,
+    translate: Translate | None = None,
     typeof: str | None = None,
-    unselectable: Literal["on", "off"] | None = None,
+    unselectable: Unselectable | None = None,
     vocab: str | None = None,
     on_blur: FocusEventHandler | None = None,
     on_change: EventHandler | None = None,
@@ -338,90 +207,44 @@ def Menuitem(
     access_key: str | None = None,
     aria_activedescendant: str | None = None,
     aria_atomic: bool | None = None,
-    aria_autocomplete: Literal["none", "inline", "list", "both"] | None = None,
+    aria_autocomplete: AriaAutocomplete | None = None,
     aria_braillelabel: str | None = None,
     aria_brailleroledescription: str | None = None,
     aria_busy: bool | None = None,
-    aria_checked: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_checked: AriaChecked | None = None,
     aria_colcount: int | float | None = None,
     aria_colindex: int | float | None = None,
     aria_colindextext: str | None = None,
     aria_colspan: int | float | None = None,
     aria_controls: str | None = None,
-    aria_current: (
-        bool
-        | Literal["false"]
-        | Literal["true"]
-        | Literal["page"]
-        | Literal["step"]
-        | Literal["location"]
-        | Literal["date"]
-        | Literal["time"]
-        | None
-    ) = None,
+    aria_current: AriaCurrent | None = None,
     aria_describedby: str | None = None,
     aria_description: str | None = None,
     aria_details: str | None = None,
     aria_disabled: bool | None = None,
-    aria_dropeffect: (
-        Literal[
-            "none",
-            "copy",
-            "execute",
-            "link",
-            "move",
-            "popup",
-        ]
-        | None
-    ) = None,
+    aria_dropeffect: AriaDropeffect | None = None,
     aria_errormessage: str | None = None,
     aria_expanded: bool | None = None,
     aria_flowto: str | None = None,
     aria_grabbed: bool | None = None,
-    aria_haspopup: (
-        bool
-        | Literal["false"]
-        | Literal["true"]
-        | Literal["menu"]
-        | Literal["listbox"]
-        | Literal["tree"]
-        | Literal["grid"]
-        | Literal["dialog"]
-        | None
-    ) = None,
+    aria_haspopup: AriaHaspopup | None = None,
     aria_hidden: bool | None = None,
-    aria_invalid: (
-        bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"] | None
-    ) = None,
+    aria_invalid: AriaInvalid | None = None,
     aria_keyshortcuts: str | None = None,
     aria_label: str | None = None,
     aria_labelledby: str | None = None,
     aria_level: int | float | None = None,
-    aria_live: Literal["off", "assertive", "polite"] | None = None,
+    aria_live: AriaLive | None = None,
     aria_modal: bool | None = None,
     aria_multiline: bool | None = None,
     aria_multiselectable: bool | None = None,
-    aria_orientation: Literal["horizontal", "vertical"] | None = None,
+    aria_orientation: AriaOrientation | None = None,
     aria_owns: str | None = None,
     aria_placeholder: str | None = None,
     aria_posinset: int | float | None = None,
-    aria_pressed: bool | Literal["false"] | Literal["mixed"] | Literal["true"] | None = None,
+    aria_pressed: AriaPressed | None = None,
     aria_readonly: bool | None = None,
-    aria_relevant: (
-        Literal[
-            "additions",
-            "additions removals",
-            "additions text",
-            "all",
-            "removals",
-            "removals additions",
-            "removals text",
-            "text",
-            "text additions",
-            "text removals",
-        ]
-        | None
-    ) = None,
+    aria_relevant: AriaRelevant | None = None,
     aria_required: bool | None = None,
     aria_roledescription: str | None = None,
     aria_rowcount: int | float | None = None,
@@ -430,65 +253,32 @@ def Menuitem(
     aria_rowspan: int | float | None = None,
     aria_selected: bool | None = None,
     aria_setsize: int | float | None = None,
-    aria_sort: Literal["none", "ascending", "descending", "other"] | None = None,
+    aria_sort: AriaSort | None = None,
     aria_valuemax: int | float | None = None,
     aria_valuemin: int | float | None = None,
     aria_valuenow: int | float | None = None,
     aria_valuetext: str | None = None,
-    auto_capitalize: (
-        Literal[
-            "off",
-            "none",
-            "on",
-            "sentences",
-            "words",
-            "characters",
-        ]
-        | None
-    ) = None,
+    auto_capitalize: AutoCapitalize | None = None,
     auto_correct: str | None = None,
     auto_focus: bool | None = None,
     auto_save: str | None = None,
     class_name: str | None = None,
     color: str | None = None,
     content: str | None = None,
-    content_editable: bool | Literal["inherit"] | Literal["plaintext-only"] | None = None,
+    content_editable: ContentEditable | None = None,
     context_menu: str | None = None,
     datatype: str | None = None,
     default_checked: bool | None = None,
     default_value: str | int | float | list[str] | None = None,
     dir: str | None = None,
     draggable: bool | None = None,
-    enter_key_hint: (
-        Literal[
-            "enter",
-            "done",
-            "go",
-            "next",
-            "previous",
-            "search",
-            "send",
-        ]
-        | None
-    ) = None,
+    enter_key_hint: EnterKeyHint | None = None,
     exportparts: str | None = None,
     hidden: bool | None = None,
     id: str | None = None,
     inert: bool | None = None,
     inlist: str | None = None,
-    input_mode: (
-        Literal[
-            "none",
-            "text",
-            "tel",
-            "url",
-            "email",
-            "numeric",
-            "decimal",
-            "search",
-        ]
-        | None
-    ) = None,
+    input_mode: InputMode | None = None,
     is_: str | None = None,
     item_id: str | None = None,
     item_prop: str | None = None,
@@ -498,9 +288,9 @@ def Menuitem(
     lang: str | None = None,
     nonce: str | None = None,
     part: str | None = None,
-    popover: Literal["", "auto", "manual", "hint"] | None = None,
+    popover: Popover | None = None,
     popover_target: str | None = None,
-    popover_target_action: Literal["toggle", "show", "hide"] | None = None,
+    popover_target_action: PopoverTargetAction | None = None,
     prefix: str | None = None,
     property: str | None = None,
     radio_group: str | None = None,
@@ -508,80 +298,7 @@ def Menuitem(
     resource: str | None = None,
     results: int | float | None = None,
     rev: str | None = None,
-    role: (
-        Literal[
-            "alert",
-            "alertdialog",
-            "application",
-            "article",
-            "banner",
-            "button",
-            "cell",
-            "checkbox",
-            "columnheader",
-            "combobox",
-            "complementary",
-            "contentinfo",
-            "definition",
-            "dialog",
-            "directory",
-            "document",
-            "feed",
-            "figure",
-            "form",
-            "grid",
-            "gridcell",
-            "group",
-            "heading",
-            "img",
-            "link",
-            "list",
-            "listbox",
-            "listitem",
-            "log",
-            "main",
-            "marquee",
-            "math",
-            "menu",
-            "menubar",
-            "menuitem",
-            "menuitemcheckbox",
-            "menuitemradio",
-            "navigation",
-            "none",
-            "note",
-            "option",
-            "presentation",
-            "progressbar",
-            "radio",
-            "radiogroup",
-            "region",
-            "row",
-            "rowgroup",
-            "rowheader",
-            "scrollbar",
-            "search",
-            "searchbox",
-            "separator",
-            "slider",
-            "spinbutton",
-            "status",
-            "switch",
-            "tab",
-            "table",
-            "tablist",
-            "tabpanel",
-            "term",
-            "textbox",
-            "timer",
-            "toolbar",
-            "tooltip",
-            "tree",
-            "treegrid",
-            "treeitem",
-        ]
-        | None
-    ) = None,
+    role: Role | None = None,
     security: str | None = None,
     slot: str | None = None,
     spell_check: bool | None = None,
@@ -590,9 +307,9 @@ def Menuitem(
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
     title: str | None = None,
-    translate: Literal["yes", "no"] | None = None,
+    translate: Translate | None = None,
     typeof: str | None = None,
-    unselectable: Literal["on", "off"] | None = None,
+    unselectable: Unselectable | None = None,
     vocab: str | None = None,
     on_blur: FocusEventHandler | None = None,
     on_change: EventHandler | None = None,

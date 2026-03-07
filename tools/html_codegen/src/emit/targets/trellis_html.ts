@@ -13,6 +13,12 @@ interface HtmlFamily {
   tags: Set<string>;
 }
 
+interface AttributeTypeAlias {
+  name: string;
+  body: TypeExpr;
+  attribute_ids: string[];
+}
+
 const HTML_FAMILIES: HtmlFamily[] = [
   {
     module_name: "document_metadata",
@@ -162,39 +168,153 @@ function index_attributes(attributes: AttributeDef[]): Map<string, AttributeDef>
   return by_id;
 }
 
-function input_type_expr(
+function strip_nullable(type_expr: TypeExpr): { base: TypeExpr; nullable: boolean } {
+  if (type_expr.kind === "nullable") {
+    return { base: type_expr.item, nullable: true };
+  }
+  return { base: type_expr, nullable: false };
+}
+
+function type_expr_contains_literal(type_expr: TypeExpr): boolean {
+  switch (type_expr.kind) {
+    case "literal":
+      return true;
+    case "nullable":
+    case "array":
+      return type_expr_contains_literal(type_expr.item);
+    case "union":
+      return type_expr.options.some((option) => type_expr_contains_literal(option));
+    case "callable":
+      return (
+        type_expr.params.some((param) => type_expr_contains_literal(param)) ||
+        type_expr_contains_literal(type_expr.returns)
+      );
+    case "object":
+      return Object.values(type_expr.fields).some((field) => type_expr_contains_literal(field));
+    default:
+      return false;
+  }
+}
+
+function type_expr_key(type_expr: TypeExpr): string {
+  switch (type_expr.kind) {
+    case "literal":
+      return `literal:${JSON.stringify(type_expr.value)}`;
+    case "primitive":
+      return `primitive:${type_expr.name}`;
+    case "reference":
+      return `reference:${type_expr.name}`;
+    case "style_object":
+      return "style_object";
+    case "nullable":
+      return `nullable:${type_expr_key(type_expr.item)}`;
+    case "array":
+      return `array:${type_expr_key(type_expr.item)}`;
+    case "union":
+      return `union:${type_expr.options.map((option) => type_expr_key(option)).join("|")}`;
+    case "callable":
+      return `callable:${type_expr.params.map((param) => type_expr_key(param)).join(",")}=>${type_expr_key(type_expr.returns)}`;
+    case "object":
+      return `object:${Object.entries(type_expr.fields)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([name, field]) => `${name}:${type_expr_key(field)}`)
+        .join(",")}`;
+  }
+}
+
+function to_pascal_case(name: string): string {
+  return name
+    .split("_")
+    .filter((part) => part.length > 0)
+    .map((part) => part[0]!.toUpperCase() + part.slice(1))
+    .join("");
+}
+
+function alias_name_for_attribute(attribute: AttributeDef): string | undefined {
+  if (attribute.id === "html:input:type") {
+    return "InputType";
+  }
+  if (attribute.name_python === "type") {
+    return undefined;
+  }
+  return to_pascal_case(attribute.name_python);
+}
+
+function build_attribute_type_aliases(
   document: IrDocument,
   elements: ElementDef[],
-): TypeExpr | undefined {
-  if (!elements.some((element) => element.tag_name === "input")) {
-    return undefined;
-  }
+): AttributeTypeAlias[] {
   const attributes_by_id = index_attributes(document.attributes);
-  return attributes_by_id.get("html:input:type")?.type_expr;
-}
-
-function literal_alias_body(type_expr: TypeExpr | undefined): string | undefined {
-  if (!type_expr) {
-    return undefined;
-  }
-  if (type_expr.kind === "union") {
-    return render_type_expr(type_expr);
-  }
-  if (type_expr.kind === "nullable" && type_expr.item.kind === "union") {
-    return render_type_expr(type_expr.item);
-  }
-  return undefined;
-}
-
-function input_type_alias(document: IrDocument, elements: ElementDef[]): string | undefined {
-  const alias_body = literal_alias_body(input_type_expr(document, elements));
-  if (!alias_body) {
-    return undefined;
+  const usage_counts = new Map<string, number>();
+  for (const element of elements) {
+    for (const attribute_id of element.attributes) {
+      usage_counts.set(attribute_id, (usage_counts.get(attribute_id) ?? 0) + 1);
+    }
   }
 
-  const body = alias_body.slice("Literal[".length, -1);
-  const options = body.split(", ").map((option) => `    ${option},`);
-  return ["InputType = Literal[", ...options, "]"].join("\n");
+  const groups = new Map<
+    string,
+    {
+      alias_name: string;
+      body: TypeExpr;
+      attribute_ids: Set<string>;
+      usage_count: number;
+      automatic: boolean;
+    }
+  >();
+
+  for (const [attribute_id, usage_count] of usage_counts) {
+    const attribute = attributes_by_id.get(attribute_id);
+    if (!attribute) {
+      continue;
+    }
+    const alias_name = alias_name_for_attribute(attribute);
+    if (!alias_name) {
+      continue;
+    }
+    const { base } = strip_nullable(attribute.type_expr);
+    if (!type_expr_contains_literal(base)) {
+      continue;
+    }
+
+    const automatic = attribute.id !== "html:input:type";
+    const key = automatic
+      ? `${alias_name}:${type_expr_key(base)}`
+      : attribute.id;
+    const group = groups.get(key);
+    if (group) {
+      group.attribute_ids.add(attribute.id);
+      group.usage_count += usage_count;
+      continue;
+    }
+    groups.set(key, {
+      alias_name,
+      body: base,
+      attribute_ids: new Set([attribute.id]),
+      usage_count,
+      automatic,
+    });
+  }
+
+  const alias_name_keys = new Map<string, string[]>();
+  for (const [key, group] of groups) {
+    const keys = alias_name_keys.get(group.alias_name) ?? [];
+    keys.push(key);
+    alias_name_keys.set(group.alias_name, keys);
+  }
+
+  return [...groups.entries()]
+    .filter(([_, group]) => group.usage_count > 1 || !group.automatic)
+    .filter(([key, group]) => {
+      const conflicting_keys = alias_name_keys.get(group.alias_name) ?? [];
+      return conflicting_keys.length === 1 || !group.automatic || group.alias_name === "InputType";
+    })
+    .map(([_, group]) => ({
+      name: group.alias_name,
+      body: group.body,
+      attribute_ids: [...group.attribute_ids].sort((left, right) => left.localeCompare(right)),
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
 }
 
 function collect_references(type_expr: TypeExpr, names: Set<string>): void {
@@ -251,11 +371,22 @@ function event_handler_imports(
     .sort((left, right) => left.localeCompare(right));
 }
 
-function parameter_annotation(element: ElementDef, attribute: AttributeDef): string {
-  if (element.tag_name === "input" && attribute.name_python === "type") {
-    return "InputType";
+function attribute_alias_name(
+  aliases_by_attribute_id: Map<string, AttributeTypeAlias>,
+  attribute: AttributeDef,
+): string | undefined {
+  return aliases_by_attribute_id.get(attribute.id)?.name;
+}
+
+function parameter_annotation(
+  attribute: AttributeDef,
+  aliases_by_attribute_id: Map<string, AttributeTypeAlias>,
+): string {
+  const alias_name = attribute_alias_name(aliases_by_attribute_id, attribute);
+  if (!alias_name) {
+    return render_type_expr(attribute.type_expr);
   }
-  return render_type_expr(attribute.type_expr);
+  return attribute.type_expr.kind === "nullable" ? `${alias_name} | None` : alias_name;
 }
 
 function render_multiline_literal_union(type_expr: TypeExpr): string[] {
@@ -270,9 +401,90 @@ function render_multiline_literal_union(type_expr: TypeExpr): string[] {
   ];
 }
 
-function multiline_parameter_annotation(element: ElementDef, attribute: AttributeDef): string[] {
-  if (element.tag_name === "input" && attribute.name_python === "type") {
-    return ["InputType"];
+function render_type_alias_lines(alias: AttributeTypeAlias): string[] {
+  if (
+    alias.body.kind === "union" &&
+    alias.body.options.every((option) => option.kind === "literal")
+  ) {
+    return [`${alias.name} = Literal[`, ...alias.body.options.map((option) => `    ${JSON.stringify(option.value)},`), "]"];
+  }
+  return [`${alias.name} = ${render_type_expr(alias.body)}`];
+}
+
+function emit_attribute_types_module(
+  aliases: AttributeTypeAlias[],
+  generated_at: string,
+): TrellisModulePayload {
+  const exported_names = aliases.map((alias) => `    "${alias.name}",`).join("\n");
+  const alias_lines = aliases.flatMap((alias, index) => {
+    const lines = render_type_alias_lines(alias);
+    if (index === 0) {
+      return lines;
+    }
+    return ["", ...lines];
+  });
+
+  return {
+    path: "src/trellis/html/_generated_attribute_types.py",
+    content: `${render_generated_module_docstring("Generated HTML attribute type aliases.", generated_at)}
+
+from __future__ import annotations
+
+from typing import Literal
+
+__all__ = [
+${exported_names}
+]
+
+${alias_lines.join("\n")}
+`,
+  };
+}
+
+function attribute_type_imports(
+  elements: ElementDef[],
+  aliases_by_attribute_id: Map<string, AttributeTypeAlias>,
+): string[] {
+  const names = new Set<string>();
+  for (const element of elements) {
+    for (const attribute_id of element.attributes) {
+      const alias = aliases_by_attribute_id.get(attribute_id);
+      if (alias) {
+        names.add(alias.name);
+      }
+    }
+  }
+  return [...names].sort((left, right) => left.localeCompare(right));
+}
+
+function type_expr_uses_literal(type_expr: TypeExpr): boolean {
+  switch (type_expr.kind) {
+    case "literal":
+      return true;
+    case "nullable":
+    case "array":
+      return type_expr_uses_literal(type_expr.item);
+    case "union":
+      return type_expr.options.some((option) => type_expr_uses_literal(option));
+    case "callable":
+      return (
+        type_expr.params.some((param) => type_expr_uses_literal(param)) ||
+        type_expr_uses_literal(type_expr.returns)
+      );
+    case "object":
+      return Object.values(type_expr.fields).some((field) => type_expr_uses_literal(field));
+    default:
+      return false;
+  }
+}
+
+function multiline_parameter_annotation(
+  attribute: AttributeDef,
+  aliases_by_attribute_id: Map<string, AttributeTypeAlias>,
+): string[] {
+  const alias_name = attribute_alias_name(aliases_by_attribute_id, attribute);
+  if (alias_name) {
+    return [attribute.type_expr.kind === "nullable" ? `${alias_name} | None` : alias_name];
   }
 
   if (
@@ -293,7 +505,7 @@ function multiline_parameter_annotation(element: ElementDef, attribute: Attribut
   return [render_type_expr(attribute.type_expr)];
 }
 
-function parameter_default(element: ElementDef, attribute: AttributeDef): string | undefined {
+function parameter_default(attribute: AttributeDef): string | undefined {
   if (attribute.default !== undefined) {
     if (typeof attribute.default === "string") {
       return JSON.stringify(attribute.default);
@@ -312,9 +524,12 @@ function parameter_default(element: ElementDef, attribute: AttributeDef): string
   return undefined;
 }
 
-function render_parameter(element: ElementDef, attribute: AttributeDef): string {
-  const annotation = parameter_annotation(element, attribute);
-  const default_value = parameter_default(element, attribute);
+function render_parameter(
+  attribute: AttributeDef,
+  aliases_by_attribute_id: Map<string, AttributeTypeAlias>,
+): string {
+  const annotation = parameter_annotation(attribute, aliases_by_attribute_id);
+  const default_value = parameter_default(attribute);
   const single_line = `    ${attribute.name_python}: ${annotation}${
     default_value === undefined ? "," : ` = ${default_value},`
   }`;
@@ -323,7 +538,7 @@ function render_parameter(element: ElementDef, attribute: AttributeDef): string 
     return single_line;
   }
 
-  const annotation_lines = multiline_parameter_annotation(element, attribute);
+  const annotation_lines = multiline_parameter_annotation(attribute, aliases_by_attribute_id);
   if (annotation_lines.length === 1) {
     return single_line;
   }
@@ -345,6 +560,7 @@ function render_parameter(element: ElementDef, attribute: AttributeDef): string 
 function render_attribute_parameters(
   element: ElementDef,
   attributes_by_id: Map<string, AttributeDef>,
+  aliases_by_attribute_id: Map<string, AttributeTypeAlias>,
 ): string[] {
   const lines: string[] = [];
   for (const attribute_id of element.attributes) {
@@ -352,7 +568,7 @@ function render_attribute_parameters(
     if (!attribute) {
       continue;
     }
-    lines.push(render_parameter(element, attribute));
+    lines.push(render_parameter(attribute, aliases_by_attribute_id));
   }
   return lines;
 }
@@ -360,12 +576,17 @@ function render_attribute_parameters(
 function render_public_helper_overloads(
   element: ElementDef,
   attributes_by_id: Map<string, AttributeDef>,
+  aliases_by_attribute_id: Map<string, AttributeTypeAlias>,
 ): string[] {
   if (element.text_behavior !== "public_helper" || !element.is_container) {
     return [];
   }
 
-  const attribute_parameters = render_attribute_parameters(element, attributes_by_id);
+  const attribute_parameters = render_attribute_parameters(
+    element,
+    attributes_by_id,
+    aliases_by_attribute_id,
+  );
   return [
     "@overload",
     `def ${element.python_name}(`,
@@ -391,9 +612,10 @@ function render_public_helper_overloads(
 function render_element_function(
   element: ElementDef,
   attributes_by_id: Map<string, AttributeDef>,
+  aliases_by_attribute_id: Map<string, AttributeTypeAlias>,
 ): string {
   const lines: string[] = [];
-  lines.push(...render_public_helper_overloads(element, attributes_by_id));
+  lines.push(...render_public_helper_overloads(element, attributes_by_id, aliases_by_attribute_id));
 
   const decorator_args = [`"${element.tag_name}"`];
 
@@ -414,7 +636,7 @@ function render_element_function(
     lines.push("    *,");
   }
 
-  lines.push(...render_attribute_parameters(element, attributes_by_id));
+  lines.push(...render_attribute_parameters(element, attributes_by_id, aliases_by_attribute_id));
 
   lines.push("    data: Mapping[str, DataValue] | None = None,");
   const return_type =
@@ -443,14 +665,25 @@ function emit_family_module(
   document: IrDocument,
   family: HtmlFamily,
   elements: ElementDef[],
+  aliases_by_attribute_id: Map<string, AttributeTypeAlias>,
   generated_at: string,
 ): TrellisModulePayload {
   const attributes_by_id = index_attributes(document.attributes);
   const handler_imports = event_handler_imports(document, elements);
+  const attribute_type_import_names = attribute_type_imports(elements, aliases_by_attribute_id);
   const rendered_elements = elements
-    .map((element) => render_element_function(element, attributes_by_id))
+    .map((element) => render_element_function(element, attributes_by_id, aliases_by_attribute_id))
     .join("\n\n\n");
-  const typing_imports = ["Literal"];
+  const needs_literal_import = elements.some((element) =>
+    element.attributes.some((attribute_id) => {
+      if (aliases_by_attribute_id.has(attribute_id)) {
+        return false;
+      }
+      const attribute = attributes_by_id.get(attribute_id);
+      return attribute ? type_expr_uses_literal(attribute.type_expr) : false;
+    }),
+  );
+  const typing_imports = needs_literal_import ? ["Literal"] : [];
   if (elements.some((element) => element.text_behavior === "public_helper" && element.is_container)) {
     typing_imports.push("overload");
   }
@@ -469,6 +702,14 @@ function emit_family_module(
       : `from trellis.html._generated_events import (
 ${handler_imports.map((name) => `    ${name},`).join("\n")}
 )`;
+  const attribute_types_import =
+    attribute_type_import_names.length === 0
+      ? ""
+      : attribute_type_import_names.length === 1
+        ? `from trellis.html._generated_attribute_types import ${attribute_type_import_names[0]}`
+        : `from trellis.html._generated_attribute_types import (
+${attribute_type_import_names.map((name) => `    ${name},`).join("\n")}
+)`;
   const first_party_imports = [
     "from trellis.core.rendering.element import Element",
     `from trellis.html.base import ${
@@ -476,9 +717,9 @@ ${handler_imports.map((name) => `    ${name},`).join("\n")}
         ? "HtmlContainerElement, Style, html_element"
         : "Style, html_element"
     }`,
+    ...(attribute_types_import ? [attribute_types_import] : []),
     ...(events_import_block ? [events_import_block] : []),
   ].join("\n");
-  const inputAlias = input_type_alias(document, elements);
 
   const parts = [
     render_generated_module_docstring(`Generated HTML ${family.title} elements.`, generated_at),
@@ -486,7 +727,7 @@ ${handler_imports.map((name) => `    ${name},`).join("\n")}
     "from __future__ import annotations",
     "",
     "from collections.abc import Mapping",
-    `from typing import ${typing_imports.join(", ")}`,
+    ...(typing_imports.length > 0 ? [`from typing import ${typing_imports.join(", ")}`] : []),
     "",
     first_party_imports,
     "",
@@ -495,7 +736,6 @@ ${handler_imports.map((name) => `    ${name},`).join("\n")}
     "]",
     "",
     "DataValue = str | int | float | bool | None",
-    ...(inputAlias ? ["", inputAlias] : []),
     "",
     "",
     rendered_elements,
@@ -552,6 +792,13 @@ export function build_trellis_html_modules(
     .filter((element) => element.namespace === "html")
     .slice()
     .sort((left, right) => left.python_name.localeCompare(right.python_name));
+  const attribute_type_aliases = build_attribute_type_aliases(document, html_elements);
+  const aliases_by_attribute_id = new Map<string, AttributeTypeAlias>();
+  for (const alias of attribute_type_aliases) {
+    for (const attribute_id of alias.attribute_ids) {
+      aliases_by_attribute_id.set(attribute_id, alias);
+    }
+  }
 
   const grouped = new Map<string, { family: HtmlFamily; elements: ElementDef[] }>();
   for (const family of HTML_FAMILIES) {
@@ -567,9 +814,18 @@ export function build_trellis_html_modules(
     .filter((entry) => entry.elements.length > 0);
 
   return [
+    ...(attribute_type_aliases.length > 0
+      ? [emit_attribute_types_module(attribute_type_aliases, generated_at)]
+      : []),
     emit_runtime_aggregator(familyModules, generated_at),
     ...familyModules.map((entry) =>
-      emit_family_module(document, entry.family, entry.elements, generated_at),
+      emit_family_module(
+        document,
+        entry.family,
+        entry.elements,
+        aliases_by_attribute_id,
+        generated_at,
+      ),
     ),
   ];
 }
