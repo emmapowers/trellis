@@ -1,6 +1,7 @@
 """Root application component for widget showcase."""
 
-from trellis import Margin, Padding, Route, Routes, component, router
+from trellis import Route, Routes, component, router
+from trellis import html as h
 from trellis import widgets as w
 from trellis.app import App, get_config, theme
 from trellis.core.components.composition import CompositionComponent
@@ -10,6 +11,7 @@ from trellis.widgets import IconName, ThemeSwitcher
 from .sections.actions import ActionsSection
 from .sections.buttons import ButtonsSection
 from .sections.charts import ChartsSection
+from .sections.css import CssSection
 from .sections.data import DataDisplaySection
 from .sections.feedback import FeedbackSection
 from .sections.forms import FormInputsSection
@@ -27,6 +29,7 @@ type ShowcaseTab = tuple[str, str, IconName, CompositionComponent]
 
 _BASE_TABS: list[ShowcaseTab] = [
     ("layout", "Layout", IconName.LAYOUT_GRID, LayoutSection),
+    ("css", "CSS", IconName.PALETTE, CssSection),
     ("buttons", "Buttons", IconName.MOUSE_POINTER, ButtonsSection),
     ("forms", "Forms", IconName.EDIT_2, FormInputsSection),
     ("status", "Status", IconName.CHECK_CIRCLE, StatusSection),
@@ -92,11 +95,11 @@ def WidgetShowcase() -> None:
         with w.Row(
             align="center",
             gap=12,
-            padding=Padding(x=24, y=16),
+            padding=h.padding(16, 24),
             style={
-                "borderBottom": f"1px solid {theme.border_default}",
-                "backgroundColor": theme.bg_surface,
-                "flexShrink": "0",
+                "border-bottom": f"1px solid {theme.border_default}",
+                "background-color": theme.bg_surface,
+                "flex-shrink": "0",
             },
         ):
             w.Icon(name=IconName.LAYOUT_DASHBOARD, size=24, color=theme.accent_primary)
@@ -104,17 +107,17 @@ def WidgetShowcase() -> None:
             ThemeSwitcher()
 
         # Main content with sidebar tabs
-        with w.Row(gap=0, flex=1, style={"minHeight": "0", "alignItems": "stretch"}):
+        with w.Row(gap=0, flex=1, style={"min-height": "0", "align-items": "stretch"}):
             # Sidebar
             with w.Column(
                 gap=2,
                 width=200,
                 padding=12,
                 style={
-                    "borderRight": f"1px solid {theme.border_default}",
-                    "backgroundColor": theme.bg_page,
+                    "border-right": f"1px solid {theme.border_default}",
+                    "background-color": theme.bg_page,
                     "overflow": "auto",
-                    "flexShrink": "0",
+                    "flex-shrink": "0",
                 },
             ):
                 for tab_id, label, _icon, _ in tabs:
@@ -128,7 +131,7 @@ def WidgetShowcase() -> None:
                         size="sm",
                         href=href,
                         full_width=True,
-                        style={"justifyContent": "flex-start"},
+                        style={"justify-content": "flex-start"},
                     )
 
             # Content area
@@ -165,7 +168,7 @@ def SectionContent(
 ) -> None:
     """Render a section with header and content card."""
     # Section header
-    with w.Row(align="center", gap=8, margin=Margin(bottom=16)):
+    with w.Row(align="center", gap=8, style={"margin-bottom": "16px"}):
         w.Icon(name=icon, size=20, color=theme.accent_primary)
         w.Heading(text=label, level=3)
 

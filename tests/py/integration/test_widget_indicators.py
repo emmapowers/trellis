@@ -75,12 +75,12 @@ class TestProgressBarWidget:
 
         @component
         def App() -> None:
-            ProgressBar(value=50, style={"marginBottom": "24px"})
+            ProgressBar(value=50, style={"margin-bottom": "24px"})
 
         result = rendered(App)
 
         progress = result.session.elements.get(result.root_element.child_ids[0])
-        assert progress.properties["style"] == {"marginBottom": "24px"}
+        assert progress.properties["style"] == {"margin-bottom": "24px"}
 
 
 class TestStatusIndicatorWidget:

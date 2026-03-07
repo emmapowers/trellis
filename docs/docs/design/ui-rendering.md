@@ -209,7 +209,7 @@ def MyApp():
 
 @component
 def Column(children: list[ChildRef]):
-    with h.Div(style={"display": "flex", "flexDirection": "column"}):
+    with h.Div(style={"display": "flex", "flex-direction": "column"}):
         for child in children:
             child()  # Position child here in the tree
 ```

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from trellis import component
 from trellis import html as h
 
@@ -70,3 +72,17 @@ def test_style_accepts_dom_dict_escape_hatch(rendered) -> None:
     assert div["props"]["class_name"].startswith("tcss_")
     assert ":hover" in div["props"]["_style_rules"]
     assert "@media (min-width: 768px)" in div["props"]["_style_rules"]
+
+
+def test_style_rejects_non_dom_dict_keys(rendered) -> None:
+    @component
+    def App() -> None:
+        h.Div(
+            style={
+                "backgroundColor": "red",
+                "border_radius": "8px",
+            }
+        )
+
+    with pytest.raises(TypeError, match="DOM-style CSS names"):
+        rendered(App)

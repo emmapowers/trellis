@@ -21,7 +21,7 @@ def ToolbarExample() -> None:
 @example("Menu")
 def MenuExample() -> None:
     """Vertical list of actions."""
-    with w.Menu(style={"maxWidth": "200px"}):
+    with w.Menu(style={"max-width": "200px"}):
         w.MenuItem(text="New File", icon=IconName.FILE, shortcut="⌘N")
         w.MenuItem(text="Open...", icon=IconName.FOLDER_OPEN, shortcut="⌘O")
         w.MenuItem(text="Save", icon=IconName.SAVE, shortcut="⌘S")

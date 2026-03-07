@@ -188,21 +188,29 @@ w.TextInput(value=mutable(state.name), placeholder="Enter name")
 
 ### Inline Styles
 
-Pass a `style` dictionary to any element:
+Use either `h.Style(...)` for typed CSS or a raw `style` dictionary with DOM-style CSS names:
 
 ```python
-h.Div(style={
-    "backgroundColor": "#f0f0f0",
-    "padding": "16px",
-    "borderRadius": "8px",
-})
+h.Div(
+    style=h.Style(
+        background_color="#f0f0f0",
+        padding=16,
+        border_radius=8,
+    )
+)
 ```
 
-Style property names use camelCase (like React), not kebab-case:
+Raw style dictionaries use DOM-style names:
 
-- `backgroundColor` not `background-color`
-- `fontSize` not `font-size`
-- `borderRadius` not `border-radius`
+- `background-color`
+- `font-size`
+- `border-radius`
+
+Structured `h.Style(...)` uses snake_case field names:
+
+- `background_color`
+- `font_size`
+- `border_radius`
 
 ### CSS Classes
 
@@ -220,12 +228,12 @@ h.Div(class_name="card card-primary")
 from trellis import html as h
 
 CARD_STYLE = {
-    "backgroundColor": "#ffffff",
+    "background-color": "#ffffff",
     "border": "1px solid #e0e0e0",
-    "borderRadius": "8px",
+    "border-radius": "8px",
     "padding": "20px",
-    "boxShadow": "0 2px 4px rgba(0,0,0,0.1)",
-    "maxWidth": "300px",
+    "box-shadow": "0 2px 4px rgba(0,0,0,0.1)",
+    "max-width": "300px",
 }
 
 TITLE_STYLE = {
@@ -259,8 +267,8 @@ from trellis import widgets as w
 
 @component
 def SettingsPanel():
-    with h.Div(style={"padding": "20px", "fontFamily": "system-ui"}):
-        h.H1("Settings", style={"marginBottom": "20px"})
+    with h.Div(style={"padding": "20px", "font-family": "system-ui"}):
+        h.H1("Settings", style={"margin-bottom": "20px"})
 
         with w.Column(gap=12):
             with w.Row(gap=8, align="center"):
@@ -287,9 +295,9 @@ App = SettingsPanel`}
 ```python
 h.Div(style={
     "display": "flex",
-    "justifyContent": "center",
-    "alignItems": "center",
-    "minHeight": "100vh",
+    "justify-content": "center",
+    "align-items": "center",
+    "min-height": "100vh",
 })
 ```
 
@@ -298,7 +306,7 @@ h.Div(style={
 ```python
 h.Div(style={
     "display": "grid",
-    "gridTemplateColumns": "repeat(3, 1fr)",
+    "grid-template-columns": "repeat(3, 1fr)",
     "gap": "16px",
 })
 ```
@@ -306,7 +314,7 @@ h.Div(style={
 ### Spacing
 
 ```python
-h.Div(style={"marginBottom": "16px"})
+h.Div(style={"margin-bottom": "16px"})
 h.Div(style={"padding": "8px 16px"})
 ```
 

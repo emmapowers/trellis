@@ -214,6 +214,9 @@ def _consume_raw_mapping(
     nested_rules: list[dict[str, tp.Any]],
 ) -> None:
     for key, value in style_mapping.items():
+        if not isinstance(key, str):
+            raise TypeError(f"Raw style keys must be strings, got {type(key).__name__}")
+
         if key.startswith("@media "):
             nested_inline, nested_children = _normalize_style(value)
             nested_rules.append(
@@ -232,8 +235,20 @@ def _consume_raw_mapping(
             )
             continue
 
+        if not _is_dom_style_key(key):
+            raise TypeError(
+                "Raw style dict keys must use DOM-style CSS names "
+                f"(kebab-case or custom properties), got {key!r}"
+            )
+
         auto_px = _CSS_NAME_BY_FIELD_REVERSED.get(key, "") in AUTO_PX_FIELDS
         inline[key] = _serialize_value(value, auto_px=auto_px)
+
+
+def _is_dom_style_key(key: str) -> bool:
+    if key.startswith("--"):
+        return True
+    return "_" not in key and key.lower() == key
 
 
 def _serialize_value(value: tp.Any, *, auto_px: bool) -> str | int | float:

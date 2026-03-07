@@ -82,13 +82,13 @@ class TestHtmlElements:
 
         @component
         def App() -> None:
-            with h.Div(style={"backgroundColor": "red", "padding": "10px"}):
+            with h.Div(style={"background-color": "red", "padding": "10px"}):
                 pass
 
         result = rendered(App)
 
         div = result.session.elements.get(result.root_element.child_ids[0])
-        assert div.properties["style"] == {"backgroundColor": "red", "padding": "10px"}
+        assert div.properties["style"] == {"background-color": "red", "padding": "10px"}
 
     def test_element_with_class_name(self, rendered) -> None:
         """Elements accept class_name prop."""

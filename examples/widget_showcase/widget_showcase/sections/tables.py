@@ -136,7 +136,7 @@ STOCKS = [
 
 def TickerCell(*, row: dict[str, tp.Any]) -> None:
     """Ticker symbol in bold monospace."""
-    w.Label(text=row["ticker"], bold=True, style={"fontFamily": "monospace"})
+    w.Label(text=row["ticker"], bold=True, style={"font-family": "monospace"})
 
 
 def PriceCell(*, row: dict[str, tp.Any]) -> None:
