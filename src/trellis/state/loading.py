@@ -5,19 +5,20 @@ from __future__ import annotations
 import asyncio
 import typing as tp
 import weakref
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from trellis.core.callback_context import callback_context
-from trellis.core.rendering.session import TaskErrorPolicy, get_active_session
+from trellis.core.rendering.session import RenderSession, TaskErrorPolicy, get_active_session
 from trellis.core.state.stateful import Stateful
 
 T = tp.TypeVar("T")
 U = tp.TypeVar("U")
 P = tp.ParamSpec("P")
+type LoadStatus = tp.Literal["loading", "ready", "failed"]
 
-_STATUS_LOADING = "loading"
-_STATUS_READY = "ready"
-_STATUS_FAILED = "failed"
+_STATUS_LOADING: tp.Literal["loading"] = "loading"
+_STATUS_READY: tp.Literal["ready"] = "ready"
+_STATUS_FAILED: tp.Literal["failed"] = "failed"
 
 
 class _NoKey:
@@ -38,53 +39,59 @@ class LoadKey:
     value: object
 
 
+@dataclass(frozen=True, slots=True)
 class Load[T]:
-    """Base wrapper around a private load controller."""
+    """Immutable snapshot of a load() result with control methods."""
 
-    __slots__ = ("_controller",)
-
-    def __init__(self, controller: _LoadState) -> None:
-        self._controller = controller
+    _state: _LoadState
+    status: LoadStatus
 
     @property
     def loading(self) -> bool:
-        return self._controller.status == _STATUS_LOADING
+        return self.status == _STATUS_LOADING
 
     @property
     def ready(self) -> bool:
-        return self._controller.status == _STATUS_READY
+        return self.status == _STATUS_READY
 
     @property
     def failed(self) -> bool:
-        return self._controller.status == _STATUS_FAILED
+        return self.status == _STATUS_FAILED
 
     def get(self, default: U) -> T | U:
-        if self.ready:
-            return tp.cast("T", self._controller.value)
         return default
 
     def reload(self) -> None:
-        self._controller.reload()
+        self._state.reload()
+
+    def cancel(self) -> None:
+        self._state.cancel()
 
 
+@dataclass(frozen=True, slots=True)
 class Loading[T](Load[T]):
     """Wrapper for an in-flight resource."""
 
+    status: tp.Literal["loading"] = field(default=_STATUS_LOADING, init=False)
 
+
+@dataclass(frozen=True, slots=True)
 class Ready[T](Load[T]):
     """Wrapper for a successfully loaded resource."""
 
-    @property
-    def value(self) -> T:
-        return tp.cast("T", self._controller.value)
+    value: T
+    status: tp.Literal["ready"] = field(default=_STATUS_READY, init=False)
+
+    def get(self, default: U) -> T:
+        return self.value
 
 
+@dataclass(frozen=True, slots=True)
 class Failed[T](Load[T]):
     """Wrapper for a failed resource."""
 
-    @property
-    def error(self) -> Exception:
-        return tp.cast("Exception", self._controller.error)
+    error: Exception
+    status: tp.Literal["failed"] = field(default=_STATUS_FAILED, init=False)
 
 
 class _LoadState(Stateful):
@@ -102,7 +109,7 @@ class _LoadState(Stateful):
     _has_request: bool
     _key: object | _NoKey
     _kwargs: dict[str, object]
-    _session_ref: weakref.ReferenceType[tp.Any] | None
+    _session_ref: weakref.ReferenceType[RenderSession] | None
 
     def __init__(self) -> None:
         self.status = _STATUS_LOADING
@@ -111,6 +118,7 @@ class _LoadState(Stateful):
         self._active_task = None
         self._args = ()
         self._element_id = None
+        self._fn = None
         self._request_generation = 0
         self._has_request = False
         self._key = _NO_KEY
@@ -151,13 +159,13 @@ class _LoadState(Stateful):
             return
         self._restart(from_render=False)
 
+    def cancel(self) -> None:
+        """Cancel the current request without starting a replacement."""
+        self._cancel_active_request()
+
     def on_unmount(self) -> None:
         """Cancel any in-flight request when the element unmounts."""
-        self._request_generation += 1
-        task = self._active_task
-        self._active_task = None
-        if task is not None:
-            task.cancel()
+        self._cancel_active_request()
 
     def _inputs_changed(
         self,
@@ -191,15 +199,7 @@ class _LoadState(Stateful):
         if task is not None:
             task.cancel()
 
-        if from_render:
-            # Internal controller state needs to show Loading in the same render pass.
-            object.__setattr__(self, "status", _STATUS_LOADING)
-            object.__setattr__(self, "value", None)
-            object.__setattr__(self, "error", None)
-        else:
-            self.status = _STATUS_LOADING
-            self.value = None
-            self.error = None
+        self._set_loading_state(from_render=from_render)
 
         fn = self._fn
         if fn is None:
@@ -248,10 +248,32 @@ class _LoadState(Stateful):
         self.value = value
         self.error = None
 
-    def _session(self) -> tp.Any:
+    def _set_loading_state(self, *, from_render: bool) -> None:
+        """Reset controller state before starting a fresh request."""
+        if from_render:
+            # Stateful writes during render are disallowed, but load() needs
+            # the same render pass to reflect the new Loading state.
+            object.__setattr__(self, "status", _STATUS_LOADING)
+            object.__setattr__(self, "value", None)
+            object.__setattr__(self, "error", None)
+            return
+
+        self.status = _STATUS_LOADING
+        self.value = None
+        self.error = None
+
+    def _session(self) -> RenderSession | None:
         if self._session_ref is None:
             return None
         return self._session_ref()
+
+    def _cancel_active_request(self) -> None:
+        """Cancel the in-flight request and invalidate any pending completion."""
+        self._request_generation += 1
+        task = self._active_task
+        self._active_task = None
+        if task is not None:
+            task.cancel()
 
 
 @tp.overload
@@ -338,7 +360,7 @@ def load(
     )
 
     if controller.status == _STATUS_READY:
-        return Ready(controller)
+        return Ready(controller, tp.cast("T", controller.value))
     if controller.status == _STATUS_FAILED:
-        return Failed(controller)
+        return Failed(controller, tp.cast("Exception", controller.error))
     return Loading(controller)

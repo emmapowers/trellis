@@ -376,3 +376,135 @@ class TestLoadHelper:
 
         assert load is package_load
         assert isinstance(observed[0], Loading)
+
+    def test_ready_snapshot_keeps_value_after_reload(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """A captured Ready snapshot keeps its value after later reloads."""
+        release_events = [asyncio.Event(), asyncio.Event()]
+        started_events = [asyncio.Event(), asyncio.Event()]
+        latest: list[Load[int]] = []
+        call_count = 0
+
+        async def fetch_value() -> int:
+            nonlocal call_count
+            idx = call_count
+            call_count += 1
+            started_events[idx].set()
+            await release_events[idx].wait()
+            return idx + 1
+
+        @component
+        def App() -> None:
+            latest[:] = [load(fetch_value)]
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+            await _wait_for(started_events[0])
+
+            release_events[0].set()
+            await asyncio.sleep(0)
+            capture.render()
+
+            ready_result = latest[-1]
+            assert isinstance(ready_result, Ready)
+            assert ready_result.value == 1
+
+            ready_result.reload()
+            capture.render()
+            await _wait_for(started_events[1])
+
+            assert isinstance(ready_result, Ready)
+            assert ready_result.value == 1
+
+        asyncio.run(test())
+
+    def test_failed_snapshot_keeps_error_after_reload(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """A captured Failed snapshot keeps its error after later reloads."""
+        release_events = [asyncio.Event(), asyncio.Event()]
+        started_events = [asyncio.Event(), asyncio.Event()]
+        latest: list[Load[int]] = []
+        errors = [RuntimeError("boom-1"), RuntimeError("boom-2")]
+        call_count = 0
+
+        async def fetch_value() -> int:
+            nonlocal call_count
+            idx = call_count
+            call_count += 1
+            started_events[idx].set()
+            await release_events[idx].wait()
+            raise errors[idx]
+
+        @component
+        def App() -> None:
+            latest[:] = [load(fetch_value)]
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+            await _wait_for(started_events[0])
+
+            release_events[0].set()
+            await asyncio.sleep(0)
+            capture.render()
+
+            failed_result = latest[-1]
+            assert isinstance(failed_result, Failed)
+            assert failed_result.error is errors[0]
+
+            failed_result.reload()
+            capture.render()
+            await _wait_for(started_events[1])
+
+            assert isinstance(failed_result, Failed)
+            assert failed_result.error is errors[0]
+
+        asyncio.run(test())
+
+    def test_cancel_prevents_in_flight_request_from_updating_result(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """cancel() stops the current request and leaves the slot loading."""
+        started = asyncio.Event()
+        release = asyncio.Event()
+        latest: list[Load[int]] = []
+        was_cancelled = asyncio.Event()
+
+        async def fetch_value() -> int:
+            started.set()
+            try:
+                await release.wait()
+            except asyncio.CancelledError:
+                was_cancelled.set()
+                raise
+            return 7
+
+        @component
+        def App() -> None:
+            latest[:] = [load(fetch_value)]
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+            await _wait_for(started)
+
+            loading_result = latest[-1]
+            assert isinstance(loading_result, Loading)
+
+            loading_result.cancel()
+            await _wait_for(was_cancelled)
+
+            release.set()
+            await asyncio.sleep(0)
+            capture.render()
+
+            assert isinstance(latest[-1], Loading)
+            assert latest[-1].loading is True
+
+        asyncio.run(test())

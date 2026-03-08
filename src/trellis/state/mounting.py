@@ -64,7 +64,7 @@ class _MountState(Stateful):
             next(generator)
         except StopIteration:
             generator.close()
-            raise RuntimeError("on_mount() generator must yield exactly once") from None
+            raise RuntimeError(self._yield_contract_error()) from None
 
         self._cleanup = generator
 
@@ -76,7 +76,7 @@ class _MountState(Stateful):
             return
 
         generator.close()
-        raise RuntimeError("on_mount() generator must yield exactly once")
+        raise RuntimeError(self._yield_contract_error())
 
     async def _run_async_generator_setup(self) -> None:
         generator = tp.cast(
@@ -87,7 +87,7 @@ class _MountState(Stateful):
             await anext(generator)
         except StopAsyncIteration:
             await generator.aclose()
-            raise RuntimeError("on_mount() generator must yield exactly once") from None
+            raise RuntimeError(self._yield_contract_error()) from None
 
         self._cleanup = generator
 
@@ -102,13 +102,23 @@ class _MountState(Stateful):
             return
 
         await generator.aclose()
-        raise RuntimeError("on_mount() generator must yield exactly once")
+        raise RuntimeError(self._yield_contract_error())
+
+    def _yield_contract_error(self) -> str:
+        fn_name = getattr(self._fn, "__qualname__", repr(self._fn))
+        return f"on_mount() generator {fn_name} must yield exactly once"
 
 
 def on_mount(
     fn: OnMountFn,
 ) -> None:
     """Register setup and cleanup logic for the current element lifetime.
+
+    Supported callback forms:
+    - Sync function: runs setup immediately after mount.
+    - Async function: runs setup in a session-managed background task.
+    - Sync generator: runs setup until `yield`, then resumes on unmount for cleanup.
+    - Async generator: awaits setup until `yield`, then awaits cleanup on unmount.
 
     Examples:
         ```python

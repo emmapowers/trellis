@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import typing as tp
 from typing import TYPE_CHECKING
 
 import pytest
@@ -101,7 +102,7 @@ class TestMountHelper:
         show_child = [True]
         events: list[str] = []
 
-        def lifecycle():
+        def lifecycle() -> tp.Generator[None]:
             events.append("setup")
             yield
             events.append("cleanup")
@@ -133,7 +134,7 @@ class TestMountHelper:
         setup_done = asyncio.Event()
         cleanup_done = asyncio.Event()
 
-        async def lifecycle():
+        async def lifecycle() -> tp.AsyncGenerator[None]:
             events.append("setup")
             setup_done.set()
             yield
