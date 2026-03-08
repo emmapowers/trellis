@@ -56,7 +56,8 @@ def invoke_lifecycle_hook(
 
             async def run_async_result(async_result: tp.Awaitable[tp.Any] = result) -> None:
                 try:
-                    await async_result
+                    with callback_context(session, element_id):
+                        await async_result
                 except Exception:
                     logging.exception("Error in async %s", label)
 

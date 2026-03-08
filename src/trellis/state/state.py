@@ -9,7 +9,7 @@ from trellis.core.state.stateful import Stateful
 
 T = tp.TypeVar("T")
 
-__all__ = ["StateCell", "state"]
+__all__ = ["StateVar", "state_var"]
 
 
 class _Missing:
@@ -21,23 +21,42 @@ class _Missing:
 _MISSING = _Missing()
 
 
-class StateCell[T]:
-    """Typed wrapper around a tracked state value."""
+class StateVar[T](Stateful):
+    """Typed slot-local reactive value.
 
-    __slots__ = ("_backing",)
+    Example:
+        ```python
+        @component
+        def Counter() -> None:
+            count = state_var(0)
+            w.Button(text="+", on_click=lambda: count.update(lambda value: value + 1))
+            w.Label(text=f"Count: {count.value}")
+        ```
+    """
 
-    def __init__(self, backing: _StateValue) -> None:
-        self._backing = backing
+    value: T
 
-    @property
-    def value(self) -> T:
-        """Get the current value."""
-        return tp.cast("T", self._backing.value)
+    def __init__(
+        self,
+        initial: T | _Missing = _MISSING,
+        *,
+        factory: tp.Callable[[], T] | None = None,
+    ) -> None:
+        if initial is not _MISSING and factory is not None:
+            raise TypeError("state_var() accepts either an initial value or factory=..., not both")
 
-    @value.setter
-    def value(self, value: T) -> None:
-        """Replace the current value."""
-        self._backing.value = value
+        if factory is not None:
+            if inspect.iscoroutinefunction(factory):
+                raise TypeError("state_var(factory=...) does not support async factories")
+            resolved = factory()
+            if inspect.isawaitable(resolved):
+                raise TypeError("state_var(factory=...) does not support async factories")
+        else:
+            if initial is _MISSING:
+                raise TypeError("state_var() requires an initial value or factory=...")
+            resolved = tp.cast("T", initial)
+
+        self.value = resolved
 
     def set(self, value: T) -> None:
         """Replace the current value."""
@@ -48,66 +67,34 @@ class StateCell[T]:
         self.value = fn(self.value)
 
     def __repr__(self) -> str:
-        return f"StateCell({self.value!r})"
-
-
-class _StateValue(Stateful):
-    """Private tracked backing object for StateCell."""
-
-    value: object
-    if tp.TYPE_CHECKING:
-        _cell: StateCell[object] | None
-    _cell = None
-
-    def __init__(
-        self,
-        initial: object | _Missing = _MISSING,
-        *,
-        factory: tp.Callable[[], object] | None = None,
-    ) -> None:
-        if factory is not None:
-            if inspect.iscoroutinefunction(factory):
-                raise TypeError("state(factory=...) does not support async factories")
-            value = factory()
-            if inspect.isawaitable(value):
-                raise TypeError("state(factory=...) does not support async factories")
-        else:
-            value = initial
-
-        if value is _MISSING:
-            raise TypeError("state() requires an initial value or factory=...")
-
-        self.value = value
-        self._cell = StateCell[object](self)
-
-    def cell(self) -> StateCell[object]:
-        """Return the stable wrapper for this backing state."""
-        existing = self._cell
-        if existing is not None:
-            return existing
-
-        cell = StateCell[object](self)
-        self._cell = cell
-        return cell
+        return f"StateVar({self.value!r})"
 
 
 @tp.overload
-def state(initial: T, /) -> StateCell[T]: ...
+def state_var(initial: T, /) -> StateVar[T]: ...
 
 
 @tp.overload
-def state(*, factory: tp.Callable[[], T]) -> StateCell[T]: ...
+def state_var(*, factory: tp.Callable[[], T]) -> StateVar[T]: ...
 
 
-def state(
+def state_var(
     initial: T | _Missing = _MISSING,
     /,
     *,
     factory: tp.Callable[[], T] | None = None,
-) -> StateCell[T]:
-    """Create slot-local reactive state for the current component."""
-    if initial is not _MISSING and factory is not None:
-        raise TypeError("state() accepts either an initial value or factory=..., not both")
+) -> StateVar[T]:
+    """Create slot-local reactive state for the current component.
 
-    backing = _StateValue(initial, factory=factory)
-    return tp.cast("StateCell[T]", backing.cell())
+    Example:
+        ```python
+        @component
+        def Greeting() -> None:
+            name = state_var("Ada")
+
+            w.TextInput(value=mutable(name.value))
+            w.Label(text=f"Hello, {name.value}")
+        ```
+    """
+
+    return StateVar(initial, factory=factory)

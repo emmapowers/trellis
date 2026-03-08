@@ -34,7 +34,7 @@ class Load[T]:
 
     __slots__ = ("_controller",)
 
-    def __init__(self, controller: _LoadController) -> None:
+    def __init__(self, controller: _LoadState) -> None:
         self._controller = controller
 
     @property
@@ -78,7 +78,7 @@ class Failed[T](Load[T]):
         return tp.cast("Exception", self._controller.error)
 
 
-class _LoadController(Stateful):
+class _LoadState(Stateful):
     """Private element-local controller backing load()."""
 
     status: str
@@ -90,7 +90,7 @@ class _LoadController(Stateful):
         _args: tuple[object, ...]
         _element_id: str | None
         _fn: tp.Callable[..., tp.Awaitable[object]]
-        _generation: int
+        _request_generation: int
         _has_request: bool
         _key: object | _NoKey
         _kwargs: dict[str, object]
@@ -99,7 +99,7 @@ class _LoadController(Stateful):
     _args = ()
     _element_id = None
     _fn = None
-    _generation = 0
+    _request_generation = 0
     _has_request = False
     _key = _NO_KEY
     _kwargs = None
@@ -112,7 +112,7 @@ class _LoadController(Stateful):
         self._active_task = None
         self._args = ()
         self._element_id = None
-        self._generation = 0
+        self._request_generation = 0
         self._has_request = False
         self._key = _NO_KEY
         self._kwargs = {}
@@ -141,20 +141,20 @@ class _LoadController(Stateful):
         self._args = args
         self._kwargs = kwargs
         self._key = key
-        self._has_request = True
 
         if should_restart:
             self._restart(from_render=True)
+            self._has_request = True
 
     def reload(self) -> None:
         """Force a fresh request for the current slot inputs."""
         if not self._has_request:
-            raise RuntimeError("load().reload() is not available before the first render.")
+            return
         self._restart(from_render=False)
 
     def on_unmount(self) -> None:
         """Cancel any in-flight request when the element unmounts."""
-        self._generation += 1
+        self._request_generation += 1
         task = self._active_task
         self._active_task = None
         if task is not None:
@@ -185,8 +185,8 @@ class _LoadController(Stateful):
         if session is None or element_id is None:
             raise RuntimeError("load() is not attached to an active render session.")
 
-        self._generation += 1
-        generation = self._generation
+        self._request_generation += 1
+        request_generation = self._request_generation
 
         task = self._active_task
         if task is not None:
@@ -207,7 +207,14 @@ class _LoadController(Stateful):
         kwargs = dict(self._kwargs)
         self._active_task = session.track_background_task(
             asyncio.create_task(
-                self._run_request(fn, args, kwargs, generation, session, element_id)
+                self._run_request(
+                    fn,
+                    args,
+                    kwargs,
+                    request_generation,
+                    session,
+                    element_id,
+                )
             )
         )
 
@@ -216,7 +223,7 @@ class _LoadController(Stateful):
         fn: tp.Callable[..., tp.Awaitable[object]],
         args: tuple[object, ...],
         kwargs: dict[str, object],
-        generation: int,
+        request_generation: int,
         session: tp.Any,
         element_id: str,
     ) -> None:
@@ -226,14 +233,14 @@ class _LoadController(Stateful):
         except asyncio.CancelledError:
             return
         except Exception as exc:
-            if generation != self._generation:
+            if request_generation != self._request_generation:
                 return
             self.status = _STATUS_FAILED
             self.value = None
             self.error = exc
             return
 
-        if generation != self._generation:
+        if request_generation != self._request_generation:
             return
 
         self.status = _STATUS_READY
@@ -252,8 +259,35 @@ def load(
     key: object | _NoKey = _NO_KEY,
     **kwargs: object,
 ) -> Load[T]:
-    """Load async data for the current element slot."""
-    controller = _LoadController()
+    """Load async data for the current element slot.
+
+    Examples:
+        ```python
+        async def fetch_message(name: str) -> str:
+            await asyncio.sleep(0.1)
+            return f"Hello, {name}"
+
+        def Greeting(name: str) -> None:
+            result = load(fetch_message, name)
+
+            if isinstance(result, Loading):
+                w.Label(text="Loading...")
+            elif isinstance(result, Failed):
+                w.Label(text=str(result.error))
+            else:
+                assert isinstance(result, Ready)
+                w.Label(text=result.value)
+        ```
+
+        ```python
+        async def fetch_count() -> int:
+            return 3
+
+        result = load(fetch_count)
+        value: int = result.get(0)
+        ```
+    """
+    controller = _LoadState()
     controller.use(fn, args, kwargs, key)
 
     if controller.status == _STATUS_READY:

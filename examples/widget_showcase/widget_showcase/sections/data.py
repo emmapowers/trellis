@@ -2,9 +2,9 @@
 
 import asyncio
 
-from trellis import component, load, mutable, state
+from trellis import component, load
 from trellis import widgets as w
-from trellis.state import Failed, Ready
+from trellis.state import Ready
 from trellis.widgets import IconName
 
 from ..components import ExampleCard
@@ -77,43 +77,20 @@ METRICS = {
 
 @example("Async Load", includes=["METRICS"])
 def AsyncLoadExample() -> None:
-    """Deterministic local async loading with success, failure, and reload states."""
-    metric = state("revenue")
-    force_error = state(False)
+    """Focused local async loading example with reload support."""
 
-    async def fetch_metric(name: str, should_fail: bool) -> dict[str, str]:
-        delay = 0.45 if name == "revenue" else 0.2
-        await asyncio.sleep(delay)
-        if should_fail:
-            raise RuntimeError(f"Could not load {name}")
-        return METRICS[name]
+    async def fetch_metric() -> dict[str, str]:
+        await asyncio.sleep(0.35)
+        return METRICS["revenue"]
 
-    result = load(fetch_metric, metric.value, force_error.value)
+    result = load(fetch_metric)
 
     with w.Column(gap=12):
-        with w.Row(gap=8, align="center"):
-            w.Label(text="Metric:", width=80)
-            w.Select(
-                value=mutable(metric.value),
-                options=[
-                    {"value": "revenue", "label": "Revenue"},
-                    {"value": "users", "label": "Users"},
-                    {"value": "orders", "label": "Orders"},
-                ],
-                width=180,
-            )
-            w.Checkbox(
-                checked=mutable(force_error.value),
-                label="Force error",
-            )
-            w.Button(text="Reload", variant="outline", on_click=result.reload)
+        w.Button(text="Reload", variant="outline", on_click=result.reload)
 
         if result.loading:
             with w.Callout(title="Loading", intent="info"):
                 w.Label(text="Fetching local metrics...")
-        elif isinstance(result, Failed):
-            with w.Callout(title="Load Failed", intent="error"):
-                w.Label(text=str(result.error))
         else:
             assert isinstance(result, Ready)
             metric_data = result.value

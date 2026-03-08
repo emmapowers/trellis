@@ -2,7 +2,7 @@
 
 from typing import cast
 
-from trellis import component, mutable, state
+from trellis import component, mutable, state_var
 from trellis import widgets as w
 from trellis.widgets import IconName
 
@@ -13,7 +13,7 @@ from ..example import example
 @example("Tabs")
 def TabsExample() -> None:
     """Tabbed content navigation."""
-    selected_tab = state("overview")
+    selected_tab = state_var("overview")
     with w.Tabs(
         selected=mutable(selected_tab.value),
     ):
@@ -41,7 +41,7 @@ def BreadcrumbExample() -> None:
 @example("Tree")
 def TreeExample() -> None:
     """Hierarchical data navigation."""
-    selected_node = state(cast("str | None", None))
+    selected_node = state_var(cast("str | None", None))
     w.Tree(
         data=[
             {
@@ -70,8 +70,8 @@ def TreeExample() -> None:
 @example("Collapsible")
 def CollapsibleExample() -> None:
     """Expandable content section."""
-    expanded = state(False)
-    experimental_features = state(False)
+    expanded = state_var(False)
+    experimental_features = state_var(False)
     with w.Collapsible(
         title="Advanced Settings",
         expanded=mutable(expanded.value),

@@ -1,4 +1,4 @@
-"""Integration tests for trellis.state.mount()."""
+"""Integration tests for trellis.state.on_mount()."""
 
 from __future__ import annotations
 
@@ -8,8 +8,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from trellis import component, mount, state
-from trellis.state import mount as package_mount
+from trellis import component, on_mount, state_var
+from trellis.core.callback_context import get_callback_node_id, get_callback_session
+from trellis.state import on_mount as package_on_mount
 
 if TYPE_CHECKING:
     from tests.conftest import PatchCapture
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 
 class TestMountHelper:
     def test_sync_function_runs_once_on_mount(self, capture_patches: type[PatchCapture]) -> None:
-        """mount(sync_fn) runs once after the first mount."""
+        """on_mount(sync_fn) runs once after the first mount."""
         calls: list[str] = []
 
         def start() -> None:
@@ -25,7 +26,7 @@ class TestMountHelper:
 
         @component
         def App() -> None:
-            mount(start)
+            on_mount(start)
 
         capture = capture_patches(App)
         capture.render()
@@ -35,13 +36,13 @@ class TestMountHelper:
     def test_async_function_runs_on_mount_and_can_update_state_later(
         self, capture_patches: type[PatchCapture]
     ) -> None:
-        """mount(async_fn) can update state after the initial render."""
+        """on_mount(async_fn) can update state after the initial render."""
         done = asyncio.Event()
         observed: list[str] = []
 
         @component
         def App() -> None:
-            status = state("idle")
+            status = state_var("idle")
             observed.append(status.value)
 
             async def start() -> None:
@@ -49,7 +50,7 @@ class TestMountHelper:
                 status.set("ready")
                 done.set()
 
-            mount(start)
+            on_mount(start)
 
         capture = capture_patches(App)
 
@@ -62,10 +63,41 @@ class TestMountHelper:
 
         assert observed == ["idle", "ready"]
 
+    def test_async_function_runs_inside_callback_context(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """Async on_mount() hooks keep callback context while awaiting."""
+        done = asyncio.Event()
+        observed: list[tuple[bool, bool]] = []
+
+        @component
+        def App() -> None:
+            async def start() -> None:
+                await asyncio.sleep(0)
+                observed.append(
+                    (
+                        get_callback_session() is capture.session,
+                        bool(get_callback_node_id()),
+                    )
+                )
+                done.set()
+
+            on_mount(start)
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+            await asyncio.wait_for(done.wait(), timeout=1.0)
+
+        asyncio.run(test())
+
+        assert observed == [(True, True)]
+
     def test_sync_generator_runs_setup_and_cleanup_on_unmount(
         self, capture_patches: type[PatchCapture]
     ) -> None:
-        """mount(sync_generator) runs setup on mount and cleanup on unmount."""
+        """on_mount(sync_generator) runs setup and cleanup around the element lifetime."""
         show_child = [True]
         events: list[str] = []
 
@@ -76,7 +108,7 @@ class TestMountHelper:
 
         @component
         def Child() -> None:
-            mount(lifecycle)
+            on_mount(lifecycle)
 
         @component
         def App() -> None:
@@ -95,7 +127,7 @@ class TestMountHelper:
     def test_async_generator_runs_setup_and_cleanup_on_unmount(
         self, capture_patches: type[PatchCapture]
     ) -> None:
-        """mount(async_generator) runs async setup and cleanup once each."""
+        """on_mount(async_generator) runs async setup and cleanup once each."""
         show_child = [True]
         events: list[str] = []
         setup_done = asyncio.Event()
@@ -110,7 +142,7 @@ class TestMountHelper:
 
         @component
         def Child() -> None:
-            mount(lifecycle)
+            on_mount(lifecycle)
 
         @component
         def App() -> None:
@@ -139,22 +171,22 @@ class TestMountHelper:
         """A mounted slot keeps its first callable and does not rerun on rerender."""
         calls: list[str] = []
         current_label = ["first"]
-        counter_cell = []
+        counter_state_var = []
 
         def run_current() -> None:
             calls.append(current_label[0])
 
         @component
         def App() -> None:
-            counter = state(0)
-            counter_cell[:] = [counter]
-            mount(run_current)
+            counter = state_var(0)
+            counter_state_var[:] = [counter]
+            on_mount(run_current)
 
         capture = capture_patches(App)
         capture.render()
 
         current_label[0] = "second"
-        counter_cell[0].set(1)
+        counter_state_var[0].set(1)
         capture.render()
 
         assert calls == ["first"]
@@ -172,7 +204,7 @@ class TestMountHelper:
 
         @component
         def Child() -> None:
-            mount(start)
+            on_mount(start)
 
         @component
         def App() -> None:
@@ -198,7 +230,7 @@ class TestMountHelper:
         capture_patches: type[PatchCapture],
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        """A generator that never yields logs an error and stores no cleanup."""
+        """A generator that never yields reports an error and stores no cleanup."""
         show_child = [True]
         events: list[str] = []
 
@@ -209,7 +241,7 @@ class TestMountHelper:
 
         @component
         def Child() -> None:
-            mount(broken)
+            on_mount(broken)
 
         @component
         def App() -> None:
@@ -227,13 +259,14 @@ class TestMountHelper:
 
         assert events == ["setup"]
         assert "yield exactly once" in caplog.text
+        assert "RuntimeError" in caplog.text
 
     def test_generator_with_multiple_yields_logs_error(
         self,
         capture_patches: type[PatchCapture],
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        """A generator that yields twice logs an error during cleanup."""
+        """A generator that yields twice reports an error during cleanup."""
         show_child = [True]
         events: list[str] = []
 
@@ -246,7 +279,7 @@ class TestMountHelper:
 
         @component
         def Child() -> None:
-            mount(broken)
+            on_mount(broken)
 
         @component
         def App() -> None:
@@ -263,16 +296,17 @@ class TestMountHelper:
 
         assert events == ["setup", "cleanup"]
         assert "yield exactly once" in caplog.text
+        assert "RuntimeError" in caplog.text
 
-    def test_mount_is_reexported_from_root_and_package(self, rendered) -> None:
-        """trellis and trellis.state both export mount()."""
+    def test_on_mount_is_reexported_from_root_and_package(self, rendered) -> None:
+        """trellis and trellis.state both export on_mount()."""
         calls: list[str] = []
 
         @component
         def App() -> None:
-            mount(lambda: calls.append("mounted"))
+            on_mount(lambda: calls.append("mounted"))
 
         rendered(App)
 
-        assert mount is package_mount
+        assert on_mount is package_on_mount
         assert calls == ["mounted"]

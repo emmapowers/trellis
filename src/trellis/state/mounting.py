@@ -3,19 +3,23 @@
 from __future__ import annotations
 
 import inspect
-import logging
 import typing as tp
 
 from trellis.core.rendering.session import get_active_session
 from trellis.core.state.stateful import Stateful
 
-logger = logging.getLogger(__name__)
+type OnMountFn = (
+    tp.Callable[[], None]
+    | tp.Callable[[], tp.Awaitable[None]]
+    | tp.Callable[[], tp.Generator[None]]
+    | tp.Callable[[], tp.AsyncGenerator[None]]
+)
 
-__all__ = ["mount"]
+__all__ = ["on_mount"]
 
 
 class _MountState(Stateful):
-    """Private slot-local state backing mount()."""
+    """Private slot-local state backing on_mount()."""
 
     if tp.TYPE_CHECKING:
         _cleanup: tp.Any | None
@@ -23,7 +27,7 @@ class _MountState(Stateful):
     _cleanup = None
     _fn = None
 
-    def __init__(self, fn: tp.Callable[[], object]) -> None:
+    def __init__(self, fn: OnMountFn) -> None:
         self._fn = fn
         self._cleanup = None
 
@@ -58,43 +62,41 @@ class _MountState(Stateful):
         await tp.cast("tp.Callable[[], tp.Awaitable[None]]", self._fn)()
 
     def _run_generator_setup(self) -> None:
-        generator = tp.cast("tp.Callable[[], tp.Generator[object]]", self._fn)()
+        generator = tp.cast("tp.Callable[[], tp.Generator[None]]", self._fn)()
         try:
             next(generator)
         except StopIteration:
-            logger.error("mount() generator must yield exactly once")
             generator.close()
-            return
+            raise RuntimeError("on_mount() generator must yield exactly once") from None
 
         self._cleanup = generator
 
-    def _run_generator_cleanup(self, generator: tp.Generator[object]) -> None:
+    def _run_generator_cleanup(self, generator: tp.Generator[None]) -> None:
         try:
             next(generator)
         except StopIteration:
             generator.close()
             return
 
-        logger.error("mount() generator must yield exactly once")
         generator.close()
+        raise RuntimeError("on_mount() generator must yield exactly once")
 
     async def _run_async_generator_setup(self) -> None:
         generator = tp.cast(
-            "tp.Callable[[], tp.AsyncGenerator[object]]",
+            "tp.Callable[[], tp.AsyncGenerator[None]]",
             self._fn,
         )()
         try:
             await anext(generator)
         except StopAsyncIteration:
-            logger.error("mount() generator must yield exactly once")
             await generator.aclose()
-            return
+            raise RuntimeError("on_mount() generator must yield exactly once") from None
 
         self._cleanup = generator
 
     async def _run_async_generator_cleanup(
         self,
-        generator: tp.AsyncGenerator[object],
+        generator: tp.AsyncGenerator[None],
     ) -> None:
         try:
             await anext(generator)
@@ -102,18 +104,44 @@ class _MountState(Stateful):
             await generator.aclose()
             return
 
-        logger.error("mount() generator must yield exactly once")
         await generator.aclose()
+        raise RuntimeError("on_mount() generator must yield exactly once")
 
 
-def mount(
-    fn: tp.Callable[[], object],
+def on_mount(
+    fn: OnMountFn,
 ) -> None:
-    """Register setup/cleanup logic for the current element lifetime."""
+    """Register setup and cleanup logic for the current element lifetime.
+
+    Examples:
+        ```python
+        @component
+        def ConnectedBadge() -> None:
+            connected = state_var(False)
+
+            async def connect() -> None:
+                connected.set(True)
+
+            on_mount(connect)
+            w.Badge(text="Connected" if connected.value else "Connecting")
+        ```
+
+        ```python
+        async def subscribe() -> tp.AsyncGenerator[None]:
+            connection = await connect()
+            yield
+            await connection.close()
+
+        @component
+        def ConnectedPanel() -> None:
+            on_mount(subscribe)
+            w.Label(text="Streaming updates")
+        ```
+    """
     session = get_active_session()
     if session is None or not session.is_executing():
         raise RuntimeError(
-            "mount() can only be called during component execution (render context)."
+            "on_mount() can only be called during component execution (render context)."
         )
 
     _MountState(fn)

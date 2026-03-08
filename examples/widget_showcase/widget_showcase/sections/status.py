@@ -4,7 +4,7 @@ import asyncio
 import typing as tp
 from contextlib import suppress
 
-from trellis import component, mount, state
+from trellis import component, on_mount, state_var
 from trellis import widgets as w
 
 from ..components import ExampleCard
@@ -36,8 +36,8 @@ def BadgeVariants() -> None:
 @example("Mount Lifecycle")
 def MountLifecycle() -> None:
     """Show a mount-managed pulse task that restarts on remount."""
-    pulse_count = state(0)
-    active = state(False)
+    pulse_count = state_var(0)
+    active = state_var(False)
 
     async def heartbeat() -> tp.AsyncGenerator[None]:
         active.set(True)
@@ -53,7 +53,7 @@ def MountLifecycle() -> None:
         with suppress(asyncio.CancelledError):
             await task
 
-    mount(heartbeat)
+    on_mount(heartbeat)
 
     with w.Column(gap=8):
         w.StatusIndicator(
