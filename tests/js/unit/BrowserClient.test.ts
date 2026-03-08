@@ -126,8 +126,8 @@ describe("BrowserClient", () => {
     });
   });
 
-  describe("proxy calls", () => {
-    it("sends proxy call responses through the browser transport", async () => {
+  describe("proxy requests", () => {
+    it("sends method proxy responses through the browser transport", async () => {
       const sentMessages: unknown[] = [];
       const client = new BrowserClient();
       client.setSendCallback((msg) => {
@@ -140,15 +140,16 @@ describe("BrowserClient", () => {
       });
 
       await client.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-1",
         proxy_id: "demo_api",
-        method: "greet",
+        operation: "call",
+        member: "greet",
         args: ["Emma"],
       });
 
       expect(sentMessages).toContainEqual({
-        type: MessageType.PROXY_CALL_RESPONSE,
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-1",
         result: "hello Emma",
         error: null,
@@ -167,15 +168,16 @@ describe("BrowserClient", () => {
       registerProxyTarget("formatNow", async (value: number) => `value: ${value}`);
 
       await client.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-2",
         proxy_id: "formatNow",
-        method: null,
+        operation: "call",
+        member: null,
         args: [3],
       });
 
       expect(sentMessages).toContainEqual({
-        type: MessageType.PROXY_CALL_RESPONSE,
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-2",
         result: "value: 3",
         error: null,
@@ -203,15 +205,16 @@ describe("BrowserClient", () => {
       });
 
       await client.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-global-1",
         proxy_id: "__global__:window.localStorage",
-        method: "getItem",
+        operation: "call",
+        member: "getItem",
         args: ["accent"],
       });
 
       expect(sentMessages).toContainEqual({
-        type: MessageType.PROXY_CALL_RESPONSE,
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-global-1",
         result: "theme:accent",
         error: null,
@@ -235,15 +238,16 @@ describe("BrowserClient", () => {
       });
 
       await client.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-global-2",
         proxy_id: "__global__:window.encoder.encode",
-        method: null,
+        operation: "call",
+        member: null,
         args: ["hello world"],
       });
 
       expect(sentMessages).toContainEqual({
-        type: MessageType.PROXY_CALL_RESPONSE,
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-global-2",
         result: "enc:hello world",
         error: null,
@@ -269,20 +273,87 @@ describe("BrowserClient", () => {
       });
 
       await client.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-clipboard-1",
         proxy_id: "__global__:navigator.clipboard",
-        method: "readText",
+        operation: "call",
+        member: "readText",
         args: [],
       });
 
       expect(sentMessages).toContainEqual({
-        type: MessageType.PROXY_CALL_RESPONSE,
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-clipboard-1",
         result: "copied text",
         error: null,
         error_type: null,
       });
+
+      client.disconnect();
+    });
+
+    it("sends property get responses through the browser transport", async () => {
+      const sentMessages: unknown[] = [];
+      Object.defineProperty(window, "document", {
+        value: { title: "Original title" },
+        writable: true,
+        configurable: true,
+      });
+      const client = new BrowserClient();
+      client.setSendCallback((msg) => {
+        sentMessages.push(msg);
+      });
+
+      await client.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-prop-1",
+        proxy_id: "__global__:document",
+        operation: "get",
+        member: "title",
+        args: [],
+      });
+
+      expect(sentMessages).toContainEqual({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-prop-1",
+        result: "Original title",
+        error: null,
+        error_type: null,
+      });
+
+      client.disconnect();
+    });
+
+    it("sends property set responses through the browser transport", async () => {
+      const sentMessages: unknown[] = [];
+      Object.defineProperty(window, "document", {
+        value: { title: "Original title" },
+        writable: true,
+        configurable: true,
+      });
+      const client = new BrowserClient();
+      client.setSendCallback((msg) => {
+        sentMessages.push(msg);
+      });
+
+      await client.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-prop-2",
+        proxy_id: "__global__:document",
+        operation: "set",
+        member: "title",
+        args: [],
+        value: "Updated title",
+      });
+
+      expect(sentMessages).toContainEqual({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-prop-2",
+        result: true,
+        error: null,
+        error_type: null,
+      });
+      expect(window.document.title).toBe("Updated title");
 
       client.disconnect();
     });

@@ -8,8 +8,8 @@ from trellis.platforms.common.messages import (
     HelloResponseMessage,
     Message,
     PatchMessage,
-    ProxyCall,
-    ProxyCallResponse,
+    ProxyRequest,
+    ProxyResponse,
     ReloadMessage,
 )
 
@@ -83,66 +83,72 @@ class TestReloadMessage:
         assert raw["type"] == "reload"
 
 
-class TestProxyCallMessage:
-    """Tests for ProxyCall serialization."""
+class TestProxyRequestMessage:
+    """Tests for ProxyRequest serialization."""
 
-    def test_object_proxy_call_message_msgpack_roundtrip(self) -> None:
-        """Object proxy calls survive msgpack encode/decode."""
+    def test_proxy_request_call_msgpack_roundtrip(self) -> None:
+        """Method call requests survive msgpack encode/decode."""
         encoder = msgspec.msgpack.Encoder()
         decoder = msgspec.msgpack.Decoder(Message)
 
-        original = ProxyCall(
+        original = ProxyRequest(
             request_id="req-1",
             proxy_id="demo_api",
-            method="greet",
+            operation="call",
+            member="greet",
             args=["Emma"],
         )
         encoded = encoder.encode(original)
         decoded = decoder.decode(encoded)
 
-        assert isinstance(decoded, ProxyCall)
+        assert isinstance(decoded, ProxyRequest)
         assert decoded.request_id == "req-1"
         assert decoded.proxy_id == "demo_api"
-        assert decoded.method == "greet"
+        assert decoded.operation == "call"
+        assert decoded.member == "greet"
         assert decoded.args == ["Emma"]
+        assert decoded.value is None
 
-    def test_function_proxy_call_message_msgpack_roundtrip(self) -> None:
-        """Function proxy calls preserve a null method."""
+    def test_proxy_request_property_set_msgpack_roundtrip(self) -> None:
+        """Property set requests preserve value and member."""
         encoder = msgspec.msgpack.Encoder()
         decoder = msgspec.msgpack.Decoder(Message)
 
-        original = ProxyCall(
+        original = ProxyRequest(
             request_id="req-2",
-            proxy_id="formatNow",
-            method=None,
-            args=[3],
+            proxy_id="document",
+            operation="set",
+            member="title",
+            value="New title",
         )
         encoded = encoder.encode(original)
         decoded = decoder.decode(encoded)
 
-        assert isinstance(decoded, ProxyCall)
+        assert isinstance(decoded, ProxyRequest)
         assert decoded.request_id == "req-2"
-        assert decoded.proxy_id == "formatNow"
-        assert decoded.method is None
-        assert decoded.args == [3]
+        assert decoded.proxy_id == "document"
+        assert decoded.operation == "set"
+        assert decoded.member == "title"
+        assert decoded.value == "New title"
+        assert decoded.args == []
 
 
-class TestProxyCallResponseMessage:
-    """Tests for ProxyCallResponse serialization."""
+class TestProxyResponseMessage:
+    """Tests for ProxyResponse serialization."""
 
-    def test_proxy_call_response_msgpack_roundtrip(self) -> None:
-        """ProxyCallResponse survives msgpack encode/decode."""
+    def test_proxy_response_msgpack_roundtrip(self) -> None:
+        """ProxyResponse survives msgpack encode/decode."""
         encoder = msgspec.msgpack.Encoder()
         decoder = msgspec.msgpack.Decoder(Message)
 
-        original = ProxyCallResponse(
+        original = ProxyResponse(
             request_id="req-1",
             result={"message": "hello"},
         )
         encoded = encoder.encode(original)
         decoded = decoder.decode(encoded)
 
-        assert isinstance(decoded, ProxyCallResponse)
+        assert isinstance(decoded, ProxyResponse)
         assert decoded.request_id == "req-1"
         assert decoded.result == {"message": "hello"}
         assert decoded.error is None
@@ -208,9 +214,19 @@ class TestMessageUnion:
             HelloResponseMessage(session_id="s1", server_version="1.0"),
             PatchMessage(patches=[]),
             EventMessage(callback_id="cb_1"),
-            ProxyCall(request_id="req-1", proxy_id="demo_api", method="greet"),
-            ProxyCall(request_id="req-2", proxy_id="formatNow", method=None),
-            ProxyCallResponse(request_id="req-1", result="ok"),
+            ProxyRequest(
+                request_id="req-1",
+                proxy_id="demo_api",
+                operation="call",
+                member="greet",
+            ),
+            ProxyRequest(
+                request_id="req-2",
+                proxy_id="document",
+                operation="get",
+                member="title",
+            ),
+            ProxyResponse(request_id="req-1", result="ok"),
             ReloadMessage(),
         ]
 

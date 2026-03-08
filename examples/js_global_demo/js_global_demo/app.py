@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from trellis import App, Stateful, component, js_global, js_method
+from trellis import App, Stateful, component, js_global, js_method, js_property
 from trellis import html as h
 from trellis import widgets as w
 from trellis.app import theme
@@ -43,9 +43,21 @@ class Clipboard:
         raise NotImplementedError
 
 
+@js_global("document")
+class Document:
+    title = js_property[str](writable=True)
+
+
+@js_global("window")
+class WindowGlobals:
+    demo_flag = js_property[str](name="__trellisProxyDemoFlag", writable=True, deletable=True)
+
+
 local_storage = LocalStorage()
 encode_uri_component = EncodeURIComponent()
 clipboard = Clipboard()
+document = Document()
+window_globals = WindowGlobals()
 
 
 Status = Literal["success", "error", "warning", "pending", "info"]
@@ -53,6 +65,8 @@ _STORAGE_KEY = "js-global-demo.theme"
 _STORAGE_VALUE = "dark"
 _ENCODE_INPUT = "hello world"
 _CLIPBOARD_TEXT = "copied from js_global demo"
+_TITLE_VALUE = "JS Global Demo Title"
+_FLAG_VALUE = "demo-flag"
 
 
 @dataclass
@@ -63,6 +77,10 @@ class DemoState(Stateful):
     encode_message: str = "Ready to encode a value."
     clipboard_status: Status = "info"
     clipboard_message: str = "Ready to use navigator.clipboard."
+    title_status: Status = "info"
+    title_message: str = "Ready to read and set document.title."
+    flag_status: Status = "info"
+    flag_message: str = "Ready to manage window.__trellisProxyDemoFlag."
 
 
 def _button_style(primary: bool) -> dict[str, str | int | float]:
@@ -169,6 +187,68 @@ def JsGlobalDemo() -> None:
             state.clipboard_status = "success"
             state.clipboard_message = f"Clipboard: {text}"
 
+    async def handle_title_read(_event: object | None = None) -> None:
+        state.title_status = "pending"
+        state.title_message = "Reading document.title..."
+        try:
+            value = await document.title.get()
+        except RuntimeError as error:
+            state.title_status = "error"
+            state.title_message = str(error)
+        else:
+            state.title_status = "success"
+            state.title_message = f"Current title: {value}"
+
+    async def handle_title_set(_event: object | None = None) -> None:
+        state.title_status = "pending"
+        state.title_message = "Setting document.title..."
+        try:
+            await document.title.set(_TITLE_VALUE)
+        except RuntimeError as error:
+            state.title_status = "error"
+            state.title_message = str(error)
+        else:
+            state.title_status = "success"
+            state.title_message = f"Updated title: {_TITLE_VALUE}"
+
+    async def handle_flag_read(_event: object | None = None) -> None:
+        state.flag_status = "pending"
+        state.flag_message = "Reading window.__trellisProxyDemoFlag..."
+        try:
+            value = await window_globals.demo_flag.get()
+        except RuntimeError as error:
+            state.flag_status = "error"
+            state.flag_message = str(error)
+        else:
+            state.flag_status = "success"
+            state.flag_message = (
+                f"Current flag: {value}" if value is not None else "Current flag: <missing>"
+            )
+
+    async def handle_flag_set(_event: object | None = None) -> None:
+        state.flag_status = "pending"
+        state.flag_message = "Setting window.__trellisProxyDemoFlag..."
+        try:
+            await window_globals.demo_flag.set(_FLAG_VALUE)
+        except RuntimeError as error:
+            state.flag_status = "error"
+            state.flag_message = str(error)
+        else:
+            state.flag_status = "success"
+            state.flag_message = f"Stored flag: {_FLAG_VALUE}"
+
+    async def handle_flag_delete(_event: object | None = None) -> None:
+        state.flag_status = "pending"
+        state.flag_message = "Deleting window.__trellisProxyDemoFlag..."
+        try:
+            await window_globals.demo_flag.delete()
+        except RuntimeError as error:
+            state.flag_status = "error"
+            state.flag_message = str(error)
+        else:
+            state.flag_status = "success"
+            state.flag_message = "Flag deleted."
+
     with w.Column(
         padding=24,
         gap=16,
@@ -187,6 +267,41 @@ def JsGlobalDemo() -> None:
                     text="Call browser globals from Python through the JS proxy transport.",
                     color=theme.text_secondary,
                 )
+
+                with w.Column(gap=8):
+                    w.Label(text="document.title", font_weight=600)
+                    w.StatusIndicator(
+                        status=state.title_status,
+                        label=state.title_status.title(),
+                    )
+                    w.Label(text=state.title_message)
+                    with w.Row(gap=12):
+                        h.HtmlButton(
+                            "Read title", on_click=handle_title_read, style=_button_style(True)
+                        )
+                        h.HtmlButton(
+                            "Set demo title",
+                            on_click=handle_title_set,
+                            style=_button_style(False),
+                        )
+
+                with w.Column(gap=8):
+                    w.Label(text="window.__trellisProxyDemoFlag", font_weight=600)
+                    w.StatusIndicator(
+                        status=state.flag_status,
+                        label=state.flag_status.title(),
+                    )
+                    w.Label(text=state.flag_message)
+                    with w.Row(gap=12):
+                        h.HtmlButton(
+                            "Read flag", on_click=handle_flag_read, style=_button_style(True)
+                        )
+                        h.HtmlButton(
+                            "Set flag", on_click=handle_flag_set, style=_button_style(False)
+                        )
+                        h.HtmlButton(
+                            "Delete flag", on_click=handle_flag_delete, style=_button_style(False)
+                        )
 
                 with w.Column(gap=8):
                     w.Label(text="localStorage", font_weight=600)

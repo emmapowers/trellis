@@ -244,26 +244,27 @@ describe("ClientMessageHandler", () => {
     });
   });
 
-  describe("handleMessage - PROXY_CALL", () => {
+  describe("handleMessage - PROXY_REQUEST", () => {
     it("dispatches proxy calls to registered targets", async () => {
-      const sendProxyResponse = vi.fn();
+      const sendMessage = vi.fn();
       registerProxyTarget("demo_api", {
         greet(name: string) {
           return `hello ${name}`;
         },
       });
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-1",
         proxy_id: "demo_api",
-        method: "greet",
+        operation: "call",
+        member: "greet",
         args: ["Emma"],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-1",
         result: "hello Emma",
         error: null,
@@ -272,20 +273,21 @@ describe("ClientMessageHandler", () => {
     });
 
     it("dispatches function proxy calls to callable targets", async () => {
-      const sendProxyResponse = vi.fn();
+      const sendMessage = vi.fn();
       registerProxyTarget("formatNow", (value: number) => `value: ${value}`);
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-fn-1",
         proxy_id: "formatNow",
-        method: null,
+        operation: "call",
+        member: null,
         args: [3],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-fn-1",
         result: "value: 3",
         error: null,
@@ -294,20 +296,21 @@ describe("ClientMessageHandler", () => {
     });
 
     it("dispatches async function proxy calls to callable targets", async () => {
-      const sendProxyResponse = vi.fn();
+      const sendMessage = vi.fn();
       registerProxyTarget("loadValue", async (value: number) => `value: ${value}`);
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-fn-2",
         proxy_id: "loadValue",
-        method: null,
+        operation: "call",
+        member: null,
         args: [5],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-fn-2",
         result: "value: 5",
         error: null,
@@ -316,24 +319,25 @@ describe("ClientMessageHandler", () => {
     });
 
     it("returns proxy dispatch errors without throwing", async () => {
-      const sendProxyResponse = vi.fn();
+      const sendMessage = vi.fn();
       registerProxyTarget("explode_api", {
         explode() {
           throw new TypeError("bad input");
         },
       });
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-2",
         proxy_id: "explode_api",
-        method: "explode",
+        operation: "call",
+        member: "explode",
         args: [],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-2",
         result: null,
         error: "bad input",
@@ -342,19 +346,20 @@ describe("ClientMessageHandler", () => {
     });
 
     it("returns an error for missing proxy targets", async () => {
-      const sendProxyResponse = vi.fn();
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      const sendMessage = vi.fn();
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-3",
         proxy_id: "missing_api",
-        method: "greet",
+        operation: "call",
+        member: "greet",
         args: [],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-3",
         result: null,
         error: "Proxy target not found: missing_api",
@@ -363,20 +368,21 @@ describe("ClientMessageHandler", () => {
     });
 
     it("returns an error for non-callable function targets", async () => {
-      const sendProxyResponse = vi.fn();
+      const sendMessage = vi.fn();
       registerProxyTarget("bad_function", { answer: 42 });
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-fn-3",
         proxy_id: "bad_function",
-        method: null,
+        operation: "call",
+        member: null,
         args: [],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-fn-3",
         result: null,
         error: "Proxy target is not callable: bad_function",
@@ -385,22 +391,23 @@ describe("ClientMessageHandler", () => {
     });
 
     it("returns an error for non-callable proxy methods", async () => {
-      const sendProxyResponse = vi.fn();
+      const sendMessage = vi.fn();
       registerProxyTarget("bad_api", {
         answer: 42,
       });
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-4",
         proxy_id: "bad_api",
-        method: "answer",
+        operation: "call",
+        member: "answer",
         args: [],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-4",
         result: null,
         error: "Proxy method not found or not callable: bad_api.answer",
@@ -409,7 +416,7 @@ describe("ClientMessageHandler", () => {
     });
 
     it("dispatches global object proxy calls with the resolved object as this", async () => {
-      const sendProxyResponse = vi.fn();
+      const sendMessage = vi.fn();
       Object.defineProperty(window, "localStorage", {
         value: {
           prefix: "theme:",
@@ -420,18 +427,19 @@ describe("ClientMessageHandler", () => {
         writable: true,
         configurable: true,
       });
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-global-1",
         proxy_id: "__global__:window.localStorage",
-        method: "getItem",
+        operation: "call",
+        member: "getItem",
         args: ["accent"],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-global-1",
         result: "theme:accent",
         error: null,
@@ -440,25 +448,26 @@ describe("ClientMessageHandler", () => {
     });
 
     it("dispatches callable globals with the parent object as receiver", async () => {
-      const sendProxyResponse = vi.fn();
+      const sendMessage = vi.fn();
       (window as Window & typeof globalThis & Record<string, unknown>).encoder = {
         prefix: "enc:",
         encode(value: string) {
           return `${this.prefix}${value}`;
         },
       };
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-global-2",
         proxy_id: "__global__:window.encoder.encode",
-        method: null,
+        operation: "call",
+        member: null,
         args: ["hello world"],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-global-2",
         result: "enc:hello world",
         error: null,
@@ -467,19 +476,20 @@ describe("ClientMessageHandler", () => {
     });
 
     it("returns a global-not-found error for missing global paths", async () => {
-      const sendProxyResponse = vi.fn();
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      const sendMessage = vi.fn();
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-global-3",
         proxy_id: "__global__:window.missingThing",
-        method: "call",
+        operation: "call",
+        member: "call",
         args: [],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-global-3",
         result: null,
         error: "Global target not found: window.missingThing",
@@ -488,24 +498,25 @@ describe("ClientMessageHandler", () => {
     });
 
     it("returns a global-method error for missing methods on global objects", async () => {
-      const sendProxyResponse = vi.fn();
+      const sendMessage = vi.fn();
       Object.defineProperty(window, "localStorage", {
         value: { answer: 42 },
         writable: true,
         configurable: true,
       });
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-global-4",
         proxy_id: "__global__:window.localStorage",
-        method: "getItem",
+        operation: "call",
+        member: "getItem",
         args: ["accent"],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-global-4",
         result: null,
         error: "Global method not found or not callable: window.localStorage.getItem",
@@ -514,22 +525,23 @@ describe("ClientMessageHandler", () => {
     });
 
     it("returns a global-callable error for non-callable callable globals", async () => {
-      const sendProxyResponse = vi.fn();
+      const sendMessage = vi.fn();
       (window as Window & typeof globalThis & Record<string, unknown>).nestedGlobal = {
         value: 42,
       };
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-global-5",
         proxy_id: "__global__:window.nestedGlobal.value",
-        method: null,
+        operation: "call",
+        member: null,
         args: [],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-global-5",
         result: null,
         error: "Global target is not callable: window.nestedGlobal.value",
@@ -538,7 +550,7 @@ describe("ClientMessageHandler", () => {
     });
 
     it("dispatches async clipboard writes through navigator.clipboard", async () => {
-      const sendProxyResponse = vi.fn();
+      const sendMessage = vi.fn();
       Object.defineProperty(window.navigator, "clipboard", {
         value: {
           async writeText(text: string) {
@@ -547,18 +559,19 @@ describe("ClientMessageHandler", () => {
         },
         configurable: true,
       });
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-clipboard-1",
         proxy_id: "__global__:navigator.clipboard",
-        method: "writeText",
+        operation: "call",
+        member: "writeText",
         args: ["copied text"],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-clipboard-1",
         result: "wrote:copied text",
         error: null,
@@ -567,7 +580,7 @@ describe("ClientMessageHandler", () => {
     });
 
     it("dispatches async clipboard reads through navigator.clipboard", async () => {
-      const sendProxyResponse = vi.fn();
+      const sendMessage = vi.fn();
       Object.defineProperty(window.navigator, "clipboard", {
         value: {
           async readText() {
@@ -576,18 +589,19 @@ describe("ClientMessageHandler", () => {
         },
         configurable: true,
       });
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-clipboard-2",
         proxy_id: "__global__:navigator.clipboard",
-        method: "readText",
+        operation: "call",
+        member: "readText",
         args: [],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-clipboard-2",
         result: "copied text",
         error: null,
@@ -596,7 +610,7 @@ describe("ClientMessageHandler", () => {
     });
 
     it("surfaces rejected clipboard promises as proxy errors", async () => {
-      const sendProxyResponse = vi.fn();
+      const sendMessage = vi.fn();
       Object.defineProperty(window.navigator, "clipboard", {
         value: {
           async writeText() {
@@ -605,18 +619,19 @@ describe("ClientMessageHandler", () => {
         },
         configurable: true,
       });
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-clipboard-3",
         proxy_id: "__global__:navigator.clipboard",
-        method: "writeText",
+        operation: "call",
+        member: "writeText",
         args: ["copied text"],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-clipboard-3",
         result: null,
         error: "Write blocked",
@@ -625,23 +640,131 @@ describe("ClientMessageHandler", () => {
     });
 
     it("returns a missing-path error when navigator.clipboard is unavailable", async () => {
-      const sendProxyResponse = vi.fn();
-      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+      const sendMessage = vi.fn();
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
 
       await handler.handleMessage({
-        type: MessageType.PROXY_CALL,
+        type: MessageType.PROXY_REQUEST,
         request_id: "req-clipboard-4",
         proxy_id: "__global__:navigator.clipboard",
-        method: "readText",
+        operation: "call",
+        member: "readText",
         args: [],
       });
 
-      expect(sendProxyResponse).toHaveBeenCalledWith({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-clipboard-4",
         result: null,
         error: "Global target not found: navigator.clipboard",
         error_type: "Error",
+      });
+    });
+
+    it("gets properties from proxy targets", async () => {
+      const sendMessage = vi.fn();
+      registerProxyTarget("document_api", { title: "Original title" });
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-prop-1",
+        proxy_id: "document_api",
+        operation: "get",
+        member: "title",
+        args: [],
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-prop-1",
+        result: "Original title",
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("sets properties on global targets with the resolved object as receiver", async () => {
+      const sendMessage = vi.fn();
+      Object.defineProperty(window, "document", {
+        value: { title: "Before" },
+        writable: true,
+        configurable: true,
+      });
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-prop-2",
+        proxy_id: "__global__:document",
+        operation: "set",
+        member: "title",
+        args: [],
+        value: "After",
+      });
+
+      expect(window.document.title).toBe("After");
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-prop-2",
+        result: true,
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("deletes properties on global targets", async () => {
+      const sendMessage = vi.fn();
+      (window as Window & typeof globalThis & Record<string, unknown>).__trellisProxyDemoFlag =
+        "demo";
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-prop-3",
+        proxy_id: "__global__:window",
+        operation: "delete",
+        member: "__trellisProxyDemoFlag",
+        args: [],
+      });
+
+      expect(
+        "__trellisProxyDemoFlag" in
+          (window as Window & typeof globalThis & Record<string, unknown>)
+      ).toBe(false);
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-prop-3",
+        result: true,
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("normalizes missing property gets to null", async () => {
+      const sendMessage = vi.fn();
+      Object.defineProperty(window, "document", {
+        value: {},
+        writable: true,
+        configurable: true,
+      });
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-prop-4",
+        proxy_id: "__global__:document",
+        operation: "get",
+        member: "missingValue",
+        args: [],
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-prop-4",
+        result: null,
+        error: null,
+        error_type: null,
       });
     });
   });

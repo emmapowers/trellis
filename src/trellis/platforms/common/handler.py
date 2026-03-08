@@ -41,8 +41,8 @@ from trellis.platforms.common.messages import (
     Message,
     Patch,
     PatchMessage,
-    ProxyCall,
-    ProxyCallResponse,
+    ProxyRequest,
+    ProxyResponse,
     RemovePatch,
     UpdatePatch,
     UrlChanged,
@@ -397,8 +397,8 @@ class MessageHandler:
             self._handle_url_changed(msg.path)
             return None
 
-        if isinstance(msg, ProxyCallResponse):
-            self._handle_proxy_call_response(msg)
+        if isinstance(msg, ProxyResponse):
+            self._handle_proxy_response(msg)
 
         return None
 
@@ -418,8 +418,8 @@ class MessageHandler:
         # The render loop will pick them up on the next frame.
         return None
 
-    def _handle_proxy_call_response(self, msg: ProxyCallResponse) -> None:
-        """Resolve or reject a pending proxy call."""
+    def _handle_proxy_response(self, msg: ProxyResponse) -> None:
+        """Resolve or reject a pending proxy request."""
         future = self._pending_proxy_calls.get(msg.request_id)
         if future is None:
             logger.debug("Ignoring proxy response for unknown request_id=%s", msg.request_id)
@@ -433,19 +433,28 @@ class MessageHandler:
         else:
             future.set_exception(RuntimeError(msg.error))
 
-    async def call_proxy(self, proxy_id: str, method: str | None, args: list[tp.Any]) -> tp.Any:
-        """Send a proxy call to the client and await the response."""
+    async def request_proxy(
+        self,
+        proxy_id: str,
+        operation: tp.Literal["call", "get", "set", "delete"],
+        member: str | None,
+        args: list[tp.Any] | None = None,
+        value: tp.Any = None,
+    ) -> tp.Any:
+        """Send a proxy request to the client and await the response."""
         request_id = str(uuid4())
         future = asyncio.get_running_loop().create_future()
         self._pending_proxy_calls[request_id] = future
 
         try:
             await self.send_message(
-                ProxyCall(
+                ProxyRequest(
                     request_id=request_id,
                     proxy_id=proxy_id,
-                    method=method,
-                    args=args,
+                    operation=operation,
+                    member=member,
+                    args=args or [],
+                    value=value,
                 )
             )
             return await future

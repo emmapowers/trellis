@@ -17,7 +17,7 @@ from trellis.platforms.common.messages import (
     EventMessage,
     HelloMessage,
     PatchMessage,
-    ProxyCallResponse,
+    ProxyResponse,
 )
 from trellis.widgets import Button, Label
 
@@ -258,8 +258,8 @@ class TestMessageHandler:
         # (we can't easily test this without internal access,
         # but the method should not raise)
 
-    def test_handle_message_resolves_pending_proxy_call(self, app_wrapper: AppWrapper) -> None:
-        """Proxy call responses resolve pending handler futures."""
+    def test_handle_message_resolves_pending_proxy_request(self, app_wrapper: AppWrapper) -> None:
+        """Proxy responses resolve pending handler futures."""
 
         @component
         def App() -> None:
@@ -272,17 +272,18 @@ class TestMessageHandler:
         handler.set_send_callback(lambda msg: sent_messages.append(msg))
 
         async def test() -> None:
-            task = asyncio.create_task(handler.call_proxy("demo_api", "greet", ["Emma"]))
+            task = asyncio.create_task(handler.request_proxy("demo_api", "call", "greet", ["Emma"]))
             await asyncio.sleep(0)
 
             assert len(sent_messages) == 1
             message = sent_messages[0]
-            assert message["type"] == "proxy_call"
+            assert message["type"] == "proxy_request"
             assert message["proxy_id"] == "demo_api"
-            assert message["method"] == "greet"
+            assert message["operation"] == "call"
+            assert message["member"] == "greet"
             assert message["args"] == ["Emma"]
 
-            response = ProxyCallResponse(
+            response = ProxyResponse(
                 request_id=message["request_id"],
                 result="hello Emma",
             )
@@ -309,17 +310,18 @@ class TestMessageHandler:
         handler.set_send_callback(lambda msg: sent_messages.append(msg))
 
         async def test() -> None:
-            task = asyncio.create_task(handler.call_proxy("formatNow", None, [3]))
+            task = asyncio.create_task(handler.request_proxy("formatNow", "call", None, [3]))
             await asyncio.sleep(0)
 
             assert len(sent_messages) == 1
             message = sent_messages[0]
-            assert message["type"] == "proxy_call"
+            assert message["type"] == "proxy_request"
             assert message["proxy_id"] == "formatNow"
-            assert message["method"] is None
+            assert message["operation"] == "call"
+            assert message["member"] is None
             assert message["args"] == [3]
 
-            response = ProxyCallResponse(
+            response = ProxyResponse(
                 request_id=message["request_id"],
                 result="value: 3",
             )
@@ -340,7 +342,7 @@ class TestMessageHandler:
         handler = BrowserMessageHandler(App, app_wrapper)
         init_handler_for_test(handler)
 
-        response = ProxyCallResponse(request_id="missing", result="hello Emma")
+        response = ProxyResponse(request_id="missing", result="hello Emma")
         result = asyncio.run(handler.handle_message(response))
 
         assert result is None

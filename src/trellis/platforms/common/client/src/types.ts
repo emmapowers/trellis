@@ -9,8 +9,8 @@ export const MessageType = {
   HELLO_RESPONSE: "hello_response",
   PATCH: "patch",
   EVENT: "event",
-  PROXY_CALL: "proxy_call",
-  PROXY_CALL_RESPONSE: "proxy_call_response",
+  PROXY_REQUEST: "proxy_request",
+  PROXY_RESPONSE: "proxy_response",
   ERROR: "error",
   HISTORY_PUSH: "history_push",
   HISTORY_BACK: "history_back",
@@ -74,16 +74,18 @@ export interface EventMessage {
   args: unknown[];
 }
 
-export interface ProxyCallMessage {
-  type: typeof MessageType.PROXY_CALL;
+export interface ProxyRequestMessage {
+  type: typeof MessageType.PROXY_REQUEST;
   request_id: string;
   proxy_id: string;
-  method: string | null;
+  operation: "call" | "get" | "set" | "delete";
+  member: string | null;
   args: unknown[];
+  value?: unknown;
 }
 
-export interface ProxyCallResponseMessage {
-  type: typeof MessageType.PROXY_CALL_RESPONSE;
+export interface ProxyResponseMessage {
+  type: typeof MessageType.PROXY_RESPONSE;
   request_id: string;
   result?: unknown;
   error?: string | null;
@@ -138,8 +140,8 @@ export type Message =
   | HelloResponseMessage
   | PatchMessage
   | EventMessage
-  | ProxyCallMessage
-  | ProxyCallResponseMessage
+  | ProxyRequestMessage
+  | ProxyResponseMessage
   | ErrorMessage
   | HistoryPushMessage
   | HistoryBackMessage

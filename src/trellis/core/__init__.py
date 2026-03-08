@@ -12,7 +12,7 @@ from trellis.core.components import (
     component,
     react,
 )
-from trellis.core.proxy import js_global, js_method, js_proxy
+from trellis.core.proxy import js_global, js_method, js_property, js_proxy
 
 # rendering
 from trellis.core.rendering import (
@@ -97,6 +97,7 @@ __all__ = [
     "is_render_active",
     "js_global",
     "js_method",
+    "js_property",
     "js_proxy",
     "mutable",
     "props_equal",

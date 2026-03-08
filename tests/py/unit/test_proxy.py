@@ -9,9 +9,9 @@ import pytest
 
 import trellis.core.proxy as proxy_module
 from trellis.core.components.composition import CompositionComponent
-from trellis.core.proxy import js_global, js_method, js_proxy
+from trellis.core.proxy import js_global, js_method, js_property, js_proxy
 from trellis.platforms.common.handler import MessageHandler
-from trellis.platforms.common.messages import Message, ProxyCall
+from trellis.platforms.common.messages import Message, ProxyRequest
 
 
 class RecordingTransport:
@@ -24,15 +24,17 @@ class RecordingTransport:
     ) -> None:
         self.result = result
         self.error = error
-        self.calls: list[tuple[str, str | None, list[tp.Any]]] = []
+        self.calls: list[tuple[str, str, str | None, list[tp.Any], tp.Any]] = []
 
-    async def call_proxy(
+    async def request_proxy(
         self,
         proxy_id: str,
-        method: str | None,
-        args: list[tp.Any],
+        operation: str,
+        member: str | None,
+        args: list[tp.Any] | None = None,
+        value: tp.Any = None,
     ) -> tp.Any:
-        self.calls.append((proxy_id, method, args))
+        self.calls.append((proxy_id, operation, member, args or [], value))
         if self.error is not None:
             raise self.error
         return self.result
@@ -73,6 +75,20 @@ class LocalStorage:
     @js_method(name="setItem")
     async def set_item(self, key: str, value: str) -> None:
         raise NotImplementedError
+
+
+@js_global("document")
+class Document:
+    title = js_property[str](writable=True)
+
+
+@js_global("window")
+class WindowGlobals:
+    demo_flag = js_property[str](
+        name="__trellisProxyDemoFlag",
+        writable=True,
+        deletable=True,
+    )
 
 
 @js_global("globalThis.encodeURIComponent", kind="function")
@@ -130,7 +146,7 @@ class TestJsProxyObjects:
         result = asyncio.run(proxy.get_message("Emma"))
 
         assert result == "hello Emma"
-        assert transport.calls == [("DemoApi", "getMessage", ["Emma"])]
+        assert transport.calls == [("DemoApi", "call", "getMessage", ["Emma"], None)]
 
     def test_decorated_object_proxy_name_override_is_used(
         self, monkeypatch: pytest.MonkeyPatch
@@ -143,7 +159,7 @@ class TestJsProxyObjects:
         result = asyncio.run(proxy.greet("Emma"))
 
         assert result == "hello Emma"
-        assert transport.calls == [("demo_api", "greet", ["Emma"])]
+        assert transport.calls == [("demo_api", "call", "greet", ["Emma"], None)]
 
     def test_js_method_override_changes_the_js_method_name(
         self, monkeypatch: pytest.MonkeyPatch
@@ -157,7 +173,7 @@ class TestJsProxyObjects:
         with pytest.raises(RuntimeError, match="bad input"):
             asyncio.run(proxy.fail_now())
 
-        assert transport.calls == [("DemoApi", "failNow", [])]
+        assert transport.calls == [("DemoApi", "call", "failNow", [], None)]
 
     def test_object_proxy_rejects_keyword_arguments(self) -> None:
         """Object proxy methods reject keyword arguments."""
@@ -181,7 +197,7 @@ class TestJsProxyObjects:
         result = asyncio.run(proxy.get_message("Emma"))
 
         assert result == "hello Emma"
-        assert transport.calls == [("DemoApi", "getMessage", ["Emma"])]
+        assert transport.calls == [("DemoApi", "call", "getMessage", ["Emma"], None)]
 
     def test_object_proxy_without_transport_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Object proxies raise when no transport can be resolved."""
@@ -206,7 +222,7 @@ class TestJsProxyObjects:
     def test_public_non_method_members_are_rejected(self) -> None:
         """Decorated object classes reject public non-method members."""
 
-        with pytest.raises(TypeError, match="public members"):
+        with pytest.raises(TypeError, match="js_property descriptors"):
 
             @js_proxy
             class InvalidApi:
@@ -218,7 +234,7 @@ class TestJsProxyObjects:
     def test_duplicate_resolved_js_method_names_are_rejected(self) -> None:
         """Decorated object classes reject duplicate resolved JS method names."""
 
-        with pytest.raises(ValueError, match="Duplicate JS proxy method name"):
+        with pytest.raises(ValueError, match="Duplicate JS proxy member name"):
 
             @js_proxy
             class InvalidApi:
@@ -250,7 +266,7 @@ class TestJsProxyFunctions:
         result = asyncio.run(format_now(3))
 
         assert result == "value: 3"
-        assert transport.calls == [("formatNow", None, [3])]
+        assert transport.calls == [("formatNow", "call", None, [3], None)]
 
     def test_decorated_function_proxy_name_override_is_used(
         self, monkeypatch: pytest.MonkeyPatch
@@ -262,7 +278,7 @@ class TestJsProxyFunctions:
         result = asyncio.run(format_exactly(3))
 
         assert result == "value: 3"
-        assert transport.calls == [("formatExactly", None, [3])]
+        assert transport.calls == [("formatExactly", "call", None, [3], None)]
 
     def test_function_proxy_rejects_keyword_arguments(self) -> None:
         """Function proxies reject keyword arguments."""
@@ -290,7 +306,9 @@ class TestJsGlobalObjects:
         result = asyncio.run(storage.get_item("theme"))
 
         assert result == "dark"
-        assert transport.calls == [("__global__:window.localStorage", "getItem", ["theme"])]
+        assert transport.calls == [
+            ("__global__:window.localStorage", "call", "getItem", ["theme"], None)
+        ]
 
     def test_object_global_proxy_rejects_keyword_arguments(self) -> None:
         """Global object proxies reject keyword arguments."""
@@ -350,7 +368,7 @@ class TestJsGlobalObjects:
     def test_public_non_method_members_on_object_global_are_rejected(self) -> None:
         """Global object classes reject public data members."""
 
-        with pytest.raises(TypeError, match="public members"):
+        with pytest.raises(TypeError, match="js_property descriptors"):
 
             @js_global("window.localStorage")
             class InvalidGlobal:
@@ -371,7 +389,7 @@ class TestJsGlobalFunctions:
 
         assert result == "hello%20world"
         assert transport.calls == [
-            ("__global__:globalThis.encodeURIComponent", None, ["hello world"])
+            ("__global__:globalThis.encodeURIComponent", "call", None, ["hello world"], None)
         ]
 
     def test_callable_global_classes_require_exactly_one_public_async_method(self) -> None:
@@ -420,7 +438,9 @@ class TestJsGlobalClipboard:
         monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
         asyncio.run(clipboard.write_text("copied text"))
 
-        assert transport.calls == [("__global__:navigator.clipboard", "writeText", ["copied text"])]
+        assert transport.calls == [
+            ("__global__:navigator.clipboard", "call", "writeText", ["copied text"], None)
+        ]
 
     def test_clipboard_wrapper_uses_read_text_method_name(
         self, monkeypatch: pytest.MonkeyPatch
@@ -433,7 +453,9 @@ class TestJsGlobalClipboard:
         result = asyncio.run(clipboard.read_text())
 
         assert result == "copied text"
-        assert transport.calls == [("__global__:navigator.clipboard", "readText", [])]
+        assert transport.calls == [
+            ("__global__:navigator.clipboard", "call", "readText", [], None)
+        ]
 
     def test_clipboard_errors_are_raised_as_runtime_errors(
         self, monkeypatch: pytest.MonkeyPatch
@@ -447,31 +469,130 @@ class TestJsGlobalClipboard:
         with pytest.raises(RuntimeError, match="clipboard blocked"):
             asyncio.run(clipboard.write_text("copied text"))
 
-        assert transport.calls == [("__global__:navigator.clipboard", "writeText", ["copied text"])]
+        assert transport.calls == [
+            ("__global__:navigator.clipboard", "call", "writeText", ["copied text"], None)
+        ]
+
+
+class TestJsProperties:
+    def test_property_get_uses_default_name_mapping(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Property get requests use snake_case to camelCase by default."""
+        transport = RecordingTransport(result="Original title")
+        document = Document()
+
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+        result = asyncio.run(document.title.get())
+
+        assert result == "Original title"
+        assert transport.calls == [("__global__:document", "get", "title", [], None)]
+
+    def test_property_name_override_is_used(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Property name overrides apply to property requests."""
+        transport = RecordingTransport(result="flag")
+        window_globals = WindowGlobals()
+
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+        result = asyncio.run(window_globals.demo_flag.get())
+
+        assert result == "flag"
+        assert transport.calls == [("__global__:window", "get", "__trellisProxyDemoFlag", [], None)]
+
+    def test_property_set_returns_bool(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Writable properties send a set request and return the JS boolean result."""
+        transport = RecordingTransport(result=True)
+        document = Document()
+
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+        result = asyncio.run(document.title.set("New title"))
+
+        assert result is True
+        assert transport.calls == [("__global__:document", "set", "title", [], "New title")]
+
+    def test_property_delete_returns_bool(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Deletable properties send a delete request and return the JS boolean result."""
+        transport = RecordingTransport(result=True)
+        window_globals = WindowGlobals()
+
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+        result = asyncio.run(window_globals.demo_flag.delete())
+
+        assert result is True
+        assert transport.calls == [
+            ("__global__:window", "delete", "__trellisProxyDemoFlag", [], None)
+        ]
+
+    def test_non_writable_properties_reject_set_locally(self) -> None:
+        """Read-only properties fail before transport."""
+
+        @js_global("document")
+        class ReadOnlyDocument:
+            title = js_property[str]()
+
+        document = ReadOnlyDocument()
+
+        with pytest.raises(TypeError, match="not writable"):
+            asyncio.run(document.title.set("New title"))
+
+    def test_non_deletable_properties_reject_delete_locally(self) -> None:
+        """Non-deletable properties fail before transport."""
+
+        @js_global("document")
+        class NonDeletableDocument:
+            title = js_property[str](writable=True)
+
+        document = NonDeletableDocument()
+
+        with pytest.raises(TypeError, match="not deletable"):
+            asyncio.run(document.title.delete())
+
+    def test_duplicate_property_and_method_names_are_rejected(self) -> None:
+        """Classes reject duplicate resolved JS member names across methods and properties."""
+
+        with pytest.raises(ValueError, match="Duplicate JS proxy member name"):
+
+            @js_global("document")
+            class InvalidDocument:
+                title = js_property[str]()
+
+                @js_method(name="title")
+                async def fetch_title(self) -> str:
+                    raise NotImplementedError
+
+    def test_properties_are_rejected_on_callable_globals(self) -> None:
+        """Callable globals cannot declare js_property descriptors."""
+
+        with pytest.raises(TypeError, match="js_property"):
+
+            @js_global("globalThis.encodeURIComponent", kind="function")
+            class InvalidGlobal:
+                value = js_property[str]()
+
+                async def encode(self, text: str) -> str:
+                    raise NotImplementedError
 
 
 class TestMessageHandlerProxyCalls:
-    def test_call_proxy_cleans_up_pending_future_on_send_failure(self) -> None:
-        """call_proxy removes pending requests when send_message fails."""
+    def test_request_proxy_cleans_up_pending_future_on_send_failure(self) -> None:
+        """request_proxy removes pending requests when send_message fails."""
         handler = RecordingMessageHandler()
         handler.raise_on_send = RuntimeError("send failed")
 
         with pytest.raises(RuntimeError, match="send failed"):
-            asyncio.run(handler.call_proxy("demo_api", "greet", ["Emma"]))
+            asyncio.run(handler.request_proxy("demo_api", "call", "greet", ["Emma"]))
 
         assert handler._pending_proxy_calls == {}
 
-    def test_call_proxy_cleans_up_pending_future_on_cancellation(self) -> None:
-        """call_proxy removes pending requests when the caller cancels."""
+    def test_request_proxy_cleans_up_pending_future_on_cancellation(self) -> None:
+        """request_proxy removes pending requests when the caller cancels."""
         handler = RecordingMessageHandler()
 
         async def test() -> None:
-            task = asyncio.create_task(handler.call_proxy("demo_api", "greet", ["Emma"]))
+            task = asyncio.create_task(handler.request_proxy("demo_api", "call", "greet", ["Emma"]))
             await asyncio.sleep(0)
 
             assert len(handler.sent_messages) == 1
             message = handler.sent_messages[0]
-            assert isinstance(message, ProxyCall)
+            assert isinstance(message, ProxyRequest)
 
             task.cancel()
             with pytest.raises(asyncio.CancelledError):
@@ -481,19 +602,20 @@ class TestMessageHandlerProxyCalls:
 
         asyncio.run(test())
 
-    def test_call_proxy_supports_function_targets(self) -> None:
-        """call_proxy sends function invocations with a null method."""
+    def test_request_proxy_supports_function_targets(self) -> None:
+        """request_proxy sends function invocations with a null member."""
         handler = RecordingMessageHandler()
 
         async def test() -> None:
-            task = asyncio.create_task(handler.call_proxy("formatNow", None, [3]))
+            task = asyncio.create_task(handler.request_proxy("formatNow", "call", None, [3]))
             await asyncio.sleep(0)
 
             assert len(handler.sent_messages) == 1
             message = handler.sent_messages[0]
-            assert isinstance(message, ProxyCall)
+            assert isinstance(message, ProxyRequest)
             assert message.proxy_id == "formatNow"
-            assert message.method is None
+            assert message.operation == "call"
+            assert message.member is None
             assert message.args == [3]
 
             task.cancel()

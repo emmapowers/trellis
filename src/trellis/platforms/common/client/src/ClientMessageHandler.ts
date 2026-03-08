@@ -12,8 +12,8 @@ import {
   MessageType,
   HelloResponseMessage,
   Patch,
-  ProxyCallMessage,
-  ProxyCallResponseMessage,
+  ProxyRequestMessage,
+  ProxyResponseMessage,
 } from "./types";
 import { store as defaultStore, TrellisStore } from "./core";
 import { debugLog, setDebugCategories } from "./debug";
@@ -30,9 +30,7 @@ export interface ClientMessageHandlerCallbacks {
   onHistoryForward?: () => void;
 }
 
-type ProxyResponseSender = (
-  msg: ProxyCallResponseMessage
-) => void | Promise<void>;
+type MessageSender = (msg: Message) => void | Promise<void>;
 
 function normalizeProxyError(error: unknown): { message: string; name: string } {
   if (error instanceof Error) {
@@ -63,7 +61,7 @@ export class ClientMessageHandler {
   private connectionState: ConnectionState = "disconnected";
   private callbacks: ClientMessageHandlerCallbacks;
   private store: TrellisStore;
-  private sendProxyResponse?: ProxyResponseSender;
+  private sendMessageCallback?: MessageSender;
 
   /**
    * Create a new message handler.
@@ -74,11 +72,11 @@ export class ClientMessageHandler {
   constructor(
     callbacks: ClientMessageHandlerCallbacks = {},
     store: TrellisStore = defaultStore,
-    sendProxyResponse?: ProxyResponseSender
+    sendMessage?: MessageSender
   ) {
     this.callbacks = callbacks;
     this.store = store;
-    this.sendProxyResponse = sendProxyResponse;
+    this.sendMessageCallback = sendMessage;
   }
 
   /**
@@ -128,8 +126,11 @@ export class ClientMessageHandler {
         this.callbacks.onHistoryForward?.();
         break;
 
-      case MessageType.PROXY_CALL:
-        await this.handleProxyCall(msg);
+      case MessageType.PROXY_REQUEST:
+        await this.handleProxyRequest(msg);
+        break;
+
+      case MessageType.PROXY_RESPONSE:
         break;
 
       case MessageType.RELOAD:
@@ -139,8 +140,8 @@ export class ClientMessageHandler {
     }
   }
 
-  private async handleProxyCall(msg: ProxyCallMessage): Promise<void> {
-    if (!this.sendProxyResponse) {
+  private async handleProxyRequest(msg: ProxyRequestMessage): Promise<void> {
+    if (!this.sendMessageCallback) {
       return;
     }
 
@@ -155,50 +156,27 @@ export class ClientMessageHandler {
 
       let result: unknown;
 
-      if (msg.method === null) {
-        if (typeof resolved.target !== "function") {
-          if (resolved.isGlobal) {
-            throw new Error(`Global target is not callable: ${resolved.path}`);
-          }
-          throw new Error(`Proxy target is not callable: ${msg.proxy_id}`);
-        }
-
-        result = await Reflect.apply(resolved.target, resolved.receiver, msg.args);
-      } else {
-        if (
-          resolved.target === null ||
-          resolved.target === undefined ||
-          (typeof resolved.target !== "object" && typeof resolved.target !== "function")
-        ) {
-          if (resolved.isGlobal) {
-            throw new Error(
-              `Global method not found or not callable: ${resolved.path}.${msg.method}`
-            );
-          }
-          throw new Error(
-            `Proxy method not found or not callable: ${msg.proxy_id}.${msg.method}`
-          );
-        }
-
-        const objectTarget = resolved.target as Record<string, unknown>;
-        const method = objectTarget[msg.method];
-        if (typeof method !== "function") {
-          if (resolved.isGlobal) {
-            throw new Error(
-              `Global method not found or not callable: ${resolved.path}.${msg.method}`
-            );
-          }
-          throw new Error(
-            `Proxy method not found or not callable: ${msg.proxy_id}.${msg.method}`
-          );
-        }
-
-        result = await Reflect.apply(method, resolved.target, msg.args);
+      switch (msg.operation) {
+        case "call":
+          result = await this.dispatchCall(msg, resolved);
+          break;
+        case "get":
+          result = this.dispatchGet(msg, resolved);
+          break;
+        case "set":
+          result = this.dispatchSet(msg, resolved);
+          break;
+        case "delete":
+          result = this.dispatchDelete(msg, resolved);
+          break;
       }
 
+      if (result === undefined) {
+        result = null;
+      }
       encode(result);
-      await this.sendProxyResponse({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      await this.sendMessageCallback({
+        type: MessageType.PROXY_RESPONSE,
         request_id: msg.request_id,
         result,
         error: null,
@@ -206,14 +184,88 @@ export class ClientMessageHandler {
       });
     } catch (error) {
       const errorObj = normalizeProxyError(error);
-      await this.sendProxyResponse({
-        type: MessageType.PROXY_CALL_RESPONSE,
+      await this.sendMessageCallback({
+        type: MessageType.PROXY_RESPONSE,
         request_id: msg.request_id,
         result: null,
         error: errorObj.message,
         error_type: errorObj.name,
       });
     }
+  }
+
+  private dispatchCall(
+    msg: ProxyRequestMessage,
+    resolved: ReturnType<typeof resolveProxyTarget>
+  ): unknown {
+    if (msg.member === null) {
+      if (typeof resolved.target !== "function") {
+        if (resolved.isGlobal) {
+          throw new Error(`Global target is not callable: ${resolved.path}`);
+        }
+        throw new Error(`Proxy target is not callable: ${msg.proxy_id}`);
+      }
+      return Reflect.apply(resolved.target, resolved.receiver, msg.args);
+    }
+
+    const objectTarget = this.requireObjectTarget(msg, resolved);
+    const method = objectTarget[msg.member];
+    if (typeof method !== "function") {
+      if (resolved.isGlobal) {
+        throw new Error(`Global method not found or not callable: ${resolved.path}.${msg.member}`);
+      }
+      throw new Error(`Proxy method not found or not callable: ${msg.proxy_id}.${msg.member}`);
+    }
+
+    return Reflect.apply(method, resolved.target, msg.args);
+  }
+
+  private dispatchGet(
+    msg: ProxyRequestMessage,
+    resolved: ReturnType<typeof resolveProxyTarget>
+  ): unknown {
+    const objectTarget = this.requireObjectTarget(msg, resolved);
+    return Reflect.get(objectTarget, this.requireMember(msg), resolved.target);
+  }
+
+  private dispatchSet(
+    msg: ProxyRequestMessage,
+    resolved: ReturnType<typeof resolveProxyTarget>
+  ): boolean {
+    const objectTarget = this.requireObjectTarget(msg, resolved);
+    return Reflect.set(objectTarget, this.requireMember(msg), msg.value, resolved.target);
+  }
+
+  private dispatchDelete(
+    msg: ProxyRequestMessage,
+    resolved: ReturnType<typeof resolveProxyTarget>
+  ): boolean {
+    const objectTarget = this.requireObjectTarget(msg, resolved);
+    return Reflect.deleteProperty(objectTarget, this.requireMember(msg));
+  }
+
+  private requireMember(msg: ProxyRequestMessage): string {
+    if (msg.member === null) {
+      throw new Error(`Proxy member is required for ${msg.operation}: ${msg.proxy_id}`);
+    }
+    return msg.member;
+  }
+
+  private requireObjectTarget(
+    msg: ProxyRequestMessage,
+    resolved: ReturnType<typeof resolveProxyTarget>
+  ): Record<string, unknown> {
+    if (
+      resolved.target === null ||
+      resolved.target === undefined ||
+      (typeof resolved.target !== "object" && typeof resolved.target !== "function")
+    ) {
+      if (resolved.isGlobal) {
+        throw new Error(`Global target not found: ${resolved.path}`);
+      }
+      throw new Error(`Proxy target not found: ${msg.proxy_id}`);
+    }
+    return resolved.target as Record<string, unknown>;
   }
 
   /** Count patches by type for debug logging. */

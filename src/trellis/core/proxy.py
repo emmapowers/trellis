@@ -10,19 +10,21 @@ import typing as tp
 from trellis.core.callback_context import get_callback_node_id, get_callback_session
 from trellis.core.rendering.session import get_active_session
 
-__all__ = ["js_global", "js_method", "js_proxy"]
+__all__ = ["js_global", "js_method", "js_property", "js_proxy"]
 
 _METHOD_NAME_ATTR = "__trellis_js_method_name__"
 _CLASS_TARGET_ATTR = "__trellis_js_proxy_name__"
 _CLASS_GLOBAL_PATH_ATTR = "__trellis_js_global_path__"
 _CLASS_BINDING_KIND_ATTR = "__trellis_js_binding_kind__"
 _CLASS_PROXY_ID_ATTR = "__trellis_js_proxy_id__"
+_PROPERTY_NAME_ATTR = "__trellis_js_property_name__"
 _GLOBAL_PROXY_ID_PREFIX = "__global__:"
 _MIN_METHOD_QUALNAME_PARTS = 2
 _PUBLIC_MEMBER_ERROR = (
-    "proxy classes may only declare async public methods; public members are not supported"
+    "proxy classes may only declare async public methods and js_property descriptors; "
+    "other public members are not supported"
 )
-_GLOBAL_PATH_RE = re.compile(r"^(?:[A-Za-z_$][A-Za-z0-9_$]*)(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+$")
+_GLOBAL_PATH_RE = re.compile(r"^(?:[A-Za-z_$][A-Za-z0-9_$]*)(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*$")
 
 T = tp.TypeVar("T")
 BindingKind = tp.Literal["bundled_object", "global_object", "global_function"]
@@ -34,12 +36,101 @@ _GLOBAL_FUNCTION_KIND: BindingKind = "global_function"
 class _ProxyTransport(tp.Protocol):
     """Transport interface used by JS proxies."""
 
-    async def call_proxy(
+    async def request_proxy(
         self,
         proxy_id: str,
-        method: str | None,
-        args: list[tp.Any],
+        operation: tp.Literal["call", "get", "set", "delete"],
+        member: str | None,
+        args: list[tp.Any] | None = None,
+        value: tp.Any = None,
     ) -> tp.Any: ...
+
+
+class _BoundJsProperty(tp.Generic[T]):
+    """Bound async accessors for a JS property."""
+
+    def __init__(self, instance: tp.Any, descriptor: "js_property[T]") -> None:
+        self._instance = instance
+        self._descriptor = descriptor
+
+    async def get(self) -> T:
+        proxy_id = tp.cast("str", getattr(type(self._instance), _CLASS_PROXY_ID_ATTR))
+        transport = tp.cast("_ProxyTransport | None", getattr(self._instance, "_transport", None))
+        result = await _request_proxy(
+            proxy_id,
+            "get",
+            self._descriptor._resolved_name,
+            (),
+            {},
+            transport,
+        )
+        return tp.cast("T", result)
+
+    async def set(self, value: T) -> bool:
+        if not self._descriptor.writable:
+            raise TypeError(f"JS proxy property '{self._descriptor._public_name}' is not writable")
+
+        proxy_id = tp.cast("str", getattr(type(self._instance), _CLASS_PROXY_ID_ATTR))
+        transport = tp.cast("_ProxyTransport | None", getattr(self._instance, "_transport", None))
+        result = await _request_proxy(
+            proxy_id,
+            "set",
+            self._descriptor._resolved_name,
+            (),
+            {},
+            transport,
+            value=value,
+        )
+        return tp.cast("bool", result)
+
+    async def delete(self) -> bool:
+        if not self._descriptor.deletable:
+            raise TypeError(f"JS proxy property '{self._descriptor._public_name}' is not deletable")
+
+        proxy_id = tp.cast("str", getattr(type(self._instance), _CLASS_PROXY_ID_ATTR))
+        transport = tp.cast("_ProxyTransport | None", getattr(self._instance, "_transport", None))
+        result = await _request_proxy(
+            proxy_id,
+            "delete",
+            self._descriptor._resolved_name,
+            (),
+            {},
+            transport,
+        )
+        return tp.cast("bool", result)
+
+
+class js_property(tp.Generic[T]):
+    """Descriptor declaring a remotely accessible JS property."""
+
+    writable: bool
+    deletable: bool
+    _declared_name: str | None
+    _resolved_name: str
+    _public_name: str
+
+    def __init__(
+        self,
+        *,
+        name: str | None = None,
+        writable: bool = False,
+        deletable: bool = False,
+    ) -> None:
+        self._declared_name = name
+        self.writable = writable
+        self.deletable = deletable
+        self._resolved_name = ""
+        self._public_name = ""
+
+    def __set_name__(self, owner: type[tp.Any], name: str) -> None:
+        self._public_name = name
+        self._resolved_name = self._declared_name or _snake_to_camel(name)
+        setattr(self, _PROPERTY_NAME_ATTR, self._resolved_name)
+
+    def __get__(self, instance: tp.Any, owner: type[tp.Any] | None = None) -> tp.Any:
+        if instance is None:
+            return self
+        return _BoundJsProperty(instance, self)
 
 
 def _snake_to_camel(name: str) -> str:
@@ -64,25 +155,34 @@ def _resolve_transport() -> _ProxyTransport:
     raise RuntimeError("Cannot call JS proxy outside render or callback context.")
 
 
-async def _call_proxy(
+async def _request_proxy(
     proxy_id: str,
-    method: str | None,
+    operation: tp.Literal["call", "get", "set", "delete"],
+    member: str | None,
     args: tuple[tp.Any, ...],
     kwargs: dict[str, tp.Any],
     transport: _ProxyTransport | None,
+    *,
+    value: tp.Any = None,
 ) -> tp.Any:
     if kwargs:
         raise TypeError("JS proxy methods do not accept keyword arguments")
 
     active_transport = transport or _resolve_transport()
-    return await active_transport.call_proxy(proxy_id, method, list(args))
+    return await active_transport.request_proxy(
+        proxy_id,
+        operation,
+        member,
+        list(args),
+        value,
+    )
 
 
 def _make_bound_method(method_name: str | None) -> tp.Callable[..., tp.Any]:
     async def proxy_method(self: tp.Any, *args: tp.Any, **kwargs: tp.Any) -> tp.Any:
         proxy_id = tp.cast("str", getattr(type(self), _CLASS_PROXY_ID_ATTR))
         transport = tp.cast("_ProxyTransport | None", getattr(self, "_transport", None))
-        return await _call_proxy(proxy_id, method_name, args, kwargs, transport)
+        return await _request_proxy(proxy_id, "call", method_name, args, kwargs, transport)
 
     return proxy_method
 
@@ -135,40 +235,54 @@ def _iter_public_members(cls: type[tp.Any]) -> tp.Iterator[tuple[str, tp.Any]]:
         yield attr_name, value
 
 
-def _collect_object_proxy_methods(
+def _collect_object_proxy_members(
     cls: type[tp.Any], *, decorator_name: str
-) -> dict[str, tp.Callable[..., tp.Any]]:
-    seen_methods: dict[str, str] = {}
+) -> tuple[dict[str, tp.Callable[..., tp.Any]], set[str]]:
+    seen_members: dict[str, str] = {}
     proxy_methods: dict[str, tp.Callable[..., tp.Any]] = {}
+    property_names: set[str] = set()
 
     for attr_name, value in _iter_public_members(cls):
         if isinstance(value, (staticmethod, classmethod, property)):
             raise TypeError(_PUBLIC_MEMBER_ERROR)
+        if isinstance(value, js_property):
+            js_name = value._resolved_name
+            if js_name in seen_members:
+                other_name = seen_members[js_name]
+                raise ValueError(
+                    f"Duplicate JS proxy member name '{js_name}' for members "
+                    f"'{other_name}' and '{attr_name}'"
+                )
+            seen_members[js_name] = attr_name
+            property_names.add(attr_name)
+            continue
         if not inspect.isfunction(value):
             raise TypeError(_PUBLIC_MEMBER_ERROR)
         if not inspect.iscoroutinefunction(value):
             raise TypeError(f"{decorator_name} method '{cls.__name__}.{attr_name}' must be async")
 
         js_name = _resolve_method_name(attr_name, value)
-        if js_name in seen_methods:
-            other_name = seen_methods[js_name]
+        if js_name in seen_members:
+            other_name = seen_members[js_name]
             raise ValueError(
-                f"Duplicate JS proxy method name '{js_name}' for methods "
+                f"Duplicate JS proxy member name '{js_name}' for members "
                 f"'{other_name}' and '{attr_name}'"
             )
-        seen_methods[js_name] = attr_name
+        seen_members[js_name] = attr_name
 
         proxy_method = _make_bound_method(js_name)
         functools.update_wrapper(proxy_method, value)
         proxy_methods[attr_name] = proxy_method
 
-    return proxy_methods
+    return proxy_methods, property_names
 
 
 def _collect_callable_global_method(cls: type[tp.Any]) -> tuple[str, tp.Callable[..., tp.Any]]:
     methods: list[tuple[str, tp.Callable[..., tp.Any]]] = []
 
     for attr_name, value in _iter_public_members(cls):
+        if isinstance(value, js_property):
+            raise TypeError("js_property is not supported on callable @js_global classes")
         if isinstance(value, (staticmethod, classmethod, property)):
             raise TypeError(_PUBLIC_MEMBER_ERROR)
         if not inspect.isfunction(value):
@@ -241,7 +355,7 @@ def _validate_global_path(path: str) -> str:
 
 def _decorate_proxy_class(cls: type[T], name: str | None) -> type[T]:
     _validate_proxy_class_header(cls, decorator_name="@js_proxy")
-    proxy_methods = _collect_object_proxy_methods(cls, decorator_name="@js_proxy")
+    proxy_methods, _ = _collect_object_proxy_members(cls, decorator_name="@js_proxy")
     return _apply_proxy_methods(
         cls,
         binding_kind=_BUNDLED_OBJECT_KIND,
@@ -257,7 +371,7 @@ def _decorate_global_class(
     global_path = _validate_global_path(path)
 
     if kind == "object":
-        proxy_methods = _collect_object_proxy_methods(cls, decorator_name="@js_global")
+        proxy_methods, _ = _collect_object_proxy_members(cls, decorator_name="@js_global")
         return _apply_proxy_methods(
             cls,
             binding_kind=_GLOBAL_OBJECT_KIND,
@@ -286,7 +400,7 @@ def _decorate_function(
 
     @functools.wraps(func)
     async def wrapper(*args: tp.Any, **kwargs: tp.Any) -> tp.Any:
-        return await _call_proxy(proxy_id, None, args, kwargs, None)
+        return await _request_proxy(proxy_id, "call", None, args, kwargs, None)
 
     return wrapper
 

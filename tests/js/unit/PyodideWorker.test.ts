@@ -189,7 +189,7 @@ describe("PyodideWorker.run() code passing", () => {
     expect(posted[0]).toEqual({ type: "run" });
   });
 
-  it("posts proxy call responses to the worker bridge", async () => {
+  it("posts proxy responses to the worker bridge", async () => {
     const worker = new PyodideWorker();
     const posted: unknown[] = [];
 
@@ -201,7 +201,7 @@ describe("PyodideWorker.run() code passing", () => {
     posted.length = 0;
 
     worker.sendMessage({
-      type: MessageType.PROXY_CALL_RESPONSE,
+      type: MessageType.PROXY_RESPONSE,
       request_id: "req-1",
       result: "hello Emma",
       error: null,
@@ -212,7 +212,7 @@ describe("PyodideWorker.run() code passing", () => {
     expect(posted[0]).toEqual({
       type: "message",
       payload: {
-        type: MessageType.PROXY_CALL_RESPONSE,
+        type: MessageType.PROXY_RESPONSE,
         request_id: "req-1",
         result: "hello Emma",
         error: null,
