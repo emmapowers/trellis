@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import typing as tp
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from trellis import JsProxy, Stateful, component, js_object
+from trellis import Stateful, component, js_proxy
 from trellis import html as h
 from trellis import widgets as w
 from trellis.app import App, theme
@@ -20,17 +19,16 @@ registry.register(
 )
 
 
-class _DemoApiProxy(JsProxy):
-    pass
+@js_proxy(name="demo_api")
+class DemoApi:
+    async def greet(self, name: str) -> str:
+        raise NotImplementedError
+
+    async def fail(self) -> str:
+        raise NotImplementedError
 
 
-class DemoApi(tp.Protocol):
-    async def greet(self, name: str) -> str: ...
-
-    async def fail(self) -> str: ...
-
-
-demo_api = tp.cast("DemoApi", js_object(_DemoApiProxy, "demo_api"))
+demo_api = DemoApi()
 
 
 @dataclass

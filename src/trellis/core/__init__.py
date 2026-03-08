@@ -12,7 +12,7 @@ from trellis.core.components import (
     component,
     react,
 )
-from trellis.core.proxy import JsProxy, js_object
+from trellis.core.proxy import js_method, js_proxy
 
 # rendering
 from trellis.core.rendering import (
@@ -71,7 +71,6 @@ __all__ = [
     "Frame",
     "FrameStack",
     "Height",
-    "JsProxy",
     "KeyTrait",
     "LifecycleTracker",
     "Margin",
@@ -96,7 +95,8 @@ __all__ = [
     "get_active_session",
     "get_ref",
     "is_render_active",
-    "js_object",
+    "js_method",
+    "js_proxy",
     "mutable",
     "props_equal",
     "react",
