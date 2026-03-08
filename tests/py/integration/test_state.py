@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from trellis.core.components.composition import component
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
-from trellis.core.state.stateful import Stateful
+from trellis.core.state.stateful import Stateful, Tracked
 
 if TYPE_CHECKING:
     from tests.conftest import PatchCapture, RenderResult
@@ -267,6 +267,36 @@ class TestLocalStatePersistence:
         indices = [k[1] for k in state_keys]
         assert 0 in indices
         assert 1 in indices
+
+
+class TestTrackedAnnotations:
+    def test_property_backed_by_private_tracked_attribute_rerenders(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """A property reading a private Tracked field still participates in reactivity."""
+
+        @dataclass(kw_only=True)
+        class MyState(Stateful):
+            _count: Tracked[int] = 0
+
+            @property
+            def count(self) -> int:
+                return self._count
+
+        state = MyState()
+        observed_counts: list[int] = []
+
+        @component
+        def Counter() -> None:
+            observed_counts.append(state.count)
+
+        capture = capture_patches(Counter)
+        capture.render()
+
+        state._count = 1
+        capture.render()
+
+        assert observed_counts == [0, 1]
 
     def test_subclass_state_works(self, capture_patches: "type[PatchCapture]") -> None:
         """Subclassed state types work correctly."""

@@ -50,6 +50,7 @@ Context API example:
 
 from __future__ import annotations
 
+import functools
 import logging
 import typing as tp
 import weakref
@@ -77,21 +78,52 @@ class _Missing:
 
 _MISSING = _Missing()
 
+_TRACKED_SENTINEL = object()
+type Tracked[T] = tp.Annotated[T, _TRACKED_SENTINEL]
 
-def _is_tracked_attribute(cls: type, name: str) -> bool:
-    """Check if attribute should be tracked for reactivity.
 
-    Returns True if the attribute has a type annotation defined in a
-    subclass of Stateful. This includes private attributes (_foo) if
-    annotated. Internal Stateful attributes are excluded because they're
-    defined on the base class.
+def _annotation_is_explicitly_tracked(annotation: tp.Any) -> bool:
+    """Return True when an annotation opts into tracked state explicitly."""
+    if tp.get_origin(annotation) is not tp.Annotated:
+        return False
+    return _TRACKED_SENTINEL in tp.get_args(annotation)[1:]
+
+
+def _get_class_annotations(cls: type) -> dict[str, tp.Any]:
+    """Resolve annotations for a class while preserving Annotated metadata.
+
+    `get_type_hints(..., include_extras=True)` gives access to Annotated metadata,
+    but some locally defined test classes and forward references can still fail to
+    resolve. Fall back to raw annotations so tracked-field detection keeps working
+    for the existing codebase.
     """
+    try:
+        return tp.get_type_hints(cls, include_extras=True)
+    except (NameError, TypeError):
+        return dict(getattr(cls, "__annotations__", {}))
+
+
+@functools.cache
+def _tracked_attributes(cls: type) -> frozenset[str]:
+    """Return the names that participate in state tracking for a Stateful class."""
+    tracked: set[str] = set()
     for klass in cls.__mro__:
         if klass is Stateful or klass is object:
             continue
-        if name in getattr(klass, "__annotations__", {}):
-            return True
-    return False
+
+        for name, annotation in _get_class_annotations(klass).items():
+            if _annotation_is_explicitly_tracked(annotation):
+                tracked.add(name)
+                continue
+
+            tracked.add(name)
+
+    return frozenset(tracked)
+
+
+def _is_tracked_attribute(cls: type, name: str) -> bool:
+    """Check if attribute should be tracked for reactivity."""
+    return name in _tracked_attributes(cls)
 
 
 def _register_context_dependency(session: RenderSession, instance: Stateful) -> None:
