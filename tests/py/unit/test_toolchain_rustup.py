@@ -123,13 +123,15 @@ class TestEnsureRustup:
         mock_run = MagicMock()
         mock_run.return_value.stdout = f"rustc {MINIMUM_RUST_VERSION} (hash 2025-01-01)"
 
+        which_map = {
+            "rustc": str(rustc_path),
+            "cargo": str(cargo_path),
+        }
+
         with (
             patch(
                 "trellis.toolchain.rustup.shutil.which",
-                side_effect=lambda name: {
-                    "rustc": str(rustc_path),
-                    "cargo": str(cargo_path),
-                }.get(name),
+                side_effect=which_map.get,
             ),
             patch("subprocess.run", mock_run),
             patch.dict("os.environ", {}, clear=True),
@@ -149,14 +151,16 @@ class TestEnsureRustup:
         mock_run = MagicMock()
         mock_run.return_value.stdout = "rustc 1.50.0 (hash 2021-01-01)"
 
+        which_map = {
+            "rustc": str(rustc_path),
+            "rustup": str(rustup_path),
+            "cargo": None,
+        }
+
         with (
             patch(
                 "trellis.toolchain.rustup.shutil.which",
-                side_effect=lambda name: {
-                    "rustc": str(rustc_path),
-                    "rustup": str(rustup_path),
-                    "cargo": None,
-                }.get(name),
+                side_effect=which_map.get,
             ),
             patch("subprocess.run", mock_run),
             patch.dict("os.environ", {}, clear=True),

@@ -128,7 +128,7 @@ def _render_template_tree(template_dir: Path, dest_dir: Path, context: dict[str,
         out_path = dest_dir / Path(*parts)
         out_path.parent.mkdir(parents=True, exist_ok=True)
 
-        template = env.get_template(str(rel))
+        template = env.get_template(rel.as_posix())
         content = template.render(context)
         out_path.write_text(content)
 

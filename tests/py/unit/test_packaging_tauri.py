@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import shutil
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -315,9 +317,7 @@ class TestTauriBundles:
             ("win32", True, []),
         ],
     )
-    def test_bundle_types(
-        self, platform: str, installer: bool, expected: list[str]
-    ) -> None:
+    def test_bundle_types(self, platform: str, installer: bool, expected: list[str]) -> None:
         assert _tauri_bundles(installer=installer, platform=platform) == expected
 
 
@@ -682,6 +682,10 @@ class TestCheckLinuxSystemDeps:
 class TestGenerateCargoConfig:
     """Tests for _generate_cargo_config."""
 
+    @pytest.mark.skipif(
+        sys.platform == "win32" or shutil.which("pkg-config") is None,
+        reason="Requires pkg-config (Linux/macOS)",
+    )
     def test_generates_config_on_linux(self, tmp_path: Path) -> None:
         scaffold_dir = tmp_path / "src-tauri"
         scaffold_dir.mkdir()

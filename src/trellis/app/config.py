@@ -304,9 +304,11 @@ class Config:
             if isinstance(value, StrEnum):
                 data[f.name] = value.value
             elif isinstance(value, Path):
-                data[f.name] = str(value)
+                data[f.name] = value.as_posix()
             elif isinstance(value, list):
-                data[f.name] = [str(item) if isinstance(item, Path) else item for item in value]
+                data[f.name] = [
+                    item.as_posix() if isinstance(item, Path) else item for item in value
+                ]
             else:
                 data[f.name] = value
         return json.dumps(data)

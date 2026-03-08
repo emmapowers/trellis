@@ -69,7 +69,7 @@ class TestFeedbackWidgets:
 
         @component
         def App() -> None:
-            with Collapsible(title="Toggle", on_toggle=lambda v: toggles.append(v)):
+            with Collapsible(title="Toggle", on_toggle=toggles.append):
                 Label(text="Content")
 
         result = rendered(App)

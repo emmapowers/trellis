@@ -228,7 +228,7 @@ class TestMessageHandler:
 
         @component
         def App() -> None:
-            Button(text="Click", on_click=lambda e: received.append(e))
+            Button(text="Click", on_click=received.append)
 
         handler = BrowserMessageHandler(App, app_wrapper)
         init_handler_for_test(handler)
@@ -461,7 +461,7 @@ class TestBrowserMessageHandler:
             Label(text="Hello")
 
         handler = BrowserMessageHandler(App, app_wrapper)
-        handler.set_send_callback(lambda msg: received_messages.append(msg))
+        handler.set_send_callback(received_messages.append)
 
         msg = PatchMessage(patches=[])
         asyncio.run(handler.send_message(msg))

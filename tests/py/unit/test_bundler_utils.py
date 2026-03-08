@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import sys
 import tarfile
 import time
 from pathlib import Path
@@ -394,6 +395,7 @@ class TestSafeExtract:
             with pytest.raises(ValueError, match="path traversal"):
                 safe_extract(tar, tmp_path)
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Symlinks require admin on Windows")
     def test_allows_internal_symlinks(self, tmp_path: Path) -> None:
         """Allows symlinks whose target resolves within the destination."""
         tar_buffer = io.BytesIO()

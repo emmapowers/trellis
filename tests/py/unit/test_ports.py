@@ -24,9 +24,8 @@ class TestFindAvailablePort:
 
     def test_returns_first_available(self) -> None:
         """Returns the first available port when others are busy."""
-        # Bind the first port
+        # Bind the first port without SO_REUSEADDR so it's exclusively held
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind(("127.0.0.1", 9100))
         sock.listen(1)
 
@@ -43,7 +42,6 @@ class TestFindAvailablePort:
         sockets = []
         for p in range(9200, 9203):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind(("127.0.0.1", p))
             s.listen(1)
             sockets.append(s)

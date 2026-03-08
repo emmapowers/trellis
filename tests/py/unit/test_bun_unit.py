@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import os
 import stat
+import sys
 import zipfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -165,6 +166,7 @@ class TestEnsureBun:
         actual_url = mock_stream.call_args[0][1]
         assert actual_url == expected_url
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Unix file permissions")
     def test_sets_executable_permission(self, tmp_path: Path) -> None:
         """Binary gets executable permission (0o755) after extraction."""
         zip_buffer = io.BytesIO()

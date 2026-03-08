@@ -36,8 +36,7 @@ _PLATFORM_HELP = {
     "--installer",
     is_flag=True,
     default=False,
-    help="Build installer bundle instead of portable. "
-    + _PLATFORM_HELP.get(sys.platform, ""),
+    help="Build installer bundle instead of portable. " + _PLATFORM_HELP.get(sys.platform, ""),
 )
 @click.option(
     "--bundles",

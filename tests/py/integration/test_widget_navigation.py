@@ -74,7 +74,7 @@ class TestNavigationWidgets:
 
         @component
         def App() -> None:
-            with Tabs(on_change=lambda v: selections.append(v)):
+            with Tabs(on_change=selections.append):
                 with Tab(id="t1", label="Tab 1"):
                     Label(text="Content")
 
@@ -132,7 +132,7 @@ class TestNavigationWidgets:
         def App() -> None:
             Tree(
                 data=[{"id": "1", "label": "Root"}],
-                on_select=lambda v: selections.append(v),
+                on_select=selections.append,
                 on_expand=lambda id, exp: expansions.append((id, exp)),
             )
 

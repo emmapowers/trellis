@@ -270,7 +270,7 @@ class TestMutableVersion:
             name: str = ""
 
         state = State()
-        m = Mutable(state, "name", on_change=lambda v: received.append(v))
+        m = Mutable(state, "name", on_change=received.append)
         m("hello", 5)
 
         assert received == ["hello"]
