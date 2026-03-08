@@ -306,6 +306,52 @@ class TestRouteReactivity:
         assert rendered == ["users"]
 
 
+class TestRouterStatePropertiesReactivity:
+    """Tests for reactive reads through RouterState public properties."""
+
+    def test_public_properties_rerender_from_private_backing_fields(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        router_state = RouterState(path="/")
+        snapshots: list[tuple[str, dict[str, str], bool, bool]] = []
+
+        @component
+        def Inspector() -> None:
+            state = router()
+            snapshots.append(
+                (
+                    state.path,
+                    dict(state.query),
+                    state.can_go_back,
+                    state.can_go_forward,
+                )
+            )
+
+        @component
+        def App() -> None:
+            with router_state:
+                Inspector()
+
+        capture = capture_patches(App)
+        capture.render()
+
+        asyncio.run(router_state.navigate("/users?page=1"))
+        capture.render()
+
+        asyncio.run(router_state.go_back())
+        capture.render()
+
+        asyncio.run(router_state.go_forward())
+        capture.render()
+
+        assert snapshots == [
+            ("/", {}, False, False),
+            ("/users?page=1", {"page": "1"}, True, False),
+            ("/", {}, False, True),
+            ("/users?page=1", {"page": "1"}, True, False),
+        ]
+
+
 class TestMultipleRoutes:
     """Tests for multiple Route components."""
 

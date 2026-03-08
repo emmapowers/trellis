@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from urllib.parse import parse_qsl
 
 from trellis.core.rendering.session import get_active_session
-from trellis.core.state.stateful import Stateful
+from trellis.core.state.stateful import Stateful, Tracked
 from trellis.routing.path_matching import match_path
 
 
@@ -64,12 +64,10 @@ class RouterState(Stateful):
         can_go_forward: Whether forward navigation is possible
     """
 
-    # Private state fields - initialized in custom __init__
-    _path: str = field(default="/")
-    _history: list[str] = field(default_factory=list)
-    _history_index: int = field(default=0)
+    _path: Tracked[str] = field(default="/")
+    _history: Tracked[list[str]] = field(default_factory=list)
+    _history_index: Tracked[int] = field(default=0)
 
-    # Async callbacks for notifying handler about navigation (set by handler)
     _on_navigate: Callable[[str], Awaitable[None]] | None = field(default=None)
     _on_go_back: Callable[[], Awaitable[None]] | None = field(default=None)
     _on_go_forward: Callable[[], Awaitable[None]] | None = field(default=None)

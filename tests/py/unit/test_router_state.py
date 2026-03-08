@@ -32,6 +32,14 @@ class TestRouterStateInit:
         state = RouterState(path="/users")
         assert state.history == ["/users"]
 
+    def test_history_returns_copy(self) -> None:
+        state = RouterState(path="/users")
+
+        history = state.history
+        history.append("/other")
+
+        assert state.history == ["/users"]
+
     def test_history_index_starts_at_zero(self) -> None:
         state = RouterState()
         # INTERNAL TEST: Verify history index for navigation logic
