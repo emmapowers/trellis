@@ -1,10 +1,12 @@
 """Integration tests for MessageHandler and BrowserMessageHandler."""
 
 import asyncio
+import gc
 import typing as tp
 from dataclasses import dataclass
 
 from tests.conftest import get_button_element
+from trellis.core.callback_context import get_callback_node_id
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.rendering.patches import RenderUpdatePatch
 from trellis.core.rendering.render import render
@@ -17,6 +19,7 @@ from trellis.platforms.common.messages import (
     EventMessage,
     HelloMessage,
     PatchMessage,
+    ProxyRequest,
     ProxyResponse,
 )
 from trellis.widgets import Button, Label
@@ -347,6 +350,139 @@ class TestMessageHandler:
 
         assert result is None
         assert handler._pending_proxy_calls == {}
+
+    def test_handle_message_invokes_proxy_callback_with_callback_context(
+        self, app_wrapper: AppWrapper
+    ) -> None:
+        """Proxy callback requests run under the captured callback context."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        assert handler.session is not None
+
+        async def callback() -> str:
+            return f"node:{get_callback_node_id()}"
+
+        callback_id = handler.session.register_proxy_callback(callback, "node-42")
+        response = asyncio.run(
+            handler.handle_message(
+                ProxyRequest(
+                    request_id="req-callback-1",
+                    proxy_id=f"__callback__:{callback_id}",
+                    operation="call",
+                    member=None,
+                    args=[],
+                )
+            )
+        )
+
+        assert isinstance(response, ProxyResponse)
+        assert response.result == "node:node-42"
+        assert response.error is None
+
+    def test_handle_message_rejects_sync_proxy_callbacks_with_return_values(
+        self, app_wrapper: AppWrapper
+    ) -> None:
+        """Synchronous proxy callbacks may only return None."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        assert handler.session is not None
+
+        def callback() -> str:
+            return "value"
+
+        callback_id = handler.session.register_proxy_callback(callback, "node-42")
+        response = asyncio.run(
+            handler.handle_message(
+                ProxyRequest(
+                    request_id="req-callback-2",
+                    proxy_id=f"__callback__:{callback_id}",
+                    operation="call",
+                    member=None,
+                    args=[],
+                )
+            )
+        )
+
+        assert isinstance(response, ProxyResponse)
+        assert response.result is None
+        assert response.error == "Synchronous proxy callbacks must return None"
+        assert response.error_type == "TypeError"
+
+    def test_handle_message_returns_missing_proxy_callback_error(
+        self, app_wrapper: AppWrapper
+    ) -> None:
+        """Missing callback handles return a proxy response error."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+
+        response = asyncio.run(
+            handler.handle_message(
+                ProxyRequest(
+                    request_id="req-callback-3",
+                    proxy_id="__callback__:missing",
+                    operation="call",
+                    member=None,
+                    args=[],
+                )
+            )
+        )
+
+        assert isinstance(response, ProxyResponse)
+        assert response.error == "Proxy callback not found: missing"
+        assert response.error_type == "LookupError"
+
+    def test_handle_message_returns_dead_proxy_callback_error(
+        self, app_wrapper: AppWrapper
+    ) -> None:
+        """Dead callback handles return a proxy response error."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        assert handler.session is not None
+
+        class CallbackOwner:
+            def callback(self) -> None:
+                return None
+
+        owner = CallbackOwner()
+        callback_id = handler.session.register_proxy_callback(owner.callback, "node-42")
+        del owner
+        gc.collect()
+
+        response = asyncio.run(
+            handler.handle_message(
+                ProxyRequest(
+                    request_id="req-callback-4",
+                    proxy_id=f"__callback__:{callback_id}",
+                    operation="call",
+                    member=None,
+                    args=[],
+                )
+            )
+        )
+
+        assert isinstance(response, ProxyResponse)
+        assert response.error == f"Proxy callback is no longer alive: {callback_id}"
+        assert response.error_type == "ReferenceError"
 
 
 class TestBrowserMessageHandler:

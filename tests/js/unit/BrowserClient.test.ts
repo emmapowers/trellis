@@ -357,5 +357,55 @@ describe("BrowserClient", () => {
 
       client.disconnect();
     });
+
+    it("sends callback proxy requests and resolves them through the browser transport", async () => {
+      const sentMessages: unknown[] = [];
+      registerProxyTarget("invokeCallback", {
+        async run(callback: (value: number) => Promise<number>) {
+          return await callback(5);
+        },
+      });
+      const client = new BrowserClient();
+      client.setSendCallback((msg) => {
+        sentMessages.push(msg);
+      });
+
+      const requestPromise = client.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-callback-1",
+        proxy_id: "invokeCallback",
+        operation: "call",
+        member: "run",
+        args: [{ __proxy_callback__: "callback-1" }],
+      });
+
+      await vi.waitFor(() => expect(sentMessages).toHaveLength(1));
+      const callbackRequest = sentMessages[0] as {
+        type: string;
+        request_id: string;
+        proxy_id: string;
+      };
+      expect(callbackRequest.type).toBe(MessageType.PROXY_REQUEST);
+      expect(callbackRequest.proxy_id).toBe("__callback__:callback-1");
+
+      await client.handleMessage({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: callbackRequest.request_id,
+        result: 10,
+        error: null,
+        error_type: null,
+      });
+      await requestPromise;
+
+      expect(sentMessages).toContainEqual({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-callback-1",
+        result: 10,
+        error: null,
+        error_type: null,
+      });
+
+      client.disconnect();
+    });
   });
 });

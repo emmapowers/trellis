@@ -9,6 +9,7 @@ import threading
 import typing as tp
 import weakref
 from dataclasses import dataclass, field
+from uuid import uuid4
 
 from trellis.core.rendering.dirty_tracker import DirtyTracker
 from trellis.core.rendering.element_state import ElementStateStore
@@ -57,6 +58,42 @@ def is_render_active() -> bool:
 _PATH_SEGMENT_RE = re.compile(r"^([a-zA-Z_][a-zA-Z0-9_]*)|^\[(\d+)\]|^\.([a-zA-Z_][a-zA-Z0-9_]*)")
 
 
+@dataclass(frozen=True)
+class ResolvedProxyCallback:
+    """A live proxy callback registration."""
+
+    callback: tp.Callable[..., tp.Any]
+    node_id: str
+
+
+@dataclass
+class _RegisteredProxyCallback:
+    """Weakly held callback metadata for proxy callback arguments."""
+
+    callback_ref: weakref.ReferenceType[tp.Callable[..., tp.Any]]
+    node_id: str
+
+    def get(self) -> tp.Callable[..., tp.Any] | None:
+        return self.callback_ref()
+
+
+def _make_proxy_callback_ref(
+    callback: tp.Callable[..., tp.Any],
+) -> weakref.ReferenceType[tp.Callable[..., tp.Any]]:
+    if hasattr(callback, "__self__") and getattr(callback, "__self__", None) is not None:
+        try:
+            return tp.cast(
+                "weakref.ReferenceType[tp.Callable[..., tp.Any]]", weakref.WeakMethod(callback)
+            )
+        except TypeError as exc:
+            raise TypeError("Proxy callbacks must support weak references") from exc
+
+    try:
+        return weakref.ref(callback)
+    except TypeError as exc:
+        raise TypeError("Proxy callbacks must support weak references") from exc
+
+
 @dataclass
 class RenderSession:
     """Session-scoped state container."""
@@ -86,6 +123,9 @@ class RenderSession:
 
     # Transport used by JS proxy calls during render/callback execution
     proxy_transport: tp.Any = None
+
+    # Weakly held callback registry for proxy callback arguments
+    _proxy_callbacks: dict[str, _RegisteredProxyCallback] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.dirty.set_lock(self.lock)
@@ -123,6 +163,40 @@ class RenderSession:
         if value is not None and callable(value):
             return tp.cast("tp.Callable[..., tp.Any]", value)
         return None
+
+    def register_proxy_callback(self, callback: tp.Callable[..., tp.Any], node_id: str) -> str:
+        """Register a callback passed through the proxy transport."""
+        self._cleanup_dead_proxy_callbacks()
+        callback_id = str(uuid4())
+        self._proxy_callbacks[callback_id] = _RegisteredProxyCallback(
+            callback_ref=_make_proxy_callback_ref(callback),
+            node_id=node_id,
+        )
+        return callback_id
+
+    def lookup_proxy_callback(
+        self, callback_id: str
+    ) -> tuple[tp.Literal["ok", "missing", "dead"], ResolvedProxyCallback | None]:
+        """Resolve a registered proxy callback by ID."""
+        registered = self._proxy_callbacks.get(callback_id)
+        if registered is None:
+            return "missing", None
+
+        callback = registered.get()
+        if callback is None:
+            self._proxy_callbacks.pop(callback_id, None)
+            return "dead", None
+
+        return "ok", ResolvedProxyCallback(callback=callback, node_id=registered.node_id)
+
+    def clear_proxy_callbacks(self) -> None:
+        """Remove all registered proxy callbacks."""
+        self._proxy_callbacks.clear()
+
+    def _cleanup_dead_proxy_callbacks(self) -> None:
+        dead_ids = [callback_id for callback_id, registered in self._proxy_callbacks.items() if registered.get() is None]
+        for callback_id in dead_ids:
+            self._proxy_callbacks.pop(callback_id, None)
 
 
 def _resolve_prop_path(props: dict[str, tp.Any], path: str) -> tp.Any:

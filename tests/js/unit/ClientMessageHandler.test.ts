@@ -767,6 +767,91 @@ describe("ClientMessageHandler", () => {
         error_type: null,
       });
     });
+
+    it("materializes callback sentinels and resolves their returned values", async () => {
+      const sendMessage = vi.fn();
+      registerProxyTarget("invokeCallback", {
+        async run(callback: (value: number) => Promise<number>, value: number) {
+          return await callback(value + 1);
+        },
+      });
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      const requestPromise = handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-callback-1",
+        proxy_id: "invokeCallback",
+        operation: "call",
+        member: "run",
+        args: [{ __proxy_callback__: "callback-1" }, 3],
+      });
+
+      await vi.waitFor(() => expect(sendMessage).toHaveBeenCalledTimes(1));
+      const callbackRequest = sendMessage.mock.calls[0][0];
+      expect(callbackRequest).toMatchObject({
+        type: MessageType.PROXY_REQUEST,
+        proxy_id: "__callback__:callback-1",
+        operation: "call",
+        member: null,
+        args: [4],
+      });
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: callbackRequest.request_id,
+        result: 8,
+        error: null,
+        error_type: null,
+      });
+      await requestPromise;
+
+      expect(sendMessage).toHaveBeenLastCalledWith({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-callback-1",
+        result: 8,
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("rejects callback wrappers using proxy response error_type as Error.name", async () => {
+      const sendMessage = vi.fn();
+      registerProxyTarget("invokeCallbackError", {
+        async run(callback: (value: number) => Promise<number>) {
+          return await callback(7);
+        },
+      });
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      const requestPromise = handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-callback-2",
+        proxy_id: "invokeCallbackError",
+        operation: "call",
+        member: "run",
+        args: [{ __proxy_callback__: "callback-2" }],
+      });
+
+      await vi.waitFor(() => expect(sendMessage).toHaveBeenCalledTimes(1));
+      const callbackRequest = sendMessage.mock.calls[0][0];
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: callbackRequest.request_id,
+        result: null,
+        error: "callback failed",
+        error_type: "TypeError",
+      });
+      await requestPromise;
+
+      expect(sendMessage).toHaveBeenLastCalledWith({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-callback-2",
+        result: null,
+        error: "callback failed",
+        error_type: "TypeError",
+      });
+    });
   });
 
   describe("works without callbacks", () => {

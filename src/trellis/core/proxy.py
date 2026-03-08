@@ -8,6 +8,7 @@ import re
 import typing as tp
 
 from trellis.core.callback_context import get_callback_node_id, get_callback_session
+from trellis.core.proxy_values import serialize_proxy_value
 from trellis.core.rendering.session import get_active_session
 
 __all__ = ["js_global", "js_method", "js_property", "js_proxy"]
@@ -169,12 +170,14 @@ async def _request_proxy(
         raise TypeError("JS proxy methods do not accept keyword arguments")
 
     active_transport = transport or _resolve_transport()
+    serialized_args = [serialize_proxy_value(arg) for arg in args]
+    serialized_value = serialize_proxy_value(value)
     return await active_transport.request_proxy(
         proxy_id,
         operation,
         member,
-        list(args),
-        value,
+        serialized_args,
+        serialized_value,
     )
 
 

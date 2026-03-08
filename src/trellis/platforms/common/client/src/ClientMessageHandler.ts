@@ -18,6 +18,7 @@ import {
 import { store as defaultStore, TrellisStore } from "./core";
 import { debugLog, setDebugCategories } from "./debug";
 import { resolveProxyTarget } from "./proxyTargets";
+import { materializeProxyValue } from "./proxyValues";
 
 export type ConnectionState = "disconnected" | "connecting" | "connected";
 
@@ -62,6 +63,10 @@ export class ClientMessageHandler {
   private callbacks: ClientMessageHandlerCallbacks;
   private store: TrellisStore;
   private sendMessageCallback?: MessageSender;
+  private pendingProxyResponses = new Map<
+    string,
+    { resolve: (value: unknown) => void; reject: (error: Error) => void }
+  >();
 
   /**
    * Create a new message handler.
@@ -131,6 +136,7 @@ export class ClientMessageHandler {
         break;
 
       case MessageType.PROXY_RESPONSE:
+        this.handleProxyResponse(msg);
         break;
 
       case MessageType.RELOAD:
@@ -198,6 +204,7 @@ export class ClientMessageHandler {
     msg: ProxyRequestMessage,
     resolved: ReturnType<typeof resolveProxyTarget>
   ): unknown {
+    const args = this.materializeArgs(msg.args);
     if (msg.member === null) {
       if (typeof resolved.target !== "function") {
         if (resolved.isGlobal) {
@@ -205,7 +212,7 @@ export class ClientMessageHandler {
         }
         throw new Error(`Proxy target is not callable: ${msg.proxy_id}`);
       }
-      return Reflect.apply(resolved.target, resolved.receiver, msg.args);
+      return Reflect.apply(resolved.target, resolved.receiver, args);
     }
 
     const objectTarget = this.requireObjectTarget(msg, resolved);
@@ -217,7 +224,7 @@ export class ClientMessageHandler {
       throw new Error(`Proxy method not found or not callable: ${msg.proxy_id}.${msg.member}`);
     }
 
-    return Reflect.apply(method, resolved.target, msg.args);
+    return Reflect.apply(method, resolved.target, args);
   }
 
   private dispatchGet(
@@ -233,7 +240,14 @@ export class ClientMessageHandler {
     resolved: ReturnType<typeof resolveProxyTarget>
   ): boolean {
     const objectTarget = this.requireObjectTarget(msg, resolved);
-    return Reflect.set(objectTarget, this.requireMember(msg), msg.value, resolved.target);
+    return Reflect.set(
+      objectTarget,
+      this.requireMember(msg),
+      materializeProxyValue(msg.value, (callbackId, args) =>
+        this.invokeProxyCallback(callbackId, args)
+      ),
+      resolved.target
+    );
   }
 
   private dispatchDelete(
@@ -266,6 +280,55 @@ export class ClientMessageHandler {
       throw new Error(`Proxy target not found: ${msg.proxy_id}`);
     }
     return resolved.target as Record<string, unknown>;
+  }
+
+  private materializeArgs(args: unknown[]): unknown[] {
+    return args.map((arg) =>
+      materializeProxyValue(arg, (callbackId, callbackArgs) =>
+        this.invokeProxyCallback(callbackId, callbackArgs)
+      )
+    );
+  }
+
+  private invokeProxyCallback(callbackId: string, args: unknown[]): Promise<unknown> {
+    if (!this.sendMessageCallback) {
+      return Promise.reject(new Error("Cannot invoke proxy callback without a message sender"));
+    }
+
+    const requestId = crypto.randomUUID();
+    return new Promise((resolve, reject) => {
+      this.pendingProxyResponses.set(requestId, { resolve, reject });
+      Promise.resolve(
+        this.sendMessageCallback?.({
+          type: MessageType.PROXY_REQUEST,
+          request_id: requestId,
+          proxy_id: `__callback__:${callbackId}`,
+          operation: "call",
+          member: null,
+          args,
+        })
+      ).catch((error) => {
+        this.pendingProxyResponses.delete(requestId);
+        reject(error instanceof Error ? error : new Error(String(error)));
+      });
+    });
+  }
+
+  private handleProxyResponse(msg: ProxyResponseMessage): void {
+    const pending = this.pendingProxyResponses.get(msg.request_id);
+    if (!pending) {
+      return;
+    }
+
+    this.pendingProxyResponses.delete(msg.request_id);
+    if (msg.error === null || msg.error === undefined) {
+      pending.resolve(msg.result);
+      return;
+    }
+
+    const error = new Error(msg.error);
+    error.name = msg.error_type ?? "Error";
+    pending.reject(error);
   }
 
   /** Count patches by type for debug logging. */

@@ -2,13 +2,24 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
-from trellis import App, Stateful, component, js_global, js_method, js_property
+from trellis import App, Stateful, component, js_global, js_method, js_property, js_proxy
 from trellis import html as h
 from trellis import widgets as w
 from trellis.app import theme
+from trellis.registry import ExportKind, registry
+
+registry.register(
+    "js-global-demo-callbacks",
+    base_path=Path(__file__).parent.resolve() / "client",
+    exports=[
+        ("invokeCallback", ExportKind.FUNCTION, "callback_helpers.ts"),
+    ],
+)
 
 
 @js_global("window.localStorage")
@@ -49,15 +60,30 @@ class Document:
 
 
 @js_global("window")
-class WindowGlobals:
+class Window:
     demo_flag = js_property[str](name="__trellisProxyDemoFlag", writable=True, deletable=True)
+
+    async def set_timeout(
+        self,
+        callback: Callable[[], None | Awaitable[None]],
+        delay_ms: int,
+    ) -> int:
+        raise NotImplementedError
 
 
 local_storage = LocalStorage()
 encode_uri_component = EncodeURIComponent()
 clipboard = Clipboard()
 document = Document()
-window_globals = WindowGlobals()
+window = Window()
+
+
+@js_proxy
+async def invoke_callback(
+    callback: Callable[[int], int | Awaitable[int]],
+    value: int,
+) -> int:
+    raise NotImplementedError
 
 
 Status = Literal["success", "error", "warning", "pending", "info"]
@@ -67,6 +93,8 @@ _ENCODE_INPUT = "hello world"
 _CLIPBOARD_TEXT = "copied from js_global demo"
 _TITLE_VALUE = "JS Global Demo Title"
 _FLAG_VALUE = "demo-flag"
+_TIMEOUT_DELAY_MS = 50
+_CALLBACK_INPUT = 3
 
 
 @dataclass
@@ -81,6 +109,23 @@ class DemoState(Stateful):
     title_message: str = "Ready to read and set document.title."
     flag_status: Status = "info"
     flag_message: str = "Ready to manage window.__trellisProxyDemoFlag."
+    timeout_status: Status = "info"
+    timeout_message: str = "Ready to call window.setTimeout with a Python callback."
+    callback_status: Status = "info"
+    callback_message: str = "Ready to pass Python callbacks into a bundled JS helper."
+
+    def complete_timeout(self) -> None:
+        self.timeout_status = "success"
+        self.timeout_message = "Timeout callback fired."
+
+    def return_sync_value(self, value: int) -> int:
+        return value + 1
+
+    async def add_async_value(self, value: int) -> int:
+        return value + 10
+
+    async def fail_async_value(self, value: int) -> int:
+        raise RuntimeError(f"async callback failed for {value}")
 
 
 def _button_style(primary: bool) -> dict[str, str | int | float]:
@@ -215,7 +260,7 @@ def JsGlobalDemo() -> None:
         state.flag_status = "pending"
         state.flag_message = "Reading window.__trellisProxyDemoFlag..."
         try:
-            value = await window_globals.demo_flag.get()
+            value = await window.demo_flag.get()
         except RuntimeError as error:
             state.flag_status = "error"
             state.flag_message = str(error)
@@ -229,7 +274,7 @@ def JsGlobalDemo() -> None:
         state.flag_status = "pending"
         state.flag_message = "Setting window.__trellisProxyDemoFlag..."
         try:
-            await window_globals.demo_flag.set(_FLAG_VALUE)
+            await window.demo_flag.set(_FLAG_VALUE)
         except RuntimeError as error:
             state.flag_status = "error"
             state.flag_message = str(error)
@@ -241,13 +286,58 @@ def JsGlobalDemo() -> None:
         state.flag_status = "pending"
         state.flag_message = "Deleting window.__trellisProxyDemoFlag..."
         try:
-            await window_globals.demo_flag.delete()
+            await window.demo_flag.delete()
         except RuntimeError as error:
             state.flag_status = "error"
             state.flag_message = str(error)
         else:
             state.flag_status = "success"
             state.flag_message = "Flag deleted."
+
+    async def handle_timeout_callback(_event: object | None = None) -> None:
+        state.timeout_status = "pending"
+        state.timeout_message = f"Waiting {_TIMEOUT_DELAY_MS}ms for timeout callback..."
+        try:
+            await window.set_timeout(state.complete_timeout, _TIMEOUT_DELAY_MS)
+        except RuntimeError as error:
+            state.timeout_status = "error"
+            state.timeout_message = str(error)
+
+    async def handle_callback_success(_event: object | None = None) -> None:
+        state.callback_status = "pending"
+        state.callback_message = "Calling invoke_callback() with an async Python callback..."
+        try:
+            result = await invoke_callback(state.add_async_value, _CALLBACK_INPUT)
+        except RuntimeError as error:
+            state.callback_status = "error"
+            state.callback_message = str(error)
+        else:
+            state.callback_status = "success"
+            state.callback_message = f"Callback result: {result}"
+
+    async def handle_callback_sync_failure(_event: object | None = None) -> None:
+        state.callback_status = "pending"
+        state.callback_message = "Calling invoke_callback() with a sync return value..."
+        try:
+            await invoke_callback(state.return_sync_value, _CALLBACK_INPUT)
+        except RuntimeError as error:
+            state.callback_status = "error"
+            state.callback_message = str(error)
+        else:
+            state.callback_status = "success"
+            state.callback_message = "Unexpected success"
+
+    async def handle_callback_async_failure(_event: object | None = None) -> None:
+        state.callback_status = "pending"
+        state.callback_message = "Calling invoke_callback() with a failing async callback..."
+        try:
+            await invoke_callback(state.fail_async_value, _CALLBACK_INPUT)
+        except RuntimeError as error:
+            state.callback_status = "error"
+            state.callback_message = str(error)
+        else:
+            state.callback_status = "success"
+            state.callback_message = "Unexpected success"
 
     with w.Column(
         padding=24,
@@ -348,6 +438,43 @@ def JsGlobalDemo() -> None:
                         h.HtmlButton(
                             "Read clipboard",
                             on_click=handle_clipboard_read,
+                            style=_button_style(False),
+                        )
+
+                with w.Column(gap=8):
+                    w.Label(text="window.setTimeout", font_weight=600)
+                    w.StatusIndicator(
+                        status=state.timeout_status,
+                        label=state.timeout_status.title(),
+                    )
+                    w.Label(text=state.timeout_message)
+                    h.HtmlButton(
+                        "Trigger timeout callback",
+                        on_click=handle_timeout_callback,
+                        style=_button_style(True),
+                    )
+
+                with w.Column(gap=8):
+                    w.Label(text="Bundled callback helper", font_weight=600)
+                    w.StatusIndicator(
+                        status=state.callback_status,
+                        label=state.callback_status.title(),
+                    )
+                    w.Label(text=state.callback_message)
+                    with w.Row(gap=12):
+                        h.HtmlButton(
+                            "Run async callback",
+                            on_click=handle_callback_success,
+                            style=_button_style(True),
+                        )
+                        h.HtmlButton(
+                            "Sync callback error",
+                            on_click=handle_callback_sync_failure,
+                            style=_button_style(False),
+                        )
+                        h.HtmlButton(
+                            "Async callback error",
+                            on_click=handle_callback_async_failure,
                             style=_button_style(False),
                         )
 

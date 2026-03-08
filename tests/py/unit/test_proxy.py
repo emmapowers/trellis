@@ -8,6 +8,7 @@ import typing as tp
 import pytest
 
 import trellis.core.proxy as proxy_module
+import trellis.core.proxy_values as proxy_values_module
 from trellis.core.components.composition import CompositionComponent
 from trellis.core.proxy import js_global, js_method, js_property, js_proxy
 from trellis.platforms.common.handler import MessageHandler
@@ -63,6 +64,11 @@ async def format_now(value: int) -> str:
 
 @js_proxy(name="formatExactly")
 async def format_exactly(value: int) -> str:
+    raise NotImplementedError
+
+
+@js_proxy
+async def invoke_callback(callback: tp.Callable[[int], tp.Any], value: int) -> int:
     raise NotImplementedError
 
 
@@ -292,6 +298,39 @@ class TestJsProxyFunctions:
             @js_proxy
             def invalid(value: int) -> int:
                 return value
+
+    def test_function_proxy_serializes_callback_arguments(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Function proxies serialize callback arguments as proxy callback sentinels."""
+        transport = RecordingTransport(result=4)
+
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+        fake_session = type(
+            "FakeSession",
+            (),
+            {
+                "is_executing": lambda self: True,
+                "current_element_id": "node-1",
+                "register_proxy_callback": lambda self, callback, node_id: "callback-1",
+            },
+        )()
+        monkeypatch.setattr(proxy_module, "get_active_session", lambda: fake_session)
+        monkeypatch.setattr(proxy_values_module, "get_active_session", lambda: fake_session)
+        monkeypatch.setattr(proxy_values_module, "get_callback_node_id", lambda: None)
+
+        result = asyncio.run(invoke_callback(lambda value: None, 3))
+
+        assert result == 4
+        assert transport.calls == [
+            (
+                "invokeCallback",
+                "call",
+                None,
+                [{"__proxy_callback__": "callback-1"}, 3],
+                None,
+            )
+        ]
 
 
 class TestJsGlobalObjects:

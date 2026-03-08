@@ -52,6 +52,7 @@ from trellis.platforms.common.serialization import (
     parse_callback_id,
     serialize_element,
 )
+from trellis.core.proxy_values import PROXY_CALLBACK_ID_PREFIX
 from trellis.routing.state import RouterState
 from trellis.utils.debug import get_enabled_categories
 
@@ -397,6 +398,9 @@ class MessageHandler:
             self._handle_url_changed(msg.path)
             return None
 
+        if isinstance(msg, ProxyRequest):
+            return await self._handle_proxy_request(msg)
+
         if isinstance(msg, ProxyResponse):
             self._handle_proxy_response(msg)
 
@@ -433,6 +437,44 @@ class MessageHandler:
         else:
             future.set_exception(RuntimeError(msg.error))
 
+    async def _handle_proxy_request(self, msg: ProxyRequest) -> Message | None:
+        """Handle a client-originated proxy request."""
+        if not msg.proxy_id.startswith(PROXY_CALLBACK_ID_PREFIX):
+            raise ValueError(f"Client may not invoke proxy target: {msg.proxy_id}")
+
+        callback_id = msg.proxy_id[len(PROXY_CALLBACK_ID_PREFIX) :]
+        assert self.session is not None
+        status, resolved = self.session.lookup_proxy_callback(callback_id)
+        if status == "missing":
+            return ProxyResponse(
+                request_id=msg.request_id,
+                error=f"Proxy callback not found: {callback_id}",
+                error_type="LookupError",
+            )
+        if status == "dead":
+            return ProxyResponse(
+                request_id=msg.request_id,
+                error=f"Proxy callback is no longer alive: {callback_id}",
+                error_type="ReferenceError",
+            )
+
+        assert resolved is not None
+        try:
+            result = await self._invoke_proxy_callback(resolved.callback, resolved.node_id, msg.args)
+        except Exception as error:
+            return ProxyResponse(
+                request_id=msg.request_id,
+                error=str(error),
+                error_type=type(error).__name__,
+            )
+
+        return ProxyResponse(
+            request_id=msg.request_id,
+            result=result,
+            error=None,
+            error_type=None,
+        )
+
     async def request_proxy(
         self,
         proxy_id: str,
@@ -460,6 +502,23 @@ class MessageHandler:
             return await future
         finally:
             self._pending_proxy_calls.pop(request_id, None)
+
+    async def _invoke_proxy_callback(
+        self,
+        callback: tp.Callable[..., tp.Any],
+        node_id: str,
+        args: list[tp.Any],
+    ) -> tp.Any:
+        """Invoke a proxy callback under callback context."""
+        assert self.session is not None
+        with callback_context(self.session, node_id):
+            if inspect.iscoroutinefunction(callback):
+                return await callback(*args)
+
+            result = callback(*args)
+            if result is not None:
+                raise TypeError("Synchronous proxy callbacks must return None")
+            return None
 
     def _handle_url_changed(self, path: str) -> None:
         """Handle browser URL change (popstate event).
@@ -624,6 +683,5 @@ class MessageHandler:
 
     def cleanup(self) -> None:
         """Clean up resources. Call when session ends."""
-        # No explicit cleanup needed - callbacks are stored in element props
-        # and cleaned up when elements are unmounted
-        pass
+        if self.session is not None:
+            self.session.clear_proxy_callbacks()
