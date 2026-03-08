@@ -57,58 +57,88 @@ __all__ = [
 
 DataValue = str | int | float | bool | None
 
+# Schemes that always bypass the client-side router. We check a known set
+# rather than using urlparse because urlparse treats any "word:rest" as a
+# scheme (e.g. "localhost:3000" parses as scheme="localhost").
+_NON_RELATIVE_PREFIXES = (
+    "http://",
+    "https://",
+    "mailto:",
+    "tel:",
+    "javascript:",
+    "data:",
+    "file:",
+    "ftp://",
+)
+
+
+def _has_uri_scheme(href: str) -> bool:
+    """Detect arbitrary URI schemes (e.g. ``tauri://``, ``custom:``) by
+    checking for ``word:`` where the word contains only valid scheme chars.
+    Excludes port-like patterns such as ``localhost:3000``.
+    """
+    colon_pos = href.find(":")
+    if colon_pos <= 0:
+        return False
+    before_colon = href[:colon_pos]
+    if not (
+        before_colon.isascii()
+        and before_colon.replace("+", "").replace("-", "").replace(".", "").isalnum()
+    ):
+        return False
+    after_colon = href[colon_pos + 1 :]
+    return after_colon.startswith("//") or not after_colon[:1].isdigit()
+
 
 def _is_relative_url(href: str) -> bool:
     """Check if a URL is relative (no host/protocol).
 
-    Relative URLs should use client-side router navigation.
-    Absolute URLs (http://, https://, //) and special schemes (mailto:, tel:, etc.)
-    should use browser navigation.
-
-    Fragment-only (#section) and query-only (?foo=bar) URLs also bypass the router
-    since they modify the current page rather than navigating to a new route.
-
-    Args:
-        href: The URL to check
-
-    Returns:
-        True if the URL is relative (should use router), False if absolute or special scheme
+    Relative URLs use client-side router navigation.  Absolute URLs, special
+    schemes, fragment-only (``#section``), and query-only (``?foo=bar``) URLs
+    all bypass the router.
     """
-    # Protocol-relative, fragment-only, and query-only URLs bypass the router.
     if href.startswith(("//", "#", "?")):
         return False
-
-    # Explicit schemes bypass the router. We check a known set rather than using
-    # urlparse because urlparse treats any "word:rest" as a scheme (e.g.
-    # "localhost:3000" parses as scheme="localhost").
-    _NON_RELATIVE_PREFIXES = (
-        "http://",
-        "https://",
-        "mailto:",
-        "tel:",
-        "javascript:",
-        "data:",
-        "file:",
-        "ftp://",
-    )
     if href.startswith(_NON_RELATIVE_PREFIXES):
         return False
-
-    # Catch any other URI scheme pattern (e.g. "tauri://...", "custom:...")
-    # by checking for "word:" where the word contains only valid scheme chars.
-    colon_pos = href.find(":")
-    if colon_pos > 0:
-        before_colon = href[:colon_pos]
-        if (
-            before_colon.isascii()
-            and before_colon.replace("+", "").replace("-", "").replace(".", "").isalnum()
-        ):
-            # Looks like a URI scheme - but exclude port-like patterns (e.g. "localhost:3000")
-            after_colon = href[colon_pos + 1 :]
-            if after_colon.startswith("//") or not after_colon[:1].isdigit():
-                return False
-
+    if _has_uri_scheme(href):
+        return False
     return True
+
+
+def _resolve_router_navigation(
+    props: dict[str, object],
+    use_router: bool,
+) -> None:
+    """Conditionally inject a router click handler and data marker into *props*.
+
+    When the link is relative, has no explicit click handler, and router
+    navigation is enabled, this replaces ``on_click`` with an async handler
+    that calls ``router().navigate()`` and marks the element with a
+    ``data-trellis-router-link`` attribute.
+    """
+    href = props["href"]
+    if not (
+        href
+        and props["on_click"] is None
+        and use_router
+        and props["target"] != "_blank"
+        and (props["download"] is None or props["download"] is False)
+        and _is_relative_url(str(href))
+    ):
+        return
+
+    nav_href = str(href)
+
+    async def router_click(_event: object) -> None:
+        await router().navigate(nav_href)
+
+    props["on_click"] = router_click
+
+    existing_data: Mapping[str, DataValue] | None = props.get("data")  # type: ignore[assignment]
+    effective_data: dict[str, DataValue] = dict(existing_data) if existing_data is not None else {}
+    effective_data["trellis-router-link"] = "true"
+    props["data"] = effective_data
 
 
 @overload
@@ -617,28 +647,7 @@ def A(
     inner_text = props.pop("inner_text")
     use_router = props.pop("use_router")
 
-    effective_on_click = props["on_click"]
-    effective_data = dict(props["data"]) if props["data"] is not None else None
-    if (
-        props["href"]
-        and props["on_click"] is None
-        and use_router
-        and props["target"] != "_blank"
-        and (props["download"] is None or props["download"] is False)
-        and _is_relative_url(props["href"])
-    ):
-        nav_href = props["href"]
-
-        async def router_click(_event: object) -> None:
-            await router().navigate(nav_href)
-
-        effective_on_click = router_click
-        if effective_data is None:
-            effective_data = {}
-        effective_data["trellis-router-link"] = "true"
-
-    props["on_click"] = effective_on_click
-    props["data"] = effective_data
+    _resolve_router_navigation(props, use_router)
 
     if inner_text is None:
         return _A(**props)

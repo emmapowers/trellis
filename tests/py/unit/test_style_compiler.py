@@ -115,3 +115,23 @@ def test_compile_style_serializes_full_media_rule_surface() -> None:
 def test_compile_style_rejects_empty_media_rules() -> None:
     with pytest.raises(ValueError, match="MediaRule must define"):
         compile_style(h.Style(media=[h.MediaRule(style=h.Style())]))
+
+
+def test_compile_style_class_name_is_deterministic() -> None:
+    """Same Style input must always produce the same class name."""
+    style = h.Style(
+        color="red",
+        padding=16,
+        line_height=1.5,
+        hover=h.Style(color="blue", opacity=0.9),
+        selectors={"& > * + *": h.Style(margin_top=24)},
+        media=[
+            h.media(min_width=768, style=h.Style(padding=32, gap=12)),
+        ],
+    )
+
+    _, first_class, first_rules = compile_style(style)
+    for _ in range(20):
+        _, cls, rules = compile_style(style)
+        assert cls == first_class
+        assert rules == first_rules
