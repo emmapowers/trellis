@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import socket
+import sys
 
 __all__ = ["find_available_port"]
 
@@ -37,8 +38,16 @@ def find_available_port(
     """
     for port in range(start, end):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            # Allow binding to TIME_WAIT ports (matches uvicorn's behavior)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            if sys.platform == "win32":
+                # On Windows, SO_REUSEADDR allows binding to ports already in
+                # use, defeating availability checks. SO_EXCLUSIVEADDRUSE is
+                # the correct option: it rejects ports in active use while
+                # still allowing TIME_WAIT ports.
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)  # type: ignore[attr-defined]
+            else:
+                # On Unix, SO_REUSEADDR allows binding to TIME_WAIT ports
+                # without allowing truly active ports (matches uvicorn).
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 sock.bind((host, port))
                 return port
