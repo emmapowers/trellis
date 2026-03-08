@@ -10,7 +10,14 @@ describe("write mode", () => {
   it("writes generated module output", async () => {
     const repo_root = await mkdtemp(join(tmpdir(), "html-codegen-"));
     await mkdir(join(repo_root, "src", "trellis", "html"), { recursive: true });
-    await writeFile(join(repo_root, "src", "trellis", "html", "events.py"), '"""stale"""\\n', "utf-8");
+    const stale_generated_path = join(
+      repo_root,
+      "src",
+      "trellis",
+      "html",
+      "_generated_stale.py",
+    );
+    await writeFile(stale_generated_path, '"""stale"""\\n', "utf-8");
 
     const result = await runCli(["write"], {
       format_python: false,
@@ -57,7 +64,7 @@ describe("write mode", () => {
     await expect(access(events_path)).resolves.toBeUndefined();
     await expect(access(style_types_path)).resolves.toBeUndefined();
     await expect(access(style_metadata_path)).resolves.toBeUndefined();
-    await expect(access(join(repo_root, "src", "trellis", "html", "events.py"))).rejects.toThrow();
+    await expect(access(stale_generated_path)).rejects.toThrow();
 
     const content = await readFile(generated_path, "utf-8");
     expect(content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
@@ -88,5 +95,21 @@ describe("write mode", () => {
     const style_metadata_content = await readFile(style_metadata_path, "utf-8");
     expect(style_metadata_content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(style_metadata_content).toContain("AUTO_PX_FIELDS = frozenset({");
+  });
+
+  it("does not delete non-generated events module", async () => {
+    const repo_root = await mkdtemp(join(tmpdir(), "html-codegen-"));
+    await mkdir(join(repo_root, "src", "trellis", "html"), { recursive: true });
+    const events_path = join(repo_root, "src", "trellis", "html", "events.py");
+    await writeFile(events_path, '"""handwritten module"""\\n', "utf-8");
+
+    const result = await runCli(["write"], {
+      format_python: false,
+      generated_at: "2026-03-07T12:00:00.000Z",
+      repo_root,
+    });
+    expect(result.exit_code).toBe(0);
+
+    await expect(readFile(events_path, "utf-8")).resolves.toBe('"""handwritten module"""\\n');
   });
 });

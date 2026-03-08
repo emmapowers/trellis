@@ -160,8 +160,7 @@ async function compute_target_summary(
   try {
     const existing_names = await readdir(generated_dir);
     for (const name of existing_names) {
-      const is_generated_file =
-        (name.startsWith("_generated_") && name.endsWith(".py")) || name === "events.py";
+      const is_generated_file = name.startsWith("_generated_") && name.endsWith(".py");
       if (!is_generated_file) {
         continue;
       }

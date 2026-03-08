@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import inspect
 import typing as tp
 
 import pytest
@@ -8,6 +9,7 @@ import pytest
 import trellis
 from trellis import widgets as w
 from trellis.html._style_runtime import SpacingInput, StyleInput, WidthInput
+from trellis.widgets.icons import Icon
 
 
 def test_widget_signatures_use_shared_css_types() -> None:
@@ -34,3 +36,17 @@ def test_legacy_style_dataclasses_are_removed() -> None:
 
     with pytest.raises(AttributeError):
         read_margin()
+
+
+def test_icon_has_single_widget_style_wrapper() -> None:
+    wrapped_layers_with_component = 0
+    current = Icon
+
+    while True:
+        if hasattr(current, "_component"):
+            wrapped_layers_with_component += 1
+        if not hasattr(current, "__wrapped__"):
+            break
+        current = current.__wrapped__  # type: ignore[attr-defined]
+
+    assert wrapped_layers_with_component == 2

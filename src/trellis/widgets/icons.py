@@ -374,7 +374,6 @@ class IconName(StrEnum):
 
 
 @widget_style_props("margin", "flex")
-@widget_style_props("margin", "flex")
 @react("client/Icon.tsx", packages={"lucide-react": "0.468.0"})
 def Icon(
     name: IconName | str,
