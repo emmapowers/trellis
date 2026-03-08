@@ -41,6 +41,8 @@ from trellis.platforms.common.messages import (
     Message,
     Patch,
     PatchMessage,
+    ProxyCall,
+    ProxyCallResponse,
     RemovePatch,
     UpdatePatch,
     UrlChanged,
@@ -276,6 +278,7 @@ class MessageHandler:
     _root_component: Component
     _app_wrapper: AppWrapper
     _background_tasks: set[asyncio.Task[tp.Any]]
+    _pending_proxy_calls: dict[str, asyncio.Future[tp.Any]]
     _render_task: asyncio.Task[None] | None
 
     def __init__(
@@ -297,6 +300,7 @@ class MessageHandler:
         self.session_id = None
         self.batch_delay = batch_delay
         self._background_tasks = set()
+        self._pending_proxy_calls = {}
         self._render_task = None
 
     async def handle_hello(self) -> str:
@@ -327,6 +331,7 @@ class MessageHandler:
             msg.theme_mode,  # "system", "light", "dark", or None
         )
         self.session = RenderSession(wrapped)
+        self.session.proxy_transport = self
 
         # Register session with global registry (used by hot reload and other features)
         get_session_registry().register(self.session)
@@ -404,7 +409,41 @@ class MessageHandler:
             self._handle_url_changed(msg.path)
             return None
 
+        if isinstance(msg, ProxyCallResponse):
+            future = self._pending_proxy_calls.get(msg.request_id)
+            if future is None:
+                logger.debug("Ignoring proxy response for unknown request_id=%s", msg.request_id)
+                return None
+
+            if future.done():
+                return None
+
+            if msg.error is None:
+                future.set_result(msg.result)
+            else:
+                future.set_exception(RuntimeError(msg.error))
+            return None
+
         return None
+
+    async def call_proxy(self, proxy_id: str, method: str, args: list[tp.Any]) -> tp.Any:
+        """Send a proxy call to the client and await the response."""
+        request_id = str(uuid4())
+        future = asyncio.get_running_loop().create_future()
+        self._pending_proxy_calls[request_id] = future
+
+        try:
+            await self.send_message(
+                ProxyCall(
+                    request_id=request_id,
+                    proxy_id=proxy_id,
+                    method=method,
+                    args=args,
+                )
+            )
+            return await future
+        finally:
+            self._pending_proxy_calls.pop(request_id, None)
 
     def _handle_url_changed(self, path: str) -> None:
         """Handle browser URL change (popstate event).

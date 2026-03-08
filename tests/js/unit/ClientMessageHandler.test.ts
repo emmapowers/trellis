@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach, vi, Mock } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, Mock } from "vitest";
 import {
   ClientMessageHandler,
   ClientMessageHandlerCallbacks,
   ConnectionState,
 } from "@common/ClientMessageHandler";
 import { store } from "@common/core/store";
+import { registerProxyTarget } from "@common/proxyTargets";
 import {
   MessageType,
   HelloResponseMessage,
@@ -84,28 +85,28 @@ describe("ClientMessageHandler", () => {
       server_version: "1.2.3",
     };
 
-    it("sets session ID", () => {
-      handler.handleMessage(helloResponse);
+    it("sets session ID", async () => {
+      await handler.handleMessage(helloResponse);
       expect(handler.getSessionId()).toBe("test-session-123");
     });
 
-    it("sets server version", () => {
-      handler.handleMessage(helloResponse);
+    it("sets server version", async () => {
+      await handler.handleMessage(helloResponse);
       expect(handler.getServerVersion()).toBe("1.2.3");
     });
 
-    it("sets connection state to connected", () => {
-      handler.handleMessage(helloResponse);
+    it("sets connection state to connected", async () => {
+      await handler.handleMessage(helloResponse);
       expect(handler.getConnectionState()).toBe("connected");
     });
 
-    it("calls onConnected callback", () => {
-      handler.handleMessage(helloResponse);
+    it("calls onConnected callback", async () => {
+      await handler.handleMessage(helloResponse);
       expect(callbacks.onConnected).toHaveBeenCalledWith(helloResponse);
     });
 
-    it("calls onConnectionStateChange callback", () => {
-      handler.handleMessage(helloResponse);
+    it("calls onConnectionStateChange callback", async () => {
+      await handler.handleMessage(helloResponse);
       expect(callbacks.onConnectionStateChange).toHaveBeenCalledWith(
         "connected"
       );
@@ -113,7 +114,7 @@ describe("ClientMessageHandler", () => {
   });
 
   describe("handleMessage - PATCH", () => {
-    it("calls store.applyPatches with patches", () => {
+    it("calls store.applyPatches with patches", async () => {
       const patches = [
         { op: "update" as const, id: "e1", props: { text: "Hello" } },
         { op: "remove" as const, id: "e2" },
@@ -123,7 +124,7 @@ describe("ClientMessageHandler", () => {
         patches,
       };
 
-      handler.handleMessage(patchMessage);
+      await handler.handleMessage(patchMessage);
 
       expect(store.applyPatches).toHaveBeenCalledWith(patches);
     });
@@ -140,14 +141,14 @@ describe("ClientMessageHandler", () => {
       consoleErrorSpy.mockRestore();
     });
 
-    it("logs error to console", () => {
+    it("logs error to console", async () => {
       const errorMessage: ErrorMessage = {
         type: MessageType.ERROR,
         error: "Something went wrong",
         context: "render",
       };
 
-      handler.handleMessage(errorMessage);
+      await handler.handleMessage(errorMessage);
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Trellis render error:",
@@ -155,51 +156,51 @@ describe("ClientMessageHandler", () => {
       );
     });
 
-    it("calls onError callback with error and context", () => {
+    it("calls onError callback with error and context", async () => {
       const errorMessage: ErrorMessage = {
         type: MessageType.ERROR,
         error: "Callback failed",
         context: "callback",
       };
 
-      handler.handleMessage(errorMessage);
+      await handler.handleMessage(errorMessage);
 
       expect(callbacks.onError).toHaveBeenCalledWith("Callback failed", "callback");
     });
   });
 
   describe("handleMessage - HISTORY_PUSH", () => {
-    it("calls onHistoryPush callback with path", () => {
+    it("calls onHistoryPush callback with path", async () => {
       const historyPush: HistoryPushMessage = {
         type: MessageType.HISTORY_PUSH,
         path: "/users/123",
       };
 
-      handler.handleMessage(historyPush);
+      await handler.handleMessage(historyPush);
 
       expect(callbacks.onHistoryPush).toHaveBeenCalledWith("/users/123");
     });
   });
 
   describe("handleMessage - HISTORY_BACK", () => {
-    it("calls onHistoryBack callback", () => {
+    it("calls onHistoryBack callback", async () => {
       const historyBack: HistoryBackMessage = {
         type: MessageType.HISTORY_BACK,
       };
 
-      handler.handleMessage(historyBack);
+      await handler.handleMessage(historyBack);
 
       expect(callbacks.onHistoryBack).toHaveBeenCalled();
     });
   });
 
   describe("handleMessage - HISTORY_FORWARD", () => {
-    it("calls onHistoryForward callback", () => {
+    it("calls onHistoryForward callback", async () => {
       const historyForward: HistoryForwardMessage = {
         type: MessageType.HISTORY_FORWARD,
       };
 
-      handler.handleMessage(historyForward);
+      await handler.handleMessage(historyForward);
 
       expect(callbacks.onHistoryForward).toHaveBeenCalled();
     });
@@ -226,57 +227,109 @@ describe("ClientMessageHandler", () => {
       });
     });
 
-    it("calls window.location.reload", () => {
+    it("calls window.location.reload", async () => {
       const reloadMessage: ReloadMessage = {
         type: MessageType.RELOAD,
       };
 
-      handler.handleMessage(reloadMessage);
+      await handler.handleMessage(reloadMessage);
 
       expect(locationReloadSpy).toHaveBeenCalled();
     });
   });
 
+  describe("handleMessage - PROXY_CALL", () => {
+    it("dispatches proxy calls to registered targets", async () => {
+      const sendProxyResponse = vi.fn();
+      registerProxyTarget("demo_api", {
+        greet(name: string) {
+          return `hello ${name}`;
+        },
+      });
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-1",
+        proxy_id: "demo_api",
+        method: "greet",
+        args: ["Emma"],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-1",
+        result: "hello Emma",
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("returns proxy dispatch errors without throwing", async () => {
+      const sendProxyResponse = vi.fn();
+      registerProxyTarget("explode_api", {
+        explode() {
+          throw new TypeError("bad input");
+        },
+      });
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-2",
+        proxy_id: "explode_api",
+        method: "explode",
+        args: [],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-2",
+        result: null,
+        error: "bad input",
+        error_type: "TypeError",
+      });
+    });
+  });
+
   describe("works without callbacks", () => {
-    it("handles messages without errors when no callbacks provided", () => {
+    it("handles messages without errors when no callbacks provided", async () => {
       const handlerNoCallbacks = new ClientMessageHandler();
 
-      // Should not throw
-      expect(() => {
+      await expect(
         handlerNoCallbacks.handleMessage({
           type: MessageType.HELLO_RESPONSE,
           session_id: "test",
           server_version: "1.0.0",
-        });
-      }).not.toThrow();
+        })
+      ).resolves.toBeUndefined();
 
       expect(() => {
         handlerNoCallbacks.setConnectionState("connecting");
       }).not.toThrow();
     });
 
-    it("handles router messages without errors when no callbacks provided", () => {
+    it("handles router messages without errors when no callbacks provided", async () => {
       const handlerNoCallbacks = new ClientMessageHandler();
 
-      // Should not throw
-      expect(() => {
+      await expect(
         handlerNoCallbacks.handleMessage({
           type: MessageType.HISTORY_PUSH,
           path: "/test",
-        });
-      }).not.toThrow();
+        })
+      ).resolves.toBeUndefined();
 
-      expect(() => {
+      await expect(
         handlerNoCallbacks.handleMessage({
           type: MessageType.HISTORY_BACK,
-        });
-      }).not.toThrow();
+        })
+      ).resolves.toBeUndefined();
 
-      expect(() => {
+      await expect(
         handlerNoCallbacks.handleMessage({
           type: MessageType.HISTORY_FORWARD,
-        });
-      }).not.toThrow();
+        })
+      ).resolves.toBeUndefined();
     });
   });
 });

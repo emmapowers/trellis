@@ -43,7 +43,7 @@ export class ServerTrellisClient extends BaseTrellisClient {
   }
 
   protected sendUrlChange(msg: UrlChangedMessage): void {
-    this.send(msg);
+    this.sendMessage(msg);
   }
 
   async connect(): Promise<HelloResponseMessage> {
@@ -74,7 +74,7 @@ export class ServerTrellisClient extends BaseTrellisClient {
 
       this.ws.onmessage = (event) => {
         const msg = decode(new Uint8Array(event.data)) as Message;
-        this.handler.handleMessage(msg);
+        void this.handler.handleMessage(msg);
 
         // Resolve connect promise on HELLO_RESPONSE
         if (msg.type === MessageType.HELLO_RESPONSE && this.connectResolver) {
@@ -96,7 +96,7 @@ export class ServerTrellisClient extends BaseTrellisClient {
     });
   }
 
-  private send(msg: Message): void {
+  protected sendMessage(msg: Message): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(encode(msg));
     }
@@ -110,7 +110,7 @@ export class ServerTrellisClient extends BaseTrellisClient {
       callback_id: callbackId,
       args,
     };
-    this.send(msg);
+    this.sendMessage(msg);
   }
 
   disconnect(): void {

@@ -6,9 +6,18 @@
  * message processing to this handler, keeping transport logic separate.
  */
 
-import { Message, MessageType, HelloResponseMessage, Patch } from "./types";
+import { encode } from "@msgpack/msgpack";
+import {
+  Message,
+  MessageType,
+  HelloResponseMessage,
+  Patch,
+  ProxyCallMessage,
+  ProxyCallResponseMessage,
+} from "./types";
 import { store as defaultStore, TrellisStore } from "./core";
 import { debugLog, setDebugCategories } from "./debug";
+import { getProxyTarget } from "./proxyTargets";
 
 export type ConnectionState = "disconnected" | "connecting" | "connected";
 
@@ -21,12 +30,17 @@ export interface ClientMessageHandlerCallbacks {
   onHistoryForward?: () => void;
 }
 
+type ProxyResponseSender = (
+  msg: ProxyCallResponseMessage
+) => void | Promise<void>;
+
 export class ClientMessageHandler {
   private sessionId: string | null = null;
   private serverVersion: string | null = null;
   private connectionState: ConnectionState = "disconnected";
   private callbacks: ClientMessageHandlerCallbacks;
   private store: TrellisStore;
+  private sendProxyResponse?: ProxyResponseSender;
 
   /**
    * Create a new message handler.
@@ -36,17 +50,19 @@ export class ClientMessageHandler {
    */
   constructor(
     callbacks: ClientMessageHandlerCallbacks = {},
-    store: TrellisStore = defaultStore
+    store: TrellisStore = defaultStore,
+    sendProxyResponse?: ProxyResponseSender
   ) {
     this.callbacks = callbacks;
     this.store = store;
+    this.sendProxyResponse = sendProxyResponse;
   }
 
   /**
    * Process an incoming message from the server.
    * Updates store and notifies callbacks as appropriate.
    */
-  handleMessage(msg: Message): void {
+  async handleMessage(msg: Message): Promise<void> {
     debugLog("messages", `Received ${msg.type}`);
 
     switch (msg.type) {
@@ -89,10 +105,53 @@ export class ClientMessageHandler {
         this.callbacks.onHistoryForward?.();
         break;
 
+      case MessageType.PROXY_CALL:
+        await this.handleProxyCall(msg);
+        break;
+
       case MessageType.RELOAD:
         debugLog("messages", "Reload requested, refreshing page");
         window.location.reload();
         break;
+    }
+  }
+
+  private async handleProxyCall(msg: ProxyCallMessage): Promise<void> {
+    if (!this.sendProxyResponse) {
+      return;
+    }
+
+    try {
+      const target = getProxyTarget(msg.proxy_id);
+      if (!target) {
+        throw new Error(`Proxy target not found: ${msg.proxy_id}`);
+      }
+
+      const method = target[msg.method];
+      if (typeof method !== "function") {
+        throw new Error(
+          `Proxy method not found or not callable: ${msg.proxy_id}.${msg.method}`
+        );
+      }
+
+      const result = await (method as (...args: unknown[]) => unknown)(...msg.args);
+      encode(result);
+      await this.sendProxyResponse({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: msg.request_id,
+        result,
+        error: null,
+        error_type: null,
+      });
+    } catch (error) {
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      await this.sendProxyResponse({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: msg.request_id,
+        result: null,
+        error: errorObj.message,
+        error_type: errorObj.name,
+      });
     }
   }
 

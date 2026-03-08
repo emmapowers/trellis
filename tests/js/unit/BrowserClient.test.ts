@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi, Mock } from "vitest";
 import { BrowserClient } from "@browser/BrowserClient";
 import { RoutingMode } from "@common/RouterManager";
+import { MessageType } from "@common/types";
+import { registerProxyTarget } from "@common/proxyTargets";
 
 describe("BrowserClient", () => {
   let originalHistory: History;
@@ -117,6 +119,39 @@ describe("BrowserClient", () => {
 
       // @ts-expect-error - accessing private property for testing
       expect(client.routerManager.getCurrentPath()).toBe("/users/123");
+
+      client.disconnect();
+    });
+  });
+
+  describe("proxy calls", () => {
+    it("sends proxy call responses through the browser transport", async () => {
+      const sentMessages: unknown[] = [];
+      const client = new BrowserClient();
+      client.setSendCallback((msg) => {
+        sentMessages.push(msg);
+      });
+      registerProxyTarget("demo_api", {
+        async greet(name: string) {
+          return `hello ${name}`;
+        },
+      });
+
+      await client.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-1",
+        proxy_id: "demo_api",
+        method: "greet",
+        args: ["Emma"],
+      });
+
+      expect(sentMessages).toContainEqual({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-1",
+        result: "hello Emma",
+        error: null,
+        error_type: null,
+      });
 
       client.disconnect();
     });

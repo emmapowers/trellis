@@ -17,6 +17,7 @@ from trellis.platforms.common.messages import (
     EventMessage,
     HelloMessage,
     PatchMessage,
+    ProxyCallResponse,
 )
 from trellis.widgets import Button, Label
 
@@ -256,6 +257,43 @@ class TestMessageHandler:
         # After cleanup, tree should have no callbacks
         # (we can't easily test this without internal access,
         # but the method should not raise)
+
+    def test_handle_message_resolves_pending_proxy_call(
+        self, app_wrapper: AppWrapper
+    ) -> None:
+        """Proxy call responses resolve pending handler futures."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+
+        sent_messages: list[dict[str, tp.Any]] = []
+        handler.set_send_callback(lambda msg: sent_messages.append(msg))
+
+        async def test() -> None:
+            task = asyncio.create_task(handler.call_proxy("demo_api", "greet", ["Emma"]))
+            await asyncio.sleep(0)
+
+            assert len(sent_messages) == 1
+            message = sent_messages[0]
+            assert message["type"] == "proxy_call"
+            assert message["proxy_id"] == "demo_api"
+            assert message["method"] == "greet"
+            assert message["args"] == ["Emma"]
+
+            response = ProxyCallResponse(
+                request_id=message["request_id"],
+                result="hello Emma",
+            )
+            result = await handler.handle_message(response)
+
+            assert result is None
+            assert await task == "hello Emma"
+
+        asyncio.run(test())
 
 
 class TestBrowserMessageHandler:

@@ -84,6 +84,9 @@ class RenderSession:
     # Initial URL path from client HelloMessage (for routing)
     initial_path: str = "/"
 
+    # Transport used by JS proxy calls during render/callback execution
+    proxy_transport: tp.Any = None
+
     def __post_init__(self) -> None:
         self.dirty.set_lock(self.lock)
 
