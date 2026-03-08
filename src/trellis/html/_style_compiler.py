@@ -235,20 +235,8 @@ def _consume_raw_mapping(
             )
             continue
 
-        if not _is_dom_style_key(key):
-            raise TypeError(
-                "Raw style dict keys must use DOM-style CSS names "
-                f"(kebab-case or custom properties), got {key!r}"
-            )
-
         auto_px = _CSS_NAME_BY_FIELD_REVERSED.get(key, "") in AUTO_PX_FIELDS
         inline[key] = _serialize_value(value, auto_px=auto_px)
-
-
-def _is_dom_style_key(key: str) -> bool:
-    if key.startswith("--"):
-        return True
-    return "_" not in key and key.lower() == key
 
 
 def _serialize_value(value: tp.Any, *, auto_px: bool) -> str | int | float:

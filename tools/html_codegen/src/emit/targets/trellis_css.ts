@@ -22,6 +22,7 @@ const CSS_ALIAS_PRIORITY = [
   "LengthPercentage",
   "TimeValue",
   "AngleValue",
+  "NamedColor",
   "ColorValue",
   "Display",
   "Position",

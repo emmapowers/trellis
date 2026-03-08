@@ -34,6 +34,18 @@ describe("webref css source extraction", () => {
     );
 
     expect(surface.value_aliases.get("Display")?.kind).toBe("union");
-    expect(surface.value_aliases.get("ColorValue")?.kind).toBe("reference");
+    expect(surface.value_aliases.get("NamedColor")?.kind).toBe("union");
+    expect(surface.value_aliases.get("NamedColor")).toMatchObject({
+      kind: "union",
+      options: expect.arrayContaining([{ kind: "literal", value: "rebeccapurple" }]),
+    });
+    expect(surface.value_aliases.get("ColorValue")).toMatchObject({
+      kind: "union",
+      options: expect.arrayContaining([
+        { kind: "reference", name: "NamedColor" },
+        { kind: "primitive", name: "str" },
+        { kind: "reference", name: "CssColor" },
+      ]),
+    });
   });
 });

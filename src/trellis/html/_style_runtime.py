@@ -125,6 +125,114 @@ def hsl(hue: int | float, saturation: int | float, lightness: int | float) -> Cs
     )
 
 
+def hwb(
+    hue: int | float,
+    whiteness: int | float,
+    blackness: int | float,
+    *,
+    alpha: float | None = None,
+) -> CssColor:
+    return CssColor(
+        _serialize_color_function(
+            "hwb",
+            _format_number(hue),
+            _format_percent(whiteness),
+            _format_percent(blackness),
+            alpha=alpha,
+        )
+    )
+
+
+def lab(
+    lightness: int | float,
+    a_value: int | float,
+    b_value: int | float,
+    *,
+    alpha: float | None = None,
+) -> CssColor:
+    return CssColor(
+        _serialize_color_function(
+            "lab",
+            _format_percent(lightness),
+            _format_number(a_value),
+            _format_number(b_value),
+            alpha=alpha,
+        )
+    )
+
+
+def lch(
+    lightness: int | float,
+    chroma: int | float,
+    hue: int | float,
+    *,
+    alpha: float | None = None,
+) -> CssColor:
+    return CssColor(
+        _serialize_color_function(
+            "lch",
+            _format_percent(lightness),
+            _format_number(chroma),
+            _format_number(hue),
+            alpha=alpha,
+        )
+    )
+
+
+def oklab(
+    lightness: int | float,
+    a_value: int | float,
+    b_value: int | float,
+    *,
+    alpha: float | None = None,
+) -> CssColor:
+    return CssColor(
+        _serialize_color_function(
+            "oklab",
+            _format_percent_unit_interval(lightness),
+            _format_number(a_value),
+            _format_number(b_value),
+            alpha=alpha,
+        )
+    )
+
+
+def oklch(
+    lightness: int | float,
+    chroma: int | float,
+    hue: int | float,
+    *,
+    alpha: float | None = None,
+) -> CssColor:
+    return CssColor(
+        _serialize_color_function(
+            "oklch",
+            _format_percent_unit_interval(lightness),
+            _format_number(chroma),
+            _format_number(hue),
+            alpha=alpha,
+        )
+    )
+
+
+def color_space(
+    space: str,
+    *components: int | float | str,
+    alpha: float | None = None,
+) -> CssColor:
+    return CssColor(
+        _serialize_color_function(
+            "color",
+            space,
+            *(
+                _format_number(component) if isinstance(component, (int, float)) else component
+                for component in components
+            ),
+            alpha=alpha,
+        )
+    )
+
+
 def var(name: str, fallback: StyleScalar | None = None) -> CssValue:
     if fallback is None:
         return CssValue(f"var({name})")
@@ -231,6 +339,26 @@ def media(
         prefers_reduced_motion=prefers_reduced_motion,
         query=query,
     )
+
+
+def _format_percent(value: int | float) -> str:
+    return f"{_format_number(value)}%"
+
+
+def _format_percent_unit_interval(value: int | float) -> str:
+    if 0 <= value <= 1:
+        return _format_percent(value * 100)
+    return _format_percent(value)
+
+
+def _serialize_color_function(
+    name: str,
+    *parts: str,
+    alpha: float | None = None,
+) -> str:
+    if alpha is None:
+        return f"{name}({' '.join(parts)})"
+    return f"{name}({' '.join(parts)} / {_format_number(alpha)})"
 
 
 def _serialize_helper_value(value: StyleScalar, *, auto_px: bool) -> str:

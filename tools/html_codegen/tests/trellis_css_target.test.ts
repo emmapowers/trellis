@@ -162,6 +162,39 @@ function sample_css_document(): CssDocument {
           source_version: "@webref/css@8.4.0",
         },
       },
+      {
+        name: "NamedColor",
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "literal", value: "rebeccapurple" },
+            { kind: "literal", value: "tomato" },
+          ],
+        },
+        source: {
+          winner: "trellis_policy",
+          contributors: ["webref"],
+          reason: "css_value_alias",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
+      {
+        name: "ColorValue",
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "reference", name: "NamedColor" },
+            { kind: "primitive", name: "str" },
+            { kind: "reference", name: "CssColor" },
+          ],
+        },
+        source: {
+          winner: "trellis_policy",
+          contributors: ["webref"],
+          reason: "css_value_alias",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
     ],
   };
 }
@@ -178,6 +211,9 @@ describe("trellis css target", () => {
     const types_module = modules.find((module) => module.path.endsWith("_generated_style_types.py"));
     expect(types_module?.content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(types_module?.content).toContain("import builtins");
+    expect(types_module?.content).toContain("NamedColor = Literal[");
+    expect(types_module?.content).toContain('Literal["rebeccapurple"');
+    expect(types_module?.content).toContain("ColorValue = NamedColor | str | CssColor");
     expect(types_module?.content).toContain("Display = Literal[");
     expect(types_module?.content).toContain("class _GeneratedStyleFields:");
     expect(types_module?.content).toContain("border: ColorValue | CssValue | None = None");
