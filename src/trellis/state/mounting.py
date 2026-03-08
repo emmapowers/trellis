@@ -21,11 +21,8 @@ __all__ = ["on_mount"]
 class _MountState(Stateful):
     """Private slot-local state backing on_mount()."""
 
-    if tp.TYPE_CHECKING:
-        _cleanup: tp.Any | None
-        _fn: tp.Callable[[], object]
-    _cleanup = None
-    _fn = None
+    _cleanup: tp.Generator[None] | tp.AsyncGenerator[None] | None
+    _fn: OnMountFn
 
     def __init__(self, fn: OnMountFn) -> None:
         self._fn = fn
@@ -53,9 +50,9 @@ class _MountState(Stateful):
             return None
 
         if inspect.isasyncgen(cleanup):
-            return self._run_async_generator_cleanup(cleanup)
+            return self._run_async_generator_cleanup(tp.cast("tp.AsyncGenerator[None]", cleanup))
 
-        self._run_generator_cleanup(cleanup)
+        self._run_generator_cleanup(tp.cast("tp.Generator[None]", cleanup))
         return None
 
     async def _run_async_function(self) -> None:

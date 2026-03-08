@@ -298,6 +298,34 @@ class TestTrackedAnnotations:
 
         assert observed_counts == [0, 1]
 
+    def test_property_backed_by_private_untracked_attribute_does_not_rerender(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """A private annotated field is inert unless it opts into Tracked."""
+
+        @dataclass(kw_only=True)
+        class MyState(Stateful):
+            _count: int = 0
+
+            @property
+            def count(self) -> int:
+                return self._count
+
+        state = MyState()
+        observed_counts: list[int] = []
+
+        @component
+        def Counter() -> None:
+            observed_counts.append(state.count)
+
+        capture = capture_patches(Counter)
+        capture.render()
+
+        state._count = 1
+        capture.render_dirty()
+
+        assert observed_counts == [0]
+
     def test_subclass_state_works(self, capture_patches: "type[PatchCapture]") -> None:
         """Subclassed state types work correctly."""
 
@@ -915,12 +943,12 @@ class TestAttributeTracking:
         assert "unannotated" not in state._state_props
         assert result.root_element is not None
 
-    def test_private_annotated_attributes_tracked(self, rendered: "type[RenderResult]") -> None:
-        """Private attributes with type annotations ARE tracked."""
+    def test_private_annotated_attributes_not_tracked(self, rendered: "type[RenderResult]") -> None:
+        """Private attributes with plain annotations are not tracked."""
 
         @dataclass(kw_only=True)
         class MyState(Stateful):
-            _private: str = ""  # Private but annotated
+            _private: str = ""
 
         state = MyState()
         state._private = "secret"
@@ -931,9 +959,7 @@ class TestAttributeTracking:
 
         result = rendered(MyComponent)
 
-        # INTERNAL TEST: private annotated attribute should be tracked
-        assert "_private" in state._state_props
-        assert len(state._state_props["_private"].watchers) == 1
+        assert not hasattr(state, "_state_props")
         assert result.root_element is not None
 
     def test_stateful_internal_attrs_not_tracked(self, rendered: "type[RenderResult]") -> None:

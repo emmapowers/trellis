@@ -94,25 +94,15 @@ class _LoadState(Stateful):
     value: object | None
     error: Exception | None
 
-    if tp.TYPE_CHECKING:
-        _active_task: asyncio.Task[object] | None
-        _args: tuple[object, ...]
-        _element_id: str | None
-        _fn: tp.Callable[..., tp.Awaitable[object]]
-        _request_generation: int
-        _has_request: bool
-        _key: object | _NoKey
-        _kwargs: dict[str, object]
-        _session_ref: weakref.ref[tp.Any] | None
-    _active_task = None
-    _args = ()
-    _element_id = None
-    _fn = None
-    _request_generation = 0
-    _has_request = False
-    _key = _NO_KEY
-    _kwargs = None
-    _session_ref = None
+    _active_task: asyncio.Task[object] | None
+    _args: tuple[object, ...]
+    _element_id: str | None
+    _fn: tp.Callable[..., tp.Awaitable[object]] | None
+    _request_generation: int
+    _has_request: bool
+    _key: object | _NoKey
+    _kwargs: dict[str, object]
+    _session_ref: weakref.ReferenceType[tp.Any] | None
 
     def __init__(self) -> None:
         self.status = _STATUS_LOADING
@@ -212,6 +202,8 @@ class _LoadState(Stateful):
             self.error = None
 
         fn = self._fn
+        if fn is None:
+            raise RuntimeError("load() is missing its async loader function.")
         args = self._args
         kwargs = dict(self._kwargs)
         self._active_task = session.track_background_task(
