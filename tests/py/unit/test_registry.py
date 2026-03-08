@@ -207,6 +207,21 @@ def register_module(registry):
         with pytest.raises(ValueError, match=r"Export name collision.*formatDate"):
             registry.collect()
 
+    def test_collect_errors_on_duplicate_object_name(self) -> None:
+        """collect() raises error if two modules export objects with same name."""
+        registry = ModuleRegistry()
+        registry.register(
+            "module-a",
+            exports=[("demo_api", ExportKind.OBJECT, "demo.ts")],
+        )
+        registry.register(
+            "module-b",
+            exports=[("demo_api", ExportKind.OBJECT, "other.ts")],
+        )
+
+        with pytest.raises(ValueError, match=r"Export name collision.*demo_api"):
+            registry.collect()
+
     def test_collect_allows_same_name_for_initializers(self) -> None:
         """collect() allows duplicate names for initializers (side-effect imports)."""
         registry = ModuleRegistry()

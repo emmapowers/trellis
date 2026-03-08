@@ -46,6 +46,24 @@ class EventMessage(msgspec.Struct, tag="event", tag_field="type"):
     args: list[tp.Any] = []
 
 
+class ProxyCall(msgspec.Struct, tag="proxy_call", tag_field="type"):
+    """Request for the client to call a registered proxy target."""
+
+    request_id: str
+    proxy_id: str
+    method: str
+    args: list[tp.Any] = []
+
+
+class ProxyCallResponse(msgspec.Struct, tag="proxy_call_response", tag_field="type"):
+    """Response to a proxy call with either a result or an error."""
+
+    request_id: str
+    result: tp.Any = None
+    error: str | None = None
+    error_type: str | None = None
+
+
 class ErrorMessage(msgspec.Struct, tag="error", tag_field="type"):
     """Error message sent to client when an exception occurs.
 
@@ -157,6 +175,8 @@ Message = (
     | HelloResponseMessage
     | PatchMessage
     | EventMessage
+    | ProxyCall
+    | ProxyCallResponse
     | ErrorMessage
     | HistoryPush
     | HistoryBack

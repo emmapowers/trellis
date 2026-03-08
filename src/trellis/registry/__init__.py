@@ -25,6 +25,9 @@ class ExportKind(StrEnum):
     FUNCTION = auto()
     """Utility function - exported for use by other modules."""
 
+    OBJECT = auto()
+    """Runtime object - will be registered via registerProxyTarget()."""
+
     INITIALIZER = auto()
     """Side-effect code - called at startup."""
 
@@ -150,12 +153,12 @@ class ModuleRegistry:
                 else:
                     packages[pkg_name] = pkg_version
 
-        # Check for export name collisions (only for COMPONENT and FUNCTION)
+        # Check for export name collisions (only for named runtime exports)
         # INITIALIZER and STYLESHEET use side-effect imports without named bindings
         seen_exports: dict[str, str] = {}  # export name -> module name
         for module in modules:
             for export in module.exports:
-                if export.kind in (ExportKind.COMPONENT, ExportKind.FUNCTION):
+                if export.kind in (ExportKind.COMPONENT, ExportKind.FUNCTION, ExportKind.OBJECT):
                     if export.name in seen_exports:
                         raise ValueError(
                             f"Export name collision for '{export.name}': "

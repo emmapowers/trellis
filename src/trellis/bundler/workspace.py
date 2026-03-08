@@ -23,6 +23,10 @@ _REGISTRY_TS_TEMPLATE = Template(
 
 import { registerWidget } from "@trellis/trellis-core/widgets/index";
 {% endif %}
+{% if objects %}
+
+import { registerProxyTarget } from "@trellis/trellis-core/proxyTargets";
+{% endif %}
 {% if initializers %}
 {% for module, source in initializers %}
 import "@trellis/{{ module }}/{{ source }}";
@@ -45,10 +49,18 @@ import { {{ name }} } from "@trellis/{{ module }}/{{ source }}";
 
 export { {{ functions | map(attribute=0) | join(', ') }} };
 {% endif %}
+{% if objects %}
+{% for name, module, source in objects %}
+import { {{ name }} } from "@trellis/{{ module }}/{{ source }}";
+{% endfor %}
+{% endif %}
 
 export function initRegistry(): void {
 {% for name, module, source in components %}
   registerWidget("{{ name }}", {{ name }});
+{% endfor %}
+{% for name, module, source in objects %}
+  registerProxyTarget("{{ name }}", {{ name }});
 {% endfor %}
 }
 """
@@ -96,6 +108,7 @@ def generate_registry_ts(collected: CollectedModules) -> str:
     """
     components: list[tuple[str, str, str]] = []  # (name, module, source)
     functions: list[tuple[str, str, str]] = []  # (name, module, source)
+    objects: list[tuple[str, str, str]] = []  # (name, module, source)
     initializers: list[tuple[str, str]] = []  # (module, source)
     stylesheets: list[tuple[str, str]] = []  # (module, source)
 
@@ -112,6 +125,8 @@ def generate_registry_ts(collected: CollectedModules) -> str:
                 components.append((export.name, module.name, source_path))
             elif export.kind == ExportKind.FUNCTION:
                 functions.append((export.name, module.name, source_path))
+            elif export.kind == ExportKind.OBJECT:
+                objects.append((export.name, module.name, source_path))
             elif export.kind == ExportKind.INITIALIZER:
                 initializers.append((module.name, source_path))
             elif export.kind == ExportKind.STYLESHEET:
@@ -120,6 +135,7 @@ def generate_registry_ts(collected: CollectedModules) -> str:
     return _REGISTRY_TS_TEMPLATE.render(
         components=components,
         functions=functions,
+        objects=objects,
         initializers=initializers,
         stylesheets=stylesheets,
     )

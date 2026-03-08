@@ -8,6 +8,8 @@ from trellis.platforms.common.messages import (
     HelloResponseMessage,
     Message,
     PatchMessage,
+    ProxyCall,
+    ProxyCallResponse,
     ReloadMessage,
 )
 
@@ -81,6 +83,52 @@ class TestReloadMessage:
         assert raw["type"] == "reload"
 
 
+class TestProxyCallMessage:
+    """Tests for ProxyCall serialization."""
+
+    def test_proxy_call_message_msgpack_roundtrip(self) -> None:
+        """ProxyCall survives msgpack encode/decode."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ProxyCall(
+            request_id="req-1",
+            proxy_id="demo_api",
+            method="greet",
+            args=["Emma"],
+        )
+        encoded = encoder.encode(original)
+        decoded = decoder.decode(encoded)
+
+        assert isinstance(decoded, ProxyCall)
+        assert decoded.request_id == "req-1"
+        assert decoded.proxy_id == "demo_api"
+        assert decoded.method == "greet"
+        assert decoded.args == ["Emma"]
+
+
+class TestProxyCallResponseMessage:
+    """Tests for ProxyCallResponse serialization."""
+
+    def test_proxy_call_response_msgpack_roundtrip(self) -> None:
+        """ProxyCallResponse survives msgpack encode/decode."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ProxyCallResponse(
+            request_id="req-1",
+            result={"message": "hello"},
+        )
+        encoded = encoder.encode(original)
+        decoded = decoder.decode(encoded)
+
+        assert isinstance(decoded, ProxyCallResponse)
+        assert decoded.request_id == "req-1"
+        assert decoded.result == {"message": "hello"}
+        assert decoded.error is None
+        assert decoded.error_type is None
+
+
 class TestMessageUnion:
     """Tests for Message union type dispatch."""
 
@@ -140,6 +188,8 @@ class TestMessageUnion:
             HelloResponseMessage(session_id="s1", server_version="1.0"),
             PatchMessage(patches=[]),
             EventMessage(callback_id="cb_1"),
+            ProxyCall(request_id="req-1", proxy_id="demo_api", method="greet"),
+            ProxyCallResponse(request_id="req-1", result="ok"),
             ReloadMessage(),
         ]
 

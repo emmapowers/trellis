@@ -130,6 +130,26 @@ class TestGenerateRegistryTs:
         assert 'import { formatDate } from "@trellis/utils/format";' in code
         assert "export { formatDate };" in code
 
+    def test_registers_objects(self) -> None:
+        """Generates registerProxyTarget calls for object exports."""
+        collected = CollectedModules(
+            modules=[
+                Module(
+                    name="demo",
+                    exports=[
+                        ModuleExport("demo_api", ExportKind.OBJECT, "demo.ts"),
+                    ],
+                ),
+            ],
+            packages={},
+        )
+
+        code = generate_registry_ts(collected)
+
+        assert 'import { registerProxyTarget } from "@trellis/trellis-core/proxyTargets";' in code
+        assert 'import { demo_api } from "@trellis/demo/demo";' in code
+        assert 'registerProxyTarget("demo_api", demo_api);' in code
+
     def test_imports_initializers(self) -> None:
         """Generates import statements for initializer exports (side-effect imports)."""
         collected = CollectedModules(
