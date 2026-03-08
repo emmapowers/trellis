@@ -81,6 +81,17 @@ class EncodeURIComponent:
         raise NotImplementedError
 
 
+@js_global("navigator.clipboard")
+class Clipboard:
+    @js_method(name="writeText")
+    async def write_text(self, text: str) -> None:
+        raise NotImplementedError
+
+    @js_method(name="readText")
+    async def read_text(self) -> str:
+        raise NotImplementedError
+
+
 def _identity_wrapper(
     component: CompositionComponent,
     _system_theme: str,
@@ -398,6 +409,47 @@ class TestJsGlobalFunctions:
             class InvalidGlobal:
                 def encode(self, value: str) -> str:
                     return value
+
+
+class TestJsGlobalClipboard:
+    def test_clipboard_wrapper_uses_write_text_method_name(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Clipboard wrappers map Python method names to browser clipboard methods."""
+        transport = RecordingTransport(result=None)
+        clipboard = Clipboard()
+
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+        asyncio.run(clipboard.write_text("copied text"))
+
+        assert transport.calls == [("__global__:navigator.clipboard", "writeText", ["copied text"])]
+
+    def test_clipboard_wrapper_uses_read_text_method_name(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Clipboard read wrappers call readText on the clipboard object."""
+        transport = RecordingTransport(result="copied text")
+        clipboard = Clipboard()
+
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+        result = asyncio.run(clipboard.read_text())
+
+        assert result == "copied text"
+        assert transport.calls == [("__global__:navigator.clipboard", "readText", [])]
+
+    def test_clipboard_errors_are_raised_as_runtime_errors(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Clipboard proxy failures surface as RuntimeError."""
+        transport = RecordingTransport(error=RuntimeError("clipboard blocked"))
+        clipboard = Clipboard()
+
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+
+        with pytest.raises(RuntimeError, match="clipboard blocked"):
+            asyncio.run(clipboard.write_text("copied text"))
+
+        assert transport.calls == [("__global__:navigator.clipboard", "writeText", ["copied text"])]
 
 
 class TestMessageHandlerProxyCalls:

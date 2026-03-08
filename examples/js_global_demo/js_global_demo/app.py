@@ -32,14 +32,27 @@ class EncodeURIComponent:
         raise NotImplementedError
 
 
+@js_global("navigator.clipboard")
+class Clipboard:
+    @js_method(name="writeText")
+    async def write_text(self, text: str) -> None:
+        raise NotImplementedError
+
+    @js_method(name="readText")
+    async def read_text(self) -> str:
+        raise NotImplementedError
+
+
 local_storage = LocalStorage()
 encode_uri_component = EncodeURIComponent()
+clipboard = Clipboard()
 
 
 Status = Literal["success", "error", "warning", "pending", "info"]
 _STORAGE_KEY = "js-global-demo.theme"
 _STORAGE_VALUE = "dark"
 _ENCODE_INPUT = "hello world"
+_CLIPBOARD_TEXT = "copied from js_global demo"
 
 
 @dataclass
@@ -48,6 +61,8 @@ class DemoState(Stateful):
     storage_message: str = "No localStorage action yet."
     encode_status: Status = "info"
     encode_message: str = "Ready to encode a value."
+    clipboard_status: Status = "info"
+    clipboard_message: str = "Ready to use navigator.clipboard."
 
 
 def _button_style(primary: bool) -> dict[str, str]:
@@ -130,6 +145,30 @@ def JsGlobalDemo() -> None:
             state.encode_status = "success"
             state.encode_message = f"{_ENCODE_INPUT} -> {encoded}"
 
+    async def handle_clipboard_write(_event: object | None = None) -> None:
+        state.clipboard_status = "pending"
+        state.clipboard_message = "Writing clipboard text..."
+        try:
+            await clipboard.write_text(_CLIPBOARD_TEXT)
+        except RuntimeError as error:
+            state.clipboard_status = "error"
+            state.clipboard_message = str(error)
+        else:
+            state.clipboard_status = "success"
+            state.clipboard_message = f"Copied: {_CLIPBOARD_TEXT}"
+
+    async def handle_clipboard_read(_event: object | None = None) -> None:
+        state.clipboard_status = "pending"
+        state.clipboard_message = "Reading clipboard text..."
+        try:
+            text = await clipboard.read_text()
+        except RuntimeError as error:
+            state.clipboard_status = "error"
+            state.clipboard_message = str(error)
+        else:
+            state.clipboard_status = "success"
+            state.clipboard_message = f"Clipboard: {text}"
+
     with w.Column(
         padding=24,
         gap=16,
@@ -173,6 +212,25 @@ def JsGlobalDemo() -> None:
                         on_click=handle_encode,
                         style=_button_style(True),
                     )
+
+                with w.Column(gap=8):
+                    w.Label(text="navigator.clipboard", font_weight=600)
+                    w.StatusIndicator(
+                        status=state.clipboard_status,
+                        label=state.clipboard_status.title(),
+                    )
+                    w.Label(text=state.clipboard_message)
+                    with w.Row(gap=12):
+                        h.HtmlButton(
+                            "Copy demo text",
+                            on_click=handle_clipboard_write,
+                            style=_button_style(True),
+                        )
+                        h.HtmlButton(
+                            "Read clipboard",
+                            on_click=handle_clipboard_read,
+                            style=_button_style(False),
+                        )
 
 
 app = App(JsGlobalDemo)

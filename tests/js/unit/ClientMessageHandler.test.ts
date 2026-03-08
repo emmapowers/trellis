@@ -53,6 +53,7 @@ describe("ClientMessageHandler", () => {
   afterEach(() => {
     delete (window as Window & typeof globalThis & Record<string, unknown>).encoder;
     delete (window as Window & typeof globalThis & Record<string, unknown>).nestedGlobal;
+    delete (window.navigator as Navigator & Record<string, unknown>).clipboard;
   });
 
   describe("initial state", () => {
@@ -532,6 +533,114 @@ describe("ClientMessageHandler", () => {
         request_id: "req-global-5",
         result: null,
         error: "Global target is not callable: window.nestedGlobal.value",
+        error_type: "Error",
+      });
+    });
+
+    it("dispatches async clipboard writes through navigator.clipboard", async () => {
+      const sendProxyResponse = vi.fn();
+      Object.defineProperty(window.navigator, "clipboard", {
+        value: {
+          async writeText(text: string) {
+            return `wrote:${text}`;
+          },
+        },
+        configurable: true,
+      });
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-clipboard-1",
+        proxy_id: "__global__:navigator.clipboard",
+        method: "writeText",
+        args: ["copied text"],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-clipboard-1",
+        result: "wrote:copied text",
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("dispatches async clipboard reads through navigator.clipboard", async () => {
+      const sendProxyResponse = vi.fn();
+      Object.defineProperty(window.navigator, "clipboard", {
+        value: {
+          async readText() {
+            return "copied text";
+          },
+        },
+        configurable: true,
+      });
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-clipboard-2",
+        proxy_id: "__global__:navigator.clipboard",
+        method: "readText",
+        args: [],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-clipboard-2",
+        result: "copied text",
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("surfaces rejected clipboard promises as proxy errors", async () => {
+      const sendProxyResponse = vi.fn();
+      Object.defineProperty(window.navigator, "clipboard", {
+        value: {
+          async writeText() {
+            throw new DOMException("Write blocked", "NotAllowedError");
+          },
+        },
+        configurable: true,
+      });
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-clipboard-3",
+        proxy_id: "__global__:navigator.clipboard",
+        method: "writeText",
+        args: ["copied text"],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-clipboard-3",
+        result: null,
+        error: "Write blocked",
+        error_type: "NotAllowedError",
+      });
+    });
+
+    it("returns a missing-path error when navigator.clipboard is unavailable", async () => {
+      const sendProxyResponse = vi.fn();
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-clipboard-4",
+        proxy_id: "__global__:navigator.clipboard",
+        method: "readText",
+        args: [],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-clipboard-4",
+        result: null,
+        error: "Global target not found: navigator.clipboard",
         error_type: "Error",
       });
     });

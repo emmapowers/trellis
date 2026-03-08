@@ -50,6 +50,7 @@ describe("BrowserClient", () => {
       configurable: true,
     });
     delete (window as Window & typeof globalThis & Record<string, unknown>).encoder;
+    delete (window.navigator as Navigator & Record<string, unknown>).clipboard;
     vi.clearAllMocks();
   });
 
@@ -245,6 +246,40 @@ describe("BrowserClient", () => {
         type: MessageType.PROXY_CALL_RESPONSE,
         request_id: "req-global-2",
         result: "enc:hello world",
+        error: null,
+        error_type: null,
+      });
+
+      client.disconnect();
+    });
+
+    it("sends async clipboard responses through the browser transport", async () => {
+      const sentMessages: unknown[] = [];
+      Object.defineProperty(window.navigator, "clipboard", {
+        value: {
+          async readText() {
+            return "copied text";
+          },
+        },
+        configurable: true,
+      });
+      const client = new BrowserClient();
+      client.setSendCallback((msg) => {
+        sentMessages.push(msg);
+      });
+
+      await client.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-clipboard-1",
+        proxy_id: "__global__:navigator.clipboard",
+        method: "readText",
+        args: [],
+      });
+
+      expect(sentMessages).toContainEqual({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-clipboard-1",
+        result: "copied text",
         error: null,
         error_type: null,
       });

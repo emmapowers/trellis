@@ -34,6 +34,29 @@ type ProxyResponseSender = (
   msg: ProxyCallResponseMessage
 ) => void | Promise<void>;
 
+function normalizeProxyError(error: unknown): { message: string; name: string } {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      name: error.name,
+    };
+  }
+
+  if (error && typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    return {
+      message:
+        typeof record.message === "string" ? record.message : String(error),
+      name: typeof record.name === "string" ? record.name : "Error",
+    };
+  }
+
+  return {
+    message: String(error),
+    name: "Error",
+  };
+}
+
 export class ClientMessageHandler {
   private sessionId: string | null = null;
   private serverVersion: string | null = null;
@@ -182,7 +205,7 @@ export class ClientMessageHandler {
         error_type: null,
       });
     } catch (error) {
-      const errorObj = error instanceof Error ? error : new Error(String(error));
+      const errorObj = normalizeProxyError(error);
       await this.sendProxyResponse({
         type: MessageType.PROXY_CALL_RESPONSE,
         request_id: msg.request_id,
