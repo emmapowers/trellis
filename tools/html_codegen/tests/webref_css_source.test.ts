@@ -39,10 +39,18 @@ describe("webref css source extraction", () => {
       kind: "union",
       options: expect.arrayContaining([{ kind: "literal", value: "rebeccapurple" }]),
     });
-    expect(surface.value_aliases.get("ColorValue")).toMatchObject({
+    expect(surface.value_aliases.get("ColorKeyword")).toMatchObject({
       kind: "union",
       options: expect.arrayContaining([
         { kind: "reference", name: "NamedColor" },
+        { kind: "literal", value: "transparent" },
+        { kind: "literal", value: "currentColor" },
+      ]),
+    });
+    expect(surface.value_aliases.get("ColorValue")).toMatchObject({
+      kind: "union",
+      options: expect.arrayContaining([
+        { kind: "reference", name: "ColorKeyword" },
         { kind: "primitive", name: "str" },
         { kind: "reference", name: "CssColor" },
       ]),

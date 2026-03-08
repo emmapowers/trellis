@@ -1,6 +1,6 @@
 """Generated CSS style type declarations.
 
-Generated at: 2026-03-08T14:37:49.831Z
+Generated at: 2026-03-08T15:15:27.665Z
 """
 
 from __future__ import annotations
@@ -176,7 +176,8 @@ NamedColor = Literal[
     "yellow",
     "yellowgreen",
 ]
-ColorValue = NamedColor | str | CssColor
+ColorKeyword = NamedColor | Literal["transparent"] | Literal["currentColor"]
+ColorValue = ColorKeyword | str | CssColor
 Display = Literal["block", "inline", "inline-block", "flex", "grid", "none", "contents"]
 Position = Literal["static", "relative", "absolute", "fixed", "sticky"]
 Overflow = Literal["visible", "hidden", "clip", "scroll", "auto"]

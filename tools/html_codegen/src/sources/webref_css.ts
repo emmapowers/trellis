@@ -274,7 +274,11 @@ function value_aliases(): Map<string, TypeExpr> {
     ["Length", reference("CssLength")],
     ["Percent", reference("CssPercent")],
     ["NamedColor", keyword_union([...NAMED_COLORS])],
-    ["ColorValue", union(reference("NamedColor"), primitive("str"), reference("CssColor"))],
+    [
+      "ColorKeyword",
+      union(reference("NamedColor"), literal("transparent"), literal("currentColor")),
+    ],
+    ["ColorValue", union(reference("ColorKeyword"), primitive("str"), reference("CssColor"))],
     ["TimeValue", reference("CssTime")],
     ["AngleValue", reference("CssAngle")],
     ["Display", keyword_union(["block", "inline", "inline-block", "flex", "grid", "none", "contents"])],

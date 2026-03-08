@@ -183,9 +183,26 @@ function sample_css_document(): CssDocument {
         type_expr: {
           kind: "union",
           options: [
-            { kind: "reference", name: "NamedColor" },
+            { kind: "reference", name: "ColorKeyword" },
             { kind: "primitive", name: "str" },
             { kind: "reference", name: "CssColor" },
+          ],
+        },
+        source: {
+          winner: "trellis_policy",
+          contributors: ["webref"],
+          reason: "css_value_alias",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
+      {
+        name: "ColorKeyword",
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "reference", name: "NamedColor" },
+            { kind: "literal", value: "transparent" },
+            { kind: "literal", value: "currentColor" },
           ],
         },
         source: {
@@ -213,7 +230,10 @@ describe("trellis css target", () => {
     expect(types_module?.content).toContain("import builtins");
     expect(types_module?.content).toContain("NamedColor = Literal[");
     expect(types_module?.content).toContain('Literal["rebeccapurple"');
-    expect(types_module?.content).toContain("ColorValue = NamedColor | str | CssColor");
+    expect(types_module?.content).toContain(
+      'ColorKeyword = NamedColor | Literal["transparent"] | Literal["currentColor"]',
+    );
+    expect(types_module?.content).toContain("ColorValue = ColorKeyword | str | CssColor");
     expect(types_module?.content).toContain("Display = Literal[");
     expect(types_module?.content).toContain("class _GeneratedStyleFields:");
     expect(types_module?.content).toContain("border: ColorValue | CssValue | None = None");
