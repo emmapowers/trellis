@@ -43,9 +43,9 @@ def _print_startup_banner(host: str, port: int) -> None:
     url = f"http://{host}:{port}"
 
     _console.print()
-    _console.print("  [bold green]🌿 Trellis[/bold green] [dim]dev server running[/dim]")
+    _console.print("  [bold green]Trellis[/bold green] [dim]dev server running[/dim]")
     _console.print()
-    _console.print(f"  [bold]➜[/bold]  [cyan]Local:[/cyan]   [underline]{url}[/underline]")
+    _console.print(f"  [bold]>[/bold]  [cyan]Local:[/cyan]   [underline]{url}[/underline]")
     _console.print()
     _console.print("  [dim]Press[/dim] [bold]Ctrl+C[/bold] [dim]to stop[/dim]")
     _console.print()

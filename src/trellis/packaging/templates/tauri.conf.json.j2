@@ -24,7 +24,9 @@
 
 {% endfor %}    ],
     "resources": [
-      "pyembed/"
+      "pyembed/"{% if is_windows %},
+      "python3*.dll",
+      "vcruntime*.dll"{% endif %}
     ]
   }{% if update_url %},
   "plugins": {

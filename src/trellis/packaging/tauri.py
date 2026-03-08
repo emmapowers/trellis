@@ -73,13 +73,23 @@ def generate_tauri_scaffold(*, scaffold_dir: Path, config: Config, dist_path: Pa
         "window_height": window_height,
         "update_url": config.update_url,
         "update_pubkey": config.update_pubkey or "",
+        "is_windows": sys.platform == "win32",
     }
 
-    # Symlink dist directory so Tauri can find frontend assets
+    # Link dist directory so Tauri can find frontend assets.
+    # On Windows, symlinks require admin privileges, so use a junction instead.
     dist_link = scaffold_dir / "dist"
     if dist_link.exists() or dist_link.is_symlink():
-        dist_link.unlink()
-    dist_link.symlink_to(dist_path.resolve())
+        if dist_link.is_dir() and not dist_link.is_symlink():
+            os.rmdir(dist_link)
+        else:
+            dist_link.unlink()
+    if sys.platform == "win32":
+        import _winapi  # noqa: PLC0415 - Windows-only
+
+        _winapi.CreateJunction(str(dist_path.resolve()), str(dist_link))
+    else:
+        dist_link.symlink_to(dist_path.resolve())
 
     # Populate icons directory from bundler output or config source icon
     icons_dir = scaffold_dir / "icons"
@@ -150,12 +160,13 @@ def install_app_into_portable_python(
         check=True,
     )
 
-    # Copy the entire Python installation into pyembed for bundling
-    python_base = python_bin.parent.parent  # bin/python3 -> install dir
-    if python_base.name == "install":
-        src_dir = python_base
+    # Copy the entire Python installation into pyembed for bundling.
+    # Unix layout: install/bin/python3 → parent.parent = install/
+    # Windows layout: python/python.exe → parent = python/
+    if sys.platform == "win32":
+        src_dir = python_bin.parent
     else:
-        src_dir = python_base
+        src_dir = python_bin.parent.parent
 
     if pyembed_dir.exists():
         shutil.rmtree(pyembed_dir)
@@ -194,7 +205,10 @@ def _get_rustflags(pyembed_dir: Path) -> str | None:
         # All flags handled by .cargo/config.toml on Linux
         return None
 
-    lib_dir = pyembed_dir / "lib"
+    if _platform == "win32":
+        lib_dir = pyembed_dir / "libs"
+    else:
+        lib_dir = pyembed_dir / "lib"
     flags = f"-L {lib_dir}"
 
     if _platform == "darwin":
@@ -260,6 +274,20 @@ def _generate_cargo_config(*, scaffold_dir: Path, pyembed_dir: Path, product_nam
         lines.append("")
 
     (cargo_dir / "config.toml").write_text("\n".join(lines) + "\n")
+
+
+_WINDOWS_PYTHON_DLLS = ["python3*.dll", "vcruntime*.dll"]
+
+
+def _stage_windows_python_dlls(*, pyembed_dir: Path, scaffold_dir: Path) -> None:
+    """Copy Python DLLs to the scaffold root so NSIS installs them next to the exe.
+
+    The exe has a load-time dependency on python313.dll, which must be in the
+    same directory as the exe (not in a subdirectory like pyembed/).
+    """
+    for pattern in _WINDOWS_PYTHON_DLLS:
+        for dll in pyembed_dir.glob(pattern):
+            shutil.copy2(dll, scaffold_dir / dll.name)
 
 
 def _get_pyo3_python(pyembed_dir: Path) -> Path:
@@ -346,16 +374,18 @@ def run_tauri_build(
     )
 
     # LD_LIBRARY_PATH lets linuxdeploy find libpython and vendored libs
-    # during AppImage bundling
-    lib_paths = [str(pyembed_dir / "lib")]
-    # Add vendored .libs directories (e.g. pillow.libs) so linuxdeploy
-    # can resolve transitive native dependencies
-    site_packages = pyembed_dir / "lib" / "python3.13" / "site-packages"
-    if site_packages.is_dir():
-        lib_paths.extend(str(d) for d in site_packages.glob("*.libs"))
-    if existing := os.environ.get("LD_LIBRARY_PATH"):
-        lib_paths.append(existing)
-    ld_library_path = ":".join(lib_paths)
+    # during AppImage bundling (Linux only)
+    if sys.platform == "win32":
+        site_packages = pyembed_dir / "Lib" / "site-packages"
+        ld_library_path = ""
+    else:
+        lib_paths = [str(pyembed_dir / "lib")]
+        site_packages = pyembed_dir / "lib" / "python3.13" / "site-packages"
+        if site_packages.is_dir():
+            lib_paths.extend(str(d) for d in site_packages.glob("*.libs"))
+        if existing := os.environ.get("LD_LIBRARY_PATH"):
+            lib_paths.append(existing)
+        ld_library_path = ":".join(lib_paths)
 
     env = {
         **os.environ,
@@ -466,6 +496,10 @@ def build_desktop_app_bundle(
         app_root=app_root,
         pyembed_dir=pyembed_dir,
     )
+
+    # 3b. Copy Python DLLs next to the exe (Windows load-time dependency)
+    if sys.platform == "win32":
+        _stage_windows_python_dlls(pyembed_dir=pyembed_dir, scaffold_dir=scaffold_dir)
 
     # 4. Run Tauri build
     product_name = config.title or config.name

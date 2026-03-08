@@ -25,6 +25,14 @@
 </head>
 <body>
     <div id="root" class="trellis-root"></div>
+    <script>
+        window.onerror = function(msg, url, line, col, err) {
+            document.body.innerHTML = '<pre style="color:red;padding:20px">ERROR: ' + msg + '\n' + url + ':' + line + ':' + col + '\n' + (err && err.stack || '') + '</pre>';
+        };
+        window.addEventListener('unhandledrejection', function(e) {
+            document.body.innerHTML = '<pre style="color:red;padding:20px">UNHANDLED REJECTION: ' + e.reason + '\n' + (e.reason && e.reason.stack || '') + '</pre>';
+        });
+    </script>
     <script type="module" src="bundle.js"></script>
 </body>
 </html>

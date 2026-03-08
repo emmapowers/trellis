@@ -24,9 +24,9 @@ _console = Console()
 def _print_startup_banner(title: str) -> None:
     """Print a colorful startup banner."""
     _console.print()
-    _console.print("  [bold green]🌿 Trellis[/bold green] [dim]desktop app[/dim]")
+    _console.print("  [bold green]Trellis[/bold green] [dim]desktop app[/dim]")
     _console.print()
-    _console.print(f"  [bold]➜[/bold]  [cyan]Window:[/cyan]   {title}")
+    _console.print(f"  [bold]>[/bold]  [cyan]Window:[/cyan]   {title}")
     _console.print()
     _console.print("  [dim]Press Ctrl+C or close window to exit[/dim]")
     _console.print()
@@ -95,7 +95,19 @@ class DesktopPlatform(DesktopStandalonePlatform):
 
     def _get_config_override(self, **kwargs: Any) -> dict[str, Any] | None:
         """Return Tauri config overrides for dev mode (frontendDist + window metadata)."""
-        dist_path = str(get_dist_dir())
+        dist_dir = get_dist_dir()
+        if sys.platform == "win32":
+            # Tauri misinterprets absolute Windows paths (C:/...) as URLs.
+            # Create a junction next to the config dir so we can use a relative path.
+            config_dir = Path(__file__).parent / "config"
+            dist_link = config_dir / "dist"
+            if not dist_link.exists():
+                import _winapi  # noqa: PLC0415
+
+                _winapi.CreateJunction(str(dist_dir.resolve()), str(dist_link))
+            dist_path = "./dist"
+        else:
+            dist_path = str(dist_dir)
         return _build_tauri_config_override(
             dist_path=dist_path,
             window_title=kwargs.get("window_title", "Trellis App"),
