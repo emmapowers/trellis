@@ -16,14 +16,14 @@ registry.register(
     "js-proxy-demo",
     base_path=Path(__file__).parent.resolve() / "client",
     exports=[
-        ("demo_api", ExportKind.OBJECT, "demo_api.ts"),
+        ("DemoApi", ExportKind.OBJECT, "demo_api.ts"),
         ("formatNow", ExportKind.FUNCTION, "demo_api.ts"),
-        ("explodeNow", ExportKind.FUNCTION, "demo_api.ts"),
+        ("renameMe", ExportKind.FUNCTION, "demo_api.ts"),
     ],
 )
 
 
-@js_proxy(name="demo_api")
+@js_proxy
 class DemoApi:
     async def greet(self, name: str) -> str:
         raise NotImplementedError
@@ -40,7 +40,7 @@ async def format_now(value: int) -> str:
     raise NotImplementedError
 
 
-@js_proxy(name="explodeNow")
+@js_proxy(name="renameMe")
 async def explode_now() -> str:
     raise NotImplementedError
 

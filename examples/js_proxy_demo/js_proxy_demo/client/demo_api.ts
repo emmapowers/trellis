@@ -1,4 +1,4 @@
-export const demo_api = {
+export const DemoApi = {
   greet(name: string): string {
     return `hello ${name}`;
   },
@@ -12,6 +12,6 @@ export function formatNow(value: number): string {
   return `value: ${value}`;
 }
 
-export function explodeNow(): never {
+export function renameMe(): never {
   throw new Error("function failure");
 }
