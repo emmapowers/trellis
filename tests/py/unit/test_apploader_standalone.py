@@ -32,7 +32,7 @@ class TestStandalonePlatformSelection:
 
         monkeypatch.setattr(sys, "_pytauri_standalone", True, raising=False)
 
-        assert isinstance(apploader.platform, DesktopStandalonePlatform)
+        assert type(apploader.platform) is DesktopStandalonePlatform
 
     @requires_pytauri
     def test_selects_dev_when_flag_not_set(

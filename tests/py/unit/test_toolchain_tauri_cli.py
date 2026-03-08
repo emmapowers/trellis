@@ -44,8 +44,8 @@ class TestEnsureTauriCli:
                 "trellis.toolchain.tauri_cli.get_rust_target", return_value="aarch64-apple-darwin"
             ),
         ):
-            # Create fake cached binary
-            binary_dir = tmp_path / "tauri-cli-2.10.0"
+            # Create fake cached binary (target-scoped)
+            binary_dir = tmp_path / "tauri-cli-2.10.0-aarch64-apple-darwin"
             binary_dir.mkdir(parents=True)
             binary_path = binary_dir / "cargo-tauri"
             binary_path.write_text("fake tauri cli")

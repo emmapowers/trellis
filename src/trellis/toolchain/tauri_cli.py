@@ -35,7 +35,7 @@ def ensure_tauri_cli(rust: RustToolchain) -> Path:
     is_windows = target.endswith("-msvc")
     binary_name = "cargo-tauri.exe" if is_windows else "cargo-tauri"
 
-    extract_dir = BIN_DIR / f"tauri-cli-{TAURI_CLI_VERSION}"
+    extract_dir = BIN_DIR / f"tauri-cli-{TAURI_CLI_VERSION}-{target}"
     binary_path = extract_dir / binary_name
 
     if binary_path.exists():

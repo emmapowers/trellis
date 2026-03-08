@@ -95,10 +95,18 @@ def _try_system_rustc() -> RustToolchain | None:
 
     rustc = Path(rustc_path)
     cargo = Path(cargo_path)
-    # Infer homes from binary locations
+    # Infer homes from binary locations, but only if the binary is in a
+    # standard ~/.cargo/bin/ layout. System installs (e.g. /usr/bin/cargo)
+    # would incorrectly infer /usr as cargo_home.
     bin_dir = cargo.parent
-    cargo_home = bin_dir.parent
-    rustup_home = Path(os.environ.get("RUSTUP_HOME", cargo_home.parent / "rustup"))
+    potential_cargo_home = bin_dir.parent
+    if bin_dir.name == "bin" and potential_cargo_home.name == ".cargo":
+        cargo_home = potential_cargo_home
+        default_rustup = potential_cargo_home.parent / ".rustup"
+    else:
+        cargo_home = Path(os.environ.get("CARGO_HOME", Path.home() / ".cargo"))
+        default_rustup = Path.home() / ".rustup"
+    rustup_home = Path(os.environ.get("RUSTUP_HOME", default_rustup))
 
     return RustToolchain(
         cargo_home=cargo_home,
@@ -215,7 +223,7 @@ def ensure_rustup() -> RustToolchain:
         ext = ".exe" if sys.platform == "win32" else ""
         rustc = cargo_home / "bin" / f"rustc{ext}"
         cargo = cargo_home / "bin" / f"cargo{ext}"
-        if rustc.exists():
+        if rustc.exists() and cargo.exists():
             result = subprocess.run(
                 [str(rustc), "--version"],
                 check=False,

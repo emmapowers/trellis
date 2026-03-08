@@ -23,8 +23,8 @@ class TestEnsurePythonStandalone:
                 return_value="aarch64-apple-darwin",
             ),
         ):
-            # Create fake cached installation
-            install_dir = tmp_path / "python-standalone-3.13.1"
+            # Create fake cached installation (target-scoped)
+            install_dir = tmp_path / "python-standalone-3.13.1-aarch64-apple-darwin"
             bin_dir = install_dir / "python" / "bin"
             bin_dir.mkdir(parents=True)
             python_bin = bin_dir / "python3"

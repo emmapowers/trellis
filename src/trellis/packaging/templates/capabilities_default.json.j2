@@ -1,6 +1,6 @@
 {
   "identifier": "default",
-  "description": "Default capabilities for {{ product_name }}",
+  "description": {{ ("Default capabilities for " ~ product_name) | tojson }},
   "windows": ["main"],
   "permissions": [
     "core:default",

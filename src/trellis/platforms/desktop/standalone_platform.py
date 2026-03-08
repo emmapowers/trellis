@@ -97,21 +97,23 @@ class DesktopStandalonePlatform(Platform):
             """Establish channel connection with frontend."""
             channel: Channel = body.channel_id.channel_on(webview_window.as_ref_webview())
             _set_dialog_runtime(app_handle)
-            self._handler = PyTauriMessageHandler(
+            handler = PyTauriMessageHandler(
                 self._root_component,  # type: ignore[arg-type]
                 self._app_wrapper,  # type: ignore[arg-type]
                 channel,
                 batch_delay=self._batch_delay,
             )
+            self._handler = handler
             # Register handler for broadcast (e.g., reload messages)
-            get_global_registry().register(self._handler)
+            get_global_registry().register(handler)
 
             def _on_handler_done(task: asyncio.Task[None]) -> None:
-                if self._handler is not None:
-                    get_global_registry().unregister(self._handler)
+                get_global_registry().unregister(handler)
+                if self._handler is handler:
+                    self._handler = None
                 _clear_dialog_runtime()
 
-            self._handler_task = asyncio.create_task(self._handler.run())
+            self._handler_task = asyncio.create_task(handler.run())
             self._handler_task.add_done_callback(_on_handler_done)
             return "ok"
 

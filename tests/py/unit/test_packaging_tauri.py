@@ -280,23 +280,27 @@ class TestInstallAppIntoPortablePython:
     """Tests for install_app_into_portable_python function."""
 
     def test_calls_pip_install(self, tmp_path: Path) -> None:
-        python_bin = tmp_path / "python" / "install" / "bin" / "python3"
-        python_bin.parent.mkdir(parents=True)
-        python_bin.write_text("fake")
+        standalone_base = tmp_path / "python-install"
+        standalone_base.mkdir()
+        bin_dir = standalone_base / "bin"
+        bin_dir.mkdir()
+        (bin_dir / "python3").write_text("fake")
         app_root = tmp_path / "app"
         app_root.mkdir()
         pyembed_dir = tmp_path / "pyembed"
 
         with (
             patch("subprocess.run") as mock_run,
-            patch("trellis.packaging.tauri.shutil.copytree"),
+            patch("trellis.packaging.tauri.sys") as mock_sys,
         ):
+            mock_sys.platform = "darwin"
             install_app_into_portable_python(
-                python_bin=python_bin, app_root=app_root, pyembed_dir=pyembed_dir
+                standalone_base=standalone_base, app_root=app_root, pyembed_dir=pyembed_dir
             )
 
         cmd = mock_run.call_args[0][0]
-        assert str(python_bin) in cmd
+        # pip runs against the copy in pyembed_dir, not the original
+        assert str(pyembed_dir / "bin" / "python3") in cmd
         assert "-m" in cmd
         assert "pip" in cmd
         assert "install" in cmd
@@ -709,10 +713,12 @@ class TestGenerateCargoConfig:
         assert "x86_64-unknown-linux-gnu" in content
         assert "aarch64-unknown-linux-gnu" in content
 
-    def test_skipped_on_non_linux(self, tmp_path: Path) -> None:
+    def test_generates_config_on_macos(self, tmp_path: Path) -> None:
         scaffold_dir = tmp_path / "src-tauri"
         scaffold_dir.mkdir()
         pyembed_dir = tmp_path / "pyembed"
+        pyembed_dir.mkdir()
+        (pyembed_dir / "lib").mkdir()
 
         with patch("trellis.packaging.tauri.sys") as mock_sys:
             mock_sys.platform = "darwin"
@@ -722,4 +728,9 @@ class TestGenerateCargoConfig:
                 product_name="My App",
             )
 
-        assert not (scaffold_dir / ".cargo" / "config.toml").exists()
+        config_path = scaffold_dir / ".cargo" / "config.toml"
+        assert config_path.exists()
+        content = config_path.read_text()
+        assert "aarch64-apple-darwin" in content
+        assert "x86_64-apple-darwin" in content
+        assert "@executable_path/../Resources/pyembed/lib" in content

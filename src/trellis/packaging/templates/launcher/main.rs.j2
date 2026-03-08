@@ -7,6 +7,8 @@ use std::io::{self, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
+use sha2::{Sha256, Digest};
+
 const MAGIC: &[u8; 8] = b"TRLSPACK";
 const FOOTER_SIZE: u64 = 48; // 32 hex hash + 8 archive size + 8 magic
 const CLEANUP_DAYS: u64 = 90;
@@ -74,6 +76,11 @@ fn extract_archive(exe_path: &Path, footer: &Footer, dest: &Path) -> Result<(), 
     f.read_exact(&mut archive_data)
         .map_err(|e| format!("read archive: {e}"))?;
 
+    let computed = format!("{:x}", Sha256::digest(&archive_data));
+    if &computed[..32] != footer.hash {
+        return Err("archive integrity check failed: hash mismatch".into());
+    }
+
     let cursor = io::Cursor::new(archive_data);
     let mut archive = zip::ZipArchive::new(cursor).map_err(|e| format!("open zip: {e}"))?;
 
@@ -85,7 +92,7 @@ fn extract_archive(exe_path: &Path, footer: &Footer, dest: &Path) -> Result<(), 
     for i in 0..total {
         let mut entry = archive.by_index(i).map_err(|e| format!("zip entry: {e}"))?;
         let name = entry.name().to_string();
-        if name.contains("..") || name.starts_with('/') || name.starts_with('\\') {
+        if name.contains("..") || name.starts_with('/') || name.starts_with('\\') || name.contains(':') {
             return Err(format!("zip entry contains path traversal: {name}"));
         }
         let out_path = dest.join(&name);

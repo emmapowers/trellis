@@ -23,6 +23,12 @@ _WINDOWS_APP_EXTENSIONS = {".exe", ".dll"}
 _WINDOWS_SKIP_EXTENSIONS = {".pdb", ".d", ".lib", ".exp"}
 
 
+def _make_cargo_name(name: str) -> str:
+    """Normalize a name into a valid Cargo package name (lowercase, alphanumeric/hyphens)."""
+    result = re.sub(r"[^a-z0-9_-]", "-", name.lower())
+    return re.sub(r"-+", "-", result).strip("-")
+
+
 def _output_filename(product_name: str, version: str, ext: str, *, installer: bool = False) -> str:
     """Build a consistent output filename.
 
@@ -126,7 +132,8 @@ def _build_launcher(rust: RustToolchain, launcher_dir: Path, cargo_name: str) ->
         env=env,
         check=True,
     )
-    return launcher_dir / "target" / "release" / (cargo_name + "-launcher.exe")
+    binary_name = (cargo_name + "-launcher").replace("-", "_") + ".exe"
+    return launcher_dir / "target" / "release" / binary_name
 
 
 def _assemble_portable_exe(launcher_exe: Path, archive_path: Path, output_path: Path) -> None:
@@ -174,8 +181,7 @@ def build_portable_exe(
     archive_path = build_dir / "app.zip"
     _create_archive(files, archive_path)
 
-    cargo_name = re.sub(r"[^a-z0-9_-]", "-", product_name.lower())
-    cargo_name = re.sub(r"-+", "-", cargo_name).strip("-")
+    cargo_name = _make_cargo_name(product_name)
     launcher_dir = build_dir / "launcher"
     icon_path = scaffold_dir / "icons" / "icon.ico"
     _generate_launcher_scaffold(launcher_dir, product_name, exe_name, cargo_name, icon_path)
@@ -216,8 +222,7 @@ def build_installer_exe(
     archive_path = build_dir / "app.zip"
     _create_archive(files, archive_path)
 
-    cargo_name = re.sub(r"[^a-z0-9_-]", "-", product_name.lower())
-    cargo_name = re.sub(r"-+", "-", cargo_name).strip("-")
+    cargo_name = _make_cargo_name(product_name)
     launcher_dir = build_dir / "launcher"
     icon_path = scaffold_dir / "icons" / "icon.ico"
     _generate_launcher_scaffold(

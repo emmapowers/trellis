@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "{{ product_name }}",
-  "version": "{{ version }}",
-  "identifier": "{{ identifier }}",
+  "productName": {{ product_name | tojson }},
+  "version": {{ version | tojson }},
+  "identifier": {{ identifier | tojson }},
   "build": {
     "frontendDist": "./dist"
   },
@@ -10,7 +10,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "{{ window_title }}",
+        "title": {{ window_title | tojson }},
         "width": {{ window_width }},
         "height": {{ window_height }},
         "visible": false
@@ -20,7 +20,7 @@
   "bundle": {
     "active": true,
     "icon": [
-{% for icon in icon_paths %}      "{{ icon }}"{% if not loop.last %},{% endif %}
+{% for icon in icon_paths %}      {{ icon | tojson }}{% if not loop.last %},{% endif %}
 
 {% endfor %}    ],
     "resources": [
@@ -31,8 +31,8 @@
   }{% if update_url %},
   "plugins": {
     "updater": {
-      "endpoints": ["{{ update_url }}"],
-      "pubkey": "{{ update_pubkey }}"
+      "endpoints": [{{ update_url | tojson }}],
+      "pubkey": {{ update_pubkey | tojson }}
     }
   }{% endif %}
 }

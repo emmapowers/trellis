@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 
 import jinja2
 
-from trellis.packaging.portable import build_installer_exe, build_portable_exe
+from trellis.packaging.portable import _make_cargo_name, build_installer_exe, build_portable_exe
 from trellis.toolchain import (
     PYTHON_STANDALONE_VERSION,
     ensure_python_standalone,
@@ -65,8 +65,7 @@ def generate_tauri_scaffold(*, scaffold_dir: Path, config: Config, dist_path: Pa
     window_width, window_height = _parse_window_size(config.window_size)
 
     # Cargo package names: lowercase, alphanumeric/hyphens/underscores only
-    cargo_name = re.sub(r"[^a-z0-9_-]", "-", config.name.lower())
-    cargo_name = re.sub(r"-+", "-", cargo_name).strip("-")
+    cargo_name = _make_cargo_name(config.name)
 
     template_vars = {
         "name": cargo_name,
@@ -143,14 +142,23 @@ def generate_tauri_scaffold(*, scaffold_dir: Path, config: Config, dist_path: Pa
 
 
 def install_app_into_portable_python(
-    *, python_bin: Path, app_root: Path, pyembed_dir: Path
+    *, standalone_base: Path, app_root: Path, pyembed_dir: Path
 ) -> None:
     """Install the Trellis app into the portable Python environment.
 
-    Uses pip to install the app and its dependencies into the standalone
-    Python, then copies the installation into pyembed_dir for bundling.
+    Copies the standalone Python to pyembed_dir first, then uses pip to
+    install the app and its dependencies into the copy. This avoids
+    polluting the cached standalone Python with app-specific packages.
     """
-    pyembed_dir.mkdir(parents=True, exist_ok=True)
+    if pyembed_dir.exists():
+        shutil.rmtree(pyembed_dir)
+    shutil.copytree(standalone_base, pyembed_dir)
+
+    # Find python binary in the copy
+    if sys.platform == "win32":
+        python_bin = pyembed_dir / "python.exe"
+    else:
+        python_bin = pyembed_dir / "bin" / "python3"
 
     subprocess.run(
         [
@@ -165,18 +173,6 @@ def install_app_into_portable_python(
         ],
         check=True,
     )
-
-    # Copy the entire Python installation into pyembed for bundling.
-    # Unix layout: install/bin/python3 → parent.parent = install/
-    # Windows layout: python/python.exe → parent = python/
-    if sys.platform == "win32":
-        src_dir = python_bin.parent
-    else:
-        src_dir = python_bin.parent.parent
-
-    if pyembed_dir.exists():
-        shutil.rmtree(pyembed_dir)
-    shutil.copytree(src_dir, pyembed_dir)
 
 
 def _patch_libpython_install_name(pyembed_dir: Path) -> None:
@@ -198,29 +194,6 @@ def _patch_libpython_install_name(pyembed_dir: Path) -> None:
             ["install_name_tool", "-id", f"@rpath/{dylib.name}", str(dylib)],
             check=True,
         )
-
-
-def _get_rustflags(pyembed_dir: Path) -> str | None:
-    """Get RUSTFLAGS for linking against the embedded Python.
-
-    Returns None on Linux where flags are set via .cargo/config.toml instead,
-    to support spaces in product_name within rpath values.
-    """
-    _platform = sys.platform
-    if _platform == "linux":
-        # All flags handled by .cargo/config.toml on Linux
-        return None
-
-    if _platform == "win32":
-        lib_dir = pyembed_dir / "libs"
-    else:
-        lib_dir = pyembed_dir / "lib"
-    flags = f"-L {lib_dir}"
-
-    if _platform == "darwin":
-        flags += " -C link-arg=-Wl,-rpath,@executable_path/../Resources/pyembed/lib"
-
-    return flags
 
 
 def _get_linux_system_lib_flags() -> list[str]:
@@ -248,36 +221,55 @@ def _get_linux_system_lib_flags() -> list[str]:
 
 
 def _generate_cargo_config(*, scaffold_dir: Path, pyembed_dir: Path, product_name: str) -> None:
-    """Generate .cargo/config.toml with linker flags for Linux.
+    """Generate .cargo/config.toml with rustflags for linking against embedded Python.
 
-    Uses config.toml instead of RUSTFLAGS to handle spaces in product_name
-    (rpath values containing spaces can't be passed via RUSTFLAGS).
+    Uses config.toml array-of-strings format instead of the RUSTFLAGS env var
+    to correctly handle paths containing spaces.
     """
-    if sys.platform != "linux":
-        return
-
     cargo_dir = scaffold_dir / ".cargo"
     cargo_dir.mkdir(parents=True, exist_ok=True)
 
-    lib_dir = pyembed_dir / "lib"
-    rpath = f"$ORIGIN/../lib/{product_name}/pyembed/lib"
-
-    rustflags = [
-        "-L",
-        str(lib_dir),
-        "-C",
-        f"link-arg=-Wl,-rpath,{rpath}",
-    ]
-    rustflags.extend(_get_linux_system_lib_flags())
-
-    # Format as TOML array
-    flags_toml = ", ".join(f'"{f}"' for f in rustflags)
-
+    _platform = sys.platform
     lines: list[str] = []
-    for target in ("x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"):
-        lines.append(f"[target.{target}]")
-        lines.append(f"rustflags = [{flags_toml}]")
-        lines.append("")
+
+    if _platform == "darwin":
+        lib_dir = pyembed_dir / "lib"
+        rustflags = [
+            "-L",
+            str(lib_dir),
+            "-C",
+            "link-arg=-Wl,-rpath,@executable_path/../Resources/pyembed/lib",
+        ]
+        flags_toml = ", ".join(f'"{f}"' for f in rustflags)
+        for target in ("aarch64-apple-darwin", "x86_64-apple-darwin"):
+            lines.append(f"[target.{target}]")
+            lines.append(f"rustflags = [{flags_toml}]")
+            lines.append("")
+
+    elif _platform == "win32":
+        lib_dir = pyembed_dir / "libs"
+        rustflags = ["-L", str(lib_dir)]
+        flags_toml = ", ".join(f'"{f}"' for f in rustflags)
+        for target in ("x86_64-pc-windows-msvc", "aarch64-pc-windows-msvc"):
+            lines.append(f"[target.{target}]")
+            lines.append(f"rustflags = [{flags_toml}]")
+            lines.append("")
+
+    else:  # linux
+        lib_dir = pyembed_dir / "lib"
+        rpath = f"$ORIGIN/../lib/{product_name}/pyembed/lib"
+        rustflags = [
+            "-L",
+            str(lib_dir),
+            "-C",
+            f"link-arg=-Wl,-rpath,{rpath}",
+        ]
+        rustflags.extend(_get_linux_system_lib_flags())
+        flags_toml = ", ".join(f'"{f}"' for f in rustflags)
+        for target in ("x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"):
+            lines.append(f"[target.{target}]")
+            lines.append(f"rustflags = [{flags_toml}]")
+            lines.append("")
 
     (cargo_dir / "config.toml").write_text("\n".join(lines) + "\n")
 
@@ -411,9 +403,6 @@ def run_tauri_build(
         "NO_STRIP": "true",
         "DEPLOY_GTK_VERSION": "3",
     }
-    rustflags = _get_rustflags(pyembed_dir)
-    if rustflags is not None:
-        env["RUSTFLAGS"] = rustflags
 
     tauri_cmd = [str(tauri_cli), "build"]
     if tauri_bundles:
@@ -522,7 +511,7 @@ def build_desktop_app_bundle(
     # 3. Install app into portable Python
     pyembed_dir = scaffold_dir / "pyembed"
     install_app_into_portable_python(
-        python_bin=python_standalone.python_bin,
+        standalone_base=python_standalone.base_dir,
         app_root=app_root,
         pyembed_dir=pyembed_dir,
     )
@@ -555,8 +544,7 @@ def build_desktop_app_bundle(
 
     # 6. On Windows, build self-extracting exe (post-processing after Tauri compile)
     if sys.platform == "win32":
-        cargo_name = re.sub(r"[^a-z0-9_-]", "-", product_name.lower())
-        cargo_name = re.sub(r"-+", "-", cargo_name).strip("-")
+        cargo_name = _make_cargo_name(product_name)
         exe_name = cargo_name + ".exe"
 
         if installer:

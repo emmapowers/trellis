@@ -5,13 +5,14 @@ Python standalone) needed for desktop app packaging.
 """
 
 from trellis.toolchain.platform import get_rust_target
-from trellis.toolchain.python_standalone import PythonStandalone, ensure_python_standalone
+from trellis.toolchain.python_standalone import (
+    PYTHON_STANDALONE_RELEASE,
+    PYTHON_STANDALONE_VERSION,
+    PythonStandalone,
+    ensure_python_standalone,
+)
 from trellis.toolchain.rustup import MINIMUM_RUST_VERSION, RustToolchain, ensure_rustup
 from trellis.toolchain.tauri_cli import TAURI_CLI_VERSION, ensure_tauri_cli
-
-PYTHON_STANDALONE_VERSION = "3.13.1"
-# Release tag for python-build-standalone (contains the build date)
-PYTHON_STANDALONE_RELEASE = "20250106"
 
 __all__ = [
     "MINIMUM_RUST_VERSION",

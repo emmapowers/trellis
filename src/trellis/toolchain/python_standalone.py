@@ -35,7 +35,7 @@ def ensure_python_standalone() -> PythonStandalone:
     target = get_rust_target()
     is_windows = target.endswith("-msvc")
 
-    install_dir = BIN_DIR / f"python-standalone-{PYTHON_STANDALONE_VERSION}"
+    install_dir = BIN_DIR / f"python-standalone-{PYTHON_STANDALONE_VERSION}-{target}"
 
     if is_windows:
         python_bin = install_dir / "python" / "python.exe"
