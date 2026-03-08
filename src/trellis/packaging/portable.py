@@ -26,7 +26,10 @@ _WINDOWS_SKIP_EXTENSIONS = {".pdb", ".d", ".lib", ".exp"}
 def _make_cargo_name(name: str) -> str:
     """Normalize a name into a valid Cargo package name (lowercase, alphanumeric/hyphens)."""
     result = re.sub(r"[^a-z0-9_-]", "-", name.lower())
-    return re.sub(r"-+", "-", result).strip("-")
+    cargo_name = re.sub(r"-+", "-", result).strip("-")
+    if not cargo_name:
+        raise ValueError("name must contain at least one ASCII letter, digit, '_' or '-'")
+    return cargo_name
 
 
 def _output_filename(product_name: str, version: str, ext: str, *, installer: bool = False) -> str:
@@ -41,8 +44,13 @@ def _output_filename(product_name: str, version: str, ext: str, *, installer: bo
     name = re.sub(r"-+", "-", name)
     if not name:
         raise ValueError("product_name must contain at least one valid filename character")
+    safe_version = re.sub(r'[<>:"/\\|?*\x00-\x1f]+', "-", version)
+    safe_version = re.sub(r"\s+", "-", safe_version).strip(" .-")
+    safe_version = re.sub(r"-+", "-", safe_version)
+    if not safe_version:
+        raise ValueError("version must contain at least one valid filename character")
     suffix = "-installer" if installer else ""
-    return f"{name}-{version}{suffix}.{ext}"
+    return f"{name}-{safe_version}{suffix}.{ext}"
 
 
 def _collect_app_files(release_dir: Path) -> list[tuple[Path, str]]:
@@ -127,12 +135,13 @@ def _generate_launcher_scaffold(
     for template_name, output_name in file_map.items():
         template = env.get_template(template_name)
         content = template.render(**template_vars)
-        (launcher_dir / output_name).write_text(content)
+        (launcher_dir / output_name).write_text(content, encoding="utf-8")
 
 
 def _build_launcher(rust: RustToolchain, launcher_dir: Path, cargo_name: str) -> Path:
     """Build the launcher crate and return the path to the release exe."""
-    env = {**os.environ, **rust.env()}
+    target_dir = launcher_dir / "target"
+    env = {**os.environ, **rust.env(), "CARGO_TARGET_DIR": str(target_dir)}
     subprocess.run(
         [str(rust.cargo_bin), "build", "--release"],
         cwd=launcher_dir,
