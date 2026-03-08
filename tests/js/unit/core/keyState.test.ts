@@ -87,6 +87,20 @@ describe("KeyState.shouldFire (requireReset)", () => {
     expect(keyState.shouldFire("binding-1", false, event)).toBe(true);
     expect(keyState.shouldFire("binding-1", false, event)).toBe(true);
   });
+
+  it("keyup for F1 does not clear F10 binding (endsWith match)", () => {
+    // Fire F10 binding
+    const f10Event = makeKeyEvent({ key: "F10" });
+    expect(keyState.shouldFire("binding-1", true, f10Event)).toBe(true);
+    expect(keyState.shouldFire("binding-1", true, f10Event)).toBe(false);
+
+    // F1 keyup should NOT clear F10 binding — endsWith(":key:F1") must not
+    // match a binding tracked as ":key:F10"
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "F1" }));
+
+    // F10 binding should still be suppressed
+    expect(keyState.shouldFire("binding-1", true, f10Event)).toBe(false);
+  });
 });
 
 describe("KeyState.advanceSequence", () => {
@@ -151,5 +165,19 @@ describe("KeyState.advanceSequence", () => {
     // After restart, we're at step 1 again
     const iEvent = makeKeyEvent({ key: "i" });
     expect(keyState.advanceSequence("seq-1", steps, 1000, iEvent)).toBe(true);
+  });
+
+  it("ignores repeat keydown events", () => {
+    const steps = [makeFilter({ key: "G" }), makeFilter({ key: "G" })];
+    const event = makeKeyEvent({ key: "g" });
+    const repeatEvent = makeKeyEvent({ key: "g", repeat: true });
+
+    // First press advances to step 1
+    expect(keyState.advanceSequence("seq-1", steps, 1000, event)).toBe(false);
+    // Repeat events should be ignored (return false without advancing)
+    expect(keyState.advanceSequence("seq-1", steps, 1000, repeatEvent)).toBe(false);
+    expect(keyState.advanceSequence("seq-1", steps, 1000, repeatEvent)).toBe(false);
+    // Real second press completes the sequence
+    expect(keyState.advanceSequence("seq-1", steps, 1000, event)).toBe(true);
   });
 });

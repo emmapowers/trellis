@@ -26,7 +26,7 @@ export class KeyState {
       this.heldKeys.delete(e.key);
       // Remove bindings that depended on this key
       for (const bindingId of this.firedBindings) {
-        if (bindingId.includes(`key:${e.key}`)) {
+        if (bindingId.endsWith(`:key:${e.key}`)) {
           this.firedBindings.delete(bindingId);
         }
       }
@@ -90,7 +90,7 @@ export class KeyState {
     // Ignore modifier-only keydown events — they don't advance or reset
     // sequences. Without this, chords like Mod+K,Mod+S break because the
     // bare Meta keydown between the two presses resets the state machine.
-    if (MODIFIER_KEYS.has(event.key)) return false;
+    if (MODIFIER_KEYS.has(event.key) || event.repeat) return false;
 
     const now = Date.now();
     let state = this.sequenceStates.get(bindingId);
