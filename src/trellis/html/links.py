@@ -1,6 +1,7 @@
-"""Link and media HTML elements.
+"""Handwritten public wrappers for link-oriented HTML elements.
 
-Elements for hyperlinks and images.
+This module holds Trellis-specific behavior that intentionally sits on top of
+the generated HTML bindings, primarily router-aware anchors.
 """
 
 from __future__ import annotations
@@ -560,13 +561,11 @@ def A(
     use_router: bool = True,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element | HtmlContainerElement:
-    """An anchor (link) element.
+    """Render an anchor element.
 
-    For relative URLs (paths without http://, https://, or //), automatically
-    uses client-side router navigation instead of full page reload. This
-    enables SPA-style navigation when used within a RouterState context.
-
-    For absolute URLs, uses normal browser navigation.
+    Wraps the standard HTML ``<a>`` element and adds Trellis router navigation
+    for relative links by default. Absolute URLs, fragment links, and special
+    schemes use normal browser navigation.
 
     Can be used as text-only or as a container:
         h.A("Click here", href="/path")  # Text only

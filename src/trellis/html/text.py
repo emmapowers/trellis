@@ -1,4 +1,9 @@
-"""Text HTML elements."""
+"""Handwritten text helpers exposed from trellis.html.
+
+Most text-related HTML wrappers are generated. This module only owns the
+special ``Text`` node helper, which renders raw text without a wrapping HTML
+element.
+"""
 
 from __future__ import annotations
 

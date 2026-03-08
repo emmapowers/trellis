@@ -1,14 +1,15 @@
-"""Native HTML element wrappers for Trellis.
+"""Native HTML and CSS wrappers for Trellis.
 
-Provides Python wrappers for common HTML elements that render directly
-as native DOM elements in React, without requiring separate React components.
+Provides Python wrappers for standard HTML elements plus typed CSS helpers that
+render directly to native DOM elements in React, without requiring separate
+React components.
 
 Example:
     ```python
     from trellis import html as h
 
-    with h.Div(class_name="container", style={"padding": "16px"}):
-        h.H1("Welcome", style={"color": "blue"})
+    with h.Div(class_name="container", style=h.Style(padding=16)):
+        h.H1("Welcome", style=h.Style(color="blue"))
         h.P("This is a paragraph.")
         h.A("Click here", href="/about")
     ```
@@ -24,6 +25,7 @@ Categories:
              Fieldset, Legend, Optgroup, Progress, Meter, Output, Datalist
     - Tables: Table, Thead, Tbody, Tfoot, Tr, Th, Td, Caption
     - Media: Video, Audio, Source, Iframe
+    - CSS: Style, media, px, rem, rgb, border, padding, margin, shadow
 """
 
 # Base types
