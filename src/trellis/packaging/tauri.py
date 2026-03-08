@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 
 import jinja2
 
+from trellis.packaging.portable import build_portable_exe
 from trellis.toolchain import ensure_python_standalone, ensure_rustup, ensure_tauri_cli
 from trellis.toolchain.rustup import RustToolchain
 
@@ -346,7 +347,7 @@ def run_tauri_build(
     pyembed_dir: Path,
     product_name: str,
     bundles: list[str] | None = None,
-) -> Path:
+) -> tuple[Path, bool]:
     """Run the Tauri build process.
 
     Args:
@@ -358,15 +359,21 @@ def run_tauri_build(
         bundles: Bundle types to build (default: ["app"])
 
     Returns:
-        Path to the build output directory
+        Tuple of (bundle_dir, wants_portable) where bundle_dir is the path
+        to the build output directory and wants_portable indicates whether
+        portable exe post-processing is needed.
     """
     if bundles is None:
         if sys.platform == "darwin":
             bundles = ["app"]
         elif sys.platform == "win32":
-            bundles = ["nsis"]
+            bundles = ["portable"]
         else:
             bundles = ["deb"]
+
+    # Separate portable from tauri-native bundle types
+    wants_portable = "portable" in bundles
+    tauri_bundles = [b for b in bundles if b != "portable"]
 
     _patch_libpython_install_name(pyembed_dir)
     _generate_cargo_config(
@@ -401,15 +408,21 @@ def run_tauri_build(
     if rustflags is not None:
         env["RUSTFLAGS"] = rustflags
 
+    tauri_cmd = [str(tauri_cli), "build"]
+    if tauri_bundles:
+        tauri_cmd.extend(["--bundles", *tauri_bundles])
+    else:
+        tauri_cmd.append("--no-bundle")
+
     subprocess.run(
-        [str(tauri_cli), "build", "--bundles", *bundles],
+        tauri_cmd,
         cwd=scaffold_dir,
         env=env,
         check=True,
     )
 
     # Tauri outputs bundles to target/release/bundle/
-    return scaffold_dir / "target" / "release" / "bundle"
+    return scaffold_dir / "target" / "release" / "bundle", wants_portable
 
 
 def _copy_build_output(*, bundle_dir: Path, output_dir: Path, platform: str) -> None:
@@ -503,7 +516,7 @@ def build_desktop_app_bundle(
 
     # 4. Run Tauri build
     product_name = config.title or config.name
-    bundle_dir = run_tauri_build(
+    bundle_dir, wants_portable = run_tauri_build(
         tauri_cli=tauri_cli,
         rust=rust,
         scaffold_dir=scaffold_dir,
@@ -515,6 +528,20 @@ def build_desktop_app_bundle(
     # 5. Copy output to destination
     dest = output_dir or (app_root / "dist")
     _copy_build_output(bundle_dir=bundle_dir, output_dir=dest, platform=sys.platform)
+
+    # 6. Build portable exe if requested (post-processing after Tauri compile)
+    if wants_portable:
+        cargo_name = re.sub(r"[^a-z0-9_-]", "-", product_name.lower())
+        cargo_name = re.sub(r"-+", "-", cargo_name).strip("-")
+        exe_name = cargo_name + ".exe"
+        build_portable_exe(
+            rust=rust,
+            scaffold_dir=scaffold_dir,
+            product_name=product_name,
+            exe_name=exe_name,
+            output_dir=dest,
+        )
+
     return dest
 
 
