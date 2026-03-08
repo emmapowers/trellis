@@ -19,18 +19,27 @@ fn wide(s: &str) -> Vec<u16> {
     s.encode_utf16().chain(std::iter::once(0)).collect()
 }
 
-fn show_error(msg: &str) -> ! {
+fn message_box(msg: &str, flags: u32) {
     #[link(name = "user32")]
     extern "system" {
         fn MessageBoxW(hwnd: *mut u8, text: *const u16, caption: *const u16, typ: u32) -> i32;
     }
     let text = wide(msg);
     let caption = wide(PRODUCT_NAME);
-    unsafe { MessageBoxW(std::ptr::null_mut(), text.as_ptr(), caption.as_ptr(), 0x10) };
+    unsafe { MessageBoxW(std::ptr::null_mut(), text.as_ptr(), caption.as_ptr(), flags) };
+}
+
+fn show_error(msg: &str) -> ! {
+    message_box(msg, 0x10); // MB_ICONERROR
     std::process::exit(1);
 }
 
+fn show_info(msg: &str) {
+    message_box(msg, 0x40); // MB_ICONINFORMATION
+}
+
 struct Footer {
+    hash: String,
     archive_size: u64,
 }
 
@@ -51,8 +60,11 @@ fn read_footer(exe_path: &Path) -> Result<Footer, String> {
         return Err("magic mismatch".into());
     }
 
+    let hash = std::str::from_utf8(&footer[0..32])
+        .map_err(|_| "invalid hash")?
+        .to_string();
     let archive_size = u64::from_le_bytes(footer[32..40].try_into().unwrap());
-    Ok(Footer { archive_size })
+    Ok(Footer { hash, archive_size })
 }
 
 fn extract_archive(exe_path: &Path, footer: &Footer, dest: &Path) -> Result<(), String> {
@@ -274,14 +286,14 @@ fn get_install_dir() -> Result<PathBuf, String> {
         .map_err(|_| "LOCALAPPDATA not set".into())
 }
 
-fn installed_version(install_dir: &Path) -> Option<String> {
-    fs::read_to_string(install_dir.join(".version"))
+fn installed_hash(install_dir: &Path) -> Option<String> {
+    fs::read_to_string(install_dir.join(".hash"))
         .ok()
         .map(|s| s.trim().to_string())
 }
 
-fn write_version(install_dir: &Path) {
-    let _ = fs::write(install_dir.join(".version"), VERSION);
+fn write_hash(install_dir: &Path, hash: &str) {
+    let _ = fs::write(install_dir.join(".hash"), hash);
 }
 
 fn shortcut_path() -> Result<PathBuf, String> {
@@ -455,7 +467,7 @@ fn main() -> ExitCode {
     let real_exe = app_dir.join(EXE_NAME);
 
     let needs_install =
-        installed_version(&install_dir).as_deref() != Some(VERSION) || !real_exe.exists();
+        installed_hash(&install_dir).as_deref() != Some(&footer.hash) || !real_exe.exists();
 
     if needs_install {
         let lock_path = install_dir.join(".install.lock");
@@ -465,7 +477,7 @@ fn main() -> ExitCode {
         };
 
         // Double-check after acquiring lock
-        if installed_version(&install_dir).as_deref() != Some(VERSION) || !real_exe.exists() {
+        if installed_hash(&install_dir).as_deref() != Some(&footer.hash) || !real_exe.exists() {
             // Remove old version if present
             if app_dir.exists() {
                 let _ = fs::remove_dir_all(&app_dir);
@@ -488,10 +500,12 @@ fn main() -> ExitCode {
                 show_error(&format!("Failed to finalize installation: {e}"));
             }
 
-            write_version(&install_dir);
+            write_hash(&install_dir, &footer.hash);
             create_shortcut(&real_exe);
             write_uninstall_script(&install_dir);
             register_uninstaller(&install_dir);
+
+            show_info(&format!("{} has been installed successfully.", PRODUCT_NAME));
         }
 
         release_lock(&lock_path);

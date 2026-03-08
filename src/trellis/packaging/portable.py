@@ -197,8 +197,8 @@ def build_installer_exe(
     """Build an installer single-exe bundle.
 
     Like build_portable_exe but installs to %LOCALAPPDATA% with a Start Menu
-    shortcut and Add/Remove Programs uninstaller. Uses the app version to
-    replace previous installs.
+    shortcut and Add/Remove Programs uninstaller. Uses the content hash to
+    detect changes and re-extract when the bundle contents differ.
 
     Returns:
         Path to the assembled installer exe
