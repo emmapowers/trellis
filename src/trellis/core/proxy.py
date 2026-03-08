@@ -27,7 +27,7 @@ class _ProxyTransport(tp.Protocol):
     async def call_proxy(
         self,
         proxy_id: str,
-        method: str,
+        method: str | None,
         args: list[tp.Any],
     ) -> tp.Any: ...
 
@@ -56,7 +56,7 @@ def _resolve_transport() -> _ProxyTransport:
 
 async def _call_proxy(
     proxy_id: str,
-    method: str,
+    method: str | None,
     args: tuple[tp.Any, ...],
     kwargs: dict[str, tp.Any],
     transport: _ProxyTransport | None,
@@ -169,7 +169,7 @@ def _decorate_function(
 
     @functools.wraps(func)
     async def wrapper(*args: tp.Any, **kwargs: tp.Any) -> tp.Any:
-        return await _call_proxy(proxy_id, proxy_id, args, kwargs, None)
+        return await _call_proxy(proxy_id, None, args, kwargs, None)
 
     return wrapper
 

@@ -23,7 +23,7 @@ class ExportKind(StrEnum):
     """React component - will be registered via registerWidget()."""
 
     FUNCTION = auto()
-    """Utility function - exported for use by other modules."""
+    """Runtime function - will be registered via registerProxyTarget()."""
 
     OBJECT = auto()
     """Runtime object - will be registered via registerProxyTarget()."""

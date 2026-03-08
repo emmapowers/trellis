@@ -155,5 +155,32 @@ describe("BrowserClient", () => {
 
       client.disconnect();
     });
+
+    it("sends function proxy responses through the browser transport", async () => {
+      const sentMessages: unknown[] = [];
+      const client = new BrowserClient();
+      client.setSendCallback((msg) => {
+        sentMessages.push(msg);
+      });
+      registerProxyTarget("formatNow", async (value: number) => `value: ${value}`);
+
+      await client.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-2",
+        proxy_id: "formatNow",
+        method: null,
+        args: [3],
+      });
+
+      expect(sentMessages).toContainEqual({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-2",
+        result: "value: 3",
+        error: null,
+        error_type: null,
+      });
+
+      client.disconnect();
+    });
   });
 });

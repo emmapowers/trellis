@@ -86,8 +86,8 @@ class TestReloadMessage:
 class TestProxyCallMessage:
     """Tests for ProxyCall serialization."""
 
-    def test_proxy_call_message_msgpack_roundtrip(self) -> None:
-        """ProxyCall survives msgpack encode/decode."""
+    def test_object_proxy_call_message_msgpack_roundtrip(self) -> None:
+        """Object proxy calls survive msgpack encode/decode."""
         encoder = msgspec.msgpack.Encoder()
         decoder = msgspec.msgpack.Decoder(Message)
 
@@ -105,6 +105,26 @@ class TestProxyCallMessage:
         assert decoded.proxy_id == "demo_api"
         assert decoded.method == "greet"
         assert decoded.args == ["Emma"]
+
+    def test_function_proxy_call_message_msgpack_roundtrip(self) -> None:
+        """Function proxy calls preserve a null method."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ProxyCall(
+            request_id="req-2",
+            proxy_id="formatNow",
+            method=None,
+            args=[3],
+        )
+        encoded = encoder.encode(original)
+        decoded = decoder.decode(encoded)
+
+        assert isinstance(decoded, ProxyCall)
+        assert decoded.request_id == "req-2"
+        assert decoded.proxy_id == "formatNow"
+        assert decoded.method is None
+        assert decoded.args == [3]
 
 
 class TestProxyCallResponseMessage:
@@ -189,6 +209,7 @@ class TestMessageUnion:
             PatchMessage(patches=[]),
             EventMessage(callback_id="cb_1"),
             ProxyCall(request_id="req-1", proxy_id="demo_api", method="greet"),
+            ProxyCall(request_id="req-2", proxy_id="formatNow", method=None),
             ProxyCallResponse(request_id="req-1", result="ok"),
             ReloadMessage(),
         ]

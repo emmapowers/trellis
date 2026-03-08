@@ -78,7 +78,7 @@ export interface ProxyCallMessage {
   type: typeof MessageType.PROXY_CALL;
   request_id: string;
   proxy_id: string;
-  method: string;
+  method: string | null;
   args: unknown[];
 }
 

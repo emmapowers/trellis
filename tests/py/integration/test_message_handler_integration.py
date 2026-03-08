@@ -293,6 +293,43 @@ class TestMessageHandler:
 
         asyncio.run(test())
 
+    def test_handle_message_resolves_pending_function_proxy_call(
+        self, app_wrapper: AppWrapper
+    ) -> None:
+        """Function proxy responses resolve pending handler futures."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+
+        sent_messages: list[dict[str, tp.Any]] = []
+        handler.set_send_callback(lambda msg: sent_messages.append(msg))
+
+        async def test() -> None:
+            task = asyncio.create_task(handler.call_proxy("formatNow", None, [3]))
+            await asyncio.sleep(0)
+
+            assert len(sent_messages) == 1
+            message = sent_messages[0]
+            assert message["type"] == "proxy_call"
+            assert message["proxy_id"] == "formatNow"
+            assert message["method"] is None
+            assert message["args"] == [3]
+
+            response = ProxyCallResponse(
+                request_id=message["request_id"],
+                result="value: 3",
+            )
+            result = await handler.handle_message(response)
+
+            assert result is None
+            assert await task == "value: 3"
+
+        asyncio.run(test())
+
     def test_handle_message_ignores_unknown_proxy_response(self, app_wrapper: AppWrapper) -> None:
         """Unknown proxy responses are ignored safely."""
 

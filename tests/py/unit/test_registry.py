@@ -222,6 +222,21 @@ def register_module(registry):
         with pytest.raises(ValueError, match=r"Export name collision.*demo_api"):
             registry.collect()
 
+    def test_collect_errors_on_function_and_object_name_collision(self) -> None:
+        """collect() raises error when runtime proxy targets share a name."""
+        registry = ModuleRegistry()
+        registry.register(
+            "module-a",
+            exports=[("sharedTarget", ExportKind.FUNCTION, "demo.ts")],
+        )
+        registry.register(
+            "module-b",
+            exports=[("sharedTarget", ExportKind.OBJECT, "other.ts")],
+        )
+
+        with pytest.raises(ValueError, match=r"Export name collision.*sharedTarget"):
+            registry.collect()
+
     def test_collect_allows_same_name_for_initializers(self) -> None:
         """collect() allows duplicate names for initializers (side-effect imports)."""
         registry = ModuleRegistry()

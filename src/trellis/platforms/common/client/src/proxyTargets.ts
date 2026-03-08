@@ -1,16 +1,13 @@
 /** Registry for bundled JS proxy targets. */
 
-const proxyTargets: Record<string, Record<string, unknown>> = {};
+export type ProxyTarget = Record<string, unknown> | ((...args: unknown[]) => unknown);
 
-export function registerProxyTarget(
-  name: string,
-  target: Record<string, unknown>
-): void {
+const proxyTargets: Record<string, ProxyTarget> = {};
+
+export function registerProxyTarget(name: string, target: ProxyTarget): void {
   proxyTargets[name] = target;
 }
 
-export function getProxyTarget(
-  name: string
-): Record<string, unknown> | undefined {
+export function getProxyTarget(name: string): ProxyTarget | undefined {
   return proxyTargets[name];
 }

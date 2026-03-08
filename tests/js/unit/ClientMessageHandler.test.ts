@@ -265,6 +265,50 @@ describe("ClientMessageHandler", () => {
       });
     });
 
+    it("dispatches function proxy calls to callable targets", async () => {
+      const sendProxyResponse = vi.fn();
+      registerProxyTarget("formatNow", (value: number) => `value: ${value}`);
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-fn-1",
+        proxy_id: "formatNow",
+        method: null,
+        args: [3],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-fn-1",
+        result: "value: 3",
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("dispatches async function proxy calls to callable targets", async () => {
+      const sendProxyResponse = vi.fn();
+      registerProxyTarget("loadValue", async (value: number) => `value: ${value}`);
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-fn-2",
+        proxy_id: "loadValue",
+        method: null,
+        args: [5],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-fn-2",
+        result: "value: 5",
+        error: null,
+        error_type: null,
+      });
+    });
+
     it("returns proxy dispatch errors without throwing", async () => {
       const sendProxyResponse = vi.fn();
       registerProxyTarget("explode_api", {
@@ -308,6 +352,28 @@ describe("ClientMessageHandler", () => {
         request_id: "req-3",
         result: null,
         error: "Proxy target not found: missing_api",
+        error_type: "Error",
+      });
+    });
+
+    it("returns an error for non-callable function targets", async () => {
+      const sendProxyResponse = vi.fn();
+      registerProxyTarget("bad_function", { answer: 42 });
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-fn-3",
+        proxy_id: "bad_function",
+        method: null,
+        args: [],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-fn-3",
+        result: null,
+        error: "Proxy target is not callable: bad_function",
         error_type: "Error",
       });
     });

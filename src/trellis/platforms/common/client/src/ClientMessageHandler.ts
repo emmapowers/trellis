@@ -127,14 +127,24 @@ export class ClientMessageHandler {
         throw new Error(`Proxy target not found: ${msg.proxy_id}`);
       }
 
-      const method = target[msg.method];
-      if (typeof method !== "function") {
-        throw new Error(
-          `Proxy method not found or not callable: ${msg.proxy_id}.${msg.method}`
-        );
+      let callableTarget: ((...args: unknown[]) => unknown) | undefined;
+
+      if (msg.method === null) {
+        if (typeof target !== "function") {
+          throw new Error(`Proxy target is not callable: ${msg.proxy_id}`);
+        }
+        callableTarget = target;
+      } else {
+        const method = target[msg.method];
+        if (typeof method !== "function") {
+          throw new Error(
+            `Proxy method not found or not callable: ${msg.proxy_id}.${msg.method}`
+          );
+        }
+        callableTarget = method as (...args: unknown[]) => unknown;
       }
 
-      const result = await (method as (...args: unknown[]) => unknown)(...msg.args);
+      const result = await callableTarget(...msg.args);
       encode(result);
       await this.sendProxyResponse({
         type: MessageType.PROXY_CALL_RESPONSE,

@@ -24,12 +24,12 @@ class RecordingTransport:
     ) -> None:
         self.result = result
         self.error = error
-        self.calls: list[tuple[str, str, list[tp.Any]]] = []
+        self.calls: list[tuple[str, str | None, list[tp.Any]]] = []
 
     async def call_proxy(
         self,
         proxy_id: str,
-        method: str,
+        method: str | None,
         args: list[tp.Any],
     ) -> tp.Any:
         self.calls.append((proxy_id, method, args))
@@ -52,6 +52,16 @@ class DemoApi:
 class NamedDemoApi:
     async def greet(self, name: str) -> str:
         raise NotImplementedError
+
+
+@js_proxy
+async def format_now(value: int) -> str:
+    raise NotImplementedError
+
+
+@js_proxy(name="formatExactly")
+async def format_exactly(value: int) -> str:
+    raise NotImplementedError
 
 
 def _identity_wrapper(
@@ -201,6 +211,45 @@ class TestJsProxyObjects:
                 raise NotImplementedError
 
 
+class TestJsProxyFunctions:
+    def test_decorated_function_proxy_uses_camel_case_target_by_default(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Function proxies default their target name to camelCase."""
+        transport = RecordingTransport(result="value: 3")
+
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+        result = asyncio.run(format_now(3))
+
+        assert result == "value: 3"
+        assert transport.calls == [("formatNow", None, [3])]
+
+    def test_decorated_function_proxy_name_override_is_used(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """name= overrides the function proxy target name exactly."""
+        transport = RecordingTransport(result="value: 3")
+
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+        result = asyncio.run(format_exactly(3))
+
+        assert result == "value: 3"
+        assert transport.calls == [("formatExactly", None, [3])]
+
+    def test_function_proxy_rejects_keyword_arguments(self) -> None:
+        """Function proxies reject keyword arguments."""
+        with pytest.raises(TypeError, match="do not accept keyword arguments"):
+            asyncio.run(format_now(value=3))
+
+    def test_non_async_functions_are_rejected(self) -> None:
+        """Decorated function proxies must be async."""
+        with pytest.raises(TypeError, match="async functions"):
+
+            @js_proxy
+            def invalid(value: int) -> int:
+                return value
+
+
 class TestMessageHandlerProxyCalls:
     def test_call_proxy_cleans_up_pending_future_on_send_failure(self) -> None:
         """call_proxy removes pending requests when send_message fails."""
@@ -229,5 +278,26 @@ class TestMessageHandlerProxyCalls:
                 await task
 
             assert handler._pending_proxy_calls == {}
+
+        asyncio.run(test())
+
+    def test_call_proxy_supports_function_targets(self) -> None:
+        """call_proxy sends function invocations with a null method."""
+        handler = RecordingMessageHandler()
+
+        async def test() -> None:
+            task = asyncio.create_task(handler.call_proxy("formatNow", None, [3]))
+            await asyncio.sleep(0)
+
+            assert len(handler.sent_messages) == 1
+            message = handler.sent_messages[0]
+            assert isinstance(message, ProxyCall)
+            assert message.proxy_id == "formatNow"
+            assert message.method is None
+            assert message.args == [3]
+
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
 
         asyncio.run(test())

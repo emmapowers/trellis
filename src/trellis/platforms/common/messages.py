@@ -51,7 +51,7 @@ class ProxyCall(msgspec.Struct, tag="proxy_call", tag_field="type"):
 
     request_id: str
     proxy_id: str
-    method: str
+    method: str | None
     args: list[tp.Any] = []
 
 
