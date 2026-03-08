@@ -8,7 +8,10 @@ import typing as tp
 import pytest
 
 import trellis.core.proxy as proxy_module
+from trellis.core.components.composition import CompositionComponent
 from trellis.core.proxy import JsProxy, js_object
+from trellis.platforms.common.handler import MessageHandler
+from trellis.platforms.common.messages import Message, ProxyCall
 
 
 class RecordingTransport:
@@ -39,6 +42,32 @@ class DemoApi(JsProxy):
     async def get_message(self, name: str) -> str: ...
 
     async def fail(self) -> str: ...
+
+
+def _identity_wrapper(
+    component: CompositionComponent,
+    _system_theme: str,
+    _theme_mode: str | None,
+) -> CompositionComponent:
+    return component
+
+
+class RecordingMessageHandler(MessageHandler):
+    def __init__(self) -> None:
+        super().__init__(
+            CompositionComponent(name="Root", render_func=lambda: None),
+            _identity_wrapper,
+        )
+        self.sent_messages: list[Message] = []
+        self.raise_on_send: BaseException | None = None
+
+    async def send_message(self, msg: Message) -> None:
+        if self.raise_on_send is not None:
+            raise self.raise_on_send
+        self.sent_messages.append(msg)
+
+    async def receive_message(self) -> Message:
+        raise NotImplementedError
 
 
 class TestJsProxy:
@@ -86,3 +115,35 @@ class TestJsProxy:
 
         with pytest.raises(RuntimeError, match="Cannot call JS proxy outside"):
             asyncio.run(proxy.get_message("Emma"))
+
+
+class TestMessageHandlerProxyCalls:
+    def test_call_proxy_cleans_up_pending_future_on_send_failure(self) -> None:
+        """call_proxy removes pending requests when send_message fails."""
+        handler = RecordingMessageHandler()
+        handler.raise_on_send = RuntimeError("send failed")
+
+        with pytest.raises(RuntimeError, match="send failed"):
+            asyncio.run(handler.call_proxy("demo_api", "greet", ["Emma"]))
+
+        assert handler._pending_proxy_calls == {}
+
+    def test_call_proxy_cleans_up_pending_future_on_cancellation(self) -> None:
+        """call_proxy removes pending requests when the caller cancels."""
+        handler = RecordingMessageHandler()
+
+        async def test() -> None:
+            task = asyncio.create_task(handler.call_proxy("demo_api", "greet", ["Emma"]))
+            await asyncio.sleep(0)
+
+            assert len(handler.sent_messages) == 1
+            message = handler.sent_messages[0]
+            assert isinstance(message, ProxyCall)
+
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+            assert handler._pending_proxy_calls == {}
+
+        asyncio.run(test())

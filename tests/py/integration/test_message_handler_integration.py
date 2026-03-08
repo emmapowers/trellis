@@ -258,9 +258,7 @@ class TestMessageHandler:
         # (we can't easily test this without internal access,
         # but the method should not raise)
 
-    def test_handle_message_resolves_pending_proxy_call(
-        self, app_wrapper: AppWrapper
-    ) -> None:
+    def test_handle_message_resolves_pending_proxy_call(self, app_wrapper: AppWrapper) -> None:
         """Proxy call responses resolve pending handler futures."""
 
         @component
@@ -294,6 +292,22 @@ class TestMessageHandler:
             assert await task == "hello Emma"
 
         asyncio.run(test())
+
+    def test_handle_message_ignores_unknown_proxy_response(self, app_wrapper: AppWrapper) -> None:
+        """Unknown proxy responses are ignored safely."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+
+        response = ProxyCallResponse(request_id="missing", result="hello Emma")
+        result = asyncio.run(handler.handle_message(response))
+
+        assert result is None
+        assert handler._pending_proxy_calls == {}
 
 
 class TestBrowserMessageHandler:

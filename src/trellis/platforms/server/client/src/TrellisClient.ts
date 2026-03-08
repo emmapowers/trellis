@@ -69,7 +69,7 @@ export class ServerTrellisClient extends BaseTrellisClient {
           system_theme: systemTheme,
           path: window.location.pathname,
         };
-        this.send(hello);
+        this.sendMessage(hello);
       };
 
       this.ws.onmessage = (event) => {

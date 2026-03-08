@@ -390,19 +390,7 @@ class MessageHandler:
             by the background render loop, not per-message.
         """
         if isinstance(msg, EventMessage):
-            logger.debug("Received EventMessage: callback_id=%s", msg.callback_id)
-            try:
-                await self._invoke_callback(msg.callback_id, msg.args)
-            except KeyError as e:
-                logger.exception(f"Unknown callback: {msg.callback_id}")
-                return ErrorMessage(error=_format_exception(e), context="callback")
-            except Exception as e:
-                logger.exception(f"Error in callback {msg.callback_id}: {e}")
-                return ErrorMessage(error=_format_exception(e), context="callback")
-
-            # Callback executed successfully. State changes mark elements dirty.
-            # The render loop will pick them up on the next frame.
-            return None
+            return await self._handle_event_message(msg)
 
         if isinstance(msg, UrlChanged):
             logger.debug("Received UrlChanged: path=%s", msg.path)
@@ -410,21 +398,40 @@ class MessageHandler:
             return None
 
         if isinstance(msg, ProxyCallResponse):
-            future = self._pending_proxy_calls.get(msg.request_id)
-            if future is None:
-                logger.debug("Ignoring proxy response for unknown request_id=%s", msg.request_id)
-                return None
-
-            if future.done():
-                return None
-
-            if msg.error is None:
-                future.set_result(msg.result)
-            else:
-                future.set_exception(RuntimeError(msg.error))
-            return None
+            self._handle_proxy_call_response(msg)
 
         return None
+
+    async def _handle_event_message(self, msg: EventMessage) -> Message | None:
+        """Handle a callback event from the client."""
+        logger.debug("Received EventMessage: callback_id=%s", msg.callback_id)
+        try:
+            await self._invoke_callback(msg.callback_id, msg.args)
+        except KeyError as e:
+            logger.exception(f"Unknown callback: {msg.callback_id}")
+            return ErrorMessage(error=_format_exception(e), context="callback")
+        except Exception as e:
+            logger.exception(f"Error in callback {msg.callback_id}: {e}")
+            return ErrorMessage(error=_format_exception(e), context="callback")
+
+        # Callback executed successfully. State changes mark elements dirty.
+        # The render loop will pick them up on the next frame.
+        return None
+
+    def _handle_proxy_call_response(self, msg: ProxyCallResponse) -> None:
+        """Resolve or reject a pending proxy call."""
+        future = self._pending_proxy_calls.get(msg.request_id)
+        if future is None:
+            logger.debug("Ignoring proxy response for unknown request_id=%s", msg.request_id)
+            return
+
+        if future.done():
+            return
+
+        if msg.error is None:
+            future.set_result(msg.result)
+        else:
+            future.set_exception(RuntimeError(msg.error))
 
     async def call_proxy(self, proxy_id: str, method: str, args: list[tp.Any]) -> tp.Any:
         """Send a proxy call to the client and await the response."""

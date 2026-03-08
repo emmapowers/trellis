@@ -290,6 +290,51 @@ describe("ClientMessageHandler", () => {
         error_type: "TypeError",
       });
     });
+
+    it("returns an error for missing proxy targets", async () => {
+      const sendProxyResponse = vi.fn();
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-3",
+        proxy_id: "missing_api",
+        method: "greet",
+        args: [],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-3",
+        result: null,
+        error: "Proxy target not found: missing_api",
+        error_type: "Error",
+      });
+    });
+
+    it("returns an error for non-callable proxy methods", async () => {
+      const sendProxyResponse = vi.fn();
+      registerProxyTarget("bad_api", {
+        answer: 42,
+      });
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-4",
+        proxy_id: "bad_api",
+        method: "answer",
+        args: [],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-4",
+        result: null,
+        error: "Proxy method not found or not callable: bad_api.answer",
+        error_type: "Error",
+      });
+    });
   });
 
   describe("works without callbacks", () => {
