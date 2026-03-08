@@ -14,6 +14,7 @@ from trellis.packaging.tauri import (
     _LINUX_REQUIRED_LIBS,
     _check_linux_system_deps,
     _generate_cargo_config,
+    _tauri_bundles,
     build_desktop_app_bundle,
     generate_tauri_scaffold,
     install_app_into_portable_python,
@@ -300,10 +301,30 @@ class TestInstallAppIntoPortablePython:
         assert str(app_root) in cmd
 
 
+class TestTauriBundles:
+    """Tests for _tauri_bundles bundle type resolution."""
+
+    @pytest.mark.parametrize(
+        ("platform", "installer", "expected"),
+        [
+            ("darwin", False, ["app"]),
+            ("darwin", True, ["dmg"]),
+            ("linux", False, ["appimage"]),
+            ("linux", True, ["deb"]),
+            ("win32", False, []),
+            ("win32", True, []),
+        ],
+    )
+    def test_bundle_types(
+        self, platform: str, installer: bool, expected: list[str]
+    ) -> None:
+        assert _tauri_bundles(installer=installer, platform=platform) == expected
+
+
 class TestRunTauriBuild:
     """Tests for run_tauri_build function."""
 
-    def test_calls_tauri_build_with_correct_args(self, tmp_path: Path) -> None:
+    def test_passes_env_and_cwd(self, tmp_path: Path) -> None:
         tauri_cli = tmp_path / "cargo-tauri"
         tauri_cli.write_text("fake")
         rust = _make_rust_toolchain(tmp_path)
@@ -313,7 +334,11 @@ class TestRunTauriBuild:
         pyembed_dir.mkdir()
         (pyembed_dir / "lib").mkdir()
 
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("subprocess.run") as mock_run,
+            patch("trellis.packaging.tauri.sys") as mock_sys,
+        ):
+            mock_sys.platform = "darwin"
             run_tauri_build(
                 tauri_cli=tauri_cli,
                 rust=rust,
@@ -322,27 +347,49 @@ class TestRunTauriBuild:
                 product_name="myapp",
             )
 
-        # Find the tauri build call (not the pkg-config call)
-        tauri_call = [c for c in mock_run.call_args_list if str(tauri_cli) in str(c)]
-        assert len(tauri_call) == 1
-        cmd = tauri_call[0][0][0]
-        assert str(tauri_cli) in cmd
-        assert "build" in cmd
-        assert "--bundles" in cmd
-
-        kwargs = tauri_call[0][1]
+        kwargs = mock_run.call_args[1]
         assert kwargs["cwd"] == scaffold_dir
-        assert "PYTAURI_STANDALONE" in kwargs["env"]
         assert kwargs["env"]["PYTAURI_STANDALONE"] == "1"
         assert "CARGO_HOME" in kwargs["env"]
         assert "RUSTUP_HOME" in kwargs["env"]
 
+    def test_win32_uses_no_bundle(self, tmp_path: Path) -> None:
+        tauri_cli = tmp_path / "cargo-tauri"
+        tauri_cli.write_text("fake")
+        rust = _make_rust_toolchain(tmp_path)
+        scaffold_dir = tmp_path / "scaffold"
+        scaffold_dir.mkdir()
+        pyembed_dir = tmp_path / "pyembed"
+        pyembed_dir.mkdir()
+        (pyembed_dir / "lib").mkdir()
+
+        with (
+            patch("subprocess.run") as mock_run,
+            patch("trellis.packaging.tauri.sys") as mock_sys,
+        ):
+            mock_sys.platform = "win32"
+            run_tauri_build(
+                tauri_cli=tauri_cli,
+                rust=rust,
+                scaffold_dir=scaffold_dir,
+                pyembed_dir=pyembed_dir,
+                product_name="myapp",
+            )
+
+        cmd = mock_run.call_args[0][0]
+        assert cmd == [str(tauri_cli), "build", "--no-bundle"]
+
     @pytest.mark.parametrize(
-        ("platform", "expected_bundle"),
-        [("darwin", "app"), ("linux", "deb")],
+        ("platform", "installer", "expected_bundle"),
+        [
+            ("darwin", False, "app"),
+            ("darwin", True, "dmg"),
+            ("linux", False, "appimage"),
+            ("linux", True, "deb"),
+        ],
     )
-    def test_default_bundle_type_per_platform(
-        self, tmp_path: Path, platform: str, expected_bundle: str
+    def test_passes_correct_bundle_to_tauri(
+        self, tmp_path: Path, platform: str, installer: bool, expected_bundle: str
     ) -> None:
         tauri_cli = tmp_path / "cargo-tauri"
         tauri_cli.write_text("fake")
@@ -364,130 +411,11 @@ class TestRunTauriBuild:
                 scaffold_dir=scaffold_dir,
                 pyembed_dir=pyembed_dir,
                 product_name="myapp",
+                installer=installer,
             )
 
         cmd = mock_run.call_args[0][0]
         assert cmd == [str(tauri_cli), "build", "--bundles", expected_bundle]
-
-    def test_bundles_parameter_changes_subprocess_args(self, tmp_path: Path) -> None:
-        tauri_cli = tmp_path / "cargo-tauri"
-        tauri_cli.write_text("fake")
-        rust = _make_rust_toolchain(tmp_path)
-        scaffold_dir = tmp_path / "scaffold"
-        scaffold_dir.mkdir()
-        pyembed_dir = tmp_path / "pyembed"
-        pyembed_dir.mkdir()
-        (pyembed_dir / "lib").mkdir()
-
-        with patch("subprocess.run") as mock_run:
-            run_tauri_build(
-                tauri_cli=tauri_cli,
-                rust=rust,
-                scaffold_dir=scaffold_dir,
-                pyembed_dir=pyembed_dir,
-                product_name="myapp",
-                bundles=["app", "dmg"],
-            )
-
-        cmd = mock_run.call_args[0][0]
-        assert cmd == [str(tauri_cli), "build", "--bundles", "app", "dmg"]
-
-    def test_portable_stripped_from_tauri_bundles(self, tmp_path: Path) -> None:
-        tauri_cli = tmp_path / "cargo-tauri"
-        tauri_cli.write_text("fake")
-        rust = _make_rust_toolchain(tmp_path)
-        scaffold_dir = tmp_path / "scaffold"
-        scaffold_dir.mkdir()
-        pyembed_dir = tmp_path / "pyembed"
-        pyembed_dir.mkdir()
-        (pyembed_dir / "lib").mkdir()
-
-        with patch("subprocess.run") as mock_run:
-            _, wants_portable, _ = run_tauri_build(
-                tauri_cli=tauri_cli,
-                rust=rust,
-                scaffold_dir=scaffold_dir,
-                pyembed_dir=pyembed_dir,
-                product_name="myapp",
-                bundles=["portable", "nsis"],
-            )
-
-        cmd = mock_run.call_args[0][0]
-        assert cmd == [str(tauri_cli), "build", "--bundles", "nsis"]
-        assert wants_portable is True
-
-    def test_win32_default_uses_no_bundle(self, tmp_path: Path) -> None:
-        tauri_cli = tmp_path / "cargo-tauri"
-        tauri_cli.write_text("fake")
-        rust = _make_rust_toolchain(tmp_path)
-        scaffold_dir = tmp_path / "scaffold"
-        scaffold_dir.mkdir()
-        pyembed_dir = tmp_path / "pyembed"
-        pyembed_dir.mkdir()
-        (pyembed_dir / "lib").mkdir()
-
-        with (
-            patch("subprocess.run") as mock_run,
-            patch("trellis.packaging.tauri.sys") as mock_sys,
-        ):
-            mock_sys.platform = "win32"
-            _, wants_portable, _ = run_tauri_build(
-                tauri_cli=tauri_cli,
-                rust=rust,
-                scaffold_dir=scaffold_dir,
-                pyembed_dir=pyembed_dir,
-                product_name="myapp",
-            )
-
-        cmd = mock_run.call_args[0][0]
-        assert cmd == [str(tauri_cli), "build", "--no-bundle"]
-        assert wants_portable is True
-
-    def test_portable_only_passes_no_bundle_to_tauri(self, tmp_path: Path) -> None:
-        tauri_cli = tmp_path / "cargo-tauri"
-        tauri_cli.write_text("fake")
-        rust = _make_rust_toolchain(tmp_path)
-        scaffold_dir = tmp_path / "scaffold"
-        scaffold_dir.mkdir()
-        pyembed_dir = tmp_path / "pyembed"
-        pyembed_dir.mkdir()
-        (pyembed_dir / "lib").mkdir()
-
-        with patch("subprocess.run") as mock_run:
-            _, wants_portable, _ = run_tauri_build(
-                tauri_cli=tauri_cli,
-                rust=rust,
-                scaffold_dir=scaffold_dir,
-                pyembed_dir=pyembed_dir,
-                product_name="myapp",
-                bundles=["portable"],
-            )
-
-        cmd = mock_run.call_args[0][0]
-        assert cmd == [str(tauri_cli), "build", "--no-bundle"]
-        assert wants_portable is True
-
-    def test_no_portable_returns_false(self, tmp_path: Path) -> None:
-        tauri_cli = tmp_path / "cargo-tauri"
-        tauri_cli.write_text("fake")
-        rust = _make_rust_toolchain(tmp_path)
-        scaffold_dir = tmp_path / "scaffold"
-        scaffold_dir.mkdir()
-        pyembed_dir = tmp_path / "pyembed"
-        pyembed_dir.mkdir()
-        (pyembed_dir / "lib").mkdir()
-
-        with patch("subprocess.run"):
-            _, wants_portable, _ = run_tauri_build(
-                tauri_cli=tauri_cli,
-                rust=rust,
-                scaffold_dir=scaffold_dir,
-                pyembed_dir=pyembed_dir,
-                product_name="myapp",
-                bundles=["nsis"],
-            )
-
-        assert wants_portable is False
 
 
 class TestBuildDesktopAppBundle:
@@ -534,8 +462,11 @@ class TestBuildDesktopAppBundle:
             patch("trellis.packaging.tauri.install_app_into_portable_python"),
             patch(
                 "trellis.packaging.tauri.run_tauri_build",
-                return_value=(tmp_path / "output", False, False),
+                return_value=tmp_path / "output",
             ),
+            # Skip Windows self-extracting exe build in unit tests
+            patch("trellis.packaging.tauri.build_portable_exe", return_value=tmp_path / "out.exe"),
+            patch("trellis.packaging.tauri.build_installer_exe", return_value=tmp_path / "out.exe"),
         ):
             build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
 
@@ -568,9 +499,9 @@ class TestBuildDesktopAppBundle:
             patch("trellis.packaging.tauri.ensure_python_standalone", return_value=mock_python),
             patch("trellis.packaging.tauri.generate_tauri_scaffold"),
             patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch(
-                "trellis.packaging.tauri.run_tauri_build", return_value=(bundle_dir, False, False)
-            ),
+            patch("trellis.packaging.tauri.run_tauri_build", return_value=bundle_dir),
+            patch("trellis.packaging.tauri.build_portable_exe", return_value=tmp_path / "out.exe"),
+            patch("trellis.packaging.tauri.build_installer_exe", return_value=tmp_path / "out.exe"),
         ):
             result = build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
 
@@ -580,7 +511,7 @@ class TestBuildDesktopAppBundle:
 class TestOutputCopying:
     """Tests for copying build output to the destination directory."""
 
-    def _setup_bundle(self, tmp_path: Path) -> tuple[Config, Path, MagicMock]:
+    def _setup_bundle(self, tmp_path: Path) -> tuple[Config, Path, MagicMock, MagicMock]:
         config = Config(
             name="myapp",
             module="main",
@@ -599,10 +530,9 @@ class TestOutputCopying:
 
         return config, app_root, mock_rust, mock_python
 
-    def test_copies_app_to_default_dist(self, tmp_path: Path) -> None:
+    def test_renames_app_bundle(self, tmp_path: Path) -> None:
         config, app_root, mock_rust, mock_python = self._setup_bundle(tmp_path)
 
-        # Create fake bundle output
         bundle_dir = tmp_path / "scaffold" / "target" / "release" / "bundle"
         macos_dir = bundle_dir / "macos"
         macos_dir.mkdir(parents=True)
@@ -620,15 +550,14 @@ class TestOutputCopying:
             ),
             patch("trellis.packaging.tauri.generate_tauri_scaffold"),
             patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch(
-                "trellis.packaging.tauri.run_tauri_build", return_value=(bundle_dir, False, False)
-            ),
-            patch("sys.platform", "darwin"),
+            patch("trellis.packaging.tauri.run_tauri_build", return_value=bundle_dir),
+            patch("trellis.packaging.tauri.sys") as mock_sys,
         ):
+            mock_sys.platform = "darwin"
             result = build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
 
         assert result == app_root / "dist"
-        assert (result / "myapp.app" / "Contents" / "Info.plist").exists()
+        assert (result / "myapp-1.0.0.app" / "Contents" / "Info.plist").exists()
 
     def test_copies_app_to_custom_output_dir(self, tmp_path: Path) -> None:
         config, app_root, mock_rust, mock_python = self._setup_bundle(tmp_path)
@@ -650,26 +579,21 @@ class TestOutputCopying:
             ),
             patch("trellis.packaging.tauri.generate_tauri_scaffold"),
             patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch(
-                "trellis.packaging.tauri.run_tauri_build", return_value=(bundle_dir, False, False)
-            ),
-            patch("sys.platform", "darwin"),
+            patch("trellis.packaging.tauri.run_tauri_build", return_value=bundle_dir),
+            patch("trellis.packaging.tauri.sys") as mock_sys,
         ):
+            mock_sys.platform = "darwin"
             result = build_desktop_app_bundle(
                 config=config, app_root=app_root, output_dir=custom_dest
             )
 
         assert result == custom_dest
-        assert (custom_dest / "myapp.app").exists()
+        assert (custom_dest / "myapp-1.0.0.app").exists()
 
-    def test_copies_dmg_when_present(self, tmp_path: Path) -> None:
+    def test_renames_dmg(self, tmp_path: Path) -> None:
         config, app_root, mock_rust, mock_python = self._setup_bundle(tmp_path)
 
         bundle_dir = tmp_path / "scaffold" / "target" / "release" / "bundle"
-        macos_dir = bundle_dir / "macos"
-        macos_dir.mkdir(parents=True)
-        app_bundle = macos_dir / "myapp.app"
-        app_bundle.mkdir()
         dmg_dir = bundle_dir / "dmg"
         dmg_dir.mkdir(parents=True)
         (dmg_dir / "myapp_1.0.0_aarch64.dmg").write_text("fake dmg")
@@ -683,19 +607,18 @@ class TestOutputCopying:
             ),
             patch("trellis.packaging.tauri.generate_tauri_scaffold"),
             patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch(
-                "trellis.packaging.tauri.run_tauri_build", return_value=(bundle_dir, False, False)
-            ),
-            patch("sys.platform", "darwin"),
+            patch("trellis.packaging.tauri.run_tauri_build", return_value=bundle_dir),
+            patch("trellis.packaging.tauri.sys") as mock_sys,
         ):
+            mock_sys.platform = "darwin"
             result = build_desktop_app_bundle(
                 config=config,
                 app_root=app_root,
                 output_dir=None,
-                bundles=["app", "dmg"],
+                installer=True,
             )
 
-        assert (result / "myapp_1.0.0_aarch64.dmg").exists()
+        assert (result / "myapp-1.0.0.dmg").exists()
 
 
 class TestCheckLinuxSystemDeps:

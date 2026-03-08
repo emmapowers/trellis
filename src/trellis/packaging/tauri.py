@@ -339,6 +339,19 @@ def _check_linux_system_deps() -> None:
     )
 
 
+def _tauri_bundles(*, installer: bool, platform: str) -> list[str]:
+    """Return the Tauri bundle types for a given mode and platform.
+
+    Windows uses self-extracting exe (post-processed), so Tauri gets --no-bundle.
+    """
+    if platform == "win32":
+        return []
+    if platform == "darwin":
+        return ["dmg"] if installer else ["app"]
+    # Linux
+    return ["deb"] if installer else ["appimage"]
+
+
 def run_tauri_build(
     *,
     tauri_cli: Path,
@@ -346,8 +359,8 @@ def run_tauri_build(
     scaffold_dir: Path,
     pyembed_dir: Path,
     product_name: str,
-    bundles: list[str] | None = None,
-) -> tuple[Path, bool, bool]:
+    installer: bool = False,
+) -> Path:
     """Run the Tauri build process.
 
     Args:
@@ -356,24 +369,12 @@ def run_tauri_build(
         scaffold_dir: Path to the generated Tauri scaffold
         pyembed_dir: Path to the embedded Python directory
         product_name: Display name of the application (used for resource paths)
-        bundles: Bundle types to build (default: ["app"])
+        installer: If True, build installer bundles instead of portable ones
 
     Returns:
-        Tuple of (bundle_dir, wants_portable, wants_installer).
+        Path to the Tauri bundle output directory.
     """
-    if bundles is None:
-        if sys.platform == "darwin":
-            bundles = ["app"]
-        elif sys.platform == "win32":
-            bundles = ["portable"]
-        else:
-            bundles = ["deb"]
-
-    # Separate self-extracting bundle types from tauri-native ones
-    _SELF_EXTRACTING = {"portable", "installer"}
-    wants_portable = "portable" in bundles
-    wants_installer = "installer" in bundles
-    tauri_bundles = [b for b in bundles if b not in _SELF_EXTRACTING]
+    tauri_bundles = _tauri_bundles(installer=installer, platform=sys.platform)
 
     _patch_libpython_install_name(pyembed_dir)
     _generate_cargo_config(
@@ -421,48 +422,58 @@ def run_tauri_build(
         check=True,
     )
 
-    # Tauri outputs bundles to target/release/bundle/
-    return scaffold_dir / "target" / "release" / "bundle", wants_portable, wants_installer
+    return scaffold_dir / "target" / "release" / "bundle"
 
 
-def _copy_build_output(*, bundle_dir: Path, output_dir: Path, platform: str) -> None:
-    """Copy build artifacts from Tauri's bundle directory to output_dir."""
+def _copy_build_output(
+    *,
+    bundle_dir: Path,
+    output_dir: Path,
+    platform: str,
+    product_name: str,
+    version: str,
+) -> None:
+    """Copy build artifacts from Tauri's bundle directory to output_dir.
+
+    Renames files to a consistent pattern: {Product-Name}-{version}.{ext}.
+    Exception: .deb files keep Debian naming conventions.
+    """
+    from trellis.packaging.portable import _output_filename  # noqa: PLC0415
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if platform == "darwin":
         macos_dir = bundle_dir / "macos"
         if macos_dir.exists():
             for app in macos_dir.glob("*.app"):
-                dest = output_dir / app.name
+                dest_name = _output_filename(product_name, version, "app")
+                dest = output_dir / dest_name
                 if dest.exists():
                     shutil.rmtree(dest)
                 shutil.copytree(app, dest)
         dmg_dir = bundle_dir / "dmg"
         if dmg_dir.exists():
             for dmg in dmg_dir.glob("*.dmg"):
-                shutil.copy2(dmg, output_dir / dmg.name)
-    elif platform == "win32":
-        nsis_dir = bundle_dir / "nsis"
-        if nsis_dir.exists():
-            for exe in nsis_dir.glob("*.exe"):
-                shutil.copy2(exe, output_dir / exe.name)
+                dest_name = _output_filename(product_name, version, "dmg")
+                shutil.copy2(dmg, output_dir / dest_name)
     elif platform == "linux":
-        for subdir, glob_pattern in [
-            ("appimage", "*.AppImage"),
-            ("deb", "*.deb"),
-            ("rpm", "*.rpm"),
-        ]:
-            pkg_dir = bundle_dir / subdir
-            if pkg_dir.exists():
-                for pkg in pkg_dir.glob(glob_pattern):
-                    shutil.copy2(pkg, output_dir / pkg.name)
+        appimage_dir = bundle_dir / "appimage"
+        if appimage_dir.exists():
+            for pkg in appimage_dir.glob("*.AppImage"):
+                dest_name = _output_filename(product_name, version, "AppImage")
+                shutil.copy2(pkg, output_dir / dest_name)
+        # .deb keeps Debian naming conventions
+        deb_dir = bundle_dir / "deb"
+        if deb_dir.exists():
+            for pkg in deb_dir.glob("*.deb"):
+                shutil.copy2(pkg, output_dir / pkg.name)
 
 
 def build_desktop_app_bundle(
     config: Config,
     app_root: Path,
     output_dir: Path | None,
-    bundles: list[str] | None = None,
+    installer: bool = False,
 ) -> Path:
     """Build a desktop app bundle with Tauri.
 
@@ -479,7 +490,7 @@ def build_desktop_app_bundle(
         config: Application configuration
         app_root: Path to the application root directory
         output_dir: Custom output directory (default: app_root / "dist")
-        bundles: Bundle types to build (default: ["app"])
+        installer: If True, build installer bundle instead of portable
 
     Returns:
         Path to the output directory containing the built artifacts
@@ -516,43 +527,50 @@ def build_desktop_app_bundle(
 
     # 4. Run Tauri build
     product_name = config.title or config.name
-    bundle_dir, wants_portable, wants_installer = run_tauri_build(
+    version = config.version or "0.1.0"
+    bundle_dir = run_tauri_build(
         tauri_cli=tauri_cli,
         rust=rust,
         scaffold_dir=scaffold_dir,
         pyembed_dir=pyembed_dir,
         product_name=product_name,
-        bundles=bundles,
+        installer=installer,
     )
 
     # 5. Copy output to destination
     dest = output_dir or (app_root / "dist")
-    _copy_build_output(bundle_dir=bundle_dir, output_dir=dest, platform=sys.platform)
+    _copy_build_output(
+        bundle_dir=bundle_dir,
+        output_dir=dest,
+        platform=sys.platform,
+        product_name=product_name,
+        version=version,
+    )
 
-    # 6. Build self-extracting exe(s) if requested (post-processing after Tauri compile)
-    cargo_name = re.sub(r"[^a-z0-9_-]", "-", product_name.lower())
-    cargo_name = re.sub(r"-+", "-", cargo_name).strip("-")
-    exe_name = cargo_name + ".exe"
+    # 6. On Windows, build self-extracting exe (post-processing after Tauri compile)
+    if sys.platform == "win32":
+        cargo_name = re.sub(r"[^a-z0-9_-]", "-", product_name.lower())
+        cargo_name = re.sub(r"-+", "-", cargo_name).strip("-")
+        exe_name = cargo_name + ".exe"
 
-    if wants_portable:
-        build_portable_exe(
-            rust=rust,
-            scaffold_dir=scaffold_dir,
-            product_name=product_name,
-            exe_name=exe_name,
-            output_dir=dest,
-        )
-
-    if wants_installer:
-        version = config.version or "0.1.0"
-        build_installer_exe(
-            rust=rust,
-            scaffold_dir=scaffold_dir,
-            product_name=product_name,
-            exe_name=exe_name,
-            version=version,
-            output_dir=dest,
-        )
+        if installer:
+            build_installer_exe(
+                rust=rust,
+                scaffold_dir=scaffold_dir,
+                product_name=product_name,
+                exe_name=exe_name,
+                version=version,
+                output_dir=dest,
+            )
+        else:
+            build_portable_exe(
+                rust=rust,
+                scaffold_dir=scaffold_dir,
+                product_name=product_name,
+                exe_name=exe_name,
+                version=version,
+                output_dir=dest,
+            )
 
     return dest
 

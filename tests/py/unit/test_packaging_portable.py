@@ -17,6 +17,7 @@ from trellis.packaging.portable import (
     _assemble_portable_exe,
     _collect_app_files,
     _create_archive,
+    _output_filename,
     build_portable_exe,
 )
 from trellis.toolchain.rustup import RustToolchain
@@ -194,13 +195,32 @@ class TestAssemblePortableExe:
         assert output_path.exists()
 
 
+class TestOutputFilename:
+    def test_portable_naming(self) -> None:
+        assert _output_filename("My App", "1.0.0", "exe") == "My-App-1.0.0.exe"
+
+    def test_installer_naming(self) -> None:
+        assert (
+            _output_filename("My App", "1.0.0", "exe", installer=True)
+            == "My-App-1.0.0-installer.exe"
+        )
+
+    def test_no_spaces_unchanged(self) -> None:
+        assert _output_filename("myapp", "2.0.0", "dmg") == "myapp-2.0.0.dmg"
+
+    def test_appimage_extension(self) -> None:
+        assert (
+            _output_filename("Widget Showcase", "0.1.0", "AppImage")
+            == "Widget-Showcase-0.1.0.AppImage"
+        )
+
+
 class TestBuildPortableExe:
     def test_orchestration_flow(self, tmp_path: Path) -> None:
         rust = _make_rust_toolchain(tmp_path)
         scaffold_dir = tmp_path / "scaffold"
         release_dir = scaffold_dir / "target" / "release"
 
-        # Set up fake release dir with an exe
         release_dir.mkdir(parents=True)
         (release_dir / "myapp.exe").write_bytes(b"MZ-real-app")
         pyembed = release_dir / "pyembed"
@@ -209,7 +229,6 @@ class TestBuildPortableExe:
 
         output_dir = tmp_path / "output"
 
-        # Mock cargo build to produce a fake launcher exe
         # cargo_name for "My App" is "my-app", so exe is "my-app-launcher.exe"
         launcher_exe_path = (
             scaffold_dir
@@ -231,14 +250,14 @@ class TestBuildPortableExe:
                 scaffold_dir=scaffold_dir,
                 product_name="My App",
                 exe_name="myapp.exe",
+                version="1.0.0",
                 output_dir=output_dir,
             )
 
         assert result.exists()
-        assert result.name == "myapp-portable.exe"
+        assert result.name == "My-App-1.0.0.exe"
         assert result.parent == output_dir
 
-        # Verify it has the footer
         data = result.read_bytes()
         assert data[-8:] == PORTABLE_MAGIC
 
@@ -255,7 +274,6 @@ class TestBuildPortableExe:
         output_dir = tmp_path / "output"
 
         def fake_cargo_build(cmd, *, cwd, env, check):
-            # Create the expected launcher exe (cargo_name for "My App" is "my-app")
             exe_path = cwd / "target" / "release" / "my-app-launcher.exe"
             exe_path.parent.mkdir(parents=True, exist_ok=True)
             exe_path.write_bytes(b"LAUNCHER")
@@ -266,10 +284,10 @@ class TestBuildPortableExe:
                 scaffold_dir=scaffold_dir,
                 product_name="My App",
                 exe_name="myapp.exe",
+                version="1.0.0",
                 output_dir=output_dir,
             )
 
-        # Verify cargo was called with --release
         cmd = mock_run.call_args[0][0]
         assert str(rust.cargo_bin) in cmd
         assert "build" in cmd
@@ -287,5 +305,6 @@ class TestBuildPortableExe:
                 scaffold_dir=scaffold_dir,
                 product_name="My App",
                 exe_name="myapp.exe",
+                version="1.0.0",
                 output_dir=tmp_path / "output",
             )

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,12 @@ from trellis.platforms.common.base import PlatformType
 
 _cli_config_vars = [v for v in get_config_vars() if not v.hidden]
 
+_PLATFORM_HELP = {
+    "darwin": "Default: .app bundle. With --installer: .dmg disk image.",
+    "win32": "Default: portable .exe. With --installer: installer .exe with Start Menu shortcut.",
+    "linux": "Default: AppImage. With --installer: .deb package.",
+}
+
 
 @trellis.command(name="package")
 @click.option(
@@ -26,16 +33,18 @@ _cli_config_vars = [v for v in get_config_vars() if not v.hidden]
     help="Output directory for the packaged app bundle (default: {app_root}/dist)",
 )
 @click.option(
-    "--dmg",
+    "--installer",
     is_flag=True,
     default=False,
-    help="Also create a DMG disk image (macOS only)",
+    help="Build installer bundle instead of portable. "
+    + _PLATFORM_HELP.get(sys.platform, ""),
 )
 @click.option(
     "--bundles",
     type=str,
     default=None,
-    help="Comma-separated bundle types (e.g. deb,appimage,rpm,portable,installer). Default: platform-specific.",
+    hidden=True,
+    help="Deprecated. Use --installer instead.",
 )
 @pass_cli_context
 @configvar_options(_cli_config_vars)
@@ -43,11 +52,17 @@ def package_app(
     ctx: CliContext,
     /,
     dest: Path | None = None,
-    dmg: bool = False,
+    installer: bool = False,
     bundles: str | None = None,
     **cli_kwargs: Any,
 ) -> None:
     """Build a desktop app bundle with Tauri."""
+    if bundles is not None:
+        raise click.UsageError(
+            "--bundles is no longer supported. "
+            "Use --installer for installer bundles, or omit for portable bundles."
+        )
+
     if "platform" in cli_kwargs:
         cli_kwargs["platform"] = PlatformType(cli_kwargs["platform"])
 
@@ -77,18 +92,12 @@ def package_app(
         click.echo(f"Packaging {config.name} for desktop...")
         apploader.bundle()
 
-        bundle_list: list[str] | None = None
-        if bundles:
-            bundle_list = [b.strip() for b in bundles.split(",")]
-        elif dmg:
-            bundle_list = ["app", "dmg"]
-
         try:
             output_path = build_desktop_app_bundle(
                 config=config,
                 app_root=resolved_path,
                 output_dir=dest,
-                bundles=bundle_list,
+                installer=installer,
             )
         except (
             RuntimeError,

@@ -23,6 +23,18 @@ _WINDOWS_APP_EXTENSIONS = {".exe", ".dll"}
 _WINDOWS_SKIP_EXTENSIONS = {".pdb", ".d", ".lib", ".exp"}
 
 
+def _output_filename(product_name: str, version: str, ext: str, *, installer: bool = False) -> str:
+    """Build a consistent output filename.
+
+    Examples:
+        _output_filename("Widget Showcase", "0.1.0", "exe") -> "Widget-Showcase-0.1.0.exe"
+        _output_filename("My App", "1.0.0", "exe", installer=True) -> "My-App-1.0.0-installer.exe"
+    """
+    name = product_name.replace(" ", "-")
+    suffix = "-installer" if installer else ""
+    return f"{name}-{version}{suffix}.{ext}"
+
+
 def _collect_app_files(release_dir: Path) -> list[tuple[Path, str]]:
     """Gather exe + pyembed/ + DLLs from the Tauri release directory.
 
@@ -70,9 +82,9 @@ def _generate_launcher_scaffold(
     """Render Jinja2 templates for the launcher Rust crate.
 
     Args:
-        mode: "portable" for hash-based caching, "installer" for version-based
+        mode: "portable" for hash-based caching, "installer" for hash-based
               install with Start Menu shortcut and uninstaller registration.
-        version: App version string, required when mode="installer".
+        version: App version string, used for display in Add/Remove Programs.
     """
     launcher_dir.mkdir(parents=True, exist_ok=True)
     (launcher_dir / "src").mkdir(parents=True, exist_ok=True)
@@ -141,36 +153,27 @@ def build_portable_exe(
     scaffold_dir: Path,
     product_name: str,
     exe_name: str,
+    version: str,
     output_dir: Path,
 ) -> Path:
     """Build a portable single-exe bundle.
 
     Orchestrates: collect files -> create archive -> build launcher -> assemble.
 
-    Args:
-        rust: RustToolchain with environment configuration
-        scaffold_dir: Path to the Tauri scaffold (contains target/release/)
-        product_name: Display name of the application
-        exe_name: Filename of the real executable (e.g. "myapp.exe")
-        output_dir: Directory to write the portable exe
-
     Returns:
         Path to the assembled portable exe
     """
     release_dir = scaffold_dir / "target" / "release"
 
-    # Collect app files from the release directory
     files = _collect_app_files(release_dir)
     if not files:
         raise RuntimeError(f"No app files found in {release_dir}")
 
-    # Create the archive
     build_dir = scaffold_dir / "target" / "portable-build"
     build_dir.mkdir(parents=True, exist_ok=True)
     archive_path = build_dir / "app.zip"
     _create_archive(files, archive_path)
 
-    # Build the launcher
     cargo_name = re.sub(r"[^a-z0-9_-]", "-", product_name.lower())
     cargo_name = re.sub(r"-+", "-", cargo_name).strip("-")
     launcher_dir = build_dir / "launcher"
@@ -178,8 +181,7 @@ def build_portable_exe(
     _generate_launcher_scaffold(launcher_dir, product_name, exe_name, cargo_name, icon_path)
     launcher_exe = _build_launcher(rust, launcher_dir, cargo_name)
 
-    # Assemble the portable exe
-    output_path = output_dir / exe_name.replace(".exe", "-portable.exe")
+    output_path = output_dir / _output_filename(product_name, version, "exe")
     _assemble_portable_exe(launcher_exe, archive_path, output_path)
 
     return output_path
@@ -229,7 +231,7 @@ def build_installer_exe(
     )
     launcher_exe = _build_launcher(rust, launcher_dir, cargo_name)
 
-    output_path = output_dir / exe_name.replace(".exe", "-setup.exe")
+    output_path = output_dir / _output_filename(product_name, version, "exe", installer=True)
     _assemble_portable_exe(launcher_exe, archive_path, output_path)
 
     return output_path
