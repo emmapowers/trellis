@@ -17,7 +17,11 @@ import {
 } from "./types";
 import { store as defaultStore, TrellisStore } from "./core";
 import { debugLog, setDebugCategories } from "./debug";
-import { resolveProxyTarget } from "./proxyTargets";
+import {
+  registerHandleTarget,
+  releaseHandleTarget,
+  resolveProxyTarget,
+} from "./proxyTargets";
 import { materializeProxyValue } from "./proxyValues";
 
 export type ConnectionState = "disconnected" | "connecting" | "connected";
@@ -152,17 +156,21 @@ export class ClientMessageHandler {
     }
 
     try {
-      const resolved = resolveProxyTarget(msg.proxy_id);
-      if (!resolved.found) {
-        if (resolved.isGlobal) {
-          throw new Error(`Global target not found: ${resolved.path}`);
-        }
-        throw new Error(`Proxy target not found: ${msg.proxy_id}`);
-      }
-
       let result: unknown;
 
-      switch (msg.operation) {
+      if (msg.operation === "release") {
+        this.dispatchRelease(msg);
+        result = null;
+      } else {
+        const resolved = resolveProxyTarget(msg.proxy_id);
+        if (!resolved.found) {
+          if (resolved.isGlobal) {
+            throw new Error(`Global target not found: ${resolved.path}`);
+          }
+          throw new Error(`Proxy target not found: ${msg.proxy_id}`);
+        }
+
+        switch (msg.operation) {
         case "call":
           result = await this.dispatchCall(msg, resolved);
           break;
@@ -175,12 +183,10 @@ export class ClientMessageHandler {
         case "delete":
           result = this.dispatchDelete(msg, resolved);
           break;
+        }
       }
 
-      if (result === undefined) {
-        result = null;
-      }
-      encode(result);
+      result = this.encodeProxyResult(msg, result);
       await this.sendMessageCallback({
         type: MessageType.PROXY_RESPONSE,
         request_id: msg.request_id,
@@ -256,6 +262,40 @@ export class ClientMessageHandler {
   ): boolean {
     const objectTarget = this.requireObjectTarget(msg, resolved);
     return Reflect.deleteProperty(objectTarget, this.requireMember(msg));
+  }
+
+  private dispatchRelease(msg: ProxyRequestMessage): void {
+    if (msg.member !== null) {
+      throw new Error(`Proxy member must be null for release: ${msg.proxy_id}`);
+    }
+    releaseHandleTarget(msg.proxy_id);
+  }
+
+  private encodeProxyResult(msg: ProxyRequestMessage, result: unknown): unknown {
+    const returnMode = msg.return_mode ?? "value";
+    const allowNull = msg.allow_null ?? true;
+
+    if (returnMode === "proxy") {
+      if (result === undefined) {
+        result = null;
+      }
+      if (result === null) {
+        if (!allowNull) {
+          throw new Error(`Proxy return was null for non-optional proxy: ${msg.proxy_id}`);
+        }
+        return null;
+      }
+      if (typeof result !== "object" && typeof result !== "function") {
+        throw new Error(`Proxy return expected object or function: ${msg.proxy_id}`);
+      }
+      return { __proxy_handle__: registerHandleTarget(result) };
+    }
+
+    if (result === undefined) {
+      result = null;
+    }
+    encode(result);
+    return result;
   }
 
   private requireMember(msg: ProxyRequestMessage): string {

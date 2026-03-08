@@ -127,6 +127,11 @@ class RenderSession:
     # Weakly held callback registry for proxy callback arguments
     _proxy_callbacks: dict[str, _RegisteredProxyCallback] = field(default_factory=dict)
 
+    # Weakly held returned proxy handles keyed by client-side handle id
+    _proxy_handles: weakref.WeakValueDictionary[str, tp.Any] = field(
+        default_factory=weakref.WeakValueDictionary
+    )
+
     def __post_init__(self) -> None:
         self.dirty.set_lock(self.lock)
 
@@ -192,6 +197,18 @@ class RenderSession:
     def clear_proxy_callbacks(self) -> None:
         """Remove all registered proxy callbacks."""
         self._proxy_callbacks.clear()
+
+    def get_proxy_handle(self, handle_id: str) -> tp.Any | None:
+        """Return a cached proxy handle instance if it is still alive."""
+        return self._proxy_handles.get(handle_id)
+
+    def store_proxy_handle(self, handle_id: str, proxy: tp.Any) -> None:
+        """Cache a returned proxy handle instance by handle id."""
+        self._proxy_handles[handle_id] = proxy
+
+    def clear_proxy_handles(self) -> None:
+        """Remove cached returned proxy handles."""
+        self._proxy_handles.clear()
 
     def _cleanup_dead_proxy_callbacks(self) -> None:
         dead_ids = [

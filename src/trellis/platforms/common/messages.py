@@ -51,10 +51,12 @@ class ProxyRequest(msgspec.Struct, tag="proxy_request", tag_field="type"):
 
     request_id: str
     proxy_id: str
-    operation: Literal["call", "get", "set", "delete"]
+    operation: Literal["call", "get", "set", "delete", "release"]
     member: str | None = None
     args: list[tp.Any] = []
     value: tp.Any = None
+    return_mode: Literal["value", "proxy"] = "value"
+    allow_null: bool = True
 
 
 class ProxyResponse(msgspec.Struct, tag="proxy_response", tag_field="type"):

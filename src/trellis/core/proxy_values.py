@@ -9,6 +9,8 @@ from trellis.core.rendering.session import get_active_session
 
 PROXY_CALLBACK_SENTINEL = "__proxy_callback__"
 PROXY_CALLBACK_ID_PREFIX = "__callback__:"
+PROXY_HANDLE_SENTINEL = "__proxy_handle__"
+PROXY_HANDLE_ID_PREFIX = "__handle__:"
 
 
 def _resolve_proxy_callback_context() -> tuple[tp.Any, str]:

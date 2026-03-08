@@ -480,10 +480,13 @@ class MessageHandler:
     async def request_proxy(
         self,
         proxy_id: str,
-        operation: tp.Literal["call", "get", "set", "delete"],
+        operation: tp.Literal["call", "get", "set", "delete", "release"],
         member: str | None,
         args: list[tp.Any] | None = None,
         value: tp.Any = None,
+        *,
+        return_mode: tp.Literal["value", "proxy"] = "value",
+        allow_null: bool = True,
     ) -> tp.Any:
         """Send a proxy request to the client and await the response."""
         request_id = str(uuid4())
@@ -499,6 +502,8 @@ class MessageHandler:
                     member=member,
                     args=args or [],
                     value=value,
+                    return_mode=return_mode,
+                    allow_null=allow_null,
                 )
             )
             return await future

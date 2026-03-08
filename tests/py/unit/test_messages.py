@@ -132,6 +132,52 @@ class TestProxyRequestMessage:
         assert decoded.value == "New title"
         assert decoded.args == []
 
+    def test_proxy_request_proxy_return_mode_msgpack_roundtrip(self) -> None:
+        """Proxy requests preserve proxy return metadata."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ProxyRequest(
+            request_id="req-3",
+            proxy_id="createCounter",
+            operation="call",
+            member=None,
+            args=["demo"],
+            return_mode="proxy",
+            allow_null=False,
+        )
+        encoded = encoder.encode(original)
+        decoded = decoder.decode(encoded)
+
+        assert isinstance(decoded, ProxyRequest)
+        assert decoded.request_id == "req-3"
+        assert decoded.proxy_id == "createCounter"
+        assert decoded.operation == "call"
+        assert decoded.member is None
+        assert decoded.args == ["demo"]
+        assert decoded.return_mode == "proxy"
+        assert decoded.allow_null is False
+
+    def test_proxy_request_release_msgpack_roundtrip(self) -> None:
+        """Release requests survive msgpack encode/decode."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ProxyRequest(
+            request_id="req-4",
+            proxy_id="__handle__:counter-1",
+            operation="release",
+        )
+        encoded = encoder.encode(original)
+        decoded = decoder.decode(encoded)
+
+        assert isinstance(decoded, ProxyRequest)
+        assert decoded.request_id == "req-4"
+        assert decoded.proxy_id == "__handle__:counter-1"
+        assert decoded.operation == "release"
+        assert decoded.member is None
+        assert decoded.args == []
+
 
 class TestProxyResponseMessage:
     """Tests for ProxyResponse serialization."""

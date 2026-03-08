@@ -324,6 +324,43 @@ describe("BrowserClient", () => {
       client.disconnect();
     });
 
+    it("sends returned handle responses through the browser transport", async () => {
+      const sentMessages: unknown[] = [];
+      const counter = {
+        count: 0,
+        increment() {
+          this.count += 1;
+          return this.count;
+        },
+      };
+      registerProxyTarget("createCounter", () => counter);
+      const client = new BrowserClient();
+      client.setSendCallback((msg) => {
+        sentMessages.push(msg);
+      });
+
+      await client.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-1",
+        proxy_id: "createCounter",
+        operation: "call",
+        member: null,
+        args: [],
+        return_mode: "proxy",
+        allow_null: false,
+      });
+
+      expect(sentMessages).toContainEqual({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-handle-1",
+        result: { __proxy_handle__: expect.stringMatching(/^__handle__:/) },
+        error: null,
+        error_type: null,
+      });
+
+      client.disconnect();
+    });
+
     it("sends property set responses through the browser transport", async () => {
       const sentMessages: unknown[] = [];
       Object.defineProperty(window, "document", {

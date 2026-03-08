@@ -78,10 +78,12 @@ export interface ProxyRequestMessage {
   type: typeof MessageType.PROXY_REQUEST;
   request_id: string;
   proxy_id: string;
-  operation: "call" | "get" | "set" | "delete";
+  operation: "call" | "get" | "set" | "delete" | "release";
   member: string | null;
   args: unknown[];
   value?: unknown;
+  return_mode?: "value" | "proxy";
+  allow_null?: boolean;
 }
 
 export interface ProxyResponseMessage {

@@ -10,9 +10,10 @@ import pytest
 import trellis.core.proxy as proxy_module
 import trellis.core.proxy_values as proxy_values_module
 from trellis.core.components.composition import CompositionComponent
-from trellis.core.proxy import js_global, js_method, js_property, js_proxy
+from trellis.core.proxy import js_global, js_method, js_property, js_proxy, js_release
+from trellis.core.rendering.session import RenderSession
 from trellis.platforms.common.handler import MessageHandler
-from trellis.platforms.common.messages import Message, ProxyRequest
+from trellis.platforms.common.messages import Message, ProxyRequest, ProxyResponse
 
 
 class RecordingTransport:
@@ -25,7 +26,10 @@ class RecordingTransport:
     ) -> None:
         self.result = result
         self.error = error
-        self.calls: list[tuple[str, str, str | None, list[tp.Any], tp.Any]] = []
+        self.session = RenderSession(CompositionComponent(name="Root", render_func=lambda: None))
+        self.calls: list[
+            tuple[str, str, str | None, list[tp.Any], tp.Any, str, bool]
+        ] = []
 
     async def request_proxy(
         self,
@@ -34,8 +38,11 @@ class RecordingTransport:
         member: str | None,
         args: list[tp.Any] | None = None,
         value: tp.Any = None,
+        *,
+        return_mode: str = "value",
+        allow_null: bool = True,
     ) -> tp.Any:
-        self.calls.append((proxy_id, operation, member, args or [], value))
+        self.calls.append((proxy_id, operation, member, args or [], value, return_mode, allow_null))
         if self.error is not None:
             raise self.error
         return self.result
@@ -152,7 +159,7 @@ class TestJsProxyObjects:
         result = asyncio.run(proxy.get_message("Emma"))
 
         assert result == "hello Emma"
-        assert transport.calls == [("DemoApi", "call", "getMessage", ["Emma"], None)]
+        assert transport.calls == [("DemoApi", "call", "getMessage", ["Emma"], None, "value", True)]
 
     def test_decorated_object_proxy_name_override_is_used(
         self, monkeypatch: pytest.MonkeyPatch
@@ -165,7 +172,7 @@ class TestJsProxyObjects:
         result = asyncio.run(proxy.greet("Emma"))
 
         assert result == "hello Emma"
-        assert transport.calls == [("demo_api", "call", "greet", ["Emma"], None)]
+        assert transport.calls == [("demo_api", "call", "greet", ["Emma"], None, "value", True)]
 
     def test_js_method_override_changes_the_js_method_name(
         self, monkeypatch: pytest.MonkeyPatch
@@ -179,7 +186,7 @@ class TestJsProxyObjects:
         with pytest.raises(RuntimeError, match="bad input"):
             asyncio.run(proxy.fail_now())
 
-        assert transport.calls == [("DemoApi", "call", "failNow", [], None)]
+        assert transport.calls == [("DemoApi", "call", "failNow", [], None, "value", True)]
 
     def test_object_proxy_rejects_keyword_arguments(self) -> None:
         """Object proxy methods reject keyword arguments."""
@@ -203,7 +210,7 @@ class TestJsProxyObjects:
         result = asyncio.run(proxy.get_message("Emma"))
 
         assert result == "hello Emma"
-        assert transport.calls == [("DemoApi", "call", "getMessage", ["Emma"], None)]
+        assert transport.calls == [("DemoApi", "call", "getMessage", ["Emma"], None, "value", True)]
 
     def test_object_proxy_without_transport_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Object proxies raise when no transport can be resolved."""
@@ -272,7 +279,7 @@ class TestJsProxyFunctions:
         result = asyncio.run(format_now(3))
 
         assert result == "value: 3"
-        assert transport.calls == [("formatNow", "call", None, [3], None)]
+        assert transport.calls == [("formatNow", "call", None, [3], None, "value", True)]
 
     def test_decorated_function_proxy_name_override_is_used(
         self, monkeypatch: pytest.MonkeyPatch
@@ -284,7 +291,7 @@ class TestJsProxyFunctions:
         result = asyncio.run(format_exactly(3))
 
         assert result == "value: 3"
-        assert transport.calls == [("formatExactly", "call", None, [3], None)]
+        assert transport.calls == [("formatExactly", "call", None, [3], None, "value", True)]
 
     def test_function_proxy_rejects_keyword_arguments(self) -> None:
         """Function proxies reject keyword arguments."""
@@ -329,6 +336,8 @@ class TestJsProxyFunctions:
                 None,
                 [{"__proxy_callback__": "callback-1"}, 3],
                 None,
+                "value",
+                True,
             )
         ]
 
@@ -346,7 +355,7 @@ class TestJsGlobalObjects:
 
         assert result == "dark"
         assert transport.calls == [
-            ("__global__:window.localStorage", "call", "getItem", ["theme"], None)
+            ("__global__:window.localStorage", "call", "getItem", ["theme"], None, "value", True)
         ]
 
     def test_object_global_proxy_rejects_keyword_arguments(self) -> None:
@@ -428,7 +437,15 @@ class TestJsGlobalFunctions:
 
         assert result == "hello%20world"
         assert transport.calls == [
-            ("__global__:globalThis.encodeURIComponent", "call", None, ["hello world"], None)
+            (
+                "__global__:globalThis.encodeURIComponent",
+                "call",
+                None,
+                ["hello world"],
+                None,
+                "value",
+                True,
+            )
         ]
 
     def test_callable_global_classes_require_exactly_one_public_async_method(self) -> None:
@@ -478,7 +495,15 @@ class TestJsGlobalClipboard:
         asyncio.run(clipboard.write_text("copied text"))
 
         assert transport.calls == [
-            ("__global__:navigator.clipboard", "call", "writeText", ["copied text"], None)
+            (
+                "__global__:navigator.clipboard",
+                "call",
+                "writeText",
+                ["copied text"],
+                None,
+                "value",
+                True,
+            )
         ]
 
     def test_clipboard_wrapper_uses_read_text_method_name(
@@ -492,7 +517,9 @@ class TestJsGlobalClipboard:
         result = asyncio.run(clipboard.read_text())
 
         assert result == "copied text"
-        assert transport.calls == [("__global__:navigator.clipboard", "call", "readText", [], None)]
+        assert transport.calls == [
+            ("__global__:navigator.clipboard", "call", "readText", [], None, "value", True)
+        ]
 
     def test_clipboard_errors_are_raised_as_runtime_errors(
         self, monkeypatch: pytest.MonkeyPatch
@@ -507,7 +534,15 @@ class TestJsGlobalClipboard:
             asyncio.run(clipboard.write_text("copied text"))
 
         assert transport.calls == [
-            ("__global__:navigator.clipboard", "call", "writeText", ["copied text"], None)
+            (
+                "__global__:navigator.clipboard",
+                "call",
+                "writeText",
+                ["copied text"],
+                None,
+                "value",
+                True,
+            )
         ]
 
 
@@ -521,7 +556,7 @@ class TestJsProperties:
         result = asyncio.run(document.title.get())
 
         assert result == "Original title"
-        assert transport.calls == [("__global__:document", "get", "title", [], None)]
+        assert transport.calls == [("__global__:document", "get", "title", [], None, "value", True)]
 
     def test_property_name_override_is_used(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Property name overrides apply to property requests."""
@@ -532,7 +567,9 @@ class TestJsProperties:
         result = asyncio.run(window_globals.demo_flag.get())
 
         assert result == "flag"
-        assert transport.calls == [("__global__:window", "get", "__trellisProxyDemoFlag", [], None)]
+        assert transport.calls == [
+            ("__global__:window", "get", "__trellisProxyDemoFlag", [], None, "value", True)
+        ]
 
     def test_property_set_returns_bool(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Writable properties send a set request and return the JS boolean result."""
@@ -543,7 +580,9 @@ class TestJsProperties:
         result = asyncio.run(document.title.set("New title"))
 
         assert result is True
-        assert transport.calls == [("__global__:document", "set", "title", [], "New title")]
+        assert transport.calls == [
+            ("__global__:document", "set", "title", [], "New title", "value", True)
+        ]
 
     def test_property_delete_returns_bool(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Deletable properties send a delete request and return the JS boolean result."""
@@ -555,7 +594,7 @@ class TestJsProperties:
 
         assert result is True
         assert transport.calls == [
-            ("__global__:window", "delete", "__trellisProxyDemoFlag", [], None)
+            ("__global__:window", "delete", "__trellisProxyDemoFlag", [], None, "value", True)
         ]
 
     def test_non_writable_properties_reject_set_locally(self) -> None:
@@ -638,6 +677,185 @@ class TestMessageHandlerProxyRequests:
             assert handler._pending_proxy_requests == {}
 
         asyncio.run(test())
+
+
+class TestReturnedProxyHandles:
+    def test_dynamic_proxy_classes_reject_direct_instantiation(self) -> None:
+        """dynamic=True proxy classes are return-only and cannot be constructed directly."""
+
+        @js_proxy(dynamic=True)
+        class CounterHandle:
+            async def increment(self) -> int:
+                raise NotImplementedError
+
+        with pytest.raises(TypeError, match="cannot be instantiated directly"):
+            CounterHandle()
+
+    def test_dynamic_proxy_classes_reject_name_override(self) -> None:
+        """dynamic=True proxies do not allow static target names."""
+
+        with pytest.raises(TypeError, match="name=.*dynamic=True"):
+
+            @js_proxy(name="CounterHandle", dynamic=True)
+            class CounterHandle:
+                async def increment(self) -> int:
+                    raise NotImplementedError
+
+    def test_function_returning_dynamic_proxy_requests_proxy_mode(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Functions annotated with a dynamic proxy return request proxy mode."""
+
+        @js_proxy(dynamic=True)
+        class CounterHandle:
+            async def increment(self) -> int:
+                raise NotImplementedError
+
+        @js_proxy
+        async def create_counter(label: str) -> CounterHandle:
+            raise NotImplementedError
+
+        transport = RecordingTransport(
+            result={proxy_values_module.PROXY_HANDLE_SENTINEL: "__handle__:counter-1"}
+        )
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+
+        result = asyncio.run(create_counter("demo"))
+
+        assert isinstance(result, CounterHandle)
+        assert transport.calls == [
+            ("createCounter", "call", None, ["demo"], None, "proxy", False)
+        ]
+
+    def test_method_returning_optional_dynamic_proxy_allows_null(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Object methods returning optional proxies request proxy mode with allow_null."""
+
+        @js_proxy(dynamic=True)
+        class HtmlElement:
+            async def focus(self) -> None:
+                raise NotImplementedError
+
+        @js_global("document")
+        class DocumentProxy:
+            async def query_selector(self, selector: str) -> HtmlElement | None:
+                raise NotImplementedError
+
+        transport = RecordingTransport(result=None)
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+
+        result = asyncio.run(DocumentProxy().query_selector("body"))
+
+        assert result is None
+        assert transport.calls == [
+            ("__global__:document", "call", "querySelector", ["body"], None, "proxy", True)
+        ]
+
+    def test_repeated_handle_id_reuses_same_python_object(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The same returned handle ID maps to stable Python identity within a session."""
+
+        @js_proxy(dynamic=True)
+        class CounterHandle:
+            async def increment(self) -> int:
+                raise NotImplementedError
+
+        @js_proxy
+        async def create_counter(label: str) -> CounterHandle:
+            raise NotImplementedError
+
+        handle_value = {proxy_values_module.PROXY_HANDLE_SENTINEL: "__handle__:counter-1"}
+        transport = RecordingTransport(result=handle_value)
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+
+        first = asyncio.run(create_counter("demo"))
+        second = asyncio.run(create_counter("demo"))
+
+        assert first is second
+
+    def test_js_release_sends_release_request(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """js_release sends a release request for dynamic handles."""
+
+        @js_proxy(dynamic=True)
+        class CounterHandle:
+            async def increment(self) -> int:
+                raise NotImplementedError
+
+        @js_proxy
+        async def create_counter(label: str) -> CounterHandle:
+            raise NotImplementedError
+
+        transport = RecordingTransport(
+            result={proxy_values_module.PROXY_HANDLE_SENTINEL: "__handle__:counter-1"}
+        )
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+
+        handle = asyncio.run(create_counter("demo"))
+        asyncio.run(js_release(handle))
+
+        assert transport.calls[-1] == (
+            "__handle__:counter-1",
+            "release",
+            None,
+            [],
+            None,
+            "value",
+            True,
+        )
+
+    def test_js_release_is_idempotent(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Releasing the same handle twice is a no-op after the first request."""
+
+        @js_proxy(dynamic=True)
+        class CounterHandle:
+            async def increment(self) -> int:
+                raise NotImplementedError
+
+        @js_proxy
+        async def create_counter(label: str) -> CounterHandle:
+            raise NotImplementedError
+
+        transport = RecordingTransport(
+            result={proxy_values_module.PROXY_HANDLE_SENTINEL: "__handle__:counter-1"}
+        )
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+
+        handle = asyncio.run(create_counter("demo"))
+        asyncio.run(js_release(handle))
+        asyncio.run(js_release(handle))
+
+        release_calls = [call for call in transport.calls if call[1] == "release"]
+        assert len(release_calls) == 1
+
+    def test_released_handles_raise_on_use(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Dynamic handles reject use after release."""
+
+        @js_proxy(dynamic=True)
+        class CounterHandle:
+            async def increment(self) -> int:
+                raise NotImplementedError
+
+        @js_proxy
+        async def create_counter(label: str) -> CounterHandle:
+            raise NotImplementedError
+
+        transport = RecordingTransport(
+            result={proxy_values_module.PROXY_HANDLE_SENTINEL: "__handle__:counter-1"}
+        )
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+
+        handle = asyncio.run(create_counter("demo"))
+        asyncio.run(js_release(handle))
+
+        with pytest.raises(RuntimeError, match="has been released"):
+            asyncio.run(handle.increment())
+
+    def test_js_release_rejects_static_root_proxies(self) -> None:
+        """Only returned dynamic handles may be released explicitly."""
+        with pytest.raises(TypeError, match="only supports returned proxy handles"):
+            asyncio.run(js_release(DemoApi()))
 
     def test_request_proxy_supports_function_targets(self) -> None:
         """request_proxy sends function invocations with a null member."""

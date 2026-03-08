@@ -5,9 +5,13 @@ import gc
 import typing as tp
 from dataclasses import dataclass
 
+import pytest
+
 from tests.conftest import get_button_element
+import trellis.core.proxy as proxy_module
 from trellis.core.callback_context import get_callback_node_id
 from trellis.core.components.composition import CompositionComponent, component
+from trellis.core.proxy import js_proxy, js_release
 from trellis.core.rendering.patches import RenderUpdatePatch
 from trellis.core.rendering.render import render
 from trellis.core.state.stateful import Stateful
@@ -332,6 +336,146 @@ class TestMessageHandler:
 
             assert result is None
             assert await task == "value: 3"
+
+        asyncio.run(test())
+
+    def test_handle_message_decodes_returned_proxy_handles(
+        self, app_wrapper: AppWrapper, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Proxy responses with handle sentinels decode into dynamic proxy instances."""
+
+        @js_proxy(dynamic=True)
+        class CounterHandle:
+            async def increment(self) -> int:
+                raise NotImplementedError
+
+        @js_proxy
+        async def create_counter(label: str) -> CounterHandle:
+            raise NotImplementedError
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: handler)
+
+        sent_messages: list[dict[str, tp.Any]] = []
+        handler.set_send_callback(lambda msg: sent_messages.append(msg))
+
+        async def test() -> None:
+            task = asyncio.create_task(create_counter("demo"))
+            await asyncio.sleep(0)
+            message = sent_messages[0]
+
+            await handler.handle_message(
+                ProxyResponse(
+                    request_id=message["request_id"],
+                    result={"__proxy_handle__": "__handle__:counter-1"},
+                )
+            )
+
+            result = await task
+            assert isinstance(result, CounterHandle)
+
+        asyncio.run(test())
+
+    def test_handle_message_reuses_cached_returned_handle_identity(
+        self, app_wrapper: AppWrapper, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Repeated handle ids resolve to one Python proxy object per session."""
+
+        @js_proxy(dynamic=True)
+        class CounterHandle:
+            async def increment(self) -> int:
+                raise NotImplementedError
+
+        @js_proxy
+        async def create_counter(label: str) -> CounterHandle:
+            raise NotImplementedError
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: handler)
+
+        sent_messages: list[dict[str, tp.Any]] = []
+        handler.set_send_callback(lambda msg: sent_messages.append(msg))
+
+        async def request_once() -> CounterHandle:
+            task = asyncio.create_task(create_counter("demo"))
+            await asyncio.sleep(0)
+            message = sent_messages.pop(0)
+            await handler.handle_message(
+                ProxyResponse(
+                    request_id=message["request_id"],
+                    result={"__proxy_handle__": "__handle__:counter-1"},
+                )
+            )
+            return tp.cast("CounterHandle", await task)
+
+        async def test() -> None:
+            first = await request_once()
+            second = await request_once()
+            assert first is second
+
+        asyncio.run(test())
+
+    def test_js_release_sends_release_requests_through_handler_transport(
+        self, app_wrapper: AppWrapper, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Explicit handle release uses the handler transport."""
+
+        @js_proxy(dynamic=True)
+        class CounterHandle:
+            async def increment(self) -> int:
+                raise NotImplementedError
+
+        @js_proxy
+        async def create_counter(label: str) -> CounterHandle:
+            raise NotImplementedError
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: handler)
+
+        sent_messages: list[dict[str, tp.Any]] = []
+        handler.set_send_callback(lambda msg: sent_messages.append(msg))
+
+        async def test() -> None:
+            task = asyncio.create_task(create_counter("demo"))
+            await asyncio.sleep(0)
+            first_request = sent_messages.pop(0)
+            await handler.handle_message(
+                ProxyResponse(
+                    request_id=first_request["request_id"],
+                    result={"__proxy_handle__": "__handle__:counter-1"},
+                )
+            )
+            handle = await task
+
+            release_task = asyncio.create_task(js_release(handle))
+            await asyncio.sleep(0)
+
+            release_request = sent_messages.pop(0)
+            assert release_request["operation"] == "release"
+            assert release_request["proxy_id"] == "__handle__:counter-1"
+
+            await handler.handle_message(
+                ProxyResponse(
+                    request_id=release_request["request_id"],
+                    result=None,
+                )
+            )
+            await release_task
 
         asyncio.run(test())
 

@@ -318,6 +318,209 @@ describe("ClientMessageHandler", () => {
       });
     });
 
+    it("returns handle sentinels for proxy-mode function calls", async () => {
+      const sendMessage = vi.fn();
+      const target = { count: 0 };
+      registerProxyTarget("createCounter", () => target);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-1",
+        proxy_id: "createCounter",
+        operation: "call",
+        member: null,
+        args: [],
+        return_mode: "proxy",
+        allow_null: false,
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-handle-1",
+        result: { __proxy_handle__: expect.stringMatching(/^__handle__:/) },
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("reuses handle ids when the same object is returned twice", async () => {
+      const sendMessage = vi.fn();
+      const target = { count: 0 };
+      registerProxyTarget("createCounterStable", () => target);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-2a",
+        proxy_id: "createCounterStable",
+        operation: "call",
+        member: null,
+        args: [],
+        return_mode: "proxy",
+        allow_null: false,
+      });
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-2b",
+        proxy_id: "createCounterStable",
+        operation: "call",
+        member: null,
+        args: [],
+        return_mode: "proxy",
+        allow_null: false,
+      });
+
+      const first = sendMessage.mock.calls[0][0].result.__proxy_handle__;
+      const second = sendMessage.mock.calls[1][0].result.__proxy_handle__;
+      expect(first).toBe(second);
+    });
+
+    it("allows dispatch against returned handle targets", async () => {
+      const sendMessage = vi.fn();
+      const target = {
+        count: 0,
+        increment() {
+          this.count += 1;
+          return this.count;
+        },
+      };
+      registerProxyTarget("createCounterDispatch", () => target);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-3a",
+        proxy_id: "createCounterDispatch",
+        operation: "call",
+        member: null,
+        args: [],
+        return_mode: "proxy",
+        allow_null: false,
+      });
+
+      const handleId = sendMessage.mock.calls[0][0].result.__proxy_handle__;
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-3b",
+        proxy_id: handleId,
+        operation: "call",
+        member: "increment",
+        args: [],
+      });
+
+      expect(sendMessage).toHaveBeenLastCalledWith({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-handle-3b",
+        result: 1,
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("releases returned handle targets idempotently", async () => {
+      const sendMessage = vi.fn();
+      const target = { count: 0 };
+      registerProxyTarget("createCounterRelease", () => target);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-4a",
+        proxy_id: "createCounterRelease",
+        operation: "call",
+        member: null,
+        args: [],
+        return_mode: "proxy",
+        allow_null: false,
+      });
+
+      const handleId = sendMessage.mock.calls[0][0].result.__proxy_handle__;
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-4b",
+        proxy_id: handleId,
+        operation: "release",
+        member: null,
+        args: [],
+      });
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-4c",
+        proxy_id: handleId,
+        operation: "release",
+        member: null,
+        args: [],
+      });
+
+      expect(sendMessage).toHaveBeenNthCalledWith(2, {
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-handle-4b",
+        result: null,
+        error: null,
+        error_type: null,
+      });
+      expect(sendMessage).toHaveBeenNthCalledWith(3, {
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-handle-4c",
+        result: null,
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("rejects primitive proxy-mode results", async () => {
+      const sendMessage = vi.fn();
+      registerProxyTarget("badProxyReturn", () => 3);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-5",
+        proxy_id: "badProxyReturn",
+        operation: "call",
+        member: null,
+        args: [],
+        return_mode: "proxy",
+        allow_null: false,
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-handle-5",
+        result: null,
+        error: "Proxy return expected object or function: badProxyReturn",
+        error_type: "Error",
+      });
+    });
+
+    it("rejects null proxy-mode results for non-optional handles", async () => {
+      const sendMessage = vi.fn();
+      registerProxyTarget("nullProxyReturn", () => null);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-6",
+        proxy_id: "nullProxyReturn",
+        operation: "call",
+        member: null,
+        args: [],
+        return_mode: "proxy",
+        allow_null: false,
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-handle-6",
+        result: null,
+        error: "Proxy return was null for non-optional proxy: nullProxyReturn",
+        error_type: "Error",
+      });
+    });
+
     it("returns proxy dispatch errors without throwing", async () => {
       const sendMessage = vi.fn();
       registerProxyTarget("explode_api", {

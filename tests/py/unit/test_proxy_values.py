@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import gc
+import weakref
 
 import pytest
 
 from trellis.core import proxy_values
+import trellis.core.proxy as proxy_module
 from trellis.core.components.composition import CompositionComponent
 from trellis.core.rendering.session import RenderSession
 
@@ -82,3 +84,83 @@ def test_register_proxy_callback_rejects_non_weakrefable_callables(
 
     with pytest.raises(TypeError, match="weak references"):
         proxy_values.serialize_proxy_value(NonWeakrefableCallable())
+
+
+def test_decode_proxy_result_reuses_cached_handle_instance() -> None:
+    """Repeated handle ids resolve to stable Python identity within one session."""
+
+    @proxy_module.js_proxy(dynamic=True)
+    class CounterHandle:
+        async def increment(self) -> int:
+            raise NotImplementedError
+
+    transport = type(
+        "Transport",
+        (),
+        {
+            "session": RenderSession(CompositionComponent(name="Root", render_func=lambda: None)),
+            "request_proxy": lambda self, *args, **kwargs: None,
+        },
+    )()
+    return_spec = proxy_module._ProxyReturnSpec(
+        mode="proxy",
+        allow_null=False,
+        proxy_cls=CounterHandle,
+    )
+    value = {proxy_values.PROXY_HANDLE_SENTINEL: "__handle__:counter-1"}
+
+    first = proxy_module._decode_proxy_result(value, return_spec=return_spec, transport=transport)
+    second = proxy_module._decode_proxy_result(value, return_spec=return_spec, transport=transport)
+
+    assert first is second
+    assert transport.session.get_proxy_handle("__handle__:counter-1") is first
+
+
+def test_decode_proxy_result_rejects_malformed_handle_sentinels() -> None:
+    """Malformed handle payloads fail cleanly."""
+
+    @proxy_module.js_proxy(dynamic=True)
+    class CounterHandle:
+        async def increment(self) -> int:
+            raise NotImplementedError
+
+    transport = type(
+        "Transport",
+        (),
+        {
+            "session": RenderSession(CompositionComponent(name="Root", render_func=lambda: None)),
+            "request_proxy": lambda self, *args, **kwargs: None,
+        },
+    )()
+    return_spec = proxy_module._ProxyReturnSpec(
+        mode="proxy",
+        allow_null=False,
+        proxy_cls=CounterHandle,
+    )
+
+    with pytest.raises(RuntimeError, match="Malformed proxy handle response"):
+        proxy_module._decode_proxy_result(
+            {"wrong": "__handle__:counter-1"},
+            return_spec=return_spec,
+            transport=transport,
+        )
+
+
+def test_session_handle_cache_drops_dead_proxy_handles() -> None:
+    """The per-session handle cache uses weak values."""
+
+    class Handle:
+        pass
+
+    session = RenderSession(CompositionComponent(name="Root", render_func=lambda: None))
+    handle = Handle()
+    handle_ref = weakref.ref(handle)
+    session.store_proxy_handle("handle-1", handle)
+
+    assert session.get_proxy_handle("handle-1") is handle
+
+    del handle
+    gc.collect()
+
+    assert handle_ref() is None
+    assert session.get_proxy_handle("handle-1") is None
