@@ -471,6 +471,81 @@ describe("ClientMessageHandler", () => {
       });
     });
 
+    it("returns handle sentinels for proxy-mode property gets", async () => {
+      const sendMessage = vi.fn();
+      (window as Window & typeof globalThis & Record<string, unknown>).proxyBody = {
+        tagName: "BODY",
+      };
+      Object.defineProperty(window, "document", {
+        value: {
+          body: (window as Window & typeof globalThis & Record<string, unknown>).proxyBody,
+        },
+        configurable: true,
+      });
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-4d",
+        proxy_id: "__global__:document",
+        operation: "get",
+        member: "body",
+        args: [],
+        return_mode: "proxy",
+        allow_null: true,
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-handle-4d",
+        result: { __proxy_handle__: expect.stringMatching(/^__handle__:/) },
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("reacquires a fresh handle id after release", async () => {
+      const sendMessage = vi.fn();
+      const target = { count: 0 };
+      registerProxyTarget("createCounterReacquire", () => target);
+      handler = new ClientMessageHandler(callbacks, store, sendMessage);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-4e-1",
+        proxy_id: "createCounterReacquire",
+        operation: "call",
+        member: null,
+        args: [],
+        return_mode: "proxy",
+        allow_null: false,
+      });
+      const firstHandle = sendMessage.mock.calls[0][0].result.__proxy_handle__;
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-4e-2",
+        proxy_id: firstHandle,
+        operation: "release",
+        member: null,
+        args: [],
+      });
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_REQUEST,
+        request_id: "req-handle-4e-3",
+        proxy_id: "createCounterReacquire",
+        operation: "call",
+        member: null,
+        args: [],
+        return_mode: "proxy",
+        allow_null: false,
+      });
+      const secondHandle = sendMessage.mock.calls[2][0].result.__proxy_handle__;
+
+      expect(secondHandle).not.toBe(firstHandle);
+    });
+
     it("rejects primitive proxy-mode results", async () => {
       const sendMessage = vi.fn();
       registerProxyTarget("badProxyReturn", () => 3);

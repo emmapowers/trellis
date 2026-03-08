@@ -857,6 +857,84 @@ class TestReturnedProxyHandles:
         with pytest.raises(TypeError, match="only supports returned proxy handles"):
             asyncio.run(js_release(DemoApi()))
 
+
+class TestPropertyReturnedProxyHandles:
+    def test_property_get_uses_proxy_mode_for_optional_dynamic_handles(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Proxy-valued properties request proxy mode and allow null for optional handles."""
+
+        @js_proxy(dynamic=True)
+        class HtmlElement:
+            async def focus(self) -> None:
+                raise NotImplementedError
+
+        @js_global("document")
+        class DocumentWithBody:
+            body = js_property[HtmlElement | None]()
+
+        transport = RecordingTransport(
+            result={proxy_values_module.PROXY_HANDLE_SENTINEL: "__handle__:body-1"}
+        )
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+
+        result = asyncio.run(DocumentWithBody().body.get())
+
+        assert isinstance(result, HtmlElement)
+        assert transport.calls == [
+            ("__global__:document", "get", "body", [], None, "proxy", True)
+        ]
+
+    def test_non_optional_proxy_valued_properties_disallow_null(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Non-optional proxy-valued properties request proxy mode without nulls."""
+
+        @js_proxy(dynamic=True)
+        class HtmlElement:
+            async def focus(self) -> None:
+                raise NotImplementedError
+
+        @js_global("document")
+        class DocumentRoot:
+            document_element = js_property[HtmlElement](name="documentElement")
+
+        transport = RecordingTransport(
+            result={proxy_values_module.PROXY_HANDLE_SENTINEL: "__handle__:root-1"}
+        )
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+
+        result = asyncio.run(DocumentRoot().document_element.get())
+
+        assert isinstance(result, HtmlElement)
+        assert transport.calls == [
+            ("__global__:document", "get", "documentElement", [], None, "proxy", False)
+        ]
+
+    def test_repeated_property_gets_reuse_python_identity(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Property-returned handles reuse the same cached Python object."""
+
+        @js_proxy(dynamic=True)
+        class HtmlElement:
+            async def focus(self) -> None:
+                raise NotImplementedError
+
+        @js_global("document")
+        class DocumentWithBody:
+            body = js_property[HtmlElement | None]()
+
+        transport = RecordingTransport(
+            result={proxy_values_module.PROXY_HANDLE_SENTINEL: "__handle__:body-1"}
+        )
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+
+        first = asyncio.run(DocumentWithBody().body.get())
+        second = asyncio.run(DocumentWithBody().body.get())
+
+        assert first is second
+
     def test_request_proxy_supports_function_targets(self) -> None:
         """request_proxy sends function invocations with a null member."""
         handler = RecordingMessageHandler()

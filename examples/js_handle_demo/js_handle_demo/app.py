@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from trellis import App, Stateful, component, js_global, js_property, js_proxy
+from trellis import App, Stateful, component, js_global, js_property, js_proxy, js_release
 from trellis import html as h
 from trellis import widgets as w
 from trellis.app import theme
@@ -48,6 +48,8 @@ async def create_counter(label: str) -> CounterHandle:
 
 @js_global("document")
 class Document:
+    body = js_property[HtmlElement | None]()
+
     async def query_selector(self, selector: str) -> HtmlElement | None:
         raise NotImplementedError
 
@@ -172,6 +174,40 @@ def JsHandleDemo() -> None:
             state.element_status = "success"
             state.element_message = f"Body id: {shown_id}"
 
+    async def handle_get_body_property(_event: object | None = None) -> None:
+        state.element_status = "pending"
+        state.element_message = "Reading document.body..."
+        try:
+            state.element = await document.body.get()
+            if state.element is None:
+                state.element_status = "success"
+                state.element_message = "document.body returned null"
+                return
+            tag_name = await state.element.tag_name.get()
+        except RuntimeError as error:
+            state.element_status = "error"
+            state.element_message = str(error)
+        else:
+            state.element_status = "success"
+            state.element_message = f"document.body returned <{tag_name}>"
+
+    async def handle_release_body(_event: object | None = None) -> None:
+        if state.element is None:
+            state.element_status = "error"
+            state.element_message = "Acquire a body handle first."
+            return
+
+        state.element_status = "pending"
+        state.element_message = "Releasing body handle..."
+        try:
+            await js_release(state.element)
+        except (RuntimeError, TypeError) as error:
+            state.element_status = "error"
+            state.element_message = str(error)
+        else:
+            state.element_status = "success"
+            state.element_message = "Released the current body handle."
+
     with h.Div(
         style={
             "background": "linear-gradient(180deg, #f3f8ff 0%, #ffffff 100%)",
@@ -199,66 +235,81 @@ def JsHandleDemo() -> None:
                 style={"color": theme.text_secondary, "fontSize": "16px", "lineHeight": "1.6"},
             )
 
-            for title, description, status, message, primary_label, primary_action, secondary_label, secondary_action in [
-                (
-                    "Bundled Counter Handle",
+            with h.Div(
+                style={
+                    "backgroundColor": "#fff",
+                    "border": f"1px solid {theme.border_default}",
+                    "borderRadius": "18px",
+                    "boxShadow": "0 18px 40px rgba(15, 23, 42, 0.08)",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "gap": "18px",
+                    "padding": "22px",
+                }
+            ):
+                h.H2("Bundled Counter Handle", style={"fontSize": "24px", "fontWeight": "650"})
+                h.P(
                     "A bundled JS function returns a live object with methods and properties.",
-                    state.counter_status,
-                    state.counter_message,
-                    "Create counter",
-                    handle_create_counter,
-                    "Increment",
-                    handle_increment_counter,
-                ),
-                (
-                    "Document Body Handle",
-                    "A browser method returns a DOM handle that Python can keep using.",
-                    state.element_status,
-                    state.element_message,
-                    "Query body",
-                    handle_query_body,
-                    "Read body id",
-                    handle_read_body_id,
-                ),
-            ]:
-                with h.Div(
                     style={
-                        "backgroundColor": "#fff",
-                        "border": f"1px solid {theme.border_default}",
-                        "borderRadius": "18px",
-                        "boxShadow": "0 18px 40px rgba(15, 23, 42, 0.08)",
-                        "display": "flex",
-                        "flexDirection": "column",
-                        "gap": "18px",
-                        "padding": "22px",
-                    }
-                ):
-                    h.H2(title, style={"fontSize": "24px", "fontWeight": "650"})
-                    h.P(
-                        description,
-                        style={
-                            "color": theme.text_secondary,
-                            "fontSize": "15px",
-                            "lineHeight": "1.6",
-                            "margin": "0",
-                        },
+                        "color": theme.text_secondary,
+                        "fontSize": "15px",
+                        "lineHeight": "1.6",
+                        "margin": "0",
+                    },
+                )
+                with h.Div(style={"display": "flex", "flexWrap": "wrap", "gap": "12px"}):
+                    w.Button(
+                        text="Create counter",
+                        on_click=handle_create_counter,
+                        style=_button_style(True),
                     )
-                    with h.Div(style={"display": "flex", "flexWrap": "wrap", "gap": "12px"}):
-                        w.Button(text=primary_label, on_click=primary_action, style=_button_style(True))
-                        w.Button(
-                            text=secondary_label,
-                            on_click=secondary_action,
-                            style=_button_style(False),
-                        )
-                    h.P(
-                        message,
-                        style={
-                            "color": _status_color(status),
-                            "fontSize": "15px",
-                            "fontWeight": "600",
-                            "margin": "0",
-                        },
-                    )
+                    w.Button(text="Increment", on_click=handle_increment_counter, style=_button_style(False))
+                h.P(
+                    state.counter_message,
+                    style={
+                        "color": _status_color(state.counter_status),
+                        "fontSize": "15px",
+                        "fontWeight": "600",
+                        "margin": "0",
+                    },
+                )
+
+            with h.Div(
+                style={
+                    "backgroundColor": "#fff",
+                    "border": f"1px solid {theme.border_default}",
+                    "borderRadius": "18px",
+                    "boxShadow": "0 18px 40px rgba(15, 23, 42, 0.08)",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "gap": "18px",
+                    "padding": "22px",
+                }
+            ):
+                h.H2("Document Body Handle", style={"fontSize": "24px", "fontWeight": "650"})
+                h.P(
+                    "Browser methods and properties both return DOM handles that can be released and reacquired.",
+                    style={
+                        "color": theme.text_secondary,
+                        "fontSize": "15px",
+                        "lineHeight": "1.6",
+                        "margin": "0",
+                    },
+                )
+                with h.Div(style={"display": "flex", "flexWrap": "wrap", "gap": "12px"}):
+                    w.Button(text="Query body", on_click=handle_query_body, style=_button_style(True))
+                    w.Button(text="Get body property", on_click=handle_get_body_property, style=_button_style(False))
+                    w.Button(text="Read body id", on_click=handle_read_body_id, style=_button_style(False))
+                    w.Button(text="Release body", on_click=handle_release_body, style=_button_style(False))
+                h.P(
+                    state.element_message,
+                    style={
+                        "color": _status_color(state.element_status),
+                        "fontSize": "15px",
+                        "fontWeight": "600",
+                        "margin": "0",
+                    },
+                )
 
 
 app = App(JsHandleDemo)
