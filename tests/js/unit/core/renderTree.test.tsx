@@ -386,6 +386,32 @@ describe("compiled CSS runtime props", () => {
     });
   });
 
+  it("preserves CSS custom properties verbatim in inline styles", () => {
+    const props = toReactDomProps({
+      style: {
+        "--paper": "oklch(0.98 0.01 95)",
+        "background-color": "var(--paper)",
+      },
+    });
+
+    expect(props.style).toEqual({
+      "--paper": "oklch(0.98 0.01 95)",
+      backgroundColor: "var(--paper)",
+    });
+  });
+
+  it("maps special DOM attribute names to the React runtime spellings", () => {
+    const props = toReactDomProps({
+      item_id: "story-1",
+      popover_target: "note-popover",
+      popover_target_action: "show",
+    });
+
+    expect(props.itemID).toBe("story-1");
+    expect(props.popovertarget).toBe("note-popover");
+    expect(props.popovertargetaction).toBe("show");
+  });
+
   it("injects compiled style rules once and strips internal props from html nodes", () => {
     const node: SerializedElement = {
       kind: ElementKind.JSX_ELEMENT,

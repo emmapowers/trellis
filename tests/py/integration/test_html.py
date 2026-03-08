@@ -435,6 +435,18 @@ class TestTextElementsAsContainers:
         p = result.session.elements.get(result.root_element.child_ids[0])
         assert p.properties["_text"] == "text content"
 
+    def test_text_hybrid_does_not_forward_unset_optional_props(self, rendered) -> None:
+        """Hybrid text wrappers should not serialize unset optional props."""
+
+        @component
+        def App() -> None:
+            h.P("text content")
+
+        result = rendered(App)
+
+        p = result.session.elements.get(result.root_element.child_ids[0])
+        assert p.properties == {"_text": "text content"}
+
     def test_p_as_empty_text_still_works(self, rendered) -> None:
         """P("") stays in text mode with explicit empty text."""
 

@@ -48,6 +48,15 @@ function domPropNameFromSnake(prop: string): string {
   if (prop.startsWith("aria_") || prop.startsWith("data_")) {
     return prop.replaceAll("_", "-");
   }
+  if (prop === "item_id") {
+    return "itemID";
+  }
+  if (prop === "popover_target") {
+    return "popovertarget";
+  }
+  if (prop === "popover_target_action") {
+    return "popovertargetaction";
+  }
   return snakeToCamelKey(prop);
 }
 
@@ -62,7 +71,7 @@ function normalizeInlineStyle(value: unknown): unknown {
 
   return Object.fromEntries(
     Object.entries(value).map(([key, nestedValue]) => [
-      cssNameToCamelKey(key),
+      key.startsWith("--") ? key : cssNameToCamelKey(key),
       normalizeInlineStyle(nestedValue),
     ])
   );
