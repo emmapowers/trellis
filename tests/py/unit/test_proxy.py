@@ -492,9 +492,7 @@ class TestJsGlobalClipboard:
         result = asyncio.run(clipboard.read_text())
 
         assert result == "copied text"
-        assert transport.calls == [
-            ("__global__:navigator.clipboard", "call", "readText", [], None)
-        ]
+        assert transport.calls == [("__global__:navigator.clipboard", "call", "readText", [], None)]
 
     def test_clipboard_errors_are_raised_as_runtime_errors(
         self, monkeypatch: pytest.MonkeyPatch
@@ -610,7 +608,7 @@ class TestJsProperties:
                     raise NotImplementedError
 
 
-class TestMessageHandlerProxyCalls:
+class TestMessageHandlerProxyRequests:
     def test_request_proxy_cleans_up_pending_future_on_send_failure(self) -> None:
         """request_proxy removes pending requests when send_message fails."""
         handler = RecordingMessageHandler()
@@ -619,7 +617,7 @@ class TestMessageHandlerProxyCalls:
         with pytest.raises(RuntimeError, match="send failed"):
             asyncio.run(handler.request_proxy("demo_api", "call", "greet", ["Emma"]))
 
-        assert handler._pending_proxy_calls == {}
+        assert handler._pending_proxy_requests == {}
 
     def test_request_proxy_cleans_up_pending_future_on_cancellation(self) -> None:
         """request_proxy removes pending requests when the caller cancels."""
@@ -637,7 +635,7 @@ class TestMessageHandlerProxyCalls:
             with pytest.raises(asyncio.CancelledError):
                 await task
 
-            assert handler._pending_proxy_calls == {}
+            assert handler._pending_proxy_requests == {}
 
         asyncio.run(test())
 

@@ -6,7 +6,7 @@ import gc
 
 import pytest
 
-import trellis.core.proxy_values as proxy_values
+from trellis.core import proxy_values
 from trellis.core.components.composition import CompositionComponent
 from trellis.core.rendering.session import RenderSession
 
@@ -25,10 +25,10 @@ def test_serialize_proxy_value_wraps_callbacks_recursively(
     monkeypatch.setattr(proxy_values, "get_active_session", lambda: session)
     monkeypatch.setattr(proxy_values, "get_callback_node_id", lambda: None)
 
-    callback = lambda value: value
-    serialized = proxy_values.serialize_proxy_value(
-        {"items": [callback], "callback": callback}
-    )
+    def callback(value: int) -> int:
+        return value
+
+    serialized = proxy_values.serialize_proxy_value({"items": [callback], "callback": callback})
 
     callback_id = serialized["callback"][proxy_values.PROXY_CALLBACK_SENTINEL]
     nested_id = serialized["items"][0][proxy_values.PROXY_CALLBACK_SENTINEL]

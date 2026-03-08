@@ -194,7 +194,11 @@ class RenderSession:
         self._proxy_callbacks.clear()
 
     def _cleanup_dead_proxy_callbacks(self) -> None:
-        dead_ids = [callback_id for callback_id, registered in self._proxy_callbacks.items() if registered.get() is None]
+        dead_ids = [
+            callback_id
+            for callback_id, registered in self._proxy_callbacks.items()
+            if registered.get() is None
+        ]
         for callback_id in dead_ids:
             self._proxy_callbacks.pop(callback_id, None)
 

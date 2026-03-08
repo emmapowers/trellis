@@ -297,7 +297,7 @@ class TestMessageHandler:
 
         asyncio.run(test())
 
-    def test_handle_message_resolves_pending_function_proxy_call(
+    def test_handle_message_resolves_pending_function_proxy_request(
         self, app_wrapper: AppWrapper
     ) -> None:
         """Function proxy responses resolve pending handler futures."""
@@ -349,7 +349,7 @@ class TestMessageHandler:
         result = asyncio.run(handler.handle_message(response))
 
         assert result is None
-        assert handler._pending_proxy_calls == {}
+        assert handler._pending_proxy_requests == {}
 
     def test_handle_message_invokes_proxy_callback_with_callback_context(
         self, app_wrapper: AppWrapper

@@ -50,7 +50,7 @@ class _ProxyTransport(tp.Protocol):
 class _BoundJsProperty(tp.Generic[T]):
     """Bound async accessors for a JS property."""
 
-    def __init__(self, instance: tp.Any, descriptor: "js_property[T]") -> None:
+    def __init__(self, instance: tp.Any, descriptor: js_property[T]) -> None:
         self._instance = instance
         self._descriptor = descriptor
 

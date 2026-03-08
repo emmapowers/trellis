@@ -19,6 +19,7 @@ from uuid import uuid4
 
 from trellis.core.callback_context import callback_context
 from trellis.core.components.base import Component
+from trellis.core.proxy_values import PROXY_CALLBACK_ID_PREFIX
 from trellis.core.rendering.patches import (
     RenderAddPatch,
     RenderPatch,
@@ -52,7 +53,6 @@ from trellis.platforms.common.serialization import (
     parse_callback_id,
     serialize_element,
 )
-from trellis.core.proxy_values import PROXY_CALLBACK_ID_PREFIX
 from trellis.routing.state import RouterState
 from trellis.utils.debug import get_enabled_categories
 
@@ -279,7 +279,7 @@ class MessageHandler:
     _root_component: Component
     _app_wrapper: AppWrapper
     _background_tasks: set[asyncio.Task[tp.Any]]
-    _pending_proxy_calls: dict[str, asyncio.Future[tp.Any]]
+    _pending_proxy_requests: dict[str, asyncio.Future[tp.Any]]
     _render_task: asyncio.Task[None] | None
 
     def __init__(
@@ -301,7 +301,7 @@ class MessageHandler:
         self.session_id = None
         self.batch_delay = batch_delay
         self._background_tasks = set()
-        self._pending_proxy_calls = {}
+        self._pending_proxy_requests = {}
         self._render_task = None
 
     async def handle_hello(self) -> str:
@@ -387,8 +387,8 @@ class MessageHandler:
             msg: The incoming message to process
 
         Returns:
-            ErrorMessage on callback error, or None. Re-rendering is handled
-            by the background render loop, not per-message.
+            Response message for protocol paths that require one, otherwise None.
+            Re-rendering is handled by the background render loop, not per-message.
         """
         if isinstance(msg, EventMessage):
             return await self._handle_event_message(msg)
@@ -424,7 +424,7 @@ class MessageHandler:
 
     def _handle_proxy_response(self, msg: ProxyResponse) -> None:
         """Resolve or reject a pending proxy request."""
-        future = self._pending_proxy_calls.get(msg.request_id)
+        future = self._pending_proxy_requests.get(msg.request_id)
         if future is None:
             logger.debug("Ignoring proxy response for unknown request_id=%s", msg.request_id)
             return
@@ -460,7 +460,9 @@ class MessageHandler:
 
         assert resolved is not None
         try:
-            result = await self._invoke_proxy_callback(resolved.callback, resolved.node_id, msg.args)
+            result = await self._invoke_proxy_callback(
+                resolved.callback, resolved.node_id, msg.args
+            )
         except Exception as error:
             return ProxyResponse(
                 request_id=msg.request_id,
@@ -486,7 +488,7 @@ class MessageHandler:
         """Send a proxy request to the client and await the response."""
         request_id = str(uuid4())
         future = asyncio.get_running_loop().create_future()
-        self._pending_proxy_calls[request_id] = future
+        self._pending_proxy_requests[request_id] = future
 
         try:
             await self.send_message(
@@ -501,7 +503,7 @@ class MessageHandler:
             )
             return await future
         finally:
-            self._pending_proxy_calls.pop(request_id, None)
+            self._pending_proxy_requests.pop(request_id, None)
 
     async def _invoke_proxy_callback(
         self,
