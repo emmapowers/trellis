@@ -167,10 +167,17 @@ describe("trellis events target", () => {
 
     const payload = build_trellis_events_module(ir, "2026-03-07T12:00:00.000Z");
     expect(payload.path).toBe("src/trellis/html/_generated_events.py");
+    expect(payload.content).toContain("Generated typed event definitions for trellis.html.");
+    expect(payload.content).toContain("Internal codegen artifact for event payloads and handlers.");
+    expect(payload.content).toContain("Reference: https://developer.mozilla.org/en-US/docs/Web/API");
     expect(payload.content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(payload.content).toContain("class Event");
+    expect(payload.content).toContain('"""Generated event type for `Event`.');
     expect(payload.content).toContain("class UIEvent(Event)");
     expect(payload.content).toContain("class MouseEvent(UIEvent)");
+    expect(payload.content).toContain(
+      "Reference: https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent",
+    );
     expect(payload.content).not.toContain("class ChangeEvent");
     expect(payload.content).toContain("EventHandler = Callable[[Event], None]");
     expect(payload.content).toContain("MouseEventHandler = Callable[[MouseEvent], None]");

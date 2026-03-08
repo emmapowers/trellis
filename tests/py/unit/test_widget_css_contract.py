@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import inspect
 import typing as tp
 
 import pytest

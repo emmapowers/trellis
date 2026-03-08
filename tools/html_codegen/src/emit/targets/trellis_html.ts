@@ -41,7 +41,6 @@ const HTML_FAMILIES: HtmlFamily[] = [
       "address",
       "article",
       "aside",
-      "blockquote",
       "center",
       "details",
       "dialog",
@@ -59,38 +58,38 @@ const HTML_FAMILIES: HtmlFamily[] = [
     ]),
   },
   {
-    module_name: "text_content",
-    title: "text content",
+    module_name: "text_blocks",
+    title: "text blocks",
     tags: new Set([
-      "abbr",
-      "b",
-      "bdi",
-      "bdo",
-      "big",
-      "br",
-      "cite",
-      "code",
-      "data",
-      "del",
-      "dfn",
-      "em",
+      "blockquote",
       "h1",
       "h2",
       "h3",
       "h4",
       "h5",
       "h6",
-      "hr",
-      "i",
-      "ins",
-      "kbd",
-      "mark",
       "p",
       "pre",
+    ]),
+  },
+  {
+    module_name: "inline_text_semantics",
+    title: "inline text semantics",
+    tags: new Set([
+      "abbr",
+      "b",
+      "bdi",
+      "bdo",
+      "big",
+      "cite",
+      "code",
+      "data",
+      "dfn",
+      "em",
+      "i",
+      "kbd",
+      "mark",
       "q",
-      "rp",
-      "rt",
-      "ruby",
       "s",
       "samp",
       "small",
@@ -100,6 +99,19 @@ const HTML_FAMILIES: HtmlFamily[] = [
       "sup",
       "time",
       "u",
+    ]),
+  },
+  {
+    module_name: "text_edits_and_ruby",
+    title: "text edits and ruby",
+    tags: new Set(["del", "ins", "rp", "rt", "ruby"]),
+  },
+  {
+    module_name: "text_breaks_and_misc",
+    title: "text breaks and misc",
+    tags: new Set([
+      "br",
+      "hr",
       "wbr",
     ]),
   },
@@ -238,6 +250,21 @@ function alias_name_for_attribute(attribute: AttributeDef): string | undefined {
     return undefined;
   }
   return to_pascal_case(attribute.name_python);
+}
+
+function html_element_reference(tag_name: string): string {
+  return `https://developer.mozilla.org/en-US/docs/Web/HTML/Element/${tag_name}`;
+}
+
+function render_html_element_docstring(element: ElementDef): string {
+  const label = element.python_name.startsWith("_") ? "Generated internal wrapper" : "Generated wrapper";
+  return [
+    `    """${label} for \`<${element.tag_name}>\`.`,
+    "",
+    `    Maps to the standard HTML \`<${element.tag_name}>\` element.`,
+    `    Reference: ${html_element_reference(element.tag_name)}`,
+    '    """',
+  ].join("\n");
 }
 
 function build_attribute_type_aliases(
@@ -426,7 +453,14 @@ function emit_attribute_types_module(
 
   return {
     path: "src/trellis/html/_generated_attribute_types.py",
-    content: `${render_generated_module_docstring("Generated HTML attribute type aliases.", generated_at)}
+    content: `${render_generated_module_docstring(
+      "Generated HTML attribute type aliases.",
+      generated_at,
+      [
+        "Internal codegen artifact for trellis.html.",
+        "Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes",
+      ],
+    )}
 
 from __future__ import annotations
 
@@ -646,7 +680,7 @@ function render_element_function(
         ? "HtmlContainerElement"
         : "Element";
   lines.push(`) -> ${return_type}:`);
-  lines.push(`    """<${element.tag_name} />"""`);
+  lines.push(render_html_element_docstring(element));
   lines.push("    ...");
 
   return lines.join("\n");
@@ -719,7 +753,14 @@ ${attribute_type_import_names.map((name) => `    ${name},`).join("\n")}
   ].join("\n");
 
   const parts = [
-    render_generated_module_docstring(`Generated HTML ${family.title} elements.`, generated_at),
+    render_generated_module_docstring(
+      `Generated HTML ${family.title} wrappers.`,
+      generated_at,
+      [
+        "Internal codegen artifact for trellis.html.",
+        "Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements",
+      ],
+    ),
     "",
     "from __future__ import annotations",
     "",
@@ -768,7 +809,14 @@ ${names}
 
   return {
     path: "src/trellis/html/_generated_runtime.py",
-    content: `${render_generated_module_docstring("Generated HTML runtime exports.", generated_at)}
+    content: `${render_generated_module_docstring(
+      "Generated HTML runtime exports.",
+      generated_at,
+      [
+        "Internal codegen artifact re-exporting generated HTML wrappers.",
+        "Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements",
+      ],
+    )}
 
 from __future__ import annotations
 

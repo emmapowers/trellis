@@ -1,6 +1,9 @@
-"""Generated HTML scripting and templates elements.
+"""Generated HTML scripting and templates wrappers.
 
-Generated at: 2026-03-07T23:41:03.418Z
+Internal codegen artifact for trellis.html.
+Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
+
+Generated at: 2026-03-08T19:26:06.396Z
 """
 
 from __future__ import annotations
@@ -198,7 +201,11 @@ def Noscript(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<noscript />"""
+    """Generated wrapper for `<noscript>`.
+
+    Maps to the standard HTML `<noscript>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/noscript
+    """
     ...
 
 
@@ -660,7 +667,11 @@ def Script(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<script />"""
+    """Generated wrapper for `<script>`.
+
+    Maps to the standard HTML `<script>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script
+    """
     ...
 
 
@@ -804,7 +815,11 @@ def Slot(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<slot />"""
+    """Generated wrapper for `<slot>`.
+
+    Maps to the standard HTML `<slot>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot
+    """
     ...
 
 
@@ -947,5 +962,9 @@ def Template(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<template />"""
+    """Generated wrapper for `<template>`.
+
+    Maps to the standard HTML `<template>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template
+    """
     ...

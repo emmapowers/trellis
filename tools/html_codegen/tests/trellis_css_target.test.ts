@@ -226,6 +226,11 @@ describe("trellis css target", () => {
     ]);
 
     const types_module = modules.find((module) => module.path.endsWith("_generated_style_types.py"));
+    expect(types_module?.content).toContain("Generated CSS style type declarations.");
+    expect(types_module?.content).toContain("Internal codegen artifact for trellis.html CSS typing.");
+    expect(types_module?.content).toContain(
+      "Reference: https://developer.mozilla.org/en-US/docs/Web/CSS",
+    );
     expect(types_module?.content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(types_module?.content).toContain("import builtins");
     expect(types_module?.content).toContain("NamedColor = Literal[");
@@ -245,9 +250,14 @@ describe("trellis css target", () => {
     );
     expect(types_module?.content).toContain("opacity: builtins.float | None = None");
     expect(types_module?.content).toContain("class MediaRule:");
+    expect(types_module?.content).toContain('"""Generated media query rule for `h.media(...)`.');
     expect(types_module?.content).toContain("prefers_color_scheme: PrefersColorScheme | None = None");
 
     const metadata_module = modules.find((module) => module.path.endsWith("_generated_style_metadata.py"));
+    expect(metadata_module?.content).toContain("Generated CSS style metadata.");
+    expect(metadata_module?.content).toContain(
+      "Internal codegen artifact used to normalize trellis.html styles.",
+    );
     expect(metadata_module?.content).toContain("CSS_NAME_BY_FIELD = {");
     expect(metadata_module?.content).toContain('"display": "display"');
     expect(metadata_module?.content).toContain("AUTO_PX_FIELDS = frozenset({");

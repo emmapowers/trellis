@@ -1,6 +1,9 @@
-"""Generated HTML image and multimedia elements.
+"""Generated HTML image and multimedia wrappers.
 
-Generated at: 2026-03-07T23:41:03.418Z
+Internal codegen artifact for trellis.html.
+Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
+
+Generated at: 2026-03-08T19:26:06.396Z
 """
 
 from __future__ import annotations
@@ -211,7 +214,11 @@ def Area(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<area />"""
+    """Generated wrapper for `<area>`.
+
+    Maps to the standard HTML `<area>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area
+    """
     ...
 
 
@@ -364,7 +371,11 @@ def Audio(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<audio />"""
+    """Generated wrapper for `<audio>`.
+
+    Maps to the standard HTML `<audio>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio
+    """
     ...
 
 
@@ -519,7 +530,11 @@ def Img(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<img />"""
+    """Generated wrapper for `<img>`.
+
+    Maps to the standard HTML `<img>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img
+    """
     ...
 
 
@@ -663,7 +678,11 @@ def Map(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<map />"""
+    """Generated wrapper for `<map>`.
+
+    Maps to the standard HTML `<map>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map
+    """
     ...
 
 
@@ -806,7 +825,11 @@ def Picture(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<picture />"""
+    """Generated wrapper for `<picture>`.
+
+    Maps to the standard HTML `<picture>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/picture
+    """
     ...
 
 
@@ -956,7 +979,11 @@ def Source(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<source />"""
+    """Generated wrapper for `<source>`.
+
+    Maps to the standard HTML `<source>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source
+    """
     ...
 
 
@@ -1104,7 +1131,11 @@ def Track(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<track />"""
+    """Generated wrapper for `<track>`.
+
+    Maps to the standard HTML `<track>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/track
+    """
     ...
 
 
@@ -1262,5 +1293,9 @@ def Video(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<video />"""
+    """Generated wrapper for `<video>`.
+
+    Maps to the standard HTML `<video>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video
+    """
     ...

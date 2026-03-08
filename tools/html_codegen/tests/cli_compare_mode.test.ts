@@ -35,7 +35,7 @@ describe("compare mode", () => {
     const repo_root = await mkdtemp(join(tmpdir(), "html-codegen-"));
     const html_dir = join(repo_root, "src", "trellis", "html");
     await mkdir(html_dir, { recursive: true });
-    await writeFile(join(html_dir, "events.py"), '"""stale"""\\n', "utf-8");
+    await writeFile(join(html_dir, "_generated_stale.py"), '"""stale"""\\n', "utf-8");
 
     const compareResult = await runCli(["compare"], {
       format_python: false,

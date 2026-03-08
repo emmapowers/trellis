@@ -1,6 +1,9 @@
 """Generated CSS style metadata.
 
-Generated at: 2026-03-07T23:41:03.418Z
+Internal codegen artifact used to normalize trellis.html styles.
+Reference: https://developer.mozilla.org/en-US/docs/Web/CSS
+
+Generated at: 2026-03-08T19:26:06.396Z
 """
 
 from __future__ import annotations

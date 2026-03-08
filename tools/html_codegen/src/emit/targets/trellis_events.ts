@@ -13,6 +13,10 @@ export interface TrellisModulePayload {
   content: string;
 }
 
+function event_reference(name: string): string {
+  return `https://developer.mozilla.org/en-US/docs/Web/API/${name}`;
+}
+
 function exported_names(document: IrDocument): string[] {
   const names = new Set<string>();
   for (const dataclass_def of document.dataclasses) {
@@ -72,6 +76,11 @@ function render_dataclass_field(field: DataclassFieldDef): string {
 function render_dataclass(dataclass_def: DataclassDef): string {
   const base = dataclass_def.base ? `(${dataclass_def.base})` : "";
   const lines = ["@dataclass(frozen=True)", `class ${dataclass_def.name}${base}:`];
+  lines.push(`    """Generated event type for \`${dataclass_def.name}\`.`);
+  lines.push("");
+  lines.push("    Derived from standard DOM event interfaces and React event bindings.");
+  lines.push(`    Reference: ${event_reference(dataclass_def.name)}`);
+  lines.push('    """');
 
   if (dataclass_def.fields.length === 0) {
     lines.push("    pass");
@@ -103,8 +112,12 @@ function emit_trellis_events_module(document: IrDocument, generated_at: string):
   const root_event_name = document.dataclasses.find((entry) => !entry.base)?.name ?? "Event";
 
   return `${render_generated_module_docstring(
-    "Generated typed event definitions for HTML elements.",
+    "Generated typed event definitions for trellis.html.",
     generated_at,
+    [
+      "Internal codegen artifact for event payloads and handlers.",
+      "Reference: https://developer.mozilla.org/en-US/docs/Web/API",
+    ],
   )}
 
 from __future__ import annotations

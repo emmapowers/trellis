@@ -1,6 +1,9 @@
-"""Generated HTML obsolete elements elements.
+"""Generated HTML obsolete elements wrappers.
 
-Generated at: 2026-03-07T23:41:03.418Z
+Internal codegen artifact for trellis.html.
+Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
+
+Generated at: 2026-03-08T19:26:06.396Z
 """
 
 from __future__ import annotations
@@ -197,7 +200,11 @@ def Keygen(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<keygen />"""
+    """Generated wrapper for `<keygen>`.
+
+    Maps to the standard HTML `<keygen>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/keygen
+    """
     ...
 
 
@@ -340,5 +347,9 @@ def Menuitem(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<menuitem />"""
+    """Generated wrapper for `<menuitem>`.
+
+    Maps to the standard HTML `<menuitem>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/menuitem
+    """
     ...

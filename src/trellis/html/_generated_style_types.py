@@ -1,6 +1,9 @@
 """Generated CSS style type declarations.
 
-Generated at: 2026-03-08T15:15:27.665Z
+Internal codegen artifact for trellis.html CSS typing.
+Reference: https://developer.mozilla.org/en-US/docs/Web/CSS
+
+Generated at: 2026-03-08T19:26:06.396Z
 """
 
 from __future__ import annotations
@@ -234,6 +237,12 @@ HoverCapability = Literal["none", "hover"]
 
 @dataclass(kw_only=True)
 class _GeneratedStyleFields:
+    """Generated CSS style field definitions.
+
+    Internal base class for `trellis.html.Style`.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/CSS
+    """
+
     accent_color: ColorValue | None = None
     align_content: CssValue | None = None
     align_items: AlignItems | None = None
@@ -995,6 +1004,12 @@ class _GeneratedStyleFields:
 
 @dataclass(frozen=True, kw_only=True)
 class MediaRule:
+    """Generated media query rule for `h.media(...)`.
+
+    Represents a typed subset of standard CSS media features.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/CSS/@media
+    """
+
     style: Style
     any_hover: HoverCapability | None = None
     any_pointer: PointerCapability | None = None

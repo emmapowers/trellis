@@ -352,8 +352,11 @@ describe("trellis target", () => {
         "src/trellis/html/_generated_interactive_elements.py",
         "src/trellis/html/_generated_sectioning_and_layout.py",
         "src/trellis/html/_generated_table_content.py",
-        "src/trellis/html/_generated_text_content.py",
+        "src/trellis/html/_generated_text_blocks.py",
       ]),
+    );
+    expect(payloads.map((payload) => payload.path)).not.toContain(
+      "src/trellis/html/_generated_text_content.py",
     );
 
     const runtime = moduleByPath(payloads, "_generated_runtime.py").content;
@@ -378,20 +381,31 @@ describe("trellis target", () => {
     expect(attributeTypes).toContain("InputType = Literal[");
 
     const layout = moduleByPath(payloads, "_generated_sectioning_and_layout.py").content;
+    expect(layout).toContain("Generated HTML sectioning and layout wrappers.");
+    expect(layout).toContain("Internal codegen artifact for trellis.html.");
+    expect(layout).toContain(
+      "Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements",
+    );
     expect(layout).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(layout).toContain("from trellis.html._generated_attribute_types import AriaAutocomplete");
     expect(layout).toContain('@html_element("div", is_container=True)');
     expect(layout).toContain("def Div(");
     expect(layout).toContain("aria_autocomplete: AriaAutocomplete | None = None");
     expect(layout).toContain("aria_label: str | None = None");
-    expect(layout).toContain('"""<div />"""');
+    expect(layout).toContain('"""Generated wrapper for `<div>`.');
+    expect(layout).toContain(
+      "Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/div",
+    );
 
     const interactive = moduleByPath(payloads, "_generated_interactive_elements.py").content;
     expect(interactive).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(interactive).toContain('@html_element("a", is_container=True, name="A")');
     expect(interactive).toContain("def _A(");
     expect(interactive).toContain("inner_text: str | None = None,");
-    expect(interactive).toContain('"""<a />"""');
+    expect(interactive).toContain('"""Generated internal wrapper for `<a>`.');
+    expect(interactive).toContain(
+      "Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a",
+    );
 
     const media = moduleByPath(payloads, "_generated_image_and_multimedia.py").content;
     expect(media).toContain("Generated at: 2026-03-07T12:00:00.000Z");
@@ -399,23 +413,22 @@ describe("trellis target", () => {
     expect(media).toContain("auto_play: bool | None = None");
     expect(media).toContain("controls: bool | None = None");
     expect(media).toContain("src: str | None = None");
-    expect(media).toContain('"""<audio />"""');
+    expect(media).toContain('"""Generated wrapper for `<audio>`.');
 
     const forms = moduleByPath(payloads, "_generated_forms.py").content;
     expect(forms).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(forms).toContain("from trellis.html._generated_attribute_types import InputType");
     expect(forms).toContain('type: InputType = "text"');
     expect(forms).toContain('def Option(\n    inner_text: str | None = None,');
-    expect(forms).toContain('"""<option />"""');
+    expect(forms).toContain('"""Generated wrapper for `<option>`.');
 
     const tables = moduleByPath(payloads, "_generated_table_content.py").content;
     expect(tables).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(tables).toContain("def Table(");
-    expect(tables).toContain('"""<table />"""');
+    expect(tables).toContain('"""Generated wrapper for `<table>`.');
 
-    const text = moduleByPath(payloads, "_generated_text_content.py").content;
-    expect(text).toContain("from trellis.html._generated_attribute_types import AriaAutocomplete");
-    expect(text).toContain("aria_autocomplete: AriaAutocomplete | None = None");
+    const text = moduleByPath(payloads, "_generated_text_blocks.py").content;
+    expect(text).toContain("Generated HTML text blocks wrappers.");
   });
 
   it("does not expose _text or fallback props in generated family modules", () => {

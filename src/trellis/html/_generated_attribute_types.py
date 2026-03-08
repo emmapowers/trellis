@@ -1,6 +1,9 @@
 """Generated HTML attribute type aliases.
 
-Generated at: 2026-03-07T23:41:03.418Z
+Internal codegen artifact for trellis.html.
+Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes
+
+Generated at: 2026-03-08T19:26:06.396Z
 """
 
 from __future__ import annotations

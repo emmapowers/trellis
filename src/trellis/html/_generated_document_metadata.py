@@ -1,6 +1,9 @@
-"""Generated HTML document metadata elements.
+"""Generated HTML document metadata wrappers.
 
-Generated at: 2026-03-07T23:41:03.418Z
+Internal codegen artifact for trellis.html.
+Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
+
+Generated at: 2026-03-08T19:26:06.396Z
 """
 
 from __future__ import annotations
@@ -204,7 +207,11 @@ def Base(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<base />"""
+    """Generated wrapper for `<base>`.
+
+    Maps to the standard HTML `<base>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+    """
     ...
 
 
@@ -347,7 +354,11 @@ def Body(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<body />"""
+    """Generated wrapper for `<body>`.
+
+    Maps to the standard HTML `<body>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/body
+    """
     ...
 
 
@@ -490,7 +501,11 @@ def Head(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<head />"""
+    """Generated wrapper for `<head>`.
+
+    Maps to the standard HTML `<head>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/head
+    """
     ...
 
 
@@ -634,7 +649,11 @@ def Html(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<html />"""
+    """Generated wrapper for `<html>`.
+
+    Maps to the standard HTML `<html>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/html
+    """
     ...
 
 
@@ -792,7 +811,11 @@ def Link(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<link />"""
+    """Generated wrapper for `<link>`.
+
+    Maps to the standard HTML `<link>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link
+    """
     ...
 
 
@@ -939,7 +962,11 @@ def Meta(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<meta />"""
+    """Generated wrapper for `<meta>`.
+
+    Maps to the standard HTML `<meta>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta
+    """
     ...
 
 
@@ -1386,7 +1413,11 @@ def StyleTag(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<style />"""
+    """Generated wrapper for `<style>`.
+
+    Maps to the standard HTML `<style>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style
+    """
     ...
 
 
@@ -1815,5 +1846,9 @@ def Title(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<title />"""
+    """Generated wrapper for `<title>`.
+
+    Maps to the standard HTML `<title>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/title
+    """
     ...

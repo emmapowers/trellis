@@ -1,6 +1,9 @@
-"""Generated HTML interactive elements elements.
+"""Generated HTML interactive elements wrappers.
 
-Generated at: 2026-03-07T23:41:03.418Z
+Internal codegen artifact for trellis.html.
+Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
+
+Generated at: 2026-03-08T19:26:06.396Z
 """
 
 from __future__ import annotations
@@ -502,5 +505,9 @@ def _A(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<a />"""
+    """Generated internal wrapper for `<a>`.
+
+    Maps to the standard HTML `<a>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a
+    """
     ...

@@ -153,6 +153,11 @@ function field_type_expr(property: CssPropertyDef): TypeExpr {
 
 function emit_style_fields(properties: CssPropertyDef[]): string[] {
   const lines = ["@dataclass(kw_only=True)", "class _GeneratedStyleFields:"];
+  lines.push('    """Generated CSS style field definitions.');
+  lines.push("");
+  lines.push("    Internal base class for `trellis.html.Style`.");
+  lines.push("    Reference: https://developer.mozilla.org/en-US/docs/Web/CSS");
+  lines.push('    """');
   for (const property of [...properties].sort((left, right) => left.python_name.localeCompare(right.python_name))) {
     lines.push(
       `    ${property.python_name}: ${render_type_expr(field_type_expr(property))} | None = None`,
@@ -166,6 +171,11 @@ function emit_style_fields(properties: CssPropertyDef[]): string[] {
 
 function emit_media_rule(media_features: CssMediaFeatureDef[]): string[] {
   const lines = ["@dataclass(frozen=True, kw_only=True)", "class MediaRule:"];
+  lines.push('    """Generated media query rule for `h.media(...)`.');
+  lines.push("");
+  lines.push("    Represents a typed subset of standard CSS media features.");
+  lines.push("    Reference: https://developer.mozilla.org/en-US/docs/Web/CSS/@media");
+  lines.push('    """');
   lines.push("    style: Style");
   for (const feature of [...media_features].sort((left, right) => left.python_name.localeCompare(right.python_name))) {
     lines.push(`    ${feature.python_name}: ${feature.value_type_name} | None = None`);
@@ -179,7 +189,10 @@ function emit_types_module(document: CssDocument, generated_at: string): string 
   const style_fields = emit_style_fields(document.properties);
   const media_rule = emit_media_rule(document.media_features);
   return [
-    render_generated_module_docstring("Generated CSS style type declarations.", generated_at),
+    render_generated_module_docstring("Generated CSS style type declarations.", generated_at, [
+      "Internal codegen artifact for trellis.html CSS typing.",
+      "Reference: https://developer.mozilla.org/en-US/docs/Web/CSS",
+    ]),
     "from __future__ import annotations",
     "",
     "import builtins",
@@ -220,7 +233,10 @@ function emit_metadata_module(document: CssDocument, generated_at: string): stri
     .join("\n");
 
   return [
-    render_generated_module_docstring("Generated CSS style metadata.", generated_at),
+    render_generated_module_docstring("Generated CSS style metadata.", generated_at, [
+      "Internal codegen artifact used to normalize trellis.html styles.",
+      "Reference: https://developer.mozilla.org/en-US/docs/Web/CSS",
+    ]),
     "from __future__ import annotations",
     "",
     "CSS_NAME_BY_FIELD = {",

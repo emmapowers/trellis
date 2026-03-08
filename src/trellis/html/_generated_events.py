@@ -1,6 +1,9 @@
-"""Generated typed event definitions for HTML elements.
+"""Generated typed event definitions for trellis.html.
 
-Generated at: 2026-03-07T23:41:03.418Z
+Internal codegen artifact for event payloads and handlers.
+Reference: https://developer.mozilla.org/en-US/docs/Web/API
+
+Generated at: 2026-03-08T19:26:06.396Z
 """
 
 from __future__ import annotations
@@ -36,6 +39,12 @@ __all__ = [
 
 @dataclass(frozen=True)
 class Event:
+    """Generated event type for `Event`.
+
+    Derived from standard DOM event interfaces and React event bindings.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/API/Event
+    """
+
     type: str = ""
     time_stamp: float = 0.0
     bubbles: bool = False
@@ -47,11 +56,23 @@ class Event:
 
 @dataclass(frozen=True)
 class UIEvent(Event):
+    """Generated event type for `UIEvent`.
+
+    Derived from standard DOM event interfaces and React event bindings.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/API/UIEvent
+    """
+
     detail: int = 0
 
 
 @dataclass(frozen=True)
 class MouseEvent(UIEvent):
+    """Generated event type for `MouseEvent`.
+
+    Derived from standard DOM event interfaces and React event bindings.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent
+    """
+
     client_x: int = 0
     client_y: int = 0
     screen_x: int = 0
@@ -66,6 +87,12 @@ class MouseEvent(UIEvent):
 
 @dataclass(frozen=True)
 class KeyboardEvent(UIEvent):
+    """Generated event type for `KeyboardEvent`.
+
+    Derived from standard DOM event interfaces and React event bindings.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
+    """
+
     key: str = ""
     code: str = ""
     location: int = 0
@@ -79,16 +106,34 @@ class KeyboardEvent(UIEvent):
 
 @dataclass(frozen=True)
 class FocusEvent(Event):
+    """Generated event type for `FocusEvent`.
+
+    Derived from standard DOM event interfaces and React event bindings.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/API/FocusEvent
+    """
+
     pass
 
 
 @dataclass(frozen=True)
 class SubmitEvent(Event):
+    """Generated event type for `SubmitEvent`.
+
+    Derived from standard DOM event interfaces and React event bindings.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/API/SubmitEvent
+    """
+
     pass
 
 
 @dataclass(frozen=True)
 class InputEvent(Event):
+    """Generated event type for `InputEvent`.
+
+    Derived from standard DOM event interfaces and React event bindings.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/API/InputEvent
+    """
+
     data: str | None = None
     is_composing: bool = False
     input_type: str = ""
@@ -96,6 +141,12 @@ class InputEvent(Event):
 
 @dataclass(frozen=True)
 class WheelEvent(MouseEvent):
+    """Generated event type for `WheelEvent`.
+
+    Derived from standard DOM event interfaces and React event bindings.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/API/WheelEvent
+    """
+
     delta_x: float = 0.0
     delta_y: float = 0.0
     delta_z: float = 0.0
@@ -104,6 +155,12 @@ class WheelEvent(MouseEvent):
 
 @dataclass(frozen=True)
 class File:
+    """Generated event type for `File`.
+
+    Derived from standard DOM event interfaces and React event bindings.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/API/File
+    """
+
     name: str = ""
     size: int = 0
     type: str = ""
@@ -111,6 +168,12 @@ class File:
 
 @dataclass(frozen=True)
 class DataTransfer:
+    """Generated event type for `DataTransfer`.
+
+    Derived from standard DOM event interfaces and React event bindings.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer
+    """
+
     drop_effect: str = "none"
     effect_allowed: str = "none"
     types: list[str] = field(default_factory=list)
@@ -119,6 +182,12 @@ class DataTransfer:
 
 @dataclass(frozen=True)
 class DragEvent(MouseEvent):
+    """Generated event type for `DragEvent`.
+
+    Derived from standard DOM event interfaces and React event bindings.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/API/DragEvent
+    """
+
     data_transfer: DataTransfer | None = None
 
 

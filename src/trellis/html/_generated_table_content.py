@@ -1,6 +1,9 @@
-"""Generated HTML table content elements.
+"""Generated HTML table content wrappers.
 
-Generated at: 2026-03-07T23:41:03.418Z
+Internal codegen artifact for trellis.html.
+Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
+
+Generated at: 2026-03-08T19:26:06.396Z
 """
 
 from __future__ import annotations
@@ -486,7 +489,11 @@ def Caption(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<caption />"""
+    """Generated wrapper for `<caption>`.
+
+    Maps to the standard HTML `<caption>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/caption
+    """
     ...
 
 
@@ -631,7 +638,11 @@ def Col(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<col />"""
+    """Generated wrapper for `<col>`.
+
+    Maps to the standard HTML `<col>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/col
+    """
     ...
 
 
@@ -775,7 +786,11 @@ def Colgroup(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<colgroup />"""
+    """Generated wrapper for `<colgroup>`.
+
+    Maps to the standard HTML `<colgroup>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/colgroup
+    """
     ...
 
 
@@ -927,7 +942,11 @@ def Table(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<table />"""
+    """Generated wrapper for `<table>`.
+
+    Maps to the standard HTML `<table>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/table
+    """
     ...
 
 
@@ -1070,7 +1089,11 @@ def Tbody(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<tbody />"""
+    """Generated wrapper for `<tbody>`.
+
+    Maps to the standard HTML `<tbody>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tbody
+    """
     ...
 
 
@@ -1526,7 +1549,11 @@ def Td(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<td />"""
+    """Generated wrapper for `<td>`.
+
+    Maps to the standard HTML `<td>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/td
+    """
     ...
 
 
@@ -1669,7 +1696,11 @@ def Tfoot(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<tfoot />"""
+    """Generated wrapper for `<tfoot>`.
+
+    Maps to the standard HTML `<tfoot>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tfoot
+    """
     ...
 
 
@@ -2116,7 +2147,11 @@ def Th(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<th />"""
+    """Generated wrapper for `<th>`.
+
+    Maps to the standard HTML `<th>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/th
+    """
     ...
 
 
@@ -2259,7 +2294,11 @@ def Thead(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<thead />"""
+    """Generated wrapper for `<thead>`.
+
+    Maps to the standard HTML `<thead>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead
+    """
     ...
 
 
@@ -2402,5 +2441,9 @@ def Tr(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<tr />"""
+    """Generated wrapper for `<tr>`.
+
+    Maps to the standard HTML `<tr>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tr
+    """
     ...

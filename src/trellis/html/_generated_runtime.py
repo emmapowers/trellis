@@ -1,6 +1,9 @@
 """Generated HTML runtime exports.
 
-Generated at: 2026-03-07T23:41:03.418Z
+Internal codegen artifact re-exporting generated HTML wrappers.
+Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
+
+Generated at: 2026-03-08T19:26:06.396Z
 """
 
 from __future__ import annotations
@@ -48,6 +51,31 @@ from trellis.html._generated_image_and_multimedia import (
     Track,
     Video,
 )
+from trellis.html._generated_inline_text_semantics import (
+    Abbr,
+    B,
+    Bdi,
+    Bdo,
+    Big,
+    Cite,
+    Code,
+    Data,
+    Dfn,
+    Em,
+    Italic,
+    Kbd,
+    Mark,
+    Q,
+    S,
+    Samp,
+    Small,
+    Span,
+    Strong,
+    Sub,
+    Sup,
+    Time,
+    U,
+)
 from trellis.html._generated_interactive_elements import (
     _A,
 )
@@ -74,7 +102,6 @@ from trellis.html._generated_sectioning_and_layout import (
     Address,
     Article,
     Aside,
-    Blockquote,
     Center,
     Details,
     Dialog,
@@ -102,46 +129,28 @@ from trellis.html._generated_table_content import (
     Thead,
     Tr,
 )
-from trellis.html._generated_text_content import (
+from trellis.html._generated_text_blocks import (
     H1,
     H2,
     H3,
     H4,
     H5,
     H6,
-    Abbr,
-    B,
-    Bdi,
-    Bdo,
-    Big,
-    Br,
-    Cite,
-    Code,
-    Data,
-    Del,
-    Dfn,
-    Em,
-    Hr,
-    Ins,
-    Italic,
-    Kbd,
-    Mark,
+    Blockquote,
     P,
     Pre,
-    Q,
+)
+from trellis.html._generated_text_breaks_and_misc import (
+    Br,
+    Hr,
+    Wbr,
+)
+from trellis.html._generated_text_edits_and_ruby import (
+    Del,
+    Ins,
     Rp,
     Rt,
     Ruby,
-    S,
-    Samp,
-    Small,
-    Span,
-    Strong,
-    Sub,
-    Sup,
-    Time,
-    U,
-    Wbr,
 )
 
 __all__ = [

@@ -1,6 +1,9 @@
-"""Generated HTML sectioning and layout elements.
+"""Generated HTML sectioning and layout wrappers.
 
-Generated at: 2026-03-07T23:41:03.418Z
+Internal codegen artifact for trellis.html.
+Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
+
+Generated at: 2026-03-08T19:26:06.396Z
 """
 
 from __future__ import annotations
@@ -49,7 +52,6 @@ __all__ = [
     "Address",
     "Article",
     "Aside",
-    "Blockquote",
     "Center",
     "Details",
     "Dialog",
@@ -208,7 +210,11 @@ def Address(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<address />"""
+    """Generated wrapper for `<address>`.
+
+    Maps to the standard HTML `<address>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/address
+    """
     ...
 
 
@@ -351,7 +357,11 @@ def Article(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<article />"""
+    """Generated wrapper for `<article>`.
+
+    Maps to the standard HTML `<article>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/article
+    """
     ...
 
 
@@ -494,439 +504,11 @@ def Aside(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<aside />"""
-    ...
+    """Generated wrapper for `<aside>`.
 
-
-@overload
-def Blockquote(
-    inner_text: str,
-    /,
-    *,
-    about: str | None = None,
-    access_key: str | None = None,
-    aria_activedescendant: str | None = None,
-    aria_atomic: bool | None = None,
-    aria_autocomplete: AriaAutocomplete | None = None,
-    aria_braillelabel: str | None = None,
-    aria_brailleroledescription: str | None = None,
-    aria_busy: bool | None = None,
-    aria_checked: AriaChecked | None = None,
-    aria_colcount: int | float | None = None,
-    aria_colindex: int | float | None = None,
-    aria_colindextext: str | None = None,
-    aria_colspan: int | float | None = None,
-    aria_controls: str | None = None,
-    aria_current: AriaCurrent | None = None,
-    aria_describedby: str | None = None,
-    aria_description: str | None = None,
-    aria_details: str | None = None,
-    aria_disabled: bool | None = None,
-    aria_dropeffect: AriaDropeffect | None = None,
-    aria_errormessage: str | None = None,
-    aria_expanded: bool | None = None,
-    aria_flowto: str | None = None,
-    aria_grabbed: bool | None = None,
-    aria_haspopup: AriaHaspopup | None = None,
-    aria_hidden: bool | None = None,
-    aria_invalid: AriaInvalid | None = None,
-    aria_keyshortcuts: str | None = None,
-    aria_label: str | None = None,
-    aria_labelledby: str | None = None,
-    aria_level: int | float | None = None,
-    aria_live: AriaLive | None = None,
-    aria_modal: bool | None = None,
-    aria_multiline: bool | None = None,
-    aria_multiselectable: bool | None = None,
-    aria_orientation: AriaOrientation | None = None,
-    aria_owns: str | None = None,
-    aria_placeholder: str | None = None,
-    aria_posinset: int | float | None = None,
-    aria_pressed: AriaPressed | None = None,
-    aria_readonly: bool | None = None,
-    aria_relevant: AriaRelevant | None = None,
-    aria_required: bool | None = None,
-    aria_roledescription: str | None = None,
-    aria_rowcount: int | float | None = None,
-    aria_rowindex: int | float | None = None,
-    aria_rowindextext: str | None = None,
-    aria_rowspan: int | float | None = None,
-    aria_selected: bool | None = None,
-    aria_setsize: int | float | None = None,
-    aria_sort: AriaSort | None = None,
-    aria_valuemax: int | float | None = None,
-    aria_valuemin: int | float | None = None,
-    aria_valuenow: int | float | None = None,
-    aria_valuetext: str | None = None,
-    auto_capitalize: AutoCapitalize | None = None,
-    auto_correct: str | None = None,
-    auto_focus: bool | None = None,
-    auto_save: str | None = None,
-    cite: str | None = None,
-    class_name: str | None = None,
-    color: str | None = None,
-    content: str | None = None,
-    content_editable: ContentEditable | None = None,
-    context_menu: str | None = None,
-    datatype: str | None = None,
-    default_checked: bool | None = None,
-    default_value: str | int | float | list[str] | None = None,
-    dir: str | None = None,
-    draggable: bool | None = None,
-    enter_key_hint: EnterKeyHint | None = None,
-    exportparts: str | None = None,
-    hidden: bool | None = None,
-    id: str | None = None,
-    inert: bool | None = None,
-    inlist: str | None = None,
-    input_mode: InputMode | None = None,
-    is_: str | None = None,
-    item_id: str | None = None,
-    item_prop: str | None = None,
-    item_ref: str | None = None,
-    item_scope: bool | None = None,
-    item_type: str | None = None,
-    lang: str | None = None,
-    nonce: str | None = None,
-    part: str | None = None,
-    popover: Popover | None = None,
-    popover_target: str | None = None,
-    popover_target_action: PopoverTargetAction | None = None,
-    prefix: str | None = None,
-    property: str | None = None,
-    radio_group: str | None = None,
-    rel: str | None = None,
-    resource: str | None = None,
-    results: int | float | None = None,
-    rev: str | None = None,
-    role: Role | None = None,
-    security: str | None = None,
-    slot: str | None = None,
-    spell_check: bool | None = None,
-    style: StyleInput | None = None,
-    suppress_content_editable_warning: bool | None = None,
-    suppress_hydration_warning: bool | None = None,
-    tab_index: int | float | None = None,
-    title: str | None = None,
-    translate: Translate | None = None,
-    typeof: str | None = None,
-    unselectable: Unselectable | None = None,
-    vocab: str | None = None,
-    on_blur: FocusEventHandler | None = None,
-    on_change: EventHandler | None = None,
-    on_click: MouseEventHandler | None = None,
-    on_context_menu: MouseEventHandler | None = None,
-    on_double_click: MouseEventHandler | None = None,
-    on_drag: DragEventHandler | None = None,
-    on_drag_end: DragEventHandler | None = None,
-    on_drag_enter: DragEventHandler | None = None,
-    on_drag_leave: DragEventHandler | None = None,
-    on_drag_over: DragEventHandler | None = None,
-    on_drag_start: DragEventHandler | None = None,
-    on_drop: DragEventHandler | None = None,
-    on_focus: FocusEventHandler | None = None,
-    on_input: InputEventHandler | None = None,
-    on_key_down: KeyboardEventHandler | None = None,
-    on_key_up: KeyboardEventHandler | None = None,
-    on_mouse_down: MouseEventHandler | None = None,
-    on_mouse_enter: MouseEventHandler | None = None,
-    on_mouse_leave: MouseEventHandler | None = None,
-    on_mouse_move: MouseEventHandler | None = None,
-    on_mouse_out: MouseEventHandler | None = None,
-    on_mouse_over: MouseEventHandler | None = None,
-    on_mouse_up: MouseEventHandler | None = None,
-    on_scroll: UIEventHandler | None = None,
-    on_submit: SubmitEventHandler | None = None,
-    on_wheel: WheelEventHandler | None = None,
-    data: Mapping[str, DataValue] | None = None,
-) -> Element: ...
-
-
-@overload
-def Blockquote(
-    *,
-    about: str | None = None,
-    access_key: str | None = None,
-    aria_activedescendant: str | None = None,
-    aria_atomic: bool | None = None,
-    aria_autocomplete: AriaAutocomplete | None = None,
-    aria_braillelabel: str | None = None,
-    aria_brailleroledescription: str | None = None,
-    aria_busy: bool | None = None,
-    aria_checked: AriaChecked | None = None,
-    aria_colcount: int | float | None = None,
-    aria_colindex: int | float | None = None,
-    aria_colindextext: str | None = None,
-    aria_colspan: int | float | None = None,
-    aria_controls: str | None = None,
-    aria_current: AriaCurrent | None = None,
-    aria_describedby: str | None = None,
-    aria_description: str | None = None,
-    aria_details: str | None = None,
-    aria_disabled: bool | None = None,
-    aria_dropeffect: AriaDropeffect | None = None,
-    aria_errormessage: str | None = None,
-    aria_expanded: bool | None = None,
-    aria_flowto: str | None = None,
-    aria_grabbed: bool | None = None,
-    aria_haspopup: AriaHaspopup | None = None,
-    aria_hidden: bool | None = None,
-    aria_invalid: AriaInvalid | None = None,
-    aria_keyshortcuts: str | None = None,
-    aria_label: str | None = None,
-    aria_labelledby: str | None = None,
-    aria_level: int | float | None = None,
-    aria_live: AriaLive | None = None,
-    aria_modal: bool | None = None,
-    aria_multiline: bool | None = None,
-    aria_multiselectable: bool | None = None,
-    aria_orientation: AriaOrientation | None = None,
-    aria_owns: str | None = None,
-    aria_placeholder: str | None = None,
-    aria_posinset: int | float | None = None,
-    aria_pressed: AriaPressed | None = None,
-    aria_readonly: bool | None = None,
-    aria_relevant: AriaRelevant | None = None,
-    aria_required: bool | None = None,
-    aria_roledescription: str | None = None,
-    aria_rowcount: int | float | None = None,
-    aria_rowindex: int | float | None = None,
-    aria_rowindextext: str | None = None,
-    aria_rowspan: int | float | None = None,
-    aria_selected: bool | None = None,
-    aria_setsize: int | float | None = None,
-    aria_sort: AriaSort | None = None,
-    aria_valuemax: int | float | None = None,
-    aria_valuemin: int | float | None = None,
-    aria_valuenow: int | float | None = None,
-    aria_valuetext: str | None = None,
-    auto_capitalize: AutoCapitalize | None = None,
-    auto_correct: str | None = None,
-    auto_focus: bool | None = None,
-    auto_save: str | None = None,
-    cite: str | None = None,
-    class_name: str | None = None,
-    color: str | None = None,
-    content: str | None = None,
-    content_editable: ContentEditable | None = None,
-    context_menu: str | None = None,
-    datatype: str | None = None,
-    default_checked: bool | None = None,
-    default_value: str | int | float | list[str] | None = None,
-    dir: str | None = None,
-    draggable: bool | None = None,
-    enter_key_hint: EnterKeyHint | None = None,
-    exportparts: str | None = None,
-    hidden: bool | None = None,
-    id: str | None = None,
-    inert: bool | None = None,
-    inlist: str | None = None,
-    input_mode: InputMode | None = None,
-    is_: str | None = None,
-    item_id: str | None = None,
-    item_prop: str | None = None,
-    item_ref: str | None = None,
-    item_scope: bool | None = None,
-    item_type: str | None = None,
-    lang: str | None = None,
-    nonce: str | None = None,
-    part: str | None = None,
-    popover: Popover | None = None,
-    popover_target: str | None = None,
-    popover_target_action: PopoverTargetAction | None = None,
-    prefix: str | None = None,
-    property: str | None = None,
-    radio_group: str | None = None,
-    rel: str | None = None,
-    resource: str | None = None,
-    results: int | float | None = None,
-    rev: str | None = None,
-    role: Role | None = None,
-    security: str | None = None,
-    slot: str | None = None,
-    spell_check: bool | None = None,
-    style: StyleInput | None = None,
-    suppress_content_editable_warning: bool | None = None,
-    suppress_hydration_warning: bool | None = None,
-    tab_index: int | float | None = None,
-    title: str | None = None,
-    translate: Translate | None = None,
-    typeof: str | None = None,
-    unselectable: Unselectable | None = None,
-    vocab: str | None = None,
-    on_blur: FocusEventHandler | None = None,
-    on_change: EventHandler | None = None,
-    on_click: MouseEventHandler | None = None,
-    on_context_menu: MouseEventHandler | None = None,
-    on_double_click: MouseEventHandler | None = None,
-    on_drag: DragEventHandler | None = None,
-    on_drag_end: DragEventHandler | None = None,
-    on_drag_enter: DragEventHandler | None = None,
-    on_drag_leave: DragEventHandler | None = None,
-    on_drag_over: DragEventHandler | None = None,
-    on_drag_start: DragEventHandler | None = None,
-    on_drop: DragEventHandler | None = None,
-    on_focus: FocusEventHandler | None = None,
-    on_input: InputEventHandler | None = None,
-    on_key_down: KeyboardEventHandler | None = None,
-    on_key_up: KeyboardEventHandler | None = None,
-    on_mouse_down: MouseEventHandler | None = None,
-    on_mouse_enter: MouseEventHandler | None = None,
-    on_mouse_leave: MouseEventHandler | None = None,
-    on_mouse_move: MouseEventHandler | None = None,
-    on_mouse_out: MouseEventHandler | None = None,
-    on_mouse_over: MouseEventHandler | None = None,
-    on_mouse_up: MouseEventHandler | None = None,
-    on_scroll: UIEventHandler | None = None,
-    on_submit: SubmitEventHandler | None = None,
-    on_wheel: WheelEventHandler | None = None,
-    data: Mapping[str, DataValue] | None = None,
-) -> HtmlContainerElement: ...
-
-
-@html_element("blockquote", is_container=True)
-def Blockquote(
-    inner_text: str | None = None,
-    /,
-    *,
-    about: str | None = None,
-    access_key: str | None = None,
-    aria_activedescendant: str | None = None,
-    aria_atomic: bool | None = None,
-    aria_autocomplete: AriaAutocomplete | None = None,
-    aria_braillelabel: str | None = None,
-    aria_brailleroledescription: str | None = None,
-    aria_busy: bool | None = None,
-    aria_checked: AriaChecked | None = None,
-    aria_colcount: int | float | None = None,
-    aria_colindex: int | float | None = None,
-    aria_colindextext: str | None = None,
-    aria_colspan: int | float | None = None,
-    aria_controls: str | None = None,
-    aria_current: AriaCurrent | None = None,
-    aria_describedby: str | None = None,
-    aria_description: str | None = None,
-    aria_details: str | None = None,
-    aria_disabled: bool | None = None,
-    aria_dropeffect: AriaDropeffect | None = None,
-    aria_errormessage: str | None = None,
-    aria_expanded: bool | None = None,
-    aria_flowto: str | None = None,
-    aria_grabbed: bool | None = None,
-    aria_haspopup: AriaHaspopup | None = None,
-    aria_hidden: bool | None = None,
-    aria_invalid: AriaInvalid | None = None,
-    aria_keyshortcuts: str | None = None,
-    aria_label: str | None = None,
-    aria_labelledby: str | None = None,
-    aria_level: int | float | None = None,
-    aria_live: AriaLive | None = None,
-    aria_modal: bool | None = None,
-    aria_multiline: bool | None = None,
-    aria_multiselectable: bool | None = None,
-    aria_orientation: AriaOrientation | None = None,
-    aria_owns: str | None = None,
-    aria_placeholder: str | None = None,
-    aria_posinset: int | float | None = None,
-    aria_pressed: AriaPressed | None = None,
-    aria_readonly: bool | None = None,
-    aria_relevant: AriaRelevant | None = None,
-    aria_required: bool | None = None,
-    aria_roledescription: str | None = None,
-    aria_rowcount: int | float | None = None,
-    aria_rowindex: int | float | None = None,
-    aria_rowindextext: str | None = None,
-    aria_rowspan: int | float | None = None,
-    aria_selected: bool | None = None,
-    aria_setsize: int | float | None = None,
-    aria_sort: AriaSort | None = None,
-    aria_valuemax: int | float | None = None,
-    aria_valuemin: int | float | None = None,
-    aria_valuenow: int | float | None = None,
-    aria_valuetext: str | None = None,
-    auto_capitalize: AutoCapitalize | None = None,
-    auto_correct: str | None = None,
-    auto_focus: bool | None = None,
-    auto_save: str | None = None,
-    cite: str | None = None,
-    class_name: str | None = None,
-    color: str | None = None,
-    content: str | None = None,
-    content_editable: ContentEditable | None = None,
-    context_menu: str | None = None,
-    datatype: str | None = None,
-    default_checked: bool | None = None,
-    default_value: str | int | float | list[str] | None = None,
-    dir: str | None = None,
-    draggable: bool | None = None,
-    enter_key_hint: EnterKeyHint | None = None,
-    exportparts: str | None = None,
-    hidden: bool | None = None,
-    id: str | None = None,
-    inert: bool | None = None,
-    inlist: str | None = None,
-    input_mode: InputMode | None = None,
-    is_: str | None = None,
-    item_id: str | None = None,
-    item_prop: str | None = None,
-    item_ref: str | None = None,
-    item_scope: bool | None = None,
-    item_type: str | None = None,
-    lang: str | None = None,
-    nonce: str | None = None,
-    part: str | None = None,
-    popover: Popover | None = None,
-    popover_target: str | None = None,
-    popover_target_action: PopoverTargetAction | None = None,
-    prefix: str | None = None,
-    property: str | None = None,
-    radio_group: str | None = None,
-    rel: str | None = None,
-    resource: str | None = None,
-    results: int | float | None = None,
-    rev: str | None = None,
-    role: Role | None = None,
-    security: str | None = None,
-    slot: str | None = None,
-    spell_check: bool | None = None,
-    style: StyleInput | None = None,
-    suppress_content_editable_warning: bool | None = None,
-    suppress_hydration_warning: bool | None = None,
-    tab_index: int | float | None = None,
-    title: str | None = None,
-    translate: Translate | None = None,
-    typeof: str | None = None,
-    unselectable: Unselectable | None = None,
-    vocab: str | None = None,
-    on_blur: FocusEventHandler | None = None,
-    on_change: EventHandler | None = None,
-    on_click: MouseEventHandler | None = None,
-    on_context_menu: MouseEventHandler | None = None,
-    on_double_click: MouseEventHandler | None = None,
-    on_drag: DragEventHandler | None = None,
-    on_drag_end: DragEventHandler | None = None,
-    on_drag_enter: DragEventHandler | None = None,
-    on_drag_leave: DragEventHandler | None = None,
-    on_drag_over: DragEventHandler | None = None,
-    on_drag_start: DragEventHandler | None = None,
-    on_drop: DragEventHandler | None = None,
-    on_focus: FocusEventHandler | None = None,
-    on_input: InputEventHandler | None = None,
-    on_key_down: KeyboardEventHandler | None = None,
-    on_key_up: KeyboardEventHandler | None = None,
-    on_mouse_down: MouseEventHandler | None = None,
-    on_mouse_enter: MouseEventHandler | None = None,
-    on_mouse_leave: MouseEventHandler | None = None,
-    on_mouse_move: MouseEventHandler | None = None,
-    on_mouse_out: MouseEventHandler | None = None,
-    on_mouse_over: MouseEventHandler | None = None,
-    on_mouse_up: MouseEventHandler | None = None,
-    on_scroll: UIEventHandler | None = None,
-    on_submit: SubmitEventHandler | None = None,
-    on_wheel: WheelEventHandler | None = None,
-    data: Mapping[str, DataValue] | None = None,
-) -> Element:
-    """<blockquote />"""
+    Maps to the standard HTML `<aside>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/aside
+    """
     ...
 
 
@@ -1069,7 +651,11 @@ def Center(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<center />"""
+    """Generated wrapper for `<center>`.
+
+    Maps to the standard HTML `<center>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/center
+    """
     ...
 
 
@@ -1214,7 +800,11 @@ def Details(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<details />"""
+    """Generated wrapper for `<details>`.
+
+    Maps to the standard HTML `<details>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/details
+    """
     ...
 
 
@@ -1359,7 +949,11 @@ def Dialog(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<dialog />"""
+    """Generated wrapper for `<dialog>`.
+
+    Maps to the standard HTML `<dialog>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog
+    """
     ...
 
 
@@ -1502,7 +1096,11 @@ def Div(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<div />"""
+    """Generated wrapper for `<div>`.
+
+    Maps to the standard HTML `<div>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/div
+    """
     ...
 
 
@@ -1931,7 +1529,11 @@ def Figcaption(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<figcaption />"""
+    """Generated wrapper for `<figcaption>`.
+
+    Maps to the standard HTML `<figcaption>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/figcaption
+    """
     ...
 
 
@@ -2074,7 +1676,11 @@ def Figure(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<figure />"""
+    """Generated wrapper for `<figure>`.
+
+    Maps to the standard HTML `<figure>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/figure
+    """
     ...
 
 
@@ -2217,7 +1823,11 @@ def Footer(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<footer />"""
+    """Generated wrapper for `<footer>`.
+
+    Maps to the standard HTML `<footer>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/footer
+    """
     ...
 
 
@@ -2360,7 +1970,11 @@ def Header(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<header />"""
+    """Generated wrapper for `<header>`.
+
+    Maps to the standard HTML `<header>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/header
+    """
     ...
 
 
@@ -2503,7 +2117,11 @@ def Hgroup(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<hgroup />"""
+    """Generated wrapper for `<hgroup>`.
+
+    Maps to the standard HTML `<hgroup>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/hgroup
+    """
     ...
 
 
@@ -2646,7 +2264,11 @@ def Main(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<main />"""
+    """Generated wrapper for `<main>`.
+
+    Maps to the standard HTML `<main>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/main
+    """
     ...
 
 
@@ -2789,7 +2411,11 @@ def Nav(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<nav />"""
+    """Generated wrapper for `<nav>`.
+
+    Maps to the standard HTML `<nav>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/nav
+    """
     ...
 
 
@@ -2932,7 +2558,11 @@ def Search(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<search />"""
+    """Generated wrapper for `<search>`.
+
+    Maps to the standard HTML `<search>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/search
+    """
     ...
 
 
@@ -3075,7 +2705,11 @@ def Section(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<section />"""
+    """Generated wrapper for `<section>`.
+
+    Maps to the standard HTML `<section>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/section
+    """
     ...
 
 
@@ -3504,5 +3138,9 @@ def Summary(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<summary />"""
+    """Generated wrapper for `<summary>`.
+
+    Maps to the standard HTML `<summary>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/summary
+    """
     ...

@@ -1,6 +1,9 @@
-"""Generated HTML lists elements.
+"""Generated HTML lists wrappers.
 
-Generated at: 2026-03-07T23:41:03.418Z
+Internal codegen artifact for trellis.html.
+Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
+
+Generated at: 2026-03-08T19:26:06.396Z
 """
 
 from __future__ import annotations
@@ -483,7 +486,11 @@ def Dd(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<dd />"""
+    """Generated wrapper for `<dd>`.
+
+    Maps to the standard HTML `<dd>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dd
+    """
     ...
 
 
@@ -626,7 +633,11 @@ def Dl(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<dl />"""
+    """Generated wrapper for `<dl>`.
+
+    Maps to the standard HTML `<dl>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dl
+    """
     ...
 
 
@@ -1055,7 +1066,11 @@ def Dt(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<dt />"""
+    """Generated wrapper for `<dt>`.
+
+    Maps to the standard HTML `<dt>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dt
+    """
     ...
 
 
@@ -1487,7 +1502,11 @@ def Li(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:
-    """<li />"""
+    """Generated wrapper for `<li>`.
+
+    Maps to the standard HTML `<li>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/li
+    """
     ...
 
 
@@ -1631,7 +1650,11 @@ def Menu(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<menu />"""
+    """Generated wrapper for `<menu>`.
+
+    Maps to the standard HTML `<menu>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/menu
+    """
     ...
 
 
@@ -1777,7 +1800,11 @@ def Ol(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<ol />"""
+    """Generated wrapper for `<ol>`.
+
+    Maps to the standard HTML `<ol>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ol
+    """
     ...
 
 
@@ -1920,5 +1947,9 @@ def Ul(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement:
-    """<ul />"""
+    """Generated wrapper for `<ul>`.
+
+    Maps to the standard HTML `<ul>` element.
+    Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ul
+    """
     ...
