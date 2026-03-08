@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { KeyState } from "@common/core/keyState";
 import { SerializedKeyFilter } from "@common/core/keyFilters";
 
@@ -112,12 +112,21 @@ describe("KeyState.advanceSequence", () => {
     const steps = [makeFilter({ key: "G" }), makeFilter({ key: "G" })];
     const event = makeKeyEvent({ key: "g" });
 
+    const now = Date.now();
+    vi.spyOn(Date, "now").mockReturnValue(now);
+
     // First key press
     expect(keyState.advanceSequence("seq-1", steps, 100, event)).toBe(false);
 
-    // Advance time past timeout by manipulating the state
-    // We can test this by using a very short timeout and Date.now mock
-    // For now, just verify the basic flow works
+    // Advance past timeout — second press should NOT complete the sequence
+    vi.spyOn(Date, "now").mockReturnValue(now + 200);
+    expect(keyState.advanceSequence("seq-1", steps, 100, event)).toBe(false);
+
+    // Sequence restarted, so this is step 2 of a fresh attempt
+    vi.spyOn(Date, "now").mockReturnValue(now + 250);
+    expect(keyState.advanceSequence("seq-1", steps, 100, event)).toBe(true);
+
+    vi.restoreAllMocks();
   });
 
   it("resets on wrong key", () => {

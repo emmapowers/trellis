@@ -96,11 +96,7 @@ function matchesKey(event: KeyboardEvent, key: string): boolean {
  */
 export function isTextInput(element: EventTarget | null): boolean {
   if (!(element instanceof HTMLElement)) return false;
-  if (
-    element.contentEditable === "true" ||
-    element.contentEditable === ""
-  )
-    return true;
+  if (element.isContentEditable || element.contentEditable === "true") return true;
   if (element instanceof HTMLTextAreaElement) return true;
   if (element instanceof HTMLSelectElement) return true;
   if (element instanceof HTMLInputElement) {

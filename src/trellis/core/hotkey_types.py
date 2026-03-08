@@ -96,6 +96,9 @@ PunctuationKey = Literal[
     ",",
     ".",
     "`",
+    "?",
+    ";",
+    "'",
 ]
 
 
@@ -180,6 +183,9 @@ ControlHotkey = Literal[
     "Control+,",
     "Control+.",
     "Control+`",
+    "Control+?",
+    "Control+;",
+    "Control+'",
 ]
 
 AltHotkey = Literal[
@@ -254,6 +260,9 @@ AltHotkey = Literal[
     "Alt+,",
     "Alt+.",
     "Alt+`",
+    "Alt+?",
+    "Alt+;",
+    "Alt+'",
 ]
 
 ShiftHotkey = Literal[
@@ -393,6 +402,9 @@ MetaHotkey = Literal[
     "Meta+,",
     "Meta+.",
     "Meta+`",
+    "Meta+?",
+    "Meta+;",
+    "Meta+'",
 ]
 
 ModHotkey = Literal[
@@ -467,6 +479,9 @@ ModHotkey = Literal[
     "Mod+,",
     "Mod+.",
     "Mod+`",
+    "Mod+?",
+    "Mod+;",
+    "Mod+'",
 ]
 
 ControlAltHotkey = Literal[
@@ -541,6 +556,9 @@ ControlAltHotkey = Literal[
     "Control+Alt+,",
     "Control+Alt+.",
     "Control+Alt+`",
+    "Control+Alt+?",
+    "Control+Alt+;",
+    "Control+Alt+'",
 ]
 
 ControlShiftHotkey = Literal[
@@ -680,6 +698,9 @@ ControlMetaHotkey = Literal[
     "Control+Meta+,",
     "Control+Meta+.",
     "Control+Meta+`",
+    "Control+Meta+?",
+    "Control+Meta+;",
+    "Control+Meta+'",
 ]
 
 AltShiftHotkey = Literal[
@@ -819,6 +840,9 @@ AltMetaHotkey = Literal[
     "Alt+Meta+,",
     "Alt+Meta+.",
     "Alt+Meta+`",
+    "Alt+Meta+?",
+    "Alt+Meta+;",
+    "Alt+Meta+'",
 ]
 
 ShiftMetaHotkey = Literal[
@@ -958,6 +982,9 @@ ModAltHotkey = Literal[
     "Mod+Alt+,",
     "Mod+Alt+.",
     "Mod+Alt+`",
+    "Mod+Alt+?",
+    "Mod+Alt+;",
+    "Mod+Alt+'",
 ]
 
 ModShiftHotkey = Literal[
@@ -1162,6 +1189,9 @@ ControlAltMetaHotkey = Literal[
     "Control+Alt+Meta+,",
     "Control+Alt+Meta+.",
     "Control+Alt+Meta+`",
+    "Control+Alt+Meta+?",
+    "Control+Alt+Meta+;",
+    "Control+Alt+Meta+'",
 ]
 
 ControlShiftMetaHotkey = Literal[
@@ -1449,4 +1479,4 @@ Hotkey = (
     | ControlAltShiftMetaHotkey
 )
 
-# Total: 1330 valid hotkey strings
+# Total: 1360 valid hotkey strings

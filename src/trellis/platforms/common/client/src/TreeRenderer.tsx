@@ -276,6 +276,8 @@ async function fireOnKeyEvent(
   native: KeyboardEvent,
   reactEvent: React.KeyboardEvent
 ): Promise<void> {
+  // Capture target before await — React recycles synthetic events.
+  const target = reactEvent.currentTarget;
   const requestId = crypto.randomUUID();
   const serialized = {
     type: native.type,
@@ -294,7 +296,7 @@ async function fireOnKeyEvent(
     // Re-dispatch event from wrapper div so DOM bubbling resumes to parent
     const clone = new KeyboardEvent(native.type, native);
     (clone as any).__trellis_redispatch__ = true;
-    reactEvent.currentTarget?.dispatchEvent(clone);
+    target?.dispatchEvent(clone);
   }
 }
 

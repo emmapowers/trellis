@@ -6,19 +6,22 @@ rather than the full props dict.
 
 from __future__ import annotations
 
+import typing as tp
 from dataclasses import dataclass
 
 from tests.conftest import PatchCapture
-from trellis.core.components.composition import component
+from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.rendering.element import _REMOVED
 from trellis.core.rendering.patches import RenderUpdatePatch
 from trellis.core.state.stateful import Stateful
 from trellis.widgets.basic import Label
 from trellis.widgets.hot_key import HotKey
 
+CapturePatches = tp.Callable[[CompositionComponent], PatchCapture]
+
 
 class TestPropDiffPatches:
-    def test_removed_prop_emits_removed_sentinel(self, capture_patches: type[PatchCapture]) -> None:
+    def test_removed_prop_emits_removed_sentinel(self, capture_patches: CapturePatches) -> None:
         """A prop present in the old render but absent in the new render
         should appear as _REMOVED in the update patch."""
 
@@ -46,7 +49,7 @@ class TestPropDiffPatches:
         assert update_patches[0].props is not None
         assert update_patches[0].props["color"] is _REMOVED
 
-    def test_only_changed_key_in_patch(self, capture_patches: type[PatchCapture]) -> None:
+    def test_only_changed_key_in_patch(self, capture_patches: CapturePatches) -> None:
         """When only one of several props changes, only that key appears in the patch."""
 
         @dataclass(kw_only=True)
@@ -73,7 +76,7 @@ class TestPropDiffPatches:
         assert "color" not in props
         assert "size" not in props
 
-    def test_unchanged_props_no_update_patch(self, capture_patches: type[PatchCapture]) -> None:
+    def test_unchanged_props_no_update_patch(self, capture_patches: CapturePatches) -> None:
         """When props are unchanged, no RenderUpdatePatch is emitted."""
 
         @dataclass(kw_only=True)
@@ -102,7 +105,7 @@ class TestPropDiffPatches:
         assert len(label_updates) == 0
 
     def test_hotkey_enabled_toggle_removes_key_filters(
-        self, capture_patches: type[PatchCapture]
+        self, capture_patches: CapturePatches
     ) -> None:
         """When HotKey enabled flips to False, __global_key_filters__ is removed."""
 

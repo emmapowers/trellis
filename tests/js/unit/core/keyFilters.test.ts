@@ -143,11 +143,10 @@ describe("isTextInput", () => {
     expect(isTextInput(el)).toBe(true);
   });
 
-  it("returns true for contentEditable='' (empty string means editable)", () => {
+  it("returns false for contentEditable=false", () => {
     const el = document.createElement("div");
-    el.contentEditable = "";
-    // jsdom may normalize empty string
-    expect(isTextInput(el)).toBe(true);
+    el.contentEditable = "false";
+    expect(isTextInput(el)).toBe(false);
   });
 
   it("returns true for select", () => {

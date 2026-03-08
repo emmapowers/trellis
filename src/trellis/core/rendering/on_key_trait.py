@@ -146,11 +146,10 @@ class OnKeyTrait:
     def _after_execute(self, element: Element, state: ElementState, session: RenderSession) -> None:
         """Inject __key_filters__ prop for client-side wrapper div."""
         bindings: list[KeyBindingSpec] = getattr(element, "_on_key_bindings", [])
+        ts = state.trait(OnKeyTraitState)
+        ts.bindings = list(bindings)
         if not bindings:
             return
-
-        ts = state.trait(OnKeyTraitState)
-        ts.bindings = bindings
 
         serialized = [_serialize_binding(b, i, focus_scoped=True) for i, b in enumerate(bindings)]
         element.props["__key_filters__"] = serialized

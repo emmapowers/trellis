@@ -125,7 +125,18 @@ export class ClientMessageHandler {
     const oldState = this.connectionState;
     this.connectionState = state;
     debugLog("messages", `Connection: ${oldState} → ${state}`);
+    if (state === "disconnected") {
+      this.flushPendingKeyEvents();
+    }
     this.callbacks.onConnectionStateChange?.(state);
+  }
+
+  /** Resolve all pending key event promises as unhandled and clear the map. */
+  private flushPendingKeyEvents(): void {
+    for (const resolver of this.pendingKeyEvents.values()) {
+      resolver(false);
+    }
+    this.pendingKeyEvents.clear();
   }
 
   getConnectionState(): ConnectionState {

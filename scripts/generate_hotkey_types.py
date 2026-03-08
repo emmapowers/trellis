@@ -37,7 +37,7 @@ NAVIGATION_KEYS = [
 
 EDITING_KEYS = ["Enter", "Escape", "Space", "Tab", "Backspace", "Delete"]
 
-PUNCTUATION_KEYS = ["/", "[", "]", "\\", "=", "-", ",", ".", "`"]
+PUNCTUATION_KEYS = ["/", "[", "]", "\\", "=", "-", ",", ".", "`", "?", ";", "'"]
 
 NON_PUNCTUATION_KEYS = (
     LETTER_KEYS + NUMBER_KEYS + EDITING_KEYS + NAVIGATION_KEYS + FUNCTION_KEYS
