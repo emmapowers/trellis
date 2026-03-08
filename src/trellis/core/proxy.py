@@ -24,12 +24,11 @@ _PUBLIC_MEMBER_ERROR = (
 )
 _GLOBAL_PATH_RE = re.compile(r"^(?:[A-Za-z_$][A-Za-z0-9_$]*)(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+$")
 
-_BUNDLED_OBJECT_KIND = "bundled_object"
-_GLOBAL_OBJECT_KIND = "global_object"
-_GLOBAL_FUNCTION_KIND = "global_function"
-
 T = tp.TypeVar("T")
 BindingKind = tp.Literal["bundled_object", "global_object", "global_function"]
+_BUNDLED_OBJECT_KIND: BindingKind = "bundled_object"
+_GLOBAL_OBJECT_KIND: BindingKind = "global_object"
+_GLOBAL_FUNCTION_KIND: BindingKind = "global_function"
 
 
 class _ProxyTransport(tp.Protocol):

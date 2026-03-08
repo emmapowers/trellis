@@ -321,7 +321,7 @@ class TestJsGlobalObjects:
         "path",
         [
             "",
-            "window[\"localStorage\"]",
+            'window["localStorage"]',
             "window.localStorage.getItem()",
             ".window",
             "window..localStorage",
@@ -361,9 +361,7 @@ class TestJsGlobalObjects:
 
 
 class TestJsGlobalFunctions:
-    def test_callable_global_proxy_uses_null_method(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_callable_global_proxy_uses_null_method(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Callable globals invoke the resolved function target directly."""
         transport = RecordingTransport(result="hello%20world")
         encoder = EncodeURIComponent()

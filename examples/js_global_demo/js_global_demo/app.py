@@ -65,7 +65,7 @@ class DemoState(Stateful):
     clipboard_message: str = "Ready to use navigator.clipboard."
 
 
-def _button_style(primary: bool) -> dict[str, str]:
+def _button_style(primary: bool) -> dict[str, str | int | float]:
     if primary:
         return {
             "backgroundColor": theme.accent_primary,
@@ -196,9 +196,13 @@ def JsGlobalDemo() -> None:
                     )
                     w.Label(text=state.storage_message)
                     with w.Row(gap=12):
-                        h.HtmlButton("Write theme", on_click=handle_write, style=_button_style(True))
+                        h.HtmlButton(
+                            "Write theme", on_click=handle_write, style=_button_style(True)
+                        )
                         h.HtmlButton("Read theme", on_click=handle_read, style=_button_style(False))
-                        h.HtmlButton("Clear theme", on_click=handle_clear, style=_button_style(False))
+                        h.HtmlButton(
+                            "Clear theme", on_click=handle_clear, style=_button_style(False)
+                        )
 
                 with w.Column(gap=8):
                     w.Label(text="encodeURIComponent", font_weight=600)
