@@ -6,11 +6,21 @@ import msgspec
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from trellis.core.components.base import Component
+from trellis.core.rendering.session import SessionDisconnected
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.common.messages import Message
 
 router = APIRouter()
+
+
+def _is_closed_websocket_error(exc: RuntimeError) -> bool:
+    """Return whether a Starlette/Uvicorn runtime error means the socket is closed."""
+    message = str(exc)
+    return (
+        "Unexpected ASGI message 'websocket.send'" in message
+        and "after sending 'websocket.close'" in message
+    )
 
 
 class WebSocketMessageHandler(MessageHandler):
@@ -46,11 +56,21 @@ class WebSocketMessageHandler(MessageHandler):
 
     async def send_message(self, msg: Message) -> None:
         """Send message to client via WebSocket."""
-        await self.websocket.send_bytes(self._encoder.encode(msg))
+        try:
+            await self.websocket.send_bytes(self._encoder.encode(msg))
+        except WebSocketDisconnect as exc:
+            raise SessionDisconnected() from exc
+        except RuntimeError as exc:
+            if _is_closed_websocket_error(exc):
+                raise SessionDisconnected() from exc
+            raise
 
     async def receive_message(self) -> Message:
         """Receive message from client via WebSocket."""
-        data = await self.websocket.receive_bytes()
+        try:
+            data = await self.websocket.receive_bytes()
+        except WebSocketDisconnect as exc:
+            raise SessionDisconnected() from exc
         return self._decoder.decode(data)
 
 

@@ -23,7 +23,9 @@ if tp.TYPE_CHECKING:
 
 __all__ = [
     "RenderSession",
+    "SessionDisconnected",
     "SessionRegistry",
+    "TaskErrorPolicy",
     "get_active_session",
     "get_session_registry",
     "is_render_active",
@@ -66,6 +68,10 @@ class TaskErrorPolicy(enum.Enum):
 
     LOG_AND_CONTINUE = "log_and_continue"
     FAIL_SESSION = "fail_session"
+
+
+class SessionDisconnected(Exception):
+    """Raised when the session transport disconnects during async work."""
 
 
 @dataclass
@@ -123,6 +129,9 @@ class RenderSession:
                 return await coro
             except asyncio.CancelledError:
                 raise
+            except SessionDisconnected as exc:
+                self._mark_fatal(exc)
+                return None
             except Exception as exc:
                 if policy is TaskErrorPolicy.FAIL_SESSION:
                     self._mark_fatal(exc)

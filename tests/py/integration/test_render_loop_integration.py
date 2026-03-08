@@ -7,10 +7,12 @@ from dataclasses import dataclass, field
 import pytest
 
 from tests.conftest import get_button_element
+from trellis import on_mount
 from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.rendering.patches import RenderAddPatch, RenderRemovePatch, RenderUpdatePatch
 from trellis.core.rendering.render import render
+from trellis.core.rendering.session import SessionDisconnected
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.browser.handler import BrowserMessageHandler
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
@@ -194,7 +196,7 @@ class TestRenderLoop:
         asyncio.run(run_test())
 
     def test_render_loop_sends_error_on_render_failure(self) -> None:
-        """Render loop sends ErrorMessage on render exception."""
+        """Render failure sends one error message and terminates the handler."""
 
         @dataclass(kw_only=True)
         class FailState(Stateful):
@@ -245,26 +247,29 @@ class TestRenderLoop:
             cb_id = button["props"]["on_click"]["__callback__"]
 
             handler.post(EventMessage(callback_id=cb_id, args=[]))
-            await asyncio.sleep(0.05)
+            await asyncio.wait_for(run_task, timeout=1.0)
 
             error_messages = [m for m in sent_messages if isinstance(m, ErrorMessage)]
-            assert len(error_messages) >= 1
+            assert len(error_messages) == 1
             assert "Intentional render failure" in error_messages[0].error
             assert error_messages[0].context == "render"
-
-            run_task.cancel()
-            try:
-                await run_task
-            except asyncio.CancelledError:
-                pass
+            assert handler.session is not None
+            assert isinstance(handler.session.fatal_error, ValueError)
+            assert str(handler.session.fatal_error) == "Intentional render failure"
 
         asyncio.run(run_test())
 
     def test_render_loop_cancels_cleanly(self) -> None:
-        """Render loop cancels without error on disconnect."""
+        """Cancelling run() shuts down session-owned tasks cleanly."""
+        started = asyncio.Event()
 
         @component
         def App() -> None:
+            async def start() -> None:
+                started.set()
+                await asyncio.Event().wait()
+
+            on_mount(start)
             Label(text="Hello")
 
         class TestableHandler(MessageHandler):
@@ -285,15 +290,82 @@ class TestRenderLoop:
         async def run_test() -> None:
             handler = TestableHandler(App, _make_test_wrapper())
             run_task = asyncio.create_task(handler.run())
-            await asyncio.sleep(0.02)
+            await asyncio.wait_for(started.wait(), timeout=1.0)
+            assert handler.session is not None
+            assert handler.session._tasks
 
             run_task.cancel()
 
             with pytest.raises(asyncio.CancelledError):
                 await run_task
 
-            assert handler._render_task is not None
-            assert handler._render_task.cancelled()
+            assert handler.session is not None
+            assert not handler.session._tasks
+
+        asyncio.run(run_test())
+
+    def test_render_loop_disconnect_does_not_log_fatal_error(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Transport disconnects terminate the handler quietly without render errors."""
+
+        @dataclass(kw_only=True)
+        class CounterState(Stateful):
+            count: int = 0
+
+        @component
+        def App() -> None:
+            state = CounterState()
+
+            def increment() -> None:
+                state.count += 1
+
+            Label(text=str(state.count))
+            Button(text="+", on_click=increment)
+
+        sent_messages: list[Message] = []
+
+        class TestableHandler(MessageHandler):
+            def __init__(self, root: Component, app_wrapper: AppWrapper) -> None:
+                super().__init__(root, app_wrapper, batch_delay=0.01)
+                self._hello_sent = False
+                self._inbox: asyncio.Queue[Message] = asyncio.Queue()
+                self._fail_next_patch = False
+
+            async def send_message(self, msg: Message) -> None:
+                if isinstance(msg, PatchMessage) and self._fail_next_patch:
+                    raise SessionDisconnected()
+                sent_messages.append(msg)
+
+            async def receive_message(self) -> Message:
+                if not self._hello_sent:
+                    self._hello_sent = True
+                    return HelloMessage(client_id="test")
+                return await self._inbox.get()
+
+            def post(self, msg: Message) -> None:
+                self._inbox.put_nowait(msg)
+
+        async def run_test() -> None:
+            handler = TestableHandler(App, _make_test_wrapper())
+            run_task = asyncio.create_task(handler.run())
+            await asyncio.sleep(0.02)
+
+            initial = next(m for m in sent_messages if isinstance(m, PatchMessage))
+            tree = initial.patches[0].element
+            app_children = find_app_children(tree)
+            button = get_button_element(app_children[1])
+            cb_id = button["props"]["on_click"]["__callback__"]
+
+            handler._fail_next_patch = True
+            handler.post(EventMessage(callback_id=cb_id, args=[]))
+            await asyncio.wait_for(run_task, timeout=1.0)
+
+            assert sum(isinstance(msg, PatchMessage) for msg in sent_messages) == 1
+            assert not any(isinstance(msg, ErrorMessage) for msg in sent_messages)
+            assert handler.session is not None
+            assert isinstance(handler.session.fatal_error, SessionDisconnected)
+            assert "Fatal error in render loop" not in caplog.text
 
         asyncio.run(run_test())
 

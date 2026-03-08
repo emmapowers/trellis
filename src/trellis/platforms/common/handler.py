@@ -7,6 +7,7 @@ Transport-specific subclasses implement send_message/receive_message.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import dataclasses
 import inspect
 import logging
@@ -26,7 +27,12 @@ from trellis.core.rendering.patches import (
     RenderUpdatePatch,
 )
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession, TaskErrorPolicy, get_session_registry
+from trellis.core.rendering.session import (
+    RenderSession,
+    SessionDisconnected,
+    TaskErrorPolicy,
+    get_session_registry,
+)
 from trellis.html.events import get_event_class
 from trellis.platforms.common.messages import (
     AddPatch,
@@ -275,7 +281,6 @@ class MessageHandler:
     batch_delay: float
     _root_component: Component
     _app_wrapper: AppWrapper
-    _render_task: asyncio.Task[None] | None
 
     def __init__(
         self,
@@ -295,7 +300,6 @@ class MessageHandler:
         self.session = None  # Created in handle_hello after receiving theme info
         self.session_id = None
         self.batch_delay = batch_delay
-        self._render_task = None
 
     async def handle_hello(self) -> str:
         """Handle hello handshake with client.
@@ -514,13 +518,21 @@ class MessageHandler:
 
             try:
                 render_patches = render(self.session)
-                if render_patches:
-                    wire_patches = _serialize_patches(render_patches, self.session)
-                    logger.debug("Sending PatchMessage with %d patches", len(wire_patches))
-                    await self.send_message(PatchMessage(patches=wire_patches))
             except Exception as e:
-                logger.exception(f"Error in render loop: {e}")
-                await self.send_message(ErrorMessage(error=_format_exception(e), context="render"))
+                try:
+                    await self.send_message(
+                        ErrorMessage(error=_format_exception(e), context="render")
+                    )
+                except Exception:
+                    logger.exception("Error sending render failure message")
+                raise
+
+            if not render_patches:
+                continue
+
+            wire_patches = _serialize_patches(render_patches, self.session)
+            logger.debug("Sending PatchMessage with %d patches", len(wire_patches))
+            await self.send_message(PatchMessage(patches=wire_patches))
 
     # -------------------------------------------------------------------------
     # Transport methods - subclasses must override
@@ -546,26 +558,55 @@ class MessageHandler:
         3. Starts background render loop (30fps batched updates)
         4. Loops receiving messages and sending responses
         """
-        await self.handle_hello()
-        await self.send_message(self.initial_render())
-
-        # Start background render loop for batched updates
-        self._render_task = asyncio.create_task(self._render_loop())
-
+        receive_task: asyncio.Task[Message] | None = None
+        fatal_wait_task: asyncio.Task[BaseException] | None = None
         try:
+            await self.handle_hello()
+            await self.send_message(self.initial_render())
+            assert self.session is not None
+
+            self.session.spawn(
+                self._render_loop(),
+                label="render loop",
+                policy=TaskErrorPolicy.FAIL_SESSION,
+            )
+
             while True:
-                msg = await self.receive_message()
+                receive_task = asyncio.create_task(self.receive_message())
+                fatal_wait_task = asyncio.create_task(self.session.wait_until_failed())
+                done, _pending = await asyncio.wait(
+                    {receive_task, fatal_wait_task},
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+
+                if fatal_wait_task in done:
+                    receive_task.cancel()
+                    with contextlib.suppress(asyncio.CancelledError, SessionDisconnected):
+                        await receive_task
+                    fatal_wait_task.result()
+                    break
+
+                fatal_wait_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await fatal_wait_task
+
+                msg = receive_task.result()
                 response = await self.handle_message(msg)
                 if response:
                     await self.send_message(response)
+        except SessionDisconnected:
+            return
         finally:
-            # Cancel render loop on disconnect
-            if self._render_task:
-                self._render_task.cancel()
-                try:
-                    await self._render_task
-                except asyncio.CancelledError:
-                    pass
+            if receive_task is not None:
+                receive_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError, SessionDisconnected):
+                    await receive_task
+            if fatal_wait_task is not None:
+                fatal_wait_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await fatal_wait_task
+            if self.session is not None:
+                await self.session.shutdown()
 
     def cleanup(self) -> None:
         """Clean up resources. Call when session ends."""

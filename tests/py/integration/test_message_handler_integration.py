@@ -8,6 +8,7 @@ from tests.conftest import get_button_element
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.rendering.patches import RenderUpdatePatch
 from trellis.core.rendering.render import render
+from trellis.core.rendering.session import SessionDisconnected
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.browser import BrowserMessageHandler
 from trellis.platforms.common.handler import AppWrapper
@@ -256,6 +257,34 @@ class TestMessageHandler:
         # After cleanup, tree should have no callbacks
         # (we can't easily test this without internal access,
         # but the method should not raise)
+
+    def test_run_exits_cleanly_on_transport_disconnect(self, app_wrapper: AppWrapper) -> None:
+        """run() treats a transport disconnect as normal shutdown."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        class DisconnectingHandler(BrowserMessageHandler):
+            _hello_sent: bool
+
+            def __init__(self) -> None:
+                super().__init__(App, app_wrapper, batch_delay=0.01)
+                self._hello_sent = False
+
+            async def receive_message(self):
+                if not self._hello_sent:
+                    self._hello_sent = True
+                    return HelloMessage(client_id="test", system_theme="light")
+                raise SessionDisconnected()
+
+        async def run_test() -> None:
+            handler = DisconnectingHandler()
+            await asyncio.wait_for(handler.run(), timeout=1.0)
+            assert handler.session is not None
+            assert not handler.session._tasks
+
+        asyncio.run(run_test())
 
 
 class TestBrowserMessageHandler:
