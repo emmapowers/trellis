@@ -136,6 +136,9 @@ function qualify_field_primitives(type_expr: TypeExpr): TypeExpr {
 
 function field_type_expr(property: CssPropertyDef): TypeExpr {
   let type_expr = qualify_field_primitives(property.type_expr);
+  if (property.value_type_name === "CssValue") {
+    type_expr = append_type_expr(type_expr, { kind: "primitive", name: "str" });
+  }
   if (property.is_shorthand && !CSS_VALUE_CAPABLE_ALIASES.has(property.value_type_name)) {
     type_expr = append_type_expr(type_expr, { kind: "reference", name: "CssValue" });
   }

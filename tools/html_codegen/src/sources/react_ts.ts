@@ -348,7 +348,11 @@ function array_item_type(type_name: string): TypeExpr | undefined {
 }
 
 function normalize_union_option(option: string): string {
-  return normalize_ws(option.replace(/^\((.*)\)$/, "$1"));
+  const normalized = normalize_ws(option.replace(/^\((.*)\)$/, "$1"));
+  if (normalized === "(string & {})" || normalized === "string & {}") {
+    return "string";
+  }
+  return normalized;
 }
 
 function resolve_alias_type(
@@ -437,9 +441,7 @@ function parse_type_expr(
   const normalized = normalize_ws(type_string);
   const union_parts = split_top_level(normalized, "|").map(normalize_union_option);
   const is_nullable = union_parts.includes("undefined");
-  const filtered_parts = union_parts.filter(
-    (option) => option !== "undefined" && option !== "(string & {})" && option !== "string & {}",
-  );
+  const filtered_parts = union_parts.filter((option) => option !== "undefined");
 
   const parsed_options = filtered_parts
     .map((option) => parse_named_type(option, aliases, prop_name, cache))

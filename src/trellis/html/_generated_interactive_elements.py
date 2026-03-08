@@ -3,7 +3,7 @@
 Internal codegen artifact for trellis.html.
 Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
 
-Generated at: 2026-03-08T19:26:06.396Z
+Generated at: 2026-03-08T20:20:29.213Z
 """
 
 from __future__ import annotations
@@ -170,7 +170,9 @@ def _A(
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
-    target: Literal["_self", "_blank", "_parent", "_top"] | None = None,
+    target: (
+        Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None
+    ) = None,
     title: str | None = None,
     translate: Translate | None = None,
     type: str | None = None,
@@ -319,7 +321,9 @@ def _A(
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
-    target: Literal["_self", "_blank", "_parent", "_top"] | None = None,
+    target: (
+        Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None
+    ) = None,
     title: str | None = None,
     translate: Translate | None = None,
     type: str | None = None,
@@ -470,7 +474,9 @@ def _A(
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
-    target: Literal["_self", "_blank", "_parent", "_top"] | None = None,
+    target: (
+        Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None
+    ) = None,
     title: str | None = None,
     translate: Translate | None = None,
     type: str | None = None,

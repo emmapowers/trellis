@@ -224,7 +224,9 @@ def A(
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
-    target: Literal["_self", "_blank", "_parent", "_top"] | None = None,
+    target: (
+        Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None
+    ) = None,
     title: str | None = None,
     translate: Translate | None = None,
     type: str | None = None,
@@ -374,7 +376,9 @@ def A(
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
-    target: Literal["_self", "_blank", "_parent", "_top"] | None = None,
+    target: (
+        Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None
+    ) = None,
     title: str | None = None,
     translate: Translate | None = None,
     type: str | None = None,
@@ -525,7 +529,9 @@ def A(
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
-    target: Literal["_self", "_blank", "_parent", "_top"] | None = None,
+    target: (
+        Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None
+    ) = None,
     title: str | None = None,
     translate: Translate | None = None,
     type: str | None = None,

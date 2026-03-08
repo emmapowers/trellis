@@ -25,6 +25,10 @@ describe("webref css source extraction", () => {
     expect(surface.properties.get("box-shadow")?.is_shorthand).toBe(true);
 
     expect(surface.properties.get("color")?.value_type_name).toBe("ColorValue");
+    expect(surface.properties.get("font-family")?.value_type_name).toBe("CssValue");
+    expect(surface.properties.get("cursor")?.value_type_name).toBe("CssValue");
+    expect(surface.properties.get("list-style")?.value_type_name).toBe("CssValue");
+    expect(surface.properties.get("font-size")?.value_type_name).toBe("LengthPercentage");
     expect(surface.properties.get("opacity")?.accepts_auto_px).toBe(false);
     expect(surface.properties.get("z-index")?.accepts_auto_px).toBe(false);
 
@@ -53,6 +57,29 @@ describe("webref css source extraction", () => {
         { kind: "reference", name: "ColorKeyword" },
         { kind: "primitive", name: "str" },
         { kind: "reference", name: "CssColor" },
+        { kind: "reference", name: "CssValue" },
+      ]),
+    });
+    expect(surface.value_aliases.get("Length")).toMatchObject({
+      kind: "union",
+      options: expect.arrayContaining([
+        { kind: "reference", name: "CssLength" },
+        { kind: "reference", name: "CssValue" },
+      ]),
+    });
+    expect(surface.value_aliases.get("Display")).toMatchObject({
+      kind: "union",
+      options: expect.arrayContaining([
+        { kind: "literal", value: "flex" },
+        { kind: "literal", value: "inline-flex" },
+        { kind: "reference", name: "CssValue" },
+      ]),
+    });
+    expect(surface.value_aliases.get("Opacity")).toMatchObject({
+      kind: "union",
+      options: expect.arrayContaining([
+        { kind: "primitive", name: "float" },
+        { kind: "reference", name: "CssValue" },
       ]),
     });
   });

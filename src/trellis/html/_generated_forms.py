@@ -3,7 +3,7 @@
 Internal codegen artifact for trellis.html.
 Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
 
-Generated at: 2026-03-08T19:26:06.396Z
+Generated at: 2026-03-08T20:20:29.213Z
 """
 
 from __future__ import annotations
@@ -1045,7 +1045,7 @@ def Input(
     aria_valuenow: int | float | None = None,
     aria_valuetext: str | None = None,
     auto_capitalize: AutoCapitalize | None = None,
-    auto_complete: Literal["", "off", "on"] | None = None,
+    auto_complete: Literal[""] | Literal["off"] | Literal["on"] | str | None = None,
     auto_correct: str | None = None,
     auto_focus: bool | None = None,
     auto_save: str | None = None,

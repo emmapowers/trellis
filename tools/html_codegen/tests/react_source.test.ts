@@ -20,6 +20,7 @@ describe("react source extraction", () => {
           { kind: "literal", value: "_blank" },
           { kind: "literal", value: "_parent" },
           { kind: "literal", value: "_top" },
+          { kind: "primitive", name: "str" },
         ],
       },
     });
@@ -62,6 +63,18 @@ describe("react source extraction", () => {
     expect(input?.attributes.get("type")?.kind).toBe("nullable");
     expect(input?.attributes.get("readOnly")?.kind).toBe("nullable");
     expect(input?.attributes.get("autoComplete")?.kind).toBe("nullable");
+    expect(input?.attributes.get("autoComplete")).toEqual({
+      kind: "nullable",
+      item: {
+        kind: "union",
+        options: [
+          { kind: "literal", value: "" },
+          { kind: "literal", value: "off" },
+          { kind: "literal", value: "on" },
+          { kind: "primitive", name: "str" },
+        ],
+      },
+    });
     expect(input?.attributes.get("onChange")?.kind).toBe("nullable");
     expect(input?.attributes.get("value")).toEqual({
       kind: "nullable",

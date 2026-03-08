@@ -11,7 +11,6 @@ from trellis.widgets import IconName, ThemeSwitcher
 from .sections.actions import ActionsSection
 from .sections.buttons import ButtonsSection
 from .sections.charts import ChartsSection
-from .sections.css import CssSection
 from .sections.data import DataDisplaySection
 from .sections.feedback import FeedbackSection
 from .sections.forms import FormInputsSection
@@ -29,7 +28,6 @@ type ShowcaseTab = tuple[str, str, IconName, CompositionComponent]
 
 _BASE_TABS: list[ShowcaseTab] = [
     ("layout", "Layout", IconName.LAYOUT_GRID, LayoutSection),
-    ("css", "CSS", IconName.PALETTE, CssSection),
     ("buttons", "Buttons", IconName.MOUSE_POINTER, ButtonsSection),
     ("forms", "Forms", IconName.EDIT_2, FormInputsSection),
     ("status", "Status", IconName.CHECK_CIRCLE, StatusSection),

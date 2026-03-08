@@ -73,8 +73,42 @@ function sample_css_document(): CssDocument {
         css_name: "opacity",
         python_name: "opacity",
         value_type_name: "Opacity",
-        type_expr: { kind: "primitive", name: "float" },
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "primitive", name: "float" },
+            { kind: "reference", name: "CssValue" },
+          ],
+        },
         accepts_auto_px: false,
+        is_shorthand: false,
+        source: {
+          winner: "webref",
+          contributors: ["webref", "csstype"],
+          reason: "css_property",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
+      {
+        css_name: "font-family",
+        python_name: "font_family",
+        value_type_name: "CssValue",
+        type_expr: { kind: "reference", name: "CssValue" },
+        accepts_auto_px: false,
+        is_shorthand: false,
+        source: {
+          winner: "webref",
+          contributors: ["webref", "csstype"],
+          reason: "css_property",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
+      {
+        css_name: "font-size",
+        python_name: "font_size",
+        value_type_name: "LengthPercentage",
+        type_expr: { kind: "reference", name: "LengthPercentage" },
+        accepts_auto_px: true,
         is_shorthand: false,
         source: {
           winner: "webref",
@@ -138,7 +172,13 @@ function sample_css_document(): CssDocument {
       },
       {
         name: "Length",
-        type_expr: { kind: "reference", name: "CssLength" },
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "reference", name: "CssLength" },
+            { kind: "reference", name: "CssValue" },
+          ],
+        },
         source: {
           winner: "trellis_policy",
           contributors: ["webref"],
@@ -186,6 +226,7 @@ function sample_css_document(): CssDocument {
             { kind: "reference", name: "ColorKeyword" },
             { kind: "primitive", name: "str" },
             { kind: "reference", name: "CssColor" },
+            { kind: "reference", name: "CssValue" },
           ],
         },
         source: {
@@ -238,17 +279,22 @@ describe("trellis css target", () => {
     expect(types_module?.content).toContain(
       'ColorKeyword = NamedColor | Literal["transparent"] | Literal["currentColor"]',
     );
-    expect(types_module?.content).toContain("ColorValue = ColorKeyword | str | CssColor");
+    expect(types_module?.content).toContain("Length = CssLength | CssValue");
+    expect(types_module?.content).toContain("ColorValue = ColorKeyword | str | CssColor | CssValue");
     expect(types_module?.content).toContain("Display = Literal[");
     expect(types_module?.content).toContain("class _GeneratedStyleFields:");
     expect(types_module?.content).toContain("border: ColorValue | CssValue | None = None");
+    expect(types_module?.content).toContain("font_family: CssValue | str | None = None");
+    expect(types_module?.content).toContain(
+      "font_size: LengthPercentage | builtins.int | builtins.float | None = None",
+    );
     expect(types_module?.content).toContain(
       "width: WidthValue | builtins.int | builtins.float | None = None",
     );
     expect(types_module?.content).toContain(
       "margin: SpacingShorthand | builtins.int | builtins.float | None = None",
     );
-    expect(types_module?.content).toContain("opacity: builtins.float | None = None");
+    expect(types_module?.content).toContain("opacity: builtins.float | CssValue | None = None");
     expect(types_module?.content).toContain("class MediaRule:");
     expect(types_module?.content).toContain('"""Generated media query rule for `h.media(...)`.');
     expect(types_module?.content).toContain("prefers_color_scheme: PrefersColorScheme | None = None");

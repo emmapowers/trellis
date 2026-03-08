@@ -271,25 +271,54 @@ function fallback_css_value(...options: TypeExpr[]): TypeExpr {
 function value_aliases(): Map<string, TypeExpr> {
   return new Map<string, TypeExpr>([
     ["CssValue", reference("CssValue")],
-    ["Length", reference("CssLength")],
-    ["Percent", reference("CssPercent")],
+    ["Length", union(reference("CssLength"), reference("CssValue"))],
+    ["Percent", union(reference("CssPercent"), reference("CssValue"))],
     ["NamedColor", keyword_union([...NAMED_COLORS])],
     [
       "ColorKeyword",
       union(reference("NamedColor"), literal("transparent"), literal("currentColor")),
     ],
-    ["ColorValue", union(reference("ColorKeyword"), primitive("str"), reference("CssColor"))],
-    ["TimeValue", reference("CssTime")],
-    ["AngleValue", reference("CssAngle")],
-    ["Display", keyword_union(["block", "inline", "inline-block", "flex", "grid", "none", "contents"])],
-    ["Position", keyword_union(["static", "relative", "absolute", "fixed", "sticky"])],
-    ["Overflow", keyword_union(["visible", "hidden", "clip", "scroll", "auto"])],
-    ["TextAlign", keyword_union(["left", "right", "center", "justify", "start", "end"])],
-    ["FontWeight", union(primitive("int"), keyword_union(["normal", "bold", "lighter", "bolder"]))],
-    ["FlexDirection", keyword_union(["row", "row-reverse", "column", "column-reverse"])],
-    ["FlexWrap", keyword_union(["nowrap", "wrap", "wrap-reverse"])],
-    ["JustifyContent", keyword_union(["flex-start", "flex-end", "center", "space-between", "space-around", "space-evenly", "start", "end"])],
-    ["AlignItems", keyword_union(["stretch", "center", "start", "end", "flex-start", "flex-end", "baseline"])],
+    [
+      "ColorValue",
+      union(reference("ColorKeyword"), primitive("str"), reference("CssColor"), reference("CssValue")),
+    ],
+    ["TimeValue", union(reference("CssTime"), reference("CssValue"))],
+    ["AngleValue", union(reference("CssAngle"), reference("CssValue"))],
+    [
+      "Display",
+      fallback_css_value(
+        keyword_union([
+          "block",
+          "inline",
+          "inline-block",
+          "flex",
+          "inline-flex",
+          "grid",
+          "inline-grid",
+          "none",
+          "contents",
+        ]),
+      ),
+    ],
+    ["Position", fallback_css_value(keyword_union(["static", "relative", "absolute", "fixed", "sticky"]))],
+    ["Overflow", fallback_css_value(keyword_union(["visible", "hidden", "clip", "scroll", "auto"]))],
+    ["TextAlign", fallback_css_value(keyword_union(["left", "right", "center", "justify", "start", "end"]))],
+    [
+      "FontWeight",
+      fallback_css_value(union(primitive("int"), keyword_union(["normal", "bold", "lighter", "bolder"]))),
+    ],
+    ["FlexDirection", fallback_css_value(keyword_union(["row", "row-reverse", "column", "column-reverse"]))],
+    ["FlexWrap", fallback_css_value(keyword_union(["nowrap", "wrap", "wrap-reverse"]))],
+    [
+      "JustifyContent",
+      fallback_css_value(
+        keyword_union(["flex-start", "flex-end", "center", "space-between", "space-around", "space-evenly", "start", "end"]),
+      ),
+    ],
+    [
+      "AlignItems",
+      fallback_css_value(keyword_union(["stretch", "center", "start", "end", "flex-start", "flex-end", "baseline"])),
+    ],
     ["LengthPercentage", union(reference("Length"), reference("Percent"))],
     ["WidthValue", fallback_css_value(reference("LengthPercentage"), keyword_union(["auto", "min-content", "max-content", "fit-content", "stretch", "contain"]))],
     ["HeightValue", fallback_css_value(reference("LengthPercentage"), keyword_union(["auto", "min-content", "max-content", "fit-content", "stretch", "contain"]))],
@@ -300,12 +329,12 @@ function value_aliases(): Map<string, TypeExpr> {
     ["ShadowValue", reference("CssValue")],
     ["TransformValue", reference("CssValue")],
     ["TransitionValue", reference("CssValue")],
-    ["Opacity", primitive("float")],
-    ["ZIndex", union(primitive("int"), literal("auto"))],
-    ["PrefersColorScheme", keyword_union(["light", "dark"])],
-    ["PrefersReducedMotion", keyword_union(["reduce", "no-preference"])],
-    ["PointerCapability", keyword_union(["none", "coarse", "fine"])],
-    ["HoverCapability", keyword_union(["none", "hover"])],
+    ["Opacity", union(primitive("float"), reference("CssValue"))],
+    ["ZIndex", union(primitive("int"), literal("auto"), reference("CssValue"))],
+    ["PrefersColorScheme", fallback_css_value(keyword_union(["light", "dark"]))],
+    ["PrefersReducedMotion", fallback_css_value(keyword_union(["reduce", "no-preference"]))],
+    ["PointerCapability", fallback_css_value(keyword_union(["none", "coarse", "fine"]))],
+    ["HoverCapability", fallback_css_value(keyword_union(["none", "hover"]))],
   ]);
 }
 
@@ -490,7 +519,7 @@ function supported_property_names(features: Record<string, CssFeature>): string[
 export async function extract_css_surface(): Promise<CssSurface> {
   const css = await index();
   const aliases = value_aliases();
-  aliases.set("Orientation", keyword_union(["portrait", "landscape"]));
+  aliases.set("Orientation", fallback_css_value(keyword_union(["portrait", "landscape"])));
 
   const properties = new Map<string, CssPropertyDef>();
   for (const name of supported_property_names(css.properties)) {
