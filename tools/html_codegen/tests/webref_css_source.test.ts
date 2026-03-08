@@ -64,6 +64,21 @@ describe("webref css source extraction", () => {
       kind: "union",
       options: expect.arrayContaining([
         { kind: "reference", name: "CssLength" },
+        { kind: "primitive", name: "str" },
+        { kind: "reference", name: "CssValue" },
+      ]),
+    });
+    expect(surface.value_aliases.get("WidthValue")).toMatchObject({
+      kind: "union",
+      options: expect.arrayContaining([
+        { kind: "primitive", name: "str" },
+        { kind: "reference", name: "CssValue" },
+      ]),
+    });
+    expect(surface.value_aliases.get("SpacingShorthand")).toMatchObject({
+      kind: "union",
+      options: expect.arrayContaining([
+        { kind: "primitive", name: "str" },
         { kind: "reference", name: "CssValue" },
       ]),
     });
@@ -71,7 +86,22 @@ describe("webref css source extraction", () => {
       kind: "union",
       options: expect.arrayContaining([
         { kind: "literal", value: "flex" },
+        { kind: "primitive", name: "str" },
         { kind: "literal", value: "inline-flex" },
+        { kind: "reference", name: "CssValue" },
+      ]),
+    });
+    expect(surface.value_aliases.get("ShadowValue")).toMatchObject({
+      kind: "union",
+      options: expect.arrayContaining([
+        { kind: "primitive", name: "str" },
+        { kind: "reference", name: "CssValue" },
+      ]),
+    });
+    expect(surface.value_aliases.get("TransitionValue")).toMatchObject({
+      kind: "union",
+      options: expect.arrayContaining([
+        { kind: "primitive", name: "str" },
         { kind: "reference", name: "CssValue" },
       ]),
     });

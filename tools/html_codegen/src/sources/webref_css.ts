@@ -265,14 +265,14 @@ function keyword_union(values: string[]): TypeExpr {
 }
 
 function fallback_css_value(...options: TypeExpr[]): TypeExpr {
-  return union(...options, reference("CssValue"));
+  return union(...options, primitive("str"), reference("CssValue"));
 }
 
 function value_aliases(): Map<string, TypeExpr> {
   return new Map<string, TypeExpr>([
     ["CssValue", reference("CssValue")],
-    ["Length", union(reference("CssLength"), reference("CssValue"))],
-    ["Percent", union(reference("CssPercent"), reference("CssValue"))],
+    ["Length", union(reference("CssLength"), primitive("str"), reference("CssValue"))],
+    ["Percent", union(reference("CssPercent"), primitive("str"), reference("CssValue"))],
     ["NamedColor", keyword_union([...NAMED_COLORS])],
     [
       "ColorKeyword",
@@ -282,8 +282,8 @@ function value_aliases(): Map<string, TypeExpr> {
       "ColorValue",
       union(reference("ColorKeyword"), primitive("str"), reference("CssColor"), reference("CssValue")),
     ],
-    ["TimeValue", union(reference("CssTime"), reference("CssValue"))],
-    ["AngleValue", union(reference("CssAngle"), reference("CssValue"))],
+    ["TimeValue", union(reference("CssTime"), primitive("str"), reference("CssValue"))],
+    ["AngleValue", union(reference("CssAngle"), primitive("str"), reference("CssValue"))],
     [
       "Display",
       fallback_css_value(
@@ -326,9 +326,9 @@ function value_aliases(): Map<string, TypeExpr> {
     ["SpacingShorthand", fallback_css_value(reference("LengthPercentage"))],
     ["GapValue", fallback_css_value(reference("LengthPercentage"), keyword_union(["normal"]))],
     ["LineHeightValue", fallback_css_value(reference("LengthPercentage"), primitive("float"), keyword_union(["normal"]))],
-    ["ShadowValue", reference("CssValue")],
-    ["TransformValue", reference("CssValue")],
-    ["TransitionValue", reference("CssValue")],
+    ["ShadowValue", union(primitive("str"), reference("CssValue"))],
+    ["TransformValue", union(primitive("str"), reference("CssValue"))],
+    ["TransitionValue", union(primitive("str"), reference("CssValue"))],
     ["Opacity", union(primitive("float"), reference("CssValue"))],
     ["ZIndex", union(primitive("int"), literal("auto"), reference("CssValue"))],
     ["PrefersColorScheme", fallback_css_value(keyword_union(["light", "dark"]))],

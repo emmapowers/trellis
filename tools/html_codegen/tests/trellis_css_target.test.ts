@@ -10,14 +10,7 @@ function sample_css_document(): CssDocument {
         css_name: "display",
         python_name: "display",
         value_type_name: "Display",
-        type_expr: {
-          kind: "union",
-          options: [
-            { kind: "literal", value: "block" },
-            { kind: "literal", value: "flex" },
-            { kind: "literal", value: "none" },
-          ],
-        },
+        type_expr: { kind: "reference", name: "Display" },
         accepts_auto_px: false,
         is_shorthand: false,
         source: {
@@ -161,6 +154,9 @@ function sample_css_document(): CssDocument {
             { kind: "literal", value: "block" },
             { kind: "literal", value: "flex" },
             { kind: "literal", value: "none" },
+            { kind: "literal", value: "inline-flex" },
+            { kind: "primitive", name: "str" },
+            { kind: "reference", name: "CssValue" },
           ],
         },
         source: {
@@ -176,6 +172,7 @@ function sample_css_document(): CssDocument {
           kind: "union",
           options: [
             { kind: "reference", name: "CssLength" },
+            { kind: "primitive", name: "str" },
             { kind: "reference", name: "CssValue" },
           ],
         },
@@ -237,6 +234,73 @@ function sample_css_document(): CssDocument {
         },
       },
       {
+        name: "WidthValue",
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "reference", name: "LengthPercentage" },
+            { kind: "literal", value: "auto" },
+            { kind: "primitive", name: "str" },
+            { kind: "reference", name: "CssValue" },
+          ],
+        },
+        source: {
+          winner: "trellis_policy",
+          contributors: ["webref"],
+          reason: "css_value_alias",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
+      {
+        name: "SpacingShorthand",
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "reference", name: "LengthPercentage" },
+            { kind: "primitive", name: "str" },
+            { kind: "reference", name: "CssValue" },
+          ],
+        },
+        source: {
+          winner: "trellis_policy",
+          contributors: ["webref"],
+          reason: "css_value_alias",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
+      {
+        name: "ShadowValue",
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "primitive", name: "str" },
+            { kind: "reference", name: "CssValue" },
+          ],
+        },
+        source: {
+          winner: "trellis_policy",
+          contributors: ["webref"],
+          reason: "css_value_alias",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
+      {
+        name: "TransitionValue",
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "primitive", name: "str" },
+            { kind: "reference", name: "CssValue" },
+          ],
+        },
+        source: {
+          winner: "trellis_policy",
+          contributors: ["webref"],
+          reason: "css_value_alias",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
+      {
         name: "ColorKeyword",
         type_expr: {
           kind: "union",
@@ -279,8 +343,11 @@ describe("trellis css target", () => {
     expect(types_module?.content).toContain(
       'ColorKeyword = NamedColor | Literal["transparent"] | Literal["currentColor"]',
     );
-    expect(types_module?.content).toContain("Length = CssLength | CssValue");
+    expect(types_module?.content).toContain("Length = CssLength | str | CssValue");
     expect(types_module?.content).toContain("ColorValue = ColorKeyword | str | CssColor | CssValue");
+    expect(types_module?.content).toContain(
+      'Display = Literal["block"] | Literal["flex"] | Literal["none"] | Literal["inline-flex"] | str | CssValue',
+    );
     expect(types_module?.content).toContain("Display = Literal[");
     expect(types_module?.content).toContain("class _GeneratedStyleFields:");
     expect(types_module?.content).toContain("border: ColorValue | CssValue | None = None");

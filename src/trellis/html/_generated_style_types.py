@@ -3,7 +3,7 @@
 Internal codegen artifact for trellis.html CSS typing.
 Reference: https://developer.mozilla.org/en-US/docs/Web/CSS
 
-Generated at: 2026-03-08T20:20:29.213Z
+Generated at: 2026-03-08T20:34:35.232Z
 """
 
 from __future__ import annotations
@@ -24,11 +24,11 @@ from trellis.html._css_primitives import (
 if TYPE_CHECKING:
     from trellis.html._style_runtime import Style
 
-Length = CssLength | CssValue
-Percent = CssPercent | CssValue
+Length = CssLength | str | CssValue
+Percent = CssPercent | str | CssValue
 LengthPercentage = Length | Percent
-TimeValue = CssTime | CssValue
-AngleValue = CssAngle | CssValue
+TimeValue = CssTime | str | CssValue
+AngleValue = CssAngle | str | CssValue
 NamedColor = Literal[
     "aliceblue",
     "antiquewhite",
@@ -191,6 +191,7 @@ Display = (
     | Literal["inline-grid"]
     | Literal["none"]
     | Literal["contents"]
+    | str
     | CssValue
 )
 Position = (
@@ -199,6 +200,7 @@ Position = (
     | Literal["absolute"]
     | Literal["fixed"]
     | Literal["sticky"]
+    | str
     | CssValue
 )
 Overflow = (
@@ -207,6 +209,7 @@ Overflow = (
     | Literal["clip"]
     | Literal["scroll"]
     | Literal["auto"]
+    | str
     | CssValue
 )
 TextAlign = (
@@ -216,19 +219,27 @@ TextAlign = (
     | Literal["justify"]
     | Literal["start"]
     | Literal["end"]
+    | str
     | CssValue
 )
 FontWeight = (
-    int | Literal["normal"] | Literal["bold"] | Literal["lighter"] | Literal["bolder"] | CssValue
+    int
+    | Literal["normal"]
+    | Literal["bold"]
+    | Literal["lighter"]
+    | Literal["bolder"]
+    | str
+    | CssValue
 )
 FlexDirection = (
     Literal["row"]
     | Literal["row-reverse"]
     | Literal["column"]
     | Literal["column-reverse"]
+    | str
     | CssValue
 )
-FlexWrap = Literal["nowrap"] | Literal["wrap"] | Literal["wrap-reverse"] | CssValue
+FlexWrap = Literal["nowrap"] | Literal["wrap"] | Literal["wrap-reverse"] | str | CssValue
 JustifyContent = (
     Literal["flex-start"]
     | Literal["flex-end"]
@@ -238,6 +249,7 @@ JustifyContent = (
     | Literal["space-evenly"]
     | Literal["start"]
     | Literal["end"]
+    | str
     | CssValue
 )
 AlignItems = (
@@ -248,6 +260,7 @@ AlignItems = (
     | Literal["flex-start"]
     | Literal["flex-end"]
     | Literal["baseline"]
+    | str
     | CssValue
 )
 WidthValue = (
@@ -258,6 +271,7 @@ WidthValue = (
     | Literal["fit-content"]
     | Literal["stretch"]
     | Literal["contain"]
+    | str
     | CssValue
 )
 HeightValue = (
@@ -268,22 +282,23 @@ HeightValue = (
     | Literal["fit-content"]
     | Literal["stretch"]
     | Literal["contain"]
+    | str
     | CssValue
 )
-BorderRadiusValue = LengthPercentage | CssValue
-SpacingShorthand = LengthPercentage | CssValue
-GapValue = LengthPercentage | Literal["normal"] | CssValue
-LineHeightValue = LengthPercentage | float | Literal["normal"] | CssValue
-ShadowValue = CssValue
-TransformValue = CssValue
-TransitionValue = CssValue
+BorderRadiusValue = LengthPercentage | str | CssValue
+SpacingShorthand = LengthPercentage | str | CssValue
+GapValue = LengthPercentage | Literal["normal"] | str | CssValue
+LineHeightValue = LengthPercentage | float | Literal["normal"] | str | CssValue
+ShadowValue = str | CssValue
+TransformValue = str | CssValue
+TransitionValue = str | CssValue
 Opacity = float | CssValue
 ZIndex = int | Literal["auto"] | CssValue
-Orientation = Literal["portrait"] | Literal["landscape"] | CssValue
-PrefersColorScheme = Literal["light"] | Literal["dark"] | CssValue
-PrefersReducedMotion = Literal["reduce"] | Literal["no-preference"] | CssValue
-PointerCapability = Literal["none"] | Literal["coarse"] | Literal["fine"] | CssValue
-HoverCapability = Literal["none"] | Literal["hover"] | CssValue
+Orientation = Literal["portrait"] | Literal["landscape"] | str | CssValue
+PrefersColorScheme = Literal["light"] | Literal["dark"] | str | CssValue
+PrefersReducedMotion = Literal["reduce"] | Literal["no-preference"] | str | CssValue
+PointerCapability = Literal["none"] | Literal["coarse"] | Literal["fine"] | str | CssValue
+HoverCapability = Literal["none"] | Literal["hover"] | str | CssValue
 
 
 @dataclass(kw_only=True)

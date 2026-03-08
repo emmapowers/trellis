@@ -93,7 +93,7 @@ def _shell_style() -> h.Style:
         min_height=h.vh(100),
         color=h.var("--ink"),
         background_color=h.var("--paper"),
-        background_image=h.raw(
+        background_image=(
             "radial-gradient(circle at top left, color-mix(in srgb, var(--lagoon) 18%, transparent) 0, transparent 38%), "
             "radial-gradient(circle at top right, color-mix(in srgb, var(--ember) 20%, transparent) 0, transparent 34%), "
             "linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,250,244,0.94))"
@@ -103,7 +103,7 @@ def _shell_style() -> h.Style:
         line_height=1.5,
         selection=h.Style(
             background_color=h.var("--lagoon"),
-            color=h.raw("white"),
+            color="white",
         ),
         media=[
             h.media(
@@ -116,8 +116,8 @@ def _shell_style() -> h.Style:
 
 def _page_frame_style() -> h.Style:
     return h.Style(
-        width=h.raw("min(1180px, 100%)"),
-        margin=h.raw("0 auto"),
+        width="min(1180px, 100%)",
+        margin="0 auto",
         selectors={"& > * + *": h.Style(margin_top=24)},
         media=[
             h.media(min_width=960, style=h.Style(selectors={"& > * + *": h.Style(margin_top=32)}))
@@ -131,7 +131,7 @@ def _panel_style(*, accent: str | None = None) -> h.Style:
         border=h.border(1, "solid", h.var("--line")),
         border_radius=28,
         padding=22,
-        box_shadow=h.raw("0 18px 60px -28px var(--shadow)"),
+        box_shadow="0 18px 60px -28px var(--shadow)",
         selectors={"& > * + *": h.Style(margin_top=12)},
         media=[
             h.media(
@@ -161,7 +161,7 @@ def _eyebrow_style() -> h.Style:
         color=h.var("--muted"),
         font_size=12,
         font_family='"IBM Plex Mono", "SFMono-Regular", monospace',
-        letter_spacing=h.raw("0.16em"),
+        letter_spacing="0.16em",
         text_transform="uppercase",
     )
 
@@ -170,19 +170,19 @@ def _headline_style() -> h.Style:
     return h.Style(
         margin=0,
         font_family='"Iowan Old Style", "Palatino Linotype", Georgia, serif',
-        font_size=h.clamp(h.px(52), h.raw("9vw"), h.px(108)),
+        font_size=h.clamp(h.px(52), "9vw", h.px(108)),
         line_height=0.92,
-        letter_spacing=h.raw("-0.05em"),
-        max_width=h.raw("10ch"),
+        letter_spacing="-0.05em",
+        max_width="10ch",
     )
 
 
 def _body_copy_style() -> h.Style:
     return h.Style(
         margin=0,
-        font_size=h.clamp(h.px(18), h.raw("2.2vw"), h.px(22)),
+        font_size=h.clamp(h.px(18), "2.2vw", h.px(22)),
         color=h.var("--muted"),
-        max_width=h.raw("38rem"),
+        max_width="38rem",
     )
 
 
@@ -195,7 +195,7 @@ def _hero_grid_style() -> h.Style:
             h.media(
                 min_width=920,
                 style=h.Style(
-                    grid_template_columns=h.raw("minmax(0, 1.3fr) minmax(22rem, 0.95fr)"),
+                    grid_template_columns="minmax(0, 1.3fr) minmax(22rem, 0.95fr)",
                     gap=28,
                 ),
             )
@@ -213,13 +213,11 @@ def _cta_link_style(*, tone: str) -> h.Style:
         border_radius=999,
         border=h.border(1, "solid", h.var("--line")),
         background_color=h.var(tone),
-        color=h.raw("white"),
+        color="white",
         text_decoration="none",
         font_weight=600,
-        transition=h.raw("transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease"),
-        hover=h.Style(
-            transform=h.translate(0, -2), box_shadow=h.raw("0 14px 28px -18px var(--shadow)")
-        ),
+        transition="transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease",
+        hover=h.Style(transform=h.translate(0, -2), box_shadow="0 14px 28px -18px var(--shadow)"),
         active=h.Style(transform=h.translate(0, 0)),
         focus_visible=h.Style(outline=h.border(2, "solid", h.var("--ink")), outline_offset=4),
     )
@@ -249,7 +247,7 @@ def _metrics_style() -> h.Style:
         media=[
             h.media(
                 min_width=600,
-                style=h.Style(grid_template_columns=h.raw("repeat(3, minmax(0, 1fr))")),
+                style=h.Style(grid_template_columns="repeat(3, minmax(0, 1fr))"),
             ),
         ],
     )
@@ -262,11 +260,11 @@ def _feature_grid_style() -> h.Style:
         media=[
             h.media(
                 min_width=760,
-                style=h.Style(grid_template_columns=h.raw("repeat(2, minmax(0, 1fr))")),
+                style=h.Style(grid_template_columns="repeat(2, minmax(0, 1fr))"),
             ),
             h.media(
                 min_width=1100,
-                style=h.Style(grid_template_columns=h.raw("repeat(3, minmax(0, 1fr))")),
+                style=h.Style(grid_template_columns="repeat(3, minmax(0, 1fr))"),
             ),
         ],
     )
@@ -282,13 +280,13 @@ def _feature_card_style(accent: str) -> h.Style:
         border_radius=24,
         padding=20,
         min_height=h.px(270),
-        box_shadow=h.raw("0 14px 42px -28px var(--shadow)"),
-        transition=h.raw("transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease"),
+        box_shadow="0 14px 42px -28px var(--shadow)",
+        transition="transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
         selectors={"& > * + *": h.Style(margin_top=12)},
         hover=h.Style(
             transform=h.translate(0, -4),
             border_color=h.var(accent),
-            box_shadow=h.raw("0 24px 48px -28px var(--shadow)"),
+            box_shadow="0 24px 48px -28px var(--shadow)",
         ),
         focus_visible=h.Style(outline=h.border(2, "solid", h.var(accent)), outline_offset=4),
     )
@@ -300,7 +298,7 @@ def _chip_style(accent: str) -> h.Style:
         align_items="center",
         border_radius=999,
         padding=h.padding(6, 10),
-        background_color=h.raw(f"color-mix(in srgb, var({accent}) 16%, white)"),
+        background_color=f"color-mix(in srgb, var({accent}) 16%, white)",
         color=h.var(accent),
         font_size=12,
         font_family='"IBM Plex Mono", "SFMono-Regular", monospace',
@@ -317,7 +315,7 @@ def _timeline_style() -> h.Style:
 
 def _input_style() -> h.Style:
     return h.Style(
-        width=h.raw("100%"),
+        width="100%",
         padding=h.padding(14, 16),
         border=h.border(1, "solid", h.var("--line")),
         border_radius=18,
@@ -328,7 +326,7 @@ def _input_style() -> h.Style:
         focus_visible=h.Style(
             border_color=h.var("--lagoon"),
             outline=h.border(2, "solid", h.rgba(0, 0, 0, 0)),
-            box_shadow=h.raw("0 0 0 4px color-mix(in srgb, var(--lagoon) 20%, transparent)"),
+            box_shadow="0 0 0 4px color-mix(in srgb, var(--lagoon) 20%, transparent)",
         ),
     )
 
@@ -339,10 +337,10 @@ def _button_style() -> h.Style:
         border=h.border(1, "solid", h.var("--ink")),
         border_radius=18,
         background_color=h.var("--ink"),
-        color=h.raw("white"),
+        color="white",
         font_weight=600,
         cursor="pointer",
-        transition=h.raw("transform 160ms ease, opacity 160ms ease"),
+        transition="transform 160ms ease, opacity 160ms ease",
         hover=h.Style(transform=h.translate(0, -2), opacity=0.96),
         active=h.Style(transform=h.translate(0, 0)),
         focus_visible=h.Style(outline=h.border(2, "solid", h.var("--lagoon")), outline_offset=4),
@@ -380,9 +378,9 @@ def ChromeHeader() -> None:
                 style=h.Style(
                     margin=0,
                     font_family='"Iowan Old Style", "Palatino Linotype", Georgia, serif',
-                    font_size=h.clamp(h.px(28), h.raw("3vw"), h.px(42)),
+                    font_size=h.clamp(h.px(28), "3vw", h.px(42)),
                     line_height=0.98,
-                    max_width=h.raw("16ch"),
+                    max_width="16ch",
                 ),
             )
         with h.Nav(aria_label="Section links"):
@@ -513,7 +511,7 @@ def CapabilityCard(card: FeatureCard) -> None:
                 font_family='"Iowan Old Style", "Palatino Linotype", Georgia, serif',
                 font_size=30,
                 line_height=0.98,
-                max_width=h.raw("14ch"),
+                max_width="14ch",
             ),
         )
         h.P(card.body, style=h.Style(margin=0, color=h.var("--muted"), font_size=16))
@@ -544,9 +542,9 @@ def CapabilitiesSection() -> None:
             style=h.Style(
                 margin=0,
                 font_family='"Iowan Old Style", "Palatino Linotype", Georgia, serif',
-                font_size=h.clamp(h.px(34), h.raw("4vw"), h.px(56)),
+                font_size=h.clamp(h.px(34), "4vw", h.px(56)),
                 line_height=0.96,
-                max_width=h.raw("18ch"),
+                max_width="18ch",
             ),
         )
         with h.Div(style=_feature_grid_style()):
@@ -565,9 +563,7 @@ def NotesSection() -> None:
             media=[
                 h.media(
                     min_width=960,
-                    style=h.Style(
-                        grid_template_columns=h.raw("minmax(0, 1.1fr) minmax(20rem, 0.9fr)")
-                    ),
+                    style=h.Style(grid_template_columns="minmax(0, 1.1fr) minmax(20rem, 0.9fr)"),
                 )
             ],
         ),
@@ -579,9 +575,9 @@ def NotesSection() -> None:
                 style=h.Style(
                     margin=0,
                     font_family='"Iowan Old Style", "Palatino Linotype", Georgia, serif',
-                    font_size=h.clamp(h.px(30), h.raw("3.6vw"), h.px(48)),
+                    font_size=h.clamp(h.px(30), "3.6vw", h.px(48)),
                     line_height=0.98,
-                    max_width=h.raw("18ch"),
+                    max_width="18ch",
                 ),
             )
             with h.Div(style=_timeline_style()):
@@ -646,14 +642,14 @@ def DispatchSection() -> None:
             style=h.Style(
                 margin=0,
                 font_family='"Iowan Old Style", "Palatino Linotype", Georgia, serif',
-                font_size=h.clamp(h.px(30), h.raw("3.4vw"), h.px(46)),
+                font_size=h.clamp(h.px(30), "3.4vw", h.px(46)),
                 line_height=0.98,
-                max_width=h.raw("16ch"),
+                max_width="16ch",
             ),
         )
         h.P(
             "The form is static, but it demonstrates native labels, placeholders, button states, and a typed media layout inside the same HTML layer.",
-            style=h.Style(margin=0, color=h.var("--muted"), max_width=h.raw("34rem")),
+            style=h.Style(margin=0, color=h.var("--muted"), max_width="34rem"),
         )
         with h.Form(
             action="#",
@@ -665,7 +661,7 @@ def DispatchSection() -> None:
                     h.media(
                         min_width=760,
                         style=h.Style(
-                            grid_template_columns=h.raw("minmax(0, 1fr) minmax(12rem, auto)"),
+                            grid_template_columns="minmax(0, 1fr) minmax(12rem, auto)",
                             align_items="end",
                         ),
                     )
@@ -713,7 +709,7 @@ def FooterRail() -> None:
     ):
         h.P(
             "HTML Studio is intentionally small: it shows how semantic trellis.html and typed CSS feel in a real page without collapsing into a widget demo.",
-            style=h.Style(margin=0, color=h.var("--muted"), max_width=h.raw("44rem")),
+            style=h.Style(margin=0, color=h.var("--muted"), max_width="44rem"),
         )
         with h.Div(style=h.Style(display="flex", gap=12, flex_wrap="wrap")):
             h.A(
