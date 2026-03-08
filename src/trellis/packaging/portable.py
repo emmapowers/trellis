@@ -1,4 +1,4 @@
-"""Build a portable single-exe bundle for Windows."""
+"""Build portable and installer single-exe bundles for Windows."""
 
 from __future__ import annotations
 
@@ -63,8 +63,17 @@ def _generate_launcher_scaffold(
     exe_name: str,
     cargo_name: str,
     icon_path: Path | None,
+    *,
+    mode: str = "portable",
+    version: str = "",
 ) -> None:
-    """Render Jinja2 templates for the launcher Rust crate."""
+    """Render Jinja2 templates for the launcher Rust crate.
+
+    Args:
+        mode: "portable" for hash-based caching, "installer" for version-based
+              install with Start Menu shortcut and uninstaller registration.
+        version: App version string, required when mode="installer".
+    """
     launcher_dir.mkdir(parents=True, exist_ok=True)
     (launcher_dir / "src").mkdir(parents=True, exist_ok=True)
 
@@ -77,11 +86,13 @@ def _generate_launcher_scaffold(
         "name": cargo_name,
         "product_name": product_name,
         "exe_name": exe_name,
+        "version": version,
     }
 
+    main_template = "main_installer.rs.j2" if mode == "installer" else "main.rs.j2"
     file_map = {
         "Cargo.toml.j2": "Cargo.toml",
-        "main.rs.j2": "src/main.rs",
+        main_template: "src/main.rs",
     }
 
     if icon_path and icon_path.exists():
@@ -169,6 +180,56 @@ def build_portable_exe(
 
     # Assemble the portable exe
     output_path = output_dir / exe_name.replace(".exe", "-portable.exe")
+    _assemble_portable_exe(launcher_exe, archive_path, output_path)
+
+    return output_path
+
+
+def build_installer_exe(
+    *,
+    rust: RustToolchain,
+    scaffold_dir: Path,
+    product_name: str,
+    exe_name: str,
+    version: str,
+    output_dir: Path,
+) -> Path:
+    """Build an installer single-exe bundle.
+
+    Like build_portable_exe but installs to %LOCALAPPDATA% with a Start Menu
+    shortcut and Add/Remove Programs uninstaller. Uses the app version to
+    replace previous installs.
+
+    Returns:
+        Path to the assembled installer exe
+    """
+    release_dir = scaffold_dir / "target" / "release"
+
+    files = _collect_app_files(release_dir)
+    if not files:
+        raise RuntimeError(f"No app files found in {release_dir}")
+
+    build_dir = scaffold_dir / "target" / "installer-build"
+    build_dir.mkdir(parents=True, exist_ok=True)
+    archive_path = build_dir / "app.zip"
+    _create_archive(files, archive_path)
+
+    cargo_name = re.sub(r"[^a-z0-9_-]", "-", product_name.lower())
+    cargo_name = re.sub(r"-+", "-", cargo_name).strip("-")
+    launcher_dir = build_dir / "launcher"
+    icon_path = scaffold_dir / "icons" / "icon.ico"
+    _generate_launcher_scaffold(
+        launcher_dir,
+        product_name,
+        exe_name,
+        cargo_name,
+        icon_path,
+        mode="installer",
+        version=version,
+    )
+    launcher_exe = _build_launcher(rust, launcher_dir, cargo_name)
+
+    output_path = output_dir / exe_name.replace(".exe", "-setup.exe")
     _assemble_portable_exe(launcher_exe, archive_path, output_path)
 
     return output_path

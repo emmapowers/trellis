@@ -403,7 +403,7 @@ class TestRunTauriBuild:
         (pyembed_dir / "lib").mkdir()
 
         with patch("subprocess.run") as mock_run:
-            _, wants_portable = run_tauri_build(
+            _, wants_portable, _ = run_tauri_build(
                 tauri_cli=tauri_cli,
                 rust=rust,
                 scaffold_dir=scaffold_dir,
@@ -431,7 +431,7 @@ class TestRunTauriBuild:
             patch("trellis.packaging.tauri.sys") as mock_sys,
         ):
             mock_sys.platform = "win32"
-            _, wants_portable = run_tauri_build(
+            _, wants_portable, _ = run_tauri_build(
                 tauri_cli=tauri_cli,
                 rust=rust,
                 scaffold_dir=scaffold_dir,
@@ -454,7 +454,7 @@ class TestRunTauriBuild:
         (pyembed_dir / "lib").mkdir()
 
         with patch("subprocess.run") as mock_run:
-            _, wants_portable = run_tauri_build(
+            _, wants_portable, _ = run_tauri_build(
                 tauri_cli=tauri_cli,
                 rust=rust,
                 scaffold_dir=scaffold_dir,
@@ -478,7 +478,7 @@ class TestRunTauriBuild:
         (pyembed_dir / "lib").mkdir()
 
         with patch("subprocess.run"):
-            _, wants_portable = run_tauri_build(
+            _, wants_portable, _ = run_tauri_build(
                 tauri_cli=tauri_cli,
                 rust=rust,
                 scaffold_dir=scaffold_dir,
@@ -533,7 +533,8 @@ class TestBuildDesktopAppBundle:
             patch("trellis.packaging.tauri.generate_tauri_scaffold"),
             patch("trellis.packaging.tauri.install_app_into_portable_python"),
             patch(
-                "trellis.packaging.tauri.run_tauri_build", return_value=(tmp_path / "output", False)
+                "trellis.packaging.tauri.run_tauri_build",
+                return_value=(tmp_path / "output", False, False),
             ),
         ):
             build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
@@ -567,7 +568,9 @@ class TestBuildDesktopAppBundle:
             patch("trellis.packaging.tauri.ensure_python_standalone", return_value=mock_python),
             patch("trellis.packaging.tauri.generate_tauri_scaffold"),
             patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch("trellis.packaging.tauri.run_tauri_build", return_value=(bundle_dir, False)),
+            patch(
+                "trellis.packaging.tauri.run_tauri_build", return_value=(bundle_dir, False, False)
+            ),
         ):
             result = build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
 
@@ -617,7 +620,9 @@ class TestOutputCopying:
             ),
             patch("trellis.packaging.tauri.generate_tauri_scaffold"),
             patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch("trellis.packaging.tauri.run_tauri_build", return_value=(bundle_dir, False)),
+            patch(
+                "trellis.packaging.tauri.run_tauri_build", return_value=(bundle_dir, False, False)
+            ),
             patch("sys.platform", "darwin"),
         ):
             result = build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
@@ -645,7 +650,9 @@ class TestOutputCopying:
             ),
             patch("trellis.packaging.tauri.generate_tauri_scaffold"),
             patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch("trellis.packaging.tauri.run_tauri_build", return_value=(bundle_dir, False)),
+            patch(
+                "trellis.packaging.tauri.run_tauri_build", return_value=(bundle_dir, False, False)
+            ),
             patch("sys.platform", "darwin"),
         ):
             result = build_desktop_app_bundle(
@@ -676,7 +683,9 @@ class TestOutputCopying:
             ),
             patch("trellis.packaging.tauri.generate_tauri_scaffold"),
             patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch("trellis.packaging.tauri.run_tauri_build", return_value=(bundle_dir, False)),
+            patch(
+                "trellis.packaging.tauri.run_tauri_build", return_value=(bundle_dir, False, False)
+            ),
             patch("sys.platform", "darwin"),
         ):
             result = build_desktop_app_bundle(

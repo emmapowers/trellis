@@ -1,0 +1,508 @@
+// Installer stub for {{ product_name }}.
+// Extracts to %LOCALAPPDATA%, creates Start Menu shortcut, registers uninstaller.
+#![windows_subsystem = "windows"]
+
+use std::fs;
+use std::io::{self, Read, Seek, SeekFrom};
+use std::os::windows::process::CommandExt;
+use std::path::{Path, PathBuf};
+use std::process::{Command, ExitCode};
+
+const MAGIC: &[u8; 8] = b"TRLSPACK";
+const FOOTER_SIZE: u64 = 48; // 32 hex hash + 8 archive size + 8 magic
+const VERSION: &str = "{{ version }}";
+const PRODUCT_NAME: &str = "{{ product_name }}";
+const EXE_NAME: &str = "{{ exe_name }}";
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+fn wide(s: &str) -> Vec<u16> {
+    s.encode_utf16().chain(std::iter::once(0)).collect()
+}
+
+fn show_error(msg: &str) -> ! {
+    #[link(name = "user32")]
+    extern "system" {
+        fn MessageBoxW(hwnd: *mut u8, text: *const u16, caption: *const u16, typ: u32) -> i32;
+    }
+    let text = wide(msg);
+    let caption = wide(PRODUCT_NAME);
+    unsafe { MessageBoxW(std::ptr::null_mut(), text.as_ptr(), caption.as_ptr(), 0x10) };
+    std::process::exit(1);
+}
+
+struct Footer {
+    archive_size: u64,
+}
+
+fn read_footer(exe_path: &Path) -> Result<Footer, String> {
+    let mut f = fs::File::open(exe_path).map_err(|e| format!("open self: {e}"))?;
+    let file_len = f.metadata().map_err(|e| format!("metadata: {e}"))?.len();
+    if file_len < FOOTER_SIZE {
+        return Err("file too small".into());
+    }
+    f.seek(SeekFrom::End(-(FOOTER_SIZE as i64)))
+        .map_err(|e| format!("seek: {e}"))?;
+
+    let mut footer = [0u8; FOOTER_SIZE as usize];
+    f.read_exact(&mut footer)
+        .map_err(|e| format!("read footer: {e}"))?;
+
+    if &footer[40..48] != MAGIC {
+        return Err("magic mismatch".into());
+    }
+
+    let archive_size = u64::from_le_bytes(footer[32..40].try_into().unwrap());
+    Ok(Footer { archive_size })
+}
+
+fn extract_archive(exe_path: &Path, footer: &Footer, dest: &Path) -> Result<(), String> {
+    let mut f = fs::File::open(exe_path).map_err(|e| format!("open self: {e}"))?;
+    let file_len = f.metadata().map_err(|e| format!("metadata: {e}"))?.len();
+    let archive_start = file_len - FOOTER_SIZE - footer.archive_size;
+
+    f.seek(SeekFrom::Start(archive_start))
+        .map_err(|e| format!("seek: {e}"))?;
+
+    let mut archive_data = vec![0u8; footer.archive_size as usize];
+    f.read_exact(&mut archive_data)
+        .map_err(|e| format!("read archive: {e}"))?;
+
+    let cursor = io::Cursor::new(archive_data);
+    let mut archive = zip::ZipArchive::new(cursor).map_err(|e| format!("open zip: {e}"))?;
+
+    let total = archive.len();
+
+    let (hwnd, progress) = create_progress_window(total as u32);
+
+    for i in 0..total {
+        let mut entry = archive.by_index(i).map_err(|e| format!("zip entry: {e}"))?;
+        let name = entry.name().to_string();
+        let out_path = dest.join(&name);
+
+        if entry.is_dir() {
+            fs::create_dir_all(&out_path).map_err(|e| format!("mkdir {name}: {e}"))?;
+        } else {
+            if let Some(parent) = out_path.parent() {
+                fs::create_dir_all(parent).map_err(|e| format!("mkdir parent: {e}"))?;
+            }
+            let mut out_file =
+                fs::File::create(&out_path).map_err(|e| format!("create {name}: {e}"))?;
+            io::copy(&mut entry, &mut out_file).map_err(|e| format!("write {name}: {e}"))?;
+        }
+        update_progress(progress, i as u32 + 1);
+    }
+
+    destroy_progress_window(hwnd);
+    Ok(())
+}
+
+// --- Win32 progress window ---
+
+#[link(name = "kernel32")]
+extern "system" {
+    fn GetModuleHandleW(name: *const u16) -> *mut u8;
+}
+
+#[link(name = "user32")]
+extern "system" {
+    fn RegisterClassExW(wc: *const WndClassExW) -> u16;
+    fn CreateWindowExW(
+        ex_style: u32,
+        class: *const u16,
+        title: *const u16,
+        style: u32,
+        x: i32, y: i32, w: i32, h: i32,
+        parent: *mut u8,
+        menu: *mut u8,
+        instance: *mut u8,
+        param: *mut u8,
+    ) -> *mut u8;
+    fn ShowWindow(hwnd: *mut u8, cmd: i32) -> i32;
+    fn UpdateWindow(hwnd: *mut u8) -> i32;
+    fn DestroyWindow(hwnd: *mut u8) -> i32;
+    fn DefWindowProcW(hwnd: *mut u8, msg: u32, wp: usize, lp: isize) -> isize;
+    fn PeekMessageW(msg: *mut [u8; 48], hwnd: *mut u8, min: u32, max: u32, remove: u32) -> i32;
+    fn TranslateMessage(msg: *const [u8; 48]) -> i32;
+    fn DispatchMessageW(msg: *const [u8; 48]) -> isize;
+    fn SendMessageW(hwnd: *mut u8, msg: u32, wp: usize, lp: isize) -> isize;
+}
+
+#[link(name = "comctl32")]
+extern "system" {
+    fn InitCommonControlsEx(icc: *const InitCommonControlsEx) -> i32;
+}
+
+#[repr(C)]
+struct InitCommonControlsEx {
+    size: u32,
+    icc: u32,
+}
+
+#[repr(C)]
+struct WndClassExW {
+    size: u32,
+    style: u32,
+    wnd_proc: unsafe extern "system" fn(*mut u8, u32, usize, isize) -> isize,
+    cls_extra: i32,
+    wnd_extra: i32,
+    instance: *mut u8,
+    icon: *mut u8,
+    cursor: *mut u8,
+    background: *mut u8,
+    menu_name: *const u16,
+    class_name: *const u16,
+    icon_sm: *mut u8,
+}
+
+unsafe extern "system" fn wnd_proc(hwnd: *mut u8, msg: u32, wp: usize, lp: isize) -> isize {
+    DefWindowProcW(hwnd, msg, wp, lp)
+}
+
+fn create_progress_window(total: u32) -> (*mut u8, *mut u8) {
+    unsafe {
+        let icc = InitCommonControlsEx { size: 8, icc: 0x20 }; // ICC_PROGRESS_CLASS
+        InitCommonControlsEx(&icc);
+
+        let instance = GetModuleHandleW(std::ptr::null());
+        let class_name = wide("TrlsInstaller");
+        let wc = WndClassExW {
+            size: std::mem::size_of::<WndClassExW>() as u32,
+            style: 0,
+            wnd_proc,
+            cls_extra: 0,
+            wnd_extra: 0,
+            instance,
+            icon: std::ptr::null_mut(),
+            cursor: std::ptr::null_mut(),
+            background: (5 + 1) as *mut u8, // COLOR_WINDOW + 1
+            menu_name: std::ptr::null(),
+            class_name: class_name.as_ptr(),
+            icon_sm: std::ptr::null_mut(),
+        };
+        RegisterClassExW(&wc);
+
+        // WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU
+        let style: u32 = 0x00C0_0000 | 0x0008_0000;
+        let title = wide(&format!("Installing {}...", PRODUCT_NAME));
+        let hwnd = CreateWindowExW(
+            0,
+            class_name.as_ptr(),
+            title.as_ptr(),
+            style,
+            0x8000_0000u32 as i32, 0x8000_0000u32 as i32, // CW_USEDEFAULT
+            420, 80,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            instance,
+            std::ptr::null_mut(),
+        );
+
+        let progress_class = wide("msctls_progress32");
+        // WS_CHILD | WS_VISIBLE
+        let progress = CreateWindowExW(
+            0,
+            progress_class.as_ptr(),
+            std::ptr::null(),
+            0x4000_0000 | 0x1000_0000,
+            10, 10, 385, 25,
+            hwnd,
+            std::ptr::null_mut(),
+            instance,
+            std::ptr::null_mut(),
+        );
+
+        // PBM_SETRANGE32 = 0x0406
+        SendMessageW(progress, 0x0406, 0, total as isize);
+
+        ShowWindow(hwnd, 1); // SW_SHOWNORMAL
+        UpdateWindow(hwnd);
+
+        (hwnd, progress)
+    }
+}
+
+fn update_progress(progress: *mut u8, pos: u32) {
+    unsafe {
+        // PBM_SETPOS = 0x0402
+        SendMessageW(progress, 0x0402, pos as usize, 0);
+
+        let mut msg = [0u8; 48];
+        while PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, 1) != 0 {
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+        }
+    }
+}
+
+fn destroy_progress_window(hwnd: *mut u8) {
+    unsafe {
+        DestroyWindow(hwnd);
+    }
+}
+
+// --- Lock file ---
+
+fn acquire_lock(lock_path: &Path) -> Result<fs::File, String> {
+    fs::create_dir_all(lock_path.parent().unwrap())
+        .map_err(|e| format!("create lock dir: {e}"))?;
+
+    for _ in 0..300 {
+        match fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(lock_path)
+        {
+            Ok(f) => return Ok(f),
+            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+            Err(e) => return Err(format!("lock: {e}")),
+        }
+    }
+    Err("timeout waiting for lock".into())
+}
+
+fn release_lock(lock_path: &Path) {
+    let _ = fs::remove_file(lock_path);
+}
+
+// --- Install helpers ---
+
+fn get_install_dir() -> Result<PathBuf, String> {
+    std::env::var("LOCALAPPDATA")
+        .map(|p| PathBuf::from(p).join(PRODUCT_NAME))
+        .map_err(|_| "LOCALAPPDATA not set".into())
+}
+
+fn installed_version(install_dir: &Path) -> Option<String> {
+    fs::read_to_string(install_dir.join(".version"))
+        .ok()
+        .map(|s| s.trim().to_string())
+}
+
+fn write_version(install_dir: &Path) {
+    let _ = fs::write(install_dir.join(".version"), VERSION);
+}
+
+fn shortcut_path() -> Result<PathBuf, String> {
+    std::env::var("APPDATA")
+        .map(|p| {
+            PathBuf::from(p)
+                .join("Microsoft\\Windows\\Start Menu\\Programs")
+                .join(format!("{}.lnk", PRODUCT_NAME))
+        })
+        .map_err(|_| "APPDATA not set".into())
+}
+
+fn create_shortcut(target: &Path) {
+    let Ok(lnk) = shortcut_path() else { return };
+    let target_s = target.display().to_string().replace('\'', "''");
+    let lnk_s = lnk.display().to_string().replace('\'', "''");
+    let dir_s = target
+        .parent()
+        .unwrap()
+        .display()
+        .to_string()
+        .replace('\'', "''");
+
+    let ps = format!(
+        "$ws = New-Object -ComObject WScript.Shell; \
+         $s = $ws.CreateShortcut('{lnk_s}'); \
+         $s.TargetPath = '{target_s}'; \
+         $s.WorkingDirectory = '{dir_s}'; \
+         $s.Save()"
+    );
+
+    let _ = Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-Command", &ps])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output();
+}
+
+fn write_uninstall_script(install_dir: &Path) {
+    let lnk = shortcut_path().unwrap_or_default();
+    let reg_key = format!(
+        "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{}",
+        PRODUCT_NAME
+    );
+    let dir_s = install_dir.display();
+    let lnk_s = lnk.display();
+
+    let script = format!(
+        "@echo off\r\n\
+         reg delete \"{reg_key}\" /f >nul 2>&1\r\n\
+         if exist \"{lnk_s}\" del \"{lnk_s}\" >nul 2>&1\r\n\
+         cd /d \"%TEMP%\"\r\n\
+         start \"\" /b cmd /c \"timeout /t 3 /nocount >nul 2>&1 & rmdir /s /q \"{dir_s}\"\"\r\n\
+         exit /b 0\r\n"
+    );
+
+    let _ = fs::write(install_dir.join("uninstall.bat"), script);
+}
+
+// --- Registry ---
+
+#[link(name = "advapi32")]
+extern "system" {
+    fn RegCreateKeyExW(
+        key: isize,
+        sub_key: *const u16,
+        reserved: u32,
+        class: *const u16,
+        options: u32,
+        sam: u32,
+        security: *mut u8,
+        result: *mut isize,
+        disposition: *mut u32,
+    ) -> i32;
+    fn RegSetValueExW(
+        key: isize,
+        name: *const u16,
+        reserved: u32,
+        typ: u32,
+        data: *const u8,
+        len: u32,
+    ) -> i32;
+    fn RegCloseKey(key: isize) -> i32;
+}
+
+const HKEY_CURRENT_USER: isize = 0x8000_0001u32 as isize;
+const KEY_WRITE: u32 = 0x20006;
+const REG_SZ: u32 = 1;
+const REG_DWORD: u32 = 4;
+
+unsafe fn set_reg_sz(hkey: isize, name: &str, value: &str) {
+    let name_w = wide(name);
+    let value_w = wide(value);
+    RegSetValueExW(
+        hkey,
+        name_w.as_ptr(),
+        0,
+        REG_SZ,
+        value_w.as_ptr() as *const u8,
+        (value_w.len() * 2) as u32,
+    );
+}
+
+unsafe fn set_reg_dword(hkey: isize, name: &str, value: u32) {
+    let name_w = wide(name);
+    RegSetValueExW(
+        hkey,
+        name_w.as_ptr(),
+        0,
+        REG_DWORD,
+        &value as *const u32 as *const u8,
+        4,
+    );
+}
+
+fn register_uninstaller(install_dir: &Path) {
+    let key_path = wide(&format!(
+        "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{}",
+        PRODUCT_NAME
+    ));
+
+    unsafe {
+        let mut hkey: isize = 0;
+        let mut disposition: u32 = 0;
+        if RegCreateKeyExW(
+            HKEY_CURRENT_USER,
+            key_path.as_ptr(),
+            0,
+            std::ptr::null(),
+            0,
+            KEY_WRITE,
+            std::ptr::null_mut(),
+            &mut hkey,
+            &mut disposition,
+        ) != 0
+        {
+            return;
+        }
+
+        let uninstall_bat = install_dir.join("uninstall.bat");
+        let uninstall_cmd = format!("cmd /c \"{}\"", uninstall_bat.display());
+        let icon_path = install_dir.join("app").join(EXE_NAME);
+
+        set_reg_sz(hkey, "DisplayName", PRODUCT_NAME);
+        set_reg_sz(hkey, "DisplayVersion", VERSION);
+        set_reg_sz(hkey, "UninstallString", &uninstall_cmd);
+        set_reg_sz(hkey, "QuietUninstallString", &uninstall_cmd);
+        set_reg_sz(hkey, "InstallLocation", &install_dir.display().to_string());
+        set_reg_sz(hkey, "DisplayIcon", &icon_path.display().to_string());
+        set_reg_dword(hkey, "NoModify", 1);
+        set_reg_dword(hkey, "NoRepair", 1);
+
+        RegCloseKey(hkey);
+    }
+}
+
+fn main() -> ExitCode {
+    let exe_path =
+        std::env::current_exe().unwrap_or_else(|e| show_error(&format!("current_exe: {e}")));
+
+    let footer = match read_footer(&exe_path) {
+        Ok(f) => f,
+        Err(e) => show_error(&format!("Invalid installer: {e}")),
+    };
+
+    let install_dir = match get_install_dir() {
+        Ok(d) => d,
+        Err(e) => show_error(&e),
+    };
+
+    let app_dir = install_dir.join("app");
+    let real_exe = app_dir.join(EXE_NAME);
+
+    let needs_install =
+        installed_version(&install_dir).as_deref() != Some(VERSION) || !real_exe.exists();
+
+    if needs_install {
+        let lock_path = install_dir.join(".install.lock");
+        let _lock = match acquire_lock(&lock_path) {
+            Ok(l) => l,
+            Err(e) => show_error(&format!("Failed to acquire lock: {e}")),
+        };
+
+        // Double-check after acquiring lock
+        if installed_version(&install_dir).as_deref() != Some(VERSION) || !real_exe.exists() {
+            // Remove old version if present
+            if app_dir.exists() {
+                let _ = fs::remove_dir_all(&app_dir);
+            }
+
+            let temp_dir = install_dir.join("app.installing");
+            if temp_dir.exists() {
+                let _ = fs::remove_dir_all(&temp_dir);
+            }
+
+            if let Err(e) = extract_archive(&exe_path, &footer, &temp_dir) {
+                let _ = fs::remove_dir_all(&temp_dir);
+                release_lock(&lock_path);
+                show_error(&format!("Installation failed: {e}"));
+            }
+
+            if let Err(e) = fs::rename(&temp_dir, &app_dir) {
+                let _ = fs::remove_dir_all(&temp_dir);
+                release_lock(&lock_path);
+                show_error(&format!("Failed to finalize installation: {e}"));
+            }
+
+            write_version(&install_dir);
+            create_shortcut(&real_exe);
+            write_uninstall_script(&install_dir);
+            register_uninstaller(&install_dir);
+        }
+
+        release_lock(&lock_path);
+    }
+
+    // Launch the app
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let status = Command::new(&real_exe).args(&args).status();
+
+    match status {
+        Ok(s) => ExitCode::from(s.code().unwrap_or(1) as u8),
+        Err(e) => show_error(&format!("Failed to launch {}: {e}", real_exe.display())),
+    }
+}

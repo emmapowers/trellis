@@ -35,7 +35,7 @@ _cli_config_vars = [v for v in get_config_vars() if not v.hidden]
     "--bundles",
     type=str,
     default=None,
-    help="Comma-separated bundle types (e.g. deb,appimage,rpm,portable). Default: platform-specific.",
+    help="Comma-separated bundle types (e.g. deb,appimage,rpm,portable,installer). Default: platform-specific.",
 )
 @pass_cli_context
 @configvar_options(_cli_config_vars)
