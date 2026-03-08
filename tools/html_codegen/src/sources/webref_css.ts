@@ -439,6 +439,9 @@ function infer_type_expr(alias_name: string): TypeExpr {
 }
 
 function accepts_auto_px(feature: CssFeature, value_type_name: string): boolean {
+  if (value_type_name === "LineHeightValue") {
+    return false;
+  }
   const syntax = feature.syntax ?? "";
   if (syntax.includes("<length") || syntax.includes("<length-percentage")) {
     return true;

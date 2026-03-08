@@ -3,7 +3,7 @@
 Internal codegen artifact used to normalize trellis.html styles.
 Reference: https://developer.mozilla.org/en-US/docs/Web/CSS
 
-Generated at: 2026-03-08T20:34:35.232Z
+Generated at: 2026-03-08T21:05:50.563Z
 """
 
 from __future__ import annotations
@@ -846,7 +846,6 @@ AUTO_PX_FIELDS = frozenset(
         "inset_inline_start",
         "left",
         "letter_spacing",
-        "line_height",
         "line_height_step",
         "line_padding",
         "margin",

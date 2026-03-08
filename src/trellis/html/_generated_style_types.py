@@ -3,7 +3,7 @@
 Internal codegen artifact for trellis.html CSS typing.
 Reference: https://developer.mozilla.org/en-US/docs/Web/CSS
 
-Generated at: 2026-03-08T20:34:35.232Z
+Generated at: 2026-03-08T21:05:50.563Z
 """
 
 from __future__ import annotations
@@ -691,7 +691,7 @@ class _GeneratedStyleFields:
     line_clamp: CssValue | str | None = None
     line_fit_edge: CssValue | str | None = None
     line_grid: CssValue | str | None = None
-    line_height: LineHeightValue | builtins.int | builtins.float | None = None
+    line_height: LineHeightValue | None = None
     line_height_step: Length | builtins.int | builtins.float | None = None
     line_padding: Length | builtins.int | builtins.float | None = None
     line_snap: CssValue | str | None = None

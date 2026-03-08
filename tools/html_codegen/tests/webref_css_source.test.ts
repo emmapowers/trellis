@@ -29,6 +29,8 @@ describe("webref css source extraction", () => {
     expect(surface.properties.get("cursor")?.value_type_name).toBe("CssValue");
     expect(surface.properties.get("list-style")?.value_type_name).toBe("CssValue");
     expect(surface.properties.get("font-size")?.value_type_name).toBe("LengthPercentage");
+    expect(surface.properties.get("line-height")?.value_type_name).toBe("LineHeightValue");
+    expect(surface.properties.get("line-height")?.accepts_auto_px).toBe(false);
     expect(surface.properties.get("opacity")?.accepts_auto_px).toBe(false);
     expect(surface.properties.get("z-index")?.accepts_auto_px).toBe(false);
 

@@ -3,7 +3,7 @@
 Internal codegen artifact for trellis.html.
 Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
 
-Generated at: 2026-03-08T20:34:35.232Z
+Generated at: 2026-03-08T21:05:50.563Z
 """
 
 from __future__ import annotations

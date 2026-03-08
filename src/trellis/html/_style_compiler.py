@@ -279,6 +279,8 @@ def _emit_rule(rule: dict[str, tp.Any], base_selector: str) -> str:
 def _emit_rule_block(selector: str, inline: StyleDict, children: list[dict[str, tp.Any]]) -> str:
     declarations = "".join(f"{name}:{_css_text(value)};" for name, value in inline.items())
     child_css = "".join(_emit_rule(child, selector) for child in children)
+    if not declarations:
+        return child_css
     return f"{selector}{{{declarations}}}{child_css}"
 
 
