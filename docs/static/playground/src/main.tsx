@@ -55,33 +55,19 @@ app = TrellisApp(App)
 `;
 }
 
-const DEFAULT_CODE = `import typing as tp
-from dataclasses import dataclass
-from trellis import *
+const DEFAULT_CODE = `from trellis import *
 from trellis import widgets as w
-from trellis import html as h
-from trellis.widgets import IconName
-
-@dataclass
-class CounterState(Stateful):
-    count: int = 0
-
-    def increment(self):
-        self.count += 1
-
-    def decrement(self):
-        self.count -= 1
 
 @component
 def Counter():
-    state = CounterState()
+    count = state_var(0)
 
     with w.Column(gap=12, style={"padding": "20px"}):
         w.Heading(text="Trellis Counter", level=2)
-        w.Label(text=f"Count: {state.count}", font_size=16)
+        w.Label(text=f"Count: {count.value}", font_size=16)
         with w.Row(gap=8):
-            w.Button(text="-", on_click=state.decrement, size="sm")
-            w.Button(text="+", on_click=state.increment, size="sm")
+            w.Button(text="-", on_click=lambda: count.set(count.value - 1), size="sm")
+            w.Button(text="+", on_click=lambda: count.set(count.value + 1), size="sm")
 
 # Export the root component
 App = Counter

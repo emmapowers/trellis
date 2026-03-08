@@ -1,9 +1,8 @@
 """Hello World counter application."""
 
 from collections.abc import Callable
-from dataclasses import dataclass
 
-from trellis import Margin, Padding, Stateful, component
+from trellis import Margin, Padding, component, state_var
 from trellis import widgets as w
 from trellis.app import App, theme
 
@@ -19,27 +18,9 @@ STYLE_COUNT_DISPLAY = {
 }
 
 
-# =============================================================================
-# State
-# =============================================================================
-
-
-@dataclass
-class CounterState(Stateful):
-    """Counter state with value constrained between min and max."""
-
-    count: int
-    min_val: int
-    max_val: int
-
-    def increment(self) -> None:
-        self.count = min(self.max_val, self.count + 1)
-
-    def decrement(self) -> None:
-        self.count = max(self.min_val, self.count - 1)
-
-    def reset(self) -> None:
-        self.count = (self.min_val + self.max_val) // 2
+MIN_COUNT = 1
+MAX_COUNT = 10
+INITIAL_COUNT = 5
 
 
 # =============================================================================
@@ -101,28 +82,37 @@ def RangeLabels(min_val: int, max_val: int) -> None:
 @component
 def HelloWorld() -> None:
     """Main application component with interactive counter."""
-    state = CounterState(count=5, min_val=1, max_val=10)
+    count = state_var(INITIAL_COUNT)
+
+    def increment() -> None:
+        count.set(min(MAX_COUNT, count.value + 1))
+
+    def decrement() -> None:
+        count.set(max(MIN_COUNT, count.value - 1))
+
+    def reset() -> None:
+        count.set((MIN_COUNT + MAX_COUNT) // 2)
 
     with w.Column(padding=24, align="center", justify="center"):
         with w.Card(padding=32, width=320):
             Header(title="Counter", subtitle="A simple interactive counter demo")
             CounterControls(
-                count=state.count,
-                on_increment=state.increment,
-                on_decrement=state.decrement,
-                min_val=state.min_val,
-                max_val=state.max_val,
+                count=count.value,
+                on_increment=increment,
+                on_decrement=decrement,
+                min_val=MIN_COUNT,
+                max_val=MAX_COUNT,
             )
             w.ProgressBar(
-                value=state.count,
-                min=state.min_val,
-                max=state.max_val,
+                value=count.value,
+                min=MIN_COUNT,
+                max=MAX_COUNT,
                 margin=Margin(bottom=16),
             )
-            RangeLabels(min_val=state.min_val, max_val=state.max_val)
+            RangeLabels(min_val=MIN_COUNT, max_val=MAX_COUNT)
 
             with w.Row(justify="center", gap=8):
-                w.Button(text="Reset", on_click=state.reset, variant="outline")
+                w.Button(text="Reset", on_click=reset, variant="outline")
 
 
 app = App(HelloWorld)
