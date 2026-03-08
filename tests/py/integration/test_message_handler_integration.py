@@ -409,9 +409,9 @@ class TestAsyncCallbackHandling:
         asyncio.run(test())
 
     def test_background_tasks_tracked(self, app_wrapper: AppWrapper) -> None:
-        """Background tasks are tracked to prevent GC.
+        """Async callbacks are tracked on the session and cleaned up after completion.
 
-        INTERNAL TEST: _background_tasks is internal - verifies GC prevention.
+        INTERNAL TEST: session._tasks is internal - verifies session task ownership.
         """
         task_completed = []
 
@@ -435,14 +435,17 @@ class TestAsyncCallbackHandling:
             event_msg = EventMessage(callback_id=cb_id, args=[])
             await handler.handle_message(event_msg)
 
-            # Verify task tracking
-            assert len(handler._background_tasks) == 1
+            assert handler.session is not None
+            assert not hasattr(handler, "_background_tasks")
+
+            # Verify task tracking moved to the session
+            assert len(handler.session._tasks) == 1
 
             # Wait for completion
             await asyncio.sleep(0.02)
 
             # Task should be removed after completion
-            assert len(handler._background_tasks) == 0
+            assert len(handler.session._tasks) == 0
             assert task_completed == [True]
 
         asyncio.run(test())

@@ -136,16 +136,6 @@ class RenderSession:
         task.add_done_callback(self._tasks.discard)
         return task
 
-    def track_background_task[T](self, task: asyncio.Task[T]) -> asyncio.Task[T]:
-        """Temporarily preserve legacy task registration during staged migration."""
-        if self._shutting_down:
-            task.cancel()
-            raise RuntimeError("Cannot spawn task on a shutting down session.")
-
-        self._tasks.add(task)
-        task.add_done_callback(self._tasks.discard)
-        return task
-
     async def wait_until_failed(self) -> BaseException:
         """Wait for the session to enter a fatal state and return the failure."""
         await self._fatal_event.wait()

@@ -26,7 +26,7 @@ from trellis.core.rendering.patches import (
     RenderUpdatePatch,
 )
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession, get_session_registry
+from trellis.core.rendering.session import RenderSession, TaskErrorPolicy, get_session_registry
 from trellis.html.events import get_event_class
 from trellis.platforms.common.messages import (
     AddPatch,
@@ -275,7 +275,6 @@ class MessageHandler:
     batch_delay: float
     _root_component: Component
     _app_wrapper: AppWrapper
-    _background_tasks: set[asyncio.Task[tp.Any]]
     _render_task: asyncio.Task[None] | None
 
     def __init__(
@@ -296,7 +295,6 @@ class MessageHandler:
         self.session = None  # Created in handle_hello after receiving theme info
         self.session_id = None
         self.batch_delay = batch_delay
-        self._background_tasks = set()
         self._render_task = None
 
     async def handle_hello(self) -> str:
@@ -481,9 +479,11 @@ class MessageHandler:
                     await callback(*processed_args, **kwargs)
 
             logger.debug("Callback %s is async, scheduled as task", callback_id)
-            task = asyncio.create_task(run_async_with_context())
-            self._background_tasks.add(task)
-            task.add_done_callback(self._background_tasks.discard)
+            session.spawn(
+                run_async_with_context(),
+                label=f"callback {callback_id}",
+                policy=TaskErrorPolicy.LOG_AND_CONTINUE,
+            )
         else:
             # Sync: call with callback context
             with callback_context(session, element_id):

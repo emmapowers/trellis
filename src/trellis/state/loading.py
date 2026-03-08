@@ -8,7 +8,7 @@ import weakref
 from dataclasses import dataclass
 
 from trellis.core.callback_context import callback_context
-from trellis.core.rendering.session import get_active_session
+from trellis.core.rendering.session import TaskErrorPolicy, get_active_session
 from trellis.core.state.stateful import Stateful
 
 T = tp.TypeVar("T")
@@ -206,17 +206,17 @@ class _LoadState(Stateful):
             raise RuntimeError("load() is missing its async loader function.")
         args = self._args
         kwargs = dict(self._kwargs)
-        self._active_task = session.track_background_task(
-            asyncio.create_task(
-                self._run_request(
-                    fn,
-                    args,
-                    kwargs,
-                    request_generation,
-                    session,
-                    element_id,
-                )
-            )
+        self._active_task = session.spawn(
+            self._run_request(
+                fn,
+                args,
+                kwargs,
+                request_generation,
+                session,
+                element_id,
+            ),
+            label="load request",
+            policy=TaskErrorPolicy.LOG_AND_CONTINUE,
         )
 
     async def _run_request(
