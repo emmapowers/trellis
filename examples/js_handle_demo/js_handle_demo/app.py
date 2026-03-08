@@ -263,7 +263,11 @@ def JsHandleDemo() -> None:
                         on_click=handle_create_counter,
                         style=_button_style(True),
                     )
-                    w.Button(text="Increment", on_click=handle_increment_counter, style=_button_style(False))
+                    w.Button(
+                        text="Increment",
+                        on_click=handle_increment_counter,
+                        style=_button_style(False),
+                    )
                 h.P(
                     state.counter_message,
                     style={
@@ -297,10 +301,24 @@ def JsHandleDemo() -> None:
                     },
                 )
                 with h.Div(style={"display": "flex", "flexWrap": "wrap", "gap": "12px"}):
-                    w.Button(text="Query body", on_click=handle_query_body, style=_button_style(True))
-                    w.Button(text="Get body property", on_click=handle_get_body_property, style=_button_style(False))
-                    w.Button(text="Read body id", on_click=handle_read_body_id, style=_button_style(False))
-                    w.Button(text="Release body", on_click=handle_release_body, style=_button_style(False))
+                    w.Button(
+                        text="Query body", on_click=handle_query_body, style=_button_style(True)
+                    )
+                    w.Button(
+                        text="Get body property",
+                        on_click=handle_get_body_property,
+                        style=_button_style(False),
+                    )
+                    w.Button(
+                        text="Read body id",
+                        on_click=handle_read_body_id,
+                        style=_button_style(False),
+                    )
+                    w.Button(
+                        text="Release body",
+                        on_click=handle_release_body,
+                        style=_button_style(False),
+                    )
                 h.P(
                     state.element_message,
                     style={

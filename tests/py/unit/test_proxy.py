@@ -13,7 +13,7 @@ from trellis.core.components.composition import CompositionComponent
 from trellis.core.proxy import js_global, js_method, js_property, js_proxy, js_release
 from trellis.core.rendering.session import RenderSession
 from trellis.platforms.common.handler import MessageHandler
-from trellis.platforms.common.messages import Message, ProxyRequest, ProxyResponse
+from trellis.platforms.common.messages import Message, ProxyRequest
 
 
 class RecordingTransport:
@@ -27,9 +27,7 @@ class RecordingTransport:
         self.result = result
         self.error = error
         self.session = RenderSession(CompositionComponent(name="Root", render_func=lambda: None))
-        self.calls: list[
-            tuple[str, str, str | None, list[tp.Any], tp.Any, str, bool]
-        ] = []
+        self.calls: list[tuple[str, str, str | None, list[tp.Any], tp.Any, str, bool]] = []
 
     async def request_proxy(
         self,
@@ -694,7 +692,7 @@ class TestReturnedProxyHandles:
     def test_dynamic_proxy_classes_reject_name_override(self) -> None:
         """dynamic=True proxies do not allow static target names."""
 
-        with pytest.raises(TypeError, match="name=.*dynamic=True"):
+        with pytest.raises(TypeError, match=r"name=.*dynamic=True"):
 
             @js_proxy(name="CounterHandle", dynamic=True)
             class CounterHandle:
@@ -723,9 +721,7 @@ class TestReturnedProxyHandles:
         result = asyncio.run(create_counter("demo"))
 
         assert isinstance(result, CounterHandle)
-        assert transport.calls == [
-            ("createCounter", "call", None, ["demo"], None, "proxy", False)
-        ]
+        assert transport.calls == [("createCounter", "call", None, ["demo"], None, "proxy", False)]
 
     def test_method_returning_optional_dynamic_proxy_allows_null(
         self, monkeypatch: pytest.MonkeyPatch
@@ -881,9 +877,7 @@ class TestPropertyReturnedProxyHandles:
         result = asyncio.run(DocumentWithBody().body.get())
 
         assert isinstance(result, HtmlElement)
-        assert transport.calls == [
-            ("__global__:document", "get", "body", [], None, "proxy", True)
-        ]
+        assert transport.calls == [("__global__:document", "get", "body", [], None, "proxy", True)]
 
     def test_non_optional_proxy_valued_properties_disallow_null(
         self, monkeypatch: pytest.MonkeyPatch

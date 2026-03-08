@@ -692,3 +692,4 @@ class MessageHandler:
         """Clean up resources. Call when session ends."""
         if self.session is not None:
             self.session.clear_proxy_callbacks()
+            self.session.clear_proxy_handles()

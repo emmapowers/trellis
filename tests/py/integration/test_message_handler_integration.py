@@ -7,8 +7,8 @@ from dataclasses import dataclass
 
 import pytest
 
-from tests.conftest import get_button_element
 import trellis.core.proxy as proxy_module
+from tests.conftest import get_button_element
 from trellis.core.callback_context import get_callback_node_id
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.proxy import js_proxy, js_release

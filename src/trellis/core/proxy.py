@@ -30,6 +30,7 @@ _CLASS_DYNAMIC_ONLY_ATTR = "__trellis_js_dynamic_only__"
 _PROPERTY_NAME_ATTR = "__trellis_js_property_name__"
 _GLOBAL_PROXY_ID_PREFIX = "__global__:"
 _MIN_METHOD_QUALNAME_PARTS = 2
+_OPTIONAL_UNION_ARG_COUNT = 2
 _PUBLIC_MEMBER_ERROR = (
     "proxy classes may only declare async public methods and js_property descriptors; "
     "other public members are not supported"
@@ -164,7 +165,7 @@ def _snake_to_camel(name: str) -> str:
 
 def _is_proxy_class(annotation: tp.Any) -> type[tp.Any] | None:
     if inspect.isclass(annotation) and hasattr(annotation, _CLASS_BINDING_KIND_ATTR):
-        return tp.cast("type[tp.Any]", annotation)
+        return annotation
     return None
 
 
@@ -178,7 +179,7 @@ def _parse_proxy_return_annotation(annotation: tp.Any) -> _ProxyReturnSpec:
         return _ProxyReturnSpec()
 
     args = tp.get_args(annotation)
-    if len(args) != 2 or type(None) not in args:
+    if len(args) != _OPTIONAL_UNION_ARG_COUNT or type(None) not in args:
         return _ProxyReturnSpec()
 
     other = args[0] if args[1] is type(None) else args[1]
@@ -259,6 +260,11 @@ def _decode_proxy_result(
         if cached is not None:
             return cached
 
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
     proxy = object.__new__(proxy_cls)
     proxy._transport = transport
     proxy._proxy_id = handle_id
@@ -268,26 +274,22 @@ def _decode_proxy_result(
 
     if session is not None:
         session.store_proxy_handle(handle_id, proxy)
-    proxy._finalizer = weakref.finalize(proxy, _finalize_proxy_handle, handle_id, transport)
+    proxy._finalizer = weakref.finalize(proxy, _finalize_proxy_handle, handle_id, transport, loop)
     return proxy
 
 
-def _finalize_proxy_handle(handle_id: str, transport: _ProxyTransport) -> None:
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
+def _finalize_proxy_handle(
+    handle_id: str,
+    transport: _ProxyTransport,
+    loop: asyncio.AbstractEventLoop | None,
+) -> None:
+    if loop is None or loop.is_closed():
         return
-
-    if loop.is_closed():
-        return
-
-    async def release_handle() -> None:
-        try:
-            await transport.request_proxy(handle_id, "release", None)
-        except Exception:
-            return
-
-    loop.create_task(release_handle())
+    future = asyncio.run_coroutine_threadsafe(
+        transport.request_proxy(handle_id, "release", None),
+        loop,
+    )
+    future.add_done_callback(lambda _: None)
 
 
 def _resolve_transport() -> _ProxyTransport:
@@ -316,7 +318,7 @@ async def _request_proxy(
     transport: _ProxyTransport | None,
     *,
     value: tp.Any = None,
-    return_spec: _ProxyReturnSpec = _ProxyReturnSpec(),
+    return_spec: _ProxyReturnSpec | None = None,
 ) -> tp.Any:
     if kwargs:
         raise TypeError("JS proxy methods do not accept keyword arguments")
@@ -324,16 +326,17 @@ async def _request_proxy(
     active_transport = transport or _resolve_transport()
     serialized_args = [serialize_proxy_value(arg) for arg in args]
     serialized_value = serialize_proxy_value(value)
+    active_return_spec = return_spec or _ProxyReturnSpec()
     result = await active_transport.request_proxy(
         proxy_id,
         operation,
         member,
         serialized_args,
         serialized_value,
-        return_mode=return_spec.mode,
-        allow_null=return_spec.allow_null,
+        return_mode=active_return_spec.mode,
+        allow_null=active_return_spec.allow_null,
     )
-    return _decode_proxy_result(result, return_spec=return_spec, transport=active_transport)
+    return _decode_proxy_result(result, return_spec=active_return_spec, transport=active_transport)
 
 
 def _make_bound_method(

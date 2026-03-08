@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import gc
 import weakref
 
 import pytest
 
-from trellis.core import proxy_values
 import trellis.core.proxy as proxy_module
+from trellis.core import proxy_values
 from trellis.core.components.composition import CompositionComponent
 from trellis.core.rendering.session import RenderSession
 
@@ -164,3 +165,45 @@ def test_session_handle_cache_drops_dead_proxy_handles() -> None:
 
     assert handle_ref() is None
     assert session.get_proxy_handle("handle-1") is None
+
+
+def test_decode_proxy_result_finalizer_releases_handles_on_gc() -> None:
+    """Dynamic handles schedule a best-effort release on the originating loop."""
+
+    @proxy_module.js_proxy(dynamic=True)
+    class CounterHandle:
+        async def increment(self) -> int:
+            raise NotImplementedError
+
+    class Transport:
+        def __init__(self) -> None:
+            self.session = RenderSession(
+                CompositionComponent(name="Root", render_func=lambda: None)
+            )
+            self.calls: list[tuple[str, str, str | None]] = []
+
+        async def request_proxy(self, proxy_id: str, operation: str, member: str | None) -> None:
+            self.calls.append((proxy_id, operation, member))
+
+    async def test() -> None:
+        transport = Transport()
+        return_spec = proxy_module._ProxyReturnSpec(
+            mode="proxy",
+            allow_null=False,
+            proxy_cls=CounterHandle,
+        )
+
+        handle = proxy_module._decode_proxy_result(
+            {proxy_values.PROXY_HANDLE_SENTINEL: "__handle__:counter-1"},
+            return_spec=return_spec,
+            transport=transport,
+        )
+        handle_ref = weakref.ref(handle)
+        del handle
+        gc.collect()
+        await asyncio.sleep(0.05)
+
+        assert handle_ref() is None
+        assert ("__handle__:counter-1", "release", None) in transport.calls
+
+    asyncio.run(test())
