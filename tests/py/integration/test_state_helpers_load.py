@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from trellis import component, load
-from trellis.state import Failed, Load, Loading, Ready
+from trellis.state import Failed, Load, Loading, LoadKey, Ready
 from trellis.state import load as package_load
 
 if TYPE_CHECKING:
@@ -237,7 +237,7 @@ class TestLoadHelper:
 
         @component
         def App() -> None:
-            result = load(fetch_value, value["current"], key="stable")
+            result = load(LoadKey("stable"), fetch_value, value["current"])
             latest[:] = [result]
             snapshots.append(_snapshot(result))
 
@@ -275,7 +275,7 @@ class TestLoadHelper:
     def test_equality_comparison_exceptions_raise_clear_type_error(
         self, capture_patches: type[PatchCapture]
     ) -> None:
-        """Comparison failures instruct the caller to provide key=... explicitly."""
+        """Comparison failures instruct the caller to provide LoadKey(...) explicitly."""
 
         class Uncomparable:
             __hash__ = object.__hash__
@@ -301,7 +301,7 @@ class TestLoadHelper:
 
             current["value"] = Uncomparable()
             capture.session.dirty.mark(capture.session.root_element.id)
-            with pytest.raises(TypeError, match="provide key="):
+            with pytest.raises(TypeError, match="provide LoadKey"):
                 capture.render()
 
         asyncio.run(test())

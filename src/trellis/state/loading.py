@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import typing as tp
 import weakref
+from dataclasses import dataclass
 
 from trellis.core.callback_context import callback_context
 from trellis.core.rendering.session import get_active_session
@@ -12,6 +13,7 @@ from trellis.core.state.stateful import Stateful
 
 T = tp.TypeVar("T")
 U = tp.TypeVar("U")
+P = tp.ParamSpec("P")
 
 _STATUS_LOADING = "loading"
 _STATUS_READY = "ready"
@@ -26,7 +28,14 @@ class _NoKey:
 
 _NO_KEY = _NoKey()
 
-__all__ = ["Failed", "Load", "Loading", "Ready", "load"]
+__all__ = ["Failed", "Load", "LoadKey", "Loading", "Ready", "load"]
+
+
+@dataclass(frozen=True, slots=True)
+class LoadKey:
+    """Explicit key wrapper for load() reload semantics."""
+
+    value: object
 
 
 class Load[T]:
@@ -175,7 +184,7 @@ class _LoadState(Stateful):
             return self._args != args or self._kwargs != kwargs
         except Exception as exc:  # pragma: no cover - exercised via integration test
             raise TypeError(
-                "load() could not compare args/kwargs for equality; provide key=... "
+                "load() could not compare args/kwargs for equality; provide LoadKey(...) "
                 "to define reload semantics explicitly."
             ) from exc
 
@@ -253,10 +262,29 @@ class _LoadState(Stateful):
         return self._session_ref()
 
 
+@tp.overload
 def load(
-    fn: tp.Callable[..., tp.Awaitable[T]],
+    fn: tp.Callable[P, tp.Awaitable[T]],
+    /,
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> Load[T]: ...
+
+
+@tp.overload
+def load(
+    key: LoadKey,
+    fn: tp.Callable[P, tp.Awaitable[T]],
+    /,
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> Load[T]: ...
+
+
+def load(
+    first: LoadKey | tp.Callable[..., tp.Awaitable[T]],
+    /,
     *args: object,
-    key: object | _NoKey = _NO_KEY,
     **kwargs: object,
 ) -> Load[T]:
     """Load async data for the current element slot.
@@ -280,6 +308,13 @@ def load(
         ```
 
         ```python
+        async def fetch_user(user_id: str) -> User:
+            return await api.get_user(user_id)
+
+        result = load(LoadKey("user:42"), fetch_user, "42")
+        ```
+
+        ```python
         async def fetch_count() -> int:
             return 3
 
@@ -287,8 +322,28 @@ def load(
         value: int = result.get(0)
         ```
     """
+    key: object | _NoKey = _NO_KEY
+
+    if isinstance(first, LoadKey):
+        if not args:
+            raise TypeError("load(LoadKey(...), ...) requires a loader function.")
+        fn = args[0]
+        call_args = args[1:]
+        key = first.value
+    else:
+        fn = first
+        call_args = args
+
+    if not callable(fn):
+        raise TypeError("load() requires an async loader function.")
+
     controller = _LoadState()
-    controller.use(fn, args, kwargs, key)
+    controller.use(
+        tp.cast("tp.Callable[..., tp.Awaitable[T]]", fn),
+        call_args,
+        kwargs,
+        key,
+    )
 
     if controller.status == _STATUS_READY:
         return Ready(controller)
