@@ -53,8 +53,13 @@ def _output_filename(product_name: str, version: str, ext: str, *, installer: bo
     return f"{name}-{safe_version}{suffix}.{ext}"
 
 
-def _collect_app_files(release_dir: Path) -> list[tuple[Path, str]]:
+def _collect_app_files(release_dir: Path, exe_name: str = "") -> list[tuple[Path, str]]:
     """Gather exe + pyembed/ + DLLs from the Tauri release directory.
+
+    Args:
+        release_dir: Path to the Tauri release directory
+        exe_name: Expected main executable name. When set, only this exe and
+            DLLs are collected (prevents rebundling previous package outputs).
 
     Returns (absolute_path, archive_relative_path) pairs.
     """
@@ -64,9 +69,14 @@ def _collect_app_files(release_dir: Path) -> list[tuple[Path, str]]:
     for path in release_dir.iterdir():
         if not path.is_file():
             continue
-        if path.suffix in _WINDOWS_SKIP_EXTENSIONS:
+        suffix = path.suffix.lower()
+        if suffix in _WINDOWS_SKIP_EXTENSIONS:
             continue
-        if path.suffix in _WINDOWS_APP_EXTENSIONS:
+        if exe_name and path.name == exe_name:
+            files.append((path, path.name))
+        elif not exe_name and suffix in _WINDOWS_APP_EXTENSIONS:
+            files.append((path, path.name))
+        elif suffix == ".dll":
             files.append((path, path.name))
 
     # Collect pyembed directory recursively
@@ -188,7 +198,7 @@ def build_portable_exe(
     """
     release_dir = scaffold_dir / "target" / "release"
 
-    files = _collect_app_files(release_dir)
+    files = _collect_app_files(release_dir, exe_name)
     if not files:
         raise RuntimeError(f"No app files found in {release_dir}")
 
@@ -229,7 +239,7 @@ def build_installer_exe(
     """
     release_dir = scaffold_dir / "target" / "release"
 
-    files = _collect_app_files(release_dir)
+    files = _collect_app_files(release_dir, exe_name)
     if not files:
         raise RuntimeError(f"No app files found in {release_dir}")
 
