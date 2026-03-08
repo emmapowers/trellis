@@ -45,5 +45,25 @@ describe("react event bindings", () => {
       typed_handler_name: "SubmitEventHandler",
       handler_name: "SubmitEventHandler",
     });
+
+    expect(bindings.get("onLoad")).toEqual({
+      prop_name: "onLoad",
+      dom_event_name: "load",
+      react_handler_alias: "ReactEventHandler",
+      react_event_interface: "ReactEvent",
+      payload_name: "Event",
+      typed_handler_name: "EventHandler",
+      handler_name: "EventHandler",
+    });
+
+    expect(bindings.get("onPlay")).toEqual({
+      prop_name: "onPlay",
+      dom_event_name: "play",
+      react_handler_alias: "ReactEventHandler",
+      react_event_interface: "ReactEvent",
+      payload_name: "Event",
+      typed_handler_name: "EventHandler",
+      handler_name: "EventHandler",
+    });
   });
 });

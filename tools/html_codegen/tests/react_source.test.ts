@@ -97,5 +97,12 @@ describe("react source extraction", () => {
     expect(audio?.attributes.get("autoPlay")?.kind).toBe("nullable");
     expect(audio?.attributes.get("controls")?.kind).toBe("nullable");
     expect(audio?.attributes.get("src")?.kind).toBe("nullable");
+
+    const table = surface.elements.get("table");
+    expect(table).toBeDefined();
+    expect(table?.attributes.get("frame")).toEqual({
+      kind: "nullable",
+      item: { kind: "primitive", name: "bool" },
+    });
   });
 });

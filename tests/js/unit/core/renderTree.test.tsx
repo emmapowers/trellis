@@ -412,6 +412,16 @@ describe("compiled CSS runtime props", () => {
     expect(props.popovertargetaction).toBe("show");
   });
 
+  it("keeps escaped html attrs distinct from data-* mappings", () => {
+    const props = toReactDomProps({
+      data_: "/movie.swf",
+      data: { "asset-id": 1 },
+    });
+
+    expect(props.data).toBe("/movie.swf");
+    expect(props["data-asset-id"]).toBe(1);
+  });
+
   it("injects compiled style rules once and strips internal props from html nodes", () => {
     const node: SerializedElement = {
       kind: ElementKind.JSX_ELEMENT,

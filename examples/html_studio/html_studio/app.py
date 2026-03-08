@@ -611,7 +611,7 @@ def CapabilityCard(card: FeatureCard) -> None:
         ):
             for point in card.points:
                 with h.Li():
-                    h.Code(point, style=_chip_style(card.accent))
+                    h.Span(point, style=_chip_style(card.accent))
 
 
 @component
@@ -768,7 +768,7 @@ def DispatchSection() -> None:
                     auto_complete="email",
                     style=_input_style(),
                 )
-            h.Button("Request notes", type="submit", style=_button_style())
+            h.Button("Request notes", type="button", style=_button_style())
 
 
 @component

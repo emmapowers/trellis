@@ -3,7 +3,7 @@
 Internal codegen artifact re-exporting generated HTML wrappers.
 Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
 
-Generated at: 2026-03-08T21:05:50.563Z
+Generated at: 2026-03-08T21:47:43.989Z
 """
 
 from __future__ import annotations
@@ -153,6 +153,9 @@ from trellis.html._generated_text_edits_and_ruby import (
     Ruby,
 )
 
+_INTERNAL_BINDINGS = (_A,)
+
+
 __all__ = [
     "H1",
     "H2",
@@ -160,7 +163,6 @@ __all__ = [
     "H4",
     "H5",
     "H6",
-    "_A",
     "Abbr",
     "Address",
     "Area",

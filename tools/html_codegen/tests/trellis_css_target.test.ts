@@ -66,13 +66,21 @@ function sample_css_document(): CssDocument {
         css_name: "opacity",
         python_name: "opacity",
         value_type_name: "Opacity",
-        type_expr: {
-          kind: "union",
-          options: [
-            { kind: "primitive", name: "float" },
-            { kind: "reference", name: "CssValue" },
-          ],
+        type_expr: { kind: "reference", name: "Opacity" },
+        accepts_auto_px: false,
+        is_shorthand: false,
+        source: {
+          winner: "webref",
+          contributors: ["webref", "csstype"],
+          reason: "css_property",
+          source_version: "@webref/css@8.4.0",
         },
+      },
+      {
+        css_name: "z-index",
+        python_name: "z_index",
+        value_type_name: "ZIndex",
+        type_expr: { kind: "reference", name: "ZIndex" },
         accepts_auto_px: false,
         is_shorthand: false,
         source: {
@@ -116,7 +124,14 @@ function sample_css_document(): CssDocument {
         css_name: "min-width",
         python_name: "min_width",
         value_type_name: "Length",
-        type_expr: { kind: "reference", name: "Length" },
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "reference", name: "Length" },
+            { kind: "primitive", name: "int" },
+            { kind: "primitive", name: "float" },
+          ],
+        },
         accepts_auto_px: true,
         source: {
           winner: "webref",
@@ -129,13 +144,20 @@ function sample_css_document(): CssDocument {
         css_name: "prefers-color-scheme",
         python_name: "prefers_color_scheme",
         value_type_name: "PrefersColorScheme",
-        type_expr: {
-          kind: "union",
-          options: [
-            { kind: "literal", value: "light" },
-            { kind: "literal", value: "dark" },
-          ],
+        type_expr: { kind: "reference", name: "PrefersColorScheme" },
+        accepts_auto_px: false,
+        source: {
+          winner: "webref",
+          contributors: ["webref"],
+          reason: "css_media_feature",
+          source_version: "@webref/css@8.4.0",
         },
+      },
+      {
+        css_name: "display-mode",
+        python_name: "display_mode",
+        value_type_name: "MediaFeatureValue",
+        type_expr: { kind: "reference", name: "MediaFeatureValue" },
         accepts_auto_px: false,
         source: {
           winner: "webref",
@@ -317,6 +339,75 @@ function sample_css_document(): CssDocument {
           source_version: "@webref/css@8.4.0",
         },
       },
+      {
+        name: "MediaFeatureValue",
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "primitive", name: "str" },
+            { kind: "primitive", name: "int" },
+            { kind: "primitive", name: "float" },
+            { kind: "reference", name: "CssValue" },
+          ],
+        },
+        source: {
+          winner: "trellis_policy",
+          contributors: ["webref"],
+          reason: "css_value_alias",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
+      {
+        name: "PrefersColorScheme",
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "literal", value: "light" },
+            { kind: "literal", value: "dark" },
+            { kind: "primitive", name: "str" },
+            { kind: "reference", name: "CssValue" },
+          ],
+        },
+        source: {
+          winner: "trellis_policy",
+          contributors: ["webref"],
+          reason: "css_value_alias",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
+      {
+        name: "Opacity",
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "primitive", name: "float" },
+            { kind: "reference", name: "CssValue" },
+          ],
+        },
+        source: {
+          winner: "trellis_policy",
+          contributors: ["webref"],
+          reason: "css_value_alias",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
+      {
+        name: "ZIndex",
+        type_expr: {
+          kind: "union",
+          options: [
+            { kind: "primitive", name: "int" },
+            { kind: "literal", value: "auto" },
+            { kind: "reference", name: "CssValue" },
+          ],
+        },
+        source: {
+          winner: "trellis_policy",
+          contributors: ["webref"],
+          reason: "css_value_alias",
+          source_version: "@webref/css@8.4.0",
+        },
+      },
     ],
   };
 }
@@ -346,6 +437,9 @@ describe("trellis css target", () => {
     expect(types_module?.content).toContain("Length = CssLength | str | CssValue");
     expect(types_module?.content).toContain("ColorValue = ColorKeyword | str | CssColor | CssValue");
     expect(types_module?.content).toContain(
+      "MediaFeatureValue = str | int | float | CssValue",
+    );
+    expect(types_module?.content).toContain(
       'Display = Literal["block"] | Literal["flex"] | Literal["none"] | Literal["inline-flex"] | str | CssValue',
     );
     expect(types_module?.content).toContain("Display = Literal[");
@@ -361,10 +455,15 @@ describe("trellis css target", () => {
     expect(types_module?.content).toContain(
       "margin: SpacingShorthand | builtins.int | builtins.float | None = None",
     );
-    expect(types_module?.content).toContain("opacity: builtins.float | CssValue | None = None");
+    expect(types_module?.content).toContain("opacity: Opacity | None = None");
+    expect(types_module?.content).toContain('z_index: ZIndex | None = None');
     expect(types_module?.content).toContain("class MediaRule:");
     expect(types_module?.content).toContain('"""Generated media query rule for `h.media(...)`.');
+    expect(types_module?.content).toContain(
+      "min_width: Length | builtins.int | builtins.float | None = None",
+    );
     expect(types_module?.content).toContain("prefers_color_scheme: PrefersColorScheme | None = None");
+    expect(types_module?.content).toContain("display_mode: MediaFeatureValue | None = None");
 
     const metadata_module = modules.find((module) => module.path.endsWith("_generated_style_metadata.py"));
     expect(metadata_module?.content).toContain("Generated CSS style metadata.");

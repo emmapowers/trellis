@@ -118,3 +118,14 @@ def test_style_serializes_modern_color_helpers(rendered) -> None:
         "text-decoration-color": "oklab(68% 0.08 -0.14)",
         "accent-color": "color(display-p3 0.2 0.5 0.7 / 0.9)",
     }
+
+
+def test_style_serializes_shadow_helper_lengths_with_units(rendered) -> None:
+    @component
+    def App() -> None:
+        h.Div(style=h.Style(box_shadow=h.shadow(0, 18, 40, h.rgba(8, 15, 30, 0.16))))
+
+    result = rendered(App)
+    div = result.tree["children"][0]
+
+    assert div["props"]["style"]["box-shadow"] == "0px 18px 40px rgb(8 15 30 / 0.16)"

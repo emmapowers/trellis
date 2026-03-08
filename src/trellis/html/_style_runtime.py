@@ -28,13 +28,14 @@ from trellis.html._generated_style_types import (
     SpacingShorthand,
     WidthValue,
     _GeneratedStyleFields,
+    _MediaRuleKwargs,
 )
 
 type StyleScalar = str | int | float | CssValue
 type RawStyleMapping = Mapping[str, tp.Any]
-type WidthInput = WidthValue | int | float
-type HeightInput = HeightValue | int | float
-type SpacingInput = SpacingShorthand | int | float
+type WidthInput = WidthValue | int | float | str
+type HeightInput = HeightValue | int | float | str
+type SpacingInput = SpacingShorthand | int | float | str
 
 
 @dataclass(kw_only=True)
@@ -328,7 +329,7 @@ def border(width: StyleScalar, style: str, color_value: StyleScalar) -> CssValue
 
 def shadow(*parts: StyleScalar) -> CssValue:
     """Return a CSS shadow shorthand value."""
-    return CssValue(" ".join(_serialize_helper_value(part, auto_px=False) for part in parts))
+    return CssValue(" ".join(_serialize_helper_value(part, auto_px=True) for part in parts))
 
 
 def scale(value: int | float) -> CssValue:
@@ -352,20 +353,7 @@ def translate(x_value: StyleScalar, y_value: StyleScalar | None = None) -> CssVa
     return CssValue(f"translate({x}, {_serialize_helper_value(y_value, auto_px=True)})")
 
 
-def media(
-    *,
-    style: Style,
-    min_width: CssLength | int | float | None = None,
-    max_width: CssLength | int | float | None = None,
-    min_height: CssLength | int | float | None = None,
-    max_height: CssLength | int | float | None = None,
-    orientation: tp.Literal["portrait", "landscape"] | None = None,
-    hover: tp.Literal["hover", "none"] | None = None,
-    pointer: tp.Literal["none", "coarse", "fine"] | None = None,
-    prefers_color_scheme: tp.Literal["light", "dark"] | None = None,
-    prefers_reduced_motion: tp.Literal["reduce", "no-preference"] | None = None,
-    query: str | None = None,
-) -> MediaRule:
+def media(*, style: Style, **feature_values: tp.Unpack[_MediaRuleKwargs]) -> MediaRule:
     """Create a typed CSS media rule for ``Style.media``.
 
     Use this for common responsive and user-preference queries. For
@@ -373,27 +361,7 @@ def media(
     instead.
     """
 
-    return MediaRule(
-        style=style,
-        min_width=tp.cast(
-            "tp.Any", min_width if not isinstance(min_width, (int, float)) else px(min_width)
-        ),
-        max_width=tp.cast(
-            "tp.Any", max_width if not isinstance(max_width, (int, float)) else px(max_width)
-        ),
-        min_height=tp.cast(
-            "tp.Any", min_height if not isinstance(min_height, (int, float)) else px(min_height)
-        ),
-        max_height=tp.cast(
-            "tp.Any", max_height if not isinstance(max_height, (int, float)) else px(max_height)
-        ),
-        orientation=orientation,
-        hover=hover,
-        pointer=pointer,
-        prefers_color_scheme=prefers_color_scheme,
-        prefers_reduced_motion=prefers_reduced_motion,
-        query=query,
-    )
+    return MediaRule(style=style, **_normalize_media_kwargs(feature_values))
 
 
 def _format_percent(value: int | float) -> str:
@@ -422,3 +390,17 @@ def _serialize_helper_value(value: StyleScalar, *, auto_px: bool) -> str:
     if isinstance(value, (int, float)):
         return f"{_format_number(value)}px" if auto_px else _format_number(value)
     return value
+
+
+def _normalize_media_kwargs(
+    feature_values: Mapping[str, tp.Any],
+) -> dict[str, tp.Any]:
+    normalized: dict[str, tp.Any] = {}
+    for name, value in feature_values.items():
+        if value is None:
+            continue
+        if isinstance(value, (int, float)) and ("width" in name or "height" in name):
+            normalized[name] = px(value)
+            continue
+        normalized[name] = value
+    return normalized

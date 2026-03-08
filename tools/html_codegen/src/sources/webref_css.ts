@@ -331,6 +331,7 @@ function value_aliases(): Map<string, TypeExpr> {
     ["TransitionValue", union(primitive("str"), reference("CssValue"))],
     ["Opacity", union(primitive("float"), reference("CssValue"))],
     ["ZIndex", union(primitive("int"), literal("auto"), reference("CssValue"))],
+    ["MediaFeatureValue", union(primitive("str"), primitive("int"), primitive("float"), reference("CssValue"))],
     ["PrefersColorScheme", fallback_css_value(keyword_union(["light", "dark"]))],
     ["PrefersReducedMotion", fallback_css_value(keyword_union(["reduce", "no-preference"]))],
     ["PointerCapability", fallback_css_value(keyword_union(["none", "coarse", "fine"]))],
@@ -430,9 +431,11 @@ function infer_type_expr(alias_name: string): TypeExpr {
     case "TransitionValue":
       return reference("TransitionValue");
     case "Opacity":
-      return primitive("float");
+      return reference("Opacity");
     case "ZIndex":
-      return union(primitive("int"), literal("auto"));
+      return reference("ZIndex");
+    case "MediaFeatureValue":
+      return reference("MediaFeatureValue");
     default:
       return reference("CssValue");
   }
@@ -491,17 +494,18 @@ function media_feature_alias(name: string): string {
   if (name === "orientation") {
     return "Orientation";
   }
-  return "CssValue";
+  return "MediaFeatureValue";
 }
 
 function build_media_feature_def(css_name: string, feature: CssFeature): CssMediaFeatureDef {
   const value_type_name = media_feature_alias(css_name);
-  const type_expr =
+  let type_expr =
     value_type_name === "Orientation"
       ? keyword_union(["portrait", "landscape"])
-      : value_type_name === "CssValue"
-        ? reference("CssValue")
-        : reference(value_type_name);
+      : reference(value_type_name);
+  if (css_name.includes("width") || css_name.includes("height")) {
+    type_expr = union(type_expr, primitive("int"), primitive("float"));
+  }
   return {
     css_name,
     python_name: to_snake_case(css_name),

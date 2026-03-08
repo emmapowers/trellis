@@ -129,7 +129,67 @@ function sample_ir(): IrDocument {
         python_name: "Table",
         is_container: true,
         text_behavior: "none",
-        attributes: ["html:global:class_name"],
+        attributes: ["html:global:class_name", "html:table:frame"],
+        events: [],
+        source: {
+          winner: "react_ts",
+          contributors: ["react_ts"],
+          reason: "runtime_precedence",
+          source_version: "@types/react@19.2.14",
+        },
+      },
+      {
+        namespace: "html",
+        tag_name: "style",
+        python_name: "StyleTag",
+        is_container: false,
+        text_behavior: "public_helper",
+        attributes: [],
+        events: [],
+        source: {
+          winner: "react_ts",
+          contributors: ["react_ts"],
+          reason: "runtime_precedence",
+          source_version: "@types/react@19.2.14",
+        },
+      },
+      {
+        namespace: "html",
+        tag_name: "title",
+        python_name: "Title",
+        is_container: false,
+        text_behavior: "public_helper",
+        attributes: [],
+        events: [],
+        source: {
+          winner: "react_ts",
+          contributors: ["react_ts"],
+          reason: "runtime_precedence",
+          source_version: "@types/react@19.2.14",
+        },
+      },
+      {
+        namespace: "html",
+        tag_name: "script",
+        python_name: "Script",
+        is_container: false,
+        text_behavior: "public_helper",
+        attributes: [],
+        events: [],
+        source: {
+          winner: "react_ts",
+          contributors: ["react_ts"],
+          reason: "runtime_precedence",
+          source_version: "@types/react@19.2.14",
+        },
+      },
+      {
+        namespace: "html",
+        tag_name: "rp",
+        python_name: "Rp",
+        is_container: false,
+        text_behavior: "public_helper",
+        attributes: [],
         events: [],
         source: {
           winner: "react_ts",
@@ -264,6 +324,37 @@ function sample_ir(): IrDocument {
         },
       },
       {
+        id: "html:table:frame",
+        name_source: "frame",
+        name_python: "frame",
+        applies_to: "element",
+        type_expr: {
+          kind: "nullable",
+          item: {
+            kind: "union",
+            options: [
+              { kind: "literal", value: "void" },
+              { kind: "literal", value: "above" },
+              { kind: "literal", value: "below" },
+              { kind: "literal", value: "hsides" },
+              { kind: "literal", value: "vsides" },
+              { kind: "literal", value: "lhs" },
+              { kind: "literal", value: "rhs" },
+              { kind: "literal", value: "box" },
+              { kind: "literal", value: "border" },
+            ],
+          },
+        },
+        required: false,
+        category: "standard",
+        source: {
+          winner: "react_ts",
+          contributors: ["react_ts"],
+          reason: "runtime_precedence",
+          source_version: "@types/react@19.2.14",
+        },
+      },
+      {
         id: "html:audio:auto_play",
         name_source: "autoPlay",
         name_python: "auto_play",
@@ -374,6 +465,7 @@ describe("trellis target", () => {
     expect(runtime).toContain("from trellis.html._generated_table_content import (");
     expect(runtime).toContain("    Table,");
     expect(runtime).not.toContain("def Div(");
+    expect(runtime).not.toContain('    "_A",');
 
     const attributeTypes = moduleByPath(payloads, "_generated_attribute_types.py").content;
     expect(attributeTypes).toContain("Generated at: 2026-03-07T12:00:00.000Z");
@@ -406,6 +498,7 @@ describe("trellis target", () => {
     expect(interactive).toContain(
       "Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a",
     );
+    expect(interactive).not.toContain('    "_A",');
 
     const media = moduleByPath(payloads, "_generated_image_and_multimedia.py").content;
     expect(media).toContain("Generated at: 2026-03-07T12:00:00.000Z");
@@ -426,9 +519,26 @@ describe("trellis target", () => {
     expect(tables).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(tables).toContain("def Table(");
     expect(tables).toContain('"""Generated wrapper for `<table>`.');
+    expect(tables).toContain("frame: (");
+    expect(tables).toContain('        "border",');
+    expect(tables).not.toContain("frame: bool | None = None");
 
     const text = moduleByPath(payloads, "_generated_text_blocks.py").content;
     expect(text).toContain("Generated HTML text blocks wrappers.");
+
+    const documentMetadata = moduleByPath(payloads, "_generated_document_metadata.py").content;
+    expect(documentMetadata).toContain("@html_element(\"style\")");
+    expect(documentMetadata).not.toContain("@html_element(\"style\", is_container=True");
+    expect(documentMetadata).toContain("@html_element(\"title\")");
+    expect(documentMetadata).not.toContain("@html_element(\"title\", is_container=True");
+
+    const scripting = moduleByPath(payloads, "_generated_scripting_and_templates.py").content;
+    expect(scripting).toContain("@html_element(\"script\")");
+    expect(scripting).not.toContain("@html_element(\"script\", is_container=True");
+
+    const textEdits = moduleByPath(payloads, "_generated_text_edits_and_ruby.py").content;
+    expect(textEdits).toContain("@html_element(\"rp\")");
+    expect(textEdits).not.toContain("@html_element(\"rp\", is_container=True");
   });
 
   it("does not expose _text or fallback props in generated family modules", () => {

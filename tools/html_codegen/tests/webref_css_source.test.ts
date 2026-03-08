@@ -35,8 +35,19 @@ describe("webref css source extraction", () => {
     expect(surface.properties.get("z-index")?.accepts_auto_px).toBe(false);
 
     expect(surface.media_features.get("min-width")?.python_name).toBe("min_width");
+    expect(surface.media_features.get("min-width")?.type_expr).toEqual({
+      kind: "union",
+      options: [
+        { kind: "reference", name: "Length" },
+        { kind: "primitive", name: "int" },
+        { kind: "primitive", name: "float" },
+      ],
+    });
     expect(surface.media_features.get("prefers-color-scheme")?.value_type_name).toBe(
       "PrefersColorScheme",
+    );
+    expect(surface.media_features.get("display-mode")?.value_type_name).toBe(
+      "MediaFeatureValue",
     );
 
     expect(surface.value_aliases.get("Display")?.kind).toBe("union");
@@ -110,6 +121,15 @@ describe("webref css source extraction", () => {
     expect(surface.value_aliases.get("Opacity")).toMatchObject({
       kind: "union",
       options: expect.arrayContaining([
+        { kind: "primitive", name: "float" },
+        { kind: "reference", name: "CssValue" },
+      ]),
+    });
+    expect(surface.value_aliases.get("MediaFeatureValue")).toMatchObject({
+      kind: "union",
+      options: expect.arrayContaining([
+        { kind: "primitive", name: "str" },
+        { kind: "primitive", name: "int" },
         { kind: "primitive", name: "float" },
         { kind: "reference", name: "CssValue" },
       ]),

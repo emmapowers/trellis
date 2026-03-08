@@ -3,7 +3,7 @@
 Internal codegen artifact for event payloads and handlers.
 Reference: https://developer.mozilla.org/en-US/docs/Web/API
 
-Generated at: 2026-03-08T21:05:50.563Z
+Generated at: 2026-03-08T21:47:43.989Z
 """
 
 from __future__ import annotations
@@ -105,14 +105,14 @@ class KeyboardEvent(UIEvent):
 
 
 @dataclass(frozen=True)
-class FocusEvent(Event):
+class FocusEvent(UIEvent):
     """Generated event type for `FocusEvent`.
 
     Derived from standard DOM event interfaces and React event bindings.
     Reference: https://developer.mozilla.org/en-US/docs/Web/API/FocusEvent
     """
 
-    pass
+    related_target: str | None = None
 
 
 @dataclass(frozen=True)
@@ -123,11 +123,11 @@ class SubmitEvent(Event):
     Reference: https://developer.mozilla.org/en-US/docs/Web/API/SubmitEvent
     """
 
-    pass
+    submitter: str | None = None
 
 
 @dataclass(frozen=True)
-class InputEvent(Event):
+class InputEvent(UIEvent):
     """Generated event type for `InputEvent`.
 
     Derived from standard DOM event interfaces and React event bindings.
@@ -135,6 +135,7 @@ class InputEvent(Event):
     """
 
     data: str | None = None
+    data_transfer: DataTransfer | None = None
     is_composing: bool = False
     input_type: str = ""
 
@@ -215,10 +216,14 @@ EVENT_TYPE_MAP: dict[str, type[Event]] = {
     "dragover": DragEvent,
     "dragstart": DragEvent,
     "drop": DragEvent,
+    "ended": Event,
+    "error": Event,
     "focus": FocusEvent,
     "input": InputEvent,
     "keydown": KeyboardEvent,
     "keyup": KeyboardEvent,
+    "load": Event,
+    "loadedmetadata": Event,
     "mousedown": MouseEvent,
     "mouseenter": MouseEvent,
     "mouseleave": MouseEvent,
@@ -226,8 +231,11 @@ EVENT_TYPE_MAP: dict[str, type[Event]] = {
     "mouseout": MouseEvent,
     "mouseover": MouseEvent,
     "mouseup": MouseEvent,
+    "pause": Event,
+    "play": Event,
     "scroll": UIEvent,
     "submit": SubmitEvent,
+    "timeupdate": Event,
     "wheel": WheelEvent,
 }
 

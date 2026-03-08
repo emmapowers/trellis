@@ -117,6 +117,12 @@ def test_public_html_style_annotations_use_typed_style_runtime() -> None:
     assert anchor_hints["style"] == h.StyleInput | None
 
 
+def test_public_html_exports_full_generated_surface() -> None:
+    for name in ("Area", "Canvas", "Map", "Picture", "Track", "Wbr"):
+        assert hasattr(h, name)
+        assert name in h.__all__
+
+
 def test_public_html_exports_style_input() -> None:
     """The HTML namespace should expose the public style input alias."""
     assert "StyleInput" in h.__all__

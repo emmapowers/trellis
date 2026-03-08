@@ -45,6 +45,7 @@ const CSS_ALIAS_PRIORITY = [
   "TransitionValue",
   "Opacity",
   "ZIndex",
+  "MediaFeatureValue",
   "Orientation",
   "PrefersColorScheme",
   "PrefersReducedMotion",
@@ -181,9 +182,23 @@ function emit_media_rule(media_features: CssMediaFeatureDef[]): string[] {
   lines.push('    """');
   lines.push("    style: Style");
   for (const feature of [...media_features].sort((left, right) => left.python_name.localeCompare(right.python_name))) {
-    lines.push(`    ${feature.python_name}: ${feature.value_type_name} | None = None`);
+    lines.push(
+      `    ${feature.python_name}: ${render_type_expr(qualify_field_primitives(feature.type_expr))} | None = None`,
+    );
   }
   lines.push('    query: str | None = None');
+  return lines;
+}
+
+function emit_media_rule_kwargs(media_features: CssMediaFeatureDef[]): string[] {
+  const lines = ["class _MediaRuleKwargs(TypedDict, total=False):"];
+  lines.push('    """Generated keyword surface for `h.media(...)`."""');
+  for (const feature of [...media_features].sort((left, right) => left.python_name.localeCompare(right.python_name))) {
+    lines.push(
+      `    ${feature.python_name}: ${render_type_expr(qualify_field_primitives(feature.type_expr))}`,
+    );
+  }
+  lines.push("    query: builtins.str");
   return lines;
 }
 
@@ -191,6 +206,7 @@ function emit_types_module(document: CssDocument, generated_at: string): string 
   const aliases = emit_aliases(document.value_aliases);
   const style_fields = emit_style_fields(document.properties);
   const media_rule = emit_media_rule(document.media_features);
+  const media_rule_kwargs = emit_media_rule_kwargs(document.media_features);
   return [
     render_generated_module_docstring("Generated CSS style type declarations.", generated_at, [
       "Internal codegen artifact for trellis.html CSS typing.",
@@ -201,7 +217,7 @@ function emit_types_module(document: CssDocument, generated_at: string): string 
     "import builtins",
     "",
     "from dataclasses import dataclass",
-    "from typing import TYPE_CHECKING, Literal",
+    "from typing import TYPE_CHECKING, Literal, TypedDict",
     "",
     "from trellis.html._css_primitives import CssAngle, CssColor, CssLength, CssPercent, CssTime, CssValue",
     "",
@@ -213,6 +229,8 @@ function emit_types_module(document: CssDocument, generated_at: string): string 
     ...style_fields,
     "",
     ...media_rule,
+    "",
+    ...media_rule_kwargs,
     "",
   ].join("\n");
 }

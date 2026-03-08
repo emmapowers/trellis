@@ -726,6 +726,7 @@ function emit_family_module(
   );
   const exported_names = elements
     .map((element) => element.python_name)
+    .filter((name) => !name.startsWith("_"))
     .sort()
     .map((name) => `    "${name}",`)
     .join("\n");
@@ -803,9 +804,18 @@ ${names}
 
   const exportedNames = nonEmptyFamilies
     .flatMap((entry) => entry.elements.map((element) => element.python_name))
-    .sort()
-    .map((name) => `    "${name}",`)
+    .filter((name) => !name.startsWith("_"))
+      .sort()
+      .map((name) => `    "${name}",`)
     .join("\n");
+  const internalNames = nonEmptyFamilies
+    .flatMap((entry) => entry.elements.map((element) => element.python_name))
+    .filter((name) => name.startsWith("_"))
+    .sort();
+  const internalBindings =
+    internalNames.length > 0
+      ? `\n_INTERNAL_BINDINGS = (${internalNames.join(", ")},)\n`
+      : "";
 
   return {
     path: "src/trellis/html/_generated_runtime.py",
@@ -821,6 +831,7 @@ ${names}
 from __future__ import annotations
 
 ${importBlocks.join("\n\n")}
+${internalBindings}
 
 __all__ = [
 ${exportedNames}

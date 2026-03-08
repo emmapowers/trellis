@@ -45,6 +45,9 @@ function convertDeepKeysToSnake(value: unknown): unknown {
 }
 
 function domPropNameFromSnake(prop: string): string {
+  if (prop === "data_") {
+    return "data";
+  }
   if (prop.startsWith("aria_") || prop.startsWith("data_")) {
     return prop.replaceAll("_", "-");
   }

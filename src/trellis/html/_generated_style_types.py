@@ -3,14 +3,14 @@
 Internal codegen artifact for trellis.html CSS typing.
 Reference: https://developer.mozilla.org/en-US/docs/Web/CSS
 
-Generated at: 2026-03-08T21:05:50.563Z
+Generated at: 2026-03-08T21:47:43.989Z
 """
 
 from __future__ import annotations
 
 import builtins
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, TypedDict
 
 from trellis.html._css_primitives import (
     CssAngle,
@@ -294,6 +294,7 @@ TransformValue = str | CssValue
 TransitionValue = str | CssValue
 Opacity = float | CssValue
 ZIndex = int | Literal["auto"] | CssValue
+MediaFeatureValue = str | int | float | CssValue
 Orientation = Literal["portrait"] | Literal["landscape"] | str | CssValue
 PrefersColorScheme = Literal["light"] | Literal["dark"] | str | CssValue
 PrefersReducedMotion = Literal["reduce"] | Literal["no-preference"] | str | CssValue
@@ -762,7 +763,7 @@ class _GeneratedStyleFields:
     offset_path: CssValue | str | None = None
     offset_position: CssValue | str | None = None
     offset_rotate: AngleValue | None = None
-    opacity: builtins.float | None = None
+    opacity: Opacity | None = None
     order: CssValue | str | None = None
     orphans: CssValue | str | None = None
     outline: CssValue | str | None = None
@@ -1064,7 +1065,7 @@ class _GeneratedStyleFields:
     writing_mode: CssValue | str | None = None
     x: LengthPercentage | builtins.int | builtins.float | None = None
     y: LengthPercentage | builtins.int | builtins.float | None = None
-    z_index: builtins.int | Literal["auto"] | None = None
+    z_index: ZIndex | None = None
     zoom: CssValue | str | None = None
 
 
@@ -1079,44 +1080,92 @@ class MediaRule:
     style: Style
     any_hover: HoverCapability | None = None
     any_pointer: PointerCapability | None = None
-    aspect_ratio: CssValue | None = None
-    color: CssValue | None = None
-    color_gamut: CssValue | None = None
-    color_index: CssValue | None = None
-    device_aspect_ratio: CssValue | None = None
-    device_height: CssValue | None = None
-    device_width: CssValue | None = None
-    display_mode: CssValue | None = None
-    dynamic_range: CssValue | None = None
-    environment_blending: CssValue | None = None
-    forced_colors: CssValue | None = None
-    grid: CssValue | None = None
-    height: CssValue | None = None
-    horizontal_viewport_segments: CssValue | None = None
+    aspect_ratio: MediaFeatureValue | None = None
+    color: MediaFeatureValue | None = None
+    color_gamut: MediaFeatureValue | None = None
+    color_index: MediaFeatureValue | None = None
+    device_aspect_ratio: MediaFeatureValue | None = None
+    device_height: MediaFeatureValue | builtins.int | builtins.float | None = None
+    device_width: MediaFeatureValue | builtins.int | builtins.float | None = None
+    display_mode: MediaFeatureValue | None = None
+    dynamic_range: MediaFeatureValue | None = None
+    environment_blending: MediaFeatureValue | None = None
+    forced_colors: MediaFeatureValue | None = None
+    grid: MediaFeatureValue | None = None
+    height: MediaFeatureValue | builtins.int | builtins.float | None = None
+    horizontal_viewport_segments: MediaFeatureValue | None = None
     hover: HoverCapability | None = None
-    inverted_colors: CssValue | None = None
-    max_height: Length | None = None
-    max_width: Length | None = None
-    min_height: Length | None = None
-    min_width: Length | None = None
-    monochrome: CssValue | None = None
-    nav_controls: CssValue | None = None
-    orientation: Orientation | None = None
-    overflow_block: CssValue | None = None
-    overflow_inline: CssValue | None = None
+    inverted_colors: MediaFeatureValue | None = None
+    max_height: Length | builtins.int | builtins.float | None = None
+    max_width: Length | builtins.int | builtins.float | None = None
+    min_height: Length | builtins.int | builtins.float | None = None
+    min_width: Length | builtins.int | builtins.float | None = None
+    monochrome: MediaFeatureValue | None = None
+    nav_controls: MediaFeatureValue | None = None
+    orientation: Literal["portrait", "landscape"] | None = None
+    overflow_block: MediaFeatureValue | None = None
+    overflow_inline: MediaFeatureValue | None = None
     pointer: PointerCapability | None = None
     prefers_color_scheme: PrefersColorScheme | None = None
-    prefers_contrast: CssValue | None = None
-    prefers_reduced_data: CssValue | None = None
+    prefers_contrast: MediaFeatureValue | None = None
+    prefers_reduced_data: MediaFeatureValue | None = None
     prefers_reduced_motion: PrefersReducedMotion | None = None
-    prefers_reduced_transparency: CssValue | None = None
-    resolution: CssValue | None = None
-    scan: CssValue | None = None
-    scripting: CssValue | None = None
-    shape: CssValue | None = None
-    update: CssValue | None = None
-    vertical_viewport_segments: CssValue | None = None
-    video_color_gamut: CssValue | None = None
-    video_dynamic_range: CssValue | None = None
-    width: CssValue | None = None
+    prefers_reduced_transparency: MediaFeatureValue | None = None
+    resolution: MediaFeatureValue | None = None
+    scan: MediaFeatureValue | None = None
+    scripting: MediaFeatureValue | None = None
+    shape: MediaFeatureValue | None = None
+    update: MediaFeatureValue | None = None
+    vertical_viewport_segments: MediaFeatureValue | None = None
+    video_color_gamut: MediaFeatureValue | None = None
+    video_dynamic_range: MediaFeatureValue | None = None
+    width: MediaFeatureValue | builtins.int | builtins.float | None = None
     query: str | None = None
+
+
+class _MediaRuleKwargs(TypedDict, total=False):
+    """Generated keyword surface for `h.media(...)`."""
+
+    any_hover: HoverCapability
+    any_pointer: PointerCapability
+    aspect_ratio: MediaFeatureValue
+    color: MediaFeatureValue
+    color_gamut: MediaFeatureValue
+    color_index: MediaFeatureValue
+    device_aspect_ratio: MediaFeatureValue
+    device_height: MediaFeatureValue | builtins.int | builtins.float
+    device_width: MediaFeatureValue | builtins.int | builtins.float
+    display_mode: MediaFeatureValue
+    dynamic_range: MediaFeatureValue
+    environment_blending: MediaFeatureValue
+    forced_colors: MediaFeatureValue
+    grid: MediaFeatureValue
+    height: MediaFeatureValue | builtins.int | builtins.float
+    horizontal_viewport_segments: MediaFeatureValue
+    hover: HoverCapability
+    inverted_colors: MediaFeatureValue
+    max_height: Length | builtins.int | builtins.float
+    max_width: Length | builtins.int | builtins.float
+    min_height: Length | builtins.int | builtins.float
+    min_width: Length | builtins.int | builtins.float
+    monochrome: MediaFeatureValue
+    nav_controls: MediaFeatureValue
+    orientation: Literal["portrait", "landscape"]
+    overflow_block: MediaFeatureValue
+    overflow_inline: MediaFeatureValue
+    pointer: PointerCapability
+    prefers_color_scheme: PrefersColorScheme
+    prefers_contrast: MediaFeatureValue
+    prefers_reduced_data: MediaFeatureValue
+    prefers_reduced_motion: PrefersReducedMotion
+    prefers_reduced_transparency: MediaFeatureValue
+    resolution: MediaFeatureValue
+    scan: MediaFeatureValue
+    scripting: MediaFeatureValue
+    shape: MediaFeatureValue
+    update: MediaFeatureValue
+    vertical_viewport_segments: MediaFeatureValue
+    video_color_gamut: MediaFeatureValue
+    video_dynamic_range: MediaFeatureValue
+    width: MediaFeatureValue | builtins.int | builtins.float
+    query: builtins.str

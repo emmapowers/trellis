@@ -3,7 +3,7 @@
 Internal codegen artifact used to normalize trellis.html styles.
 Reference: https://developer.mozilla.org/en-US/docs/Web/CSS
 
-Generated at: 2026-03-08T21:05:50.563Z
+Generated at: 2026-03-08T21:47:43.989Z
 """
 
 from __future__ import annotations

@@ -56,9 +56,16 @@ const PUBLIC_EVENT_PROP_NAMES = [
   "onInput",
   "onFocus",
   "onBlur",
+  "onLoad",
+  "onError",
   "onSubmit",
   "onScroll",
   "onWheel",
+  "onPlay",
+  "onPause",
+  "onEnded",
+  "onTimeUpdate",
+  "onLoadedMetadata",
   "onDragStart",
   "onDrag",
   "onDragEnd",
@@ -98,9 +105,13 @@ const NON_CONTAINER_TAGS = new Set([
   "meta",
   "option",
   "param",
+  "rp",
+  "script",
   "source",
+  "style",
   "textarea",
   "track",
+  "title",
   "wbr",
 ]);
 
@@ -270,24 +281,44 @@ const DATACLASS_CONFIGS: DataclassConfig[] = [
   },
   {
     name: "FocusEvent",
-    base: "Event",
+    base: "UIEvent",
     source_interface: "FocusEvent",
-    fields: [],
+    fields: [
+      {
+        name_source: "relatedTarget",
+        name_python: "related_target",
+        type_expr: { kind: "nullable", item: primitive("str") },
+        default: null,
+      },
+    ],
     source: webref_source("idl_payload"),
   },
   {
     name: "SubmitEvent",
     base: "Event",
     source_interface: "SubmitEvent",
-    fields: [],
+    fields: [
+      {
+        name_source: "submitter",
+        name_python: "submitter",
+        type_expr: { kind: "nullable", item: primitive("str") },
+        default: null,
+      },
+    ],
     source: webref_source("idl_payload"),
   },
   {
     name: "InputEvent",
-    base: "Event",
+    base: "UIEvent",
     source_interface: "InputEvent",
     fields: [
       { source_name: "data", default: null },
+      {
+        name_source: "dataTransfer",
+        name_python: "data_transfer",
+        type_expr: { kind: "nullable", item: { kind: "reference", name: "DataTransfer" } },
+        default: null,
+      },
       { source_name: "isComposing", default: false },
       { source_name: "inputType", default: "" },
     ],
@@ -418,6 +449,29 @@ function attribute_default(tag_name: string, prop_name: string): string | number
   return ATTRIBUTE_DEFAULTS.get(`${tag_name}:${prop_name}`);
 }
 
+function attribute_type_override(tag_name: string, prop_name: string): TypeExpr | undefined {
+  if (tag_name === "table" && prop_name === "frame") {
+    return {
+      kind: "nullable",
+      item: {
+        kind: "union",
+        options: [
+          { kind: "literal", value: "void" },
+          { kind: "literal", value: "above" },
+          { kind: "literal", value: "below" },
+          { kind: "literal", value: "hsides" },
+          { kind: "literal", value: "vsides" },
+          { kind: "literal", value: "lhs" },
+          { kind: "literal", value: "rhs" },
+          { kind: "literal", value: "box" },
+          { kind: "literal", value: "border" },
+        ],
+      },
+    };
+  }
+  return undefined;
+}
+
 function normalize_attribute_type(
   type_expr: TypeExpr,
   required: boolean,
@@ -472,13 +526,14 @@ function build_attribute_def(
   const name_python = to_python_param_name(prop_name);
   const is_aria = prop_name.startsWith("aria-");
   const is_global = GLOBAL_PROP_NAMES.has(prop_name) || is_aria;
+  const overridden_type_expr = attribute_type_override(tag_name, prop_name) ?? type_expr;
 
   return {
     id: is_global ? `html:global:${name_python}` : `html:${tag_name}:${name_python}`,
     name_source: prop_name,
     name_python: to_python_param_name(prop_name),
     applies_to: is_global ? "global" : "element",
-    type_expr: normalize_attribute_type(type_expr, required, default_value),
+    type_expr: normalize_attribute_type(overridden_type_expr, required, default_value),
     required,
     default: default_value,
     category: is_aria ? "aria" : "standard",

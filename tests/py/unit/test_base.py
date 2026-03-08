@@ -110,11 +110,17 @@ class TestIComponentProtocolConformance:
         assert captured["async"] is True
         assert "async_" not in captured
 
-    def test_html_element_normalizes_reserved_helper_props(self, monkeypatch) -> None:
-        """Trailing underscore kwargs also cover helper-name collisions like data."""
+    def test_html_element_preserves_escaped_data_attr_alongside_data_mapping(
+        self, monkeypatch
+    ) -> None:
+        """Escaped HTML attrs should not collide with the data-* mapping helper."""
 
         @html_element("object")
-        def Object(*, data_: str | None = None) -> Element: ...
+        def Object(
+            *,
+            data_: str | None = None,
+            data: dict[str, object] | None = None,
+        ) -> Element: ...
 
         captured: dict[str, object] = {}
         dummy_session = _DummySession()
@@ -131,9 +137,9 @@ class TestIComponentProtocolConformance:
 
         monkeypatch.setattr(Object._component, "_place", fake_place)
 
-        Object(data_="/asset.bin")
-        assert captured["data"] == "/asset.bin"
-        assert "data_" not in captured
+        Object(data_="/asset.bin", data={"asset-id": 1})
+        assert captured["data_"] == "/asset.bin"
+        assert captured["data"] == {"asset-id": 1}
 
     def test_react_component_has_react_component_kind(self) -> None:
         """ReactComponentBase subclass should return REACT_COMPONENT kind."""

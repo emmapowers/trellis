@@ -272,7 +272,7 @@ function payload_name_for_binding(
   if (prop_name === "onSubmit") {
     return "SubmitEvent";
   }
-  if (react_event_interface === "SyntheticEvent") {
+  if (react_event_interface === "SyntheticEvent" || react_event_interface === "ReactEvent") {
     return "Event";
   }
   return react_event_interface;

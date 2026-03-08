@@ -261,7 +261,7 @@ def html_element(
             for key, value in props.items():
                 if value is None:
                     continue
-                normalized_key = key.removesuffix("_")
+                normalized_key = key if key == "data_" else key.removesuffix("_")
                 if normalized_key in normalized_props:
                     raise TypeError(
                         f"{element_name}() received duplicate keyword arguments after "

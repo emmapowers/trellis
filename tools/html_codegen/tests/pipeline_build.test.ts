@@ -123,12 +123,22 @@ describe("pipeline build", () => {
     });
     expect(find_element("script")).toMatchObject({
       python_name: "Script",
-      is_container: true,
+      is_container: false,
       text_behavior: "public_helper",
     });
     expect(find_element("style")).toMatchObject({
       python_name: "StyleTag",
-      is_container: true,
+      is_container: false,
+      text_behavior: "public_helper",
+    });
+    expect(find_element("title")).toMatchObject({
+      python_name: "Title",
+      is_container: false,
+      text_behavior: "public_helper",
+    });
+    expect(find_element("rp")).toMatchObject({
+      python_name: "Rp",
+      is_container: false,
       text_behavior: "public_helper",
     });
     expect(find_element("picture")).toMatchObject({
@@ -141,5 +151,46 @@ describe("pipeline build", () => {
       is_container: true,
       text_behavior: "none",
     });
+
+    const table_frame = ir.attributes.find((attribute) => attribute.id === "html:table:frame");
+    expect(table_frame?.type_expr).toEqual({
+      kind: "nullable",
+      item: {
+        kind: "union",
+        options: [
+          { kind: "literal", value: "void" },
+          { kind: "literal", value: "above" },
+          { kind: "literal", value: "below" },
+          { kind: "literal", value: "hsides" },
+          { kind: "literal", value: "vsides" },
+          { kind: "literal", value: "lhs" },
+          { kind: "literal", value: "rhs" },
+          { kind: "literal", value: "box" },
+          { kind: "literal", value: "border" },
+        ],
+      },
+    });
+
+    expect(ir.events.find((event) => event.id === "html:global:on_load")).toMatchObject({
+      dom_event_name: "load",
+      payload_name: "Event",
+      handler_name: "EventHandler",
+    });
+    expect(ir.events.find((event) => event.id === "html:global:on_play")).toMatchObject({
+      dom_event_name: "play",
+      payload_name: "Event",
+      handler_name: "EventHandler",
+    });
+
+    const focus_event = ir.dataclasses.find((dataclass_def) => dataclass_def.name === "FocusEvent");
+    expect(focus_event?.base).toBe("UIEvent");
+    expect(focus_event?.fields.some((field) => field.name_python === "related_target")).toBe(true);
+
+    const input_event = ir.dataclasses.find((dataclass_def) => dataclass_def.name === "InputEvent");
+    expect(input_event?.base).toBe("UIEvent");
+    expect(input_event?.fields.some((field) => field.name_python === "data_transfer")).toBe(true);
+
+    const submit_event = ir.dataclasses.find((dataclass_def) => dataclass_def.name === "SubmitEvent");
+    expect(submit_event?.fields.some((field) => field.name_python === "submitter")).toBe(true);
   });
 });

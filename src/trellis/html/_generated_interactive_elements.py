@@ -3,7 +3,7 @@
 Internal codegen artifact for trellis.html.
 Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
 
-Generated at: 2026-03-08T21:05:50.563Z
+Generated at: 2026-03-08T21:47:43.989Z
 """
 
 from __future__ import annotations
@@ -49,9 +49,7 @@ from trellis.html._generated_events import (
 from trellis.html._style_runtime import StyleInput
 from trellis.html.base import HtmlContainerElement, html_element
 
-__all__ = [
-    "_A",
-]
+__all__ = []
 
 DataValue = str | int | float | bool | None
 
@@ -191,10 +189,14 @@ def _A(
     on_drag_over: DragEventHandler | None = None,
     on_drag_start: DragEventHandler | None = None,
     on_drop: DragEventHandler | None = None,
+    on_ended: EventHandler | None = None,
+    on_error: EventHandler | None = None,
     on_focus: FocusEventHandler | None = None,
     on_input: InputEventHandler | None = None,
     on_key_down: KeyboardEventHandler | None = None,
     on_key_up: KeyboardEventHandler | None = None,
+    on_load: EventHandler | None = None,
+    on_loaded_metadata: EventHandler | None = None,
     on_mouse_down: MouseEventHandler | None = None,
     on_mouse_enter: MouseEventHandler | None = None,
     on_mouse_leave: MouseEventHandler | None = None,
@@ -202,8 +204,11 @@ def _A(
     on_mouse_out: MouseEventHandler | None = None,
     on_mouse_over: MouseEventHandler | None = None,
     on_mouse_up: MouseEventHandler | None = None,
+    on_pause: EventHandler | None = None,
+    on_play: EventHandler | None = None,
     on_scroll: UIEventHandler | None = None,
     on_submit: SubmitEventHandler | None = None,
+    on_time_update: EventHandler | None = None,
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
@@ -342,10 +347,14 @@ def _A(
     on_drag_over: DragEventHandler | None = None,
     on_drag_start: DragEventHandler | None = None,
     on_drop: DragEventHandler | None = None,
+    on_ended: EventHandler | None = None,
+    on_error: EventHandler | None = None,
     on_focus: FocusEventHandler | None = None,
     on_input: InputEventHandler | None = None,
     on_key_down: KeyboardEventHandler | None = None,
     on_key_up: KeyboardEventHandler | None = None,
+    on_load: EventHandler | None = None,
+    on_loaded_metadata: EventHandler | None = None,
     on_mouse_down: MouseEventHandler | None = None,
     on_mouse_enter: MouseEventHandler | None = None,
     on_mouse_leave: MouseEventHandler | None = None,
@@ -353,8 +362,11 @@ def _A(
     on_mouse_out: MouseEventHandler | None = None,
     on_mouse_over: MouseEventHandler | None = None,
     on_mouse_up: MouseEventHandler | None = None,
+    on_pause: EventHandler | None = None,
+    on_play: EventHandler | None = None,
     on_scroll: UIEventHandler | None = None,
     on_submit: SubmitEventHandler | None = None,
+    on_time_update: EventHandler | None = None,
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
@@ -495,10 +507,14 @@ def _A(
     on_drag_over: DragEventHandler | None = None,
     on_drag_start: DragEventHandler | None = None,
     on_drop: DragEventHandler | None = None,
+    on_ended: EventHandler | None = None,
+    on_error: EventHandler | None = None,
     on_focus: FocusEventHandler | None = None,
     on_input: InputEventHandler | None = None,
     on_key_down: KeyboardEventHandler | None = None,
     on_key_up: KeyboardEventHandler | None = None,
+    on_load: EventHandler | None = None,
+    on_loaded_metadata: EventHandler | None = None,
     on_mouse_down: MouseEventHandler | None = None,
     on_mouse_enter: MouseEventHandler | None = None,
     on_mouse_leave: MouseEventHandler | None = None,
@@ -506,8 +522,11 @@ def _A(
     on_mouse_out: MouseEventHandler | None = None,
     on_mouse_over: MouseEventHandler | None = None,
     on_mouse_up: MouseEventHandler | None = None,
+    on_pause: EventHandler | None = None,
+    on_play: EventHandler | None = None,
     on_scroll: UIEventHandler | None = None,
     on_submit: SubmitEventHandler | None = None,
+    on_time_update: EventHandler | None = None,
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element:

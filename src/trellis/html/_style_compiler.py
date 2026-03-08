@@ -236,26 +236,34 @@ def _media_query(rule: MediaRule) -> str:
     parts: list[str] = []
     if rule.query:
         parts.append(rule.query)
-    for field_name in (
+    auto_px_fields = {
         "min_width",
         "max_width",
         "min_height",
         "max_height",
-        "orientation",
-        "hover",
-        "pointer",
-        "prefers_color_scheme",
-        "prefers_reduced_motion",
-    ):
-        value = getattr(rule, field_name)
+        "width",
+        "height",
+        "device_width",
+        "device_height",
+        "min_device_width",
+        "max_device_width",
+        "min_device_height",
+        "max_device_height",
+    }
+    for field in fields(rule):
+        if field.name in {"style", "query"}:
+            continue
+        value = getattr(rule, field.name)
         if value is None:
             continue
-        css_name = field_name.replace("_", "-")
+        css_name = field.name.replace("_", "-")
         serialized = _serialize_value(
             value,
-            auto_px=field_name in {"min_width", "max_width", "min_height", "max_height"},
+            auto_px=field.name in auto_px_fields,
         )
         parts.append(f"({css_name}: {serialized})")
+    if not parts:
+        raise ValueError("MediaRule must define `query` or at least one media feature")
     return " and ".join(parts)
 
 

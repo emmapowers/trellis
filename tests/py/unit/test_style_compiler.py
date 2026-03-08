@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from trellis import html as h
 from trellis.html._style_compiler import compile_style, merge_style_inputs
 
@@ -82,3 +84,34 @@ def test_compile_style_omits_empty_selector_blocks_inside_media_rules() -> None:
     assert ">{}" not in style_rules
     assert "@media (min-width: 960px)" in style_rules
     assert "> * + *{margin-top:32px;}" in style_rules
+
+
+def test_compile_style_serializes_full_media_rule_surface() -> None:
+    _, class_name, style_rules = compile_style(
+        h.Style(
+            media=[
+                h.media(
+                    style=h.Style(color="red"),
+                    min_width=720,
+                    display_mode="browser",
+                    any_hover="hover",
+                    color=8,
+                    aspect_ratio="16/9",
+                )
+            ]
+        )
+    )
+
+    assert class_name is not None
+    assert style_rules is not None
+    assert "@media" in style_rules
+    assert "(min-width: 720px)" in style_rules
+    assert "(display-mode: browser)" in style_rules
+    assert "(any-hover: hover)" in style_rules
+    assert "(color: 8)" in style_rules
+    assert "(aspect-ratio: 16/9)" in style_rules
+
+
+def test_compile_style_rejects_empty_media_rules() -> None:
+    with pytest.raises(ValueError, match="MediaRule must define"):
+        compile_style(h.Style(media=[h.MediaRule(style=h.Style())]))

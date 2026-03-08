@@ -19,6 +19,14 @@ def test_widget_signatures_use_shared_css_types() -> None:
     assert label_hints["style"] == StyleInput | None
 
 
+def test_public_style_input_aliases_accept_plain_strings() -> None:
+    spacing_value = getattr(SpacingInput, "__value__", SpacingInput)
+    width_value = getattr(WidthInput, "__value__", WidthInput)
+
+    assert str in tp.get_args(spacing_value)
+    assert str in tp.get_args(width_value)
+
+
 def test_legacy_style_dataclasses_are_removed() -> None:
     assert not hasattr(trellis, "Margin")
     assert not hasattr(trellis, "Padding")
