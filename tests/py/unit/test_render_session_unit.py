@@ -1,14 +1,19 @@
 """Unit tests for RenderSession class."""
 
+import asyncio
+import inspect
+import logging
 import weakref
 from typing import TYPE_CHECKING
+
+import pytest
 
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.dirty_tracker import DirtyTracker
 from trellis.core.rendering.element import Element
 from trellis.core.rendering.element_state import ElementStateStore
 from trellis.core.rendering.element_store import ElementStore
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, TaskErrorPolicy
 
 if TYPE_CHECKING:
     from trellis.core.components.composition import CompositionComponent
@@ -137,3 +142,123 @@ class TestRenderSession:
             with session.lock:
                 # Should not deadlock
                 pass
+
+    @pytest.mark.anyio
+    async def test_spawn_logs_and_isolates_task_failure(
+        self,
+        noop_component: "CompositionComponent",
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """LOG_AND_CONTINUE failures are logged without failing the session."""
+        session = RenderSession(root_component=noop_component)
+        completed = asyncio.Event()
+
+        async def failing_task() -> None:
+            raise RuntimeError("task failed")
+
+        async def succeeding_task() -> None:
+            completed.set()
+
+        with caplog.at_level(logging.ERROR):
+            failed = session.spawn(
+                failing_task(),
+                label="failing task",
+                policy=TaskErrorPolicy.LOG_AND_CONTINUE,
+            )
+            succeeded = session.spawn(
+                succeeding_task(),
+                label="succeeding task",
+                policy=TaskErrorPolicy.LOG_AND_CONTINUE,
+            )
+
+            await asyncio.wait_for(completed.wait(), timeout=1.0)
+            assert await asyncio.wait_for(failed, timeout=1.0) is None
+            assert await asyncio.wait_for(succeeded, timeout=1.0) is None
+
+        assert session.fatal_error is None
+        assert "Error in failing task" in caplog.text
+
+    @pytest.mark.anyio
+    async def test_spawn_fail_session_sets_fatal_error(
+        self,
+        noop_component: "CompositionComponent",
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """FAIL_SESSION failures store the exception and wake fatal waiters."""
+        session = RenderSession(root_component=noop_component)
+
+        async def failing_task() -> None:
+            raise ValueError("fatal task failed")
+
+        with caplog.at_level(logging.ERROR):
+            task = session.spawn(
+                failing_task(),
+                label="fatal task",
+                policy=TaskErrorPolicy.FAIL_SESSION,
+            )
+            fatal_error = await asyncio.wait_for(session.wait_until_failed(), timeout=1.0)
+            assert await asyncio.wait_for(task, timeout=1.0) is None
+
+        assert isinstance(fatal_error, ValueError)
+        assert str(fatal_error) == "fatal task failed"
+        assert session.fatal_error is fatal_error
+        assert "Fatal error in fatal task" in caplog.text
+
+    @pytest.mark.anyio
+    async def test_shutdown_cancels_pending_tasks(
+        self,
+        noop_component: "CompositionComponent",
+    ) -> None:
+        """shutdown() cancels pending tasks and removes them from tracking."""
+        session = RenderSession(root_component=noop_component)
+        cancelled = asyncio.Event()
+        started = asyncio.Event()
+
+        async def pending_task() -> None:
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                cancelled.set()
+                raise
+
+        task = session.spawn(
+            pending_task(),
+            label="pending task",
+            policy=TaskErrorPolicy.LOG_AND_CONTINUE,
+        )
+        await asyncio.wait_for(started.wait(), timeout=1.0)
+
+        await session.shutdown()
+
+        assert task.cancelled()
+        await asyncio.wait_for(cancelled.wait(), timeout=1.0)
+        assert not session._tasks
+
+    @pytest.mark.anyio
+    async def test_spawn_after_shutdown_raises_and_closes_coroutine(
+        self,
+        noop_component: "CompositionComponent",
+    ) -> None:
+        """spawn() rejects new tasks once shutdown starts and closes the coroutine."""
+        session = RenderSession(root_component=noop_component)
+        closed = False
+
+        async def late_task() -> None:
+            nonlocal closed
+            try:
+                await asyncio.sleep(0)
+            finally:
+                closed = True
+
+        await session.shutdown()
+        coro = late_task()
+
+        with pytest.raises(RuntimeError, match=r"Cannot spawn task on a shutting down session\."):
+            session.spawn(
+                coro,
+                label="late task",
+                policy=TaskErrorPolicy.LOG_AND_CONTINUE,
+            )
+
+        assert inspect.getcoroutinestate(coro) == inspect.CORO_CLOSED

@@ -873,7 +873,7 @@ class TestAsyncLifecycleHooks:
     ) -> None:
         """Background tasks from async hooks are tracked on session.
 
-        INTERNAL TEST: _background_tasks is internal - verifies GC prevention.
+        INTERNAL TEST: _tasks is internal - verifies GC prevention.
         """
         completed: list[str] = []
         proceed_event = asyncio.Event()
@@ -899,7 +899,7 @@ class TestAsyncLifecycleHooks:
             await asyncio.sleep(0)
 
             # Task should be tracked
-            assert len(capture.session._background_tasks) == 1
+            assert len(capture.session._tasks) == 1
 
             # Let task complete
             proceed_event.set()
@@ -909,7 +909,7 @@ class TestAsyncLifecycleHooks:
             await asyncio.sleep(0)
 
             # Task should be removed after completion
-            assert len(capture.session._background_tasks) == 0
+            assert len(capture.session._tasks) == 0
             assert completed == ["done"]
 
         asyncio.run(test())

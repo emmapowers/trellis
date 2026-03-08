@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import contextvars
+import enum
+import logging
 import re
 import threading
 import typing as tp
@@ -27,6 +29,8 @@ __all__ = [
     "is_render_active",
     "set_active_session",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 # Thread-safe, task-local storage for the active render session.
@@ -57,6 +61,13 @@ def is_render_active() -> bool:
 _PATH_SEGMENT_RE = re.compile(r"^([a-zA-Z_][a-zA-Z0-9_]*)|^\[(\d+)\]|^\.([a-zA-Z_][a-zA-Z0-9_]*)")
 
 
+class TaskErrorPolicy(enum.Enum):
+    """How a session-managed task should affect the owning session on failure."""
+
+    LOG_AND_CONTINUE = "log_and_continue"
+    FAIL_SESSION = "fail_session"
+
+
 @dataclass
 class RenderSession:
     """Session-scoped state container."""
@@ -78,8 +89,11 @@ class RenderSession:
     # Render count - incremented at the start of each render pass
     render_count: int = 0
 
-    # Background tasks for async lifecycle hooks (prevents GC)
-    _background_tasks: set[asyncio.Task[tp.Any]] = field(default_factory=set)
+    # Session-scoped async tasks (lifecycle hooks, callbacks, load requests, render loop)
+    _tasks: set[asyncio.Task[tp.Any]] = field(default_factory=set)
+    _fatal_error: BaseException | None = None
+    _fatal_event: asyncio.Event = field(default_factory=asyncio.Event)
+    _shutting_down: bool = False
 
     # Initial URL path from client HelloMessage (for routing)
     initial_path: str = "/"
@@ -87,11 +101,80 @@ class RenderSession:
     def __post_init__(self) -> None:
         self.dirty.set_lock(self.lock)
 
-    def track_background_task[T](self, task: asyncio.Task[T]) -> asyncio.Task[T]:
-        """Track a background task for the lifetime of this session."""
-        self._background_tasks.add(task)
-        task.add_done_callback(self._background_tasks.discard)
+    @property
+    def fatal_error(self) -> BaseException | None:
+        """Return the fatal session error, if one has been recorded."""
+        return self._fatal_error
+
+    def spawn[T](
+        self,
+        coro: tp.Coroutine[tp.Any, tp.Any, T],
+        *,
+        label: str,
+        policy: TaskErrorPolicy,
+    ) -> asyncio.Task[T]:
+        """Create and track a session-scoped task with explicit failure policy."""
+        if self._shutting_down:
+            coro.close()
+            raise RuntimeError("Cannot spawn task on a shutting down session.")
+
+        async def run_managed_task() -> T | None:
+            try:
+                return await coro
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                if policy is TaskErrorPolicy.FAIL_SESSION:
+                    self._mark_fatal(exc)
+                    logger.exception("Fatal error in %s", label)
+                else:
+                    logger.exception("Error in %s", label)
+                return None
+
+        task = tp.cast("asyncio.Task[T]", asyncio.create_task(run_managed_task()))
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
         return task
+
+    def track_background_task[T](self, task: asyncio.Task[T]) -> asyncio.Task[T]:
+        """Temporarily preserve legacy task registration during staged migration."""
+        if self._shutting_down:
+            task.cancel()
+            raise RuntimeError("Cannot spawn task on a shutting down session.")
+
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+        return task
+
+    async def wait_until_failed(self) -> BaseException:
+        """Wait for the session to enter a fatal state and return the failure."""
+        await self._fatal_event.wait()
+        assert self._fatal_error is not None
+        return self._fatal_error
+
+    async def shutdown(self) -> None:
+        """Cancel and await all remaining session-scoped tasks."""
+        if self._shutting_down:
+            return
+
+        self._shutting_down = True
+        current_task = asyncio.current_task()
+        tasks_to_cancel = [task for task in self._tasks if task is not current_task]
+
+        for task in tasks_to_cancel:
+            task.cancel()
+
+        if tasks_to_cancel:
+            await asyncio.gather(*tasks_to_cancel, return_exceptions=True)
+
+        self._tasks.clear()
+
+    def _mark_fatal(self, error: BaseException) -> None:
+        """Record the first fatal session error and wake fatal waiters."""
+        if self._fatal_error is not None:
+            return
+        self._fatal_error = error
+        self._fatal_event.set()
 
     @property
     def root_element(self) -> Element | None:
