@@ -19,10 +19,9 @@ from trellis.platforms.desktop.standalone_platform import DesktopStandalonePlatf
 def _find_app(module_name: str) -> App:
     """Import the user module and find the App instance."""
     mod = importlib.import_module(module_name)
-    for name in dir(mod):
-        obj = getattr(mod, name)
-        if isinstance(obj, App):
-            return obj
+    obj = getattr(mod, "app", None)
+    if isinstance(obj, App):
+        return obj
     raise RuntimeError(
         f"No App instance found in {module_name}. "
         "Your app module must define: app = App(RootComponent)"

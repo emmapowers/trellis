@@ -63,7 +63,13 @@ fn read_footer(exe_path: &Path) -> Result<Footer, String> {
     let hash = std::str::from_utf8(&footer[0..32])
         .map_err(|_| "invalid hash")?
         .to_string();
+    if hash.len() != 32 || !hash.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err("invalid hash: expected 32 hex characters".into());
+    }
     let archive_size = u64::from_le_bytes(footer[32..40].try_into().unwrap());
+    if archive_size == 0 || archive_size > file_len - FOOTER_SIZE {
+        return Err("invalid archive size".into());
+    }
     Ok(Footer { hash, archive_size })
 }
 
@@ -89,6 +95,9 @@ fn extract_archive(exe_path: &Path, footer: &Footer, dest: &Path) -> Result<(), 
     for i in 0..total {
         let mut entry = archive.by_index(i).map_err(|e| format!("zip entry: {e}"))?;
         let name = entry.name().to_string();
+        if name.contains("..") || name.starts_with('/') || name.starts_with('\\') {
+            return Err(format!("zip entry contains path traversal: {name}"));
+        }
         let out_path = dest.join(&name);
 
         if entry.is_dir() {
@@ -274,7 +283,8 @@ fn acquire_lock(lock_path: &Path) -> Result<fs::File, String> {
     Err("timeout waiting for lock".into())
 }
 
-fn release_lock(lock_path: &Path) {
+fn release_lock(lock_file: fs::File, lock_path: &Path) {
+    drop(lock_file);
     let _ = fs::remove_file(lock_path);
 }
 
@@ -345,7 +355,7 @@ fn write_uninstall_script(install_dir: &Path) {
          reg delete \"{reg_key}\" /f >nul 2>&1\r\n\
          if exist \"{lnk_s}\" del \"{lnk_s}\" >nul 2>&1\r\n\
          cd /d \"%TEMP%\"\r\n\
-         start \"\" /b cmd /c \"timeout /t 3 /nocount >nul 2>&1 & rmdir /s /q \"{dir_s}\"\"\r\n\
+         start \"\" /b cmd /c \"timeout /t 3 /nocount >nul 2>&1 & rmdir /s /q \"\"{dir_s}\"\"\"\r\n\
          exit /b 0\r\n"
     );
 
@@ -471,7 +481,7 @@ fn main() -> ExitCode {
 
     if needs_install {
         let lock_path = install_dir.join(".install.lock");
-        let _lock = match acquire_lock(&lock_path) {
+        let lock_file = match acquire_lock(&lock_path) {
             Ok(l) => l,
             Err(e) => show_error(&format!("Failed to acquire lock: {e}")),
         };
@@ -490,13 +500,13 @@ fn main() -> ExitCode {
 
             if let Err(e) = extract_archive(&exe_path, &footer, &temp_dir) {
                 let _ = fs::remove_dir_all(&temp_dir);
-                release_lock(&lock_path);
+                release_lock(lock_file, &lock_path);
                 show_error(&format!("Installation failed: {e}"));
             }
 
             if let Err(e) = fs::rename(&temp_dir, &app_dir) {
                 let _ = fs::remove_dir_all(&temp_dir);
-                release_lock(&lock_path);
+                release_lock(lock_file, &lock_path);
                 show_error(&format!("Failed to finalize installation: {e}"));
             }
 
@@ -508,7 +518,7 @@ fn main() -> ExitCode {
             show_info(&format!("{} has been installed successfully.", PRODUCT_NAME));
         }
 
-        release_lock(&lock_path);
+        release_lock(lock_file, &lock_path);
     }
 
     // Launch the app

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import io
-import sys
 import tarfile
 import time
 from pathlib import Path
@@ -395,7 +394,7 @@ class TestSafeExtract:
             with pytest.raises(ValueError, match="path traversal"):
                 safe_extract(tar, tmp_path)
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Symlinks require admin on Windows")
+    @pytest.mark.platform(exclude="win32")
     def test_allows_internal_symlinks(self, tmp_path: Path) -> None:
         """Allows symlinks whose target resolves within the destination."""
         tar_buffer = io.BytesIO()
@@ -415,6 +414,29 @@ class TestSafeExtract:
             safe_extract(tar, tmp_path)
 
         assert (tmp_path / "package" / "link").is_symlink()
+
+    @pytest.mark.platform(exclude="win32")
+    def test_rejects_symlink_traversal_via_earlier_link(self, tmp_path: Path) -> None:
+        """Rejects paths that escape via a symlink declared earlier in the archive."""
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            # First: symlink package/link -> subdir/..  (resolves to package/)
+            link_info = tarfile.TarInfo(name="package/link")
+            link_info.type = tarfile.SYMTYPE
+            link_info.linkname = "subdir/.."
+            tar.addfile(link_info)
+
+            # Second: file that traverses through the symlink to escape
+            # package/link/../../escape.txt -> package/(subdir/..)/../.. -> above dest
+            data = b"escaped"
+            info = tarfile.TarInfo(name="package/link/../../escape.txt")
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            with pytest.raises(ValueError, match="path traversal"):
+                safe_extract(tar, tmp_path)
 
     def test_rejects_escaping_symlinks(self, tmp_path: Path) -> None:
         """Rejects symlinks whose target resolves outside the destination."""

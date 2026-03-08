@@ -51,7 +51,13 @@ fn read_footer(exe_path: &Path) -> Result<Footer, String> {
     let hash = std::str::from_utf8(&footer[0..32])
         .map_err(|_| "invalid hash")?
         .to_string();
+    if hash.len() != 32 || !hash.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err("invalid hash: expected 32 hex characters".into());
+    }
     let archive_size = u64::from_le_bytes(footer[32..40].try_into().unwrap());
+    if archive_size == 0 || archive_size > file_len - FOOTER_SIZE {
+        return Err("invalid archive size".into());
+    }
 
     Ok(Footer { hash, archive_size })
 }
@@ -79,6 +85,9 @@ fn extract_archive(exe_path: &Path, footer: &Footer, dest: &Path) -> Result<(), 
     for i in 0..total {
         let mut entry = archive.by_index(i).map_err(|e| format!("zip entry: {e}"))?;
         let name = entry.name().to_string();
+        if name.contains("..") || name.starts_with('/') || name.starts_with('\\') {
+            return Err(format!("zip entry contains path traversal: {name}"));
+        }
         let out_path = dest.join(&name);
 
         if entry.is_dir() {
@@ -266,7 +275,8 @@ fn acquire_lock(lock_path: &Path) -> Result<fs::File, String> {
     Err("timeout waiting for lock".into())
 }
 
-fn release_lock(lock_path: &Path) {
+fn release_lock(lock_file: fs::File, lock_path: &Path) {
+    drop(lock_file);
     let _ = fs::remove_file(lock_path);
 }
 
@@ -321,7 +331,7 @@ fn main() -> ExitCode {
 
     if !real_exe.exists() {
         let lock_path = cache_dir.join(format!("{}.lock", footer.hash));
-        let _lock = match acquire_lock(&lock_path) {
+        let lock_file = match acquire_lock(&lock_path) {
             Ok(l) => l,
             Err(e) => show_error(&format!("Failed to acquire lock: {e}")),
         };
@@ -335,18 +345,18 @@ fn main() -> ExitCode {
 
             if let Err(e) = extract_archive(&exe_path, &footer, &temp_dir) {
                 let _ = fs::remove_dir_all(&temp_dir);
-                release_lock(&lock_path);
+                release_lock(lock_file, &lock_path);
                 show_error(&format!("Extraction failed: {e}"));
             }
 
             if let Err(e) = fs::rename(&temp_dir, &version_dir) {
                 let _ = fs::remove_dir_all(&temp_dir);
-                release_lock(&lock_path);
+                release_lock(lock_file, &lock_path);
                 show_error(&format!("Failed to finalize extraction: {e}"));
             }
         }
 
-        release_lock(&lock_path);
+        release_lock(lock_file, &lock_path);
     }
 
     // Best-effort cleanup of old versions

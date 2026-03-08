@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -287,7 +286,7 @@ class TestGetBin:
         assert get_bin(node_modules, "esbuild") == node_modules / ".bin" / "esbuild"
         assert get_bin(node_modules, "prettier") == node_modules / ".bin" / "prettier"
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Windows uses .cmd extension")
+    @pytest.mark.platform(exclude="win32")
     def test_get_bin_unix_path(self, tmp_path: Path) -> None:
         """On Unix, get_bin returns path without extension."""
         node_modules = tmp_path / "node_modules"

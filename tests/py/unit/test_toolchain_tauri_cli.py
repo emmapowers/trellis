@@ -8,7 +8,6 @@ import zipfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from trellis.toolchain import TAURI_CLI_VERSION
 from trellis.toolchain.rustup import RustToolchain
 from trellis.toolchain.tauri_cli import ensure_tauri_cli
 
@@ -46,7 +45,7 @@ class TestEnsureTauriCli:
             ),
         ):
             # Create fake cached binary
-            binary_dir = tmp_path / f"tauri-cli-{TAURI_CLI_VERSION}"
+            binary_dir = tmp_path / "tauri-cli-2.10.0"
             binary_dir.mkdir(parents=True)
             binary_path = binary_dir / "cargo-tauri"
             binary_path.write_text("fake tauri cli")

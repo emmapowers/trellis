@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import typing as tp
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -31,7 +32,25 @@ def pytest_configure(config: pytest.Config) -> None:
     """Register custom pytest markers."""
     config.addinivalue_line("markers", "slow: marks test as slow (>1s or subprocess)")
     config.addinivalue_line("markers", "network: requires network access")
-    config.addinivalue_line("markers", "platform: cross-platform protocol tests")
+    config.addinivalue_line(
+        "markers",
+        "platform(only=None, exclude=None): OS-specific tests. "
+        "only='darwin' runs only on macOS; exclude='win32' skips on Windows.",
+    )
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Auto-skip tests based on @pytest.mark.platform marker."""
+    for item in items:
+        marker = item.get_closest_marker("platform")
+        if marker is None:
+            continue
+        only = marker.kwargs.get("only")
+        exclude = marker.kwargs.get("exclude")
+        if only and sys.platform != only:
+            item.add_marker(pytest.mark.skip(reason=f"platform: only runs on {only}"))
+        if exclude and sys.platform == exclude:
+            item.add_marker(pytest.mark.skip(reason=f"platform: excluded on {exclude}"))
 
 
 @contextmanager

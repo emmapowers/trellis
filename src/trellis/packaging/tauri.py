@@ -14,7 +14,12 @@ from typing import TYPE_CHECKING
 import jinja2
 
 from trellis.packaging.portable import build_installer_exe, build_portable_exe
-from trellis.toolchain import ensure_python_standalone, ensure_rustup, ensure_tauri_cli
+from trellis.toolchain import (
+    PYTHON_STANDALONE_VERSION,
+    ensure_python_standalone,
+    ensure_rustup,
+    ensure_tauri_cli,
+)
 from trellis.toolchain.rustup import RustToolchain
 
 if TYPE_CHECKING:
@@ -388,7 +393,8 @@ def run_tauri_build(
         ld_library_path = ""
     else:
         lib_paths = [str(pyembed_dir / "lib")]
-        site_packages = pyembed_dir / "lib" / "python3.13" / "site-packages"
+        python_dir = "python" + ".".join(PYTHON_STANDALONE_VERSION.split(".")[:2])
+        site_packages = pyembed_dir / "lib" / python_dir / "site-packages"
         if site_packages.is_dir():
             lib_paths.extend(str(d) for d in site_packages.glob("*.libs"))
         if existing := os.environ.get("LD_LIBRARY_PATH"):

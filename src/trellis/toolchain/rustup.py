@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -127,8 +128,9 @@ def _try_rustup_install() -> RustToolchain | None:
         },
     )
 
-    cargo_bin = cargo_home / "bin" / "cargo"
-    rustc_bin = cargo_home / "bin" / "rustc"
+    ext = ".exe" if sys.platform == "win32" else ""
+    cargo_bin = cargo_home / "bin" / f"cargo{ext}"
+    rustc_bin = cargo_home / "bin" / f"rustc{ext}"
 
     return RustToolchain(
         cargo_home=cargo_home,
@@ -183,11 +185,12 @@ def _download_rustup() -> RustToolchain:
 
     init_path.unlink(missing_ok=True)
 
+    ext = ".exe" if sys.platform == "win32" else ""
     return RustToolchain(
         cargo_home=cargo_home,
         rustup_home=rustup_home,
-        cargo_bin=cargo_home / "bin" / "cargo",
-        rustc_bin=cargo_home / "bin" / "rustc",
+        cargo_bin=cargo_home / "bin" / f"cargo{ext}",
+        rustc_bin=cargo_home / "bin" / f"rustc{ext}",
     )
 
 
@@ -209,8 +212,9 @@ def ensure_rustup() -> RustToolchain:
     if env_cargo and env_rustup:
         cargo_home = Path(env_cargo)
         rustup_home = Path(env_rustup)
-        rustc = cargo_home / "bin" / "rustc"
-        cargo = cargo_home / "bin" / "cargo"
+        ext = ".exe" if sys.platform == "win32" else ""
+        rustc = cargo_home / "bin" / f"rustc{ext}"
+        cargo = cargo_home / "bin" / f"cargo{ext}"
         if rustc.exists():
             result = subprocess.run(
                 [str(rustc), "--version"],
