@@ -111,7 +111,7 @@ class DesktopStandalonePlatform(Platform):
                 get_global_registry().unregister(handler)
                 if self._handler is handler:
                     self._handler = None
-                _clear_dialog_runtime()
+                    _clear_dialog_runtime()
 
             self._handler_task = asyncio.create_task(handler.run())
             self._handler_task.add_done_callback(_on_handler_done)

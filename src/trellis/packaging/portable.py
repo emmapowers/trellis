@@ -36,7 +36,11 @@ def _output_filename(product_name: str, version: str, ext: str, *, installer: bo
         _output_filename("Widget Showcase", "0.1.0", "exe") -> "Widget-Showcase-0.1.0.exe"
         _output_filename("My App", "1.0.0", "exe", installer=True) -> "My-App-1.0.0-installer.exe"
     """
-    name = product_name.replace(" ", "-")
+    name = re.sub(r'[<>:"/\\|?*\x00-\x1f]+', "-", product_name)
+    name = re.sub(r"\s+", "-", name).strip(" .-")
+    name = re.sub(r"-+", "-", name)
+    if not name:
+        raise ValueError("product_name must contain at least one valid filename character")
     suffix = "-installer" if installer else ""
     return f"{name}-{version}{suffix}.{ext}"
 
@@ -71,7 +75,7 @@ def _collect_app_files(release_dir: Path) -> list[tuple[Path, str]]:
 def _create_archive(files: list[tuple[Path, str]], archive_path: Path) -> None:
     """Create a zip archive from the collected files."""
     with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        for abs_path, arc_name in files:
+        for abs_path, arc_name in sorted(files, key=lambda item: item[1]):
             zf.write(abs_path, arc_name)
 
 
@@ -116,6 +120,9 @@ def _generate_launcher_scaffold(
     if icon_path and icon_path.exists():
         shutil.copy2(icon_path, launcher_dir / "icon.ico")
         file_map["build.rs.j2"] = "build.rs"
+    else:
+        (launcher_dir / "build.rs").unlink(missing_ok=True)
+        (launcher_dir / "icon.ico").unlink(missing_ok=True)
 
     for template_name, output_name in file_map.items():
         template = env.get_template(template_name)
