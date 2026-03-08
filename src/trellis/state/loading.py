@@ -131,7 +131,7 @@ class _LoadState(Stateful):
         args: tuple[object, ...],
         kwargs: dict[str, object],
         key: object | _NoKey,
-    ) -> None:
+    ) -> Load[T]:
         """Update the semantic inputs for this slot and restart if needed."""
         session = get_active_session()
         if session is None or not session.is_executing():
@@ -152,6 +152,8 @@ class _LoadState(Stateful):
         if should_restart:
             self._restart(from_render=True)
             self._has_request = True
+
+        return self._snapshot()
 
     def reload(self) -> None:
         """Force a fresh request for the current slot inputs."""
@@ -199,7 +201,8 @@ class _LoadState(Stateful):
         if task is not None:
             task.cancel()
 
-        self._set_loading_state(from_render=from_render)
+        if not from_render:
+            self._set_loading_state()
 
         fn = self._fn
         if fn is None:
@@ -248,16 +251,8 @@ class _LoadState(Stateful):
         self.value = value
         self.error = None
 
-    def _set_loading_state(self, *, from_render: bool) -> None:
-        """Reset controller state before starting a fresh request."""
-        if from_render:
-            # Stateful writes during render are disallowed, but load() needs
-            # the same render pass to reflect the new Loading state.
-            object.__setattr__(self, "status", _STATUS_LOADING)
-            object.__setattr__(self, "value", None)
-            object.__setattr__(self, "error", None)
-            return
-
+    def _set_loading_state(self) -> None:
+        """Reset controller state before starting an explicit fresh request."""
         self.status = _STATUS_LOADING
         self.value = None
         self.error = None
@@ -266,6 +261,21 @@ class _LoadState(Stateful):
         if self._session_ref is None:
             return None
         return self._session_ref()
+
+    def _snapshot(self) -> Load[T]:
+        """Capture the current load result while preserving reactive dependencies."""
+        status = self.status
+        value = self.value
+        error = self.error
+        task = self._active_task
+
+        if task is not None and not task.done():
+            return Loading(self)
+        if status == _STATUS_READY:
+            return Ready(self, tp.cast("T", value))
+        if status == _STATUS_FAILED:
+            return Failed(self, tp.cast("Exception", error))
+        return Loading(self)
 
     def _cancel_active_request(self) -> None:
         """Cancel the in-flight request and invalidate any pending completion."""
@@ -352,15 +362,9 @@ def load(
         raise TypeError("load() requires an async loader function.")
 
     controller = _LoadState()
-    controller.use(
+    return controller.use(
         tp.cast("tp.Callable[..., tp.Awaitable[T]]", fn),
         call_args,
         kwargs,
         key,
     )
-
-    if controller.status == _STATUS_READY:
-        return Ready(controller, tp.cast("T", controller.value))
-    if controller.status == _STATUS_FAILED:
-        return Failed(controller, tp.cast("Exception", controller.error))
-    return Loading(controller)
