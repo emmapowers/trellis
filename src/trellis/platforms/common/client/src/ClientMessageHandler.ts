@@ -135,7 +135,8 @@ export class ClientMessageHandler {
         }
         callableTarget = target;
       } else {
-        const method = target[msg.method];
+        const objectTarget = target as Record<string, unknown>;
+        const method = objectTarget[msg.method];
         if (typeof method !== "function") {
           throw new Error(
             `Proxy method not found or not callable: ${msg.proxy_id}.${msg.method}`
