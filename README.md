@@ -52,6 +52,7 @@ Trellis aims for both: simple to start, maintainable as applications grow.
 
 - **Declarative UI in Python** — `@component` functions with context-manager syntax. No templates, no separate frontend language.
 - **Reactive state** — Automatic dependency tracking. Components re-render when dependencies change.
+- **Local state helpers** — `state_var()`, `on_mount()`, and `load()` cover simple component-local state, lifecycle work, and async resources without a full state class.
 - **Fine-grained updates** — Only affected components re-render. Efficient diffs over the wire.
 - **Dark mode** — System theme detection with light/dark toggle. Theme tokens for consistent styling.
 - **Three platforms** — Server (web app), Desktop (native), Browser (Pyodide). Same codebase, each adapts to platform strengths.
@@ -83,24 +84,19 @@ All widgets support React Aria for accessibility (keyboard navigation, focus man
 ## Example
 
 ```python
-from dataclasses import dataclass
-from trellis import Stateful, component
-from trellis import html as h
+from trellis import component, state_var
 from trellis import widgets as w
-
-@dataclass
-class Counter(Stateful):
-    count: int = 0
-    def increment(self) -> None:
-        self.count += 1
 
 @component
 def App() -> None:
-    state = Counter()
+    count = state_var(0)
+
     with w.Column():
-        w.Label(text=f"Count: {state.count}", font_size=24)
-        w.Button(text="Increment", on_click=state.increment)
+        w.Label(text=f"Count: {count.value}", font_size=24)
+        w.Button(text="Increment", on_click=lambda: count.set(count.value + 1))
 ```
+
+Use `state_var()` for one-off local values like counters and toggles. Keep `Stateful` classes for structured, multi-field, shared, or behavior-heavy state.
 
 ## Installation
 

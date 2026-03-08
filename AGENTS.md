@@ -57,6 +57,7 @@ src/trellis/
 - Initialize instance state in `__init__`, unless the class is intentionally using `@dataclass`.
 - Use `ClassVar[...]` only for true class-level data, not per-instance defaults.
 - Avoid class-body mutable instance defaults in plain classes.
+- Use `state_var()` for simple component-local state such as 1-2 independent values. Keep `Stateful` classes for structured, multi-field, shared, or behavior-heavy state.
 
 ### Import Style
 
@@ -69,6 +70,7 @@ from trellis import html as h
 ```
 
 - `trellis` exports core primitives (`component`, `Stateful`, `RenderSession`, etc.) plus `App`
+- Import state helpers like `state_var`, `on_mount`, and `load` directly from `trellis` when needed
 - Widgets are accessed via `w.Button`, `w.Label`, `w.Column`, etc.
 - HTML elements are accessed via `h.Div`, `h.Span`, `h.P`, etc.
 
