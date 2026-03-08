@@ -53,6 +53,10 @@ src/trellis/
 - use the test-driven development skill when making changes
 - code comments should document the code that as it is. Do not leave comments saying what has changed. Make sure existing comments are updated when code associated with them changes.
 - prefer normal attribute access over `object.__getattribute__`/`object.__setattr__`. If a class owns an attribute, declare it on the class and initialize it in the constructor. Only use `object.__getattribute__`/`object.__setattr__` when working around framework limitations (e.g. `@dataclass` not calling `super().__init__`) or truly dynamic attribute access.
+- Declare all owned instance attributes in the class body with type annotations.
+- Initialize instance state in `__init__`, unless the class is intentionally using `@dataclass`.
+- Use `ClassVar[...]` only for true class-level data, not per-instance defaults.
+- Avoid class-body mutable instance defaults in plain classes.
 
 ### Import Style
 
