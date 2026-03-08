@@ -9,7 +9,7 @@ import pytest
 
 import trellis.core.proxy as proxy_module
 from trellis.core.components.composition import CompositionComponent
-from trellis.core.proxy import js_method, js_proxy
+from trellis.core.proxy import js_global, js_method, js_proxy
 from trellis.platforms.common.handler import MessageHandler
 from trellis.platforms.common.messages import Message, ProxyCall
 
@@ -62,6 +62,23 @@ async def format_now(value: int) -> str:
 @js_proxy(name="formatExactly")
 async def format_exactly(value: int) -> str:
     raise NotImplementedError
+
+
+@js_global("window.localStorage")
+class LocalStorage:
+    @js_method(name="getItem")
+    async def get_item(self, key: str) -> str | None:
+        raise NotImplementedError
+
+    @js_method(name="setItem")
+    async def set_item(self, key: str, value: str) -> None:
+        raise NotImplementedError
+
+
+@js_global("globalThis.encodeURIComponent", kind="function")
+class EncodeURIComponent:
+    async def encode(self, value: str) -> str:
+        raise NotImplementedError
 
 
 def _identity_wrapper(
@@ -248,6 +265,139 @@ class TestJsProxyFunctions:
             @js_proxy
             def invalid(value: int) -> int:
                 return value
+
+
+class TestJsGlobalObjects:
+    def test_object_global_proxy_uses_reserved_global_proxy_id(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Global object proxies send calls through the reserved global ID prefix."""
+        transport = RecordingTransport(result="dark")
+        storage = LocalStorage()
+
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+        result = asyncio.run(storage.get_item("theme"))
+
+        assert result == "dark"
+        assert transport.calls == [("__global__:window.localStorage", "getItem", ["theme"])]
+
+    def test_object_global_proxy_rejects_keyword_arguments(self) -> None:
+        """Global object proxies reject keyword arguments."""
+        storage = LocalStorage()
+
+        with pytest.raises(TypeError, match="do not accept keyword arguments"):
+            asyncio.run(storage.get_item(key="theme"))
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "window.localStorage",
+            "navigator.clipboard",
+            "globalThis.encodeURIComponent",
+        ],
+    )
+    def test_global_paths_allow_dotted_identifier_segments(self, path: str) -> None:
+        """Dotted global paths are accepted at decoration time."""
+
+        @js_global(path)
+        class ValidGlobal:
+            async def ping(self) -> None:
+                raise NotImplementedError
+
+        assert ValidGlobal.__name__ == "ValidGlobal"
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "",
+            "window[\"localStorage\"]",
+            "window.localStorage.getItem()",
+            ".window",
+            "window..localStorage",
+        ],
+    )
+    def test_invalid_global_paths_are_rejected(self, path: str) -> None:
+        """Malformed global paths fail at decoration time."""
+
+        with pytest.raises(TypeError, match="global path"):
+
+            @js_global(path)
+            class InvalidGlobal:
+                async def ping(self) -> None:
+                    raise NotImplementedError
+
+    def test_non_async_object_global_methods_are_rejected(self) -> None:
+        """Global object classes require async public methods."""
+
+        with pytest.raises(TypeError, match="must be async"):
+
+            @js_global("window.localStorage")
+            class InvalidGlobal:
+                def get_item(self, key: str) -> str | None:
+                    return key
+
+    def test_public_non_method_members_on_object_global_are_rejected(self) -> None:
+        """Global object classes reject public data members."""
+
+        with pytest.raises(TypeError, match="public members"):
+
+            @js_global("window.localStorage")
+            class InvalidGlobal:
+                version = "1"
+
+                async def get_item(self, key: str) -> str | None:
+                    raise NotImplementedError
+
+
+class TestJsGlobalFunctions:
+    def test_callable_global_proxy_uses_null_method(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Callable globals invoke the resolved function target directly."""
+        transport = RecordingTransport(result="hello%20world")
+        encoder = EncodeURIComponent()
+
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: transport)
+        result = asyncio.run(encoder.encode("hello world"))
+
+        assert result == "hello%20world"
+        assert transport.calls == [
+            ("__global__:globalThis.encodeURIComponent", None, ["hello world"])
+        ]
+
+    def test_callable_global_classes_require_exactly_one_public_async_method(self) -> None:
+        """Callable globals reject classes with multiple public methods."""
+
+        with pytest.raises(TypeError, match="exactly one public async method"):
+
+            @js_global("globalThis.encodeURIComponent", kind="function")
+            class InvalidGlobal:
+                async def encode(self, value: str) -> str:
+                    raise NotImplementedError
+
+                async def decode(self, value: str) -> str:
+                    raise NotImplementedError
+
+    def test_callable_global_classes_reject_js_method_overrides(self) -> None:
+        """Callable globals do not allow per-method JS name overrides."""
+
+        with pytest.raises(TypeError, match="@js_method"):
+
+            @js_global("globalThis.encodeURIComponent", kind="function")
+            class InvalidGlobal:
+                @js_method(name="encodeURIComponent")
+                async def encode(self, value: str) -> str:
+                    raise NotImplementedError
+
+    def test_callable_global_classes_reject_non_async_public_methods(self) -> None:
+        """Callable globals require their single public method to be async."""
+
+        with pytest.raises(TypeError, match="must be async"):
+
+            @js_global("globalThis.encodeURIComponent", kind="function")
+            class InvalidGlobal:
+                def encode(self, value: str) -> str:
+                    return value
 
 
 class TestMessageHandlerProxyCalls:

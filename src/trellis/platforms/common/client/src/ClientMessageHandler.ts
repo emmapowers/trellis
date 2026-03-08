@@ -17,7 +17,7 @@ import {
 } from "./types";
 import { store as defaultStore, TrellisStore } from "./core";
 import { debugLog, setDebugCategories } from "./debug";
-import { getProxyTarget } from "./proxyTargets";
+import { resolveProxyTarget } from "./proxyTargets";
 
 export type ConnectionState = "disconnected" | "connecting" | "connected";
 
@@ -122,30 +122,57 @@ export class ClientMessageHandler {
     }
 
     try {
-      const target = getProxyTarget(msg.proxy_id);
-      if (!target) {
+      const resolved = resolveProxyTarget(msg.proxy_id);
+      if (!resolved.found) {
+        if (resolved.isGlobal) {
+          throw new Error(`Global target not found: ${resolved.path}`);
+        }
         throw new Error(`Proxy target not found: ${msg.proxy_id}`);
       }
 
-      let callableTarget: ((...args: unknown[]) => unknown) | undefined;
+      let result: unknown;
 
       if (msg.method === null) {
-        if (typeof target !== "function") {
+        if (typeof resolved.target !== "function") {
+          if (resolved.isGlobal) {
+            throw new Error(`Global target is not callable: ${resolved.path}`);
+          }
           throw new Error(`Proxy target is not callable: ${msg.proxy_id}`);
         }
-        callableTarget = target;
+
+        result = await Reflect.apply(resolved.target, resolved.receiver, msg.args);
       } else {
-        const objectTarget = target as Record<string, unknown>;
-        const method = objectTarget[msg.method];
-        if (typeof method !== "function") {
+        if (
+          resolved.target === null ||
+          resolved.target === undefined ||
+          (typeof resolved.target !== "object" && typeof resolved.target !== "function")
+        ) {
+          if (resolved.isGlobal) {
+            throw new Error(
+              `Global method not found or not callable: ${resolved.path}.${msg.method}`
+            );
+          }
           throw new Error(
             `Proxy method not found or not callable: ${msg.proxy_id}.${msg.method}`
           );
         }
-        callableTarget = method as (...args: unknown[]) => unknown;
+
+        const objectTarget = resolved.target as Record<string, unknown>;
+        const method = objectTarget[msg.method];
+        if (typeof method !== "function") {
+          if (resolved.isGlobal) {
+            throw new Error(
+              `Global method not found or not callable: ${resolved.path}.${msg.method}`
+            );
+          }
+          throw new Error(
+            `Proxy method not found or not callable: ${msg.proxy_id}.${msg.method}`
+          );
+        }
+
+        result = await Reflect.apply(method, resolved.target, msg.args);
       }
 
-      const result = await callableTarget(...msg.args);
       encode(result);
       await this.sendProxyResponse({
         type: MessageType.PROXY_CALL_RESPONSE,

@@ -49,6 +49,7 @@ describe("BrowserClient", () => {
       writable: true,
       configurable: true,
     });
+    delete (window as Window & typeof globalThis & Record<string, unknown>).encoder;
     vi.clearAllMocks();
   });
 
@@ -176,6 +177,74 @@ describe("BrowserClient", () => {
         type: MessageType.PROXY_CALL_RESPONSE,
         request_id: "req-2",
         result: "value: 3",
+        error: null,
+        error_type: null,
+      });
+
+      client.disconnect();
+    });
+
+    it("sends global object proxy responses through the browser transport", async () => {
+      const sentMessages: unknown[] = [];
+      Object.defineProperty(window, "localStorage", {
+        value: {
+          prefix: "theme:",
+          getItem(key: string) {
+            return `${this.prefix}${key}`;
+          },
+        },
+        writable: true,
+        configurable: true,
+      });
+      const client = new BrowserClient();
+      client.setSendCallback((msg) => {
+        sentMessages.push(msg);
+      });
+
+      await client.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-global-1",
+        proxy_id: "__global__:window.localStorage",
+        method: "getItem",
+        args: ["accent"],
+      });
+
+      expect(sentMessages).toContainEqual({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-global-1",
+        result: "theme:accent",
+        error: null,
+        error_type: null,
+      });
+
+      client.disconnect();
+    });
+
+    it("sends callable global responses through the browser transport", async () => {
+      const sentMessages: unknown[] = [];
+      (window as Window & typeof globalThis & Record<string, unknown>).encoder = {
+        prefix: "enc:",
+        encode(value: string) {
+          return `${this.prefix}${value}`;
+        },
+      };
+      const client = new BrowserClient();
+      client.setSendCallback((msg) => {
+        sentMessages.push(msg);
+      });
+
+      await client.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-global-2",
+        proxy_id: "__global__:window.encoder.encode",
+        method: null,
+        args: ["hello world"],
+      });
+
+      expect(sentMessages).toContainEqual({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-global-2",
+        result: "enc:hello world",
         error: null,
         error_type: null,
       });

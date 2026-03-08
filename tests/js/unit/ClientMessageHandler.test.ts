@@ -50,6 +50,11 @@ describe("ClientMessageHandler", () => {
     handler = new ClientMessageHandler(callbacks);
   });
 
+  afterEach(() => {
+    delete (window as Window & typeof globalThis & Record<string, unknown>).encoder;
+    delete (window as Window & typeof globalThis & Record<string, unknown>).nestedGlobal;
+  });
+
   describe("initial state", () => {
     it("starts disconnected", () => {
       expect(handler.getConnectionState()).toBe("disconnected");
@@ -398,6 +403,135 @@ describe("ClientMessageHandler", () => {
         request_id: "req-4",
         result: null,
         error: "Proxy method not found or not callable: bad_api.answer",
+        error_type: "Error",
+      });
+    });
+
+    it("dispatches global object proxy calls with the resolved object as this", async () => {
+      const sendProxyResponse = vi.fn();
+      Object.defineProperty(window, "localStorage", {
+        value: {
+          prefix: "theme:",
+          getItem(key: string) {
+            return `${this.prefix}${key}`;
+          },
+        },
+        writable: true,
+        configurable: true,
+      });
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-global-1",
+        proxy_id: "__global__:window.localStorage",
+        method: "getItem",
+        args: ["accent"],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-global-1",
+        result: "theme:accent",
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("dispatches callable globals with the parent object as receiver", async () => {
+      const sendProxyResponse = vi.fn();
+      (window as Window & typeof globalThis & Record<string, unknown>).encoder = {
+        prefix: "enc:",
+        encode(value: string) {
+          return `${this.prefix}${value}`;
+        },
+      };
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-global-2",
+        proxy_id: "__global__:window.encoder.encode",
+        method: null,
+        args: ["hello world"],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-global-2",
+        result: "enc:hello world",
+        error: null,
+        error_type: null,
+      });
+    });
+
+    it("returns a global-not-found error for missing global paths", async () => {
+      const sendProxyResponse = vi.fn();
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-global-3",
+        proxy_id: "__global__:window.missingThing",
+        method: "call",
+        args: [],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-global-3",
+        result: null,
+        error: "Global target not found: window.missingThing",
+        error_type: "Error",
+      });
+    });
+
+    it("returns a global-method error for missing methods on global objects", async () => {
+      const sendProxyResponse = vi.fn();
+      Object.defineProperty(window, "localStorage", {
+        value: { answer: 42 },
+        writable: true,
+        configurable: true,
+      });
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-global-4",
+        proxy_id: "__global__:window.localStorage",
+        method: "getItem",
+        args: ["accent"],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-global-4",
+        result: null,
+        error: "Global method not found or not callable: window.localStorage.getItem",
+        error_type: "Error",
+      });
+    });
+
+    it("returns a global-callable error for non-callable callable globals", async () => {
+      const sendProxyResponse = vi.fn();
+      (window as Window & typeof globalThis & Record<string, unknown>).nestedGlobal = {
+        value: 42,
+      };
+      handler = new ClientMessageHandler(callbacks, store, sendProxyResponse);
+
+      await handler.handleMessage({
+        type: MessageType.PROXY_CALL,
+        request_id: "req-global-5",
+        proxy_id: "__global__:window.nestedGlobal.value",
+        method: null,
+        args: [],
+      });
+
+      expect(sendProxyResponse).toHaveBeenCalledWith({
+        type: MessageType.PROXY_CALL_RESPONSE,
+        request_id: "req-global-5",
+        result: null,
+        error: "Global target is not callable: window.nestedGlobal.value",
         error_type: "Error",
       });
     });
