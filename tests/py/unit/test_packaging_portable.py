@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import io
 import struct
+import time
 import zipfile
 from pathlib import Path
 from unittest.mock import patch
@@ -103,6 +104,14 @@ class TestCollectAppFiles:
         files = _collect_app_files(release_dir)
         assert files == []
 
+    def test_raises_when_exe_name_missing(self, tmp_path: Path) -> None:
+        release_dir = tmp_path / "target" / "release"
+        release_dir.mkdir(parents=True)
+        (release_dir / "python313.dll").write_bytes(b"dll-content")
+
+        with pytest.raises(RuntimeError, match=r"Expected app executable 'myapp\.exe' not found"):
+            _collect_app_files(release_dir, exe_name="myapp.exe")
+
 
 class TestCreateArchive:
     def test_round_trip(self, tmp_path: Path) -> None:
@@ -118,6 +127,23 @@ class TestCreateArchive:
             assert "pyembed/python.exe" in names
             # Verify content survived
             assert zf.read("myapp.exe") == b"MZ" + b"\x00" * 100
+
+    def test_deterministic_hash_ignores_mtime(self, tmp_path: Path) -> None:
+        release_dir = _make_release_dir(tmp_path)
+        files = _collect_app_files(release_dir)
+
+        archive1 = tmp_path / "a1.zip"
+        _create_archive(files, archive1)
+
+        # Touch all files to change mtimes
+        time.sleep(0.1)
+        for abs_path, _ in files:
+            abs_path.touch()
+
+        archive2 = tmp_path / "a2.zip"
+        _create_archive(files, archive2)
+
+        assert archive1.read_bytes() == archive2.read_bytes()
 
 
 class TestAssemblePortableExe:
@@ -299,7 +325,7 @@ class TestBuildPortableExe:
         release_dir = scaffold_dir / "target" / "release"
         release_dir.mkdir(parents=True)
 
-        with pytest.raises(RuntimeError, match="No app files found"):
+        with pytest.raises(RuntimeError, match="Expected app executable"):
             build_portable_exe(
                 rust=rust,
                 scaffold_dir=scaffold_dir,

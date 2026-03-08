@@ -64,6 +64,7 @@ def _collect_app_files(release_dir: Path, exe_name: str = "") -> list[tuple[Path
     Returns (absolute_path, archive_relative_path) pairs.
     """
     files: list[tuple[Path, str]] = []
+    found_main_exe = not exe_name
 
     # Collect the main exe and DLLs from the release root
     for path in release_dir.iterdir():
@@ -74,10 +75,14 @@ def _collect_app_files(release_dir: Path, exe_name: str = "") -> list[tuple[Path
             continue
         if exe_name and path.name == exe_name:
             files.append((path, path.name))
+            found_main_exe = True
         elif not exe_name and suffix in _WINDOWS_APP_EXTENSIONS:
             files.append((path, path.name))
         elif suffix == ".dll":
             files.append((path, path.name))
+
+    if not found_main_exe:
+        raise RuntimeError(f"Expected app executable {exe_name!r} not found in {release_dir}")
 
     # Collect pyembed directory recursively
     pyembed_dir = release_dir / "pyembed"
@@ -91,10 +96,17 @@ def _collect_app_files(release_dir: Path, exe_name: str = "") -> list[tuple[Path
 
 
 def _create_archive(files: list[tuple[Path, str]], archive_path: Path) -> None:
-    """Create a zip archive from the collected files."""
+    """Create a deterministic zip archive from the collected files.
+
+    Uses a fixed timestamp so the archive hash depends only on file contents,
+    not on filesystem modification times.
+    """
     with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for abs_path, arc_name in sorted(files, key=lambda item: item[1]):
-            zf.write(abs_path, arc_name)
+            info = zipfile.ZipInfo(arc_name)
+            info.date_time = (1980, 1, 1, 0, 0, 0)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            zf.writestr(info, abs_path.read_bytes())
 
 
 def _generate_launcher_scaffold(
