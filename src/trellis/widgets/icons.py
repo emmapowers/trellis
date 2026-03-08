@@ -14,6 +14,7 @@ from enum import StrEnum
 
 from trellis.core.components.react import react
 from trellis.html._style_runtime import SpacingInput, StyleInput
+from trellis.widgets._style_props import widget_style_props
 
 
 class IconName(StrEnum):
@@ -372,6 +373,8 @@ class IconName(StrEnum):
     POWER_OFF = "power-off"
 
 
+@widget_style_props("margin", "flex")
+@widget_style_props("margin", "flex")
 @react("client/Icon.tsx", packages={"lucide-react": "0.468.0"})
 def Icon(
     name: IconName | str,

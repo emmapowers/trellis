@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from trellis.core.components.react import react
 from trellis.html._style_runtime import SpacingInput, StyleInput, WidthInput
+from trellis.widgets._style_props import widget_style_props
 
 _MARKDOWN_PACKAGES = {
     "@types/markdown-it": "14.1.2",
@@ -12,6 +13,7 @@ _MARKDOWN_PACKAGES = {
 }
 
 
+@widget_style_props("margin", "width")
 @react("client/Markdown.tsx", packages=_MARKDOWN_PACKAGES)
 def Markdown(
     content: str = "",

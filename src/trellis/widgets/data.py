@@ -10,11 +10,13 @@ from typing import Literal
 
 from trellis.core.components.react import react
 from trellis.html._style_runtime import SpacingInput, StyleInput, WidthInput
+from trellis.widgets._style_props import widget_style_props
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
 
 
+@widget_style_props("padding", "margin", "width", "flex")
 @react("client/Stat.tsx")
 def Stat(
     *,
@@ -51,6 +53,7 @@ def Stat(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/Tag.tsx")
 def Tag(
     text: str = "",

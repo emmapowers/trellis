@@ -68,7 +68,7 @@ class TestProgressBarWidget:
         result = rendered(App)
 
         progress = result.session.elements.get(result.root_element.child_ids[0])
-        assert progress.properties["height"] == 12
+        assert progress.properties["style"] == {"height": "12px"}
 
     def test_progress_bar_with_style(self, rendered) -> None:
         """ProgressBar accepts style dict."""

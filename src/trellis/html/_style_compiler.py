@@ -15,9 +15,6 @@ from trellis.html._style_runtime import Style
 
 StyleDict = dict[str, tp.Any]
 CompiledStyle = tuple[StyleDict, str | None, str | None]
-WidgetStyleField = tp.Literal[
-    "margin", "padding", "width", "height", "flex", "text_align", "font_weight"
-]
 
 _PSEUDO_FIELDS = {
     "hover": ":hover",
@@ -37,40 +34,6 @@ _PSEUDO_FIELDS = {
 _CSS_NAME_BY_FIELD_REVERSED = {
     css_name: field_name for field_name, css_name in CSS_NAME_BY_FIELD.items()
 }
-_FONT_WEIGHT_KEYWORDS = {"normal": 400, "medium": 500, "semibold": 600, "bold": 700}
-
-
-def merge_widget_style_props(
-    props: dict[str, tp.Any],
-    style_fields: frozenset[WidgetStyleField],
-) -> dict[str, tp.Any]:
-    result = dict(props)
-    style_updates: dict[str, tp.Any] = {}
-
-    for field_name in ("margin", "padding", "width", "height", "flex"):
-        if field_name in style_fields and field_name in result:
-            value = result.pop(field_name)
-            if value is not None:
-                style_updates[field_name] = value
-
-    if "text_align" in style_fields and "text_align" in result:
-        value = result.pop("text_align")
-        if value is not None:
-            style_updates["text_align"] = value
-
-    if "font_weight" in style_fields and "font_weight" in result:
-        value = result.pop("font_weight")
-        if value is not None:
-            if isinstance(value, str):
-                value = _FONT_WEIGHT_KEYWORDS.get(value, value)
-            style_updates["font_weight"] = value
-
-    merged_style = result.pop("style", None)
-    if style_updates:
-        merged_style = merge_style_inputs(merged_style, Style(**style_updates))
-    if merged_style is not None:
-        result["style"] = merged_style
-    return result
 
 
 def compile_style_props(props: dict[str, tp.Any]) -> dict[str, tp.Any]:
@@ -119,8 +82,20 @@ def merge_style_inputs(
     if not base_mapping and not overlay_mapping:
         return None
 
+    return _deep_merge_style_mappings(base_mapping, overlay_mapping)
+
+
+def _deep_merge_style_mappings(
+    base_mapping: Mapping[str, tp.Any],
+    overlay_mapping: Mapping[str, tp.Any],
+) -> dict[str, tp.Any]:
     merged = dict(base_mapping)
-    merged.update(overlay_mapping)
+    for key, overlay_value in overlay_mapping.items():
+        base_value = merged.get(key)
+        if isinstance(base_value, Mapping) and isinstance(overlay_value, Mapping):
+            merged[key] = _deep_merge_style_mappings(base_value, overlay_value)
+            continue
+        merged[key] = overlay_value
     return merged
 
 

@@ -75,7 +75,7 @@ class TestCardAndDivider:
         result = rendered(App)
 
         divider = result.session.elements.get(result.root_element.child_ids[0])
-        assert divider.properties["margin"] == 24
+        assert divider.properties["style"] == {"margin": "24px"}
         assert divider.properties["color"] == "#6366f1"
 
     def test_divider_vertical_orientation(self, rendered) -> None:

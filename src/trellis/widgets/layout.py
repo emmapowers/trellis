@@ -8,6 +8,7 @@ from trellis.core.components.composition import component
 from trellis.core.components.react import react
 from trellis.core.state.mutable import Mutable
 from trellis.html._style_runtime import HeightInput, SpacingInput, StyleInput, WidthInput
+from trellis.widgets._style_props import widget_style_props
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering.child_ref import ChildRef
@@ -15,6 +16,7 @@ if tp.TYPE_CHECKING:
 _SPLIT_PANE_REQUIRED_CHILDREN = 2
 
 
+@widget_style_props("padding", "margin", "width", "height", "flex")
 @react("client/Column.tsx", is_container=True)
 def Column(
     *,
@@ -61,6 +63,7 @@ def Column(
     pass
 
 
+@widget_style_props("padding", "margin", "width", "height", "flex")
 @react("client/Row.tsx", is_container=True)
 def Row(
     *,
@@ -103,6 +106,7 @@ def Row(
     pass
 
 
+@widget_style_props("padding", "margin", "width", "height", "flex")
 @react("client/Card.tsx", is_container=True)
 def Card(
     *,
@@ -188,6 +192,7 @@ def SplitPane(
     )
 
 
+@widget_style_props("margin", "width", "height", "flex")
 @react("client/SplitPane.tsx", export_name="SplitPane", is_container=True)
 def _SplitPane(
     *,

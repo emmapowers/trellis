@@ -6,11 +6,13 @@ import typing as tp
 
 from trellis.core.components.react import react
 from trellis.html._style_runtime import SpacingInput, StyleInput
+from trellis.widgets._style_props import widget_style_props
 
 _RECHARTS_PACKAGES = {"recharts": "3.6.0"}
 _UPLOT_PACKAGES = {"uplot": "1.6.31"}
 
 
+@widget_style_props("margin", "width", "height", "flex")
 @react("client/TimeSeriesChart.tsx", packages=_UPLOT_PACKAGES)
 def TimeSeriesChart(
     *,
@@ -67,6 +69,7 @@ def TimeSeriesChart(
     pass
 
 
+@widget_style_props("margin", "width", "height", "flex")
 @react("client/LineChart.tsx", packages=_RECHARTS_PACKAGES)
 def LineChart(
     *,
@@ -121,6 +124,7 @@ def LineChart(
     pass
 
 
+@widget_style_props("margin", "width", "height", "flex")
 @react("client/BarChart.tsx", packages=_RECHARTS_PACKAGES)
 def BarChart(
     *,
@@ -175,6 +179,7 @@ def BarChart(
     pass
 
 
+@widget_style_props("margin", "width", "height", "flex")
 @react("client/AreaChart.tsx", packages=_RECHARTS_PACKAGES)
 def AreaChart(
     *,
@@ -219,6 +224,7 @@ def AreaChart(
     pass
 
 
+@widget_style_props("margin", "width", "height", "flex")
 @react("client/PieChart.tsx", packages=_RECHARTS_PACKAGES)
 def PieChart(
     *,
@@ -272,6 +278,7 @@ def PieChart(
     pass
 
 
+@widget_style_props("margin", "width", "height", "flex")
 @react("client/Sparkline.tsx")
 def Sparkline(
     *,

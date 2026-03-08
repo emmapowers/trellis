@@ -10,6 +10,7 @@ from typing import Literal
 
 from trellis.core.components.react import react
 from trellis.html._style_runtime import SpacingInput, StyleInput, WidthInput
+from trellis.widgets._style_props import widget_style_props
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -17,6 +18,7 @@ if tp.TYPE_CHECKING:
 _ARIA_PACKAGES = {"react-aria": "3.35.0", "react-stately": "3.33.0"}
 
 
+@widget_style_props("padding", "margin", "width", "flex")
 @react("client/Menu.tsx", is_container=True, packages=_ARIA_PACKAGES)
 def Menu(
     *,
@@ -40,6 +42,7 @@ def Menu(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/Menu.tsx", export_name="MenuItem")
 def MenuItem(
     text: str = "",
@@ -69,6 +72,7 @@ def MenuItem(
     pass
 
 
+@widget_style_props("margin")
 @react("client/Menu.tsx", export_name="MenuDivider")
 def MenuDivider(
     *,
@@ -82,6 +86,7 @@ def MenuDivider(
     pass
 
 
+@widget_style_props("padding", "margin", "width", "flex")
 @react("client/Toolbar.tsx", is_container=True, packages=_ARIA_PACKAGES)
 def Toolbar(
     *,

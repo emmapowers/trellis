@@ -12,7 +12,6 @@ from typing import Literal, ParamSpec
 from trellis.core.components.base import Component, ElementKind
 from trellis.core.rendering.element import ContainerElement, Element
 from trellis.core.rendering.traits import ContainerTrait
-from trellis.html._style_compiler import WidgetStyleField, merge_widget_style_props
 from trellis.registry import ExportKind, registry
 
 __all__ = ["ReactComponentBase", "react"]
@@ -20,33 +19,6 @@ __all__ = ["ReactComponentBase", "react"]
 # ParamSpec for preserving function signatures through decorators
 P = ParamSpec("P")
 E = tp.TypeVar("E", bound=Element)
-
-
-def _style_prop_names(func: Callable[P, tp.Any]) -> frozenset[WidgetStyleField]:
-    names: set[WidgetStyleField] = set()
-
-    for parameter in inspect.signature(func).parameters.values():
-        annotation = func.__annotations__.get(parameter.name)
-        if annotation is None:
-            continue
-        annotation_text = str(annotation)
-
-        if parameter.name in {"flex", "text_align", "font_weight"}:
-            names.add(tp.cast("WidgetStyleField", parameter.name))
-            continue
-
-        if parameter.name in {"margin", "padding"} and "SpacingInput" in annotation_text:
-            names.add(tp.cast("WidgetStyleField", parameter.name))
-            continue
-
-        if parameter.name == "width" and "WidthInput" in annotation_text:
-            names.add("width")
-            continue
-
-        if parameter.name == "height" and "HeightInput" in annotation_text:
-            names.add("height")
-
-    return frozenset(names)
 
 
 class ReactComponentBase(Component):
@@ -159,7 +131,6 @@ def react(
         func: Callable[P, tp.Any],
     ) -> Callable[P, Element | E]:
         resolved_export_name = export_name or func.__name__
-        style_prop_names = _style_prop_names(func)
 
         # Create a generated ReactComponentBase subclass
         class _Generated(ReactComponentBase):
@@ -180,7 +151,7 @@ def react(
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> Element | E:
-            return _singleton._place(**merge_widget_style_props(dict(kwargs), style_prop_names))
+            return _singleton._place(**dict(kwargs))
 
         wrapper._component = _singleton  # type: ignore[attr-defined]
 

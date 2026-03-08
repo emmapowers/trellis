@@ -9,6 +9,7 @@ from trellis.core.components.react import react
 from trellis.core.state.mutable import Mutable
 from trellis.html._style_runtime import SpacingInput, StyleInput, WidthInput
 from trellis.html.links import A
+from trellis.widgets._style_props import widget_style_props
 from trellis.widgets.icons import IconName
 
 if tp.TYPE_CHECKING:
@@ -18,6 +19,7 @@ if tp.TYPE_CHECKING:
 _ARIA_PACKAGES = {"react-aria": "3.35.0", "react-stately": "3.33.0"}
 
 
+@widget_style_props("padding", "margin", "width", "flex", "text_align", "font_weight")
 @react("client/Label.tsx")
 def Label(
     text: str = "",
@@ -148,6 +150,7 @@ def Button(
         )
 
 
+@widget_style_props("margin", "flex")
 @react("client/Button.tsx", export_name="Button", packages=_ARIA_PACKAGES)
 def _Button(
     text: str = "",
@@ -167,6 +170,7 @@ def _Button(
     pass
 
 
+@widget_style_props("margin", "width", "flex")
 @react("client/Slider.tsx", packages=_ARIA_PACKAGES)
 def Slider(
     *,
@@ -205,6 +209,7 @@ def Slider(
     pass
 
 
+@widget_style_props("margin", "width", "flex")
 @react("client/TextInput.tsx", packages=_ARIA_PACKAGES)
 def TextInput(
     value: str | Mutable[str] = "",
@@ -239,6 +244,7 @@ def TextInput(
     pass
 
 
+@widget_style_props("margin", "width", "flex")
 @react("client/MultilineInput.tsx", packages=_ARIA_PACKAGES)
 def MultilineInput(
     value: str | Mutable[str] = "",
@@ -273,6 +279,7 @@ def MultilineInput(
     pass
 
 
+@widget_style_props("margin", "width", "flex")
 @react("client/NumberInput.tsx", packages={**_ARIA_PACKAGES, "@internationalized/date": "3.5.6"})
 def NumberInput(
     *,
@@ -312,6 +319,7 @@ def NumberInput(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/Checkbox.tsx", packages=_ARIA_PACKAGES)
 def Checkbox(
     *,
@@ -344,6 +352,7 @@ def Checkbox(
     pass
 
 
+@widget_style_props("margin")
 @react("client/Divider.tsx")
 def Divider(
     *,
@@ -375,6 +384,7 @@ def Divider(
     pass
 
 
+@widget_style_props("margin", "width", "flex")
 @react("client/Select.tsx", packages=_ARIA_PACKAGES)
 def Select(
     *,
@@ -414,6 +424,7 @@ def Select(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/Heading.tsx")
 def Heading(
     text: str = "",
@@ -449,6 +460,7 @@ def Heading(
     pass
 
 
+@widget_style_props("margin", "width", "height", "flex")
 @react("client/ProgressBar.tsx")
 def ProgressBar(
     *,
@@ -494,6 +506,7 @@ def ProgressBar(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/StatusIndicator.tsx")
 def StatusIndicator(
     *,
@@ -539,6 +552,7 @@ def StatusIndicator(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/Badge.tsx")
 def Badge(
     text: str = "",
@@ -581,6 +595,7 @@ def Badge(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/Tooltip.tsx", is_container=True, packages=_ARIA_PACKAGES)
 def Tooltip(
     content: str = "",

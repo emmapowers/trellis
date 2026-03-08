@@ -40,8 +40,9 @@ from dataclasses import dataclass
 
 from trellis.core.components.composition import component
 from trellis.core.components.react import react
-from trellis.html._style_compiler import merge_style_inputs, merge_widget_style_props
+from trellis.html._style_compiler import merge_style_inputs
 from trellis.html._style_runtime import HeightInput, SpacingInput, StyleInput, WidthInput
+from trellis.widgets._style_props import merge_widget_style_props
 from trellis.widgets.icons import IconName
 
 __all__ = ["Table", "TableColumn"]

@@ -124,7 +124,7 @@ class TestChartWidgets:
         chart = result.session.elements.get(result.root_element.child_ids[0])
         assert chart.component.name == "TimeSeriesChart"
         assert len(chart.properties["data"]) == 2
-        assert chart.properties["height"] == 300
+        assert chart.properties["style"] == {"height": "300px"}
 
     def test_line_chart_with_data(self, rendered) -> None:
         """LineChart stores data and configuration props."""
@@ -204,5 +204,5 @@ class TestChartWidgets:
         chart = result.session.elements.get(result.root_element.child_ids[0])
         assert chart.component.name == "Sparkline"
         assert chart.properties["data"] == [10, 20, 15, 25]
-        assert chart.properties["height"] == 30
+        assert chart.properties["style"] == {"height": "30px"}
         assert chart.properties["color"] == "#22c55e"

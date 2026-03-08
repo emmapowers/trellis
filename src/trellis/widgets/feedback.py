@@ -11,11 +11,13 @@ from typing import Literal
 from trellis.core.components.react import react
 from trellis.core.state.mutable import Mutable
 from trellis.html._style_runtime import SpacingInput, StyleInput, WidthInput
+from trellis.widgets._style_props import widget_style_props
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
 
 
+@widget_style_props("padding", "margin", "width", "flex")
 @react("client/Collapsible.tsx", is_container=True)
 def Collapsible(
     *,
@@ -46,6 +48,7 @@ def Collapsible(
     pass
 
 
+@widget_style_props("padding", "margin", "width", "flex")
 @react("client/Callout.tsx", is_container=True)
 def Callout(
     *,

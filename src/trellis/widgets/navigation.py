@@ -12,8 +12,9 @@ from trellis.core.components.composition import component
 from trellis.core.components.react import react
 from trellis.core.state.mutable import Mutable
 from trellis.html import A, Li, Nav, Ol, Span, Style, color, px, raw, rem
-from trellis.html._style_compiler import merge_style_inputs, merge_widget_style_props
+from trellis.html._style_compiler import merge_style_inputs
 from trellis.html._style_runtime import HeightInput, SpacingInput, StyleInput, WidthInput
+from trellis.widgets._style_props import merge_widget_style_props, widget_style_props
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
@@ -26,6 +27,7 @@ _FONT_FAMILY = (
 )
 
 
+@widget_style_props("margin", "width", "flex")
 @react("client/Tabs.tsx", is_container=True, packages=_ARIA_PACKAGES)
 def Tabs(
     *,
@@ -54,6 +56,7 @@ def Tabs(
     pass
 
 
+@widget_style_props("padding")
 @react("client/Tabs.tsx", export_name="Tab", is_container=True)
 def Tab(
     *,
@@ -80,6 +83,7 @@ def Tab(
     pass
 
 
+@widget_style_props("margin", "width", "height", "flex")
 @react("client/Tree.tsx")
 def Tree(
     *,
