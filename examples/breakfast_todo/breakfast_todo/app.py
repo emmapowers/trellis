@@ -25,12 +25,12 @@ def BreakfastTodo() -> None:
 
     with state:  # Provide state as context for child components
         with w.Column(padding=h.padding(40, 20), align="center"):
-            with w.Card(padding=0, width=500, style={"overflow": "hidden"}):
+            with w.Card(padding=0, width=500, style=h.Style(overflow="hidden")):
                 # Header
                 with w.Column(
                     align="center",
                     padding=20,
-                    style={"border-bottom": f"1px solid {theme.border_default}"},
+                    style=h.Style(border_bottom=f"1px solid {theme.border_default}"),
                 ):
                     w.Label(
                         text="🍳 breakfast todos",
@@ -41,7 +41,7 @@ def BreakfastTodo() -> None:
 
                 # Input
                 with w.Column(
-                    padding=12, style={"border-bottom": f"1px solid {theme.border_default}"}
+                    padding=12, style=h.Style(border_bottom=f"1px solid {theme.border_default}")
                 ):
                     TodoInput()
 
@@ -50,7 +50,7 @@ def BreakfastTodo() -> None:
 
                 # Footer (only show if there are todos)
                 if state.todos:
-                    with w.Column(style={"border-top": f"1px solid {theme.border_default}"}):
+                    with w.Column(style=h.Style(border_top=f"1px solid {theme.border_default}")):
                         TodoFooter()
 
 

@@ -25,18 +25,18 @@ def CodeBlock(*, code: str) -> None:
     """
     w.Label(
         text=code,
-        style={
-            "font-family": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-            "font-size": "13px",
-            "line-height": "1.5",
-            "white-space": "pre",
-            "background-color": "#000000",
-            "color": "#e2e8f0",
-            "padding": "16px",
-            "border-radius": "6px",
-            "overflow": "auto",
-            "display": "block",
-        },
+        style=h.Style(
+            font_family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            font_size=13,
+            line_height=1.5,
+            white_space="pre",
+            background_color="#000000",
+            color="#e2e8f0",
+            padding=16,
+            border_radius=6,
+            overflow="auto",
+            display="block",
+        ),
     )
 
 
@@ -76,7 +76,7 @@ def ExampleCard(*, example: CompositionComponent) -> None:
                 with h.A(
                     href=make_playground_url(source, func_name),
                     target="_blank",
-                    style={"text-decoration": "none"},
+                    style=h.Style(text_decoration="none"),
                 ):
                     w.Button(
                         text="Playground",

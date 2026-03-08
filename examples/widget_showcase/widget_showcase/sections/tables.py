@@ -3,6 +3,7 @@
 import typing as tp
 
 from trellis import component
+from trellis import html as h
 from trellis import widgets as w
 from trellis.app import theme
 
@@ -136,7 +137,7 @@ STOCKS = [
 
 def TickerCell(*, row: dict[str, tp.Any]) -> None:
     """Ticker symbol in bold monospace."""
-    w.Label(text=row["ticker"], bold=True, style={"font-family": "monospace"})
+    w.Label(text=row["ticker"], bold=True, style=h.Style(font_family="monospace"))
 
 
 def PriceCell(*, row: dict[str, tp.Any]) -> None:

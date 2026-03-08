@@ -218,7 +218,7 @@ from trellis.widgets import IconName
 
 @component
 def App():
-    with w.Card(style={{"margin": "24px"}}):
+    with w.Card(style=h.Style(margin=24)):
         with w.Column():
             {func_name}()
 """

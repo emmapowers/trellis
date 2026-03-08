@@ -146,7 +146,7 @@ trellis package --platform desktop
 | 🚧 | Widget toolkit |
 | ✅ | Bidirectional binding (`mutable()`) |
 | ✅ | Partial updates (diff patches) |
-| ❌ | Routing |
+| ✅ | Routing |
 | ✅ | Hot reload |
 
 ## Development
@@ -172,7 +172,7 @@ npm run codegen:compare
 npm run codegen:write
 ```
 
-`codegen:write` updates both `src/trellis/html/_generated_runtime.py` and `src/trellis/html/events.py`.
+`codegen:write` regenerates all `src/trellis/html/_generated_*.py` modules.
 
 **Project structure:**
 

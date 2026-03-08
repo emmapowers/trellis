@@ -266,7 +266,7 @@ def toggle_visibility():
 @component
 def MyComponent(state: State) -> Elements:
     return Div(
-        style={"display": "block" if state.visible else "none"}
+        style=h.Style(display="block" if state.visible else "none")
     )
 ```
 

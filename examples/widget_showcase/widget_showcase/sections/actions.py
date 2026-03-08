@@ -1,6 +1,7 @@
 """Actions section of the widget showcase."""
 
 from trellis import component
+from trellis import html as h
 from trellis import widgets as w
 from trellis.widgets import IconName
 
@@ -21,7 +22,7 @@ def ToolbarExample() -> None:
 @example("Menu")
 def MenuExample() -> None:
     """Vertical list of actions."""
-    with w.Menu(style={"max-width": "200px"}):
+    with w.Menu(style=h.Style(max_width=200)):
         w.MenuItem(text="New File", icon=IconName.FILE, shortcut="⌘N")
         w.MenuItem(text="Open...", icon=IconName.FOLDER_OPEN, shortcut="⌘O")
         w.MenuItem(text="Save", icon=IconName.SAVE, shortcut="⌘S")

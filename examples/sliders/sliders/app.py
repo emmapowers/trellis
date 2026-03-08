@@ -44,16 +44,16 @@ def ControlPanel() -> None:
     def handle_num_change(value: float) -> None:
         state.set_num_sliders(int(value))
 
-    with w.Card(padding=16, width=400, style={"margin-bottom": "16px"}):
+    with w.Card(padding=16, width=400, style=h.Style(margin_bottom=16)):
         w.Label(
             text="Slider Performance Test",
             font_size=16,
             bold=True,
             text_align="center",
-            style={"display": "block", "margin-bottom": "12px"},
+            style=h.Style(display="block", margin_bottom=12),
         )
 
-        with w.Row(gap=8, align="center", style={"margin-bottom": "8px"}):
+        with w.Row(gap=8, align="center", style=h.Style(margin_bottom=8)):
             w.Label(text="Num Sliders:", color=theme.text_secondary, width=100)
             # Uses callback() for custom processing (clamping via set_num_sliders)
             w.NumberInput(
@@ -62,7 +62,7 @@ def ControlPanel() -> None:
                 width=80,
             )
 
-        with w.Row(gap=8, align="center", style={"margin-bottom": "8px"}):
+        with w.Row(gap=8, align="center", style=h.Style(margin_bottom=8)):
             w.Label(text="Value:", color=theme.text_secondary, width=100)
             w.NumberInput(
                 value=mutable(state.value),
@@ -98,14 +98,14 @@ def SliderColumn() -> None:
                         min=1,
                         max=100,
                         step=1,
-                        style={"flex": 1},
+                        style=h.Style(flex="1"),
                     ).key(f"slider-{i}")
                     w.Label(
                         text=str(int(state.value)),
                         font_size=13,
                         bold=True,
                         width=36,
-                        style={"font-variant-numeric": "tabular-nums"},
+                        style=h.Style(font_variant_numeric="tabular-nums"),
                     )
 
 

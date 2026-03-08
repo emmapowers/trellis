@@ -44,10 +44,10 @@ def TodoItem(todo: Todo) -> None:
         w.Label(
             text=todo.text,
             flex=1,
-            style={
-                "text-decoration": "line-through" if todo.completed else "none",
-                "color": theme.text_muted if todo.completed else None,
-            },
+            style=h.Style(
+                text_decoration="line-through" if todo.completed else "none",
+                color=theme.text_muted if todo.completed else None,
+            ),
         )
 
         w.Button(

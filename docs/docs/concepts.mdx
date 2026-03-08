@@ -31,7 +31,7 @@ Use Python's `with` statement to nest elements:
 ```python
 @component
 def Card() -> None:
-    with h.Div(style={"border": "1px solid #ccc", "padding": "16px"}):
+    with h.Div(style=h.Style(border="1px solid #ccc", padding=16)):
         h.H2("Card Title")
         h.P("Card content goes here.")
 ```
