@@ -20,11 +20,9 @@ registry.register(
 
 
 class DemoApi(JsProxy):
-    async def greet(self, name: str) -> str:
-        raise NotImplementedError
+    async def greet(self, name: str) -> str: ...
 
-    async def fail(self) -> str:
-        raise NotImplementedError
+    async def fail(self) -> str: ...
 
 
 demo_api = js_object(DemoApi, "demo_api")
