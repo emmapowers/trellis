@@ -121,7 +121,7 @@ def JsProxyDemo() -> None:
                     color=theme.text_secondary,
                 )
                 with w.Column(gap=8):
-                    w.Label(text="Object proxy", weight=600)
+                    w.Label(text="Object proxy", font_weight=600)
                     w.StatusIndicator(
                         status=state.object_status,
                         label=state.object_status.title(),
@@ -157,7 +157,7 @@ def JsProxyDemo() -> None:
                             },
                         )
                 with w.Column(gap=8):
-                    w.Label(text="Function proxy", weight=600)
+                    w.Label(text="Function proxy", font_weight=600)
                     w.StatusIndicator(
                         status=state.function_status,
                         label=state.function_status.title(),

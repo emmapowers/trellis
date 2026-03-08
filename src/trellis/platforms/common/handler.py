@@ -433,9 +433,7 @@ class MessageHandler:
         else:
             future.set_exception(RuntimeError(msg.error))
 
-    async def call_proxy(
-        self, proxy_id: str, method: str | None, args: list[tp.Any]
-    ) -> tp.Any:
+    async def call_proxy(self, proxy_id: str, method: str | None, args: list[tp.Any]) -> tp.Any:
         """Send a proxy call to the client and await the response."""
         request_id = str(uuid4())
         future = asyncio.get_running_loop().create_future()

@@ -151,7 +151,8 @@ def _decorate_class(cls: type[T], name: str | None) -> type[T]:
         self._transport = None
 
     setattr(cls, _CLASS_TARGET_ATTR, name or cls.__name__)
-    cls.__init__ = __init__
+    proxy_class = tp.cast("tp.Any", cls)
+    proxy_class.__init__ = __init__
 
     for attr_name, proxy_method in proxy_methods.items():
         setattr(cls, attr_name, proxy_method)
