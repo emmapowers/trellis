@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import typing as tp
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -19,13 +20,17 @@ registry.register(
 )
 
 
-class DemoApi(JsProxy):
+class _DemoApiProxy(JsProxy):
+    pass
+
+
+class DemoApi(tp.Protocol):
     async def greet(self, name: str) -> str: ...
 
     async def fail(self) -> str: ...
 
 
-demo_api = js_object(DemoApi, "demo_api")
+demo_api = tp.cast("DemoApi", js_object(_DemoApiProxy, "demo_api"))
 
 
 @dataclass
