@@ -34,6 +34,10 @@ describe("webref css source extraction", () => {
     expect(surface.properties.get("opacity")?.accepts_auto_px).toBe(false);
     expect(surface.properties.get("z-index")?.accepts_auto_px).toBe(false);
 
+    // scrollbar-width only accepts keywords (auto | thin | none), not lengths
+    expect(surface.properties.get("scrollbar-width")?.accepts_auto_px).toBe(false);
+    expect(surface.properties.get("scrollbar-width")?.value_type_name).toBe("CssValue");
+
     expect(surface.media_features.get("min-width")?.python_name).toBe("min_width");
     expect(surface.media_features.get("min-width")?.type_expr).toEqual({
       kind: "union",

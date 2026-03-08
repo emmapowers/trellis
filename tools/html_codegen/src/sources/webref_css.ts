@@ -368,7 +368,9 @@ function infer_alias_name(css_name: string, feature: CssFeature): string {
     return "SpacingShorthand";
   }
   if (css_name === "gap" || css_name.endsWith("-gap")) return "GapValue";
-  if (css_name === "width" || css_name.endsWith("-width")) return "WidthValue";
+  // scrollbar-width only accepts keywords (auto | thin | none), not lengths
+  if (css_name === "width" || (css_name.endsWith("-width") && css_name !== "scrollbar-width"))
+    return "WidthValue";
   if (css_name === "height" || css_name.endsWith("-height")) return "HeightValue";
   if (css_name === "opacity") return "Opacity";
   if (css_name === "z-index") return "ZIndex";

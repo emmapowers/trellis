@@ -3,7 +3,7 @@
 Internal codegen artifact for trellis.html CSS typing.
 Reference: https://developer.mozilla.org/en-US/docs/Web/CSS
 
-Generated at: 2026-03-08T21:47:43.989Z
+Generated at: 2026-03-08T23:01:31.838Z
 """
 
 from __future__ import annotations
@@ -913,7 +913,7 @@ class _GeneratedStyleFields:
     scroll_timeline_name: CssValue | str | None = None
     scrollbar_color: ColorValue | None = None
     scrollbar_gutter: CssValue | str | None = None
-    scrollbar_width: WidthValue | builtins.int | builtins.float | None = None
+    scrollbar_width: CssValue | str | None = None
     shape_image_threshold: CssValue | str | None = None
     shape_inside: CssValue | str | None = None
     shape_margin: LengthPercentage | builtins.int | builtins.float | None = None
