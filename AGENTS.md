@@ -89,8 +89,8 @@ Run `just ci` before committing to catch formatting, lint, and type errors.
 - **pyproject.toml**: Runtime dependencies (shipped with pip package) and dev dependency groups
 - **justfile**: Task runner recipes (uses `uv run` to invoke dev tools)
 
-`uv sync --dev` installs the core dev toolchain in editable mode.
-Use `uv sync --group desktop` to also install desktop dependencies (pytauri) for recipes like `just showcase --desktop`.
+`uv sync --dev` installs the core dev toolchain for non-desktop development.
+For desktop development (including `just showcase --desktop`), use `uv sync --group desktop`, which includes the dev toolchain plus pytauri.
 
 ## UI Testing with Playwright MCP
 
