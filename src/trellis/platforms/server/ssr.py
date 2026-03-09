@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import typing as tp
 from uuid import uuid4
@@ -11,6 +10,7 @@ from trellis.core.rendering.session import RenderSession
 from trellis.core.rendering.ssr import render_for_ssr
 from trellis.platforms.common.handler import _serialize_patches
 from trellis.platforms.common.serialization import serialize_element
+from trellis.platforms.common.ssr_utils import build_dehydration_data
 from trellis.platforms.server.session_store import SessionEntry, SessionStore
 from trellis.platforms.server.ssr_cache import SSRCache
 
@@ -19,20 +19,6 @@ if tp.TYPE_CHECKING:
     from trellis.platforms.server.ssr_renderer import SSRRenderer
 
 logger = logging.getLogger(__name__)
-
-_SERVER_VERSION_KEY = "serverVersion"
-_SESSION_ID_KEY = "sessionId"
-_PATCHES_KEY = "patches"
-
-
-def _get_version() -> str:
-    """Get package version from metadata."""
-    try:
-        from importlib.metadata import version as get_package_version  # noqa: PLC0415
-
-        return get_package_version("trellis")
-    except Exception:
-        return "0.0.0"
 
 
 class SSROrchestrator:
@@ -97,7 +83,7 @@ class SSROrchestrator:
         ssr_html = self._get_ssr_html(path, system_theme, session)
 
         # Build dehydration data (always fresh — element IDs are per-session)
-        dehydration_data = _build_dehydration_data(session_id, wire_patches)
+        dehydration_data = build_dehydration_data(session_id, wire_patches)
 
         # Inject into template
         result = html_template.replace("<!--ssr-outlet-->", ssr_html)
@@ -125,24 +111,3 @@ class SSROrchestrator:
                 self._cache.put(path, system_theme, ssr_html)
 
         return ssr_html
-
-
-def _build_dehydration_data(
-    session_id: str,
-    wire_patches: list[tp.Any],
-) -> str:
-    """Build the JSON string for the dehydration script."""
-    import msgspec  # noqa: PLC0415
-
-    # Encode patches using msgspec for correct serialization of Struct types
-    encoder = msgspec.json.Encoder()
-    patches_json = encoder.encode(wire_patches).decode("utf-8")
-
-    data = {
-        _SESSION_ID_KEY: session_id,
-        _SERVER_VERSION_KEY: _get_version(),
-    }
-    # Build JSON manually to embed pre-encoded patches
-    data_json = json.dumps(data)
-    # Insert patches into the JSON object
-    return data_json[:-1] + f', "{_PATCHES_KEY}": {patches_json}' + "}"
