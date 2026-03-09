@@ -24,7 +24,12 @@
     </style>
 </head>
 <body>
-    <div id="root" class="trellis-root"></div>
+    <div id="root" class="trellis-root">
+    {% if ssr_enabled %}
+        <template id="ssr-light">{{ ssr_light_html | safe }}</template>
+        <template id="ssr-dark">{{ ssr_dark_html | safe }}</template>
+    {% endif %}
+    </div>
     <script>
         function renderFatalError(title, details) {
             var pre = document.createElement('pre');
@@ -40,6 +45,36 @@
             renderFatalError('UNHANDLED REJECTION: ' + e.reason, (e.reason && e.reason.stack || ''));
         });
     </script>
+    {% if ssr_enabled %}
+    <script>
+        // Select the correct SSR theme variant before first paint.
+        // SSR HTML is trusted build-time content from the app's renderToString.
+        (function() {
+            var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var templateId = isDark ? 'ssr-dark' : 'ssr-light';
+            var template = document.getElementById(templateId);
+            var root = document.getElementById('root');
+            if (template && root) {
+                while (root.firstChild) root.removeChild(root.firstChild);
+                var clone = document.importNode(template.content, true);
+                root.appendChild(clone);
+            }
+            var light = document.getElementById('ssr-light');
+            var dark = document.getElementById('ssr-dark');
+            if (light) light.remove();
+            if (dark) dark.remove();
+        })();
+    </script>
+    <script>
+        // Set dehydration data for the active theme
+        (function() {
+            var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var lightData = {{ ssr_light_data | safe }};
+            var darkData = {{ ssr_dark_data | safe }};
+            window.__TRELLIS_SSR__ = isDark ? darkData : lightData;
+        })();
+    </script>
+    {% endif %}
     <script type="module" src="bundle.js"></script>
 </body>
 </html>

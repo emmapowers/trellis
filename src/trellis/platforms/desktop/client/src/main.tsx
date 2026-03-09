@@ -38,10 +38,27 @@ addConsoleHandler((level, args) => {
 });
 
 import React, { useEffect, useState, useMemo } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, hydrateRoot } from "react-dom/client";
 import { DesktopClient } from "@trellis/trellis-desktop/client/src/DesktopClient";
 import { TrellisRoot } from "@trellis/trellis-core/TrellisRoot";
+import { store } from "@trellis/trellis-core/core";
+import type { Patch } from "@trellis/trellis-core/types";
 import { installExternalLinkDelegation } from "./externalLinks";
+
+/** SSR dehydration data injected at build time. */
+interface TrellisSSRData {
+  serverVersion: string;
+  sessionId?: string;
+  patches: Patch[];
+}
+
+declare global {
+  interface Window {
+    __TRELLIS_SSR__?: TrellisSSRData;
+  }
+}
+
+const ssrData = window.__TRELLIS_SSR__;
 
 function App() {
   const [error, setError] = useState<string | null>(null);
@@ -72,5 +89,15 @@ function App() {
   return <TrellisRoot client={client} error={error} />;
 }
 
-const root = createRoot(document.getElementById("root")!);
-root.render(<App />);
+const container = document.getElementById("root")!;
+
+if (ssrData) {
+  // SSR path: pre-populate the store with patches from build-time render,
+  // then hydrate the existing DOM.
+  store.applyPatches(ssrData.patches);
+  hydrateRoot(container, <App />);
+} else {
+  // CSR path: create a fresh root.
+  const root = createRoot(container);
+  root.render(<App />);
+}

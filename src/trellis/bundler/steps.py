@@ -793,3 +793,62 @@ class SSRBundleBuildStep(BuildStep):
         step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
         step_manifest.source_paths.update(metafile.inputs)
         step_manifest.dest_files.update(metafile.outputs)
+
+
+class SSRPreRenderStep(BuildStep):
+    """Pre-render the app at build time for both light and dark themes.
+
+    Runs the app's root component through the SSR pipeline for each theme,
+    producing rendered HTML and dehydration data that gets baked into
+    index.html via template_context.
+
+    Must run after SSRBundleBuildStep (needs ssr.js) and before
+    IndexHtmlRenderStep (populates template_context).
+    """
+
+    @property
+    def name(self) -> str:
+        return "ssr-pre-render"
+
+    def run(self, ctx: BuildContext) -> None:
+        # Lazy imports to avoid circular deps and heavy imports at module level
+        from trellis.app.apploader import get_apploader  # noqa: PLC0415
+        from trellis.core.rendering.session import RenderSession  # noqa: PLC0415
+        from trellis.core.rendering.ssr import render_for_ssr  # noqa: PLC0415
+        from trellis.platforms.common.handler import _serialize_patches  # noqa: PLC0415
+        from trellis.platforms.common.serialization import serialize_element  # noqa: PLC0415
+        from trellis.platforms.common.ssr_utils import build_dehydration_data  # noqa: PLC0415
+        from trellis.platforms.server.ssr_renderer import SSRRenderer  # noqa: PLC0415
+
+        ssr_bundle = ctx.dist_dir / "ssr.js"
+        if not ssr_bundle.exists():
+            logger.warning("SSR bundle not found at %s, skipping pre-render", ssr_bundle)
+            return
+
+        apploader = get_apploader()
+        if apploader.app is None:
+            apploader.load_app()
+        app = apploader.app
+        assert app is not None
+
+        renderer = SSRRenderer(ssr_bundle)
+        renderer.start()
+        try:
+            for theme in ("light", "dark"):
+                wrapped = app.get_wrapped_top(theme, None)
+                session = RenderSession(wrapped)
+                session.initial_path = "/"
+                ssr_result = render_for_ssr(session)
+                wire_patches = _serialize_patches(ssr_result.patches, session)
+
+                assert session.root_element is not None
+                tree = serialize_element(session.root_element, session)
+                ssr_html = renderer.render(tree) or ""
+
+                dehydration = build_dehydration_data(None, wire_patches)
+                ctx.template_context[f"ssr_{theme}_html"] = ssr_html
+                ctx.template_context[f"ssr_{theme}_data"] = dehydration
+
+            ctx.template_context["ssr_enabled"] = True
+        finally:
+            renderer.stop()

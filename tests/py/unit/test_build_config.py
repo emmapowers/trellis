@@ -18,6 +18,7 @@ from trellis.bundler.steps import (
     PackageInstallStep,
     RegistryGenerationStep,
     SSRBundleBuildStep,
+    SSRPreRenderStep,
     StaticFileCopyStep,
     TsconfigStep,
 )
@@ -137,8 +138,10 @@ class TestDesktopGetBuildConfig:
             PackageInstallStep,
             RegistryGenerationStep,
             BundleBuildStep,
+            SSRBundleBuildStep,
             StaticFileCopyStep,
             IconAssetStep,
+            SSRPreRenderStep,
             IndexHtmlRenderStep,
         ]
 
