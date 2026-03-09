@@ -31,15 +31,22 @@ export class ServerTrellisClient extends BaseTrellisClient {
   private ws: WebSocket | null = null;
   private connectResolver: ((response: HelloResponseMessage) => void) | null =
     null;
+  private ssrSessionId: string | undefined;
 
   /**
    * Create a new server client.
    *
    * @param callbacks - Optional callbacks for connection events
    * @param store - Optional store instance (defaults to singleton)
+   * @param ssrSessionId - Session ID from SSR to resume on connect
    */
-  constructor(callbacks: TrellisClientCallbacks = {}, store?: TrellisStore) {
+  constructor(
+    callbacks: TrellisClientCallbacks = {},
+    store?: TrellisStore,
+    ssrSessionId?: string
+  ) {
     super(RoutingMode.Url, callbacks, store);
+    this.ssrSessionId = ssrSessionId;
   }
 
   protected sendUrlChange(msg: UrlChangedMessage): void {
@@ -68,6 +75,7 @@ export class ServerTrellisClient extends BaseTrellisClient {
           client_id: this.clientId,
           system_theme: systemTheme,
           path: window.location.pathname,
+          session_id: this.ssrSessionId,
         };
         this.send(hello);
       };

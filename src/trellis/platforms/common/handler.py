@@ -28,6 +28,7 @@ from trellis.core.rendering.patches import (
 )
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession, get_session_registry, set_render_session
+from trellis.core.rendering.ssr import execute_deferred_hooks
 from trellis.html._generated_events import get_event_class
 from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.messages import (
@@ -52,6 +53,9 @@ from trellis.platforms.common.serialization import (
 from trellis.routing import RouterState
 from trellis.routing.messages import HistoryBack, HistoryForward, HistoryPush
 from trellis.utils.debug import get_enabled_categories
+
+if tp.TYPE_CHECKING:
+    from trellis.platforms.server.session_store import SessionStore
 
 logger = logging.getLogger(__name__)
 _DICT_ARG_COUNT = 2
@@ -276,12 +280,16 @@ class MessageHandler:
     message_send_queue: asyncio.Queue[Message]
     _root_component: Component
     _app_wrapper: AppWrapper
+    _session_store: SessionStore | None
+    _background_tasks: set[asyncio.Task[tp.Any]]
+    _render_task: asyncio.Task[None] | None
 
     def __init__(
         self,
         root_component: Component,
         app_wrapper: AppWrapper,
         batch_delay: float = 1.0 / 30,
+        session_store: SessionStore | None = None,
     ) -> None:
         """Create a new message handler.
 
@@ -289,6 +297,7 @@ class MessageHandler:
             root_component: The root Trellis component to render
             app_wrapper: Callback to wrap the component (e.g., with TrellisApp)
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
+            session_store: Optional session store for SSR session resumption
         """
         self._root_component = root_component
         self._app_wrapper = app_wrapper
@@ -296,17 +305,20 @@ class MessageHandler:
         self.session_id = None
         self.batch_delay = batch_delay
         self.message_send_queue = asyncio.Queue()
+        self._session_store = session_store
+        self._background_tasks = set()
+        self._render_task = None
 
     async def handle_hello(self) -> str:
         """Handle hello handshake with client.
 
-        Receives HelloMessage from client, generates session ID,
-        creates wrapped component with theme info, and sends
-        HelloResponseMessage. All platforms use this handshake for
-        session initialization.
+        Receives HelloMessage from client. If the message includes a session_id
+        from SSR and it's found in the session store, the existing session is
+        resumed and deferred hooks are executed. Otherwise, a new session is
+        created.
 
         Returns:
-            The generated session ID
+            The generated or resumed session ID
 
         Raises:
             ValueError: If received message is not HelloMessage
@@ -317,28 +329,37 @@ class MessageHandler:
 
         logger.debug("Hello from client_id=%s path=%s", msg.client_id, msg.path)
 
-        # Wrap the component with theme data from the client
-        # The wrapper handles conversion to enums and TrellisApp setup
-        wrapped = self._app_wrapper(
-            self._root_component,
-            msg.system_theme,  # "light" or "dark"
-            msg.theme_mode,  # "system", "light", "dark", or None
-        )
-        self.session = RenderSession(wrapped)
-        set_render_session(self.session)
+        # Try to resume an SSR session
+        resumed = False
+        if msg.session_id and self._session_store:
+            entry = self._session_store.pop(msg.session_id)
+            if entry is not None:
+                self.session = entry.session
+                self.session_id = msg.session_id
+                get_session_registry().register(self.session)
+                set_render_session(self.session)
+                execute_deferred_hooks(self.session, entry.deferred_mounts, entry.deferred_unmounts)
+                resumed = True
+                logger.debug("Resumed SSR session: session_id=%s", self.session_id)
 
-        # Register session with global registry (used by hot reload and other features)
-        get_session_registry().register(self.session)
-
-        self.session_id = str(uuid4())
-
-        # Store initial path for routing
-        self.session.initial_path = msg.path
+        if not resumed:
+            # Create a new session
+            wrapped = self._app_wrapper(
+                self._root_component,
+                msg.system_theme,  # "light" or "dark"
+                msg.theme_mode,  # "system", "light", "dark", or None
+            )
+            self.session = RenderSession(wrapped)
+            get_session_registry().register(self.session)
+            set_render_session(self.session)
+            self.session_id = str(uuid4())
+            self.session.initial_path = msg.path
 
         # Include debug config if debug logging is enabled
         debug_categories = get_enabled_categories()
         debug_config = DebugConfig(categories=debug_categories) if debug_categories else None
 
+        assert self.session_id is not None
         response = HelloResponseMessage(
             session_id=self.session_id,
             server_version=_get_version(),
@@ -351,11 +372,22 @@ class MessageHandler:
     def initial_render(self) -> Message:
         """Generate initial render message.
 
+        If the session was already rendered by SSR (root_element_id is set),
+        skips rendering and returns empty patches. Otherwise performs a full
+        initial render. Sets up router callbacks in both cases.
+
+
         Returns:
             PatchMessage on success, ErrorMessage on exception
         """
         assert self.session is not None, "handle_hello must be called before initial_render"
         try:
+            if self.session.root_element_id is not None:
+                # Already rendered by SSR — skip render, just set up router
+                logger.debug("Skipping initial render (SSR session)")
+                self._setup_router_callbacks()
+                return PatchMessage(patches=[])
+
             render_patches = render(self.session)
             wire_patches = _serialize_patches(render_patches, self.session)
             element_count = len(self.session.elements)

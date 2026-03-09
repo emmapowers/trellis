@@ -25,6 +25,7 @@ from trellis.bundler import (
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
+    SSRBundleBuildStep,
     StaticFileCopyStep,
 )
 from trellis.platforms.common import find_available_port
@@ -72,18 +73,28 @@ class ServerPlatform(Platform):
         """
         entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
         template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
-        return BuildConfig(
-            entry_point=entry_point,
-            steps=[
-                PackageInstallStep(),
-                RegistryGenerationStep(),
-                BundleBuildStep(output_name="bundle"),
+        ssr_enabled = config.ssr
+
+        steps = [
+            PackageInstallStep(),
+            RegistryGenerationStep(),
+            BundleBuildStep(output_name="bundle"),
+        ]
+        if ssr_enabled:
+            steps.append(SSRBundleBuildStep())
+        steps.extend(
+            [
                 StaticFileCopyStep(),
                 IconAssetStep(icon_path=config.icon),
                 IndexHtmlRenderStep(
                     template_path, {"title": config.title, "static_path": "/static"}
                 ),
-            ],
+            ]
+        )
+
+        return BuildConfig(
+            entry_point=entry_point,
+            steps=steps,
         )
 
     async def run(
@@ -96,6 +107,7 @@ class ServerPlatform(Platform):
         static_dir: Path | None = None,
         batch_delay: float = 1.0 / 30,
         hot_reload: bool = True,
+        ssr: bool = True,
         **_kwargs: Any,  # Ignore other platform args
     ) -> None:
         """Start FastAPI server with WebSocket support.
@@ -108,7 +120,12 @@ class ServerPlatform(Platform):
             static_dir: Custom static files directory
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
             hot_reload: Enable hot reload (default True)
+            ssr: Enable server-side rendering (default True)
         """
+        from trellis.platforms.server.session_store import SessionStore  # noqa: PLC0415
+        from trellis.platforms.server.ssr import SSROrchestrator  # noqa: PLC0415
+        from trellis.platforms.server.ssr_renderer import SSRRenderer  # noqa: PLC0415
+
         # Start hot reload if enabled
         if hot_reload:
             hr = get_or_create_hot_reload(asyncio.get_running_loop())
@@ -128,6 +145,41 @@ class ServerPlatform(Platform):
         app.state.trellis_top_component = root_component
         app.state.trellis_app_wrapper = app_wrapper
         app.state.trellis_batch_delay = batch_delay
+
+        # Set up SSR infrastructure
+        ssr_renderer: SSRRenderer | None = None
+        session_store = SessionStore()
+        app.state.trellis_session_store = session_store
+
+        if ssr:
+            static = static_dir or create_static_dir()
+            ssr_bundle = static / "ssr.js"
+            if ssr_bundle.exists():
+                ssr_renderer = SSRRenderer(ssr_bundle)
+                try:
+                    ssr_renderer.start()
+                except Exception:
+                    import logging  # noqa: PLC0415
+
+                    logging.getLogger(__name__).warning(
+                        "SSR renderer failed to start, falling back to CSR"
+                    )
+                    ssr_renderer = None
+
+            ssr_orchestrator = SSROrchestrator(
+                root_component=root_component,
+                app_wrapper=app_wrapper,
+                session_store=session_store,
+                ssr_renderer=ssr_renderer,
+            )
+            app.state.trellis_ssr = ssr_orchestrator
+
+            # Register SSR cache invalidation with hot reload
+            if hot_reload:
+                hr = get_or_create_hot_reload()
+                hr.add_on_reload_callback(ssr_orchestrator.invalidate_cache)
+        else:
+            app.state.trellis_ssr = None
 
         # Set up static file serving
         static = static_dir or create_static_dir()
@@ -151,4 +203,8 @@ class ServerPlatform(Platform):
             log_level="warning",  # Suppress uvicorn's info messages
         )
         server = uvicorn.Server(config)
-        await server.serve()
+        try:
+            await server.serve()
+        finally:
+            if ssr_renderer is not None:
+                ssr_renderer.stop()

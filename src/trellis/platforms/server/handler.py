@@ -14,6 +14,9 @@ from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.common.messages import Message
 
+if tp.TYPE_CHECKING:
+    from trellis.platforms.server.session_store import SessionStore
+
 router = APIRouter()
 
 
@@ -42,6 +45,7 @@ class WebSocketMessageHandler(MessageHandler):
         app_wrapper: AppWrapper,
         websocket: WebSocket,
         batch_delay: float = 1.0 / 30,
+        session_store: SessionStore | None = None,
     ) -> None:
         """Create a WebSocket message handler.
 
@@ -50,8 +54,11 @@ class WebSocketMessageHandler(MessageHandler):
             app_wrapper: Callback to wrap component with TrellisApp
             websocket: The FastAPI WebSocket connection
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
+            session_store: Optional session store for SSR session resumption
         """
-        super().__init__(root_component, app_wrapper, batch_delay=batch_delay)
+        super().__init__(
+            root_component, app_wrapper, batch_delay=batch_delay, session_store=session_store
+        )
         self.websocket = websocket
         self._encoder = msgspec.msgpack.Encoder()
         self._decoder = msgspec.msgpack.Decoder()
@@ -98,8 +105,15 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     # Get batch_delay from app state (defaults to 30fps if not set)
     batch_delay = getattr(websocket.app.state, "trellis_batch_delay", 1.0 / 30)
 
+    # Get session store for SSR session resumption (if SSR is enabled)
+    session_store = getattr(websocket.app.state, "trellis_session_store", None)
+
     handler = WebSocketMessageHandler(
-        top_component, app_wrapper, websocket, batch_delay=batch_delay
+        top_component,
+        app_wrapper,
+        websocket,
+        batch_delay=batch_delay,
+        session_store=session_store,
     )
 
     # Register handler for broadcast (e.g., reload messages)

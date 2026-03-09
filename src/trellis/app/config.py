@@ -111,6 +111,12 @@ _PORT: ConfigVar[int | None] = ConfigVar(
     short_name="p",
     help="Server port to bind to",
 )
+_SSR = ConfigVar(
+    "ssr",
+    default=True,
+    category="server",
+    help="Enable server-side rendering",
+)
 
 
 def _default_routing_mode(platform: PlatformType) -> RoutingMode:
@@ -250,6 +256,7 @@ class Config:
     # Server settings
     host: str = "127.0.0.1"
     port: int | None = None
+    ssr: bool = True
 
     # Desktop settings
     window_size: str = "maximized"
@@ -278,6 +285,7 @@ class Config:
         library: bool = False,
         host: str = "127.0.0.1",
         port: int | None = None,
+        ssr: bool = True,
         window_size: str = "maximized",
         identifier: str | None = None,
         version: str | None = None,
@@ -318,6 +326,7 @@ class Config:
         # Server settings
         self.host = _HOST.resolve(host)
         self.port = _PORT.resolve(port)
+        self.ssr = _SSR.resolve(ssr)
 
         # Desktop settings
         self.window_size = _WINDOW_SIZE.resolve(window_size)

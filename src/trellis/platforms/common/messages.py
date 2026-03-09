@@ -78,6 +78,7 @@ class HelloMessage(Message, tag="hello"):
     system_theme: Literal["light", "dark"] = "light"  # Detected from OS preference
     theme_mode: Literal["system", "light", "dark"] | None = None  # Host-controlled override
     path: str = "/"
+    session_id: str | None = None  # Set when resuming an SSR session
 
 
 class DebugConfig(msgspec.Struct):

@@ -723,3 +723,73 @@ class IndexHtmlRenderStep(BuildStep):
         step_manifest.source_paths.add(self._template_path)
         step_manifest.dest_files.add(output_path)
         step_manifest.metadata["context_hash"] = self._compute_context_hash(ctx)
+
+
+class SSRBundleBuildStep(BuildStep):
+    """Run esbuild to create the SSR bundle for server-side rendering.
+
+    Builds a Node-targeted ESM bundle from the SSR entry point.
+    Unlike BundleBuildStep, uses --platform=node and --target=esnext.
+    """
+
+    def __init__(self, *, output_name: str = "ssr") -> None:
+        self.output_name = output_name
+
+    @property
+    def name(self) -> str:
+        return "ssr-bundle-build"
+
+    def should_build(
+        self, ctx: BuildContext, step_manifest: StepManifest | None
+    ) -> ShouldBuild | None:
+        """Check if SSR bundle needs rebuilding based on source/output mtimes."""
+        if step_manifest is None:
+            return ShouldBuild.BUILD
+        if not step_manifest.source_paths or not step_manifest.dest_files:
+            return ShouldBuild.BUILD
+        if is_rebuild_needed(step_manifest.source_paths, step_manifest.dest_files):
+            return ShouldBuild.BUILD
+        return ShouldBuild.SKIP
+
+    def run(self, ctx: BuildContext) -> None:
+        esbuild = get_bin(node_modules_path(ctx.workspace), "esbuild")
+        metafile_path = get_metafile_path(ctx.workspace)
+
+        ssr_entry = (
+            Path(__file__).parent.parent
+            / "platforms"
+            / "server"
+            / "client"
+            / "src"
+            / "ssr-entry.tsx"
+        )
+
+        cmd = [
+            str(esbuild),
+            str(ssr_entry),
+            "--bundle",
+            f"--outdir={ctx.dist_dir}",
+            f"--entry-names={self.output_name}",
+            f"--metafile={metafile_path}",
+            "--format=esm",
+            "--platform=node",
+            "--target=esnext",
+            "--jsx=automatic",
+            "--loader:.tsx=tsx",
+            "--loader:.ts=ts",
+        ]
+
+        # Add aliases for each module
+        aliases = _get_module_aliases(ctx.collected)
+        cmd.extend(f"--alias:@trellis/{name}={path}" for name, path in aliases.items())
+
+        # Add additional args from context (including _registry alias)
+        cmd.extend(ctx.esbuild_args)
+
+        ctx.exec_in_build_env(cmd)
+
+        # Populate step manifest from metafile
+        metafile = read_metafile(ctx.workspace)
+        step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
+        step_manifest.source_paths.update(metafile.inputs)
+        step_manifest.dest_files.update(metafile.outputs)
