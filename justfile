@@ -42,8 +42,8 @@ clean:
 demo:
     uv run python examples/demo.py
 
-showcase:
-    uv run trellis -r examples/widget_showcase run --desktop
+showcase *args:
+    uv run trellis -r examples/widget_showcase run {{args}}
 
 sliders:
     uv run python examples/all_sliders_all_the_time.py

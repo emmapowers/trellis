@@ -24,6 +24,6 @@ just ci         # Full CI checks
 
 - Formatting: Ruff (100 char line length)
 - Linting: Ruff
-- Type checking: MyPy (strict mode)
+- Type checking: Basedpyright (standard mode)
 
-Run `just cleanup` before committing.
+Run `just ci` before committing.

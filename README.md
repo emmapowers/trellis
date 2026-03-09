@@ -164,7 +164,7 @@ trellis package --platform desktop
 
 ```bash
 just demo             # Run the demo app (server)
-just demo --desktop   # Run the demo app (desktop)
+just showcase         # Run the widget showcase (desktop)
 just test             # Run tests
 just lint             # Check linters
 just cleanup          # Format and lint with auto-fix
