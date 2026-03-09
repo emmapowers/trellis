@@ -11,5 +11,20 @@
   "pythonVersion": "3.13",
   "typeCheckingMode": "standard",
   "venvPath": ".",
-  "venv": ".venv"
+  "venv": ".venv",
+  "reportMissingImports": "warning",
+  "executionEnvironments": [
+    {
+      "root": "src/trellis/platforms/desktop",
+      "reportMissingImports": false
+    },
+    {
+      "root": "src/trellis/desktop",
+      "reportMissingImports": false
+    },
+    {
+      "root": "src/trellis/packaging",
+      "reportMissingImports": false
+    }
+  ]
 }
