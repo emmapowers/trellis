@@ -39,17 +39,17 @@ clean:
     rm -rf dist build .build .ruff_cache .pytest_cache .coverage
 
 # Examples
-demo:
-    uv run python examples/demo.py
+hello_world *args:
+    uv run trellis -r examples/hello_world run {{args}}
 
 showcase *args:
     uv run trellis -r examples/widget_showcase run {{args}}
 
-sliders:
-    uv run python examples/all_sliders_all_the_time.py
+sliders *args:
+    uv run trellis -r examples/sliders run {{args}}
 
-breakfast:
-    uv run python -m examples.breakfast_todo
+breakfast *args:
+    uv run trellis -r examples/breakfast_todo run {{args}}
 
 # Playground
 install-playground-deps:

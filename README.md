@@ -163,11 +163,13 @@ trellis package --platform desktop
 **Commands:**
 
 ```bash
-just demo             # Run the demo app (server)
-just showcase         # Run the widget showcase (desktop)
-just test             # Run tests
-just lint             # Check linters
-just cleanup          # Format and lint with auto-fix
+just hello_world              # Run hello world example (server)
+just showcase                 # Run the widget showcase (server)
+just showcase --desktop       # Run the widget showcase (desktop)
+just test                     # Run tests
+just typecheck                # Type check with basedpyright
+just lint                     # Check linters
+just cleanup                  # Format and lint with auto-fix
 ```
 
 **Project structure:**

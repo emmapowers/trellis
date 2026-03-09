@@ -149,3 +149,24 @@ ban-relative-imports = "all"
     "TID252",   # relative imports in examples are fine
 ]
 
+[tool.basedpyright]
+pythonVersion = "3.13"
+typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"
+include = ["src/trellis", "examples"]
+exclude = [
+    "docs/",
+    "**/dist/",
+    "**/.trellis-build/",
+    "**/.workspace/",
+    "**/.trellis/",
+    "**/node_modules/",
+]
+reportMissingImports = "warning"
+executionEnvironments = [
+    { root = "src/trellis/platforms/desktop", reportMissingImports = false },
+    { root = "src/trellis/desktop", reportMissingImports = false },
+    { root = "src/trellis/packaging", reportMissingImports = false },
+]
+
