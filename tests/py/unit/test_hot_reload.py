@@ -86,9 +86,9 @@ class TestHotReload:
 
         # ALL elements should now be dirty
         dirty_count = len(list(session.dirty.pop_all()))
-        assert (
-            dirty_count == element_count
-        ), f"Expected {element_count} dirty elements, got {dirty_count}"
+        assert dirty_count == element_count, (
+            f"Expected {element_count} dirty elements, got {dirty_count}"
+        )
 
     def test_invalidate_with_no_sessions(self) -> None:
         """Invalidating with no sessions doesn't error."""

@@ -163,11 +163,11 @@ trellis package --platform desktop
 **Commands:**
 
 ```bash
-pixi run demo             # Run the demo app (server)
-pixi run demo --desktop   # Run the demo app (desktop)
-pixi run test             # Run tests
-pixi run lint             # Check linters
-pixi run cleanup          # Format and lint with auto-fix
+just demo             # Run the demo app (server)
+just demo --desktop   # Run the demo app (desktop)
+just test             # Run tests
+just lint             # Check linters
+just cleanup          # Format and lint with auto-fix
 ```
 
 **Project structure:**

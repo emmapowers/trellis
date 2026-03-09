@@ -269,7 +269,9 @@ class TestResolve:
         lockfile = self._make_lockfile({"numpy": {"version": "1.26.4"}})
         app_wheel = _make_wheel(tmp_path, "myapp", "0.1.0", requires=["numpy>=1.0"])
 
-        with (patch("trellis.bundler.wheels.fetch_pyodide_lockfile", return_value=lockfile),):
+        with (
+            patch("trellis.bundler.wheels.fetch_pyodide_lockfile", return_value=lockfile),
+        ):
             result = resolve_dependencies(app_wheel, tmp_path / "cache")
 
         assert "numpy" in result.pyodide_packages

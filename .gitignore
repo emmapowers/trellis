@@ -19,8 +19,11 @@ htmlcov/
 # Linting
 .ruff_cache/
 
-# Pixi
-.pixi/
+# Virtual environment
+.venv/
+
+# direnv
+.direnv/
 
 # IDE
 .idea/

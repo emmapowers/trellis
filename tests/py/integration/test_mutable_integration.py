@@ -760,9 +760,9 @@ class TestMutableRerender:
                 input_update = patch
                 break
 
-        assert (
-            input_update is not None
-        ), "Expected RenderUpdatePatch for TextInput after mutable callback"
+        assert input_update is not None, (
+            "Expected RenderUpdatePatch for TextInput after mutable callback"
+        )
         assert input_update.props is not None
         # Patch props contain raw Mutable objects, not serialized dicts
         value_mutable = input_update.props["value"]
@@ -814,9 +814,9 @@ class TestMutableRerender:
                 slider_update = patch
                 break
 
-        assert (
-            slider_update is not None
-        ), "Expected RenderUpdatePatch for Slider after mutable callback"
+        assert slider_update is not None, (
+            "Expected RenderUpdatePatch for Slider after mutable callback"
+        )
         assert slider_update.props is not None
         # Patch props contain raw Mutable objects, not serialized dicts
         value_mutable = slider_update.props["value"]
