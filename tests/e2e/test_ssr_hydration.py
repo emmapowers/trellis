@@ -83,6 +83,9 @@ def test_no_hydration_warnings(server_url: str) -> None:
     )
 
     if result.returncode == 2:
-        pytest.skip(f"Playwright script error: {result.stderr.strip()}")
+        stderr = result.stderr.strip()
+        if "Playwright not installed" in stderr or "Cannot find module" in stderr:
+            pytest.skip(f"Playwright not available: {stderr}")
+        pytest.fail(f"Hydration check script error:\nstdout: {result.stdout}\nstderr: {stderr}")
 
     assert result.returncode == 0, f"Hydration warnings detected:\n{result.stdout}\n{result.stderr}"

@@ -6,6 +6,7 @@ import logging
 import os
 import subprocess
 import tempfile
+import threading
 import time
 import typing as tp
 from pathlib import Path
@@ -31,8 +32,10 @@ class SSRRenderer:
         self._bundle_path = ssr_bundle_path
         self._process: subprocess.Popen[bytes] | None = None
         self._socket_path: str | None = None
+        self._socket_dir: str | None = None
         self._client: httpx.Client | None = None
         self._restart_count = 0
+        self._lock = threading.Lock()
 
     @property
     def is_available(self) -> bool:
@@ -41,11 +44,18 @@ class SSRRenderer:
 
     def start(self) -> None:
         """Start the Bun SSR subprocess."""
+        with self._lock:
+            self._start_locked()
+
+    def _start_locked(self) -> None:
+        """Start the renderer (must be called with _lock held)."""
         if self.is_available:
             return
 
         bun = ensure_bun()
-        self._socket_path = tempfile.mktemp(suffix=".sock", prefix="trellis-ssr-")
+        # Use mkdtemp to create the socket path securely (mktemp is racy)
+        self._socket_dir = tempfile.mkdtemp(prefix="trellis-ssr-")
+        self._socket_path = os.path.join(self._socket_dir, "ssr.sock")
 
         env = {**os.environ, "TRELLIS_SSR_SOCKET": self._socket_path}
 
@@ -53,8 +63,8 @@ class SSRRenderer:
         self._process = start_child_process(
             [str(bun), str(self._bundle_path)],
             env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
 
         # Create HTTP client connected via Unix socket
@@ -75,11 +85,7 @@ class SSRRenderer:
         while time.monotonic() < deadline:
             # Fail fast if the process has exited
             if self._process is not None and self._process.poll() is not None:
-                stderr = self._process.stderr
-                output = stderr.read().decode() if stderr else ""
-                logger.warning(
-                    "SSR renderer exited with code %d: %s", self._process.returncode, output
-                )
+                logger.warning("SSR renderer exited with code %d", self._process.returncode)
                 return False
             try:
                 if self._client is not None:
@@ -96,11 +102,14 @@ class SSRRenderer:
 
         Returns HTML string or None on failure.
         """
-        if not self.is_available or self._client is None:
-            return None
+        # Snapshot client under lock to avoid racing with stop/restart
+        with self._lock:
+            if not self.is_available or self._client is None:
+                return None
+            client = self._client
 
         try:
-            resp = self._client.post(
+            resp = client.post(
                 "/render",
                 json=serialized_tree,
                 timeout=_RENDER_TIMEOUT,
@@ -116,21 +125,27 @@ class SSRRenderer:
 
     def _try_restart(self) -> None:
         """Attempt to restart the renderer after a crash."""
-        self._restart_count += 1
-        if self._restart_count > _MAX_RESTART_ATTEMPTS:
-            logger.error("SSR renderer exceeded max restart attempts, disabling")
-            self.stop()
-            return
+        with self._lock:
+            self._restart_count += 1
+            if self._restart_count > _MAX_RESTART_ATTEMPTS:
+                logger.error("SSR renderer exceeded max restart attempts, disabling")
+                self._stop_locked()
+                return
 
-        logger.info("Restarting SSR renderer (attempt %d)", self._restart_count)
-        self.stop()
-        try:
-            self.start()
-        except Exception:
-            logger.exception("Failed to restart SSR renderer")
+            logger.info("Restarting SSR renderer (attempt %d)", self._restart_count)
+            self._stop_locked()
+            try:
+                self._start_locked()
+            except Exception:
+                logger.exception("Failed to restart SSR renderer")
 
     def stop(self) -> None:
         """Terminate the SSR subprocess."""
+        with self._lock:
+            self._stop_locked()
+
+    def _stop_locked(self) -> None:
+        """Stop the renderer (must be called with _lock held)."""
         if self._client is not None:
             self._client.close()
             self._client = None
@@ -140,9 +155,14 @@ class SSRRenderer:
             self._process = None
             logger.debug("SSR renderer stopped")
 
-        # Clean up socket file
+        # Clean up socket file and directory
         if self._socket_path is not None:
             socket_path = Path(self._socket_path)
             if socket_path.exists():
                 socket_path.unlink()
             self._socket_path = None
+        if self._socket_dir is not None:
+            socket_dir = Path(self._socket_dir)
+            if socket_dir.exists():
+                socket_dir.rmdir()
+            self._socket_dir = None

@@ -338,6 +338,8 @@ class MessageHandler:
                 self.session_id = msg.session_id
                 get_session_registry().register(self.session)
                 set_render_session(self.session)
+                # Set up router before deferred hooks — mount callbacks may navigate
+                self._setup_router_callbacks()
                 execute_deferred_hooks(self.session, entry.deferred_mounts, entry.deferred_unmounts)
                 resumed = True
                 logger.debug("Resumed SSR session: session_id=%s", self.session_id)

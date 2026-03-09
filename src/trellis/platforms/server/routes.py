@@ -24,11 +24,22 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _is_document_request(request: Request) -> bool:
+    """Check if the request is a browser document navigation.
+
+    Returns True for requests that accept HTML (standard browser navigation),
+    False for asset/API requests that should get a real 404.
+    """
+    accept = request.headers.get("accept", "")
+    return "text/html" in accept
+
+
 def register_spa_fallback(app: FastAPI) -> None:
     """Register 404 handler that serves SPA HTML for client-side routing.
 
     This allows users to refresh on any client-side route (e.g., /about,
     /users/123) and get the SPA, which then handles routing on the client.
+    Only handles document navigations — asset/API 404s pass through.
 
     Args:
         app: The FastAPI application to register the handler on.
@@ -36,7 +47,9 @@ def register_spa_fallback(app: FastAPI) -> None:
 
     @app.exception_handler(404)
     async def spa_fallback_handler(request: Request, exc: StarletteHTTPException) -> HTMLResponse:
-        """Return SPA HTML for 404s to support client-side routing."""
+        """Return SPA HTML for document 404s to support client-side routing."""
+        if not _is_document_request(request):
+            return HTMLResponse(content="Not Found", status_code=404)
         return _ssr_or_static_response(request)
 
 
@@ -65,7 +78,9 @@ def _ssr_or_static_response(request: Request) -> HTMLResponse:
                 theme_mode=None,
                 html_template=get_index_html(),
             )
-            return HTMLResponse(content=html, status_code=200)
+            response = HTMLResponse(content=html, status_code=200)
+            response.headers["Vary"] = "Sec-CH-Prefers-Color-Scheme"
+            return response
         except Exception:
             logger.exception("SSR render failed, falling back to static HTML")
 

@@ -35,3 +35,14 @@ class TestBuildDehydrationData:
         data = json.loads(result)
         assert "serverVersion" in data
         assert isinstance(data["serverVersion"], str)
+
+    def test_escapes_script_closing_tag(self) -> None:
+        """Angle brackets are escaped to prevent </script> injection."""
+        patches = [{"text": "</script><img src=x>"}]
+        result = build_dehydration_data(None, patches)
+        # Raw < must not appear in the output
+        assert "<" not in result
+        assert "\\u003c" in result
+        # But JSON.parse still recovers the original value
+        data = json.loads(result)
+        assert data["patches"][0]["text"] == "</script><img src=x>"

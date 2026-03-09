@@ -51,4 +51,9 @@ def build_dehydration_data(
 
     # Build JSON manually to embed pre-encoded patches
     data_json = json.dumps(data)
-    return data_json[:-1] + f', "{_PATCHES_KEY}": {patches_json}' + "}"
+    result = data_json[:-1] + f', "{_PATCHES_KEY}": {patches_json}' + "}"
+
+    # Escape characters that could break inline <script> embedding:
+    # - </script> injection via < becoming \u003c
+    # - JS line terminators that break string literals
+    return result.replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import typing as tp
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -36,6 +37,24 @@ def label_orchestrator(app_wrapper: tp.Any) -> SSROrchestrator:
         app_wrapper=app_wrapper,
         session_store=store,
         ssr_renderer=None,
+    )
+
+
+@pytest.fixture
+def label_orchestrator_with_renderer(app_wrapper: tp.Any) -> SSROrchestrator:
+    @component
+    def App() -> None:
+        Label(text="Hello SSR")
+
+    store = SessionStore(ttl_seconds=300)
+    renderer = MagicMock()
+    renderer.is_available = True
+    renderer.render.return_value = "<div>rendered</div>"
+    return SSROrchestrator(
+        root_component=App,
+        app_wrapper=app_wrapper,
+        session_store=store,
+        ssr_renderer=renderer,
     )
 
 
@@ -111,3 +130,19 @@ class TestSSROrchestrator:
             session_ids.append(match.group(1))
 
         assert session_ids[0] != session_ids[1]
+
+    def test_renderer_called_once_for_cached_route(
+        self, label_orchestrator_with_renderer: SSROrchestrator
+    ) -> None:
+        """With a renderer, the second request for the same route+theme uses cached HTML."""
+        orch = label_orchestrator_with_renderer
+        renderer = orch._ssr_renderer
+        assert renderer is not None
+
+        for _ in range(2):
+            orch.render_to_response(
+                path="/", system_theme="light", theme_mode=None, html_template=_HTML_TEMPLATE
+            )
+
+        # Renderer should only be called once — second request uses cache
+        assert renderer.render.call_count == 1

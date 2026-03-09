@@ -16,6 +16,7 @@ from trellis.app.configvars import (
     validate_batch_delay,
     validate_debug_categories,
     validate_port_or_none,
+    validate_positive_int,
     validate_window_size,
 )
 from trellis.platforms.common.base import PlatformType
@@ -121,6 +122,7 @@ _SESSION_TTL = ConfigVar(
     "session_ttl",
     default=300,
     category="server",
+    validator=validate_positive_int,
     help="Session time-to-live in seconds (for SSR resumption and reconnection)",
 )
 
@@ -232,6 +234,7 @@ class Config:
         title: Application title (page/window title, defaults to name)
         host: Server bind address
         port: Server port (None for auto-select)
+        ssr: Enable server-side rendering (default True)
         session_ttl: Session time-to-live in seconds (default 300)
         window_size: Desktop window size ('maximized' or 'WIDTHxHEIGHT')
         identifier: Reverse-domain bundle identifier (e.g., 'com.example.myapp')

@@ -745,6 +745,8 @@ class SSRBundleBuildStep(BuildStep):
         """Check if SSR bundle needs rebuilding based on source/output mtimes."""
         if step_manifest is None:
             return ShouldBuild.BUILD
+        if step_manifest.metadata.get("output_name") != self.output_name:
+            return ShouldBuild.BUILD
         if not step_manifest.source_paths or not step_manifest.dest_files:
             return ShouldBuild.BUILD
         if is_rebuild_needed(step_manifest.source_paths, step_manifest.dest_files):
@@ -793,6 +795,7 @@ class SSRBundleBuildStep(BuildStep):
         step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
         step_manifest.source_paths.update(metafile.inputs)
         step_manifest.dest_files.update(metafile.outputs)
+        step_manifest.metadata["output_name"] = self.output_name
 
 
 class SSRPreRenderStep(BuildStep):
