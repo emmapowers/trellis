@@ -72,7 +72,7 @@ from trellis import html as h
 
 - `just cleanup` - Format and lint with auto-fix
 - `just lint` - Check all linters (no fix)
-- `just mypy` - Check for type errors
+- `just typecheck` - Check for type errors
 - `just test` - Run tests
 - `just ci` - Full CI checks
 - `just showcase` - Run widget showcase

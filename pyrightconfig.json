@@ -1,0 +1,15 @@
+{
+  "include": ["src/trellis", "examples"],
+  "exclude": [
+    "docs/",
+    "**/dist/",
+    "**/.trellis-build/",
+    "**/.workspace/",
+    "**/.trellis/",
+    "**/node_modules/"
+  ],
+  "pythonVersion": "3.13",
+  "typeCheckingMode": "standard",
+  "venvPath": ".",
+  "venv": ".venv"
+}

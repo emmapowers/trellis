@@ -15,6 +15,7 @@ htmlcov/
 # Type checking
 .mypy_cache/
 .dmypy.json
+.basedpyright/
 
 # Linting
 .ruff_cache/

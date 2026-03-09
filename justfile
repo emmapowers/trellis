@@ -11,11 +11,8 @@ fmt-check:
     uv run ruff check src tests examples
 
 # Type checking
-mypy:
-    uv run dmypy run -- src/trellis examples
-
-mypy-ci:
-    uv run mypy src/trellis examples
+typecheck:
+    uv run basedpyright
 
 # Testing
 test:
@@ -33,13 +30,13 @@ test-js: install-js-test-deps
 # Composite lint/test tasks
 cleanup: fmt
 
-lint: fmt-check mypy-ci
+lint: fmt-check typecheck
 
 ci: lint test test-js
 
 # Build tasks
 clean:
-    rm -rf dist build .build .mypy_cache .ruff_cache .pytest_cache .coverage
+    rm -rf dist build .build .ruff_cache .pytest_cache .coverage
 
 # Examples
 demo:
