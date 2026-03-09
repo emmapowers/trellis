@@ -13,6 +13,7 @@ from pathlib import Path
 import httpx
 
 from trellis.bundler.bun import ensure_bun
+from trellis.utils.subprocess import start_child_process, stop_child_process
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ class SSRRenderer:
         env = {**os.environ, "TRELLIS_SSR_SOCKET": self._socket_path}
 
         logger.debug("Starting SSR renderer: %s %s", bun, self._bundle_path)
-        self._process = subprocess.Popen(
+        self._process = start_child_process(
             [str(bun), str(self._bundle_path)],
             env=env,
             stdout=subprocess.PIPE,
@@ -135,11 +136,7 @@ class SSRRenderer:
             self._client = None
 
         if self._process is not None:
-            self._process.terminate()
-            try:
-                self._process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self._process.kill()
+            stop_child_process(self._process)
             self._process = None
             logger.debug("SSR renderer stopped")
 
