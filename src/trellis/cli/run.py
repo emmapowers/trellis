@@ -24,6 +24,7 @@ def _build_run_kwargs(config: Config) -> dict[str, Any]:
         "port": config.port,
         "batch_delay": config.batch_delay,
         "hot_reload": config.hot_reload,
+        "session_ttl": config.session_ttl,
     }
     if config.platform == PlatformType.DESKTOP:
         kwargs["window_title"] = config.title

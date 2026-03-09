@@ -15,7 +15,7 @@ from trellis.widgets import Label
 
 @pytest.fixture
 def ssr_orchestrator(noop_component: CompositionComponent, app_wrapper: tp.Any) -> SSROrchestrator:
-    store = SessionStore(ttl_seconds=120)
+    store = SessionStore(ttl_seconds=300)
     return SSROrchestrator(
         root_component=noop_component,
         app_wrapper=app_wrapper,
@@ -30,7 +30,7 @@ def label_orchestrator(app_wrapper: tp.Any) -> SSROrchestrator:
     def App() -> None:
         Label(text="Hello SSR")
 
-    store = SessionStore(ttl_seconds=120)
+    store = SessionStore(ttl_seconds=300)
     return SSROrchestrator(
         root_component=App,
         app_wrapper=app_wrapper,

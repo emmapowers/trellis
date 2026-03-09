@@ -31,7 +31,7 @@ class SessionEntry:
 class SessionStore:
     """Thread-safe in-memory store for SSR sessions with TTL expiry."""
 
-    def __init__(self, ttl_seconds: float = 120) -> None:
+    def __init__(self, ttl_seconds: float = 300) -> None:
         self._ttl = ttl_seconds
         self._entries: dict[str, SessionEntry] = {}
         self._lock = threading.Lock()

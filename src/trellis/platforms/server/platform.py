@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -13,6 +14,7 @@ if TYPE_CHECKING:
     from trellis.app.config import Config
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
+    from trellis.platforms.server.session_store import SessionStore
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -35,6 +37,8 @@ from trellis.platforms.server.middleware import RequestLoggingMiddleware
 from trellis.platforms.server.routes import create_static_dir, register_spa_fallback
 from trellis.platforms.server.routes import router as http_router
 from trellis.utils.hot_reload import get_or_create_hot_reload
+
+logger = logging.getLogger(__name__)
 
 _console = Console()
 
@@ -108,6 +112,7 @@ class ServerPlatform(Platform):
         batch_delay: float = 1.0 / 30,
         hot_reload: bool = True,
         ssr: bool = True,
+        session_ttl: int = 300,
         **_kwargs: Any,  # Ignore other platform args
     ) -> None:
         """Start FastAPI server with WebSocket support.
@@ -121,6 +126,7 @@ class ServerPlatform(Platform):
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
             hot_reload: Enable hot reload (default True)
             ssr: Enable server-side rendering (default True)
+            session_ttl: Session time-to-live in seconds (default 300)
         """
         from trellis.platforms.server.session_store import SessionStore  # noqa: PLC0415
         from trellis.platforms.server.ssr import SSROrchestrator  # noqa: PLC0415
@@ -148,7 +154,7 @@ class ServerPlatform(Platform):
 
         # Set up SSR infrastructure
         ssr_renderer: SSRRenderer | None = None
-        session_store = SessionStore()
+        session_store = SessionStore(ttl_seconds=session_ttl)
         app.state.trellis_session_store = session_store
 
         if ssr:
@@ -159,11 +165,7 @@ class ServerPlatform(Platform):
                 try:
                     ssr_renderer.start()
                 except Exception:
-                    import logging  # noqa: PLC0415
-
-                    logging.getLogger(__name__).warning(
-                        "SSR renderer failed to start, falling back to CSR"
-                    )
+                    logger.warning("SSR renderer failed to start, falling back to CSR")
                     ssr_renderer = None
 
             ssr_orchestrator = SSROrchestrator(
@@ -180,6 +182,11 @@ class ServerPlatform(Platform):
                 hr.add_on_reload_callback(ssr_orchestrator.invalidate_cache)
         else:
             app.state.trellis_ssr = None
+
+        # Periodic cleanup of expired sessions
+        cleanup_task = asyncio.create_task(
+            _session_cleanup_loop(session_store, interval=session_ttl)
+        )
 
         # Set up static file serving
         static = static_dir or create_static_dir()
@@ -206,5 +213,13 @@ class ServerPlatform(Platform):
         try:
             await server.serve()
         finally:
+            cleanup_task.cancel()
             if ssr_renderer is not None:
                 ssr_renderer.stop()
+
+
+async def _session_cleanup_loop(store: SessionStore, interval: float) -> None:
+    """Periodically remove expired sessions from the store."""
+    while True:
+        await asyncio.sleep(interval)
+        store.cleanup_expired()

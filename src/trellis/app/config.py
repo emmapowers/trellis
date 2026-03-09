@@ -117,6 +117,12 @@ _SSR = ConfigVar(
     category="server",
     help="Enable server-side rendering",
 )
+_SESSION_TTL = ConfigVar(
+    "session_ttl",
+    default=300,
+    category="server",
+    help="Session time-to-live in seconds (for SSR resumption and reconnection)",
+)
 
 
 def _default_routing_mode(platform: PlatformType) -> RoutingMode:
@@ -226,6 +232,7 @@ class Config:
         title: Application title (page/window title, defaults to name)
         host: Server bind address
         port: Server port (None for auto-select)
+        session_ttl: Session time-to-live in seconds (default 300)
         window_size: Desktop window size ('maximized' or 'WIDTHxHEIGHT')
         identifier: Reverse-domain bundle identifier (e.g., 'com.example.myapp')
         version: Application version string (semver)
@@ -257,6 +264,7 @@ class Config:
     host: str = "127.0.0.1"
     port: int | None = None
     ssr: bool = True
+    session_ttl: int = 300
 
     # Desktop settings
     window_size: str = "maximized"
@@ -286,6 +294,7 @@ class Config:
         host: str = "127.0.0.1",
         port: int | None = None,
         ssr: bool = True,
+        session_ttl: int = 300,
         window_size: str = "maximized",
         identifier: str | None = None,
         version: str | None = None,
@@ -327,6 +336,7 @@ class Config:
         self.host = _HOST.resolve(host)
         self.port = _PORT.resolve(port)
         self.ssr = _SSR.resolve(ssr)
+        self.session_ttl = _SESSION_TTL.resolve(session_ttl)
 
         # Desktop settings
         self.window_size = _WINDOW_SIZE.resolve(window_size)
