@@ -1,4 +1,10 @@
-"""SSR HTML cache keyed by (route, theme)."""
+"""SSR rendered-HTML cache keyed by (route, theme).
+
+Caches only the rendered HTML output from renderToString(), not the
+full page template or dehydration data. Dehydration data (patches,
+session ID) contains per-session element IDs and must be computed
+fresh for every request.
+"""
 
 from __future__ import annotations
 
@@ -8,11 +14,11 @@ __all__ = ["SSRCache"]
 
 
 class SSRCache:
-    """Caches SSR HTML templates per route and theme.
+    """Caches rendered SSR HTML per route and theme.
 
-    The cached HTML contains a SESSION_ID_PLACEHOLDER that is replaced
-    with a fresh session ID on each request. This allows the HTML structure
-    to be reused while creating unique sessions.
+    The cached value is the HTML fragment produced by the Bun sidecar's
+    renderToString(). This is purely structural and does not contain
+    session-specific data, so it can be safely reused across requests.
     """
 
     def __init__(self) -> None:
@@ -20,14 +26,14 @@ class SSRCache:
         self._lock = threading.Lock()
 
     def get(self, route: str, theme: str) -> str | None:
-        """Get cached HTML for a route+theme pair."""
+        """Get cached rendered HTML for a route+theme pair."""
         with self._lock:
             return self._cache.get((route, theme))
 
-    def put(self, route: str, theme: str, html_template: str) -> None:
-        """Cache HTML for a route+theme pair."""
+    def put(self, route: str, theme: str, ssr_html: str) -> None:
+        """Cache rendered HTML for a route+theme pair."""
         with self._lock:
-            self._cache[(route, theme)] = html_template
+            self._cache[(route, theme)] = ssr_html
 
     def invalidate(self) -> None:
         """Clear all cached entries. Called on hot reload / rebuild."""

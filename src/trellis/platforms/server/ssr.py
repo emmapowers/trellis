@@ -24,9 +24,6 @@ _SERVER_VERSION_KEY = "serverVersion"
 _SESSION_ID_KEY = "sessionId"
 _PATCHES_KEY = "patches"
 
-# Placeholder replaced per-request with a fresh session ID
-_SESSION_ID_PLACEHOLDER = "__SSR_SESSION_ID__"
-
 
 def _get_version() -> str:
     """Get package version from metadata."""
@@ -39,7 +36,13 @@ def _get_version() -> str:
 
 
 class SSROrchestrator:
-    """Orchestrates SSR: creates session, renders, stores for resumption."""
+    """Orchestrates SSR: creates session, renders, stores for resumption.
+
+    Caches the rendered HTML fragment (renderToString output) per
+    route+theme.  Dehydration data (patches, session ID) is always
+    computed fresh because element IDs are non-deterministic across
+    sessions.
+    """
 
     def __init__(
         self,
@@ -63,30 +66,12 @@ class SSROrchestrator:
     ) -> str:
         """Render the app to a complete HTML response.
 
-        Uses a per-route+theme cache for the HTML template. On cache hit,
-        only a fresh session and session_id are created (no full render).
+        Every request creates a fresh session and computes dehydration
+        data.  The expensive renderToString() call is cached per
+        route+theme so only the first request for each combination hits
+        the Bun sidecar.
         """
-        # Check cache first
-        cached = self._cache.get(path, system_theme)
-        if cached is not None:
-            return self._serve_from_cache(cached, path, system_theme, theme_mode)
-
-        # Full render on cache miss
-        return self._full_render(path, system_theme, theme_mode, html_template)
-
-    def invalidate_cache(self) -> None:
-        """Clear the HTML cache. Called on hot reload / rebuild."""
-        self._cache.invalidate()
-
-    def _serve_from_cache(
-        self,
-        cached_html: str,
-        path: str,
-        system_theme: str,
-        theme_mode: str | None,
-    ) -> str:
-        """Serve a cached response with a fresh session."""
-        # Create a fresh session even on cache hit
+        # Create session and render (always — patches are per-session)
         wrapped = self._app_wrapper(
             self._root_component,
             system_theme,
@@ -96,40 +81,6 @@ class SSROrchestrator:
         session.initial_path = path
         session_id = str(uuid4())
 
-        # Render for SSR to get patches and deferred hooks
-        ssr_result = render_for_ssr(session)
-        wire_patches = _serialize_patches(ssr_result.patches, session)
-
-        # Store session
-        entry = SessionEntry(
-            session=session,
-            deferred_mounts=ssr_result.deferred_mounts,
-            deferred_unmounts=ssr_result.deferred_unmounts,
-            patches=wire_patches,
-        )
-        self._session_store.store(session_id, entry)
-
-        # Replace placeholder with fresh session ID and patches
-        return cached_html.replace(_SESSION_ID_PLACEHOLDER, session_id)
-
-    def _full_render(
-        self,
-        path: str,
-        system_theme: str,
-        theme_mode: str | None,
-        html_template: str,
-    ) -> str:
-        """Do a full SSR render and cache the result."""
-        wrapped = self._app_wrapper(
-            self._root_component,
-            system_theme,
-            theme_mode,
-        )
-        session = RenderSession(wrapped)
-        session.initial_path = path
-        session_id = str(uuid4())
-
-        # Render for SSR (defers mount hooks)
         ssr_result = render_for_ssr(session)
         wire_patches = _serialize_patches(ssr_result.patches, session)
 
@@ -142,7 +93,28 @@ class SSROrchestrator:
         )
         self._session_store.store(session_id, entry)
 
-        # Try to render HTML via Bun sidecar
+        # Get rendered HTML — from cache or Bun sidecar
+        ssr_html = self._get_ssr_html(path, system_theme, session)
+
+        # Build dehydration data (always fresh — element IDs are per-session)
+        dehydration_data = _build_dehydration_data(session_id, wire_patches)
+
+        # Inject into template
+        result = html_template.replace("<!--ssr-outlet-->", ssr_html)
+        dehydration_script = f"<script>window.__TRELLIS_SSR__ = {dehydration_data};</script>"
+        return result.replace("</body>", f"{dehydration_script}\n</body>")
+
+    def invalidate_cache(self) -> None:
+        """Clear the HTML cache. Called on hot reload / rebuild."""
+        self._cache.invalidate()
+
+    def _get_ssr_html(self, path: str, system_theme: str, session: RenderSession) -> str:
+        """Get rendered HTML, using the cache when possible."""
+        cached = self._cache.get(path, system_theme)
+        if cached is not None:
+            return cached
+
+        # Render via Bun sidecar
         ssr_html = ""
         if self._ssr_renderer is not None and self._ssr_renderer.is_available:
             assert session.root_element is not None
@@ -150,14 +122,9 @@ class SSROrchestrator:
             rendered = self._ssr_renderer.render(tree)
             if rendered is not None:
                 ssr_html = rendered
+                self._cache.put(path, system_theme, ssr_html)
 
-        # Build dehydration data
-        dehydration_data = _build_dehydration_data(session_id, wire_patches)
-
-        # Inject into template
-        result = html_template.replace("<!--ssr-outlet-->", ssr_html)
-        dehydration_script = f"<script>window.__TRELLIS_SSR__ = {dehydration_data};</script>"
-        return result.replace("</body>", f"{dehydration_script}\n</body>")
+        return ssr_html
 
 
 def _build_dehydration_data(
