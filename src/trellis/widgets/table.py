@@ -253,7 +253,7 @@ def Table(
         compact=compact,
         bordered=bordered,
         class_name=class_name,
-        style=combined_style if combined_style else None,
+        style=combined_style or None,
     ):
         # Generate cell slots for columns with custom renderers
         for row_index, row in enumerate(data):

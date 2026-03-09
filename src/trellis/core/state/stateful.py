@@ -192,7 +192,7 @@ class Stateful:
             def wrapped_init(self: Stateful, *a: tp.Any, **kw: tp.Any) -> None:
                 if getattr(self, "_initialized", False):
                     return  # Skip - cached instance
-                original_init(self, *a, **kw)
+                original_init(self, *a, **kw)  # pyright: ignore[reportArgumentType]
                 object.__setattr__(self, "_input_versions", {})
                 object.__setattr__(self, "_initialized", True)
                 object.__setattr__(self, "_context_watchers", weakref.WeakSet())

@@ -5,11 +5,8 @@ A browser-based playground for experimenting with Trellis UI components using Py
 ## Running Locally
 
 ```bash
-# 1. Build the wheel
-pixi run build
-
-# 2. Start the server
-pixi run playground
+# Start the server (builds playground automatically)
+just playground
 ```
 
 Then open http://localhost:8000/playground/ in your browser.

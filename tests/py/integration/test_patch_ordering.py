@@ -233,9 +233,9 @@ class TestInitialRenderInvariants:
         )
 
         # Must be an AddPatch
-        assert isinstance(
-            patches[0], RenderAddPatch
-        ), f"Initial render patch must be RenderAddPatch, got {type(patches[0]).__name__}"
+        assert isinstance(patches[0], RenderAddPatch), (
+            f"Initial render patch must be RenderAddPatch, got {type(patches[0]).__name__}"
+        )
 
     def test_initial_render_add_patch_contains_full_tree(
         self, capture_patches: "type[PatchCapture]"
@@ -326,9 +326,9 @@ class TestIncrementalAddInvariants:
 
         # Should have exactly: 1 UpdatePatch (Root) + 1 AddPatch (Child)
         assert len(remove_patches) == 0, f"No removes expected, got {len(remove_patches)}"
-        assert (
-            len(update_patches) == 1
-        ), f"Expected 1 UpdatePatch for parent, got {len(update_patches)}"
+        assert len(update_patches) == 1, (
+            f"Expected 1 UpdatePatch for parent, got {len(update_patches)}"
+        )
         assert len(add_patches) == 1, f"Expected 1 AddPatch for new subtree, got {len(add_patches)}"
 
         # UpdatePatch should be for Root (its child_ids changed)
@@ -410,6 +410,6 @@ class TestIncrementalAddInvariants:
 
         # 1 UpdatePatch for Root + 2 AddPatches for ChildA and ChildB
         assert len(update_patches) == 1
-        assert (
-            len(add_patches) == 2
-        ), f"Expected 2 AddPatches (one per sibling), got {len(add_patches)}"
+        assert len(add_patches) == 2, (
+            f"Expected 2 AddPatches (one per sibling), got {len(add_patches)}"
+        )

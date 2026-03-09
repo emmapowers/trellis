@@ -184,7 +184,7 @@ def _find_variable_source(var_name: str, source_lines: list[str]) -> str | None:
                 if isinstance(target, ast.Name) and target.id == var_name:
                     # Use get_source_segment to extract exact source
                     segment = ast.get_source_segment(source, node)
-                    return segment if segment else None
+                    return segment or None
 
     return None
 

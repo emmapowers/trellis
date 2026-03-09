@@ -42,6 +42,8 @@ dependencies = [
     # Icon format conversion (SVG rasterization, ICO/ICNS generation)
     "Pillow>=10.0; sys_platform != 'emscripten'",
     "resvg-py>=0.2; sys_platform != 'emscripten'",
+    # Bundler uses `pip wheel` to build wheels for Pyodide deployment
+    "pip>=24; sys_platform != 'emscripten'",
 ]
 
 [project.optional-dependencies]
@@ -49,6 +51,23 @@ desktop = [
     "pytauri-wheel>=0.8.0",
     "pydantic>=2.12",
     "pyinstaller>=6.12",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8,<1",
+    "pytest>=8,<9",
+    "pytest-cov>=6,<7",
+    "basedpyright>=1.38,<2",
+    "pydoc-markdown>=4.8,<5",
+    "types-Pillow>=10.0",
+    "pybun>=1.3.10",
+    "rust-just>=1.46",
+    "playwright>=1.57.0,<2",
+]
+desktop = [
+    {include-group = "dev"},
+    "trellis[desktop]",
 ]
 
 [project.urls]
@@ -69,14 +88,10 @@ addopts = "-vv"
 source = ["src/trellis"]
 omit = ["tests/*"]
 
-[tool.black]
-line-length = 100
-target-version = ["py312", "py313"]
-
 [tool.ruff]
 line-length = 100
 target-version = "py313"
-exclude = ["docs/", "examples/*/pyproject.toml"]
+exclude = ["docs/", "examples/*/pyproject.toml", "**/.trellis-build/"]
 
 [tool.ruff.lint]
 select = [
@@ -128,53 +143,30 @@ ban-relative-imports = "all"
     "RUF012",   # Stateful classes intentionally use mutable defaults
     "TC002",    # pytest type annotations are common in tests
     "TID252",   # relative imports in test helpers
+    "PLW0108",  # lambda wrappers for callbacks are idiomatic in tests
 ]
 "examples/**" = [
     "TID252",   # relative imports in examples are fine
 ]
 
-[tool.mypy]
-python_version = "3.13"
-# Each example directory has a trellis_config.py file. Without explicit_package_bases,
-# mypy sees these as duplicate "trellis_config" modules. With it enabled, each directory
-# passed on the command line becomes a separate namespace root.
-explicit_package_bases = true
-mypy_path = ["src"]
-strict = true
-warn_return_any = true
-warn_unused_ignores = true
-disallow_untyped_defs = true
-warn_redundant_casts = true
-warn_no_return = true
-warn_unreachable = true
-exclude = ["docs/"]
+[tool.basedpyright]
+pythonVersion = "3.13"
+typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"
+include = ["src/trellis", "examples"]
+exclude = [
+    "docs/",
+    "**/dist/",
+    "**/.trellis-build/",
+    "**/.workspace/",
+    "**/.trellis/",
+    "**/node_modules/",
+]
+reportMissingImports = "warning"
+executionEnvironments = [
+    { root = "src/trellis/platforms/desktop", reportMissingImports = false },
+    { root = "src/trellis/desktop", reportMissingImports = false },
+    { root = "src/trellis/packaging", reportMissingImports = false },
+]
 
-# Decorators like @html_element and @react_component_base replace the function
-# body entirely, so the stub functions legitimately have empty bodies.
-[[tool.mypy.overrides]]
-module = ["trellis.html.*", "trellis.widgets.*", "trellis.app.theme_provider"]
-disable_error_code = ["empty-body"]
-
-# Desktop platform has optional pytauri dependency
-[[tool.mypy.overrides]]
-module = ["pytauri", "pytauri.*", "pytauri_wheel", "pytauri_wheel.*"]
-ignore_missing_imports = true
-
-# Jurigged for hot reload (no type stubs)
-[[tool.mypy.overrides]]
-module = ["jurigged", "jurigged.*"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["trellis.platforms.desktop.*"]
-disable_error_code = ["untyped-decorator"]
-
-# PyInstaller has no type stubs
-[[tool.mypy.overrides]]
-module = ["PyInstaller", "PyInstaller.*"]
-ignore_missing_imports = true
-
-# resvg-py has no type stubs
-[[tool.mypy.overrides]]
-module = ["resvg_py"]
-ignore_missing_imports = true

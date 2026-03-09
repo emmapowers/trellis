@@ -70,26 +70,27 @@ from trellis import html as h
 
 ## Commands
 
-- `pixi run cleanup` - Format and lint with auto-fix
-- `pixi run lint` - Check all linters (no fix)
-- `pixi run mypy` - Check for type errors
-- `pixi run test` - Run tests
-- `pixi run ci` - Full CI checks
-- `pixi run showcase` - Run widget showcase
+- `just cleanup` - Format and lint with auto-fix
+- `just lint` - Check all linters (no fix)
+- `just typecheck` - Check for type errors
+- `just test` - Run tests
+- `just ci` - Full CI checks
+- `just showcase` - Run widget showcase
 - `trellis bundle` - Build platform bundles (server + desktop)
 - `trellis bundle --force-build` - Force rebuild even if sources unchanged
 - `trellis bundle --platform server` - Build only server bundle
 
 ## Git Workflow
 
-Run `pixi run ci` before committing to catch formatting, lint, and type errors.
+Run `just ci` before committing to catch formatting, lint, and type errors.
 
 ## Dependencies
 
-- **pyproject.toml**: Runtime dependencies for trellis (shipped with pip package)
-- **pixi.toml**: Dev-only tools (black, ruff, mypy, pytest, nodejs for esbuild)
+- **pyproject.toml**: Runtime dependencies (shipped with pip package) and dev dependency groups
+- **justfile**: Task runner recipes (uses `uv run` to invoke dev tools)
 
-Since trellis is installed in editable mode, pyproject.toml dependencies are also available in the pixi environment.
+`uv sync --dev` installs the core dev toolchain for non-desktop development.
+For desktop development (including `just showcase --desktop`), use `uv sync --group desktop`, which includes the dev toolchain plus pytauri.
 
 ## UI Testing with Playwright MCP
 

@@ -2,28 +2,28 @@
 
 ## Development Setup
 
-1. Install [pixi](https://pixi.sh)
+1. Install [uv](https://docs.astral.sh/uv/)
 2. Clone and install:
    ```bash
    git clone https://github.com/emmapowers/trellis.git
    cd trellis
-   pixi install
+   uv sync --dev
    ```
 
 ## Development Commands
 
 ```bash
-pixi run test       # Run tests
-pixi run test-cov   # Run tests with coverage
-pixi run cleanup    # Format and lint (auto-fix)
-pixi run lint       # Check linting (no fix)
-pixi run ci         # Full CI checks
+just test       # Run tests
+just test-cov   # Run tests with coverage
+just cleanup    # Format and lint (auto-fix)
+just lint       # Check linting (no fix)
+just ci         # Full CI checks
 ```
 
 ## Code Style
 
-- Formatting: Black (100 char line length)
+- Formatting: Ruff (100 char line length)
 - Linting: Ruff
-- Type checking: MyPy (strict mode)
+- Type checking: Basedpyright (standard mode)
 
-Run `pixi run cleanup` before committing.
+Run `just ci` before committing.
