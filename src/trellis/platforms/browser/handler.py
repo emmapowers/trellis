@@ -97,7 +97,7 @@ class BrowserMessageHandler(MessageHandler):
         """
         # In Pyodide, msg_dict may be a JsProxy - convert to native Python dict
         if hasattr(msg_dict, "to_py"):
-            msg_dict = msg_dict.to_py()
+            msg_dict = msg_dict.to_py()  # pyright: ignore[reportAttributeAccessIssue]
         msg = _dict_to_message(msg_dict)
         self._inbox.put_nowait(msg)
 

@@ -442,16 +442,16 @@ class TrackedDict(dict[KT, VT], _TrackedMixin):
         self._register_access(key)
         return dict.__contains__(self, key)
 
-    @tp.overload  # type: ignore[override]
-    def get(self, key: KT) -> VT | None: ...
+    @tp.overload
+    def get(self, key: KT, default: None = None, /) -> VT | None: ...
 
     @tp.overload
-    def get(self, key: KT, default: VT) -> VT: ...
+    def get(self, key: KT, default: VT, /) -> VT: ...
 
     @tp.overload
-    def get(self, key: KT, default: T) -> VT | T: ...
+    def get(self, key: KT, default: T, /) -> VT | T: ...
 
-    def get(self, key: KT, default: VT | T | None = None) -> VT | T | None:
+    def get(self, key: KT, default: VT | T | None = None, /) -> VT | T | None:
         self._register_access(key)
         if key in dict.keys(self):
             return dict.__getitem__(self, key)
