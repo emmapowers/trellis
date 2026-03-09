@@ -91,7 +91,7 @@ omit = ["tests/*"]
 [tool.ruff]
 line-length = 100
 target-version = "py313"
-exclude = ["docs/", "examples/*/pyproject.toml"]
+exclude = ["docs/", "examples/*/pyproject.toml", "**/.trellis-build/"]
 
 [tool.ruff.lint]
 select = [
@@ -143,6 +143,7 @@ ban-relative-imports = "all"
     "RUF012",   # Stateful classes intentionally use mutable defaults
     "TC002",    # pytest type annotations are common in tests
     "TID252",   # relative imports in test helpers
+    "PLW0108",  # lambda wrappers for callbacks are idiomatic in tests
 ]
 "examples/**" = [
     "TID252",   # relative imports in examples are fine

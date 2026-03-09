@@ -249,7 +249,7 @@ def _download_wheel(req: Requirement, python_version: str, cache_dir: Path) -> P
     # Build version spec string
     version_spec = str(req)
     # Strip markers for pip download
-    name_and_version = version_spec.split(";")[0].strip()
+    name_and_version = version_spec.split(";", maxsplit=1)[0].strip()
 
     result = subprocess.run(
         [
