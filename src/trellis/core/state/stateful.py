@@ -232,7 +232,7 @@ class Stateful:
     _input_versions: dict[str, int]
     _initialized: bool
 
-    def __new__(cls, *args: tp.Any, **kwargs: tp.Any) -> Stateful:
+    def __new__(cls, *args: tp.Any, **kwargs: tp.Any) -> tp.Self:
         """Create or retrieve a cached Stateful instance.
 
         During component execution, state instances are cached on the
@@ -286,7 +286,7 @@ class Stateful:
                 cls.__name__,
                 call_idx,
             )
-            return tp.cast("Stateful", state.local_state[key])
+            return tp.cast("tp.Self", state.local_state[key])
 
         logger.debug(
             "State %s created (new instance, call_idx=%d)",
