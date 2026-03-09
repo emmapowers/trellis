@@ -1,7 +1,8 @@
 /**
  * Common React root component for Trellis applications.
  *
- * Provides the TrellisContext and handles the loading/connected/error states.
+ * Provides the TrellisContext and renders the component tree once available.
+ * Shows an error display only for catastrophic errors.
  * Used by server and desktop platforms. Browser platform has its own
  * TrellisApp component due to unique Pyodide lifecycle requirements.
  */
@@ -11,128 +12,50 @@ import { TrellisClient } from "./TrellisClient";
 import { TrellisContext } from "./TrellisContext";
 import { TreeRenderer } from "./TreeRenderer";
 import { useRootId } from "./core";
-import { ConnectionState } from "./ClientMessageHandler";
 
 export interface TrellisRootProps {
   /** The platform-specific client instance */
   client: TrellisClient;
-  /** Current connection state */
-  connectionState: ConnectionState;
-  /** Error message if an error occurred */
+  /** Error message if a catastrophic error occurred */
   error: string | null;
-  /** Session ID from server */
-  sessionId?: string | null;
-  /** Server version string */
-  serverVersion?: string | null;
-  /** Title to show in connection status (e.g., "Trellis" or "Trellis Desktop") */
-  title?: string;
 }
 
 /**
  * Root component that provides context and handles app states.
+ *
+ * Renders nothing until the component tree is available (SSR content
+ * remains visible during this time). Shows an error display only for
+ * catastrophic failures.
  */
 export function TrellisRoot({
   client,
-  connectionState,
   error,
-  sessionId,
-  serverVersion,
-  title = "Trellis",
-}: TrellisRootProps): React.ReactElement {
+}: TrellisRootProps): React.ReactElement | null {
   // Show error if present
   if (error) {
     return <ErrorDisplay error={error} />;
   }
 
-  // Provide context and render content
+  // Provide context and render tree when available
   return (
     <TrellisContext.Provider value={client}>
-      <TrellisContent
-        connectionState={connectionState}
-        sessionId={sessionId}
-        serverVersion={serverVersion}
-        title={title}
-      />
+      <TrellisContent />
     </TrellisContext.Provider>
   );
 }
 
-interface TrellisContentProps {
-  connectionState: ConnectionState;
-  sessionId?: string | null;
-  serverVersion?: string | null;
-  title: string;
-}
-
 /**
  * Inner component that uses hooks depending on TrellisContext.
+ * Renders nothing until the tree root is available.
  */
-function TrellisContent({
-  connectionState,
-  sessionId,
-  serverVersion,
-  title,
-}: TrellisContentProps): React.ReactElement {
+function TrellisContent(): React.ReactElement | null {
   const rootId = useRootId();
 
-  // If we have a tree, render it
-  if (rootId) {
-    return <TreeRenderer />;
+  if (!rootId) {
+    return null;
   }
 
-  // Otherwise show connection status
-  return (
-    <ConnectionStatus
-      connectionState={connectionState}
-      sessionId={sessionId}
-      serverVersion={serverVersion}
-      title={title}
-    />
-  );
-}
-
-interface ConnectionStatusProps {
-  connectionState: ConnectionState;
-  sessionId?: string | null;
-  serverVersion?: string | null;
-  title: string;
-}
-
-/**
- * Connection status display shown before tree is available.
- */
-function ConnectionStatus({
-  connectionState,
-  sessionId,
-  serverVersion,
-  title,
-}: ConnectionStatusProps): React.ReactElement {
-  return (
-    <div style={{ fontFamily: "system-ui, sans-serif", padding: "20px" }}>
-      <h1>{title}</h1>
-      <p>
-        Status:{" "}
-        <strong
-          style={{
-            color:
-              connectionState === "connected"
-                ? "green"
-                : connectionState === "connecting"
-                  ? "orange"
-                  : "red",
-          }}
-        >
-          {connectionState}
-        </strong>
-      </p>
-      {sessionId && (
-        <>
-          <p>Session ID: {sessionId}</p>
-          <p>Server Version: {serverVersion}</p>
-        </>
-      )}
-    </div>
-  );
+  return <TreeRenderer />;
 }
 
 interface ErrorDisplayProps {
@@ -140,7 +63,7 @@ interface ErrorDisplayProps {
 }
 
 /**
- * Error display component.
+ * Error display for catastrophic failures (WebSocket death, server errors).
  */
 function ErrorDisplay({ error }: ErrorDisplayProps): React.ReactElement {
   return (

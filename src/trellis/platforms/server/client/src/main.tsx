@@ -12,9 +12,8 @@ initRegistry();
 import "@trellis/trellis-core/theme.css"; // Theme CSS variables
 import "@trellis/trellis-core/console"; // Set up console filtering
 import React, { useEffect, useState, useMemo } from "react";
-import { createRoot } from "react-dom/client";
-import { hydrateRoot } from "react-dom/client";
-import { ServerTrellisClient, ConnectionState } from "@trellis/trellis-server/client/src/TrellisClient";
+import { createRoot, hydrateRoot } from "react-dom/client";
+import { ServerTrellisClient } from "@trellis/trellis-server/client/src/TrellisClient";
 import { TrellisRoot } from "@trellis/trellis-core/TrellisRoot";
 import { store } from "@trellis/trellis-core/core";
 import type { Patch } from "@trellis/trellis-core/types";
@@ -35,14 +34,6 @@ declare global {
 const ssrData = window.__TRELLIS_SSR__;
 
 function App() {
-  const [connectionState, setConnectionState] =
-    useState<ConnectionState>(ssrData ? "connecting" : "disconnected");
-  const [sessionId, setSessionId] = useState<string | null>(
-    ssrData?.sessionId ?? null
-  );
-  const [serverVersion, setServerVersion] = useState<string | null>(
-    ssrData?.serverVersion ?? null
-  );
   const [error, setError] = useState<string | null>(null);
 
   // Create client once (stable reference for context)
@@ -50,11 +41,6 @@ function App() {
     () =>
       new ServerTrellisClient(
         {
-          onConnectionStateChange: setConnectionState,
-          onConnected: (response) => {
-            setSessionId(response.session_id);
-            setServerVersion(response.server_version);
-          },
           onError: (errorMsg) => {
             setError(errorMsg);
           },
@@ -73,16 +59,7 @@ function App() {
     return () => client.disconnect();
   }, [client]);
 
-  return (
-    <TrellisRoot
-      client={client}
-      connectionState={connectionState}
-      error={error}
-      sessionId={sessionId}
-      serverVersion={serverVersion}
-      title="Trellis"
-    />
-  );
+  return <TrellisRoot client={client} error={error} />;
 }
 
 const container = document.getElementById("root")!;

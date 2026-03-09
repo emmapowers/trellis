@@ -39,26 +39,17 @@ addConsoleHandler((level, args) => {
 
 import React, { useEffect, useState, useMemo } from "react";
 import { createRoot } from "react-dom/client";
-import { DesktopClient, ConnectionState } from "@trellis/trellis-desktop/client/src/DesktopClient";
+import { DesktopClient } from "@trellis/trellis-desktop/client/src/DesktopClient";
 import { TrellisRoot } from "@trellis/trellis-core/TrellisRoot";
 import { installExternalLinkDelegation } from "./externalLinks";
 
 function App() {
-  const [connectionState, setConnectionState] =
-    useState<ConnectionState>("disconnected");
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [serverVersion, setServerVersion] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Create client once (stable reference for context)
   const client = useMemo(
     () =>
       new DesktopClient({
-        onConnectionStateChange: setConnectionState,
-        onConnected: (response) => {
-          setSessionId(response.session_id);
-          setServerVersion(response.server_version);
-        },
         onError: (errorMsg) => {
           setError(errorMsg);
         },
@@ -78,16 +69,7 @@ function App() {
     return installExternalLinkDelegation();
   }, []);
 
-  return (
-    <TrellisRoot
-      client={client}
-      connectionState={connectionState}
-      error={error}
-      sessionId={sessionId}
-      serverVersion={serverVersion}
-      title="Trellis Desktop"
-    />
-  );
+  return <TrellisRoot client={client} error={error} />;
 }
 
 const root = createRoot(document.getElementById("root")!);
