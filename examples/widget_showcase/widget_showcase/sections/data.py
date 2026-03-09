@@ -1,6 +1,7 @@
 """Data display section of the widget showcase."""
 
 import asyncio
+import typing as tp
 
 from trellis import component, load
 from trellis import widgets as w
@@ -50,7 +51,17 @@ def Tags() -> None:
         w.Tag(text="Removable", variant="primary", removable=True)
 
 
-type MetricData = dict[str, str | IconName]
+type MetricDelta = tp.Literal["increase", "decrease", "neutral"]
+
+
+class MetricData(tp.TypedDict):
+    """Metric data displayed by the async load example."""
+
+    label: str
+    value: str
+    delta: str
+    delta_type: MetricDelta
+    icon: IconName
 
 
 METRICS: dict[str, MetricData] = {

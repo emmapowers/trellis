@@ -97,4 +97,4 @@ def state_var(
         ```
     """
 
-    return StateVar(initial, factory=factory)
+    return tp.cast("StateVar[T]", StateVar(initial, factory=factory))
