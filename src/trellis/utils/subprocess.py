@@ -84,9 +84,11 @@ def _start_posix(cmd: list[str], **popen_kwargs: tp.Any) -> subprocess.Popen[byt
 def _set_pdeathsig(sig: int) -> None:
     """Set parent death signal via prctl (Linux only)."""
     import ctypes  # noqa: PLC0415 — only needed on Linux
+    import ctypes.util  # noqa: PLC0415
 
     PR_SET_PDEATHSIG = 1
-    libc = ctypes.CDLL("libc.so.6", use_errno=True)
+    libc_name = ctypes.util.find_library("c")
+    libc = ctypes.CDLL(libc_name or None, use_errno=True)
     result = libc.prctl(PR_SET_PDEATHSIG, sig, 0, 0, 0)
     if result != 0:
         errno = ctypes.get_errno()
@@ -96,6 +98,11 @@ def _set_pdeathsig(sig: int) -> None:
 def _stop_posix(process: subprocess.Popen[bytes], timeout: float) -> None:
     """Stop a POSIX process group gracefully."""
     import signal  # noqa: PLC0415 — only needed on POSIX
+
+    # If the process has already been reaped, its PID may have been recycled.
+    # Calling killpg would signal an unrelated process group.
+    if process.returncode is not None:
+        return
 
     try:
         pgid = os.getpgid(process.pid)
@@ -126,11 +133,21 @@ def _start_windows(cmd: list[str], **popen_kwargs: tp.Any) -> subprocess.Popen[b
     process = subprocess.Popen(cmd, **popen_kwargs)
 
     # Create a Job Object and assign the process to it
+    get_last_error = ctypes.get_last_error  # type: ignore[attr-defined]
     try:
-        kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)  # type: ignore[attr-defined]
+        kernel32.CreateJobObjectW.restype = ctypes.wintypes.HANDLE
+        kernel32.SetInformationJobObject.restype = ctypes.wintypes.BOOL
+        kernel32.OpenProcess.restype = ctypes.wintypes.HANDLE
+        kernel32.AssignProcessToJobObject.restype = ctypes.wintypes.BOOL
+        kernel32.CloseHandle.restype = ctypes.wintypes.BOOL
 
         job = kernel32.CreateJobObjectW(None, None)
-        if job:
+        if not job:
+            logger.warning("CreateJobObjectW failed (error %d)", get_last_error())
+            return process
+
+        try:
             # Set JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
             class JOBOBJECT_BASIC_LIMIT_INFORMATION(ctypes.Structure):
                 _fields_ = [  # noqa: RUF012 — ctypes API
@@ -161,23 +178,38 @@ def _start_windows(cmd: list[str], **popen_kwargs: tp.Any) -> subprocess.Popen[b
             info = JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
             info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
 
-            kernel32.SetInformationJobObject(
+            if not kernel32.SetInformationJobObject(
                 job,
                 JobObjectExtendedLimitInformation,
                 ctypes.byref(info),
                 ctypes.sizeof(info),
-            )
+            ):
+                logger.warning("SetInformationJobObject failed (error %d)", get_last_error())
+                kernel32.CloseHandle(job)
+                return process
 
-            handle = kernel32.OpenProcess(0x100, False, process.pid)  # PROCESS_SET_QUOTA
-            if handle:
-                # PROCESS_SET_QUOTA | PROCESS_TERMINATE for assign
-                full_handle = kernel32.OpenProcess(0x100 | 0x1, False, process.pid)
-                if full_handle:
-                    kernel32.AssignProcessToJobObject(job, full_handle)
-                    kernel32.CloseHandle(full_handle)
-                kernel32.CloseHandle(handle)
+            # PROCESS_SET_QUOTA | PROCESS_TERMINATE for AssignProcessToJobObject
+            proc_handle = kernel32.OpenProcess(0x100 | 0x1, False, process.pid)
+            if not proc_handle:
+                logger.warning("OpenProcess failed (error %d)", get_last_error())
+                kernel32.CloseHandle(job)
+                return process
+
+            try:
+                if not kernel32.AssignProcessToJobObject(job, proc_handle):
+                    logger.warning(
+                        "AssignProcessToJobObject failed (error %d)",
+                        get_last_error(),
+                    )
+                    kernel32.CloseHandle(job)
+                    return process
+            finally:
+                kernel32.CloseHandle(proc_handle)
 
             process._job_handle = job  # type: ignore[attr-defined]
+        except Exception:
+            kernel32.CloseHandle(job)
+            raise
     except Exception:
         logger.warning("Failed to create Windows Job Object", exc_info=True)
 
@@ -206,6 +238,8 @@ def _stop_windows(process: subprocess.Popen[bytes], timeout: float) -> None:
             try:
                 import ctypes  # noqa: PLC0415
 
-                ctypes.windll.kernel32.CloseHandle(job_handle)  # type: ignore[attr-defined]
+                kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)  # type: ignore[attr-defined]
+                kernel32.CloseHandle.restype = ctypes.wintypes.BOOL
+                kernel32.CloseHandle(job_handle)
             except Exception:
                 pass

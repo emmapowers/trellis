@@ -805,9 +805,12 @@ class SSRPreRenderStep(BuildStep):
     producing rendered HTML and dehydration data that gets baked into
     index.html via template_context.
 
-    Must run after SSRBundleBuildStep (needs ssr.js) and before
+    Must run after SSRBundleBuildStep (needs the SSR bundle) and before
     IndexHtmlRenderStep (populates template_context).
     """
+
+    def __init__(self, *, output_name: str = "ssr") -> None:
+        self.output_name = output_name
 
     @property
     def name(self) -> str:
@@ -823,7 +826,7 @@ class SSRPreRenderStep(BuildStep):
         from trellis.platforms.common.ssr_utils import build_dehydration_data  # noqa: PLC0415
         from trellis.platforms.server.ssr_renderer import SSRRenderer  # noqa: PLC0415
 
-        ssr_bundle = ctx.dist_dir / "ssr.js"
+        ssr_bundle = ctx.dist_dir / f"{self.output_name}.js"
         if not ssr_bundle.exists():
             logger.warning("SSR bundle not found at %s, skipping pre-render", ssr_bundle)
             return
@@ -835,8 +838,8 @@ class SSRPreRenderStep(BuildStep):
         assert app is not None
 
         renderer = SSRRenderer(ssr_bundle)
-        renderer.start()
         try:
+            renderer.start()
             for theme in ("light", "dark"):
                 wrapped = app.get_wrapped_top(theme, None)
                 session = RenderSession(wrapped)

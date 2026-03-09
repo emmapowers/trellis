@@ -60,12 +60,16 @@ if (!url) {
 
     if (pageErrors.length > 0) {
       console.error("Page errors:");
-      pageErrors.forEach((e) => console.error("  ", e));
+      pageErrors.forEach((e) => {
+        console.error("  ", e);
+      });
     }
 
     if (warnings.length > 0) {
       console.error("Hydration warnings found:");
-      warnings.forEach((w) => console.error("  ", w));
+      warnings.forEach((w) => {
+        console.error("  ", w);
+      });
       process.exit(1);
     }
 

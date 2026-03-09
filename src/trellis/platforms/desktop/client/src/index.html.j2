@@ -55,14 +55,12 @@
             var template = document.getElementById(templateId);
             var root = document.getElementById('root');
             if (template && root) {
+                // Replace all children with the selected SSR template content.
+                // This also removes the <template> elements inside #root.
                 while (root.firstChild) root.removeChild(root.firstChild);
                 var clone = document.importNode(template.content, true);
                 root.appendChild(clone);
             }
-            var light = document.getElementById('ssr-light');
-            var dark = document.getElementById('ssr-dark');
-            if (light) light.remove();
-            if (dark) dark.remove();
         })();
     </script>
     <script>

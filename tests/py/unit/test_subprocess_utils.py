@@ -44,8 +44,18 @@ class TestStartChildProcess:
 
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows only")
     def test_windows_sets_creation_flags(self) -> None:
-        """On Windows, CREATE_NEW_PROCESS_GROUP is set."""
-        with patch("trellis.utils.subprocess.subprocess.Popen") as mock_popen:
+        """On Windows, CREATE_NEW_PROCESS_GROUP is set and Job Object is created."""
+        fake_kernel32 = MagicMock()
+        fake_kernel32.CreateJobObjectW.return_value = 1
+        fake_kernel32.SetInformationJobObject.return_value = 1
+        fake_kernel32.OpenProcess.return_value = 1
+        fake_kernel32.AssignProcessToJobObject.return_value = 1
+        fake_kernel32.CloseHandle.return_value = 1
+
+        with (
+            patch("trellis.utils.subprocess.subprocess.Popen") as mock_popen,
+            patch("trellis.utils.subprocess.ctypes.WinDLL", return_value=fake_kernel32),
+        ):
             mock_proc = MagicMock()
             mock_proc.pid = 1234
             mock_popen.return_value = mock_proc
@@ -53,6 +63,7 @@ class TestStartChildProcess:
             kwargs = mock_popen.call_args[1]
             CREATE_NEW_PROCESS_GROUP = 0x00000200
             assert kwargs["creationflags"] & CREATE_NEW_PROCESS_GROUP
+            fake_kernel32.AssignProcessToJobObject.assert_called_once()
 
     def test_passes_extra_kwargs(self) -> None:
         """Extra kwargs are forwarded to Popen."""
@@ -78,6 +89,7 @@ class TestStopChildProcess:
         """On POSIX, sends SIGTERM to the process group."""
         mock_proc = MagicMock()
         mock_proc.pid = 1234
+        mock_proc.returncode = None
 
         with (
             patch("trellis.utils.subprocess.os.getpgid", return_value=1234) as mock_getpgid,
@@ -93,6 +105,7 @@ class TestStopChildProcess:
         """On POSIX, escalates to SIGKILL when SIGTERM times out."""
         mock_proc = MagicMock()
         mock_proc.pid = 1234
+        mock_proc.returncode = None
         mock_proc.wait.side_effect = [subprocess.TimeoutExpired("cmd", 5), None]
 
         with (
@@ -107,16 +120,36 @@ class TestStopChildProcess:
 
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows only")
     def test_windows_calls_terminate(self) -> None:
-        """On Windows, calls process.terminate()."""
+        """On Windows, calls process.terminate() and closes job handle."""
+        fake_kernel32 = MagicMock()
+        fake_kernel32.CloseHandle.return_value = 1
+
         mock_proc = MagicMock()
-        stop_child_process(mock_proc)
+        mock_proc._job_handle = 42
+
+        with patch("trellis.utils.subprocess.ctypes.WinDLL", return_value=fake_kernel32):
+            stop_child_process(mock_proc)
+
         mock_proc.terminate.assert_called_once()
         mock_proc.wait.assert_called_once()
+        fake_kernel32.CloseHandle.assert_called_once_with(42)
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="POSIX only")
+    def test_posix_skips_already_reaped_process(self) -> None:
+        """On POSIX, skips killpg if process has already been reaped."""
+        mock_proc = MagicMock()
+        mock_proc.pid = 1234
+        mock_proc.returncode = 0  # Already reaped
+
+        with patch("trellis.utils.subprocess.os.killpg") as mock_killpg:
+            stop_child_process(mock_proc)
+            mock_killpg.assert_not_called()
 
     def test_handles_already_dead_process(self) -> None:
         """Does not raise when process is already dead."""
         mock_proc = MagicMock()
         mock_proc.pid = 1234
+        mock_proc.returncode = None
 
         if sys.platform == "win32":
             mock_proc.terminate.side_effect = ProcessLookupError
