@@ -117,6 +117,70 @@ class TestLoadHelper:
         assert observed[1].get(11) == 11
         assert str(observed[1].error) == "boom"
 
+    def test_failed_helpers_raise_and_format_error(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """Failed snapshots expose helpers for raising and formatting the stored error."""
+        release = asyncio.Event()
+        observed: list[Load[int]] = []
+
+        async def fetch_value() -> int:
+            await release.wait()
+            raise RuntimeError("boom")
+
+        @component
+        def App() -> None:
+            observed.append(load(fetch_value))
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+            release.set()
+            await asyncio.sleep(0)
+            capture.render()
+
+        asyncio.run(test())
+
+        failed_result = observed[1]
+        assert isinstance(failed_result, Failed)
+        assert failed_result.message() == "boom"
+        assert repr(failed_result) == "Failed(RuntimeError('boom'))"
+        with pytest.raises(RuntimeError, match="boom"):
+            failed_result.reraise()
+        with pytest.raises(RuntimeError, match="boom"):
+            failed_result.raise_if_error()
+
+    def test_raise_if_error_is_noop_for_non_failed_results(
+        self, capture_patches: type[PatchCapture]
+    ) -> None:
+        """Non-failed snapshots keep raise_if_error() as a no-op."""
+        release = asyncio.Event()
+        observed: list[Load[int]] = []
+
+        async def fetch_value() -> int:
+            await release.wait()
+            return 4
+
+        @component
+        def App() -> None:
+            observed.append(load(fetch_value))
+
+        capture = capture_patches(App)
+
+        async def test() -> None:
+            capture.render()
+            observed[0].raise_if_error()
+            release.set()
+            await asyncio.sleep(0)
+            capture.render()
+
+        asyncio.run(test())
+
+        ready_result = observed[1]
+        assert isinstance(ready_result, Ready)
+        ready_result.raise_if_error()
+
     def test_reload_forces_a_fresh_fetch(self, capture_patches: type[PatchCapture]) -> None:
         """reload() starts a fresh request for the same slot."""
         release_events = [asyncio.Event(), asyncio.Event()]

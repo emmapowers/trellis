@@ -50,7 +50,7 @@ class LoadKey:
 class Load[T]:
     """Immutable snapshot of a load() result with control methods."""
 
-    _state: _LoadState
+    _state: _LoadState = field(repr=False)
     status: LoadStatus
 
     @property
@@ -75,6 +75,9 @@ class Load[T]:
         if default is _MISSING_DEFAULT:
             return None
         return tp.cast("U", default)
+
+    def raise_if_error(self) -> None:
+        """Raise the stored exception when this snapshot represents a failure."""
 
     def reload(self) -> None:
         self._state.reload()
@@ -113,6 +116,20 @@ class Failed[T](Load[T]):
 
     error: Exception
     status: tp.Literal["failed"] = field(default=_STATUS_FAILED, init=False)
+
+    def reraise(self) -> tp.NoReturn:
+        """Raise the stored exception."""
+        raise self.error
+
+    def raise_if_error(self) -> None:
+        self.reraise()
+
+    def message(self) -> str:
+        """Return the error message without exposing the exception type."""
+        return str(self.error)
+
+    def __repr__(self) -> str:
+        return f"Failed({self.error!r})"
 
 
 class _LoadState(Stateful):

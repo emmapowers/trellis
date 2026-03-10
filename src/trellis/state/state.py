@@ -52,10 +52,6 @@ class StateVar[T](Stateful):
         """Replace the current value."""
         self.value = value
 
-    def update(self, fn: tp.Callable[[T], T]) -> None:
-        """Replace the current value with a function of the previous value."""
-        self.value = fn(self.value)
-
     def __repr__(self) -> str:
         return f"StateVar({self.value!r})"
 
@@ -81,9 +77,12 @@ def state_var(
         @component
         def Greeting() -> None:
             name = state_var("Ada")
+            count = state_var(0)
 
             w.TextInput(value=mutable(name.value))
+            w.Button(text="+", on_click=lambda: count.set(count.value + 1))
             w.Label(text=f"Hello, {name.value}")
+            w.Label(text=f"Count: {count.value}")
         ```
 
     Returns:
