@@ -54,6 +54,7 @@ class TestLoadHelper:
         assert observed[0].loading is True
         assert observed[0].ready is False
         assert observed[0].failed is False
+        assert observed[0].get() is None
         assert observed[0].get(9) == 9
 
     def test_successful_completion_yields_ready(self, capture_patches: type[PatchCapture]) -> None:
@@ -82,6 +83,7 @@ class TestLoadHelper:
         assert isinstance(observed[0], Loading)
         assert isinstance(observed[1], Ready)
         assert observed[1].ready is True
+        assert observed[1].get() == "ready"
         assert observed[1].get("fallback") == "ready"
         assert observed[1].value == "ready"
 
@@ -111,6 +113,7 @@ class TestLoadHelper:
         assert isinstance(observed[0], Loading)
         assert isinstance(observed[1], Failed)
         assert observed[1].failed is True
+        assert observed[1].get() is None
         assert observed[1].get(11) == 11
         assert str(observed[1].error) == "boom"
 

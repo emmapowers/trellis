@@ -7,7 +7,6 @@ Transport-specific subclasses implement send_message/receive_message.
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import dataclasses
 import inspect
 import logging
@@ -546,6 +545,33 @@ class MessageHandler:
         """Receive message from client. Override in subclass."""
         raise NotImplementedError
 
+    async def _receive_message_or_fatal(self) -> Message | None:
+        """Wait for the next client message or a fatal session failure."""
+        assert self.session is not None
+
+        receive_task = asyncio.create_task(self.receive_message())
+        fatal_wait_task = asyncio.create_task(self.session.wait_until_failed())
+        tasks = {receive_task, fatal_wait_task}
+
+        try:
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        except BaseException:
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+            raise
+
+        if pending:
+            for task in pending:
+                task.cancel()
+            await asyncio.gather(*pending, return_exceptions=True)
+
+        if fatal_wait_task in done:
+            fatal_wait_task.result()
+            return None
+
+        return receive_task.result()
+
     # -------------------------------------------------------------------------
     # Main loop
     # -------------------------------------------------------------------------
@@ -558,8 +584,6 @@ class MessageHandler:
         3. Starts background render loop (30fps batched updates)
         4. Loops receiving messages and sending responses
         """
-        receive_task: asyncio.Task[Message] | None = None
-        fatal_wait_task: asyncio.Task[BaseException] | None = None
         try:
             await self.handle_hello()
             await self.send_message(self.initial_render())
@@ -572,39 +596,16 @@ class MessageHandler:
             )
 
             while True:
-                receive_task = asyncio.create_task(self.receive_message())
-                fatal_wait_task = asyncio.create_task(self.session.wait_until_failed())
-                done, _pending = await asyncio.wait(
-                    {receive_task, fatal_wait_task},
-                    return_when=asyncio.FIRST_COMPLETED,
-                )
-
-                if fatal_wait_task in done:
-                    receive_task.cancel()
-                    with contextlib.suppress(asyncio.CancelledError, SessionDisconnected):
-                        await receive_task
-                    fatal_wait_task.result()
+                msg = await self._receive_message_or_fatal()
+                if msg is None:
                     break
 
-                fatal_wait_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await fatal_wait_task
-
-                msg = receive_task.result()
                 response = await self.handle_message(msg)
                 if response:
                     await self.send_message(response)
         except SessionDisconnected:
             return
         finally:
-            if receive_task is not None:
-                receive_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError, SessionDisconnected):
-                    await receive_task
-            if fatal_wait_task is not None:
-                fatal_wait_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await fatal_wait_task
             if self.session is not None:
                 await self.session.shutdown()
 

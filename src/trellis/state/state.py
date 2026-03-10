@@ -22,17 +22,7 @@ _MISSING = _Missing()
 
 
 class StateVar[T](Stateful):
-    """Typed slot-local reactive value.
-
-    Example:
-        ```python
-        @component
-        def Counter() -> None:
-            count = state_var(0)
-            w.Button(text="+", on_click=lambda: count.update(lambda value: value + 1))
-            w.Label(text=f"Count: {count.value}")
-        ```
-    """
+    """Typed slot-local reactive value."""
 
     value: T
 
@@ -95,6 +85,9 @@ def state_var(
             w.TextInput(value=mutable(name.value))
             w.Label(text=f"Hello, {name.value}")
         ```
+
+    Returns:
+        A per-element `StateVar[T]` that persists across re-renders.
     """
 
     return StateVar(initial, factory=factory)

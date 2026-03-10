@@ -52,7 +52,6 @@ Trellis aims for both: simple to start, maintainable as applications grow.
 
 - **Declarative UI in Python** — `@component` functions with context-manager syntax. No templates, no separate frontend language.
 - **Reactive state** — Automatic dependency tracking. Components re-render when dependencies change.
-- **Local state helpers** — `state_var()`, `on_mount()`, and `load()` cover simple component-local state, lifecycle work, and async resources without a full state class.
 - **Fine-grained updates** — Only affected components re-render. Efficient diffs over the wire.
 - **Dark mode** — System theme detection with light/dark toggle. Theme tokens for consistent styling.
 - **Three platforms** — Server (web app), Desktop (native), Browser (Pyodide). Same codebase, each adapts to platform strengths.
@@ -95,8 +94,6 @@ def App() -> None:
         w.Label(text=f"Count: {count.value}", font_size=24)
         w.Button(text="Increment", on_click=lambda: count.set(count.value + 1))
 ```
-
-Use `state_var()` for one-off local values like counters and toggles. Keep `Stateful` classes for structured, multi-field, shared, or behavior-heavy state.
 
 ## Installation
 

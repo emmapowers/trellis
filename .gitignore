@@ -29,6 +29,7 @@ htmlcov/
 # IDE
 .idea/
 .vscode/
+*.local.code-workspace
 *.swp
 *.swo
 

@@ -58,7 +58,7 @@ def invoke_lifecycle_hook(
 
         if inspect.isawaitable(result):
 
-            async def run_async_result(async_result: tp.Awaitable[tp.Any] = result) -> None:
+            async def run_async_result(async_result: tp.Awaitable[tp.Any]) -> None:
                 try:
                     with callback_context(session, element_id):
                         await async_result
@@ -66,7 +66,7 @@ def invoke_lifecycle_hook(
                     logging.exception("Error in async %s", label)
 
             session.spawn(
-                run_async_result(),
+                run_async_result(result),
                 label=f"async {label}",
                 policy=TaskErrorPolicy.LOG_AND_CONTINUE,
             )

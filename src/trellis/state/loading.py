@@ -21,6 +21,12 @@ _STATUS_READY: tp.Literal["ready"] = "ready"
 _STATUS_FAILED: tp.Literal["failed"] = "failed"
 
 
+class _MissingDefault:
+    """Sentinel for an omitted Load.get() default."""
+
+    pass
+
+
 class _NoKey:
     """Sentinel for a missing load key."""
 
@@ -28,6 +34,7 @@ class _NoKey:
 
 
 _NO_KEY = _NoKey()
+_MISSING_DEFAULT = _MissingDefault()
 
 __all__ = ["Failed", "Load", "LoadKey", "Loading", "Ready", "load"]
 
@@ -58,8 +65,16 @@ class Load[T]:
     def failed(self) -> bool:
         return self.status == _STATUS_FAILED
 
-    def get(self, default: U) -> T | U:
-        return default
+    @tp.overload
+    def get(self) -> T | None: ...
+
+    @tp.overload
+    def get(self, default: U) -> T | U: ...
+
+    def get(self, default: U | _MissingDefault = _MISSING_DEFAULT) -> T | U | None:
+        if default is _MISSING_DEFAULT:
+            return None
+        return tp.cast("U", default)
 
     def reload(self) -> None:
         self._state.reload()
@@ -82,7 +97,13 @@ class Ready[T](Load[T]):
     value: T
     status: tp.Literal["ready"] = field(default=_STATUS_READY, init=False)
 
-    def get(self, default: U) -> T:
+    @tp.overload
+    def get(self) -> T: ...
+
+    @tp.overload
+    def get(self, default: object) -> T: ...
+
+    def get(self, default: object = _MISSING_DEFAULT) -> T:
         return self.value
 
 
