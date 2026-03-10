@@ -55,6 +55,7 @@ desktop = [
 
 [dependency-groups]
 dev = [
+    "trellis[desktop]",
     "ruff>=0.8,<1",
     "pytest>=8,<9",
     "pytest-cov>=6,<7",
@@ -64,10 +65,6 @@ dev = [
     "pybun>=1.3.10",
     "rust-just>=1.46",
     "playwright>=1.57.0,<2",
-]
-desktop = [
-    {include-group = "dev"},
-    "trellis[desktop]",
 ]
 
 [project.urls]
@@ -169,4 +166,3 @@ executionEnvironments = [
     { root = "src/trellis/desktop", reportMissingImports = false },
     { root = "src/trellis/packaging", reportMissingImports = false },
 ]
-
