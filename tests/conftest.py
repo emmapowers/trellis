@@ -10,6 +10,7 @@ from unittest.mock import Mock
 import pytest
 
 import trellis.app.apploader as apploader_module
+import trellis.core.protocol as protocol_module
 from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent
 from trellis.core.rendering.element import Element
@@ -42,6 +43,14 @@ def reset_apploader() -> tp.Generator[None]:
     apploader_module._apploader = None
     yield
     apploader_module._apploader = None
+
+
+@pytest.fixture
+def reset_protocol() -> tp.Generator[None]:
+    """Reset protocol registries and contextvars before and after test."""
+    protocol_module._reset_for_tests()
+    yield
+    protocol_module._reset_for_tests()
 
 
 # =============================================================================

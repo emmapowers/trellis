@@ -1,0 +1,212 @@
+"""Unit tests for the core protocol registry."""
+
+from __future__ import annotations
+
+import asyncio
+import typing as tp
+
+import msgspec
+import pytest
+
+from trellis.core.protocol import (
+    MessageHandlerProtocol,
+    MessageListener,
+    dispatch,
+    get_message_handler,
+    listen,
+    register_message_types,
+    send,
+    set_message_handler,
+)
+
+
+class Ping(msgspec.Struct, tag="ping", tag_field="type"):
+    value: int
+
+
+class Pong(msgspec.Struct, tag="pong", tag_field="type"):
+    value: int
+
+
+class MockMessageHandler:
+    """Minimal handler implementing the protocol interface for tests."""
+
+    message_send_queue: asyncio.Queue[object]
+
+    def __init__(self) -> None:
+        self.message_send_queue = asyncio.Queue()
+
+
+class TestMessageTypeRegistration:
+    def test_register_message_types_by_tag(self, reset_protocol) -> None:
+        register_message_types(Ping, Pong)
+
+        assert Ping in tp.cast("dict[type[object], str]", getattr(__import__("trellis.core.protocol", fromlist=["_MESSAGE_TAGS"]), "_MESSAGE_TAGS"))
+        assert "ping" in tp.cast("dict[str, type[object]]", getattr(__import__("trellis.core.protocol", fromlist=["_MESSAGE_TYPES"]), "_MESSAGE_TYPES"))
+
+
+class TestMessageHandlerContext:
+    def test_get_and_set_message_handler(
+        self,
+        reset_protocol,
+    ) -> None:
+        handler = MockMessageHandler()
+
+        assert get_message_handler() is None
+
+        set_message_handler(handler)
+        assert get_message_handler() is handler
+
+        set_message_handler(None)
+        assert get_message_handler() is None
+
+
+class TestListenerRegistration:
+    @pytest.mark.anyio
+    async def test_global_free_function_listener_receives_all_sessions(
+        self,
+        reset_protocol,
+    ) -> None:
+        received: list[tuple[MessageHandlerProtocol, int]] = []
+
+        @listen(Ping)
+        async def on_ping(
+            message_handler: MessageHandlerProtocol,
+            message: Ping,
+        ) -> None:
+            received.append((message_handler, message.value))
+
+        first = MockMessageHandler()
+        second = MockMessageHandler()
+
+        await dispatch(first, Ping(1))
+        await dispatch(second, Ping(2))
+
+        assert received == [(first, 1), (second, 2)]
+
+    @pytest.mark.anyio
+    async def test_session_scoped_free_function_listener_receives_only_own_handler(
+        self,
+        reset_protocol,
+    ) -> None:
+        received: list[tuple[MessageHandlerProtocol, int]] = []
+        first = MockMessageHandler()
+        second = MockMessageHandler()
+
+        set_message_handler(first)
+        try:
+
+            @listen(Ping)
+            async def on_ping(
+                message_handler: MessageHandlerProtocol,
+                message: Ping,
+            ) -> None:
+                received.append((message_handler, message.value))
+        finally:
+            set_message_handler(None)
+
+        await dispatch(first, Ping(1))
+        await dispatch(second, Ping(2))
+
+        assert received == [(first, 1)]
+
+    @pytest.mark.anyio
+    async def test_duplicate_registration_is_idempotent_within_scope(
+        self,
+        reset_protocol,
+    ) -> None:
+        received: list[int] = []
+
+        async def on_ping(message_handler: MessageHandlerProtocol, message: Ping) -> None:
+            del message_handler
+            received.append(message.value)
+
+        decorated = listen(Ping)(on_ping)
+        listen(Ping)(decorated)
+
+        await dispatch(MockMessageHandler(), Ping(3))
+
+        assert received == [3]
+
+    @pytest.mark.anyio
+    async def test_dispatch_invokes_global_then_session_scoped_listeners_in_order(
+        self,
+        reset_protocol,
+    ) -> None:
+        calls: list[str] = []
+        handler = MockMessageHandler()
+
+        @listen(Ping)
+        async def global_listener(
+            message_handler: MessageHandlerProtocol,
+            message: Ping,
+        ) -> None:
+            del message_handler
+            calls.append(f"global:{message.value}")
+
+        set_message_handler(handler)
+        try:
+
+            @listen(Ping)
+            async def session_listener(
+                message_handler: MessageHandlerProtocol,
+                message: Ping,
+            ) -> None:
+                del message_handler
+                calls.append(f"session:{message.value}")
+        finally:
+            set_message_handler(None)
+
+        await dispatch(handler, Ping(4))
+
+        assert calls == ["global:4", "session:4"]
+
+
+class TestMessageListener:
+    @pytest.mark.anyio
+    async def test_message_listener_auto_registers_bound_methods_against_active_handler(
+        self,
+        reset_protocol,
+    ) -> None:
+        received: list[tuple[MessageHandlerProtocol, int]] = []
+        handler = MockMessageHandler()
+
+        class PingListener(MessageListener):
+            @listen(Ping)
+            async def on_ping(
+                self,
+                message_handler: MessageHandlerProtocol,
+                message: Ping,
+            ) -> None:
+                del self
+                received.append((message_handler, message.value))
+
+        set_message_handler(handler)
+        try:
+            PingListener()
+        finally:
+            set_message_handler(None)
+
+        await dispatch(handler, Ping(5))
+
+        assert received == [(handler, 5)]
+
+
+class TestSend:
+    @pytest.mark.anyio
+    async def test_send_enqueues_to_active_handler_queue(self, reset_protocol) -> None:
+        handler = MockMessageHandler()
+        set_message_handler(handler)
+
+        try:
+            await send(Ping(6))
+        finally:
+            set_message_handler(None)
+
+        queued = await asyncio.wait_for(handler.message_send_queue.get(), timeout=1.0)
+        assert queued == Ping(6)
+
+    @pytest.mark.anyio
+    async def test_send_raises_without_active_handler(self, reset_protocol) -> None:
+        with pytest.raises(RuntimeError, match="No active message handler"):
+            await send(Ping(7))

@@ -42,6 +42,16 @@ from trellis.core.rendering import (
 )
 
 # state
+from trellis.core.protocol import (
+    MessageHandlerProtocol,
+    MessageListener,
+    dispatch,
+    get_message_handler,
+    listen,
+    register_message_types,
+    send,
+    set_message_handler,
+)
 from trellis.core.state import (
     Mutable,
     Ref,
@@ -74,6 +84,8 @@ __all__ = [
     "KeyTrait",
     "LifecycleTracker",
     "Margin",
+    "MessageHandlerProtocol",
+    "MessageListener",
     "Mutable",
     "Padding",
     "PatchCollector",
@@ -93,14 +105,20 @@ __all__ = [
     "callback",
     "component",
     "convert_to_tracked",
+    "dispatch",
     "get_active_session",
+    "get_message_handler",
     "get_ref",
     "is_render_active",
+    "listen",
     "mutable",
     "props_equal",
     "react",
+    "register_message_types",
     "reconcile_children",
     "render",
+    "send",
     "set_active_session",
+    "set_message_handler",
     "set_ref",
 ]
