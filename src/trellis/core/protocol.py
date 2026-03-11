@@ -146,7 +146,8 @@ class StatefulMessageHandlerMixin(_MessageHandlerBase):
     """Lifecycle-driven protocol listeners for Stateful classes."""
 
     def on_mount(self) -> None | tp.Coroutine[tp.Any, tp.Any, None]:
-        result = super().on_mount()
+        mount = getattr(super(), "on_mount", None)
+        result = mount() if callable(mount) else None
         if inspect.isawaitable(result):
 
             async def run_after_mount(async_result: tp.Awaitable[tp.Any]) -> None:
@@ -156,11 +157,14 @@ class StatefulMessageHandlerMixin(_MessageHandlerBase):
             return run_after_mount(result)
 
         self.register_message_listeners()
-        return result
+        return tp.cast("None | tp.Coroutine[tp.Any, tp.Any, None]", result)
 
     def on_unmount(self) -> None | tp.Coroutine[tp.Any, tp.Any, None]:
         self.unregister_message_listeners()
-        return super().on_unmount()
+        unmount = getattr(super(), "on_unmount", None)
+        if callable(unmount):
+            return tp.cast("None | tp.Coroutine[tp.Any, tp.Any, None]", unmount())
+        return None
 
 
 async def send(message: object) -> None:

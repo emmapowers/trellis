@@ -10,11 +10,9 @@ import pytest
 
 import trellis.core.protocol as protocol_module
 from trellis.core.components.composition import component
-from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
 from trellis.core.protocol import (
-    MessageHandlerProtocol,
     MessageHandler,
+    MessageHandlerProtocol,
     StatefulMessageHandlerMixin,
     dispatch,
     get_message_handler,
@@ -23,6 +21,8 @@ from trellis.core.protocol import (
     send,
     set_message_handler,
 )
+from trellis.core.rendering.render import render
+from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
 
 
