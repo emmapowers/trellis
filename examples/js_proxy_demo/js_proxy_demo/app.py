@@ -45,7 +45,7 @@ async def explode_now() -> str:
     raise NotImplementedError
 
 
-@dataclass
+@dataclass(kw_only=True)
 class DemoState(Stateful):
     object_status: Literal["success", "error", "warning", "pending", "info"] = "info"
     object_message: str = "Object ready"

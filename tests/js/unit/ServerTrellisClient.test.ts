@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { decode } from "@msgpack/msgpack";
+import { decode, encode } from "@msgpack/msgpack";
 import { ServerTrellisClient } from "@trellis/trellis-server/client/src/TrellisClient";
 import { MessageType } from "@common/types";
 
@@ -91,6 +91,33 @@ describe("ServerTrellisClient", () => {
     expect(message.type).toBe(MessageType.HELLO);
     expect(message.path).toBe("/");
 
+    client.disconnect();
+  });
+
+  it("logs rejected async message handling", async () => {
+    const client = new ServerTrellisClient();
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const handleMessage = vi
+      .spyOn((client as { handler: { handleMessage: (msg: unknown) => Promise<void> } }).handler, "handleMessage")
+      .mockRejectedValue(new Error("message boom"));
+    const encoded = encode({ type: MessageType.RELOAD });
+
+    void client.connect();
+    fakeSocket.onmessage?.({
+      data: encoded.buffer.slice(
+        encoded.byteOffset,
+        encoded.byteOffset + encoded.byteLength
+      ),
+    });
+    await Promise.resolve();
+
+    expect(handleMessage).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalledWith(
+      "Message handling failed:",
+      expect.objectContaining({ message: "message boom" })
+    );
+
+    consoleError.mockRestore();
     client.disconnect();
   });
 });

@@ -24,7 +24,7 @@ type WorkerInMessage =
 type WorkerOutMessage =
   | { type: "status"; message: string }
   | { type: "ready" }
-  | { type: "message"; payload: Record<string, unknown> }
+  | { type: "message"; payload: Message }
   | { type: "error"; message: string };
 
 export interface PyodideWorkerOptions {
@@ -34,7 +34,7 @@ export interface PyodideWorkerOptions {
   onError?: (error: string) => void;
 }
 
-type MessageCallback = (msg: Record<string, unknown>) => void;
+type MessageCallback = (msg: Message) => void;
 
 // === Worker Manager ===
 

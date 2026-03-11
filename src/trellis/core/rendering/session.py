@@ -77,6 +77,22 @@ class _RegisteredProxyCallback:
         return self.callback_ref()
 
 
+class ProxyTransportProtocol(tp.Protocol):
+    """Transport surface used by session-scoped JS proxy bindings."""
+
+    async def request_proxy(
+        self,
+        proxy_id: str,
+        operation: tp.Literal["call", "get", "set", "delete", "release"],
+        member: str | None,
+        args: list[tp.Any] | None = None,
+        value: tp.Any = None,
+        *,
+        return_mode: tp.Literal["value", "proxy"] = "value",
+        allow_null: bool = True,
+    ) -> tp.Any: ...
+
+
 def _make_proxy_callback_ref(
     callback: tp.Callable[..., tp.Any],
 ) -> weakref.ReferenceType[tp.Callable[..., tp.Any]]:
@@ -122,7 +138,7 @@ class RenderSession:
     initial_path: str = "/"
 
     # Transport used by JS proxy calls during render/callback execution
-    proxy_transport: tp.Any = None
+    proxy_transport: ProxyTransportProtocol | None = None
 
     # Weakly held callback registry for proxy callback arguments
     _proxy_callbacks: dict[str, _RegisteredProxyCallback] = field(default_factory=dict)

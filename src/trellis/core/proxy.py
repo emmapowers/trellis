@@ -297,14 +297,14 @@ def _resolve_transport() -> _ProxyTransport:
     if session is not None and session.is_executing():
         transport = session.proxy_transport
         if transport is not None:
-            return tp.cast("_ProxyTransport", transport)
+            return transport
 
     callback_node_id = get_callback_node_id()
     if callback_node_id is not None:
         callback_session = get_callback_session()
         transport = callback_session.proxy_transport
         if transport is not None:
-            return tp.cast("_ProxyTransport", transport)
+            return transport
 
     raise RuntimeError("Cannot call JS proxy outside render or callback context.")
 

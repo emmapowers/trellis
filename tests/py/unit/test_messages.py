@@ -200,6 +200,25 @@ class TestProxyResponseMessage:
         assert decoded.error is None
         assert decoded.error_type is None
 
+    def test_proxy_response_error_msgpack_roundtrip(self) -> None:
+        """ProxyResponse error payload survives msgpack encode/decode."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ProxyResponse(
+            request_id="req-err",
+            error="Something went wrong",
+            error_type="TypeError",
+        )
+        encoded = encoder.encode(original)
+        decoded = decoder.decode(encoded)
+
+        assert isinstance(decoded, ProxyResponse)
+        assert decoded.request_id == "req-err"
+        assert decoded.result is None
+        assert decoded.error == "Something went wrong"
+        assert decoded.error_type == "TypeError"
+
 
 class TestMessageUnion:
     """Tests for Message union type dispatch."""

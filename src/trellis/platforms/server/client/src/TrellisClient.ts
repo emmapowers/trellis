@@ -74,7 +74,9 @@ export class ServerTrellisClient extends BaseTrellisClient {
 
       this.ws.onmessage = (event) => {
         const msg = decode(new Uint8Array(event.data)) as Message;
-        void this.handler.handleMessage(msg);
+        void this.handler.handleMessage(msg).catch((error: unknown) => {
+          console.error("Message handling failed:", error);
+        });
 
         // Resolve connect promise on HELLO_RESPONSE
         if (msg.type === MessageType.HELLO_RESPONSE && this.connectResolver) {
