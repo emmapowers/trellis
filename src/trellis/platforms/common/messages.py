@@ -112,10 +112,5 @@ class ReloadMessage(msgspec.Struct, tag="reload", tag_field="type"):
 
 # Union type for all messages - used by MessageHandler
 Message = (
-    HelloMessage
-    | HelloResponseMessage
-    | PatchMessage
-    | EventMessage
-    | ErrorMessage
-    | ReloadMessage
+    HelloMessage | HelloResponseMessage | PatchMessage | EventMessage | ErrorMessage | ReloadMessage
 )

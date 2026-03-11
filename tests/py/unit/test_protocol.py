@@ -8,6 +8,7 @@ import typing as tp
 import msgspec
 import pytest
 
+import trellis.core.protocol as protocol_module
 from trellis.core.protocol import (
     MessageHandlerProtocol,
     MessageListener,
@@ -41,8 +42,8 @@ class TestMessageTypeRegistration:
     def test_register_message_types_by_tag(self, reset_protocol) -> None:
         register_message_types(Ping, Pong)
 
-        assert Ping in tp.cast("dict[type[object], str]", getattr(__import__("trellis.core.protocol", fromlist=["_MESSAGE_TAGS"]), "_MESSAGE_TAGS"))
-        assert "ping" in tp.cast("dict[str, type[object]]", getattr(__import__("trellis.core.protocol", fromlist=["_MESSAGE_TYPES"]), "_MESSAGE_TYPES"))
+        assert Ping in tp.cast("dict[type[object], str]", protocol_module._MESSAGE_TAGS)
+        assert "ping" in tp.cast("dict[str, type[object]]", protocol_module._MESSAGE_TYPES)
 
 
 class TestMessageHandlerContext:

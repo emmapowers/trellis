@@ -22,6 +22,7 @@ from trellis.core.rendering.session import (
     set_active_session,
 )
 from trellis.core.rendering.traits import get_trait_hooks
+from trellis.core.state.stateful import Stateful
 from trellis.utils.logger import logger
 
 __all__ = [
@@ -184,7 +185,7 @@ def _execute_single_element(
 
     state.state_call_count = 0
     previous_context = dict(state.context)
-    state.context.clear()
+    state._entered_context_types.clear()
 
     # Get props including children if component accepts them
     props = element.props.copy()
@@ -215,6 +216,14 @@ def _execute_single_element(
         for th in trait_hooks:
             if th.after_execute is not None:
                 th.after_execute(element, element, state, session)
+
+        stale_context_types = [
+            context_type
+            for context_type in state.context
+            if context_type not in state._entered_context_types
+        ]
+        for context_type in stale_context_types:
+            state.context.pop(context_type, None)
 
         _cleanup_removed_message_listeners(previous_context, state.context)
 
@@ -418,7 +427,7 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
 def _get_lifecycle_statefuls(
     state: ElementState,
     reverse: bool = False,
-) -> list[object]:
+) -> list[Stateful]:
     """Return unique stateful objects that should receive lifecycle hooks."""
     local_state_items = list(state.local_state.items())
     local_state_items.sort(key=lambda item: item[0][1], reverse=reverse)
@@ -429,7 +438,7 @@ def _get_lifecycle_statefuls(
         context_values.reverse()
 
     seen: set[int] = set()
-    lifecycle_statefuls: list[object] = []
+    lifecycle_statefuls: list[Stateful] = []
     for stateful in [*local_statefuls, *context_values]:
         stateful_id = id(stateful)
         if stateful_id in seen:

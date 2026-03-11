@@ -107,7 +107,7 @@ class RenderSession:
                 return await coro
             except asyncio.CancelledError:
                 raise
-            except Exception as exc:
+            except Exception:
                 logger.exception("Error in %s", label)
                 return None
 

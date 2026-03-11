@@ -13,6 +13,18 @@ from trellis.core.components import (
     react,
 )
 
+# state
+from trellis.core.protocol import (
+    MessageHandlerProtocol,
+    MessageListener,
+    dispatch,
+    get_message_handler,
+    listen,
+    register_message_types,
+    send,
+    set_message_handler,
+)
+
 # rendering
 from trellis.core.rendering import (
     ActiveRender,
@@ -39,18 +51,6 @@ from trellis.core.rendering import (
     reconcile_children,
     render,
     set_active_session,
-)
-
-# state
-from trellis.core.protocol import (
-    MessageHandlerProtocol,
-    MessageListener,
-    dispatch,
-    get_message_handler,
-    listen,
-    register_message_types,
-    send,
-    set_message_handler,
 )
 from trellis.core.state import (
     Mutable,
@@ -114,8 +114,8 @@ __all__ = [
     "mutable",
     "props_equal",
     "react",
-    "register_message_types",
     "reconcile_children",
+    "register_message_types",
     "render",
     "send",
     "set_active_session",

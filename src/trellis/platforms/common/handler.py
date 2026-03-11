@@ -497,7 +497,7 @@ class MessageHandler:
         tasks.add(receive_task)
 
         try:
-            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            done, _pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         except BaseException:
             receive_task.cancel()
             await asyncio.gather(receive_task, return_exceptions=True)

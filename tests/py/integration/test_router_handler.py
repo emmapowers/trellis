@@ -17,7 +17,6 @@ from trellis.platforms.common.messages import (
     AddPatch,
     EventMessage,
     HelloMessage,
-    Message,
     PatchMessage,
 )
 from trellis.platforms.common.serialization import serialize_element

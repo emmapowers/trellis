@@ -21,9 +21,9 @@ _handler_ctx: contextvars.ContextVar[MessageHandlerProtocol | None] = contextvar
 _MESSAGE_TYPES: dict[str, type[object]] = {}
 _MESSAGE_TAGS: dict[type[object], str] = {}
 _GLOBAL_LISTENERS: dict[type[object], list[Listener]] = defaultdict(list)
-_HANDLER_LISTENERS: weakref.WeakKeyDictionary[
-    object, dict[type[object], list[Listener]]
-] = weakref.WeakKeyDictionary()
+_HANDLER_LISTENERS: weakref.WeakKeyDictionary[object, dict[type[object], list[Listener]]] = (
+    weakref.WeakKeyDictionary()
+)
 
 
 @tp.runtime_checkable
@@ -100,9 +100,7 @@ class MessageListener:
         if handler is not None:
             self.register_message_listeners(handler)
 
-    def register_message_listeners(
-        self, handler: MessageHandlerProtocol | None = None
-    ) -> None:
+    def register_message_listeners(self, handler: MessageHandlerProtocol | None = None) -> None:
         """Attach bound listeners for this object to the target handler."""
         if handler is None:
             handler = get_message_handler()
@@ -213,10 +211,14 @@ def _looks_like_method(fn: tp.Callable[..., tp.Any]) -> bool:
     if not params:
         return False
     first = params[0]
-    return first.kind in (
-        inspect.Parameter.POSITIONAL_ONLY,
-        inspect.Parameter.POSITIONAL_OR_KEYWORD,
-    ) and first.name == "self"
+    return (
+        first.kind
+        in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        )
+        and first.name == "self"
+    )
 
 
 def _reset_for_tests() -> None:
