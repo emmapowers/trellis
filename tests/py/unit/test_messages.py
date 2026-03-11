@@ -8,6 +8,8 @@ from trellis.platforms.common.messages import (
     HelloResponseMessage,
     Message,
     PatchMessage,
+    ProxyRequest,
+    ProxyResponse,
     ReloadMessage,
 )
 
@@ -81,6 +83,143 @@ class TestReloadMessage:
         assert raw["type"] == "reload"
 
 
+class TestProxyRequestMessage:
+    """Tests for ProxyRequest serialization."""
+
+    def test_proxy_request_call_msgpack_roundtrip(self) -> None:
+        """Method call requests survive msgpack encode/decode."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ProxyRequest(
+            request_id="req-1",
+            proxy_id="demo_api",
+            operation="call",
+            member="greet",
+            args=["Emma"],
+        )
+        encoded = encoder.encode(original)
+        decoded = decoder.decode(encoded)
+
+        assert isinstance(decoded, ProxyRequest)
+        assert decoded.request_id == "req-1"
+        assert decoded.proxy_id == "demo_api"
+        assert decoded.operation == "call"
+        assert decoded.member == "greet"
+        assert decoded.args == ["Emma"]
+        assert decoded.value is None
+
+    def test_proxy_request_property_set_msgpack_roundtrip(self) -> None:
+        """Property set requests preserve value and member."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ProxyRequest(
+            request_id="req-2",
+            proxy_id="document",
+            operation="set",
+            member="title",
+            value="New title",
+        )
+        encoded = encoder.encode(original)
+        decoded = decoder.decode(encoded)
+
+        assert isinstance(decoded, ProxyRequest)
+        assert decoded.request_id == "req-2"
+        assert decoded.proxy_id == "document"
+        assert decoded.operation == "set"
+        assert decoded.member == "title"
+        assert decoded.value == "New title"
+        assert decoded.args == []
+
+    def test_proxy_request_proxy_return_mode_msgpack_roundtrip(self) -> None:
+        """Proxy requests preserve proxy return metadata."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ProxyRequest(
+            request_id="req-3",
+            proxy_id="createCounter",
+            operation="call",
+            member=None,
+            args=["demo"],
+            return_mode="proxy",
+            allow_null=False,
+        )
+        encoded = encoder.encode(original)
+        decoded = decoder.decode(encoded)
+
+        assert isinstance(decoded, ProxyRequest)
+        assert decoded.request_id == "req-3"
+        assert decoded.proxy_id == "createCounter"
+        assert decoded.operation == "call"
+        assert decoded.member is None
+        assert decoded.args == ["demo"]
+        assert decoded.return_mode == "proxy"
+        assert decoded.allow_null is False
+
+    def test_proxy_request_release_msgpack_roundtrip(self) -> None:
+        """Release requests survive msgpack encode/decode."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ProxyRequest(
+            request_id="req-4",
+            proxy_id="__handle__:counter-1",
+            operation="release",
+        )
+        encoded = encoder.encode(original)
+        decoded = decoder.decode(encoded)
+
+        assert isinstance(decoded, ProxyRequest)
+        assert decoded.request_id == "req-4"
+        assert decoded.proxy_id == "__handle__:counter-1"
+        assert decoded.operation == "release"
+        assert decoded.member is None
+        assert decoded.args == []
+
+
+class TestProxyResponseMessage:
+    """Tests for ProxyResponse serialization."""
+
+    def test_proxy_response_msgpack_roundtrip(self) -> None:
+        """ProxyResponse survives msgpack encode/decode."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ProxyResponse(
+            request_id="req-1",
+            result={"message": "hello"},
+        )
+        encoded = encoder.encode(original)
+        decoded = decoder.decode(encoded)
+
+        assert isinstance(decoded, ProxyResponse)
+        assert decoded.request_id == "req-1"
+        assert decoded.result == {"message": "hello"}
+        assert decoded.error is None
+        assert decoded.error_type is None
+
+    def test_proxy_response_error_msgpack_roundtrip(self) -> None:
+        """ProxyResponse error payload survives msgpack encode/decode."""
+        encoder = msgspec.msgpack.Encoder()
+        decoder = msgspec.msgpack.Decoder(Message)
+
+        original = ProxyResponse(
+            request_id="req-err",
+            error="Something went wrong",
+            error_type="TypeError",
+        )
+        encoded = encoder.encode(original)
+        decoded = decoder.decode(encoded)
+
+        assert isinstance(decoded, ProxyResponse)
+        assert decoded.request_id == "req-err"
+        assert decoded.result is None
+        assert decoded.error == "Something went wrong"
+        assert decoded.error_type == "TypeError"
+
+
 class TestMessageUnion:
     """Tests for Message union type dispatch."""
 
@@ -140,6 +279,19 @@ class TestMessageUnion:
             HelloResponseMessage(session_id="s1", server_version="1.0"),
             PatchMessage(patches=[]),
             EventMessage(callback_id="cb_1"),
+            ProxyRequest(
+                request_id="req-1",
+                proxy_id="demo_api",
+                operation="call",
+                member="greet",
+            ),
+            ProxyRequest(
+                request_id="req-2",
+                proxy_id="document",
+                operation="get",
+                member="title",
+            ),
+            ProxyResponse(request_id="req-1", result="ok"),
             ReloadMessage(),
         ]
 

@@ -14,6 +14,8 @@ from trellis.platforms.common.messages import (
     Message,
     Patch,
     PatchMessage,
+    ProxyRequest,
+    ProxyResponse,
     RemovePatch,
     UpdatePatch,
 )
@@ -49,6 +51,8 @@ __all__ = [
     "Platform",
     "PlatformArgumentError",
     "PlatformType",
+    "ProxyRequest",
+    "ProxyResponse",
     "RemovePatch",
     "UpdatePatch",
     "find_available_port",

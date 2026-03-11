@@ -19,6 +19,7 @@ from uuid import uuid4
 
 from trellis.core.callback_context import callback_context
 from trellis.core.components.base import Component
+from trellis.core.proxy_values import PROXY_CALLBACK_ID_PREFIX
 from trellis.core.rendering.patches import (
     RenderAddPatch,
     RenderPatch,
@@ -41,6 +42,8 @@ from trellis.platforms.common.messages import (
     Message,
     Patch,
     PatchMessage,
+    ProxyRequest,
+    ProxyResponse,
     RemovePatch,
     UpdatePatch,
     UrlChanged,
@@ -276,6 +279,7 @@ class MessageHandler:
     _root_component: Component
     _app_wrapper: AppWrapper
     _background_tasks: set[asyncio.Task[tp.Any]]
+    _pending_proxy_requests: dict[str, asyncio.Future[tp.Any]]
     _render_task: asyncio.Task[None] | None
 
     def __init__(
@@ -297,6 +301,7 @@ class MessageHandler:
         self.session_id = None
         self.batch_delay = batch_delay
         self._background_tasks = set()
+        self._pending_proxy_requests = {}
         self._render_task = None
 
     async def handle_hello(self) -> str:
@@ -327,6 +332,7 @@ class MessageHandler:
             msg.theme_mode,  # "system", "light", "dark", or None
         )
         self.session = RenderSession(wrapped)
+        self.session.proxy_transport = self
 
         # Register session with global registry (used by hot reload and other features)
         get_session_registry().register(self.session)
@@ -381,30 +387,145 @@ class MessageHandler:
             msg: The incoming message to process
 
         Returns:
-            ErrorMessage on callback error, or None. Re-rendering is handled
-            by the background render loop, not per-message.
+            Response message for protocol paths that require one, otherwise None.
+            Re-rendering is handled by the background render loop, not per-message.
         """
         if isinstance(msg, EventMessage):
-            logger.debug("Received EventMessage: callback_id=%s", msg.callback_id)
-            try:
-                await self._invoke_callback(msg.callback_id, msg.args)
-            except KeyError as e:
-                logger.exception(f"Unknown callback: {msg.callback_id}")
-                return ErrorMessage(error=_format_exception(e), context="callback")
-            except Exception as e:
-                logger.exception(f"Error in callback {msg.callback_id}: {e}")
-                return ErrorMessage(error=_format_exception(e), context="callback")
-
-            # Callback executed successfully. State changes mark elements dirty.
-            # The render loop will pick them up on the next frame.
-            return None
+            return await self._handle_event_message(msg)
 
         if isinstance(msg, UrlChanged):
             logger.debug("Received UrlChanged: path=%s", msg.path)
             self._handle_url_changed(msg.path)
             return None
 
+        if isinstance(msg, ProxyRequest):
+            return await self._handle_proxy_request(msg)
+
+        if isinstance(msg, ProxyResponse):
+            self._handle_proxy_response(msg)
+
         return None
+
+    async def _handle_event_message(self, msg: EventMessage) -> Message | None:
+        """Handle a callback event from the client."""
+        logger.debug("Received EventMessage: callback_id=%s", msg.callback_id)
+        try:
+            await self._invoke_callback(msg.callback_id, msg.args)
+        except KeyError as e:
+            logger.exception(f"Unknown callback: {msg.callback_id}")
+            return ErrorMessage(error=_format_exception(e), context="callback")
+        except Exception as e:
+            logger.exception(f"Error in callback {msg.callback_id}: {e}")
+            return ErrorMessage(error=_format_exception(e), context="callback")
+
+        # Callback executed successfully. State changes mark elements dirty.
+        # The render loop will pick them up on the next frame.
+        return None
+
+    def _handle_proxy_response(self, msg: ProxyResponse) -> None:
+        """Resolve or reject a pending proxy request."""
+        future = self._pending_proxy_requests.get(msg.request_id)
+        if future is None:
+            logger.debug("Ignoring proxy response for unknown request_id=%s", msg.request_id)
+            return
+
+        if future.done():
+            return
+
+        if msg.error is None:
+            future.set_result(msg.result)
+        else:
+            future.set_exception(RuntimeError(msg.error))
+
+    async def _handle_proxy_request(self, msg: ProxyRequest) -> Message | None:
+        """Handle a client-originated proxy request."""
+        if not msg.proxy_id.startswith(PROXY_CALLBACK_ID_PREFIX):
+            raise ValueError(f"Client may not invoke proxy target: {msg.proxy_id}")
+
+        callback_id = msg.proxy_id[len(PROXY_CALLBACK_ID_PREFIX) :]
+        assert self.session is not None
+        status, resolved = self.session.lookup_proxy_callback(callback_id)
+        if status == "missing":
+            return ProxyResponse(
+                request_id=msg.request_id,
+                error=f"Proxy callback not found: {callback_id}",
+                error_type="LookupError",
+            )
+        if status == "dead":
+            return ProxyResponse(
+                request_id=msg.request_id,
+                error=f"Proxy callback is no longer alive: {callback_id}",
+                error_type="ReferenceError",
+            )
+
+        assert resolved is not None
+        try:
+            result = await self._invoke_proxy_callback(
+                resolved.callback, resolved.node_id, msg.args
+            )
+        except Exception as error:
+            return ProxyResponse(
+                request_id=msg.request_id,
+                error=str(error),
+                error_type=type(error).__name__,
+            )
+
+        return ProxyResponse(
+            request_id=msg.request_id,
+            result=result,
+            error=None,
+            error_type=None,
+        )
+
+    async def request_proxy(
+        self,
+        proxy_id: str,
+        operation: tp.Literal["call", "get", "set", "delete", "release"],
+        member: str | None,
+        args: list[tp.Any] | None = None,
+        value: tp.Any = None,
+        *,
+        return_mode: tp.Literal["value", "proxy"] = "value",
+        allow_null: bool = True,
+    ) -> tp.Any:
+        """Send a proxy request to the client and await the response."""
+        request_id = str(uuid4())
+        future = asyncio.get_running_loop().create_future()
+        self._pending_proxy_requests[request_id] = future
+
+        try:
+            await self.send_message(
+                ProxyRequest(
+                    request_id=request_id,
+                    proxy_id=proxy_id,
+                    operation=operation,
+                    member=member,
+                    args=args or [],
+                    value=value,
+                    return_mode=return_mode,
+                    allow_null=allow_null,
+                )
+            )
+            return await future
+        finally:
+            self._pending_proxy_requests.pop(request_id, None)
+
+    async def _invoke_proxy_callback(
+        self,
+        callback: tp.Callable[..., tp.Any],
+        node_id: str,
+        args: list[tp.Any],
+    ) -> tp.Any:
+        """Invoke a proxy callback under callback context."""
+        assert self.session is not None
+        with callback_context(self.session, node_id):
+            if inspect.iscoroutinefunction(callback):
+                return await callback(*args)
+
+            result = callback(*args)
+            if result is not None:
+                raise TypeError("Synchronous proxy callbacks must return None")
+            return None
 
     def _handle_url_changed(self, path: str) -> None:
         """Handle browser URL change (popstate event).
@@ -569,6 +690,6 @@ class MessageHandler:
 
     def cleanup(self) -> None:
         """Clean up resources. Call when session ends."""
-        # No explicit cleanup needed - callbacks are stored in element props
-        # and cleaned up when elements are unmounted
-        pass
+        if self.session is not None:
+            self.session.clear_proxy_callbacks()
+            self.session.clear_proxy_handles()

@@ -9,6 +9,7 @@ import threading
 import typing as tp
 import weakref
 from dataclasses import dataclass, field
+from uuid import uuid4
 
 from trellis.core.rendering.dirty_tracker import DirtyTracker
 from trellis.core.rendering.element_state import ElementStateStore
@@ -57,6 +58,58 @@ def is_render_active() -> bool:
 _PATH_SEGMENT_RE = re.compile(r"^([a-zA-Z_][a-zA-Z0-9_]*)|^\[(\d+)\]|^\.([a-zA-Z_][a-zA-Z0-9_]*)")
 
 
+@dataclass(frozen=True)
+class ResolvedProxyCallback:
+    """A live proxy callback registration."""
+
+    callback: tp.Callable[..., tp.Any]
+    node_id: str
+
+
+@dataclass
+class _RegisteredProxyCallback:
+    """Weakly held callback metadata for proxy callback arguments."""
+
+    callback_ref: weakref.ReferenceType[tp.Callable[..., tp.Any]]
+    node_id: str
+
+    def get(self) -> tp.Callable[..., tp.Any] | None:
+        return self.callback_ref()
+
+
+class ProxyTransportProtocol(tp.Protocol):
+    """Transport surface used by session-scoped JS proxy bindings."""
+
+    async def request_proxy(
+        self,
+        proxy_id: str,
+        operation: tp.Literal["call", "get", "set", "delete", "release"],
+        member: str | None,
+        args: list[tp.Any] | None = None,
+        value: tp.Any = None,
+        *,
+        return_mode: tp.Literal["value", "proxy"] = "value",
+        allow_null: bool = True,
+    ) -> tp.Any: ...
+
+
+def _make_proxy_callback_ref(
+    callback: tp.Callable[..., tp.Any],
+) -> weakref.ReferenceType[tp.Callable[..., tp.Any]]:
+    if hasattr(callback, "__self__") and getattr(callback, "__self__", None) is not None:
+        try:
+            return tp.cast(
+                "weakref.ReferenceType[tp.Callable[..., tp.Any]]", weakref.WeakMethod(callback)
+            )
+        except TypeError as exc:
+            raise TypeError("Proxy callbacks must support weak references") from exc
+
+    try:
+        return weakref.ref(callback)
+    except TypeError as exc:
+        raise TypeError("Proxy callbacks must support weak references") from exc
+
+
 @dataclass
 class RenderSession:
     """Session-scoped state container."""
@@ -83,6 +136,17 @@ class RenderSession:
 
     # Initial URL path from client HelloMessage (for routing)
     initial_path: str = "/"
+
+    # Transport used by JS proxy calls during render/callback execution
+    proxy_transport: ProxyTransportProtocol | None = None
+
+    # Weakly held callback registry for proxy callback arguments
+    _proxy_callbacks: dict[str, _RegisteredProxyCallback] = field(default_factory=dict)
+
+    # Weakly held returned proxy handles keyed by client-side handle id
+    _proxy_handles: weakref.WeakValueDictionary[str, tp.Any] = field(
+        default_factory=weakref.WeakValueDictionary
+    )
 
     def __post_init__(self) -> None:
         self.dirty.set_lock(self.lock)
@@ -120,6 +184,56 @@ class RenderSession:
         if value is not None and callable(value):
             return tp.cast("tp.Callable[..., tp.Any]", value)
         return None
+
+    def register_proxy_callback(self, callback: tp.Callable[..., tp.Any], node_id: str) -> str:
+        """Register a callback passed through the proxy transport."""
+        self._cleanup_dead_proxy_callbacks()
+        callback_id = str(uuid4())
+        self._proxy_callbacks[callback_id] = _RegisteredProxyCallback(
+            callback_ref=_make_proxy_callback_ref(callback),
+            node_id=node_id,
+        )
+        return callback_id
+
+    def lookup_proxy_callback(
+        self, callback_id: str
+    ) -> tuple[tp.Literal["ok", "missing", "dead"], ResolvedProxyCallback | None]:
+        """Resolve a registered proxy callback by ID."""
+        registered = self._proxy_callbacks.get(callback_id)
+        if registered is None:
+            return "missing", None
+
+        callback = registered.get()
+        if callback is None:
+            self._proxy_callbacks.pop(callback_id, None)
+            return "dead", None
+
+        return "ok", ResolvedProxyCallback(callback=callback, node_id=registered.node_id)
+
+    def clear_proxy_callbacks(self) -> None:
+        """Remove all registered proxy callbacks."""
+        self._proxy_callbacks.clear()
+
+    def get_proxy_handle(self, handle_id: str) -> tp.Any | None:
+        """Return a cached proxy handle instance if it is still alive."""
+        return self._proxy_handles.get(handle_id)
+
+    def store_proxy_handle(self, handle_id: str, proxy: tp.Any) -> None:
+        """Cache a returned proxy handle instance by handle id."""
+        self._proxy_handles[handle_id] = proxy
+
+    def clear_proxy_handles(self) -> None:
+        """Remove cached returned proxy handles."""
+        self._proxy_handles.clear()
+
+    def _cleanup_dead_proxy_callbacks(self) -> None:
+        dead_ids = [
+            callback_id
+            for callback_id, registered in self._proxy_callbacks.items()
+            if registered.get() is None
+        ]
+        for callback_id in dead_ids:
+            self._proxy_callbacks.pop(callback_id, None)
 
 
 def _resolve_prop_path(props: dict[str, tp.Any], path: str) -> tp.Any:

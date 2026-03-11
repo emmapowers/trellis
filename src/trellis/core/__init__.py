@@ -12,6 +12,7 @@ from trellis.core.components import (
     component,
     react,
 )
+from trellis.core.proxy import js_global, js_method, js_property, js_proxy, js_release
 
 # rendering
 from trellis.core.rendering import (
@@ -94,6 +95,11 @@ __all__ = [
     "get_active_session",
     "get_ref",
     "is_render_active",
+    "js_global",
+    "js_method",
+    "js_property",
+    "js_proxy",
+    "js_release",
     "mutable",
     "props_equal",
     "react",

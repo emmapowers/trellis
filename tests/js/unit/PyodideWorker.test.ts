@@ -5,6 +5,7 @@
  * errors through callbacks.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { MessageType } from "@common/types";
 
 // Mock Worker before importing PyodideWorker
 class MockWorker {
@@ -186,5 +187,37 @@ describe("PyodideWorker.run() code passing", () => {
 
     expect(posted).toHaveLength(1);
     expect(posted[0]).toEqual({ type: "run" });
+  });
+
+  it("posts proxy responses to the worker bridge", async () => {
+    const worker = new PyodideWorker();
+    const posted: unknown[] = [];
+
+    const createPromise = worker.create({});
+    mockWorkerInstance?.onPostMessage((msg) => posted.push(msg));
+    mockWorkerInstance?.simulateMessage({ type: "ready" });
+    await createPromise;
+
+    posted.length = 0;
+
+    worker.sendMessage({
+      type: MessageType.PROXY_RESPONSE,
+      request_id: "req-1",
+      result: "hello Emma",
+      error: null,
+      error_type: null,
+    });
+
+    expect(posted).toHaveLength(1);
+    expect(posted[0]).toEqual({
+      type: "message",
+      payload: {
+        type: MessageType.PROXY_RESPONSE,
+        request_id: "req-1",
+        result: "hello Emma",
+        error: null,
+        error_type: null,
+      },
+    });
   });
 });

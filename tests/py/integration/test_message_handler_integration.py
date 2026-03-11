@@ -1,11 +1,17 @@
 """Integration tests for MessageHandler and BrowserMessageHandler."""
 
 import asyncio
+import gc
 import typing as tp
 from dataclasses import dataclass
 
+import pytest
+
+import trellis.core.proxy as proxy_module
 from tests.conftest import get_button_element
+from trellis.core.callback_context import get_callback_node_id
 from trellis.core.components.composition import CompositionComponent, component
+from trellis.core.proxy import js_proxy, js_release
 from trellis.core.rendering.patches import RenderUpdatePatch
 from trellis.core.rendering.render import render
 from trellis.core.state.stateful import Stateful
@@ -17,6 +23,8 @@ from trellis.platforms.common.messages import (
     EventMessage,
     HelloMessage,
     PatchMessage,
+    ProxyRequest,
+    ProxyResponse,
 )
 from trellis.widgets import Button, Label
 
@@ -256,6 +264,369 @@ class TestMessageHandler:
         # After cleanup, tree should have no callbacks
         # (we can't easily test this without internal access,
         # but the method should not raise)
+
+    def test_handle_message_resolves_pending_proxy_request(self, app_wrapper: AppWrapper) -> None:
+        """Proxy responses resolve pending handler futures."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+
+        sent_messages: list[dict[str, tp.Any]] = []
+        handler.set_send_callback(lambda msg: sent_messages.append(msg))
+
+        async def test() -> None:
+            task = asyncio.create_task(handler.request_proxy("demo_api", "call", "greet", ["Emma"]))
+            await asyncio.sleep(0)
+
+            assert len(sent_messages) == 1
+            message = sent_messages[0]
+            assert message["type"] == "proxy_request"
+            assert message["proxy_id"] == "demo_api"
+            assert message["operation"] == "call"
+            assert message["member"] == "greet"
+            assert message["args"] == ["Emma"]
+
+            response = ProxyResponse(
+                request_id=message["request_id"],
+                result="hello Emma",
+            )
+            result = await handler.handle_message(response)
+
+            assert result is None
+            assert await task == "hello Emma"
+
+        asyncio.run(test())
+
+    def test_handle_message_resolves_pending_function_proxy_request(
+        self, app_wrapper: AppWrapper
+    ) -> None:
+        """Function proxy responses resolve pending handler futures."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+
+        sent_messages: list[dict[str, tp.Any]] = []
+        handler.set_send_callback(lambda msg: sent_messages.append(msg))
+
+        async def test() -> None:
+            task = asyncio.create_task(handler.request_proxy("formatNow", "call", None, [3]))
+            await asyncio.sleep(0)
+
+            assert len(sent_messages) == 1
+            message = sent_messages[0]
+            assert message["type"] == "proxy_request"
+            assert message["proxy_id"] == "formatNow"
+            assert message["operation"] == "call"
+            assert message["member"] is None
+            assert message["args"] == [3]
+
+            response = ProxyResponse(
+                request_id=message["request_id"],
+                result="value: 3",
+            )
+            result = await handler.handle_message(response)
+
+            assert result is None
+            assert await task == "value: 3"
+
+        asyncio.run(test())
+
+    def test_handle_message_decodes_returned_proxy_handles(
+        self, app_wrapper: AppWrapper, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Proxy responses with handle sentinels decode into dynamic proxy instances."""
+
+        @js_proxy(dynamic=True)
+        class CounterHandle:
+            async def increment(self) -> int:
+                raise NotImplementedError
+
+        @js_proxy
+        async def create_counter(label: str) -> CounterHandle:
+            raise NotImplementedError
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: handler)
+
+        sent_messages: list[dict[str, tp.Any]] = []
+        handler.set_send_callback(lambda msg: sent_messages.append(msg))
+
+        async def test() -> None:
+            task = asyncio.create_task(create_counter("demo"))
+            await asyncio.sleep(0)
+            message = sent_messages[0]
+
+            await handler.handle_message(
+                ProxyResponse(
+                    request_id=message["request_id"],
+                    result={"__proxy_handle__": "__handle__:counter-1"},
+                )
+            )
+
+            result = await task
+            assert isinstance(result, CounterHandle)
+
+        asyncio.run(test())
+
+    def test_handle_message_reuses_cached_returned_handle_identity(
+        self, app_wrapper: AppWrapper, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Repeated handle ids resolve to one Python proxy object per session."""
+
+        @js_proxy(dynamic=True)
+        class CounterHandle:
+            async def increment(self) -> int:
+                raise NotImplementedError
+
+        @js_proxy
+        async def create_counter(label: str) -> CounterHandle:
+            raise NotImplementedError
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: handler)
+
+        sent_messages: list[dict[str, tp.Any]] = []
+        handler.set_send_callback(lambda msg: sent_messages.append(msg))
+
+        async def request_once() -> CounterHandle:
+            task = asyncio.create_task(create_counter("demo"))
+            await asyncio.sleep(0)
+            message = sent_messages.pop(0)
+            await handler.handle_message(
+                ProxyResponse(
+                    request_id=message["request_id"],
+                    result={"__proxy_handle__": "__handle__:counter-1"},
+                )
+            )
+            return tp.cast("CounterHandle", await task)
+
+        async def test() -> None:
+            first = await request_once()
+            second = await request_once()
+            assert first is second
+
+        asyncio.run(test())
+
+    def test_js_release_sends_release_requests_through_handler_transport(
+        self, app_wrapper: AppWrapper, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Explicit handle release uses the handler transport."""
+
+        @js_proxy(dynamic=True)
+        class CounterHandle:
+            async def increment(self) -> int:
+                raise NotImplementedError
+
+        @js_proxy
+        async def create_counter(label: str) -> CounterHandle:
+            raise NotImplementedError
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        monkeypatch.setattr(proxy_module, "_resolve_transport", lambda: handler)
+
+        sent_messages: list[dict[str, tp.Any]] = []
+        handler.set_send_callback(lambda msg: sent_messages.append(msg))
+
+        async def test() -> None:
+            task = asyncio.create_task(create_counter("demo"))
+            await asyncio.sleep(0)
+            first_request = sent_messages.pop(0)
+            await handler.handle_message(
+                ProxyResponse(
+                    request_id=first_request["request_id"],
+                    result={"__proxy_handle__": "__handle__:counter-1"},
+                )
+            )
+            handle = await task
+
+            release_task = asyncio.create_task(js_release(handle))
+            await asyncio.sleep(0)
+
+            release_request = sent_messages.pop(0)
+            assert release_request["operation"] == "release"
+            assert release_request["proxy_id"] == "__handle__:counter-1"
+
+            await handler.handle_message(
+                ProxyResponse(
+                    request_id=release_request["request_id"],
+                    result=None,
+                )
+            )
+            await release_task
+
+        asyncio.run(test())
+
+    def test_handle_message_ignores_unknown_proxy_response(self, app_wrapper: AppWrapper) -> None:
+        """Unknown proxy responses are ignored safely."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+
+        response = ProxyResponse(request_id="missing", result="hello Emma")
+        result = asyncio.run(handler.handle_message(response))
+
+        assert result is None
+        assert handler._pending_proxy_requests == {}
+
+    def test_handle_message_invokes_proxy_callback_with_callback_context(
+        self, app_wrapper: AppWrapper
+    ) -> None:
+        """Proxy callback requests run under the captured callback context."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        assert handler.session is not None
+
+        async def callback() -> str:
+            return f"node:{get_callback_node_id()}"
+
+        callback_id = handler.session.register_proxy_callback(callback, "node-42")
+        response = asyncio.run(
+            handler.handle_message(
+                ProxyRequest(
+                    request_id="req-callback-1",
+                    proxy_id=f"__callback__:{callback_id}",
+                    operation="call",
+                    member=None,
+                    args=[],
+                )
+            )
+        )
+
+        assert isinstance(response, ProxyResponse)
+        assert response.result == "node:node-42"
+        assert response.error is None
+
+    def test_handle_message_rejects_sync_proxy_callbacks_with_return_values(
+        self, app_wrapper: AppWrapper
+    ) -> None:
+        """Synchronous proxy callbacks may only return None."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        assert handler.session is not None
+
+        def callback() -> str:
+            return "value"
+
+        callback_id = handler.session.register_proxy_callback(callback, "node-42")
+        response = asyncio.run(
+            handler.handle_message(
+                ProxyRequest(
+                    request_id="req-callback-2",
+                    proxy_id=f"__callback__:{callback_id}",
+                    operation="call",
+                    member=None,
+                    args=[],
+                )
+            )
+        )
+
+        assert isinstance(response, ProxyResponse)
+        assert response.result is None
+        assert response.error == "Synchronous proxy callbacks must return None"
+        assert response.error_type == "TypeError"
+
+    def test_handle_message_returns_missing_proxy_callback_error(
+        self, app_wrapper: AppWrapper
+    ) -> None:
+        """Missing callback handles return a proxy response error."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+
+        response = asyncio.run(
+            handler.handle_message(
+                ProxyRequest(
+                    request_id="req-callback-3",
+                    proxy_id="__callback__:missing",
+                    operation="call",
+                    member=None,
+                    args=[],
+                )
+            )
+        )
+
+        assert isinstance(response, ProxyResponse)
+        assert response.error == "Proxy callback not found: missing"
+        assert response.error_type == "LookupError"
+
+    def test_handle_message_returns_dead_proxy_callback_error(
+        self, app_wrapper: AppWrapper
+    ) -> None:
+        """Dead callback handles return a proxy response error."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        assert handler.session is not None
+
+        class CallbackOwner:
+            def callback(self) -> None:
+                return None
+
+        owner = CallbackOwner()
+        callback_id = handler.session.register_proxy_callback(owner.callback, "node-42")
+        del owner
+        gc.collect()
+
+        response = asyncio.run(
+            handler.handle_message(
+                ProxyRequest(
+                    request_id="req-callback-4",
+                    proxy_id=f"__callback__:{callback_id}",
+                    operation="call",
+                    member=None,
+                    args=[],
+                )
+            )
+        )
+
+        assert isinstance(response, ProxyResponse)
+        assert response.error == f"Proxy callback is no longer alive: {callback_id}"
+        assert response.error_type == "ReferenceError"
 
 
 class TestBrowserMessageHandler:

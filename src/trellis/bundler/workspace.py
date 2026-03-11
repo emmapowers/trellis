@@ -23,6 +23,10 @@ _REGISTRY_TS_TEMPLATE = Template(
 
 import { registerWidget } from "@trellis/trellis-core/widgets/index";
 {% endif %}
+{% if functions or objects %}
+
+import { registerProxyTarget } from "@trellis/trellis-core/proxyTargets";
+{% endif %}
 {% if initializers %}
 {% for module, source in initializers %}
 import "@trellis/{{ module }}/{{ source }}";
@@ -42,13 +46,22 @@ import { {{ name }} } from "@trellis/{{ module }}/{{ source }}";
 {% for name, module, source in functions %}
 import { {{ name }} } from "@trellis/{{ module }}/{{ source }}";
 {% endfor %}
-
-export { {{ functions | map(attribute=0) | join(', ') }} };
+{% endif %}
+{% if objects %}
+{% for name, module, source in objects %}
+import { {{ name }} } from "@trellis/{{ module }}/{{ source }}";
+{% endfor %}
 {% endif %}
 
 export function initRegistry(): void {
 {% for name, module, source in components %}
   registerWidget("{{ name }}", {{ name }});
+{% endfor %}
+{% for name, module, source in functions %}
+  registerProxyTarget("{{ name }}", {{ name }});
+{% endfor %}
+{% for name, module, source in objects %}
+  registerProxyTarget("{{ name }}", {{ name }});
 {% endfor %}
 }
 """
@@ -85,8 +98,8 @@ def generate_registry_ts(collected: CollectedModules) -> str:
     This file:
     - Imports all component exports and registers them via registerWidget()
     - Imports all initializer exports for their side effects
-    - Re-exports all function exports
-    - Exports an initRegistry() function that registers all components
+    - Imports function and object exports and registers them via registerProxyTarget()
+    - Exports an initRegistry() function that registers all runtime exports
 
     Args:
         collected: Collected modules
@@ -96,6 +109,7 @@ def generate_registry_ts(collected: CollectedModules) -> str:
     """
     components: list[tuple[str, str, str]] = []  # (name, module, source)
     functions: list[tuple[str, str, str]] = []  # (name, module, source)
+    objects: list[tuple[str, str, str]] = []  # (name, module, source)
     initializers: list[tuple[str, str]] = []  # (module, source)
     stylesheets: list[tuple[str, str]] = []  # (module, source)
 
@@ -112,6 +126,8 @@ def generate_registry_ts(collected: CollectedModules) -> str:
                 components.append((export.name, module.name, source_path))
             elif export.kind == ExportKind.FUNCTION:
                 functions.append((export.name, module.name, source_path))
+            elif export.kind == ExportKind.OBJECT:
+                objects.append((export.name, module.name, source_path))
             elif export.kind == ExportKind.INITIALIZER:
                 initializers.append((module.name, source_path))
             elif export.kind == ExportKind.STYLESHEET:
@@ -120,6 +136,7 @@ def generate_registry_ts(collected: CollectedModules) -> str:
     return _REGISTRY_TS_TEMPLATE.render(
         components=components,
         functions=functions,
+        objects=objects,
         initializers=initializers,
         stylesheets=stylesheets,
     )

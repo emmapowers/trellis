@@ -14,7 +14,6 @@ import {
   TrellisContext,
   HostThemeModeContext,
 } from "@trellis/trellis-core/TrellisContext";
-import { Message } from "@trellis/trellis-core/types";
 import { TreeRenderer } from "@trellis/trellis-core/TreeRenderer";
 import { useRootId } from "@trellis/trellis-core/core";
 import { PyodideWorker } from "@trellis/trellis-browser/client/src/PyodideWorker";
@@ -201,7 +200,7 @@ export function TrellisApp({
         // 2. Wire up message passing between client and worker
         // Worker -> Client: Python sends HELLO_RESPONSE, RENDER, ERROR
         worker.onMessage((msg) => {
-          client.handleMessage(msg as unknown as Message);
+          void client.handleMessage(msg);
         });
 
         // Client -> Worker: JS sends HELLO, EVENT

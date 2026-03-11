@@ -38,7 +38,7 @@ export interface BrowserClientOptions {
   routingMode?: RoutingMode;
 }
 
-type SendCallback = (msg: HelloMessage | EventMessage | UrlChangedMessage) => void;
+type SendCallback = (msg: Message) => void;
 
 /**
  * Browser client using Web Worker for communication with Python.
@@ -67,6 +67,10 @@ export class BrowserClient extends BaseTrellisClient {
   }
 
   protected sendUrlChange(msg: UrlChangedMessage): void {
+    this.sendMessage(msg);
+  }
+
+  protected sendMessage(msg: Message): void {
     this.sendCallback?.(msg);
   }
 
@@ -82,8 +86,8 @@ export class BrowserClient extends BaseTrellisClient {
   /**
    * Handle a message from Python (called by PyodideWorker.onMessage).
    */
-  handleMessage(msg: Message): void {
-    this.handler.handleMessage(msg);
+  async handleMessage(msg: Message): Promise<void> {
+    await this.handler.handleMessage(msg);
   }
 
   /**
@@ -105,7 +109,7 @@ export class BrowserClient extends BaseTrellisClient {
       theme_mode: themeMode,
       path: this.getCurrentPath(),
     };
-    this.sendCallback?.(hello);
+    this.sendMessage(hello);
   }
 
   /** Send an event to invoke a callback in Python. */
@@ -115,7 +119,7 @@ export class BrowserClient extends BaseTrellisClient {
       callback_id: callbackId,
       args,
     };
-    this.sendCallback?.(msg);
+    this.sendMessage(msg);
   }
 
   disconnect(): void {

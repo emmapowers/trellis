@@ -10,7 +10,7 @@
 // Import worker code as text (built by bundler with --loader:.worker-bundle=text)
 // Uses @trellis alias so esbuild can resolve the pre-built worker bundle
 import WORKER_CODE from "@trellis/trellis-browser/pyodide.worker-bundle";
-import type { HelloMessage, EventMessage, UrlChangedMessage } from "@trellis/trellis-core/types";
+import type { Message } from "@trellis/trellis-core/types";
 
 // === Types ===
 
@@ -18,13 +18,13 @@ import type { HelloMessage, EventMessage, UrlChangedMessage } from "@trellis/tre
 type WorkerInMessage =
   | { type: "init" }
   | { type: "run"; code?: string }
-  | { type: "message"; payload: HelloMessage | EventMessage | UrlChangedMessage };
+  | { type: "message"; payload: Message };
 
 /** Messages from worker to main thread */
 type WorkerOutMessage =
   | { type: "status"; message: string }
   | { type: "ready" }
-  | { type: "message"; payload: Record<string, unknown> }
+  | { type: "message"; payload: Message }
   | { type: "error"; message: string };
 
 export interface PyodideWorkerOptions {
@@ -34,7 +34,7 @@ export interface PyodideWorkerOptions {
   onError?: (error: string) => void;
 }
 
-type MessageCallback = (msg: Record<string, unknown>) => void;
+type MessageCallback = (msg: Message) => void;
 
 // === Worker Manager ===
 
@@ -148,9 +148,9 @@ export class PyodideWorker {
   }
 
   /**
-   * Send a message to Python (HELLO, EVENT, URL_CHANGED).
+   * Send a message to Python.
    */
-  sendMessage(msg: HelloMessage | EventMessage | UrlChangedMessage): void {
+  sendMessage(msg: Message): void {
     if (!this.worker) {
       console.warn("PyodideWorker: No worker, cannot send message");
       return;

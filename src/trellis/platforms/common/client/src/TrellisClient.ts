@@ -5,7 +5,7 @@ import {
 } from "./ClientMessageHandler";
 import { TrellisStore } from "./core";
 import { RouterManager, RoutingMode } from "./RouterManager";
-import { UrlChangedMessage } from "./types";
+import { Message, UrlChangedMessage } from "./types";
 
 export { ConnectionState };
 
@@ -66,11 +66,16 @@ export abstract class BaseTrellisClient implements TrellisClient {
       onHistoryForward: () => this.routerManager.forward(),
     };
 
-    this.handler = new ClientMessageHandler(handlerCallbacks, store);
+    this.handler = new ClientMessageHandler(handlerCallbacks, store, (msg) =>
+      this.sendMessage(msg)
+    );
   }
 
   /** Send a URL change message to the backend. Subclasses implement transport. */
   protected abstract sendUrlChange(msg: UrlChangedMessage): void;
+
+  /** Send an arbitrary message to the backend. Subclasses implement transport. */
+  protected abstract sendMessage(msg: Message): void;
 
   /** Send an event to invoke a callback. Subclasses implement transport. */
   abstract sendEvent(callbackId: string, args: unknown[]): void;

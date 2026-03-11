@@ -51,7 +51,7 @@ export class DesktopClient extends BaseTrellisClient {
   }
 
   protected sendUrlChange(msg: UrlChangedMessage): void {
-    this.send(msg);
+    this.sendMessage(msg);
   }
 
   async connect(): Promise<HelloResponseMessage> {
@@ -65,7 +65,7 @@ export class DesktopClient extends BaseTrellisClient {
       // Set up message handler for incoming messages from Python
       this.channel.onmessage = (data: ArrayBuffer) => {
         const msg = decode(new Uint8Array(data)) as Message;
-        this.handler.handleMessage(msg);
+        void this.handler.handleMessage(msg);
 
         // Resolve connect promise on HELLO_RESPONSE
         if (msg.type === MessageType.HELLO_RESPONSE && this.connectResolver) {
@@ -91,7 +91,7 @@ export class DesktopClient extends BaseTrellisClient {
             system_theme: systemTheme,
             path: this.routerManager.getCurrentPath(),
           };
-          this.send(hello);
+          this.sendMessage(hello);
         })
         .catch((err) => {
           this.handler.setConnectionState("disconnected");
@@ -100,7 +100,7 @@ export class DesktopClient extends BaseTrellisClient {
     });
   }
 
-  private send(msg: Message): void {
+  protected sendMessage(msg: Message): void {
     // Send msgpack-encoded message through the send command
     const encoded = encode(msg);
     pyInvoke("trellis_send", {
@@ -117,7 +117,7 @@ export class DesktopClient extends BaseTrellisClient {
       callback_id: callbackId,
       args,
     };
-    this.send(msg);
+    this.sendMessage(msg);
   }
 
   disconnect(): void {

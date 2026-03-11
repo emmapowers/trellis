@@ -111,8 +111,8 @@ class TestGenerateRegistryTs:
 
         assert 'registerWidget("Button", Button);' in code
 
-    def test_exports_functions(self) -> None:
-        """Re-exports function exports."""
+    def test_registers_functions_as_proxy_targets(self) -> None:
+        """Registers function exports as proxy targets."""
         collected = CollectedModules(
             modules=[
                 Module(
@@ -128,7 +128,29 @@ class TestGenerateRegistryTs:
         code = generate_registry_ts(collected)
 
         assert 'import { formatDate } from "@trellis/utils/format";' in code
-        assert "export { formatDate };" in code
+        assert 'import { registerProxyTarget } from "@trellis/trellis-core/proxyTargets";' in code
+        assert 'registerProxyTarget("formatDate", formatDate);' in code
+        assert "export { formatDate };" not in code
+
+    def test_registers_objects(self) -> None:
+        """Generates registerProxyTarget calls for object exports."""
+        collected = CollectedModules(
+            modules=[
+                Module(
+                    name="demo",
+                    exports=[
+                        ModuleExport("demo_api", ExportKind.OBJECT, "demo.ts"),
+                    ],
+                ),
+            ],
+            packages={},
+        )
+
+        code = generate_registry_ts(collected)
+
+        assert 'import { registerProxyTarget } from "@trellis/trellis-core/proxyTargets";' in code
+        assert 'import { demo_api } from "@trellis/demo/demo";' in code
+        assert 'registerProxyTarget("demo_api", demo_api);' in code
 
     def test_imports_initializers(self) -> None:
         """Generates import statements for initializer exports (side-effect imports)."""
