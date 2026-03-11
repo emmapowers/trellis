@@ -15,6 +15,7 @@ from trellis.core.callback_context import callback_context
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering.session import RenderSession
+    from trellis.core.state.stateful import Stateful
 
 __all__ = ["LifecycleTracker", "invoke_lifecycle_hook"]
 
@@ -77,11 +78,18 @@ class LifecycleTracker:
     the complete tree state.
     """
 
-    __slots__ = ("_pending_mounts", "_pending_unmounts")
+    __slots__ = (
+        "_pending_context_mounts",
+        "_pending_context_unmounts",
+        "_pending_mounts",
+        "_pending_unmounts",
+    )
 
     def __init__(self) -> None:
         self._pending_mounts: list[str] = []
         self._pending_unmounts: list[str] = []
+        self._pending_context_mounts: list[tuple[str, Stateful]] = []
+        self._pending_context_unmounts: list[tuple[str, Stateful]] = []
 
     def track_mount(self, element_id: str) -> None:
         """Track an element for mount hook.
@@ -109,6 +117,10 @@ class LifecycleTracker:
         self._pending_mounts.clear()
         return mounts
 
+    def track_context_mount(self, element_id: str, stateful: Stateful) -> None:
+        """Track a context-provided Stateful instance for mount hook dispatch."""
+        self._pending_context_mounts.append((element_id, stateful))
+
     def pop_unmounts(self) -> list[str]:
         """Pop and return all pending unmount element IDs.
 
@@ -119,15 +131,40 @@ class LifecycleTracker:
         self._pending_unmounts.clear()
         return unmounts
 
+    def track_context_unmount(self, element_id: str, stateful: Stateful) -> None:
+        """Track a context-provided Stateful instance for unmount hook dispatch."""
+        self._pending_context_unmounts.append((element_id, stateful))
+
+    def pop_context_mounts(self) -> list[tuple[str, Stateful]]:
+        """Pop and return pending context-provider mount hooks."""
+        mounts = list(self._pending_context_mounts)
+        self._pending_context_mounts.clear()
+        return mounts
+
+    def pop_context_unmounts(self) -> list[tuple[str, Stateful]]:
+        """Pop and return pending context-provider unmount hooks."""
+        unmounts = list(self._pending_context_unmounts)
+        self._pending_context_unmounts.clear()
+        return unmounts
+
     def has_pending(self) -> bool:
         """Check if there are any pending hooks.
 
         Returns:
             True if there are pending mount or unmount hooks
         """
-        return bool(self._pending_mounts) or bool(self._pending_unmounts)
+        return any(
+            (
+                self._pending_mounts,
+                self._pending_unmounts,
+                self._pending_context_mounts,
+                self._pending_context_unmounts,
+            )
+        )
 
     def clear(self) -> None:
         """Clear all pending hooks."""
         self._pending_mounts.clear()
         self._pending_unmounts.clear()
+        self._pending_context_mounts.clear()
+        self._pending_context_unmounts.clear()
