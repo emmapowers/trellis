@@ -10,6 +10,7 @@ import asyncio
 import typing as tp
 
 from trellis.core.components.composition import CompositionComponent, component
+from trellis.core.protocol import listen
 from trellis.core.rendering.render import render
 from trellis.html.links import A
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
@@ -283,6 +284,55 @@ class TestUrlChangedMessage:
         asyncio.run(test())
 
         assert router_state.path == "/"
+
+    def test_url_changed_updates_router_state_after_remount(self) -> None:
+        """Remounted RouterState listeners resume receiving UrlChanged messages once."""
+
+        class RecordingRouterState(RouterState):
+            def __init__(self, *, path: str = "/") -> None:
+                super().__init__(path=path)
+                self.received_paths: list[str] = []
+
+            @listen(UrlChanged)
+            async def on_url_changed(
+                self,
+                message_handler: tp.Any,
+                message: UrlChanged,
+            ) -> None:
+                self.received_paths.append(message.path)
+                await super().on_url_changed(message_handler, message)
+
+        router_state = RecordingRouterState(path="/")
+        show_router = [True]
+
+        @component
+        def App() -> None:
+            if show_router[0]:
+                with router_state:
+                    Label(text=router_state.path)
+
+        handler = MockMessageHandler(App)
+        handler.queue_incoming(HelloMessage(client_id="test", path="/"))
+
+        async def test() -> None:
+            await handler.handle_hello()
+            handler.initial_render()
+            assert handler.session.root_element_id is not None
+
+            show_router[0] = False
+            handler.session.dirty.mark(handler.session.root_element_id)
+            render(handler.session)
+
+            show_router[0] = True
+            handler.session.dirty.mark(handler.session.root_element_id)
+            render(handler.session)
+
+            await handler.handle_message(UrlChanged(path="/remounted"))
+
+        asyncio.run(test())
+
+        assert router_state.path == "/remounted"
+        assert router_state.received_paths == ["/remounted"]
 
 
 class TestHistoryMessagesFromRouterState:
