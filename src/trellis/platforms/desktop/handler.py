@@ -55,7 +55,7 @@ class PyTauriMessageHandler(MessageHandler):
         self._encoder = msgspec.msgpack.Encoder()
         self._decoder = msgspec.msgpack.Decoder(Message)
 
-    async def send_message(self, msg: Message) -> None:
+    async def send_message(self, msg: object) -> None:
         """Send message to client via channel."""
         data = self._encoder.encode(msg)
         self._channel.send(bytes(data))

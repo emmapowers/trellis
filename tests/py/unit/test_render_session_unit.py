@@ -13,7 +13,7 @@ from trellis.core.rendering.dirty_tracker import DirtyTracker
 from trellis.core.rendering.element import Element
 from trellis.core.rendering.element_state import ElementStateStore
 from trellis.core.rendering.element_store import ElementStore
-from trellis.core.rendering.session import RenderSession, TaskErrorPolicy
+from trellis.core.rendering.session import RenderSession
 
 if TYPE_CHECKING:
     from trellis.core.components.composition import CompositionComponent
@@ -149,7 +149,7 @@ class TestRenderSession:
         noop_component: "CompositionComponent",
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        """LOG_AND_CONTINUE failures are logged without failing the session."""
+        """Task failures are logged without affecting sibling tasks."""
         session = RenderSession(root_component=noop_component)
         completed = asyncio.Event()
 
@@ -163,46 +163,17 @@ class TestRenderSession:
             failed = session.spawn(
                 failing_task(),
                 label="failing task",
-                policy=TaskErrorPolicy.LOG_AND_CONTINUE,
             )
             succeeded = session.spawn(
                 succeeding_task(),
                 label="succeeding task",
-                policy=TaskErrorPolicy.LOG_AND_CONTINUE,
             )
 
             await asyncio.wait_for(completed.wait(), timeout=1.0)
             assert await asyncio.wait_for(failed, timeout=1.0) is None
             assert await asyncio.wait_for(succeeded, timeout=1.0) is None
 
-        assert session.fatal_error is None
         assert "Error in failing task" in caplog.text
-
-    @pytest.mark.anyio
-    async def test_spawn_fail_session_sets_fatal_error(
-        self,
-        noop_component: "CompositionComponent",
-        caplog: pytest.LogCaptureFixture,
-    ) -> None:
-        """FAIL_SESSION failures store the exception and wake fatal waiters."""
-        session = RenderSession(root_component=noop_component)
-
-        async def failing_task() -> None:
-            raise ValueError("fatal task failed")
-
-        with caplog.at_level(logging.ERROR):
-            task = session.spawn(
-                failing_task(),
-                label="fatal task",
-                policy=TaskErrorPolicy.FAIL_SESSION,
-            )
-            fatal_error = await asyncio.wait_for(session.wait_until_failed(), timeout=1.0)
-            assert await asyncio.wait_for(task, timeout=1.0) is None
-
-        assert isinstance(fatal_error, ValueError)
-        assert str(fatal_error) == "fatal task failed"
-        assert session.fatal_error is fatal_error
-        assert "Fatal error in fatal task" in caplog.text
 
     @pytest.mark.anyio
     async def test_shutdown_cancels_pending_tasks(
@@ -225,7 +196,6 @@ class TestRenderSession:
         task = session.spawn(
             pending_task(),
             label="pending task",
-            policy=TaskErrorPolicy.LOG_AND_CONTINUE,
         )
         await asyncio.wait_for(started.wait(), timeout=1.0)
 
@@ -258,7 +228,6 @@ class TestRenderSession:
             session.spawn(
                 coro,
                 label="late task",
-                policy=TaskErrorPolicy.LOG_AND_CONTINUE,
             )
 
         assert inspect.getcoroutinestate(coro) == inspect.CORO_CLOSED

@@ -7,7 +7,7 @@ import asyncio
 import pytest
 from fastapi import WebSocketDisconnect
 
-from trellis.core.rendering.session import SessionDisconnected
+from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.messages import PatchMessage
 from trellis.platforms.server.handler import WebSocketMessageHandler
 
@@ -31,6 +31,15 @@ class _FakeWebSocket:
 
 class TestWebSocketMessageHandler:
     """Tests for WebSocket-specific disconnect normalization."""
+
+    def test_handler_exposes_message_send_queue(
+        self,
+        noop_component,
+        app_wrapper,
+    ) -> None:
+        handler = WebSocketMessageHandler(noop_component, app_wrapper, _FakeWebSocket())  # type: ignore[arg-type]
+
+        assert isinstance(handler.message_send_queue, asyncio.Queue)
 
     def test_send_message_raises_session_disconnected_for_closed_websocket(
         self,

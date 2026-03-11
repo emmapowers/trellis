@@ -12,7 +12,6 @@ import logging
 import typing as tp
 
 from trellis.core.callback_context import callback_context
-from trellis.core.rendering.session import TaskErrorPolicy
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering.session import RenderSession
@@ -46,7 +45,6 @@ def invoke_lifecycle_hook(
         session.spawn(
             run_async_hook(),
             label=f"async {label}",
-            policy=TaskErrorPolicy.LOG_AND_CONTINUE,
         )
     else:
         try:
@@ -68,7 +66,6 @@ def invoke_lifecycle_hook(
             session.spawn(
                 run_async_result(result),
                 label=f"async {label}",
-                policy=TaskErrorPolicy.LOG_AND_CONTINUE,
             )
 
 

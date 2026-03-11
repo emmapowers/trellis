@@ -8,7 +8,7 @@ import weakref
 from dataclasses import dataclass, field
 
 from trellis.core.callback_context import callback_context
-from trellis.core.rendering.session import RenderSession, TaskErrorPolicy, get_active_session
+from trellis.core.rendering.session import RenderSession, get_active_session
 from trellis.core.state.stateful import Stateful
 
 T = tp.TypeVar("T")
@@ -257,7 +257,6 @@ class _LoadState(Stateful):
                 element_id,
             ),
             label="load request",
-            policy=TaskErrorPolicy.LOG_AND_CONTINUE,
         )
 
     async def _run_request(

@@ -6,7 +6,7 @@ import msgspec
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from trellis.core.components.base import Component
-from trellis.core.rendering.session import SessionDisconnected
+from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.common.messages import Message
@@ -54,7 +54,7 @@ class WebSocketMessageHandler(MessageHandler):
         # Single decoder for all message types (including HelloMessage)
         self._decoder = msgspec.msgpack.Decoder(Message)
 
-    async def send_message(self, msg: Message) -> None:
+    async def send_message(self, msg: object) -> None:
         """Send message to client via WebSocket."""
         try:
             await self.websocket.send_bytes(self._encoder.encode(msg))

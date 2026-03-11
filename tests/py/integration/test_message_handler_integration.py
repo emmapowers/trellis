@@ -4,13 +4,21 @@ import asyncio
 import typing as tp
 from dataclasses import dataclass
 
+import msgspec
+import pytest
+
 from tests.conftest import get_button_element
 from trellis.core.components.composition import CompositionComponent, component
+from trellis.core.protocol import (
+    listen,
+    register_message_types,
+    send,
+)
 from trellis.core.rendering.patches import RenderUpdatePatch
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import SessionDisconnected
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.browser import BrowserMessageHandler
+from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.handler import AppWrapper
 from trellis.platforms.common.messages import (
     AddPatch,
@@ -20,6 +28,10 @@ from trellis.platforms.common.messages import (
     PatchMessage,
 )
 from trellis.widgets import Button, Label
+
+
+class Ping(msgspec.Struct, tag="ping", tag_field="type"):
+    value: int
 
 
 def init_handler_for_test(handler: BrowserMessageHandler) -> None:
@@ -285,6 +297,96 @@ class TestMessageHandler:
             assert not handler.session._tasks
 
         asyncio.run(run_test())
+
+    def test_handle_message_dispatches_extension_messages(
+        self,
+        app_wrapper: AppWrapper,
+        reset_protocol,
+    ) -> None:
+        """Extension messages are routed through the protocol dispatcher."""
+        received: list[tuple[BrowserMessageHandler, int]] = []
+
+        register_message_types(Ping)
+
+        @listen(Ping)
+        async def on_ping(handler, message: Ping) -> None:
+            received.append((handler, message.value))
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+
+        response = asyncio.run(handler.handle_message(Ping(9)))
+
+        assert response is None
+        assert received == [(handler, 9)]
+
+    def test_async_callback_can_send_protocol_message(
+        self,
+        app_wrapper: AppWrapper,
+        reset_protocol,
+    ) -> None:
+        """Async callbacks inherit handler context for send()."""
+        register_message_types(Ping)
+
+        @component
+        def App() -> None:
+            async def emit() -> None:
+                await send(Ping(11))
+
+            Button(text="Emit", on_click=emit)
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        tree = get_initial_tree(handler)
+
+        app_children = find_app_children(tree)
+        button = get_button_element(app_children[0])
+        cb_id = button["props"]["on_click"]["__callback__"]
+
+        async def run_test() -> None:
+            response = await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
+            assert response is None
+            queued = await asyncio.wait_for(handler.message_send_queue.get(), timeout=1.0)
+            assert queued == Ping(11)
+
+        asyncio.run(run_test())
+
+    def test_message_send_queue_drains_to_transport(
+        self,
+        app_wrapper: AppWrapper,
+        reset_protocol,
+    ) -> None:
+        """Handler queue drain forwards queued protocol messages to send_message()."""
+        sent_messages: list[object] = []
+        register_message_types(Ping)
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        class QueueDrainHandler(BrowserMessageHandler):
+            async def send_message(self, msg: object) -> None:  # type: ignore[override]
+                sent_messages.append(msg)
+
+        handler = QueueDrainHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        sent_messages.clear()
+
+        async def run_test() -> None:
+            drain_task = asyncio.create_task(handler._drain_message_send_queue())
+            await handler.message_send_queue.put(Ping(12))
+            await asyncio.sleep(0)
+            drain_task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await drain_task
+
+        asyncio.run(run_test())
+
+        assert sent_messages == [Ping(12)]
 
 
 class TestBrowserMessageHandler:

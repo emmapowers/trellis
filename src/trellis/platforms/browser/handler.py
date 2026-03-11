@@ -71,7 +71,7 @@ class BrowserMessageHandler(MessageHandler):
         if serializer is not None:
             self._serializer = serializer
 
-    async def send_message(self, msg: Message) -> None:
+    async def send_message(self, msg: object) -> None:
         """Send message to JavaScript via callback."""
         if self._send_callback is None:
             return
@@ -111,7 +111,7 @@ class BrowserMessageHandler(MessageHandler):
         self._inbox.put_nowait(EventMessage(callback_id=callback_id, args=args or []))
 
 
-def _message_to_dict(msg: Message) -> dict[str, tp.Any]:
+def _message_to_dict(msg: object) -> dict[str, tp.Any]:
     """Convert a msgspec Message struct to a plain dict for JavaScript.
 
     Uses msgspec.to_builtins() for recursive conversion of nested structs,

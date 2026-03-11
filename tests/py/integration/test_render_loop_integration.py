@@ -12,9 +12,9 @@ from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.rendering.patches import RenderAddPatch, RenderRemovePatch, RenderUpdatePatch
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import SessionDisconnected
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.browser.handler import BrowserMessageHandler
+from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.messages import (
     AddPatch,
@@ -253,9 +253,6 @@ class TestRenderLoop:
             assert len(error_messages) == 1
             assert "Intentional render failure" in error_messages[0].error
             assert error_messages[0].context == "render"
-            assert handler.session is not None
-            assert isinstance(handler.session.fatal_error, ValueError)
-            assert str(handler.session.fatal_error) == "Intentional render failure"
 
         asyncio.run(run_test())
 
@@ -363,8 +360,6 @@ class TestRenderLoop:
 
             assert sum(isinstance(msg, PatchMessage) for msg in sent_messages) == 1
             assert not any(isinstance(msg, ErrorMessage) for msg in sent_messages)
-            assert handler.session is not None
-            assert isinstance(handler.session.fatal_error, SessionDisconnected)
             assert "Fatal error in render loop" not in caplog.text
 
         asyncio.run(run_test())

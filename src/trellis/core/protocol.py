@@ -113,14 +113,19 @@ async def send(message: object) -> None:
 
 async def dispatch(handler: MessageHandlerProtocol, message: object) -> None:
     """Dispatch a decoded message to global and handler-scoped listeners."""
-    for listener in _GLOBAL_LISTENERS.get(type(message), ()):
-        await listener(handler, message)
+    previous = get_message_handler()
+    set_message_handler(handler)
+    try:
+        for listener in _GLOBAL_LISTENERS.get(type(message), ()):
+            await listener(handler, message)
 
-    scoped = _HANDLER_LISTENERS.get(handler)
-    if scoped is None:
-        return
-    for listener in scoped.get(type(message), ()):
-        await listener(handler, message)
+        scoped = _HANDLER_LISTENERS.get(handler)
+        if scoped is None:
+            return
+        for listener in scoped.get(type(message), ()):
+            await listener(handler, message)
+    finally:
+        set_message_handler(previous)
 
 
 def _register_listener(

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import contextvars
-import enum
 import logging
 import re
 import threading
@@ -23,9 +22,7 @@ if tp.TYPE_CHECKING:
 
 __all__ = [
     "RenderSession",
-    "SessionDisconnected",
     "SessionRegistry",
-    "TaskErrorPolicy",
     "get_active_session",
     "get_session_registry",
     "is_render_active",
@@ -63,17 +60,6 @@ def is_render_active() -> bool:
 _PATH_SEGMENT_RE = re.compile(r"^([a-zA-Z_][a-zA-Z0-9_]*)|^\[(\d+)\]|^\.([a-zA-Z_][a-zA-Z0-9_]*)")
 
 
-class TaskErrorPolicy(enum.Enum):
-    """How a session-managed task should affect the owning session on failure."""
-
-    LOG_AND_CONTINUE = "log_and_continue"
-    FAIL_SESSION = "fail_session"
-
-
-class SessionDisconnected(Exception):
-    """Raised when the session transport disconnects during async work."""
-
-
 @dataclass
 class RenderSession:
     """Session-scoped state container."""
@@ -95,10 +81,8 @@ class RenderSession:
     # Render count - incremented at the start of each render pass
     render_count: int = 0
 
-    # Session-scoped async tasks (lifecycle hooks, callbacks, load requests, render loop)
+    # Session-scoped async tasks for non-critical background work.
     _tasks: set[asyncio.Task[tp.Any]] = field(default_factory=set)
-    _fatal_error: BaseException | None = None
-    _fatal_event: asyncio.Event = field(default_factory=asyncio.Event)
     _shutting_down: bool = False
 
     # Initial URL path from client HelloMessage (for routing)
@@ -107,19 +91,13 @@ class RenderSession:
     def __post_init__(self) -> None:
         self.dirty.set_lock(self.lock)
 
-    @property
-    def fatal_error(self) -> BaseException | None:
-        """Return the fatal session error, if one has been recorded."""
-        return self._fatal_error
-
     def spawn[T](
         self,
         coro: tp.Coroutine[tp.Any, tp.Any, T],
         *,
         label: str,
-        policy: TaskErrorPolicy,
     ) -> asyncio.Task[T]:
-        """Create and track a session-scoped task with explicit failure policy."""
+        """Create and track a session-scoped task for non-critical background work."""
         if self._shutting_down:
             coro.close()
             raise RuntimeError("Cannot spawn task on a shutting down session.")
@@ -129,27 +107,14 @@ class RenderSession:
                 return await coro
             except asyncio.CancelledError:
                 raise
-            except SessionDisconnected as exc:
-                self._mark_fatal(exc)
-                return None
             except Exception as exc:
-                if policy is TaskErrorPolicy.FAIL_SESSION:
-                    self._mark_fatal(exc)
-                    logger.exception("Fatal error in %s", label)
-                else:
-                    logger.exception("Error in %s", label)
+                logger.exception("Error in %s", label)
                 return None
 
         task = tp.cast("asyncio.Task[T]", asyncio.create_task(run_managed_task()))
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
         return task
-
-    async def wait_until_failed(self) -> BaseException:
-        """Wait for the session to enter a fatal state and return the failure."""
-        await self._fatal_event.wait()
-        assert self._fatal_error is not None
-        return self._fatal_error
 
     async def shutdown(self) -> None:
         """Cancel and await all remaining session-scoped tasks."""
@@ -167,13 +132,6 @@ class RenderSession:
             await asyncio.gather(*tasks_to_cancel, return_exceptions=True)
 
         self._tasks.clear()
-
-    def _mark_fatal(self, error: BaseException) -> None:
-        """Record the first fatal session error and wake fatal waiters."""
-        if self._fatal_error is not None:
-            return
-        self._fatal_error = error
-        self._fatal_event.set()
 
     @property
     def root_element(self) -> Element | None:

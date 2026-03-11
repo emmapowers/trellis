@@ -14,11 +14,13 @@ import traceback
 import types
 import typing as tp
 from collections.abc import Callable
+from contextlib import contextmanager
 from importlib.metadata import version as get_package_version
 from uuid import uuid4
 
 from trellis.core.callback_context import callback_context
 from trellis.core.components.base import Component
+from trellis.core.protocol import dispatch, get_message_handler, send, set_message_handler
 from trellis.core.rendering.patches import (
     RenderAddPatch,
     RenderPatch,
@@ -26,13 +28,9 @@ from trellis.core.rendering.patches import (
     RenderUpdatePatch,
 )
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import (
-    RenderSession,
-    SessionDisconnected,
-    TaskErrorPolicy,
-    get_session_registry,
-)
+from trellis.core.rendering.session import RenderSession, get_session_registry
 from trellis.html.events import get_event_class
+from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.messages import (
     AddPatch,
     DebugConfig,
@@ -278,6 +276,7 @@ class MessageHandler:
     session: RenderSession | None
     session_id: str | None
     batch_delay: float
+    message_send_queue: asyncio.Queue[object]
     _root_component: Component
     _app_wrapper: AppWrapper
 
@@ -299,6 +298,7 @@ class MessageHandler:
         self.session = None  # Created in handle_hello after receiving theme info
         self.session_id = None
         self.batch_delay = batch_delay
+        self.message_send_queue = asyncio.Queue()
 
     async def handle_hello(self) -> str:
         """Handle hello handshake with client.
@@ -360,7 +360,7 @@ class MessageHandler:
         """
         assert self.session is not None, "handle_hello must be called before initial_render"
         try:
-            render_patches = render(self.session)
+            render_patches = self._render_with_message_handler()
             wire_patches = _serialize_patches(render_patches, self.session)
             element_count = len(self.session.elements)
             logger.debug(
@@ -405,6 +405,7 @@ class MessageHandler:
             self._handle_url_changed(msg.path)
             return None
 
+        await dispatch(self, msg)
         return None
 
     def _handle_url_changed(self, path: str) -> None:
@@ -443,13 +444,13 @@ class MessageHandler:
             return
 
         async def on_navigate(path: str) -> None:
-            await self.send_message(HistoryPush(path=path))
+            await send(HistoryPush(path=path))
 
         async def on_go_back() -> None:
-            await self.send_message(HistoryBack())
+            await send(HistoryBack())
 
         async def on_go_forward() -> None:
-            await self.send_message(HistoryForward())
+            await send(HistoryForward())
 
         router_state._on_navigate = on_navigate
         router_state._on_go_back = on_go_back
@@ -478,18 +479,17 @@ class MessageHandler:
         if inspect.iscoroutinefunction(callback):
             # Async: wrap to provide callback context
             async def run_async_with_context() -> None:
-                with callback_context(session, element_id):
+                with self._message_handler_context(), callback_context(session, element_id):
                     await callback(*processed_args, **kwargs)
 
             logger.debug("Callback %s is async, scheduled as task", callback_id)
             session.spawn(
                 run_async_with_context(),
                 label=f"callback {callback_id}",
-                policy=TaskErrorPolicy.LOG_AND_CONTINUE,
             )
         else:
             # Sync: call with callback context
-            with callback_context(session, element_id):
+            with self._message_handler_context(), callback_context(session, element_id):
                 callback(*processed_args, **kwargs)
 
     # -------------------------------------------------------------------------
@@ -516,7 +516,7 @@ class MessageHandler:
             logger.debug("Render loop: %d dirty elements", dirty_count)
 
             try:
-                render_patches = render(self.session)
+                render_patches = self._render_with_message_handler()
             except Exception as e:
                 try:
                     await self.send_message(
@@ -533,42 +533,54 @@ class MessageHandler:
             logger.debug("Sending PatchMessage with %d patches", len(wire_patches))
             await self.send_message(PatchMessage(patches=wire_patches))
 
+    async def _drain_message_send_queue(self) -> None:
+        """Send queued protocol messages over the transport."""
+        while True:
+            message = await self.message_send_queue.get()
+            await self.send_message(message)
+
     # -------------------------------------------------------------------------
     # Transport methods - subclasses must override
     # -------------------------------------------------------------------------
 
-    async def send_message(self, msg: Message) -> None:
+    async def send_message(self, msg: object) -> None:
         """Send message to client. Override in subclass."""
         raise NotImplementedError
 
-    async def receive_message(self) -> Message:
+    async def receive_message(self) -> object:
         """Receive message from client. Override in subclass."""
         raise NotImplementedError
 
-    async def _receive_message_or_fatal(self) -> Message | None:
-        """Wait for the next client message or a fatal session failure."""
-        assert self.session is not None
-
+    async def _receive_message_or_critical(
+        self, critical_tasks: set[asyncio.Task[tp.Any]]
+    ) -> object | None:
+        """Wait for the next client message or a critical task completion."""
         receive_task = asyncio.create_task(self.receive_message())
-        fatal_wait_task = asyncio.create_task(self.session.wait_until_failed())
-        tasks = {receive_task, fatal_wait_task}
+        tasks = set(critical_tasks)
+        tasks.add(receive_task)
 
         try:
             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         except BaseException:
-            for task in tasks:
-                task.cancel()
-            await asyncio.gather(*tasks, return_exceptions=True)
+            receive_task.cancel()
+            await asyncio.gather(receive_task, return_exceptions=True)
             raise
 
-        if pending:
-            for task in pending:
-                task.cancel()
-            await asyncio.gather(*pending, return_exceptions=True)
-
-        if fatal_wait_task in done:
-            fatal_wait_task.result()
-            return None
+        if any(task in done for task in critical_tasks):
+            receive_task.cancel()
+            await asyncio.gather(receive_task, return_exceptions=True)
+            for task in critical_tasks:
+                if task not in done:
+                    continue
+                try:
+                    task.result()
+                except SessionDisconnected:
+                    return None
+                except Exception:
+                    logger.exception("Critical handler task failed")
+                    return None
+                logger.error("Critical handler task exited unexpectedly")
+                return None
 
         return receive_task.result()
 
@@ -589,14 +601,13 @@ class MessageHandler:
             await self.send_message(self.initial_render())
             assert self.session is not None
 
-            self.session.spawn(
-                self._render_loop(),
-                label="render loop",
-                policy=TaskErrorPolicy.FAIL_SESSION,
-            )
+            critical_tasks = {
+                asyncio.create_task(self._render_loop()),
+                asyncio.create_task(self._drain_message_send_queue()),
+            }
 
             while True:
-                msg = await self._receive_message_or_fatal()
+                msg = await self._receive_message_or_critical(critical_tasks)
                 if msg is None:
                     break
 
@@ -606,6 +617,11 @@ class MessageHandler:
         except SessionDisconnected:
             return
         finally:
+            critical_tasks = locals().get("critical_tasks", set())
+            for task in critical_tasks:
+                task.cancel()
+            if critical_tasks:
+                await asyncio.gather(*critical_tasks, return_exceptions=True)
             if self.session is not None:
                 await self.session.shutdown()
 
@@ -614,3 +630,17 @@ class MessageHandler:
         # No explicit cleanup needed - callbacks are stored in element props
         # and cleaned up when elements are unmounted
         pass
+
+    @contextmanager
+    def _message_handler_context(self) -> tp.Iterator[None]:
+        previous = get_message_handler()
+        set_message_handler(self)
+        try:
+            yield
+        finally:
+            set_message_handler(previous)
+
+    def _render_with_message_handler(self) -> list[RenderPatch]:
+        assert self.session is not None
+        with self._message_handler_context():
+            return render(self.session)
