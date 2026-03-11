@@ -3,7 +3,7 @@
 Internal codegen artifact describing the public runtime surface for trellis.html CSS helpers.
 Reference: https://developer.mozilla.org/en-US/docs/Web/CSS
 
-Generated at: 2026-03-11T22:34:18.844Z
+Generated at: 2026-03-11T22:46:25.136Z
 """
 from __future__ import annotations
 

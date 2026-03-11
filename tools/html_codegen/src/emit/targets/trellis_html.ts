@@ -267,6 +267,16 @@ function render_html_element_docstring(element: ElementDef): string {
   ].join("\n");
 }
 
+function runtime_docstring_text(element: ElementDef): string {
+  const label = element.python_name.startsWith("_") ? "Generated internal wrapper" : "Generated wrapper";
+  return [
+    `${label} for \`<${element.tag_name}>\`.`,
+    "",
+    `Maps to the standard HTML \`<${element.tag_name}>\` element.`,
+    `Reference: ${html_element_reference(element.tag_name)}`,
+  ].join("\n");
+}
+
 function build_attribute_type_aliases(
   document: IrDocument,
   elements: ElementDef[],
@@ -452,7 +462,7 @@ function emit_attribute_types_module(
   });
 
   return {
-    path: "src/trellis/html/_generated_attribute_types.py",
+    path: "src/trellis/html/_generated_attribute_types.pyi",
     content: `${render_generated_module_docstring(
       "Generated HTML attribute type aliases.",
       generated_at,
@@ -643,7 +653,7 @@ function render_public_helper_overloads(
   ];
 }
 
-function render_element_function(
+function render_element_stub(
   element: ElementDef,
   attributes_by_id: Map<string, AttributeDef>,
   aliases_by_attribute_id: Map<string, AttributeTypeAlias>,
@@ -651,16 +661,10 @@ function render_element_function(
   const lines: string[] = [];
   lines.push(...render_public_helper_overloads(element, attributes_by_id, aliases_by_attribute_id));
 
-  const decorator_args = [`"${element.tag_name}"`];
-
-  if (element.is_container) {
-    decorator_args.push("is_container=True");
-  }
-  if (element.python_name.startsWith("_")) {
-    decorator_args.push(`name="${element.python_name.slice(1)}"`);
+  if (element.text_behavior === "public_helper" && element.is_container) {
+    return lines.join("\n");
   }
 
-  lines.push(`@html_element(${decorator_args.join(", ")})`);
   lines.push(`def ${element.python_name}(`);
   if (element.text_behavior === "public_helper") {
     lines.push("    inner_text: str | None = None,");
@@ -679,11 +683,25 @@ function render_element_function(
       : element.is_container
         ? "HtmlContainerElement"
         : "Element";
-  lines.push(`) -> ${return_type}:`);
-  lines.push(render_html_element_docstring(element));
-  lines.push("    ...");
+  lines.push(`) -> ${return_type}: ...`);
 
   return lines.join("\n");
+}
+
+function render_runtime_element_assignment(element: ElementDef): string {
+  const component_name = element.python_name.startsWith("_")
+    ? element.python_name.slice(1)
+    : element.python_name;
+  const args = [
+    `"${element.tag_name}"`,
+    `component_name="${component_name}"`,
+    `export_name="${element.python_name}"`,
+  ];
+  if (element.is_container) {
+    args.push("is_container=True");
+  }
+  args.push(`doc=${JSON.stringify(runtime_docstring_text(element))}`);
+  return `${element.python_name} = create_html_element(${args.join(", ")})`;
 }
 
 function family_for_tag(tag_name: string): HtmlFamily {
@@ -695,7 +713,44 @@ function family_for_tag(tag_name: string): HtmlFamily {
   throw new Error(`No HTML family configured for <${tag_name}>.`);
 }
 
-function emit_family_module(
+function emit_family_runtime_module(
+  family: HtmlFamily,
+  elements: ElementDef[],
+  generated_at: string,
+): TrellisModulePayload {
+  const exported_names = elements
+    .map((element) => element.python_name)
+    .filter((name) => !name.startsWith("_"))
+    .sort()
+    .map((name) => `    "${name}",`)
+    .join("\n");
+  const assignments = elements.map(render_runtime_element_assignment).join("\n");
+
+  return {
+    path: `src/trellis/html/_generated_${family.module_name}.py`,
+    content: `${render_generated_module_docstring(
+      `Generated HTML ${family.title} runtime wrappers.`,
+      generated_at,
+      [
+        "Internal codegen artifact for trellis.html.",
+        "Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements",
+      ],
+    )}
+
+from __future__ import annotations
+
+from trellis.html._runtime_factory import create_html_element
+
+__all__ = [
+${exported_names}
+]
+
+${assignments}
+`,
+  };
+}
+
+function emit_family_stub_module(
   document: IrDocument,
   family: HtmlFamily,
   elements: ElementDef[],
@@ -706,7 +761,7 @@ function emit_family_module(
   const handler_imports = event_handler_imports(document, elements);
   const attribute_type_import_names = attribute_type_imports(elements, aliases_by_attribute_id);
   const rendered_elements = elements
-    .map((element) => render_element_function(element, attributes_by_id, aliases_by_attribute_id))
+    .map((element) => render_element_stub(element, attributes_by_id, aliases_by_attribute_id))
     .join("\n\n\n");
   const needs_literal_import = elements.some((element) =>
     element.attributes.some((attribute_id) => {
@@ -748,7 +803,7 @@ ${attribute_type_import_names.map((name) => `    ${name},`).join("\n")}
   const first_party_imports = [
     "from trellis.core.rendering.element import Element",
     "from trellis.html._style_runtime import StyleInput",
-    `from trellis.html.base import ${needs_container_type ? "HtmlContainerElement, html_element" : "html_element"}`,
+    ...(needs_container_type ? ["from trellis.html.base import HtmlContainerElement"] : []),
     ...(attribute_types_import ? [attribute_types_import] : []),
     ...(events_import_block ? [events_import_block] : []),
   ].join("\n");
@@ -781,7 +836,7 @@ ${attribute_type_import_names.map((name) => `    ${name},`).join("\n")}
   ];
 
   return {
-    path: `src/trellis/html/_generated_${family.module_name}.py`,
+    path: `src/trellis/html/_generated_${family.module_name}.pyi`,
     content: `${parts.join("\n").trimEnd()}\n`,
   };
 }
@@ -789,6 +844,7 @@ ${attribute_type_import_names.map((name) => `    ${name},`).join("\n")}
 function emit_runtime_aggregator(
   family_modules: Array<{ family: HtmlFamily; elements: ElementDef[] }>,
   generated_at: string,
+  path: string,
 ): TrellisModulePayload {
   const nonEmptyFamilies = family_modules.filter((entry) => entry.elements.length > 0);
   const importBlocks = nonEmptyFamilies.map((entry) => {
@@ -818,7 +874,7 @@ ${names}
       : "";
 
   return {
-    path: "src/trellis/html/_generated_runtime.py",
+    path,
     content: `${render_generated_module_docstring(
       "Generated HTML runtime exports.",
       generated_at,
@@ -873,15 +929,21 @@ export function build_trellis_html_modules(
     ...(attribute_type_aliases.length > 0
       ? [emit_attribute_types_module(attribute_type_aliases, generated_at)]
       : []),
-    emit_runtime_aggregator(familyModules, generated_at),
-    ...familyModules.map((entry) =>
-      emit_family_module(
+    emit_runtime_aggregator(familyModules, generated_at, "src/trellis/html/_generated_runtime.py"),
+    emit_runtime_aggregator(
+      familyModules,
+      generated_at,
+      "src/trellis/html/_generated_runtime.pyi",
+    ),
+    ...familyModules.flatMap((entry) => [
+      emit_family_runtime_module(entry.family, entry.elements, generated_at),
+      emit_family_stub_module(
         document,
         entry.family,
         entry.elements,
         aliases_by_attribute_id,
         generated_at,
       ),
-    ),
+    ]),
   ];
 }

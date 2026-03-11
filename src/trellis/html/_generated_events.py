@@ -3,7 +3,7 @@
 Internal codegen artifact for event payloads and handlers.
 Reference: https://developer.mozilla.org/en-US/docs/Web/API
 
-Generated at: 2026-03-08T21:47:43.989Z
+Generated at: 2026-03-11T22:46:25.136Z
 """
 
 from __future__ import annotations

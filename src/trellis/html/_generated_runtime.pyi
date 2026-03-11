@@ -18,39 +18,39 @@ from trellis.html._generated_document_metadata import (
     StyleTag,
     Title,
 )
-from trellis.html._generated_embedded_content import (
-    Canvas,
-    Embed,
-    Iframe,
-    Object,
-    Param,
+
+from trellis.html._generated_sectioning_and_layout import (
+    Address,
+    Article,
+    Aside,
+    Center,
+    Details,
+    Dialog,
+    Div,
+    Figcaption,
+    Figure,
+    Footer,
+    Header,
+    Hgroup,
+    Main,
+    Nav,
+    Search,
+    Section,
+    Summary,
 )
-from trellis.html._generated_forms import (
-    Button,
-    Datalist,
-    Fieldset,
-    Form,
-    Input,
-    Label,
-    Legend,
-    Meter,
-    Optgroup,
-    Option,
-    Output,
-    Progress,
-    Select,
-    Textarea,
+
+from trellis.html._generated_text_blocks import (
+    Blockquote,
+    H1,
+    H2,
+    H3,
+    H4,
+    H5,
+    H6,
+    P,
+    Pre,
 )
-from trellis.html._generated_image_and_multimedia import (
-    Area,
-    Audio,
-    Img,
-    Map,
-    Picture,
-    Source,
-    Track,
-    Video,
-)
+
 from trellis.html._generated_inline_text_semantics import (
     Abbr,
     B,
@@ -76,9 +76,21 @@ from trellis.html._generated_inline_text_semantics import (
     Time,
     U,
 )
-from trellis.html._generated_interactive_elements import (
-    _A,
+
+from trellis.html._generated_text_edits_and_ruby import (
+    Del,
+    Ins,
+    Rp,
+    Rt,
+    Ruby,
 )
+
+from trellis.html._generated_text_breaks_and_misc import (
+    Br,
+    Hr,
+    Wbr,
+)
+
 from trellis.html._generated_lists import (
     Dd,
     Dl,
@@ -88,35 +100,24 @@ from trellis.html._generated_lists import (
     Ol,
     Ul,
 )
-from trellis.html._generated_obsolete import (
-    Keygen,
-    Menuitem,
+
+from trellis.html._generated_forms import (
+    Button,
+    Datalist,
+    Fieldset,
+    Form,
+    Input,
+    Label,
+    Legend,
+    Meter,
+    Optgroup,
+    Option,
+    Output,
+    Progress,
+    Select,
+    Textarea,
 )
-from trellis.html._generated_scripting_and_templates import (
-    Noscript,
-    Script,
-    Slot,
-    Template,
-)
-from trellis.html._generated_sectioning_and_layout import (
-    Address,
-    Article,
-    Aside,
-    Center,
-    Details,
-    Dialog,
-    Div,
-    Figcaption,
-    Figure,
-    Footer,
-    Header,
-    Hgroup,
-    Main,
-    Nav,
-    Search,
-    Section,
-    Summary,
-)
+
 from trellis.html._generated_table_content import (
     Caption,
     Col,
@@ -129,40 +130,46 @@ from trellis.html._generated_table_content import (
     Thead,
     Tr,
 )
-from trellis.html._generated_text_blocks import (
-    H1,
-    H2,
-    H3,
-    H4,
-    H5,
-    H6,
-    Blockquote,
-    P,
-    Pre,
+
+from trellis.html._generated_image_and_multimedia import (
+    Area,
+    Audio,
+    Img,
+    Map,
+    Picture,
+    Source,
+    Track,
+    Video,
 )
-from trellis.html._generated_text_breaks_and_misc import (
-    Br,
-    Hr,
-    Wbr,
+
+from trellis.html._generated_embedded_content import (
+    Canvas,
+    Embed,
+    Iframe,
+    Object,
+    Param,
 )
-from trellis.html._generated_text_edits_and_ruby import (
-    Del,
-    Ins,
-    Rp,
-    Rt,
-    Ruby,
+
+from trellis.html._generated_interactive_elements import (
+    _A,
+)
+
+from trellis.html._generated_scripting_and_templates import (
+    Noscript,
+    Script,
+    Slot,
+    Template,
+)
+
+from trellis.html._generated_obsolete import (
+    Keygen,
+    Menuitem,
 )
 
 _INTERNAL_BINDINGS = (_A,)
 
 
 __all__ = [
-    "H1",
-    "H2",
-    "H3",
-    "H4",
-    "H5",
-    "H6",
     "Abbr",
     "Address",
     "Area",
@@ -202,6 +209,12 @@ __all__ = [
     "Figure",
     "Footer",
     "Form",
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
     "Head",
     "Header",
     "Hgroup",

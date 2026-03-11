@@ -32,15 +32,30 @@ describe("write mode", () => {
       "src",
       "trellis",
       "html",
-      "_generated_attribute_types.py",
+      "_generated_attribute_types.pyi",
+    );
+    const runtime_stub_path = join(
+      repo_root,
+      "src",
+      "trellis",
+      "html",
+      "_generated_runtime.pyi",
     );
     const forms_path = join(repo_root, "src", "trellis", "html", "_generated_forms.py");
+    const forms_stub_path = join(repo_root, "src", "trellis", "html", "_generated_forms.pyi");
     const media_path = join(
       repo_root,
       "src",
       "trellis",
       "html",
       "_generated_image_and_multimedia.py",
+    );
+    const media_stub_path = join(
+      repo_root,
+      "src",
+      "trellis",
+      "html",
+      "_generated_image_and_multimedia.pyi",
     );
     const events_path = join(repo_root, "src", "trellis", "html", "_generated_events.py");
     const style_types_path = join(
@@ -66,8 +81,11 @@ describe("write mode", () => {
     );
     await expect(access(generated_path)).resolves.toBeUndefined();
     await expect(access(attribute_types_path)).resolves.toBeUndefined();
+    await expect(access(runtime_stub_path)).resolves.toBeUndefined();
     await expect(access(forms_path)).resolves.toBeUndefined();
+    await expect(access(forms_stub_path)).resolves.toBeUndefined();
     await expect(access(media_path)).resolves.toBeUndefined();
+    await expect(access(media_stub_path)).resolves.toBeUndefined();
     await expect(access(events_path)).resolves.toBeUndefined();
     await expect(access(style_types_path)).resolves.toBeUndefined();
     await expect(access(style_runtime_stub_path)).resolves.toBeUndefined();
@@ -81,15 +99,25 @@ describe("write mode", () => {
 
     const forms_content = await readFile(forms_path, "utf-8");
     expect(forms_content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
-    expect(forms_content).toContain("def Input(");
+    expect(forms_content).toContain('Input = create_html_element("input"');
+
+    const forms_stub_content = await readFile(forms_stub_path, "utf-8");
+    expect(forms_stub_content).toContain("def Input(");
 
     const attribute_types_content = await readFile(attribute_types_path, "utf-8");
     expect(attribute_types_content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(attribute_types_content).toContain("InputType = Literal[");
 
+    const runtime_stub_content = await readFile(runtime_stub_path, "utf-8");
+    expect(runtime_stub_content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
+    expect(runtime_stub_content).toContain("from trellis.html._generated_forms import (");
+
     const media_content = await readFile(media_path, "utf-8");
     expect(media_content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
-    expect(media_content).toContain("def Audio(");
+    expect(media_content).toContain('Audio = create_html_element("audio"');
+
+    const media_stub_content = await readFile(media_stub_path, "utf-8");
+    expect(media_stub_content).toContain("def Audio(");
 
     const events_content = await readFile(events_path, "utf-8");
     expect(events_content).toContain("Generated at: 2026-03-07T12:00:00.000Z");

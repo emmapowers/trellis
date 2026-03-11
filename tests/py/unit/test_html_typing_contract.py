@@ -16,13 +16,16 @@ def test_container_html_wrappers_type_as_html_container_element(tmp_path: Path) 
 
         from trellis import html as h
         from trellis.core.rendering.element import Element
-        from trellis.html._generated_runtime import _A
+        from trellis.html._generated_interactive_elements import _A
         from trellis.html.base import HtmlContainerElement
 
         assert_type(_A(), HtmlContainerElement)
         assert_type(h.Div(), HtmlContainerElement)
+        assert_type(h.Div(class_name="shell", data={"test-id": "hero"}), HtmlContainerElement)
         assert_type(h.P(), HtmlContainerElement)
         assert_type(h.A(), HtmlContainerElement)
+        assert_type(h.A(href="/docs", aria_label="Docs"), HtmlContainerElement)
+        assert_type(h.Audio(auto_play=True, controls=True), HtmlContainerElement)
         assert_type(h.P("hello"), Element)
         assert_type(h.Style(color="red", background_color="blue"), h.Style)
         assert_type(h.Style(backgroundColor="red"), h.Style)

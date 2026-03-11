@@ -77,6 +77,54 @@ class TestHtmlElements:
         assert p.properties["_text"] == "Paragraph text"
         assert span.properties["_text"] == "Inline text"
 
+    def test_generated_wrapper_accepts_permissive_kwargs(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Div(
+                data_testid="hero-shell",
+                camelCaseProp="allowed-at-runtime",
+                aria_label="Hero shell",
+            )
+
+        result = rendered(App)
+        div = result.session.elements.get(result.root_element.child_ids[0])
+
+        assert div.properties["data_testid"] == "hero-shell"
+        assert div.properties["camelCaseProp"] == "allowed-at-runtime"
+        assert div.properties["aria_label"] == "Hero shell"
+
+    def test_generated_wrapper_normalizes_trailing_underscore_props(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Div(is_="hero-card")
+
+        result = rendered(App)
+        div = result.session.elements.get(result.root_element.child_ids[0])
+
+        assert "is_" not in div.properties
+        assert div.properties["is"] == "hero-card"
+
+    def test_generated_wrapper_supports_data_mapping(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Div(data={"test-id": "hero", "active": True})
+
+        result = rendered(App)
+        div = result.session.elements.get(result.root_element.child_ids[0])
+
+        assert div.properties["data"] == {"test-id": "hero", "active": True}
+
+    def test_generated_wrapper_preserves_hybrid_text_behavior(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.P("hello")
+
+        result = rendered(App)
+        paragraph = result.session.elements.get(result.root_element.child_ids[0])
+
+        assert paragraph.component.name == "P"
+        assert paragraph.properties["_text"] == "hello"
+
     def test_element_with_style(self, rendered) -> None:
         """Elements accept style dict."""
 

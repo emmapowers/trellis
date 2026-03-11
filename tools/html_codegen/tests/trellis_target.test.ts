@@ -436,14 +436,21 @@ describe("trellis target", () => {
 
     expect(payloads.map((payload) => payload.path)).toEqual(
       expect.arrayContaining([
-        "src/trellis/html/_generated_attribute_types.py",
+        "src/trellis/html/_generated_attribute_types.pyi",
         "src/trellis/html/_generated_runtime.py",
+        "src/trellis/html/_generated_runtime.pyi",
         "src/trellis/html/_generated_forms.py",
+        "src/trellis/html/_generated_forms.pyi",
         "src/trellis/html/_generated_image_and_multimedia.py",
+        "src/trellis/html/_generated_image_and_multimedia.pyi",
         "src/trellis/html/_generated_interactive_elements.py",
+        "src/trellis/html/_generated_interactive_elements.pyi",
         "src/trellis/html/_generated_sectioning_and_layout.py",
+        "src/trellis/html/_generated_sectioning_and_layout.pyi",
         "src/trellis/html/_generated_table_content.py",
+        "src/trellis/html/_generated_table_content.pyi",
         "src/trellis/html/_generated_text_blocks.py",
+        "src/trellis/html/_generated_text_blocks.pyi",
       ]),
     );
     expect(payloads.map((payload) => payload.path)).not.toContain(
@@ -467,83 +474,88 @@ describe("trellis target", () => {
     expect(runtime).not.toContain("def Div(");
     expect(runtime).not.toContain('    "_A",');
 
-    const attributeTypes = moduleByPath(payloads, "_generated_attribute_types.py").content;
+    const runtimeStub = moduleByPath(payloads, "_generated_runtime.pyi").content;
+    expect(runtimeStub).toContain("from trellis.html._generated_interactive_elements import (");
+    expect(runtimeStub).toContain("    _A,");
+
+    const attributeTypes = moduleByPath(payloads, "_generated_attribute_types.pyi").content;
     expect(attributeTypes).toContain("Generated at: 2026-03-07T12:00:00.000Z");
     expect(attributeTypes).toContain("AriaAutocomplete = Literal[");
     expect(attributeTypes).toContain("InputType = Literal[");
 
     const layout = moduleByPath(payloads, "_generated_sectioning_and_layout.py").content;
-    expect(layout).toContain("Generated HTML sectioning and layout wrappers.");
+    expect(layout).toContain("Generated HTML sectioning and layout runtime wrappers.");
     expect(layout).toContain("Internal codegen artifact for trellis.html.");
     expect(layout).toContain(
       "Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements",
     );
     expect(layout).toContain("Generated at: 2026-03-07T12:00:00.000Z");
-    expect(layout).toContain("from trellis.html._generated_attribute_types import AriaAutocomplete");
-    expect(layout).toContain('@html_element("div", is_container=True)');
-    expect(layout).toContain("def Div(");
-    expect(layout).toContain("aria_autocomplete: AriaAutocomplete | None = None");
-    expect(layout).toContain("aria_label: str | None = None");
-    expect(layout).toContain('"""Generated wrapper for `<div>`.');
-    expect(layout).toContain(
-      "Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/div",
-    );
+    expect(layout).toContain("from trellis.html._runtime_factory import create_html_element");
+    expect(layout).toContain('Div = create_html_element("div", component_name="Div", export_name="Div", is_container=True');
+    expect(layout).not.toContain("from trellis.html._generated_attribute_types");
+
+    const layoutStub = moduleByPath(payloads, "_generated_sectioning_and_layout.pyi").content;
+    expect(layoutStub).toContain("from trellis.html._generated_attribute_types import AriaAutocomplete");
+    expect(layoutStub).toContain("def Div(");
+    expect(layoutStub).toContain("aria_autocomplete: AriaAutocomplete | None = None");
+    expect(layoutStub).toContain("aria_label: str | None = None");
 
     const interactive = moduleByPath(payloads, "_generated_interactive_elements.py").content;
     expect(interactive).toContain("Generated at: 2026-03-07T12:00:00.000Z");
-    expect(interactive).toContain('@html_element("a", is_container=True, name="A")');
-    expect(interactive).toContain("def _A(");
-    expect(interactive).toContain("inner_text: str | None = None,");
-    expect(interactive).toContain('"""Generated internal wrapper for `<a>`.');
-    expect(interactive).toContain(
-      "Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a",
-    );
+    expect(interactive).toContain('create_html_element("a", component_name="A", export_name="_A", is_container=True');
     expect(interactive).not.toContain('    "_A",');
+
+    const interactiveStub = moduleByPath(payloads, "_generated_interactive_elements.pyi").content;
+    expect(interactiveStub).toContain("def _A(");
+    expect(interactiveStub).toContain("inner_text: str,");
 
     const media = moduleByPath(payloads, "_generated_image_and_multimedia.py").content;
     expect(media).toContain("Generated at: 2026-03-07T12:00:00.000Z");
-    expect(media).toContain("def Audio(");
-    expect(media).toContain("auto_play: bool | None = None");
-    expect(media).toContain("controls: bool | None = None");
-    expect(media).toContain("src: str | None = None");
-    expect(media).toContain('"""Generated wrapper for `<audio>`.');
+    expect(media).toContain('Audio = create_html_element("audio", component_name="Audio", export_name="Audio", is_container=True');
+
+    const mediaStub = moduleByPath(payloads, "_generated_image_and_multimedia.pyi").content;
+    expect(mediaStub).toContain("def Audio(");
+    expect(mediaStub).toContain("auto_play: bool | None = None");
+    expect(mediaStub).toContain("controls: bool | None = None");
+    expect(mediaStub).toContain("src: str | None = None");
 
     const forms = moduleByPath(payloads, "_generated_forms.py").content;
     expect(forms).toContain("Generated at: 2026-03-07T12:00:00.000Z");
-    expect(forms).toContain("from trellis.html._generated_attribute_types import InputType");
-    expect(forms).toContain('type: InputType = "text"');
-    expect(forms).toContain('def Option(\n    inner_text: str | None = None,');
-    expect(forms).toContain('"""Generated wrapper for `<option>`.');
+    expect(forms).toContain('Input = create_html_element("input", component_name="Input", export_name="Input"');
+    expect(forms).not.toContain("from trellis.html._generated_attribute_types import InputType");
+
+    const formsStub = moduleByPath(payloads, "_generated_forms.pyi").content;
+    expect(formsStub).toContain("from trellis.html._generated_attribute_types import InputType");
+    expect(formsStub).toContain('type: InputType = "text"');
+    expect(formsStub).toContain('def Option(\n    inner_text: str | None = None,');
 
     const tables = moduleByPath(payloads, "_generated_table_content.py").content;
     expect(tables).toContain("Generated at: 2026-03-07T12:00:00.000Z");
-    expect(tables).toContain("def Table(");
-    expect(tables).toContain('"""Generated wrapper for `<table>`.');
-    expect(tables).toContain("frame: (");
-    expect(tables).toContain('        "border",');
-    expect(tables).not.toContain("frame: bool | None = None");
+    expect(tables).toContain('Table = create_html_element("table", component_name="Table", export_name="Table", is_container=True');
+
+    const tablesStub = moduleByPath(payloads, "_generated_table_content.pyi").content;
+    expect(tablesStub).toContain("def Table(");
+    expect(tablesStub).toContain("frame: (");
+    expect(tablesStub).toContain('        "border",');
+    expect(tablesStub).not.toContain("frame: bool | None = None");
 
     const text = moduleByPath(payloads, "_generated_text_blocks.py").content;
-    expect(text).toContain("Generated HTML text blocks wrappers.");
+    expect(text).toContain("Generated HTML text blocks runtime wrappers.");
 
     const documentMetadata = moduleByPath(payloads, "_generated_document_metadata.py").content;
-    expect(documentMetadata).toContain("@html_element(\"style\")");
-    expect(documentMetadata).not.toContain("@html_element(\"style\", is_container=True");
-    expect(documentMetadata).toContain("@html_element(\"title\")");
-    expect(documentMetadata).not.toContain("@html_element(\"title\", is_container=True");
+    expect(documentMetadata).toContain('StyleTag = create_html_element("style", component_name="StyleTag", export_name="StyleTag"');
+    expect(documentMetadata).toContain('Title = create_html_element("title", component_name="Title", export_name="Title"');
 
     const scripting = moduleByPath(payloads, "_generated_scripting_and_templates.py").content;
-    expect(scripting).toContain("@html_element(\"script\")");
-    expect(scripting).not.toContain("@html_element(\"script\", is_container=True");
+    expect(scripting).toContain('Script = create_html_element("script", component_name="Script", export_name="Script"');
 
     const textEdits = moduleByPath(payloads, "_generated_text_edits_and_ruby.py").content;
-    expect(textEdits).toContain("@html_element(\"rp\")");
-    expect(textEdits).not.toContain("@html_element(\"rp\", is_container=True");
+    expect(textEdits).toContain('Rp = create_html_element("rp", component_name="Rp", export_name="Rp"');
   });
 
   it("does not expose _text or fallback props in generated family modules", () => {
     const payloads = build_trellis_html_modules(sample_ir(), "2026-03-07T12:00:00.000Z");
-    const familyModules = payloads.filter((payload) => payload.path.includes("_generated_") && !payload.path.endsWith("_generated_runtime.py"));
+    const familyModules = payloads.filter((payload) => payload.path.endsWith(".pyi") && payload.path.includes("_generated_") && !payload.path.endsWith("_generated_runtime.pyi") && !payload.path.endsWith("_generated_attribute_types.pyi"));
     const combined = familyModules.map((payload) => payload.content).join("\n");
 
     expect(combined).not.toContain("**props: tp.Any");
