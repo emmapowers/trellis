@@ -87,21 +87,21 @@ def listen(*message_types: type[object]) -> tp.Callable[[F], F]:
     return decorator
 
 
-class MessageListener:
-    """Base class for objects with handler-scoped protocol listeners."""
+class _MessageHandlerBase:
+    """Shared listener registration bookkeeping for handler-aware objects."""
 
     _message_listener_registrations: list[tuple[MessageHandlerProtocol, type[object], Listener]]
     _message_listener_handler: MessageHandlerProtocol | None
 
-    def __init__(self) -> None:
+    def _ensure_message_listener_state(self) -> None:
+        if hasattr(self, "_message_listener_registrations"):
+            return
         self._message_listener_registrations = []
         self._message_listener_handler = None
-        handler = get_message_handler()
-        if handler is not None:
-            self.register_message_listeners(handler)
 
     def register_message_listeners(self, handler: MessageHandlerProtocol | None = None) -> None:
         """Attach bound listeners for this object to the target handler."""
+        self._ensure_message_listener_state()
         if handler is None:
             handler = get_message_handler()
         if handler is None:
@@ -125,10 +125,42 @@ class MessageListener:
 
     def unregister_message_listeners(self) -> None:
         """Detach any handler-scoped listeners previously registered by this object."""
+        self._ensure_message_listener_state()
         for handler, message_type, listener in self._message_listener_registrations:
             _unregister_listener(message_type, listener, handler)
         self._message_listener_registrations.clear()
         self._message_listener_handler = None
+
+
+class MessageHandler(_MessageHandlerBase):
+    """Base class for non-stateful objects with protocol listeners."""
+
+    def __init__(self) -> None:
+        self._ensure_message_listener_state()
+        handler = get_message_handler()
+        if handler is not None:
+            self.register_message_listeners(handler)
+
+
+class StatefulMessageHandlerMixin(_MessageHandlerBase):
+    """Lifecycle-driven protocol listeners for Stateful classes."""
+
+    def on_mount(self) -> None | tp.Coroutine[tp.Any, tp.Any, None]:
+        result = super().on_mount()
+        if inspect.isawaitable(result):
+
+            async def run_after_mount(async_result: tp.Awaitable[tp.Any]) -> None:
+                await async_result
+                self.register_message_listeners()
+
+            return run_after_mount(result)
+
+        self.register_message_listeners()
+        return result
+
+    def on_unmount(self) -> None | tp.Coroutine[tp.Any, tp.Any, None]:
+        self.unregister_message_listeners()
+        return super().on_unmount()
 
 
 async def send(message: object) -> None:

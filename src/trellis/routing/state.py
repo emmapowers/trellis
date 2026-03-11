@@ -5,7 +5,7 @@ from urllib.parse import parse_qsl
 
 from trellis.core.protocol import (
     MessageHandlerProtocol,
-    MessageListener,
+    StatefulMessageHandlerMixin,
     get_message_handler,
     listen,
     send,
@@ -41,7 +41,7 @@ class CurrentRouteContext(Stateful):
 
 
 @dataclass()
-class RouterState(Stateful, MessageListener):
+class RouterState(StatefulMessageHandlerMixin, Stateful):
     """Reactive router state for client-side routing.
 
     Provides path-based routing with history navigation. Extends Stateful
@@ -92,7 +92,6 @@ class RouterState(Stateful, MessageListener):
         self._path = path
         self._history = [path]
         self._history_index = 0
-        MessageListener.__init__(self)
 
     @property
     def path(self) -> str:
@@ -199,20 +198,6 @@ class RouterState(Stateful, MessageListener):
     ) -> None:
         """Update router state when the browser URL changes."""
         self._update_path_from_url(message.path)
-
-    def on_mount(self) -> None:
-        """Register session-scoped listeners after the router enters the tree."""
-        self.register_message_listeners()
-
-    def on_unmount(self) -> None:
-        """Detach session-scoped listeners when the router leaves the tree."""
-        self.unregister_message_listeners()
-
-    def __enter__(self) -> "RouterState":
-        """Provide router context and ensure its listeners are registered."""
-        result = super().__enter__()
-        self.register_message_listeners()
-        return result
 
     def _update_path_from_url(self, path: str) -> None:
         """Update path from a browser-driven URL change.

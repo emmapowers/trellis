@@ -15,8 +15,9 @@ from trellis.core.components import (
 
 # state
 from trellis.core.protocol import (
+    MessageHandler,
     MessageHandlerProtocol,
-    MessageListener,
+    StatefulMessageHandlerMixin,
     dispatch,
     get_message_handler,
     listen,
@@ -84,8 +85,8 @@ __all__ = [
     "KeyTrait",
     "LifecycleTracker",
     "Margin",
+    "MessageHandler",
     "MessageHandlerProtocol",
-    "MessageListener",
     "Mutable",
     "Padding",
     "PatchCollector",
@@ -97,6 +98,7 @@ __all__ = [
     "RenderSession",
     "RenderUpdatePatch",
     "Stateful",
+    "StatefulMessageHandlerMixin",
     "Tracked",
     "TrackedDict",
     "TrackedList",

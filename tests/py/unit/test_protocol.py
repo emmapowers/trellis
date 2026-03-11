@@ -9,9 +9,13 @@ import msgspec
 import pytest
 
 import trellis.core.protocol as protocol_module
+from trellis.core.components.composition import component
+from trellis.core.rendering.render import render
+from trellis.core.rendering.session import RenderSession
 from trellis.core.protocol import (
     MessageHandlerProtocol,
-    MessageListener,
+    MessageHandler,
+    StatefulMessageHandlerMixin,
     dispatch,
     get_message_handler,
     listen,
@@ -19,6 +23,7 @@ from trellis.core.protocol import (
     send,
     set_message_handler,
 )
+from trellis.core.state.stateful import Stateful
 
 
 class Ping(msgspec.Struct, tag="ping", tag_field="type"):
@@ -199,16 +204,16 @@ class TestListenerRegistration:
         assert calls == ["first", "second"]
 
 
-class TestMessageListener:
+class TestMessageHandler:
     @pytest.mark.anyio
-    async def test_message_listener_auto_registers_bound_methods_against_active_handler(
+    async def test_message_handler_auto_registers_bound_methods_against_active_handler(
         self,
         reset_protocol,
     ) -> None:
         received: list[tuple[MessageHandlerProtocol, int]] = []
         handler = MockMessageHandler()
 
-        class PingListener(MessageListener):
+        class PingListener(MessageHandler):
             @listen(Ping)
             async def on_ping(
                 self,
@@ -227,6 +232,110 @@ class TestMessageListener:
         await dispatch(handler, Ping(5))
 
         assert received == [(handler, 5)]
+
+    @pytest.mark.anyio
+    async def test_message_handler_does_not_auto_register_without_active_handler(
+        self,
+        reset_protocol,
+    ) -> None:
+        received: list[int] = []
+        handler = MockMessageHandler()
+
+        class PingListener(MessageHandler):
+            @listen(Ping)
+            async def on_ping(
+                self,
+                message_handler: MessageHandlerProtocol,
+                message: Ping,
+            ) -> None:
+                del self, message_handler
+                received.append(message.value)
+
+        listener = PingListener()
+
+        await dispatch(handler, Ping(9))
+
+        assert received == []
+
+        listener.register_message_listeners(handler)
+        await dispatch(handler, Ping(10))
+
+        assert received == [10]
+
+    @pytest.mark.anyio
+    async def test_unregister_message_listeners_detaches_bound_methods(
+        self,
+        reset_protocol,
+    ) -> None:
+        received: list[int] = []
+        handler = MockMessageHandler()
+
+        class PingListener(MessageHandler):
+            @listen(Ping)
+            async def on_ping(
+                self,
+                message_handler: MessageHandlerProtocol,
+                message: Ping,
+            ) -> None:
+                del self, message_handler
+                received.append(message.value)
+
+        set_message_handler(handler)
+        try:
+            listener = PingListener()
+        finally:
+            set_message_handler(None)
+
+        await dispatch(handler, Ping(11))
+        listener.unregister_message_listeners()
+        await dispatch(handler, Ping(12))
+
+        assert received == [11]
+
+
+class TestStatefulMessageHandlerMixin:
+    @pytest.mark.anyio
+    async def test_stateful_mixin_registers_on_mount_and_unregisters_on_unmount(
+        self,
+        reset_protocol,
+    ) -> None:
+        received: list[int] = []
+        show_state = True
+        handler = MockMessageHandler()
+
+        @component
+        def App() -> None:
+            nonlocal show_state
+            if show_state:
+                with PingState():
+                    pass
+
+        class PingState(StatefulMessageHandlerMixin, Stateful):
+            @listen(Ping)
+            async def on_ping(
+                self,
+                message_handler: MessageHandlerProtocol,
+                message: Ping,
+            ) -> None:
+                del self, message_handler
+                received.append(message.value)
+
+        session = RenderSession(App)
+
+        set_message_handler(handler)
+        try:
+            render(session)
+            await dispatch(handler, Ping(13))
+
+            show_state = False
+            assert session.root_element_id is not None
+            session.dirty.mark(session.root_element_id)
+            render(session)
+            await dispatch(handler, Ping(14))
+        finally:
+            set_message_handler(None)
+
+        assert received == [13]
 
 
 class TestSend:
