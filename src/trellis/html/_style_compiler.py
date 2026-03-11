@@ -123,7 +123,9 @@ def _consume_style_object(
         inline[css_name] = _serialize_value(value, auto_px=_should_auto_px(name, css_name))
 
     for key, raw_value in style.vars.items():
-        inline[key if key.startswith("--") else f"--{key}"] = _serialize_value(raw_value, auto_px=False)
+        inline[key if key.startswith("--") else f"--{key}"] = _serialize_value(
+            raw_value, auto_px=False
+        )
 
     for selector, nested_style in style.selectors.items():
         nested_inline, nested_children = _normalize_style(nested_style)

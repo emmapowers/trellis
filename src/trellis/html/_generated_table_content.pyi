@@ -12,8 +12,6 @@ from collections.abc import Mapping
 from typing import Literal, overload
 
 from trellis.core.rendering.element import Element
-from trellis.html._style_runtime import StyleInput
-from trellis.html.base import HtmlContainerElement
 from trellis.html._generated_attribute_types import (
     AriaAutocomplete,
     AriaChecked,
@@ -47,6 +45,8 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 
 __all__ = [
     "Caption",
@@ -62,7 +62,6 @@ __all__ = [
 ]
 
 DataValue = str | int | float | bool | None
-
 
 @overload
 def Caption(
@@ -212,8 +211,6 @@ def Caption(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Caption(
     *,
@@ -360,10 +357,6 @@ def Caption(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 def Col(
     *,
     about: str | None = None,
@@ -511,8 +504,6 @@ def Col(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 def Colgroup(
     *,
     about: str | None = None,
@@ -659,8 +650,6 @@ def Colgroup(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Table(
     *,
     about: str | None = None,
@@ -740,17 +729,17 @@ def Table(
     enter_key_hint: EnterKeyHint | None = None,
     exportparts: str | None = None,
     frame: (
-    Literal[
-        "void",
-        "above",
-        "below",
-        "hsides",
-        "vsides",
-        "lhs",
-        "rhs",
-        "box",
-        "border",
-    ]
+        Literal[
+            "void",
+            "above",
+            "below",
+            "hsides",
+            "vsides",
+            "lhs",
+            "rhs",
+            "box",
+            "border",
+        ]
         | None
     ) = None,
     hidden: bool | None = None,
@@ -828,8 +817,6 @@ def Table(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Tbody(
     *,
     about: str | None = None,
@@ -975,8 +962,6 @@ def Tbody(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 @overload
 def Td(
     inner_text: str,
@@ -1134,8 +1119,6 @@ def Td(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Td(
     *,
@@ -1291,10 +1274,6 @@ def Td(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 def Tfoot(
     *,
     about: str | None = None,
@@ -1440,8 +1419,6 @@ def Tfoot(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 @overload
 def Th(
     inner_text: str,
@@ -1596,8 +1573,6 @@ def Th(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Th(
     *,
@@ -1750,10 +1725,6 @@ def Th(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 def Thead(
     *,
     about: str | None = None,
@@ -1899,8 +1870,6 @@ def Thead(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Tr(
     *,
     about: str | None = None,

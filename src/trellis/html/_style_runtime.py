@@ -27,9 +27,15 @@ if tp.TYPE_CHECKING:
 
 type StyleScalar = str | int | float | CssValue
 type RawStyleMapping = Mapping[str, tp.Any]
-type WidthInput = WidthValue | int | float | str
-type HeightInput = HeightValue | int | float | str
-type SpacingInput = SpacingShorthand | int | float | str
+
+if tp.TYPE_CHECKING:
+    type WidthInput = WidthValue | int | float | str
+    type HeightInput = HeightValue | int | float | str
+    type SpacingInput = SpacingShorthand | int | float | str
+else:
+    type WidthInput = str | int | float | CssValue
+    type HeightInput = str | int | float | CssValue
+    type SpacingInput = str | int | float | CssValue
 
 _PSEUDO_SELECTORS = {
     "hover": ":hover",
@@ -50,7 +56,7 @@ _PSEUDO_SELECTORS = {
 class MediaRule:
     """Runtime representation of a CSS media rule."""
 
-    __slots__ = ("style", "query", "features")
+    __slots__ = ("features", "query", "style")
 
     def __init__(
         self,
@@ -72,7 +78,7 @@ class Style:
     dynamic cases, ``style`` also accepts raw dicts using DOM-style CSS keys.
     """
 
-    __slots__ = ("props", "vars", "selectors", "media")
+    __slots__ = ("media", "props", "selectors", "vars")
 
     props: dict[str, tp.Any]
     vars: dict[str, StyleScalar]

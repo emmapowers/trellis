@@ -12,8 +12,6 @@ from collections.abc import Mapping
 from typing import Literal, overload
 
 from trellis.core.rendering.element import Element
-from trellis.html._style_runtime import StyleInput
-from trellis.html.base import HtmlContainerElement
 from trellis.html._generated_attribute_types import (
     AriaAutocomplete,
     AriaChecked,
@@ -47,6 +45,8 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 
 __all__ = [
     "Address",
@@ -69,7 +69,6 @@ __all__ = [
 ]
 
 DataValue = str | int | float | bool | None
-
 
 def Address(
     *,
@@ -216,8 +215,6 @@ def Address(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Article(
     *,
     about: str | None = None,
@@ -363,8 +360,6 @@ def Article(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Aside(
     *,
     about: str | None = None,
@@ -510,8 +505,6 @@ def Aside(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Center(
     *,
     about: str | None = None,
@@ -657,8 +650,6 @@ def Center(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Details(
     *,
     about: str | None = None,
@@ -806,8 +797,6 @@ def Details(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Dialog(
     *,
     about: str | None = None,
@@ -955,8 +944,6 @@ def Dialog(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Div(
     *,
     about: str | None = None,
@@ -1102,8 +1089,6 @@ def Div(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 @overload
 def Figcaption(
     inner_text: str,
@@ -1252,8 +1237,6 @@ def Figcaption(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Figcaption(
     *,
@@ -1400,10 +1383,6 @@ def Figcaption(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 def Figure(
     *,
     about: str | None = None,
@@ -1549,8 +1528,6 @@ def Figure(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Footer(
     *,
     about: str | None = None,
@@ -1696,8 +1673,6 @@ def Footer(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Header(
     *,
     about: str | None = None,
@@ -1843,8 +1818,6 @@ def Header(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Hgroup(
     *,
     about: str | None = None,
@@ -1990,8 +1963,6 @@ def Hgroup(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Main(
     *,
     about: str | None = None,
@@ -2137,8 +2108,6 @@ def Main(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Nav(
     *,
     about: str | None = None,
@@ -2284,8 +2253,6 @@ def Nav(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Search(
     *,
     about: str | None = None,
@@ -2431,8 +2398,6 @@ def Search(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Section(
     *,
     about: str | None = None,
@@ -2578,8 +2543,6 @@ def Section(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 @overload
 def Summary(
     inner_text: str,
@@ -2728,8 +2691,6 @@ def Summary(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Summary(
     *,

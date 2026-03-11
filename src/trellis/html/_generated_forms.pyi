@@ -12,8 +12,6 @@ from collections.abc import Mapping
 from typing import Literal, overload
 
 from trellis.core.rendering.element import Element
-from trellis.html._style_runtime import StyleInput
-from trellis.html.base import HtmlContainerElement
 from trellis.html._generated_attribute_types import (
     AriaAutocomplete,
     AriaChecked,
@@ -48,6 +46,8 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 
 __all__ = [
     "Button",
@@ -67,7 +67,6 @@ __all__ = [
 ]
 
 DataValue = str | int | float | bool | None
-
 
 @overload
 def Button(
@@ -227,8 +226,6 @@ def Button(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Button(
     *,
@@ -385,10 +382,6 @@ def Button(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 def Datalist(
     *,
     about: str | None = None,
@@ -534,8 +527,6 @@ def Datalist(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Fieldset(
     *,
     about: str | None = None,
@@ -684,8 +675,6 @@ def Fieldset(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Form(
     *,
     about: str | None = None,
@@ -839,8 +828,6 @@ def Form(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Input(
     *,
     about: str | None = None,
@@ -1016,8 +1003,6 @@ def Input(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Label(
     inner_text: str,
@@ -1168,8 +1153,6 @@ def Label(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Label(
     *,
@@ -1318,10 +1301,6 @@ def Label(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Legend(
     inner_text: str,
@@ -1470,8 +1449,6 @@ def Legend(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Legend(
     *,
@@ -1618,10 +1595,6 @@ def Legend(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 def Meter(
     *,
     about: str | None = None,
@@ -1774,8 +1747,6 @@ def Meter(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Optgroup(
     *,
     about: str | None = None,
@@ -1923,8 +1894,6 @@ def Optgroup(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Option(
     inner_text: str | None = None,
     /,
@@ -2076,8 +2045,6 @@ def Option(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Output(
     inner_text: str,
@@ -2229,8 +2196,6 @@ def Output(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Output(
     *,
@@ -2380,10 +2345,6 @@ def Output(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 def Progress(
     *,
     about: str | None = None,
@@ -2531,8 +2492,6 @@ def Progress(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Select(
     *,
     about: str | None = None,
@@ -2686,8 +2645,6 @@ def Select(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Textarea(
     *,
     about: str | None = None,

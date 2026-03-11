@@ -11,7 +11,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from trellis.core.rendering.element import Element
-from trellis.html._style_runtime import StyleInput
 from trellis.html._generated_attribute_types import (
     AriaAutocomplete,
     AriaChecked,
@@ -45,6 +44,7 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html._style_runtime import StyleInput
 
 __all__ = [
     "Keygen",
@@ -52,7 +52,6 @@ __all__ = [
 ]
 
 DataValue = str | int | float | bool | None
-
 
 def Keygen(
     *,
@@ -205,8 +204,6 @@ def Keygen(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 def Menuitem(
     *,
     about: str | None = None,

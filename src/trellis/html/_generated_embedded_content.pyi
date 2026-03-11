@@ -11,8 +11,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from trellis.core.rendering.element import Element
-from trellis.html._style_runtime import StyleInput
-from trellis.html.base import HtmlContainerElement
 from trellis.html._generated_attribute_types import (
     AriaAutocomplete,
     AriaChecked,
@@ -48,6 +46,8 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 
 __all__ = [
     "Canvas",
@@ -58,7 +58,6 @@ __all__ = [
 ]
 
 DataValue = str | int | float | bool | None
-
 
 def Canvas(
     *,
@@ -207,8 +206,6 @@ def Canvas(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Embed(
     *,
     about: str | None = None,
@@ -358,8 +355,6 @@ def Embed(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 def Iframe(
     *,
     about: str | None = None,
@@ -521,8 +516,6 @@ def Iframe(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 def Object(
     *,
     about: str | None = None,
@@ -677,8 +670,6 @@ def Object(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Param(
     *,
     about: str | None = None,

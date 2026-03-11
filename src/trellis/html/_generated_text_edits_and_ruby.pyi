@@ -12,8 +12,6 @@ from collections.abc import Mapping
 from typing import overload
 
 from trellis.core.rendering.element import Element
-from trellis.html._style_runtime import StyleInput
-from trellis.html.base import HtmlContainerElement
 from trellis.html._generated_attribute_types import (
     AriaAutocomplete,
     AriaChecked,
@@ -47,6 +45,8 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 
 __all__ = [
     "Del",
@@ -58,7 +58,6 @@ __all__ = [
 
 DataValue = str | int | float | bool | None
 
-
 @overload
 def Del(
     inner_text: str,
@@ -209,8 +208,6 @@ def Del(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Del(
     *,
@@ -359,10 +356,6 @@ def Del(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Ins(
     inner_text: str,
@@ -513,8 +506,6 @@ def Ins(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Ins(
     *,
@@ -663,10 +654,6 @@ def Ins(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 def Rp(
     inner_text: str | None = None,
     /,
@@ -814,8 +801,6 @@ def Rp(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Rt(
     inner_text: str,
@@ -964,8 +949,6 @@ def Rt(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Rt(
     *,
@@ -1112,10 +1095,6 @@ def Rt(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Ruby(
     inner_text: str,
@@ -1264,8 +1243,6 @@ def Ruby(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Ruby(
     *,

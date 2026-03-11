@@ -5,15 +5,54 @@ Reference: https://developer.mozilla.org/en-US/docs/Web/CSS
 
 Generated at: 2026-03-11T22:46:25.136Z
 """
+
 from __future__ import annotations
 
 import builtins
-
 from collections.abc import Mapping
 from typing import Any, Literal, Unpack
 
-from trellis.html._css_primitives import CssAngle, CssColor, CssLength, CssPercent, CssTime, CssValue
-from trellis.html._generated_style_types import AlignItems, AngleValue, BorderRadiusValue, ColorKeyword, ColorValue, Display, FlexDirection, FlexWrap, FontWeight, GapValue, HeightValue, HoverCapability, JustifyContent, Length, LengthPercentage, LineHeightValue, MediaFeatureValue, NamedColor, Opacity, Orientation, Overflow, Percent, PointerCapability, Position, PrefersColorScheme, PrefersReducedMotion, ShadowValue, SpacingShorthand, TextAlign, TimeValue, TransformValue, TransitionValue, WidthValue, ZIndex, _MediaRuleKwargs
+from trellis.html._css_primitives import (
+    CssAngle,
+    CssColor,
+    CssLength,
+    CssPercent,
+    CssTime,
+    CssValue,
+)
+from trellis.html._generated_style_types import (
+    AlignItems,
+    AngleValue,
+    BorderRadiusValue,
+    ColorValue,
+    Display,
+    FlexDirection,
+    FlexWrap,
+    FontWeight,
+    GapValue,
+    HeightValue,
+    HoverCapability,
+    JustifyContent,
+    Length,
+    LengthPercentage,
+    LineHeightValue,
+    MediaFeatureValue,
+    Opacity,
+    Overflow,
+    PointerCapability,
+    Position,
+    PrefersColorScheme,
+    PrefersReducedMotion,
+    ShadowValue,
+    SpacingShorthand,
+    TextAlign,
+    TimeValue,
+    TransformValue,
+    TransitionValue,
+    WidthValue,
+    ZIndex,
+    _MediaRuleKwargs,
+)
 
 type StyleScalar = builtins.str | builtins.int | builtins.float | CssValue
 type RawStyleMapping = Mapping[builtins.str, Any]
@@ -28,6 +67,7 @@ class MediaRule:
     Represents a typed subset of standard CSS media features.
     Reference: https://developer.mozilla.org/en-US/docs/Web/CSS/@media
     """
+
     style: StyleInput
     query: builtins.str | None
     features: builtins.dict[builtins.str, Any]
@@ -83,6 +123,7 @@ class MediaRule:
 
 class Style:
     """Generated typing stub for `trellis.html.Style`."""
+
     props: builtins.dict[builtins.str, Any]
     vars: builtins.dict[builtins.str, StyleScalar]
     selectors: builtins.dict[builtins.str, StyleInput]
@@ -1025,15 +1066,29 @@ class Style:
         column_rule: CssValue | str | None = None,
         column_rule_break: CssValue | str | None = None,
         column_rule_color: ColorValue | None = None,
-        column_rule_edge_inset: LengthPercentage | CssValue | builtins.int | builtins.float | None = None,
+        column_rule_edge_inset: (
+            LengthPercentage | CssValue | builtins.int | builtins.float | None
+        ) = None,
         column_rule_edge_inset_end: LengthPercentage | builtins.int | builtins.float | None = None,
-        column_rule_edge_inset_start: LengthPercentage | builtins.int | builtins.float | None = None,
+        column_rule_edge_inset_start: (
+            LengthPercentage | builtins.int | builtins.float | None
+        ) = None,
         column_rule_inset: CssValue | str | None = None,
-        column_rule_inset_end: LengthPercentage | CssValue | builtins.int | builtins.float | None = None,
-        column_rule_inset_start: LengthPercentage | CssValue | builtins.int | builtins.float | None = None,
-        column_rule_interior_inset: LengthPercentage | CssValue | builtins.int | builtins.float | None = None,
-        column_rule_interior_inset_end: LengthPercentage | builtins.int | builtins.float | None = None,
-        column_rule_interior_inset_start: LengthPercentage | builtins.int | builtins.float | None = None,
+        column_rule_inset_end: (
+            LengthPercentage | CssValue | builtins.int | builtins.float | None
+        ) = None,
+        column_rule_inset_start: (
+            LengthPercentage | CssValue | builtins.int | builtins.float | None
+        ) = None,
+        column_rule_interior_inset: (
+            LengthPercentage | CssValue | builtins.int | builtins.float | None
+        ) = None,
+        column_rule_interior_inset_end: (
+            LengthPercentage | builtins.int | builtins.float | None
+        ) = None,
+        column_rule_interior_inset_start: (
+            LengthPercentage | builtins.int | builtins.float | None
+        ) = None,
         column_rule_style: CssValue | str | None = None,
         column_rule_visibility_items: CssValue | str | None = None,
         column_rule_width: WidthValue | builtins.int | builtins.float | None = None,
@@ -1308,11 +1363,15 @@ class Style:
         overflow_anchor: Overflow | None = None,
         overflow_block: Overflow | None = None,
         overflow_clip_margin: Overflow | CssValue | builtins.int | builtins.float | None = None,
-        overflow_clip_margin_block: Overflow | CssValue | builtins.int | builtins.float | None = None,
+        overflow_clip_margin_block: (
+            Overflow | CssValue | builtins.int | builtins.float | None
+        ) = None,
         overflow_clip_margin_block_end: Overflow | builtins.int | builtins.float | None = None,
         overflow_clip_margin_block_start: Overflow | builtins.int | builtins.float | None = None,
         overflow_clip_margin_bottom: Overflow | builtins.int | builtins.float | None = None,
-        overflow_clip_margin_inline: Overflow | CssValue | builtins.int | builtins.float | None = None,
+        overflow_clip_margin_inline: (
+            Overflow | CssValue | builtins.int | builtins.float | None
+        ) = None,
         overflow_clip_margin_inline_end: Overflow | builtins.int | builtins.float | None = None,
         overflow_clip_margin_inline_start: Overflow | builtins.int | builtins.float | None = None,
         overflow_clip_margin_left: Overflow | builtins.int | builtins.float | None = None,
@@ -1379,15 +1438,25 @@ class Style:
         row_rule: CssValue | str | None = None,
         row_rule_break: CssValue | str | None = None,
         row_rule_color: ColorValue | None = None,
-        row_rule_edge_inset: LengthPercentage | CssValue | builtins.int | builtins.float | None = None,
+        row_rule_edge_inset: (
+            LengthPercentage | CssValue | builtins.int | builtins.float | None
+        ) = None,
         row_rule_edge_inset_end: LengthPercentage | builtins.int | builtins.float | None = None,
         row_rule_edge_inset_start: LengthPercentage | builtins.int | builtins.float | None = None,
         row_rule_inset: CssValue | str | None = None,
-        row_rule_inset_end: LengthPercentage | CssValue | builtins.int | builtins.float | None = None,
-        row_rule_inset_start: LengthPercentage | CssValue | builtins.int | builtins.float | None = None,
-        row_rule_interior_inset: LengthPercentage | CssValue | builtins.int | builtins.float | None = None,
+        row_rule_inset_end: (
+            LengthPercentage | CssValue | builtins.int | builtins.float | None
+        ) = None,
+        row_rule_inset_start: (
+            LengthPercentage | CssValue | builtins.int | builtins.float | None
+        ) = None,
+        row_rule_interior_inset: (
+            LengthPercentage | CssValue | builtins.int | builtins.float | None
+        ) = None,
         row_rule_interior_inset_end: LengthPercentage | builtins.int | builtins.float | None = None,
-        row_rule_interior_inset_start: LengthPercentage | builtins.int | builtins.float | None = None,
+        row_rule_interior_inset_start: (
+            LengthPercentage | builtins.int | builtins.float | None
+        ) = None,
         row_rule_style: CssValue | str | None = None,
         row_rule_visibility_items: CssValue | str | None = None,
         row_rule_width: WidthValue | builtins.int | builtins.float | None = None,
@@ -1425,11 +1494,15 @@ class Style:
         scroll_margin_top: Length | builtins.int | builtins.float | None = None,
         scroll_marker_group: CssValue | str | None = None,
         scroll_padding: LengthPercentage | CssValue | builtins.int | builtins.float | None = None,
-        scroll_padding_block: LengthPercentage | CssValue | builtins.int | builtins.float | None = None,
+        scroll_padding_block: (
+            LengthPercentage | CssValue | builtins.int | builtins.float | None
+        ) = None,
         scroll_padding_block_end: LengthPercentage | builtins.int | builtins.float | None = None,
         scroll_padding_block_start: LengthPercentage | builtins.int | builtins.float | None = None,
         scroll_padding_bottom: LengthPercentage | builtins.int | builtins.float | None = None,
-        scroll_padding_inline: LengthPercentage | CssValue | builtins.int | builtins.float | None = None,
+        scroll_padding_inline: (
+            LengthPercentage | CssValue | builtins.int | builtins.float | None
+        ) = None,
         scroll_padding_inline_end: LengthPercentage | builtins.int | builtins.float | None = None,
         scroll_padding_inline_start: LengthPercentage | builtins.int | builtins.float | None = None,
         scroll_padding_left: LengthPercentage | builtins.int | builtins.float | None = None,
@@ -1528,11 +1601,19 @@ class Style:
         timeline_scope: CssValue | str | None = None,
         timeline_trigger: CssValue | str | None = None,
         timeline_trigger_activation_range: CssValue | str | None = None,
-        timeline_trigger_activation_range_end: LengthPercentage | builtins.int | builtins.float | None = None,
-        timeline_trigger_activation_range_start: LengthPercentage | builtins.int | builtins.float | None = None,
+        timeline_trigger_activation_range_end: (
+            LengthPercentage | builtins.int | builtins.float | None
+        ) = None,
+        timeline_trigger_activation_range_start: (
+            LengthPercentage | builtins.int | builtins.float | None
+        ) = None,
         timeline_trigger_active_range: CssValue | str | None = None,
-        timeline_trigger_active_range_end: LengthPercentage | builtins.int | builtins.float | None = None,
-        timeline_trigger_active_range_start: LengthPercentage | builtins.int | builtins.float | None = None,
+        timeline_trigger_active_range_end: (
+            LengthPercentage | builtins.int | builtins.float | None
+        ) = None,
+        timeline_trigger_active_range_start: (
+            LengthPercentage | builtins.int | builtins.float | None
+        ) = None,
         timeline_trigger_name: CssValue | str | None = None,
         timeline_trigger_source: CssValue | str | None = None,
         top: LengthPercentage | builtins.int | builtins.float | None = None,
@@ -1605,14 +1686,54 @@ def sec(value: builtins.int | builtins.float) -> CssTime: ...
 def ms(value: builtins.int | builtins.float) -> CssTime: ...
 def deg(value: builtins.int | builtins.float) -> CssAngle: ...
 def rgb(red: builtins.int, green: builtins.int, blue: builtins.int) -> CssColor: ...
-def rgba(red: builtins.int, green: builtins.int, blue: builtins.int, alpha: builtins.float) -> CssColor: ...
-def hsl(hue: builtins.int | builtins.float, saturation: builtins.int | builtins.float, lightness: builtins.int | builtins.float) -> CssColor: ...
-def hwb(hue: builtins.int | builtins.float, whiteness: builtins.int | builtins.float, blackness: builtins.int | builtins.float, *, alpha: builtins.float | None = None) -> CssColor: ...
-def lab(lightness: builtins.int | builtins.float, a_value: builtins.int | builtins.float, b_value: builtins.int | builtins.float, *, alpha: builtins.float | None = None) -> CssColor: ...
-def lch(lightness: builtins.int | builtins.float, chroma: builtins.int | builtins.float, hue: builtins.int | builtins.float, *, alpha: builtins.float | None = None) -> CssColor: ...
-def oklab(lightness: builtins.int | builtins.float, a_value: builtins.int | builtins.float, b_value: builtins.int | builtins.float, *, alpha: builtins.float | None = None) -> CssColor: ...
-def oklch(lightness: builtins.int | builtins.float, chroma: builtins.int | builtins.float, hue: builtins.int | builtins.float, *, alpha: builtins.float | None = None) -> CssColor: ...
-def color_space(space: builtins.str, *components: builtins.int | builtins.float | builtins.str, alpha: builtins.float | None = None) -> CssColor: ...
+def rgba(
+    red: builtins.int, green: builtins.int, blue: builtins.int, alpha: builtins.float
+) -> CssColor: ...
+def hsl(
+    hue: builtins.int | builtins.float,
+    saturation: builtins.int | builtins.float,
+    lightness: builtins.int | builtins.float,
+) -> CssColor: ...
+def hwb(
+    hue: builtins.int | builtins.float,
+    whiteness: builtins.int | builtins.float,
+    blackness: builtins.int | builtins.float,
+    *,
+    alpha: builtins.float | None = None,
+) -> CssColor: ...
+def lab(
+    lightness: builtins.int | builtins.float,
+    a_value: builtins.int | builtins.float,
+    b_value: builtins.int | builtins.float,
+    *,
+    alpha: builtins.float | None = None,
+) -> CssColor: ...
+def lch(
+    lightness: builtins.int | builtins.float,
+    chroma: builtins.int | builtins.float,
+    hue: builtins.int | builtins.float,
+    *,
+    alpha: builtins.float | None = None,
+) -> CssColor: ...
+def oklab(
+    lightness: builtins.int | builtins.float,
+    a_value: builtins.int | builtins.float,
+    b_value: builtins.int | builtins.float,
+    *,
+    alpha: builtins.float | None = None,
+) -> CssColor: ...
+def oklch(
+    lightness: builtins.int | builtins.float,
+    chroma: builtins.int | builtins.float,
+    hue: builtins.int | builtins.float,
+    *,
+    alpha: builtins.float | None = None,
+) -> CssColor: ...
+def color_space(
+    space: builtins.str,
+    *components: builtins.int | builtins.float | builtins.str,
+    alpha: builtins.float | None = None,
+) -> CssColor: ...
 def var(name: builtins.str, fallback: StyleScalar | None = None) -> CssValue: ...
 def calc(expression: builtins.str) -> CssValue: ...
 def min_(*values: StyleScalar) -> CssValue: ...
@@ -1626,4 +1747,9 @@ def shadow(*parts: StyleScalar) -> CssValue: ...
 def scale(value: builtins.int | builtins.float) -> CssValue: ...
 def rotate(value: CssAngle | builtins.int | builtins.float) -> CssValue: ...
 def translate(x_value: StyleScalar, y_value: StyleScalar | None = None) -> CssValue: ...
-def media(*, style: StyleInput, query: builtins.str | None = None, **feature_values: Unpack[_MediaRuleKwargs]) -> MediaRule: ...
+def media(
+    *,
+    style: StyleInput,
+    query: builtins.str | None = None,
+    **feature_values: Unpack[_MediaRuleKwargs],
+) -> MediaRule: ...

@@ -11,8 +11,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from trellis.core.rendering.element import Element
-from trellis.html._style_runtime import StyleInput
-from trellis.html.base import HtmlContainerElement
 from trellis.html._generated_attribute_types import (
     AriaAutocomplete,
     AriaChecked,
@@ -50,6 +48,8 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 
 __all__ = [
     "Base",
@@ -63,7 +63,6 @@ __all__ = [
 ]
 
 DataValue = str | int | float | bool | None
-
 
 def Base(
     *,
@@ -212,8 +211,6 @@ def Base(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 def Body(
     *,
     about: str | None = None,
@@ -359,8 +356,6 @@ def Body(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Head(
     *,
     about: str | None = None,
@@ -506,8 +501,6 @@ def Head(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Html(
     *,
     about: str | None = None,
@@ -654,8 +647,6 @@ def Html(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Link(
     *,
     about: str | None = None,
@@ -816,8 +807,6 @@ def Link(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 def Meta(
     *,
     about: str | None = None,
@@ -967,8 +956,6 @@ def Meta(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 def StyleTag(
     inner_text: str | None = None,
     /,
@@ -1122,8 +1109,6 @@ def StyleTag(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 def Title(
     inner_text: str | None = None,
     /,

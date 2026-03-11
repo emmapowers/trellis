@@ -12,8 +12,6 @@ from collections.abc import Mapping
 from typing import Literal
 
 from trellis.core.rendering.element import Element
-from trellis.html._style_runtime import StyleInput
-from trellis.html.base import HtmlContainerElement
 from trellis.html._generated_attribute_types import (
     AriaAutocomplete,
     AriaChecked,
@@ -51,6 +49,8 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 
 __all__ = [
     "Area",
@@ -64,7 +64,6 @@ __all__ = [
 ]
 
 DataValue = str | int | float | bool | None
-
 
 def Area(
     *,
@@ -220,8 +219,6 @@ def Area(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 def Audio(
     *,
     about: str | None = None,
@@ -377,8 +374,6 @@ def Audio(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Img(
     *,
     about: str | None = None,
@@ -536,8 +531,6 @@ def Img(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 def Map(
     *,
     about: str | None = None,
@@ -684,8 +677,6 @@ def Map(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Picture(
     *,
     about: str | None = None,
@@ -831,8 +822,6 @@ def Picture(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Source(
     *,
     about: str | None = None,
@@ -985,8 +974,6 @@ def Source(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 def Track(
     *,
     about: str | None = None,
@@ -1137,8 +1124,6 @@ def Track(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 def Video(
     *,
     about: str | None = None,

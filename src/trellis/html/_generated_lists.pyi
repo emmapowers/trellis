@@ -12,8 +12,6 @@ from collections.abc import Mapping
 from typing import Literal, overload
 
 from trellis.core.rendering.element import Element
-from trellis.html._style_runtime import StyleInput
-from trellis.html.base import HtmlContainerElement
 from trellis.html._generated_attribute_types import (
     AriaAutocomplete,
     AriaChecked,
@@ -47,6 +45,8 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 
 __all__ = [
     "Dd",
@@ -59,7 +59,6 @@ __all__ = [
 ]
 
 DataValue = str | int | float | bool | None
-
 
 @overload
 def Dd(
@@ -209,8 +208,6 @@ def Dd(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Dd(
     *,
@@ -357,10 +354,6 @@ def Dd(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 def Dl(
     *,
     about: str | None = None,
@@ -506,8 +499,6 @@ def Dl(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 @overload
 def Dt(
     inner_text: str,
@@ -656,8 +647,6 @@ def Dt(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Dt(
     *,
@@ -804,10 +793,6 @@ def Dt(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Li(
     inner_text: str,
@@ -957,8 +942,6 @@ def Li(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Li(
     *,
@@ -1106,10 +1089,6 @@ def Li(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 def Menu(
     *,
     about: str | None = None,
@@ -1256,8 +1235,6 @@ def Menu(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Ol(
     *,
     about: str | None = None,
@@ -1406,8 +1383,6 @@ def Ol(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Ul(
     *,
     about: str | None = None,

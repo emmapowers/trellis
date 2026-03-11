@@ -12,8 +12,6 @@ from collections.abc import Mapping
 from typing import overload
 
 from trellis.core.rendering.element import Element
-from trellis.html._style_runtime import StyleInput
-from trellis.html.base import HtmlContainerElement
 from trellis.html._generated_attribute_types import (
     AriaAutocomplete,
     AriaChecked,
@@ -47,6 +45,8 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 
 __all__ = [
     "Abbr",
@@ -76,7 +76,6 @@ __all__ = [
 
 DataValue = str | int | float | bool | None
 
-
 @overload
 def Abbr(
     inner_text: str,
@@ -225,8 +224,6 @@ def Abbr(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Abbr(
     *,
@@ -373,10 +370,6 @@ def Abbr(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def B(
     inner_text: str,
@@ -525,8 +518,6 @@ def B(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def B(
     *,
@@ -673,10 +664,6 @@ def B(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Bdi(
     inner_text: str,
@@ -825,8 +812,6 @@ def Bdi(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Bdi(
     *,
@@ -973,10 +958,6 @@ def Bdi(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Bdo(
     inner_text: str,
@@ -1125,8 +1106,6 @@ def Bdo(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Bdo(
     *,
@@ -1273,10 +1252,6 @@ def Bdo(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Big(
     inner_text: str,
@@ -1425,8 +1400,6 @@ def Big(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Big(
     *,
@@ -1573,10 +1546,6 @@ def Big(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Cite(
     inner_text: str,
@@ -1725,8 +1694,6 @@ def Cite(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Cite(
     *,
@@ -1873,10 +1840,6 @@ def Cite(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Code(
     inner_text: str,
@@ -2025,8 +1988,6 @@ def Code(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Code(
     *,
@@ -2173,10 +2134,6 @@ def Code(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Data(
     inner_text: str,
@@ -2326,8 +2283,6 @@ def Data(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Data(
     *,
@@ -2475,10 +2430,6 @@ def Data(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Dfn(
     inner_text: str,
@@ -2627,8 +2578,6 @@ def Dfn(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Dfn(
     *,
@@ -2775,10 +2724,6 @@ def Dfn(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Em(
     inner_text: str,
@@ -2927,8 +2872,6 @@ def Em(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Em(
     *,
@@ -3075,10 +3018,6 @@ def Em(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Italic(
     inner_text: str,
@@ -3227,8 +3166,6 @@ def Italic(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Italic(
     *,
@@ -3375,10 +3312,6 @@ def Italic(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Kbd(
     inner_text: str,
@@ -3527,8 +3460,6 @@ def Kbd(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Kbd(
     *,
@@ -3675,10 +3606,6 @@ def Kbd(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Mark(
     inner_text: str,
@@ -3827,8 +3754,6 @@ def Mark(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Mark(
     *,
@@ -3975,10 +3900,6 @@ def Mark(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Q(
     inner_text: str,
@@ -4128,8 +4049,6 @@ def Q(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Q(
     *,
@@ -4277,10 +4196,6 @@ def Q(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def S(
     inner_text: str,
@@ -4429,8 +4344,6 @@ def S(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def S(
     *,
@@ -4577,10 +4490,6 @@ def S(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Samp(
     inner_text: str,
@@ -4729,8 +4638,6 @@ def Samp(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Samp(
     *,
@@ -4877,10 +4784,6 @@ def Samp(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Small(
     inner_text: str,
@@ -5029,8 +4932,6 @@ def Small(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Small(
     *,
@@ -5177,10 +5078,6 @@ def Small(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Span(
     inner_text: str,
@@ -5329,8 +5226,6 @@ def Span(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Span(
     *,
@@ -5477,10 +5372,6 @@ def Span(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Strong(
     inner_text: str,
@@ -5629,8 +5520,6 @@ def Strong(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Strong(
     *,
@@ -5777,10 +5666,6 @@ def Strong(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Sub(
     inner_text: str,
@@ -5929,8 +5814,6 @@ def Sub(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Sub(
     *,
@@ -6077,10 +5960,6 @@ def Sub(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Sup(
     inner_text: str,
@@ -6229,8 +6108,6 @@ def Sup(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Sup(
     *,
@@ -6377,10 +6254,6 @@ def Sup(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Time(
     inner_text: str,
@@ -6530,8 +6403,6 @@ def Time(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Time(
     *,
@@ -6679,10 +6550,6 @@ def Time(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def U(
     inner_text: str,
@@ -6831,8 +6698,6 @@ def U(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def U(
     *,

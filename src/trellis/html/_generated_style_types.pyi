@@ -5,33 +5,282 @@ Reference: https://developer.mozilla.org/en-US/docs/Web/CSS
 
 Generated at: 2026-03-11T22:46:25.136Z
 """
+
 from __future__ import annotations
 
 import builtins
-
 from typing import Literal, TypedDict
 
-from trellis.html._css_primitives import CssAngle, CssColor, CssLength, CssPercent, CssTime, CssValue
+from trellis.html._css_primitives import (
+    CssAngle,
+    CssColor,
+    CssLength,
+    CssPercent,
+    CssTime,
+    CssValue,
+)
 
 Length = CssLength | str | CssValue
 Percent = CssPercent | str | CssValue
 LengthPercentage = Length | Percent
 TimeValue = CssTime | str | CssValue
 AngleValue = CssAngle | str | CssValue
-NamedColor = Literal["aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "green", "greenyellow", "grey", "honeydew", "hotpink", "indianred", "indigo", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "turquoise", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen"]
+NamedColor = Literal[
+    "aliceblue",
+    "antiquewhite",
+    "aqua",
+    "aquamarine",
+    "azure",
+    "beige",
+    "bisque",
+    "black",
+    "blanchedalmond",
+    "blue",
+    "blueviolet",
+    "brown",
+    "burlywood",
+    "cadetblue",
+    "chartreuse",
+    "chocolate",
+    "coral",
+    "cornflowerblue",
+    "cornsilk",
+    "crimson",
+    "cyan",
+    "darkblue",
+    "darkcyan",
+    "darkgoldenrod",
+    "darkgray",
+    "darkgreen",
+    "darkgrey",
+    "darkkhaki",
+    "darkmagenta",
+    "darkolivegreen",
+    "darkorange",
+    "darkorchid",
+    "darkred",
+    "darksalmon",
+    "darkseagreen",
+    "darkslateblue",
+    "darkslategray",
+    "darkslategrey",
+    "darkturquoise",
+    "darkviolet",
+    "deeppink",
+    "deepskyblue",
+    "dimgray",
+    "dimgrey",
+    "dodgerblue",
+    "firebrick",
+    "floralwhite",
+    "forestgreen",
+    "fuchsia",
+    "gainsboro",
+    "ghostwhite",
+    "gold",
+    "goldenrod",
+    "gray",
+    "green",
+    "greenyellow",
+    "grey",
+    "honeydew",
+    "hotpink",
+    "indianred",
+    "indigo",
+    "ivory",
+    "khaki",
+    "lavender",
+    "lavenderblush",
+    "lawngreen",
+    "lemonchiffon",
+    "lightblue",
+    "lightcoral",
+    "lightcyan",
+    "lightgoldenrodyellow",
+    "lightgray",
+    "lightgreen",
+    "lightgrey",
+    "lightpink",
+    "lightsalmon",
+    "lightseagreen",
+    "lightskyblue",
+    "lightslategray",
+    "lightslategrey",
+    "lightsteelblue",
+    "lightyellow",
+    "lime",
+    "limegreen",
+    "linen",
+    "magenta",
+    "maroon",
+    "mediumaquamarine",
+    "mediumblue",
+    "mediumorchid",
+    "mediumpurple",
+    "mediumseagreen",
+    "mediumslateblue",
+    "mediumspringgreen",
+    "mediumturquoise",
+    "mediumvioletred",
+    "midnightblue",
+    "mintcream",
+    "mistyrose",
+    "moccasin",
+    "navajowhite",
+    "navy",
+    "oldlace",
+    "olive",
+    "olivedrab",
+    "orange",
+    "orangered",
+    "orchid",
+    "palegoldenrod",
+    "palegreen",
+    "paleturquoise",
+    "palevioletred",
+    "papayawhip",
+    "peachpuff",
+    "peru",
+    "pink",
+    "plum",
+    "powderblue",
+    "purple",
+    "rebeccapurple",
+    "red",
+    "rosybrown",
+    "royalblue",
+    "saddlebrown",
+    "salmon",
+    "sandybrown",
+    "seagreen",
+    "seashell",
+    "sienna",
+    "silver",
+    "skyblue",
+    "slateblue",
+    "slategray",
+    "slategrey",
+    "snow",
+    "springgreen",
+    "steelblue",
+    "tan",
+    "teal",
+    "thistle",
+    "tomato",
+    "turquoise",
+    "violet",
+    "wheat",
+    "white",
+    "whitesmoke",
+    "yellow",
+    "yellowgreen",
+]
 ColorKeyword = NamedColor | Literal["transparent"] | Literal["currentColor"]
 ColorValue = ColorKeyword | str | CssColor | CssValue
-Display = Literal["block"] | Literal["inline"] | Literal["inline-block"] | Literal["flex"] | Literal["inline-flex"] | Literal["grid"] | Literal["inline-grid"] | Literal["none"] | Literal["contents"] | str | CssValue
-Position = Literal["static"] | Literal["relative"] | Literal["absolute"] | Literal["fixed"] | Literal["sticky"] | str | CssValue
-Overflow = Literal["visible"] | Literal["hidden"] | Literal["clip"] | Literal["scroll"] | Literal["auto"] | str | CssValue
-TextAlign = Literal["left"] | Literal["right"] | Literal["center"] | Literal["justify"] | Literal["start"] | Literal["end"] | str | CssValue
-FontWeight = int | Literal["normal"] | Literal["bold"] | Literal["lighter"] | Literal["bolder"] | str | CssValue
-FlexDirection = Literal["row"] | Literal["row-reverse"] | Literal["column"] | Literal["column-reverse"] | str | CssValue
+Display = (
+    Literal["block"]
+    | Literal["inline"]
+    | Literal["inline-block"]
+    | Literal["flex"]
+    | Literal["inline-flex"]
+    | Literal["grid"]
+    | Literal["inline-grid"]
+    | Literal["none"]
+    | Literal["contents"]
+    | str
+    | CssValue
+)
+Position = (
+    Literal["static"]
+    | Literal["relative"]
+    | Literal["absolute"]
+    | Literal["fixed"]
+    | Literal["sticky"]
+    | str
+    | CssValue
+)
+Overflow = (
+    Literal["visible"]
+    | Literal["hidden"]
+    | Literal["clip"]
+    | Literal["scroll"]
+    | Literal["auto"]
+    | str
+    | CssValue
+)
+TextAlign = (
+    Literal["left"]
+    | Literal["right"]
+    | Literal["center"]
+    | Literal["justify"]
+    | Literal["start"]
+    | Literal["end"]
+    | str
+    | CssValue
+)
+FontWeight = (
+    int
+    | Literal["normal"]
+    | Literal["bold"]
+    | Literal["lighter"]
+    | Literal["bolder"]
+    | str
+    | CssValue
+)
+FlexDirection = (
+    Literal["row"]
+    | Literal["row-reverse"]
+    | Literal["column"]
+    | Literal["column-reverse"]
+    | str
+    | CssValue
+)
 FlexWrap = Literal["nowrap"] | Literal["wrap"] | Literal["wrap-reverse"] | str | CssValue
-JustifyContent = Literal["flex-start"] | Literal["flex-end"] | Literal["center"] | Literal["space-between"] | Literal["space-around"] | Literal["space-evenly"] | Literal["start"] | Literal["end"] | str | CssValue
-AlignItems = Literal["stretch"] | Literal["center"] | Literal["start"] | Literal["end"] | Literal["flex-start"] | Literal["flex-end"] | Literal["baseline"] | str | CssValue
-WidthValue = LengthPercentage | Literal["auto"] | Literal["min-content"] | Literal["max-content"] | Literal["fit-content"] | Literal["stretch"] | Literal["contain"] | str | CssValue
-HeightValue = LengthPercentage | Literal["auto"] | Literal["min-content"] | Literal["max-content"] | Literal["fit-content"] | Literal["stretch"] | Literal["contain"] | str | CssValue
+JustifyContent = (
+    Literal["flex-start"]
+    | Literal["flex-end"]
+    | Literal["center"]
+    | Literal["space-between"]
+    | Literal["space-around"]
+    | Literal["space-evenly"]
+    | Literal["start"]
+    | Literal["end"]
+    | str
+    | CssValue
+)
+AlignItems = (
+    Literal["stretch"]
+    | Literal["center"]
+    | Literal["start"]
+    | Literal["end"]
+    | Literal["flex-start"]
+    | Literal["flex-end"]
+    | Literal["baseline"]
+    | str
+    | CssValue
+)
+WidthValue = (
+    LengthPercentage
+    | Literal["auto"]
+    | Literal["min-content"]
+    | Literal["max-content"]
+    | Literal["fit-content"]
+    | Literal["stretch"]
+    | Literal["contain"]
+    | str
+    | CssValue
+)
+HeightValue = (
+    LengthPercentage
+    | Literal["auto"]
+    | Literal["min-content"]
+    | Literal["max-content"]
+    | Literal["fit-content"]
+    | Literal["stretch"]
+    | Literal["contain"]
+    | str
+    | CssValue
+)
 BorderRadiusValue = LengthPercentage | str | CssValue
 SpacingShorthand = LengthPercentage | str | CssValue
 GapValue = LengthPercentage | Literal["normal"] | str | CssValue
@@ -50,6 +299,7 @@ HoverCapability = Literal["none"] | Literal["hover"] | str | CssValue
 
 class _MediaRuleKwargs(TypedDict, total=False):
     """Generated keyword surface for `h.media(...)`."""
+
     any_hover: HoverCapability
     any_pointer: PointerCapability
     aspect_ratio: MediaFeatureValue

@@ -11,8 +11,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from trellis.core.rendering.element import Element
-from trellis.html._style_runtime import StyleInput
-from trellis.html.base import HtmlContainerElement
 from trellis.html._generated_attribute_types import (
     AriaAutocomplete,
     AriaChecked,
@@ -50,6 +48,8 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 
 __all__ = [
     "Noscript",
@@ -59,7 +59,6 @@ __all__ = [
 ]
 
 DataValue = str | int | float | bool | None
-
 
 def Noscript(
     *,
@@ -206,8 +205,6 @@ def Noscript(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Script(
     inner_text: str | None = None,
     /,
@@ -366,8 +363,6 @@ def Script(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 def Slot(
     *,
     about: str | None = None,
@@ -514,8 +509,6 @@ def Slot(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
 def Template(
     *,
     about: str | None = None,

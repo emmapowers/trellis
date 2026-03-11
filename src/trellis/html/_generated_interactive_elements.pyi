@@ -12,8 +12,6 @@ from collections.abc import Mapping
 from typing import Literal, overload
 
 from trellis.core.rendering.element import Element
-from trellis.html._style_runtime import StyleInput
-from trellis.html.base import HtmlContainerElement
 from trellis.html._generated_attribute_types import (
     AriaAutocomplete,
     AriaChecked,
@@ -48,13 +46,12 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 
-__all__ = [
-
-]
+__all__ = []
 
 DataValue = str | int | float | bool | None
-
 
 @overload
 def _A(
@@ -170,7 +167,9 @@ def _A(
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
-    target: Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None = None,
+    target: (
+        Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None
+    ) = None,
     title: str | None = None,
     translate: Translate | None = None,
     type: str | None = None,
@@ -212,8 +211,6 @@ def _A(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def _A(
     *,
@@ -326,7 +323,9 @@ def _A(
     suppress_content_editable_warning: bool | None = None,
     suppress_hydration_warning: bool | None = None,
     tab_index: int | float | None = None,
-    target: Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None = None,
+    target: (
+        Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None
+    ) = None,
     title: str | None = None,
     translate: Translate | None = None,
     type: str | None = None,

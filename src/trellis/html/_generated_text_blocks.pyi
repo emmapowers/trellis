@@ -12,8 +12,6 @@ from collections.abc import Mapping
 from typing import overload
 
 from trellis.core.rendering.element import Element
-from trellis.html._style_runtime import StyleInput
-from trellis.html.base import HtmlContainerElement
 from trellis.html._generated_attribute_types import (
     AriaAutocomplete,
     AriaChecked,
@@ -47,22 +45,23 @@ from trellis.html._generated_events import (
     UIEventHandler,
     WheelEventHandler,
 )
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 
 __all__ = [
-    "Blockquote",
     "H1",
     "H2",
     "H3",
     "H4",
     "H5",
     "H6",
+    "Blockquote",
     "P",
     "Pre",
 ]
 
 DataValue = str | int | float | bool | None
 
-
 @overload
 def Blockquote(
     inner_text: str,
@@ -212,8 +211,6 @@ def Blockquote(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Blockquote(
     *,
@@ -361,10 +358,6 @@ def Blockquote(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def H1(
     inner_text: str,
@@ -513,8 +506,6 @@ def H1(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def H1(
     *,
@@ -661,10 +652,6 @@ def H1(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def H2(
     inner_text: str,
@@ -813,8 +800,6 @@ def H2(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def H2(
     *,
@@ -961,10 +946,6 @@ def H2(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def H3(
     inner_text: str,
@@ -1113,8 +1094,6 @@ def H3(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def H3(
     *,
@@ -1261,10 +1240,6 @@ def H3(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def H4(
     inner_text: str,
@@ -1413,8 +1388,6 @@ def H4(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def H4(
     *,
@@ -1561,10 +1534,6 @@ def H4(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def H5(
     inner_text: str,
@@ -1713,8 +1682,6 @@ def H5(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def H5(
     *,
@@ -1861,10 +1828,6 @@ def H5(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def H6(
     inner_text: str,
@@ -2013,8 +1976,6 @@ def H6(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def H6(
     *,
@@ -2161,10 +2122,6 @@ def H6(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def P(
     inner_text: str,
@@ -2313,8 +2270,6 @@ def P(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def P(
     *,
@@ -2461,10 +2416,6 @@ def P(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
-
-
-
-
 @overload
 def Pre(
     inner_text: str,
@@ -2613,8 +2564,6 @@ def Pre(
     on_wheel: WheelEventHandler | None = None,
     data: Mapping[str, DataValue] | None = None,
 ) -> Element: ...
-
-
 @overload
 def Pre(
     *,

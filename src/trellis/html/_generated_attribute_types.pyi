@@ -48,7 +48,16 @@ AriaAutocomplete = Literal[
 
 AriaChecked = bool | Literal["false"] | Literal["mixed"] | Literal["true"]
 
-AriaCurrent = bool | Literal["false"] | Literal["true"] | Literal["page"] | Literal["step"] | Literal["location"] | Literal["date"] | Literal["time"]
+AriaCurrent = (
+    bool
+    | Literal["false"]
+    | Literal["true"]
+    | Literal["page"]
+    | Literal["step"]
+    | Literal["location"]
+    | Literal["date"]
+    | Literal["time"]
+)
 
 AriaDropeffect = Literal[
     "none",
@@ -59,7 +68,16 @@ AriaDropeffect = Literal[
     "popup",
 ]
 
-AriaHaspopup = bool | Literal["false"] | Literal["true"] | Literal["menu"] | Literal["listbox"] | Literal["tree"] | Literal["grid"] | Literal["dialog"]
+AriaHaspopup = (
+    bool
+    | Literal["false"]
+    | Literal["true"]
+    | Literal["menu"]
+    | Literal["listbox"]
+    | Literal["tree"]
+    | Literal["grid"]
+    | Literal["dialog"]
+)
 
 AriaInvalid = bool | Literal["false"] | Literal["true"] | Literal["grammar"] | Literal["spelling"]
 
@@ -96,7 +114,15 @@ AriaSort = Literal[
     "other",
 ]
 
-AutoCapitalize = Literal["off"] | Literal["none"] | Literal["on"] | Literal["sentences"] | Literal["words"] | Literal["characters"] | str
+AutoCapitalize = (
+    Literal["off"]
+    | Literal["none"]
+    | Literal["on"]
+    | Literal["sentences"]
+    | Literal["words"]
+    | Literal["characters"]
+    | str
+)
 
 Blocking = Literal["render"] | str
 
@@ -135,7 +161,31 @@ InputMode = Literal[
     "search",
 ]
 
-InputType = Literal["button"] | Literal["checkbox"] | Literal["color"] | Literal["date"] | Literal["datetime-local"] | Literal["email"] | Literal["file"] | Literal["hidden"] | Literal["image"] | Literal["month"] | Literal["number"] | Literal["password"] | Literal["radio"] | Literal["range"] | Literal["reset"] | Literal["search"] | Literal["submit"] | Literal["tel"] | Literal["text"] | Literal["time"] | Literal["url"] | Literal["week"] | str
+InputType = (
+    Literal["button"]
+    | Literal["checkbox"]
+    | Literal["color"]
+    | Literal["date"]
+    | Literal["datetime-local"]
+    | Literal["email"]
+    | Literal["file"]
+    | Literal["hidden"]
+    | Literal["image"]
+    | Literal["month"]
+    | Literal["number"]
+    | Literal["password"]
+    | Literal["radio"]
+    | Literal["range"]
+    | Literal["reset"]
+    | Literal["search"]
+    | Literal["submit"]
+    | Literal["tel"]
+    | Literal["text"]
+    | Literal["time"]
+    | Literal["url"]
+    | Literal["week"]
+    | str
+)
 
 Loading = Literal[
     "eager",
@@ -167,7 +217,78 @@ ReferrerPolicy = Literal[
     "unsafe-url",
 ]
 
-Role = Literal["alert"] | Literal["alertdialog"] | Literal["application"] | Literal["article"] | Literal["banner"] | Literal["button"] | Literal["cell"] | Literal["checkbox"] | Literal["columnheader"] | Literal["combobox"] | Literal["complementary"] | Literal["contentinfo"] | Literal["definition"] | Literal["dialog"] | Literal["directory"] | Literal["document"] | Literal["feed"] | Literal["figure"] | Literal["form"] | Literal["grid"] | Literal["gridcell"] | Literal["group"] | Literal["heading"] | Literal["img"] | Literal["link"] | Literal["list"] | Literal["listbox"] | Literal["listitem"] | Literal["log"] | Literal["main"] | Literal["marquee"] | Literal["math"] | Literal["menu"] | Literal["menubar"] | Literal["menuitem"] | Literal["menuitemcheckbox"] | Literal["menuitemradio"] | Literal["navigation"] | Literal["none"] | Literal["note"] | Literal["option"] | Literal["presentation"] | Literal["progressbar"] | Literal["radio"] | Literal["radiogroup"] | Literal["region"] | Literal["row"] | Literal["rowgroup"] | Literal["rowheader"] | Literal["scrollbar"] | Literal["search"] | Literal["searchbox"] | Literal["separator"] | Literal["slider"] | Literal["spinbutton"] | Literal["status"] | Literal["switch"] | Literal["tab"] | Literal["table"] | Literal["tablist"] | Literal["tabpanel"] | Literal["term"] | Literal["textbox"] | Literal["timer"] | Literal["toolbar"] | Literal["tooltip"] | Literal["tree"] | Literal["treegrid"] | Literal["treeitem"] | str
+Role = (
+    Literal["alert"]
+    | Literal["alertdialog"]
+    | Literal["application"]
+    | Literal["article"]
+    | Literal["banner"]
+    | Literal["button"]
+    | Literal["cell"]
+    | Literal["checkbox"]
+    | Literal["columnheader"]
+    | Literal["combobox"]
+    | Literal["complementary"]
+    | Literal["contentinfo"]
+    | Literal["definition"]
+    | Literal["dialog"]
+    | Literal["directory"]
+    | Literal["document"]
+    | Literal["feed"]
+    | Literal["figure"]
+    | Literal["form"]
+    | Literal["grid"]
+    | Literal["gridcell"]
+    | Literal["group"]
+    | Literal["heading"]
+    | Literal["img"]
+    | Literal["link"]
+    | Literal["list"]
+    | Literal["listbox"]
+    | Literal["listitem"]
+    | Literal["log"]
+    | Literal["main"]
+    | Literal["marquee"]
+    | Literal["math"]
+    | Literal["menu"]
+    | Literal["menubar"]
+    | Literal["menuitem"]
+    | Literal["menuitemcheckbox"]
+    | Literal["menuitemradio"]
+    | Literal["navigation"]
+    | Literal["none"]
+    | Literal["note"]
+    | Literal["option"]
+    | Literal["presentation"]
+    | Literal["progressbar"]
+    | Literal["radio"]
+    | Literal["radiogroup"]
+    | Literal["region"]
+    | Literal["row"]
+    | Literal["rowgroup"]
+    | Literal["rowheader"]
+    | Literal["scrollbar"]
+    | Literal["search"]
+    | Literal["searchbox"]
+    | Literal["separator"]
+    | Literal["slider"]
+    | Literal["spinbutton"]
+    | Literal["status"]
+    | Literal["switch"]
+    | Literal["tab"]
+    | Literal["table"]
+    | Literal["tablist"]
+    | Literal["tabpanel"]
+    | Literal["term"]
+    | Literal["textbox"]
+    | Literal["timer"]
+    | Literal["toolbar"]
+    | Literal["tooltip"]
+    | Literal["tree"]
+    | Literal["treegrid"]
+    | Literal["treeitem"]
+    | str
+)
 
 Translate = Literal[
     "yes",

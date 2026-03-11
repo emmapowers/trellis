@@ -7,11 +7,9 @@ the generated HTML bindings, primarily router-aware anchors.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
 
 from trellis.core.rendering.element import Element
-from trellis.html._generated_runtime import Img
-from trellis.html._generated_runtime import _A
+from trellis.html._generated_runtime import _A, Img
 from trellis.routing.state import router
 
 __all__ = [

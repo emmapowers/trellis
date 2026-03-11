@@ -15,14 +15,15 @@ __all__ = [
 
 type DataValue = str | int | float | bool | None
 
-
 @overload
 def A(
     inner_text: str,
     /,
     *,
     href: str | None = None,
-    target: Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None = None,
+    target: (
+        Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None
+    ) = None,
     rel: str | None = None,
     class_name: str | None = None,
     style: StyleInput | None = None,
@@ -32,15 +33,15 @@ def A(
     use_router: bool = True,
     **extra_props: Any,
 ) -> Element: ...
-
-
 @overload
 def A(
     inner_text: None = None,
     /,
     *,
     href: str | None = None,
-    target: Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None = None,
+    target: (
+        Literal["_self"] | Literal["_blank"] | Literal["_parent"] | Literal["_top"] | str | None
+    ) = None,
     rel: str | None = None,
     class_name: str | None = None,
     style: StyleInput | None = None,
