@@ -413,15 +413,16 @@ function sample_css_document(): CssDocument {
 }
 
 describe("trellis css target", () => {
-  it("emits generated style type and metadata modules", () => {
+  it("emits generated style stub and metadata modules", () => {
     const modules = build_trellis_css_modules(sample_css_document(), "2026-03-07T12:00:00.000Z");
 
     expect(modules.map((module) => module.path)).toEqual([
-      "src/trellis/html/_generated_style_types.py",
+      "src/trellis/html/_generated_style_types.pyi",
+      "src/trellis/html/_style_runtime.pyi",
       "src/trellis/html/_generated_style_metadata.py",
     ]);
 
-    const types_module = modules.find((module) => module.path.endsWith("_generated_style_types.py"));
+    const types_module = modules.find((module) => module.path.endsWith("_generated_style_types.pyi"));
     expect(types_module?.content).toContain("Generated CSS style type declarations.");
     expect(types_module?.content).toContain("Internal codegen artifact for trellis.html CSS typing.");
     expect(types_module?.content).toContain(
@@ -443,27 +444,35 @@ describe("trellis css target", () => {
       'Display = Literal["block"] | Literal["flex"] | Literal["none"] | Literal["inline-flex"] | str | CssValue',
     );
     expect(types_module?.content).toContain("Display = Literal[");
-    expect(types_module?.content).toContain("class _GeneratedStyleFields:");
-    expect(types_module?.content).toContain("border: ColorValue | CssValue | None = None");
-    expect(types_module?.content).toContain("font_family: CssValue | str | None = None");
-    expect(types_module?.content).toContain(
-      "font_size: LengthPercentage | builtins.int | builtins.float | None = None",
+    expect(types_module?.content).toContain("class _MediaRuleKwargs(TypedDict, total=False):");
+
+    const runtime_stub_module = modules.find((module) => module.path.endsWith("_style_runtime.pyi"));
+    expect(runtime_stub_module?.content).toContain("class MediaRule:");
+    expect(runtime_stub_module?.content).toContain("class Style:");
+    expect(runtime_stub_module?.content).toContain("def __init__(");
+    expect(runtime_stub_module?.content).toContain("border: ColorValue | CssValue | None");
+    expect(runtime_stub_module?.content).toContain("font_family: CssValue | str | None");
+    expect(runtime_stub_module?.content).toContain(
+      "font_size: LengthPercentage | builtins.int | builtins.float | None",
     );
-    expect(types_module?.content).toContain(
-      "width: WidthValue | builtins.int | builtins.float | None = None",
+    expect(runtime_stub_module?.content).toContain(
+      "width: WidthValue | builtins.int | builtins.float | None",
     );
-    expect(types_module?.content).toContain(
-      "margin: SpacingShorthand | builtins.int | builtins.float | None = None",
+    expect(runtime_stub_module?.content).toContain(
+      "margin: SpacingShorthand | builtins.int | builtins.float | None",
     );
-    expect(types_module?.content).toContain("opacity: Opacity | None = None");
-    expect(types_module?.content).toContain('z_index: ZIndex | None = None');
-    expect(types_module?.content).toContain("class MediaRule:");
-    expect(types_module?.content).toContain('"""Generated media query rule for `h.media(...)`.');
-    expect(types_module?.content).toContain(
+    expect(runtime_stub_module?.content).toContain("opacity: Opacity | None");
+    expect(runtime_stub_module?.content).toContain('z_index: ZIndex | None');
+    expect(runtime_stub_module?.content).toContain('"""Generated media query rule for `h.media(...)`.');
+    expect(runtime_stub_module?.content).toContain(
       "min_width: Length | builtins.int | builtins.float | None = None",
     );
-    expect(types_module?.content).toContain("prefers_color_scheme: PrefersColorScheme | None = None");
-    expect(types_module?.content).toContain("display_mode: MediaFeatureValue | None = None");
+    expect(runtime_stub_module?.content).toContain(
+      "prefers_color_scheme: PrefersColorScheme | None = None",
+    );
+    expect(runtime_stub_module?.content).toContain(
+      "display_mode: MediaFeatureValue | None = None",
+    );
 
     const metadata_module = modules.find((module) => module.path.endsWith("_generated_style_metadata.py"));
     expect(metadata_module?.content).toContain("Generated CSS style metadata.");

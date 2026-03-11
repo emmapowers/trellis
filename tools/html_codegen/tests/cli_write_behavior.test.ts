@@ -48,7 +48,14 @@ describe("write mode", () => {
       "src",
       "trellis",
       "html",
-      "_generated_style_types.py",
+      "_generated_style_types.pyi",
+    );
+    const style_runtime_stub_path = join(
+      repo_root,
+      "src",
+      "trellis",
+      "html",
+      "_style_runtime.pyi",
     );
     const style_metadata_path = join(
       repo_root,
@@ -63,6 +70,7 @@ describe("write mode", () => {
     await expect(access(media_path)).resolves.toBeUndefined();
     await expect(access(events_path)).resolves.toBeUndefined();
     await expect(access(style_types_path)).resolves.toBeUndefined();
+    await expect(access(style_runtime_stub_path)).resolves.toBeUndefined();
     await expect(access(style_metadata_path)).resolves.toBeUndefined();
     await expect(access(stale_generated_path)).rejects.toThrow();
 
@@ -89,8 +97,12 @@ describe("write mode", () => {
 
     const style_types_content = await readFile(style_types_path, "utf-8");
     expect(style_types_content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
-    expect(style_types_content).toContain("class _GeneratedStyleFields:");
-    expect(style_types_content).toContain("class MediaRule:");
+    expect(style_types_content).toContain("class _MediaRuleKwargs");
+
+    const style_runtime_stub_content = await readFile(style_runtime_stub_path, "utf-8");
+    expect(style_runtime_stub_content).toContain("Generated at: 2026-03-07T12:00:00.000Z");
+    expect(style_runtime_stub_content).toContain("class Style:");
+    expect(style_runtime_stub_content).toContain("class MediaRule:");
 
     const style_metadata_content = await readFile(style_metadata_path, "utf-8");
     expect(style_metadata_content).toContain("Generated at: 2026-03-07T12:00:00.000Z");

@@ -4,33 +4,18 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import typing as tp
 from collections.abc import Mapping
-from dataclasses import fields
 
 from trellis.html._css_primitives import CssValue
 from trellis.html._generated_style_metadata import AUTO_PX_FIELDS, CSS_NAME_BY_FIELD
-from trellis.html._generated_style_types import MediaRule
-from trellis.html._style_runtime import Style
+from trellis.html._style_runtime import MediaRule, Style
 
 StyleDict = dict[str, tp.Any]
 CompiledStyle = tuple[StyleDict, str | None, str | None]
 
-_PSEUDO_FIELDS = {
-    "hover": ":hover",
-    "focus": ":focus",
-    "focus_visible": ":focus-visible",
-    "focus_within": ":focus-within",
-    "active": ":active",
-    "visited": ":visited",
-    "disabled": ":disabled",
-    "checked": ":checked",
-    "placeholder": "::placeholder",
-    "before": "::before",
-    "after": "::after",
-    "selection": "::selection",
-}
-
+_CAMEL_BOUNDARY = re.compile(r"(?<!^)(?=[A-Z])")
 _CSS_NAME_BY_FIELD_REVERSED = {
     css_name: field_name for field_name, css_name in CSS_NAME_BY_FIELD.items()
 }
@@ -106,15 +91,15 @@ def _normalize_style(style_input: tp.Any) -> tuple[StyleDict, list[dict[str, tp.
     if style_input is None:
         return inline, nested_rules
 
-    if isinstance(style_input, Style):
-        _consume_style_object(style_input, inline, nested_rules)
-        return inline, nested_rules
-
     if isinstance(style_input, Mapping):
-        _consume_raw_mapping(style_input, inline, nested_rules)
-        return inline, nested_rules
+        style = Style(style_input)
+    elif isinstance(style_input, Style):
+        style = style_input
+    else:
+        raise TypeError(f"Unsupported style value: {style_input!r}")
 
-    raise TypeError(f"Unsupported style value: {style_input!r}")
+    _consume_style_object(style, inline, nested_rules)
+    return inline, nested_rules
 
 
 def _style_input_to_mapping(style_input: tp.Any) -> dict[str, tp.Any]:
@@ -129,89 +114,52 @@ def _style_input_to_mapping(style_input: tp.Any) -> dict[str, tp.Any]:
 
 
 def _consume_style_object(
-    style: Style, inline: StyleDict, nested_rules: list[dict[str, tp.Any]]
-) -> None:
-    for field in fields(style):
-        value = getattr(style, field.name)
-        if value is None:
-            continue
-
-        if field.name == "vars":
-            for key, raw_value in value.items():
-                inline[key] = _serialize_value(raw_value, auto_px=False)
-            continue
-
-        if field.name in _PSEUDO_FIELDS:
-            nested_inline, nested_children = _normalize_style(value)
-            nested_rules.append(
-                {
-                    "selector": _PSEUDO_FIELDS[field.name],
-                    "inline": nested_inline,
-                    "children": nested_children,
-                }
-            )
-            continue
-
-        if field.name == "media":
-            if isinstance(value, Mapping):
-                for query, nested_style in value.items():
-                    media_query = query.removeprefix("@media ").strip()
-                    nested_inline, nested_children = _normalize_style(nested_style)
-                    nested_rules.append(
-                        {"media": media_query, "inline": nested_inline, "children": nested_children}
-                    )
-            else:
-                for rule in value:
-                    query = _media_query(rule)
-                    nested_inline, nested_children = _normalize_style(rule.style)
-                    nested_rules.append(
-                        {"media": query, "inline": nested_inline, "children": nested_children}
-                    )
-            continue
-
-        if field.name == "selectors":
-            for selector, nested_style in value.items():
-                nested_inline, nested_children = _normalize_style(nested_style)
-                nested_rules.append(
-                    {"selector": selector, "inline": nested_inline, "children": nested_children}
-                )
-            continue
-
-        css_name = CSS_NAME_BY_FIELD.get(field.name)
-        if css_name is None:
-            continue
-        inline[css_name] = _serialize_value(value, auto_px=field.name in AUTO_PX_FIELDS)
-
-
-def _consume_raw_mapping(
-    style_mapping: Mapping[str, tp.Any],
+    style: Style,
     inline: StyleDict,
     nested_rules: list[dict[str, tp.Any]],
 ) -> None:
-    for key, value in style_mapping.items():
-        if not isinstance(key, str):
-            raise TypeError(f"Raw style keys must be strings, got {type(key).__name__}")
+    for name, value in style.props.items():
+        css_name = _normalize_css_name(name)
+        inline[css_name] = _serialize_value(value, auto_px=_should_auto_px(name, css_name))
 
-        if key.startswith("@media "):
-            nested_inline, nested_children = _normalize_style(value)
-            nested_rules.append(
-                {
-                    "media": key.removeprefix("@media ").strip(),
-                    "inline": nested_inline,
-                    "children": nested_children,
-                }
-            )
-            continue
+    for key, raw_value in style.vars.items():
+        inline[key if key.startswith("--") else f"--{key}"] = _serialize_value(raw_value, auto_px=False)
 
-        if key.startswith(":") or key.startswith("&"):
-            nested_inline, nested_children = _normalize_style(value)
-            nested_rules.append(
-                {"selector": key, "inline": nested_inline, "children": nested_children}
-            )
-            continue
+    for selector, nested_style in style.selectors.items():
+        nested_inline, nested_children = _normalize_style(nested_style)
+        nested_rules.append(
+            {"selector": selector, "inline": nested_inline, "children": nested_children}
+        )
 
-        auto_px = _CSS_NAME_BY_FIELD_REVERSED.get(key, "") in AUTO_PX_FIELDS
-        inline[key] = _serialize_value(value, auto_px=auto_px)
+    for rule in style.media:
+        query = _media_query(rule)
+        nested_inline, nested_children = _normalize_style(rule.style)
+        nested_rules.append({"media": query, "inline": nested_inline, "children": nested_children})
+
+
+def _normalize_css_name(name: str) -> str:
+    if name.startswith("--"):
+        return name
+    if name in CSS_NAME_BY_FIELD:
+        return CSS_NAME_BY_FIELD[name]
+    if "-" in name:
+        normalized = name.lower()
+    elif "_" in name:
+        normalized = name.replace("_", "-").lower()
+    else:
+        normalized = _CAMEL_BOUNDARY.sub("-", name).lower()
+
+    for prefix in ("webkit-", "moz-", "ms-", "o-"):
+        if normalized.startswith(prefix):
+            return f"-{normalized}"
+    return normalized
+
+
+def _should_auto_px(source_name: str, css_name: str) -> bool:
+    if source_name in AUTO_PX_FIELDS:
+        return True
+    normalized_field_name = _CSS_NAME_BY_FIELD_REVERSED.get(css_name)
+    return normalized_field_name in AUTO_PX_FIELDS
 
 
 def _serialize_value(value: tp.Any, *, auto_px: bool) -> str | int | float:
@@ -236,35 +184,17 @@ def _media_query(rule: MediaRule) -> str:
     parts: list[str] = []
     if rule.query:
         parts.append(rule.query)
-    auto_px_fields = {
-        "min_width",
-        "max_width",
-        "min_height",
-        "max_height",
-        "width",
-        "height",
-        "device_width",
-        "device_height",
-        "min_device_width",
-        "max_device_width",
-        "min_device_height",
-        "max_device_height",
-    }
-    for field in fields(rule):
-        if field.name in {"style", "query"}:
-            continue
-        value = getattr(rule, field.name)
-        if value is None:
-            continue
-        css_name = field.name.replace("_", "-")
-        serialized = _serialize_value(
-            value,
-            auto_px=field.name in auto_px_fields,
-        )
+    for name, value in rule.features.items():
+        css_name = _normalize_css_name(name)
+        serialized = _serialize_value(value, auto_px=_is_auto_px_media_feature(css_name))
         parts.append(f"({css_name}: {serialized})")
     if not parts:
         raise ValueError("MediaRule must define `query` or at least one media feature")
     return " and ".join(parts)
+
+
+def _is_auto_px_media_feature(css_name: str) -> bool:
+    return "width" in css_name or "height" in css_name
 
 
 def _emit_rule(rule: dict[str, tp.Any], base_selector: str) -> str:

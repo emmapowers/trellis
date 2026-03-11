@@ -74,7 +74,7 @@ def test_style_accepts_dom_dict_escape_hatch(rendered) -> None:
     assert "@media (min-width: 768px)" in div["props"]["_style_rules"]
 
 
-def test_style_accepts_unvalidated_raw_dict_keys(rendered) -> None:
+def test_style_normalizes_raw_dict_keys(rendered) -> None:
     @component
     def App() -> None:
         h.Div(
@@ -87,10 +87,7 @@ def test_style_accepts_unvalidated_raw_dict_keys(rendered) -> None:
     result = rendered(App)
     div = result.tree["children"][0]
 
-    assert div["props"]["style"] == {
-        "backgroundColor": "red",
-        "border_radius": "8px",
-    }
+    assert div["props"]["style"] == {"background-color": "red", "border-radius": "8px"}
 
 
 def test_style_serializes_modern_color_helpers(rendered) -> None:
@@ -129,3 +126,45 @@ def test_style_serializes_shadow_helper_lengths_with_units(rendered) -> None:
     div = result.tree["children"][0]
 
     assert div["props"]["style"]["box-shadow"] == "0px 18px 40px rgb(8 15 30 / 0.16)"
+
+
+def test_style_accepts_permissive_kwargs_and_nested_raw_mappings(rendered) -> None:
+    @component
+    def App() -> None:
+        h.Div(
+            style=h.Style(
+                backgroundColor="red",
+                border_radius=8,
+                vars={"--accent": h.rgb(10, 20, 30)},
+                selectors={
+                    "& > span": h.Style(margin_top=4),
+                    "&:focus-visible": {"outlineWidth": 3},
+                },
+                media=[
+                    h.media(
+                        min_width=640,
+                        style={
+                            "paddingInline": "2rem",
+                            "& > strong": {"fontWeight": 700},
+                        },
+                    ),
+                ],
+            )
+        )
+
+    result = rendered(App)
+    div = result.tree["children"][0]
+
+    assert div["props"]["style"] == {
+        "background-color": "red",
+        "border-radius": "8px",
+        "--accent": "rgb(10 20 30)",
+    }
+    assert div["props"]["class_name"].startswith("tcss_")
+    assert "& > span".replace("&", f".{div['props']['class_name']}")[:5]  # sanity on class use
+    assert ".tcss_" in div["props"]["_style_rules"]
+    assert "> span" in div["props"]["_style_rules"]
+    assert ":focus-visible" in div["props"]["_style_rules"]
+    assert "@media (min-width: 640px)" in div["props"]["_style_rules"]
+    assert "padding-inline:2rem" in div["props"]["_style_rules"]
+    assert "font-weight:700" in div["props"]["_style_rules"]

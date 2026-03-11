@@ -156,15 +156,10 @@ function field_type_expr(property: CssPropertyDef): TypeExpr {
 }
 
 function emit_style_fields(properties: CssPropertyDef[]): string[] {
-  const lines = ["@dataclass(kw_only=True)", "class _GeneratedStyleFields:"];
-  lines.push('    """Generated CSS style field definitions.');
-  lines.push("");
-  lines.push("    Internal base class for `trellis.html.Style`.");
-  lines.push("    Reference: https://developer.mozilla.org/en-US/docs/Web/CSS");
-  lines.push('    """');
+  const lines = ["class _GeneratedStyleFields:"];
   for (const property of [...properties].sort((left, right) => left.python_name.localeCompare(right.python_name))) {
     lines.push(
-      `    ${property.python_name}: ${render_type_expr(field_type_expr(property))} | None = None`,
+      `    ${property.python_name}: ${render_type_expr(field_type_expr(property))} | None`,
     );
   }
   if (properties.length === 0) {
@@ -174,19 +169,27 @@ function emit_style_fields(properties: CssPropertyDef[]): string[] {
 }
 
 function emit_media_rule(media_features: CssMediaFeatureDef[]): string[] {
-  const lines = ["@dataclass(frozen=True, kw_only=True)", "class MediaRule:"];
+  const lines = ["class MediaRule:"];
   lines.push('    """Generated media query rule for `h.media(...)`.');
   lines.push("");
   lines.push("    Represents a typed subset of standard CSS media features.");
   lines.push("    Reference: https://developer.mozilla.org/en-US/docs/Web/CSS/@media");
   lines.push('    """');
-  lines.push("    style: Style");
+  lines.push("    style: StyleInput");
+  lines.push("    query: builtins.str | None");
+  lines.push("    features: builtins.dict[builtins.str, Any]");
   for (const feature of [...media_features].sort((left, right) => left.python_name.localeCompare(right.python_name))) {
     lines.push(
       `    ${feature.python_name}: ${render_type_expr(qualify_field_primitives(feature.type_expr))} | None = None`,
     );
   }
-  lines.push('    query: str | None = None');
+  lines.push("    def __init__(");
+  lines.push("        self,");
+  lines.push("        *,");
+  lines.push("        style: StyleInput,");
+  lines.push("        query: builtins.str | None = None,");
+  lines.push("        **feature_values: Unpack[_MediaRuleKwargs],");
+  lines.push("    ) -> None: ...");
   return lines;
 }
 
@@ -198,14 +201,11 @@ function emit_media_rule_kwargs(media_features: CssMediaFeatureDef[]): string[] 
       `    ${feature.python_name}: ${render_type_expr(qualify_field_primitives(feature.type_expr))}`,
     );
   }
-  lines.push("    query: builtins.str");
   return lines;
 }
 
 function emit_types_module(document: CssDocument, generated_at: string): string {
   const aliases = emit_aliases(document.value_aliases);
-  const style_fields = emit_style_fields(document.properties);
-  const media_rule = emit_media_rule(document.media_features);
   const media_rule_kwargs = emit_media_rule_kwargs(document.media_features);
   return [
     render_generated_module_docstring("Generated CSS style type declarations.", generated_at, [
@@ -216,21 +216,126 @@ function emit_types_module(document: CssDocument, generated_at: string): string 
     "",
     "import builtins",
     "",
-    "from dataclasses import dataclass",
-    "from typing import TYPE_CHECKING, Literal, TypedDict",
+    "from typing import Literal, TypedDict",
     "",
     "from trellis.html._css_primitives import CssAngle, CssColor, CssLength, CssPercent, CssTime, CssValue",
     "",
-    "if TYPE_CHECKING:",
-    "    from trellis.html._style_runtime import Style",
-    "",
     ...aliases,
     "",
-    ...style_fields,
-    "",
-    ...media_rule,
-    "",
     ...media_rule_kwargs,
+    "",
+  ].join("\n");
+}
+
+function emit_style_runtime_stub(document: CssDocument, generated_at: string): string {
+  const ordered_properties = [...document.properties].sort((left, right) =>
+    left.python_name.localeCompare(right.python_name),
+  );
+  const ordered_alias_names = [...document.value_aliases]
+    .map((alias) => alias.name)
+    .sort((left, right) => left.localeCompare(right));
+  const style_field_lines = emit_style_fields(document.properties);
+  const media_rule_lines = emit_media_rule(document.media_features);
+  const init_lines = [
+    "    def __init__(",
+    "        self,",
+    "        _mapping: StyleInput | None = None,",
+    "        /,",
+    "        *,",
+    "        vars: builtins.dict[builtins.str, StyleScalar] | None = None,",
+    "        selectors: builtins.dict[builtins.str, StyleInput] | None = None,",
+    "        media: builtins.list[MediaRule] | builtins.dict[builtins.str, StyleInput] | None = None,",
+    '        hover: Style | None = None,',
+    '        focus: Style | None = None,',
+    '        focus_visible: Style | None = None,',
+    '        focus_within: Style | None = None,',
+    '        active: Style | None = None,',
+    '        visited: Style | None = None,',
+    '        disabled: Style | None = None,',
+    '        checked: Style | None = None,',
+    '        placeholder: Style | None = None,',
+    '        before: Style | None = None,',
+    '        after: Style | None = None,',
+    '        selection: Style | None = None,',
+    ...ordered_properties.map(
+      (property) =>
+        `        ${property.python_name}: ${render_type_expr(field_type_expr(property))} | None = None,`,
+    ),
+    "        **extra_styles: Any,",
+    "    ) -> None: ...",
+  ];
+  const helper_lines = [
+    "def raw(value: builtins.str) -> CssValue: ...",
+    "def color(value: builtins.str) -> CssColor: ...",
+    "def px(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def rem(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def em(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def vw(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def vh(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def pct(value: builtins.int | builtins.float) -> CssPercent: ...",
+    "def sec(value: builtins.int | builtins.float) -> CssTime: ...",
+    "def ms(value: builtins.int | builtins.float) -> CssTime: ...",
+    "def deg(value: builtins.int | builtins.float) -> CssAngle: ...",
+    "def rgb(red: builtins.int, green: builtins.int, blue: builtins.int) -> CssColor: ...",
+    "def rgba(red: builtins.int, green: builtins.int, blue: builtins.int, alpha: builtins.float) -> CssColor: ...",
+    "def hsl(hue: builtins.int | builtins.float, saturation: builtins.int | builtins.float, lightness: builtins.int | builtins.float) -> CssColor: ...",
+    "def hwb(hue: builtins.int | builtins.float, whiteness: builtins.int | builtins.float, blackness: builtins.int | builtins.float, *, alpha: builtins.float | None = None) -> CssColor: ...",
+    "def lab(lightness: builtins.int | builtins.float, a_value: builtins.int | builtins.float, b_value: builtins.int | builtins.float, *, alpha: builtins.float | None = None) -> CssColor: ...",
+    "def lch(lightness: builtins.int | builtins.float, chroma: builtins.int | builtins.float, hue: builtins.int | builtins.float, *, alpha: builtins.float | None = None) -> CssColor: ...",
+    "def oklab(lightness: builtins.int | builtins.float, a_value: builtins.int | builtins.float, b_value: builtins.int | builtins.float, *, alpha: builtins.float | None = None) -> CssColor: ...",
+    "def oklch(lightness: builtins.int | builtins.float, chroma: builtins.int | builtins.float, hue: builtins.int | builtins.float, *, alpha: builtins.float | None = None) -> CssColor: ...",
+    "def color_space(space: builtins.str, *components: builtins.int | builtins.float | builtins.str, alpha: builtins.float | None = None) -> CssColor: ...",
+    "def var(name: builtins.str, fallback: StyleScalar | None = None) -> CssValue: ...",
+    "def calc(expression: builtins.str) -> CssValue: ...",
+    "def min_(*values: StyleScalar) -> CssValue: ...",
+    "def max_(*values: StyleScalar) -> CssValue: ...",
+    "def clamp(minimum: StyleScalar, preferred: StyleScalar, maximum: StyleScalar) -> CssValue: ...",
+    "def margin(*values: StyleScalar) -> CssValue: ...",
+    "def padding(*values: StyleScalar) -> CssValue: ...",
+    "def inset(*values: StyleScalar) -> CssValue: ...",
+    "def border(width: StyleScalar, style: builtins.str, color_value: StyleScalar) -> CssValue: ...",
+    "def shadow(*parts: StyleScalar) -> CssValue: ...",
+    "def scale(value: builtins.int | builtins.float) -> CssValue: ...",
+    "def rotate(value: CssAngle | builtins.int | builtins.float) -> CssValue: ...",
+    "def translate(x_value: StyleScalar, y_value: StyleScalar | None = None) -> CssValue: ...",
+    "def media(*, style: StyleInput, query: builtins.str | None = None, **feature_values: Unpack[_MediaRuleKwargs]) -> MediaRule: ...",
+  ];
+
+  return [
+    render_generated_module_docstring("Generated CSS runtime typing stubs.", generated_at, [
+      "Internal codegen artifact describing the public runtime surface for trellis.html CSS helpers.",
+      "Reference: https://developer.mozilla.org/en-US/docs/Web/CSS",
+    ]),
+    "from __future__ import annotations",
+    "",
+    "import builtins",
+    "",
+    "from collections.abc import Mapping",
+    "from typing import Any, Literal, Unpack",
+    "",
+    "from trellis.html._css_primitives import CssAngle, CssColor, CssLength, CssPercent, CssTime, CssValue",
+    `from trellis.html._generated_style_types import ${[...ordered_alias_names, "_MediaRuleKwargs"].join(", ")}`,
+    "",
+    "type StyleScalar = builtins.str | builtins.int | builtins.float | CssValue",
+    "type RawStyleMapping = Mapping[builtins.str, Any]",
+    "type StyleInput = Style | RawStyleMapping",
+    "type WidthInput = WidthValue | builtins.int | builtins.float | builtins.str",
+    "type HeightInput = HeightValue | builtins.int | builtins.float | builtins.str",
+    "type SpacingInput = SpacingShorthand | builtins.int | builtins.float | builtins.str",
+    "",
+    ...media_rule_lines,
+    "",
+    "class Style:",
+    '    """Generated typing stub for `trellis.html.Style`."""',
+    "    props: builtins.dict[builtins.str, Any]",
+    "    vars: builtins.dict[builtins.str, StyleScalar]",
+    "    selectors: builtins.dict[builtins.str, StyleInput]",
+    "    media: builtins.list[MediaRule]",
+    ...style_field_lines.slice(1),
+    "",
+    ...init_lines,
+    "",
+    ...helper_lines,
     "",
   ].join("\n");
 }
@@ -281,8 +386,12 @@ export function build_trellis_css_modules(
 ): TrellisModulePayload[] {
   return [
     {
-      path: "src/trellis/html/_generated_style_types.py",
+      path: "src/trellis/html/_generated_style_types.pyi",
       content: emit_types_module(document, generated_at),
+    },
+    {
+      path: "src/trellis/html/_style_runtime.pyi",
+      content: emit_style_runtime_stub(document, generated_at),
     },
     {
       path: "src/trellis/html/_generated_style_metadata.py",

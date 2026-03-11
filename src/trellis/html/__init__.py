@@ -30,7 +30,6 @@ Categories:
 
 from trellis.html import _generated_events as _generated_events
 from trellis.html import _generated_runtime as _generated_runtime
-from trellis.html import _generated_style_types as _generated_style_types
 from trellis.html import _style_runtime as _style_runtime
 from trellis.html._generated_events import *
 from trellis.html._generated_runtime import *
@@ -82,8 +81,6 @@ _css_exports = [
     "vh",
     "vw",
 ]
-MediaRule = _generated_style_types.MediaRule
-
 __all__ = [
     "A",
     "HtmlContainerTrait",
