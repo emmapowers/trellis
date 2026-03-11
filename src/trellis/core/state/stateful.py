@@ -86,6 +86,11 @@ type Tracked[T] = tp.Annotated[T, _TRACKED_SENTINEL]
 
 def _annotation_is_explicitly_tracked(annotation: tp.Any) -> bool:
     """Return True when an annotation opts into tracked state explicitly."""
+    if isinstance(annotation, str):
+        normalized = annotation.replace(" ", "")
+        head = normalized.split("[", 1)[0]
+        if head.rsplit(".", 1)[-1] == "Tracked":
+            return True
     annotation_origin = tp.get_origin(annotation)
     if annotation_origin is Tracked:
         return True

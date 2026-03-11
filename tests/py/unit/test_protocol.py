@@ -29,6 +29,10 @@ class Pong(msgspec.Struct, tag="pong", tag_field="type"):
     value: int
 
 
+class Temp(msgspec.Struct, tag="temp", tag_field="type"):
+    value: int
+
+
 class MockMessageHandler:
     """Minimal handler implementing the protocol interface for tests."""
 
@@ -44,6 +48,15 @@ class TestMessageTypeRegistration:
 
         assert Ping in tp.cast("dict[type[object], str]", protocol_module._MESSAGE_TAGS)
         assert "ping" in tp.cast("dict[str, type[object]]", protocol_module._MESSAGE_TYPES)
+
+    def test_reset_for_tests_clears_registered_message_types(self, reset_protocol) -> None:
+        register_message_types(Temp)
+
+        assert protocol_module.decode_registered_message({"type": "temp", "value": 1}) == Temp(1)
+
+        protocol_module._reset_for_tests()
+
+        assert protocol_module.decode_registered_message({"type": "temp", "value": 1}) is None
 
 
 class TestMessageHandlerContext:
@@ -161,6 +174,29 @@ class TestListenerRegistration:
         await dispatch(handler, Ping(4))
 
         assert calls == ["global:4", "session:4"]
+
+    @pytest.mark.anyio
+    async def test_dispatch_uses_listener_snapshots_when_listeners_unregister(
+        self,
+        reset_protocol,
+    ) -> None:
+        calls: list[str] = []
+
+        async def first(message_handler: MessageHandlerProtocol, message: Ping) -> None:
+            del message_handler, message
+            calls.append("first")
+            protocol_module._unregister_listener(Ping, first, None)
+
+        async def second(message_handler: MessageHandlerProtocol, message: Ping) -> None:
+            del message_handler, message
+            calls.append("second")
+
+        listen(Ping)(first)
+        listen(Ping)(second)
+
+        await dispatch(MockMessageHandler(), Ping(8))
+
+        assert calls == ["first", "second"]
 
 
 class TestMessageListener:

@@ -48,9 +48,15 @@ def reset_apploader() -> tp.Generator[None]:
 @pytest.fixture
 def reset_protocol() -> tp.Generator[None]:
     """Reset protocol registries and contextvars before and after test."""
+    message_types = dict(protocol_module._MESSAGE_TYPES)
+    message_tags = dict(protocol_module._MESSAGE_TAGS)
     protocol_module._reset_for_tests()
+    protocol_module._MESSAGE_TYPES.update(message_types)
+    protocol_module._MESSAGE_TAGS.update(message_tags)
     yield
     protocol_module._reset_for_tests()
+    protocol_module._MESSAGE_TYPES.update(message_types)
+    protocol_module._MESSAGE_TAGS.update(message_tags)
 
 
 # =============================================================================

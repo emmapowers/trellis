@@ -79,11 +79,18 @@ def state_var(
             name = state_var("Ada")
             count = state_var(0)
 
+            def rename() -> None:
+                name.value = "Grace"
+
             w.TextInput(value=mutable(name.value))
+            w.Button(text="Rename", on_click=rename)
             w.Button(text="+", on_click=lambda: count.set(count.value + 1))
             w.Label(text=f"Hello, {name.value}")
             w.Label(text=f"Count: {count.value}")
         ```
+
+    In ordinary Python code, assign to `.value` directly. Use `.set(...)` when
+    passing a setter callback around or when it reads more clearly at the call site.
 
     Returns:
         A per-element `StateVar[T]` that persists across re-renders.

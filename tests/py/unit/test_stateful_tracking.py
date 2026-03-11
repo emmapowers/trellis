@@ -34,6 +34,14 @@ class TestTrackedAttributeDetection:
 
         assert _is_tracked_attribute(MyState, "_value") is True
 
+    def test_private_string_tracked_attribute_is_tracked_with_unresolved_forward_ref(self) -> None:
+        class MyState(Stateful):
+            _value: int
+
+        MyState.__annotations__["_value"] = 'Tracked["Socket"]'
+
+        assert _is_tracked_attribute(MyState, "_value") is True
+
     def test_private_annotated_attribute_is_not_tracked(self) -> None:
         @dataclass(kw_only=True)
         class MyState(Stateful):

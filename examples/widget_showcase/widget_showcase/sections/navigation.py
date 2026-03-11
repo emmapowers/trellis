@@ -1,7 +1,5 @@
 """Navigation section of the widget showcase."""
 
-from typing import cast
-
 from trellis import component, mutable, state_var
 from trellis import widgets as w
 from trellis.widgets import IconName
@@ -41,7 +39,11 @@ def BreadcrumbExample() -> None:
 @example("Tree")
 def TreeExample() -> None:
     """Hierarchical data navigation."""
-    selected_node = state_var(cast("str | None", None))
+
+    def initial_selection() -> str | None:
+        return None
+
+    selected_node = state_var(factory=initial_selection)
     w.Tree(
         data=[
             {

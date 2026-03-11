@@ -91,7 +91,7 @@ def HelloWorld() -> None:
         count.set(max(MIN_COUNT, count.value - 1))
 
     def reset() -> None:
-        count.set((MIN_COUNT + MAX_COUNT) // 2)
+        count.set(INITIAL_COUNT)
 
     with w.Column(padding=24, align="center", justify="center"):
         with w.Card(padding=32, width=320):

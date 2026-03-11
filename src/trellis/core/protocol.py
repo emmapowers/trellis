@@ -144,13 +144,13 @@ async def dispatch(handler: MessageHandlerProtocol, message: object) -> None:
     previous = get_message_handler()
     set_message_handler(handler)
     try:
-        for listener in _GLOBAL_LISTENERS.get(type(message), ()):
+        for listener in tuple(_GLOBAL_LISTENERS.get(type(message), ())):
             await listener(handler, message)
 
         scoped = _HANDLER_LISTENERS.get(handler)
         if scoped is None:
             return
-        for listener in scoped.get(type(message), ()):
+        for listener in tuple(scoped.get(type(message), ())):
             await listener(handler, message)
     finally:
         set_message_handler(previous)
@@ -223,6 +223,8 @@ def _looks_like_method(fn: tp.Callable[..., tp.Any]) -> bool:
 
 def _reset_for_tests() -> None:
     """Reset protocol registries and context for isolated tests."""
+    _MESSAGE_TYPES.clear()
+    _MESSAGE_TAGS.clear()
     _GLOBAL_LISTENERS.clear()
     _HANDLER_LISTENERS.clear()
     _handler_ctx.set(None)
