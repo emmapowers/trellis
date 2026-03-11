@@ -1,11 +1,18 @@
 """Router state management."""
 
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from urllib.parse import parse_qsl
 
+from trellis.core.protocol import (
+    MessageHandlerProtocol,
+    MessageListener,
+    get_message_handler,
+    listen,
+    send,
+)
 from trellis.core.rendering.session import get_active_session
 from trellis.core.state.stateful import Stateful, Tracked
+from trellis.routing.messages import HistoryBack, HistoryForward, HistoryPush, UrlChanged
 from trellis.routing.path_matching import match_path
 
 
@@ -34,7 +41,7 @@ class CurrentRouteContext(Stateful):
 
 
 @dataclass()
-class RouterState(Stateful):
+class RouterState(Stateful, MessageListener):
     """Reactive router state for client-side routing.
 
     Provides path-based routing with history navigation. Extends Stateful
@@ -68,10 +75,6 @@ class RouterState(Stateful):
     _history: Tracked[list[str]] = field(default_factory=list)
     _history_index: Tracked[int] = field(default=0)
 
-    _on_navigate: Callable[[str], Awaitable[None]] | None = field(default=None)
-    _on_go_back: Callable[[], Awaitable[None]] | None = field(default=None)
-    _on_go_forward: Callable[[], Awaitable[None]] | None = field(default=None)
-
     def __init__(self, *, path: str | None = None) -> None:
         """Initialize with starting path.
 
@@ -89,9 +92,7 @@ class RouterState(Stateful):
         self._path = path
         self._history = [path]
         self._history_index = 0
-        self._on_navigate = None
-        self._on_go_back = None
-        self._on_go_forward = None
+        MessageListener.__init__(self)
 
     @property
     def path(self) -> str:
@@ -161,9 +162,8 @@ class RouterState(Stateful):
         self._history_index = len(self._history) - 1
         self._path = path
 
-        # Notify handler to update browser history
-        if self._on_navigate is not None:
-            await self._on_navigate(path)
+        if get_message_handler() is not None:
+            await send(HistoryPush(path=path))
 
     async def go_back(self) -> None:
         """Navigate back in history.
@@ -175,9 +175,8 @@ class RouterState(Stateful):
         self._history_index -= 1
         self._path = self._history[self._history_index]
 
-        # Notify handler to update browser history
-        if self._on_go_back is not None:
-            await self._on_go_back()
+        if get_message_handler() is not None:
+            await send(HistoryBack())
 
     async def go_forward(self) -> None:
         """Navigate forward in history.
@@ -189,15 +188,37 @@ class RouterState(Stateful):
         self._history_index += 1
         self._path = self._history[self._history_index]
 
-        # Notify handler to update browser history
-        if self._on_go_forward is not None:
-            await self._on_go_forward()
+        if get_message_handler() is not None:
+            await send(HistoryForward())
+
+    @listen(UrlChanged)
+    async def on_url_changed(
+        self,
+        _message_handler: MessageHandlerProtocol,
+        message: UrlChanged,
+    ) -> None:
+        """Update router state when the browser URL changes."""
+        self._update_path_from_url(message.path)
+
+    def on_mount(self) -> None:
+        """Register session-scoped listeners after the router enters the tree."""
+        self.register_message_listeners()
+
+    def on_unmount(self) -> None:
+        """Detach session-scoped listeners when the router leaves the tree."""
+        self.unregister_message_listeners()
+
+    def __enter__(self) -> "RouterState":
+        """Provide router context and ensure its listeners are registered."""
+        result = super().__enter__()
+        self.register_message_listeners()
+        return result
 
     def _update_path_from_url(self, path: str) -> None:
-        """Update path from browser URL change (popstate).
+        """Update path from a browser-driven URL change.
 
-        Called by handler when receiving UrlChanged message. Does NOT
-        trigger history callbacks since this is a browser-initiated change.
+        Used by the UrlChanged protocol listener. Does not enqueue history
+        messages since the browser already owns the navigation.
 
         Args:
             path: The new path from browser URL

@@ -100,47 +100,6 @@ class HelloResponseMessage(msgspec.Struct, tag="hello_response", tag_field="type
     debug: DebugConfig | None = None
 
 
-# ============================================================================
-# Router messages for client-side navigation
-# ============================================================================
-
-
-class HistoryPush(msgspec.Struct, tag="history_push", tag_field="type"):
-    """Push a new path to browser history.
-
-    Sent from server to client when RouterState.navigate() is called.
-    """
-
-    path: str
-
-
-class HistoryBack(msgspec.Struct, tag="history_back", tag_field="type"):
-    """Navigate back in browser history.
-
-    Sent from server to client when RouterState.go_back() is called.
-    """
-
-    pass
-
-
-class HistoryForward(msgspec.Struct, tag="history_forward", tag_field="type"):
-    """Navigate forward in browser history.
-
-    Sent from server to client when RouterState.go_forward() is called.
-    """
-
-    pass
-
-
-class UrlChanged(msgspec.Struct, tag="url_changed", tag_field="type"):
-    """URL changed in browser (e.g., popstate event).
-
-    Sent from client to server when browser URL changes.
-    """
-
-    path: str
-
-
 class ReloadMessage(msgspec.Struct, tag="reload", tag_field="type"):
     """Reload message sent when bundle is rebuilt.
 
@@ -158,9 +117,5 @@ Message = (
     | PatchMessage
     | EventMessage
     | ErrorMessage
-    | HistoryPush
-    | HistoryBack
-    | HistoryForward
-    | UrlChanged
     | ReloadMessage
 )

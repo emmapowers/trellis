@@ -55,6 +55,22 @@ def register_message_types(*message_types: type[msgspec.Struct]) -> None:
         _MESSAGE_TAGS[message_type] = config.tag
 
 
+def decode_registered_message(payload: object) -> object | None:
+    """Decode an extension message from a builtins payload if it is registered."""
+    if not isinstance(payload, dict):
+        return None
+
+    tag = payload.get("type")
+    if not isinstance(tag, str):
+        return None
+
+    message_type = _MESSAGE_TYPES.get(tag)
+    if message_type is None:
+        return None
+
+    return msgspec.convert(payload, message_type)
+
+
 def listen(*message_types: type[object]) -> tp.Callable[[F], F]:
     """Register a listener or mark an instance method for later registration."""
 
@@ -75,16 +91,28 @@ class MessageListener:
     """Base class for objects with handler-scoped protocol listeners."""
 
     _message_listener_registrations: list[tuple[MessageHandlerProtocol, type[object], Listener]]
+    _message_listener_handler: MessageHandlerProtocol | None
 
     def __init__(self) -> None:
-        handler = get_message_handler()
-        if handler is None:
-            raise RuntimeError(
-                f"{type(self).__name__} must be created with an active message handler "
-                "to register protocol listeners."
-            )
-
         self._message_listener_registrations = []
+        self._message_listener_handler = None
+        handler = get_message_handler()
+        if handler is not None:
+            self.register_message_listeners(handler)
+
+    def register_message_listeners(
+        self, handler: MessageHandlerProtocol | None = None
+    ) -> None:
+        """Attach bound listeners for this object to the target handler."""
+        if handler is None:
+            handler = get_message_handler()
+        if handler is None:
+            return
+        if self._message_listener_handler is handler and self._message_listener_registrations:
+            return
+        if self._message_listener_registrations:
+            self.unregister_message_listeners()
+
         for name in dir(type(self)):
             descriptor = getattr(type(self), name, None)
             message_types = getattr(descriptor, _LISTEN_ATTR, None)
@@ -95,12 +123,14 @@ class MessageListener:
             for message_type in message_types:
                 _register_listener(message_type, listener, handler)
                 self._message_listener_registrations.append((handler, message_type, listener))
+        self._message_listener_handler = handler
 
     def unregister_message_listeners(self) -> None:
         """Detach any handler-scoped listeners previously registered by this object."""
         for handler, message_type, listener in self._message_listener_registrations:
             _unregister_listener(message_type, listener, handler)
         self._message_listener_registrations.clear()
+        self._message_listener_handler = None
 
 
 async def send(message: object) -> None:
@@ -191,8 +221,6 @@ def _looks_like_method(fn: tp.Callable[..., tp.Any]) -> bool:
 
 def _reset_for_tests() -> None:
     """Reset protocol registries and context for isolated tests."""
-    _MESSAGE_TYPES.clear()
-    _MESSAGE_TAGS.clear()
     _GLOBAL_LISTENERS.clear()
     _HANDLER_LISTENERS.clear()
     _handler_ctx.set(None)

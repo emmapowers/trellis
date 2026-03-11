@@ -20,7 +20,7 @@ from uuid import uuid4
 
 from trellis.core.callback_context import callback_context
 from trellis.core.components.base import Component
-from trellis.core.protocol import dispatch, get_message_handler, send, set_message_handler
+from trellis.core.protocol import dispatch, get_message_handler, set_message_handler
 from trellis.core.rendering.patches import (
     RenderAddPatch,
     RenderPatch,
@@ -38,22 +38,17 @@ from trellis.platforms.common.messages import (
     EventMessage,
     HelloMessage,
     HelloResponseMessage,
-    HistoryBack,
-    HistoryForward,
-    HistoryPush,
     Message,
     Patch,
     PatchMessage,
     RemovePatch,
     UpdatePatch,
-    UrlChanged,
 )
 from trellis.platforms.common.serialization import (
     _serialize_props,
     parse_callback_id,
     serialize_element,
 )
-from trellis.routing.state import RouterState
 from trellis.utils.debug import get_enabled_categories
 
 logger = logging.getLogger(__name__)
@@ -353,8 +348,6 @@ class MessageHandler:
     def initial_render(self) -> Message:
         """Generate initial render message.
 
-        Also sets up router callbacks if RouterState exists.
-
         Returns:
             PatchMessage on success, ErrorMessage on exception
         """
@@ -367,15 +360,12 @@ class MessageHandler:
                 "Initial render complete, sending PatchMessage (%d elements)", element_count
             )
 
-            # Set up router callbacks after render creates the tree
-            self._setup_router_callbacks()
-
             return PatchMessage(patches=wire_patches)
         except Exception as e:
             logger.exception(f"Error during initial render: {e}")
             return ErrorMessage(error=_format_exception(e), context="render")
 
-    async def handle_message(self, msg: Message) -> Message | None:
+    async def handle_message(self, msg: object) -> Message | None:
         """Process incoming message, return response message.
 
         Args:
@@ -400,61 +390,8 @@ class MessageHandler:
             # The render loop will pick them up on the next frame.
             return None
 
-        if isinstance(msg, UrlChanged):
-            logger.debug("Received UrlChanged: path=%s", msg.path)
-            self._handle_url_changed(msg.path)
-            return None
-
         await dispatch(self, msg)
         return None
-
-    def _handle_url_changed(self, path: str) -> None:
-        """Handle browser URL change (popstate event).
-
-        Finds RouterState in the session and updates its path.
-        """
-        router_state = self._find_router_state()
-        if router_state is not None:
-            router_state._update_path_from_url(path)
-
-    def _find_router_state(self) -> tp.Any:
-        """Find RouterState instance in session's element states.
-
-        Note: While this search is technically O(N) in the number of elements,
-        RouterState is typically placed on the root TrellisApp element, so in
-        practice it completes in O(1) as it's found immediately.
-
-        Returns:
-            RouterState instance or None if not found
-        """
-        if self.session is None:
-            return None
-
-        # Search through element states for RouterState in context
-        for element_id in self.session.states._state:
-            state = self.session.states.get(element_id)
-            if state is not None and RouterState in state.context:
-                return state.context[RouterState]
-        return None
-
-    def _setup_router_callbacks(self) -> None:
-        """Set up async callbacks on RouterState to send history messages."""
-        router_state = self._find_router_state()
-        if router_state is None:
-            return
-
-        async def on_navigate(path: str) -> None:
-            await send(HistoryPush(path=path))
-
-        async def on_go_back() -> None:
-            await send(HistoryBack())
-
-        async def on_go_forward() -> None:
-            await send(HistoryForward())
-
-        router_state._on_navigate = on_navigate
-        router_state._on_go_back = on_go_back
-        router_state._on_go_forward = on_go_forward
 
     async def _invoke_callback(self, callback_id: str, args: list[tp.Any]) -> None:
         """Invoke callback with event conversion.
@@ -592,7 +529,7 @@ class MessageHandler:
         """Main message loop - hello, initial render, then event loop.
 
         1. Performs hello handshake with client
-        2. Sends initial render (full tree, also sets up router callbacks)
+        2. Sends initial render (full tree)
         3. Starts background render loop (30fps batched updates)
         4. Loops receiving messages and sending responses
         """

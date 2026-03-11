@@ -17,15 +17,20 @@ from trellis.platforms.common.messages import (
     AddPatch,
     EventMessage,
     HelloMessage,
+    Message,
+    PatchMessage,
+)
+from trellis.platforms.common.serialization import serialize_element
+from trellis.routing import (
     HistoryBack,
     HistoryForward,
     HistoryPush,
-    Message,
-    PatchMessage,
+    Route,
+    RouterState,
+    Routes,
     UrlChanged,
+    router,
 )
-from trellis.platforms.common.serialization import serialize_element
-from trellis.routing import Route, RouterState, Routes, router
 from trellis.widgets import Button, Label
 
 
@@ -47,14 +52,14 @@ class MockMessageHandler(MessageHandler):
         self, root_component: tp.Any, app_wrapper: AppWrapper = simple_app_wrapper
     ) -> None:
         super().__init__(root_component, app_wrapper)
-        self.sent_messages: list[Message] = []
-        self.incoming_messages: list[Message] = []
+        self.sent_messages: list[object] = []
+        self.incoming_messages: list[object] = []
         self._message_index = 0
 
-    async def send_message(self, msg: Message) -> None:
+    async def send_message(self, msg: object) -> None:
         self.sent_messages.append(msg)
 
-    async def receive_message(self) -> Message:
+    async def receive_message(self) -> object:
         if self._message_index < len(self.incoming_messages):
             msg = self.incoming_messages[self._message_index]
             self._message_index += 1
@@ -63,7 +68,7 @@ class MockMessageHandler(MessageHandler):
         await asyncio.sleep(float("inf"))
         raise RuntimeError("No more messages")
 
-    def queue_incoming(self, msg: Message) -> None:
+    def queue_incoming(self, msg: object) -> None:
         """Queue a message to be received."""
         self.incoming_messages.append(msg)
 
@@ -251,6 +256,35 @@ class TestUrlChangedMessage:
         # About page should have rendered
         assert "about" in rendered_routes
 
+    def test_url_changed_does_not_update_router_state_after_unmount(self) -> None:
+        """Unmounted RouterState listeners stop receiving UrlChanged messages."""
+        router_state = RouterState(path="/")
+        show_router = [True]
+
+        @component
+        def App() -> None:
+            if show_router[0]:
+                with router_state:
+                    Label(text=router_state.path)
+
+        handler = MockMessageHandler(App)
+        handler.queue_incoming(HelloMessage(client_id="test", path="/"))
+
+        async def test() -> None:
+            await handler.handle_hello()
+            handler.initial_render()
+            app_element_id = handler.session.root_element.child_ids[0]
+
+            show_router[0] = False
+            handler.session.dirty.mark(app_element_id)
+            render(handler.session)
+
+            await handler.handle_message(UrlChanged(path="/detached"))
+
+        asyncio.run(test())
+
+        assert router_state.path == "/"
+
 
 class TestHistoryMessagesFromRouterState:
     """Tests for sending history messages when RouterState navigation methods are called."""
@@ -275,17 +309,23 @@ class TestHistoryMessagesFromRouterState:
             await handler.handle_hello()
             handler.initial_render()
             handler.sent_messages.clear()
+            drain_task = asyncio.create_task(handler._drain_message_send_queue())
 
-            # Get the button callback
-            tree = serialize_element(handler.session.root_element, handler.session)
-            # Navigate: TestRoot -> App -> Button (composition) -> _Button (react)
-            app = tree["children"][0]
-            button_wrapper = app["children"][0]
-            button = button_wrapper["children"][0]
-            cb_id = button["props"]["on_click"]["__callback__"]
+            try:
+                # Get the button callback
+                tree = serialize_element(handler.session.root_element, handler.session)
+                # Navigate: TestRoot -> App -> Button (composition) -> _Button (react)
+                app = tree["children"][0]
+                button_wrapper = app["children"][0]
+                button = button_wrapper["children"][0]
+                cb_id = button["props"]["on_click"]["__callback__"]
 
-            # Invoke callback
-            await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
+                # Invoke callback
+                await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
+                await asyncio.sleep(0.01)
+            finally:
+                drain_task.cancel()
+                await asyncio.gather(drain_task, return_exceptions=True)
 
         asyncio.run(test())
 
@@ -320,15 +360,21 @@ class TestHistoryMessagesFromRouterState:
             await handler.handle_hello()
             handler.initial_render()
             handler.sent_messages.clear()
+            drain_task = asyncio.create_task(handler._drain_message_send_queue())
 
-            tree = serialize_element(handler.session.root_element, handler.session)
-            # Navigate: TestRoot -> App -> Button (composition) -> _Button (react)
-            app = tree["children"][0]
-            button_wrapper = app["children"][0]
-            button = button_wrapper["children"][0]
-            cb_id = button["props"]["on_click"]["__callback__"]
+            try:
+                tree = serialize_element(handler.session.root_element, handler.session)
+                # Navigate: TestRoot -> App -> Button (composition) -> _Button (react)
+                app = tree["children"][0]
+                button_wrapper = app["children"][0]
+                button = button_wrapper["children"][0]
+                cb_id = button["props"]["on_click"]["__callback__"]
 
-            await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
+                await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
+                await asyncio.sleep(0.01)
+            finally:
+                drain_task.cancel()
+                await asyncio.gather(drain_task, return_exceptions=True)
 
         asyncio.run(test())
 
@@ -362,15 +408,21 @@ class TestHistoryMessagesFromRouterState:
             await handler.handle_hello()
             handler.initial_render()
             handler.sent_messages.clear()
+            drain_task = asyncio.create_task(handler._drain_message_send_queue())
 
-            tree = serialize_element(handler.session.root_element, handler.session)
-            # Navigate: TestRoot -> App -> Button (composition) -> _Button (react)
-            app = tree["children"][0]
-            button_wrapper = app["children"][0]
-            button = button_wrapper["children"][0]
-            cb_id = button["props"]["on_click"]["__callback__"]
+            try:
+                tree = serialize_element(handler.session.root_element, handler.session)
+                # Navigate: TestRoot -> App -> Button (composition) -> _Button (react)
+                app = tree["children"][0]
+                button_wrapper = app["children"][0]
+                button = button_wrapper["children"][0]
+                cb_id = button["props"]["on_click"]["__callback__"]
 
-            await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
+                await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
+                await asyncio.sleep(0.01)
+            finally:
+                drain_task.cancel()
+                await asyncio.gather(drain_task, return_exceptions=True)
 
         asyncio.run(test())
 
@@ -394,15 +446,23 @@ class TestHistoryMessagesFromRouterState:
             await handler.handle_hello()
             handler.initial_render()
             handler.sent_messages.clear()
+            drain_task = asyncio.create_task(handler._drain_message_send_queue())
 
-            tree = serialize_element(handler.session.root_element, handler.session)
-            # Navigate: TestRoot -> App -> Anchor
-            app = tree["children"][0]
-            anchor = app["children"][0]
-            cb_id = anchor["props"]["on_click"]["__callback__"]
+            try:
+                tree = serialize_element(handler.session.root_element, handler.session)
+                # Navigate: TestRoot -> App -> Anchor
+                app = tree["children"][0]
+                anchor = app["children"][0]
+                cb_id = anchor["props"]["on_click"]["__callback__"]
 
-            # Pass click event - handler converts dict with "type" to MouseEvent
-            await handler.handle_message(EventMessage(callback_id=cb_id, args=[{"type": "click"}]))
+                # Pass click event - handler converts dict with "type" to MouseEvent
+                await handler.handle_message(
+                    EventMessage(callback_id=cb_id, args=[{"type": "click"}])
+                )
+                await asyncio.sleep(0.01)
+            finally:
+                drain_task.cancel()
+                await asyncio.gather(drain_task, return_exceptions=True)
 
         asyncio.run(test())
 

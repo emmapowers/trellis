@@ -6,6 +6,7 @@ import msgspec
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from trellis.core.components.base import Component
+from trellis.core.protocol import decode_registered_message
 from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.handler_registry import get_global_registry
@@ -31,7 +32,7 @@ class WebSocketMessageHandler(MessageHandler):
 
     websocket: WebSocket
     _encoder: msgspec.msgpack.Encoder
-    _decoder: msgspec.msgpack.Decoder[Message]
+    _decoder: msgspec.msgpack.Decoder[object]
 
     def __init__(
         self,
@@ -51,8 +52,7 @@ class WebSocketMessageHandler(MessageHandler):
         super().__init__(root_component, app_wrapper, batch_delay=batch_delay)
         self.websocket = websocket
         self._encoder = msgspec.msgpack.Encoder()
-        # Single decoder for all message types (including HelloMessage)
-        self._decoder = msgspec.msgpack.Decoder(Message)
+        self._decoder = msgspec.msgpack.Decoder()
 
     async def send_message(self, msg: object) -> None:
         """Send message to client via WebSocket."""
@@ -65,13 +65,17 @@ class WebSocketMessageHandler(MessageHandler):
                 raise SessionDisconnected() from exc
             raise
 
-    async def receive_message(self) -> Message:
+    async def receive_message(self) -> object:
         """Receive message from client via WebSocket."""
         try:
             data = await self.websocket.receive_bytes()
         except WebSocketDisconnect as exc:
             raise SessionDisconnected() from exc
-        return self._decoder.decode(data)
+        raw_message = self._decoder.decode(data)
+        extension_message = decode_registered_message(raw_message)
+        if extension_message is not None:
+            return extension_message
+        return msgspec.convert(raw_message, Message)
 
 
 @router.websocket("/ws")

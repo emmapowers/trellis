@@ -7,6 +7,7 @@ import time
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.element import Element, props_equal
+from trellis.core.rendering.element_state import ElementState
 from trellis.core.rendering.lifecycle import invoke_lifecycle_hook
 from trellis.core.rendering.patches import (
     RenderAddPatch,
@@ -182,6 +183,8 @@ def _execute_single_element(
     session.elements.store(element)
 
     state.state_call_count = 0
+    previous_context = dict(state.context)
+    state.context.clear()
 
     # Get props including children if component accepts them
     props = element.props.copy()
@@ -212,6 +215,8 @@ def _execute_single_element(
         for th in trait_hooks:
             if th.after_execute is not None:
                 th.after_execute(element, element, state, session)
+
+        _cleanup_removed_message_listeners(previous_context, state.context)
 
         # Update element in-place with child_ids (execution of children happens in _execute_tree)
         element.child_ids = new_child_ids
@@ -371,14 +376,11 @@ def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
     if state is None:
         return
 
-    # Get states sorted by call index
-    items = list(state.local_state.items())
-    items.sort(key=lambda x: x[0][1])
+    stateful_instances = _get_lifecycle_statefuls(state)
+    if stateful_instances:
+        logger.debug("Calling on_mount for %s (%d states)", element_id, len(stateful_instances))
 
-    if items:
-        logger.debug("Calling on_mount for %s (%d states)", element_id, len(items))
-
-    for _, stateful in items:
+    for stateful in stateful_instances:
         if hasattr(stateful, "on_mount"):
             invoke_lifecycle_hook(session, element_id, stateful.on_mount, "on_mount")
 
@@ -404,16 +406,51 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
             if th.on_unmount is not None:
                 th.on_unmount(element, element, state, session)
 
-    # Get states sorted by call index, reversed
-    items = list(state.local_state.items())
-    items.sort(key=lambda x: x[0][1], reverse=True)
-
-    if items:
+    stateful_instances = _get_lifecycle_statefuls(state, reverse=True)
+    if stateful_instances:
         logger.debug("Calling on_unmount for %s", element_id)
 
-    for _, stateful in items:
+    for stateful in stateful_instances:
         if hasattr(stateful, "on_unmount"):
             invoke_lifecycle_hook(session, element_id, stateful.on_unmount, "on_unmount")
+
+
+def _get_lifecycle_statefuls(
+    state: ElementState,
+    reverse: bool = False,
+) -> list[object]:
+    """Return unique stateful objects that should receive lifecycle hooks."""
+    local_state_items = list(state.local_state.items())
+    local_state_items.sort(key=lambda item: item[0][1], reverse=reverse)
+    local_statefuls = [instance for _, instance in local_state_items]
+
+    context_values = list(state.context.values())
+    if reverse:
+        context_values.reverse()
+
+    seen: set[int] = set()
+    lifecycle_statefuls: list[object] = []
+    for stateful in [*local_statefuls, *context_values]:
+        stateful_id = id(stateful)
+        if stateful_id in seen:
+            continue
+        seen.add(stateful_id)
+        lifecycle_statefuls.append(stateful)
+    return lifecycle_statefuls
+
+
+def _cleanup_removed_message_listeners(
+    previous_context: dict[type, object],
+    current_context: dict[type, object],
+) -> None:
+    """Detach message listeners for context providers removed during re-render."""
+    current_instances = {id(instance) for instance in current_context.values()}
+    for instance in previous_context.values():
+        if id(instance) in current_instances:
+            continue
+        unregister = getattr(instance, "unregister_message_listeners", None)
+        if callable(unregister):
+            unregister()
 
 
 def _process_pending_hooks(

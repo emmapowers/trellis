@@ -13,11 +13,9 @@ from collections.abc import Callable
 import msgspec
 
 from trellis.core.components.base import Component
+from trellis.core.protocol import decode_registered_message
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
-from trellis.platforms.common.messages import (
-    EventMessage,
-    Message,
-)
+from trellis.platforms.common.messages import EventMessage, Message
 
 __all__ = ["BrowserMessageHandler"]
 
@@ -32,7 +30,7 @@ class BrowserMessageHandler(MessageHandler):
     and BrowserPlatform.run() connects this handler to the bridge.
     """
 
-    _inbox: asyncio.Queue[Message]
+    _inbox: asyncio.Queue[object]
     _send_callback: Callable[[tp.Any], None] | None
     _serializer: Callable[[dict[str, tp.Any]], tp.Any]
 
@@ -83,7 +81,7 @@ class BrowserMessageHandler(MessageHandler):
         serialized = self._serializer(msg_dict)
         self._send_callback(serialized)
 
-    async def receive_message(self) -> Message:
+    async def receive_message(self) -> object:
         """Receive message from queue (populated by enqueue_message)."""
         return await self._inbox.get()
 
@@ -121,12 +119,11 @@ def _message_to_dict(msg: object) -> dict[str, tp.Any]:
     return result
 
 
-def _dict_to_message(msg_dict: dict[str, tp.Any]) -> Message:
-    """Convert a dict from JavaScript to a msgspec Message struct.
+def _dict_to_message(msg_dict: dict[str, tp.Any]) -> object:
+    """Convert a dict from JavaScript to a protocol message struct."""
+    extension_message = decode_registered_message(msg_dict)
+    if extension_message is not None:
+        return extension_message
 
-    Uses msgspec.convert() with the Message union type, which automatically
-    dispatches to the correct struct based on the 'type' tag field.
-    This is symmetric with msgspec.to_builtins() used in _message_to_dict().
-    """
     result: Message = msgspec.convert(msg_dict, Message)
     return result

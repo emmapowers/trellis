@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 import msgspec
 
+from trellis.core.protocol import decode_registered_message
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.messages import Message
 
@@ -32,7 +33,7 @@ class PyTauriMessageHandler(MessageHandler):
     _channel: Channel
     _queue: asyncio.Queue[bytes]
     _encoder: msgspec.msgpack.Encoder
-    _decoder: msgspec.msgpack.Decoder[Message]
+    _decoder: msgspec.msgpack.Decoder[object]
 
     def __init__(
         self,
@@ -53,17 +54,21 @@ class PyTauriMessageHandler(MessageHandler):
         self._channel = channel
         self._queue = asyncio.Queue()
         self._encoder = msgspec.msgpack.Encoder()
-        self._decoder = msgspec.msgpack.Decoder(Message)
+        self._decoder = msgspec.msgpack.Decoder()
 
     async def send_message(self, msg: object) -> None:
         """Send message to client via channel."""
         data = self._encoder.encode(msg)
         self._channel.send(bytes(data))
 
-    async def receive_message(self) -> Message:
+    async def receive_message(self) -> object:
         """Receive message from queue (populated by trellis_send command)."""
         data = await self._queue.get()
-        return self._decoder.decode(data)
+        raw_message = self._decoder.decode(data)
+        extension_message = decode_registered_message(raw_message)
+        if extension_message is not None:
+            return extension_message
+        return msgspec.convert(raw_message, Message)
 
     def enqueue(self, data: bytes) -> None:
         """Enqueue incoming message data from trellis_send command."""

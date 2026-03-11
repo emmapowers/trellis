@@ -2,14 +2,8 @@
 
 import msgspec
 
-from trellis.platforms.common.messages import (
-    HelloMessage,
-    HistoryBack,
-    HistoryForward,
-    HistoryPush,
-    Message,
-    UrlChanged,
-)
+from trellis.platforms.common.messages import HelloMessage, Message
+from trellis.routing import HistoryBack, HistoryForward, HistoryPush, UrlChanged
 
 
 class TestHelloMessagePath:
@@ -50,7 +44,7 @@ class TestHistoryPush:
     def test_history_push_roundtrip(self) -> None:
         """HistoryPush survives msgpack roundtrip."""
         encoder = msgspec.msgpack.Encoder()
-        decoder = msgspec.msgpack.Decoder(Message)
+        decoder = msgspec.msgpack.Decoder(HistoryPush)
 
         original = HistoryPush(path="/users/42")
         decoded = decoder.decode(encoder.encode(original))
@@ -80,7 +74,7 @@ class TestHistoryBack:
     def test_history_back_roundtrip(self) -> None:
         """HistoryBack survives msgpack roundtrip."""
         encoder = msgspec.msgpack.Encoder()
-        decoder = msgspec.msgpack.Decoder(Message)
+        decoder = msgspec.msgpack.Decoder(HistoryBack)
 
         original = HistoryBack()
         decoded = decoder.decode(encoder.encode(original))
@@ -108,7 +102,7 @@ class TestHistoryForward:
     def test_history_forward_roundtrip(self) -> None:
         """HistoryForward survives msgpack roundtrip."""
         encoder = msgspec.msgpack.Encoder()
-        decoder = msgspec.msgpack.Decoder(Message)
+        decoder = msgspec.msgpack.Decoder(HistoryForward)
 
         original = HistoryForward()
         decoded = decoder.decode(encoder.encode(original))
@@ -136,7 +130,7 @@ class TestUrlChanged:
     def test_url_changed_roundtrip(self) -> None:
         """UrlChanged survives msgpack roundtrip."""
         encoder = msgspec.msgpack.Encoder()
-        decoder = msgspec.msgpack.Decoder(Message)
+        decoder = msgspec.msgpack.Decoder(UrlChanged)
 
         original = UrlChanged(path="/about")
         decoded = decoder.decode(encoder.encode(original))
@@ -155,22 +149,22 @@ class TestUrlChanged:
         assert raw["path"] == "/contact"
 
 
-class TestRouterMessagesInUnion:
-    """Tests for router messages in the Message union."""
+class TestRouterMessageOwnership:
+    """Tests for router message ownership."""
 
-    def test_all_router_messages_distinguishable(self) -> None:
-        """All router message types can be distinguished after decoding."""
+    def test_router_messages_live_in_routing_module(self) -> None:
+        """Router messages are owned by trellis.routing, not common platform messages."""
+        assert HistoryPush.__module__ == "trellis.routing.messages"
+        assert HistoryBack.__module__ == "trellis.routing.messages"
+        assert HistoryForward.__module__ == "trellis.routing.messages"
+        assert UrlChanged.__module__ == "trellis.routing.messages"
+
+    def test_hello_message_still_roundtrips_through_common_union(self) -> None:
+        """Infrastructure messages remain in the common message union."""
         encoder = msgspec.msgpack.Encoder()
         decoder = msgspec.msgpack.Decoder(Message)
 
-        messages = [
-            HelloMessage(client_id="c1", path="/test"),
-            HistoryPush(path="/users"),
-            HistoryBack(),
-            HistoryForward(),
-            UrlChanged(path="/new"),
-        ]
+        original = HelloMessage(client_id="c1", path="/test")
+        decoded = decoder.decode(encoder.encode(original))
 
-        for original in messages:
-            decoded = decoder.decode(encoder.encode(original))
-            assert type(decoded) is type(original)
+        assert type(decoded) is HelloMessage
