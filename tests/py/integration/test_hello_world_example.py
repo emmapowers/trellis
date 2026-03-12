@@ -58,6 +58,10 @@ class TestHelloWorldExample:
 
         _invoke_callback(session, increment_button["props"]["on_click"]["__callback__"])
         render(session)
+        incremented_tree = serialize_element(session.root_element, session)
+        incremented_label = _find_count_label(incremented_tree)
+        assert incremented_label is not None
+        assert incremented_label["props"]["text"] == "8"
         _invoke_callback(session, reset_button["props"]["on_click"]["__callback__"])
         render(session)
 

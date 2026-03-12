@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import typing as tp
 
-import msgspec
 import pytest
 
 import trellis.core.protocol as protocol_module
@@ -56,15 +55,19 @@ class TestMessageTypeRegistration:
         assert Ping in tp.cast("dict[type[object], str]", protocol_module._MESSAGE_TAGS)
         assert "ping" in tp.cast("dict[str, type[object]]", protocol_module._MESSAGE_TYPES)
 
-    def test_reset_for_tests_clears_registered_message_types(self, reset_protocol) -> None:
+    def test_reset_fixture_clears_registered_message_types(self, reset_protocol) -> None:
         register_message_types(Temp)
 
         assert decode_message({"type": "temp", "value": 1}) == Temp(1)
 
-        protocol_module._reset_for_tests()
+    def test_register_message_types_rejects_conflicting_duplicate_tag(self, reset_protocol) -> None:
+        class TempConflict(Message, tag="temp"):
+            value: str
 
-        with pytest.raises(msgspec.ValidationError):
-            decode_message({"type": "temp", "value": 1})
+        register_message_types(Temp)
+
+        with pytest.raises(ValueError, match="already registered"):
+            register_message_types(TempConflict)
 
 
 class TestMessageHandlerContext:
@@ -84,6 +87,18 @@ class TestMessageHandlerContext:
 
 
 class TestListenerRegistration:
+    @staticmethod
+    async def _dispatch_with_handler(
+        handler: MessageHandlerProtocol,
+        message: Message,
+    ) -> None:
+        previous = get_message_handler()
+        set_message_handler(handler)
+        try:
+            await dispatch(message)
+        finally:
+            set_message_handler(previous)
+
     @pytest.mark.anyio
     async def test_global_free_function_listener_receives_all_sessions(
         self,
@@ -101,8 +116,8 @@ class TestListenerRegistration:
         first = MockMessageHandler()
         second = MockMessageHandler()
 
-        await dispatch(first, Ping(1))
-        await dispatch(second, Ping(2))
+        await self._dispatch_with_handler(first, Ping(1))
+        await self._dispatch_with_handler(second, Ping(2))
 
         assert received == [(first, 1), (second, 2)]
 
@@ -127,8 +142,8 @@ class TestListenerRegistration:
         finally:
             set_message_handler(None)
 
-        await dispatch(first, Ping(1))
-        await dispatch(second, Ping(2))
+        await self._dispatch_with_handler(first, Ping(1))
+        await self._dispatch_with_handler(second, Ping(2))
 
         assert received == [(first, 1)]
 
@@ -146,7 +161,7 @@ class TestListenerRegistration:
         decorated = listen(Ping)(on_ping)
         listen(Ping)(decorated)
 
-        await dispatch(MockMessageHandler(), Ping(3))
+        await self._dispatch_with_handler(MockMessageHandler(), Ping(3))
 
         assert received == [3]
 
@@ -179,7 +194,7 @@ class TestListenerRegistration:
         finally:
             set_message_handler(None)
 
-        await dispatch(handler, Ping(4))
+        await self._dispatch_with_handler(handler, Ping(4))
 
         assert calls == ["global:4", "session:4"]
 
@@ -202,7 +217,7 @@ class TestListenerRegistration:
         listen(Ping)(first)
         listen(Ping)(second)
 
-        await dispatch(MockMessageHandler(), Ping(8))
+        await self._dispatch_with_handler(MockMessageHandler(), Ping(8))
 
         assert calls == ["first", "second"]
 
@@ -232,7 +247,7 @@ class TestMessageHandler:
         finally:
             set_message_handler(None)
 
-        await dispatch(handler, Ping(5))
+        await TestListenerRegistration._dispatch_with_handler(handler, Ping(5))
 
         assert received == [(handler, 5)]
 
@@ -256,12 +271,12 @@ class TestMessageHandler:
 
         listener = PingListener()
 
-        await dispatch(handler, Ping(9))
+        await TestListenerRegistration._dispatch_with_handler(handler, Ping(9))
 
         assert received == []
 
         listener.register_message_listeners(handler)
-        await dispatch(handler, Ping(10))
+        await TestListenerRegistration._dispatch_with_handler(handler, Ping(10))
 
         assert received == [10]
 
@@ -289,9 +304,9 @@ class TestMessageHandler:
         finally:
             set_message_handler(None)
 
-        await dispatch(handler, Ping(11))
+        await TestListenerRegistration._dispatch_with_handler(handler, Ping(11))
         listener.unregister_message_listeners()
-        await dispatch(handler, Ping(12))
+        await TestListenerRegistration._dispatch_with_handler(handler, Ping(12))
 
         assert received == [11]
 
@@ -331,13 +346,13 @@ class TestStatefulMessageHandlerMixin:
         set_message_handler(handler)
         try:
             render(session)
-            await dispatch(handler, Ping(13))
+            await TestListenerRegistration._dispatch_with_handler(handler, Ping(13))
 
             show_host[0] = False
             assert session.root_element_id is not None
             session.dirty.mark(session.root_element_id)
             render(session)
-            await dispatch(handler, Ping(14))
+            await TestListenerRegistration._dispatch_with_handler(handler, Ping(14))
         finally:
             set_message_handler(None)
 
@@ -362,3 +377,12 @@ class TestSend:
     async def test_send_raises_without_active_handler(self, reset_protocol) -> None:
         with pytest.raises(RuntimeError, match="No active message handler"):
             await send(Ping(7))
+
+
+class TestListenValidation:
+    def test_listen_rejects_sync_function(self, reset_protocol) -> None:
+        with pytest.raises(TypeError, match="async"):
+
+            @listen(Ping)
+            def on_ping(message_handler: MessageHandlerProtocol, message: Ping) -> None:
+                del message_handler, message

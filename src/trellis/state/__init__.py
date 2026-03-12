@@ -2,7 +2,7 @@
 
 from trellis.state.loading import Failed, Load, Loading, LoadKey, Ready, load
 from trellis.state.mounting import on_mount
-from trellis.state.state import StateVar, state_var
+from trellis.state.statevar import StateVar, state_var
 
 __all__ = [
     "Failed",

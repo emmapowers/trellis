@@ -50,12 +50,20 @@ def reset_protocol() -> tp.Generator[None]:
     """Reset protocol registries and contextvars before and after test."""
     message_types = dict(protocol_module._MESSAGE_TYPES)
     message_tags = dict(protocol_module._MESSAGE_TAGS)
-    protocol_module._reset_for_tests()
+    protocol_module._GLOBAL_LISTENERS.clear()
+    protocol_module._HANDLER_LISTENERS.clear()
+    protocol_module.set_message_handler(None)
+    protocol_module._MESSAGE_TYPES.clear()
     protocol_module._MESSAGE_TYPES.update(message_types)
+    protocol_module._MESSAGE_TAGS.clear()
     protocol_module._MESSAGE_TAGS.update(message_tags)
     yield
-    protocol_module._reset_for_tests()
+    protocol_module._GLOBAL_LISTENERS.clear()
+    protocol_module._HANDLER_LISTENERS.clear()
+    protocol_module.set_message_handler(None)
+    protocol_module._MESSAGE_TYPES.clear()
     protocol_module._MESSAGE_TYPES.update(message_types)
+    protocol_module._MESSAGE_TAGS.clear()
     protocol_module._MESSAGE_TAGS.update(message_tags)
 
 

@@ -53,11 +53,13 @@ class MockMessageHandler(MessageHandler):
     ) -> None:
         super().__init__(root_component, app_wrapper)
         self.sent_messages: list[object] = []
+        self.sent_queue: asyncio.Queue[object] = asyncio.Queue()
         self.incoming_messages: list[object] = []
         self._message_index = 0
 
     async def send_message(self, msg: object) -> None:
         self.sent_messages.append(msg)
+        self.sent_queue.put_nowait(msg)
 
     async def receive_message(self) -> object:
         if self._message_index < len(self.incoming_messages):
@@ -71,6 +73,13 @@ class MockMessageHandler(MessageHandler):
     def queue_incoming(self, msg: object) -> None:
         """Queue a message to be received."""
         self.incoming_messages.append(msg)
+
+    async def wait_for_sent(self, message_type: type[object]) -> object:
+        """Wait for a sent message of the requested type."""
+        while True:
+            msg = await asyncio.wait_for(self.sent_queue.get(), timeout=1.0)
+            if isinstance(msg, message_type):
+                return msg
 
 
 def get_initial_tree(handler: MessageHandler) -> dict[str, tp.Any]:
@@ -386,6 +395,7 @@ class TestHistoryMessagesFromRouterState:
             await handler.handle_hello()
             handler.initial_render()
             handler.sent_messages.clear()
+            handler.sent_queue = asyncio.Queue()
             drain_task = asyncio.create_task(handler._drain_message_send_queue())
 
             try:
@@ -399,7 +409,7 @@ class TestHistoryMessagesFromRouterState:
 
                 # Invoke callback
                 await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
-                await asyncio.sleep(0.01)
+                await handler.wait_for_sent(HistoryPush)
             finally:
                 drain_task.cancel()
                 await asyncio.gather(drain_task, return_exceptions=True)
@@ -437,6 +447,7 @@ class TestHistoryMessagesFromRouterState:
             await handler.handle_hello()
             handler.initial_render()
             handler.sent_messages.clear()
+            handler.sent_queue = asyncio.Queue()
             drain_task = asyncio.create_task(handler._drain_message_send_queue())
 
             try:
@@ -448,7 +459,7 @@ class TestHistoryMessagesFromRouterState:
                 cb_id = button["props"]["on_click"]["__callback__"]
 
                 await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
-                await asyncio.sleep(0.01)
+                await handler.wait_for_sent(HistoryBack)
             finally:
                 drain_task.cancel()
                 await asyncio.gather(drain_task, return_exceptions=True)
@@ -485,6 +496,7 @@ class TestHistoryMessagesFromRouterState:
             await handler.handle_hello()
             handler.initial_render()
             handler.sent_messages.clear()
+            handler.sent_queue = asyncio.Queue()
             drain_task = asyncio.create_task(handler._drain_message_send_queue())
 
             try:
@@ -496,7 +508,7 @@ class TestHistoryMessagesFromRouterState:
                 cb_id = button["props"]["on_click"]["__callback__"]
 
                 await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
-                await asyncio.sleep(0.01)
+                await handler.wait_for_sent(HistoryForward)
             finally:
                 drain_task.cancel()
                 await asyncio.gather(drain_task, return_exceptions=True)
@@ -523,6 +535,7 @@ class TestHistoryMessagesFromRouterState:
             await handler.handle_hello()
             handler.initial_render()
             handler.sent_messages.clear()
+            handler.sent_queue = asyncio.Queue()
             drain_task = asyncio.create_task(handler._drain_message_send_queue())
 
             try:
@@ -536,7 +549,7 @@ class TestHistoryMessagesFromRouterState:
                 await handler.handle_message(
                     EventMessage(callback_id=cb_id, args=[{"type": "click"}])
                 )
-                await asyncio.sleep(0.01)
+                await handler.wait_for_sent(HistoryPush)
             finally:
                 drain_task.cancel()
                 await asyncio.gather(drain_task, return_exceptions=True)

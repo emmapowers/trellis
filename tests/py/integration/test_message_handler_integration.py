@@ -4,12 +4,12 @@ import asyncio
 import typing as tp
 from dataclasses import dataclass
 
-import msgspec
 import pytest
 
 from tests.conftest import get_button_element
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.protocol import (
+    Message,
     listen,
     register_message_types,
     send,
@@ -30,7 +30,7 @@ from trellis.platforms.common.messages import (
 from trellis.widgets import Button, Label
 
 
-class Ping(msgspec.Struct, tag="ping", tag_field="type"):
+class Ping(Message, tag="ping"):
     value: int
 
 

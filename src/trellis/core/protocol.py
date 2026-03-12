@@ -48,12 +48,25 @@ def set_message_handler(handler: MessageHandlerProtocol | None) -> None:
 
 
 def register_message_types(*message_types: type[msgspec.Struct]) -> None:
-    """Register extension message types by their msgspec tag."""
+    """Register protocol message types by their msgspec tag."""
     for message_type in message_types:
+        if not issubclass(message_type, Message):
+            raise TypeError(f"{message_type.__name__} must inherit from Message to register.")
+
         config = message_type.__struct_config__
         if config.tag is None or not isinstance(config.tag, str):
             raise TypeError(
                 f"{message_type.__name__} must define a string msgspec tag to register."
+            )
+        existing_type = _MESSAGE_TYPES.get(config.tag)
+        if existing_type is not None and existing_type is not message_type:
+            raise ValueError(
+                f"Message tag {config.tag!r} is already registered to {existing_type.__name__}."
+            )
+        existing_tag = _MESSAGE_TAGS.get(message_type)
+        if existing_tag is not None and existing_tag != config.tag:
+            raise ValueError(
+                f"{message_type.__name__} is already registered with tag {existing_tag!r}."
             )
         _MESSAGE_TYPES[config.tag] = message_type
         _MESSAGE_TAGS[message_type] = config.tag
@@ -79,6 +92,8 @@ def listen(*message_types: type[object]) -> tp.Callable[[F], F]:
     """Register a listener or mark an instance method for later registration."""
 
     def decorator(fn: F) -> F:
+        if not inspect.iscoroutinefunction(fn):
+            raise TypeError("@listen handlers must be async functions.")
         if _looks_like_method(fn):
             setattr(fn, _LISTEN_ATTR, message_types)
             return fn
@@ -179,21 +194,20 @@ async def send(message: object) -> None:
     await handler.message_send_queue.put(message)
 
 
-async def dispatch(handler: MessageHandlerProtocol, message: object) -> None:
+async def dispatch(message: object) -> None:
     """Dispatch a decoded message to global and handler-scoped listeners."""
-    previous = get_message_handler()
-    set_message_handler(handler)
-    try:
-        for listener in tuple(_GLOBAL_LISTENERS.get(type(message), ())):
-            await listener(handler, message)
+    handler = get_message_handler()
+    if handler is None:
+        raise RuntimeError("No active message handler is available for dispatch().")
 
-        scoped = _HANDLER_LISTENERS.get(handler)
-        if scoped is None:
-            return
-        for listener in tuple(scoped.get(type(message), ())):
-            await listener(handler, message)
-    finally:
-        set_message_handler(previous)
+    for listener in tuple(_GLOBAL_LISTENERS.get(type(message), ())):
+        await listener(handler, message)
+
+    scoped = _HANDLER_LISTENERS.get(handler)
+    if scoped is None:
+        return
+    for listener in tuple(scoped.get(type(message), ())):
+        await listener(handler, message)
 
 
 def _register_listener(
@@ -259,12 +273,3 @@ def _looks_like_method(fn: tp.Callable[..., tp.Any]) -> bool:
         )
         and first.name == "self"
     )
-
-
-def _reset_for_tests() -> None:
-    """Reset protocol registries and context for isolated tests."""
-    _MESSAGE_TYPES.clear()
-    _MESSAGE_TAGS.clear()
-    _GLOBAL_LISTENERS.clear()
-    _HANDLER_LISTENERS.clear()
-    _handler_ctx.set(None)

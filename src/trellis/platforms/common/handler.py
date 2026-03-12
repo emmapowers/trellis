@@ -353,14 +353,15 @@ class MessageHandler:
         """
         assert self.session is not None, "handle_hello must be called before initial_render"
         try:
-            render_patches = self._render_with_message_handler()
-            wire_patches = _serialize_patches(render_patches, self.session)
-            element_count = len(self.session.elements)
-            logger.debug(
-                "Initial render complete, sending PatchMessage (%d elements)", element_count
-            )
+            with self._message_handler_context():
+                render_patches = render(self.session)
+                wire_patches = _serialize_patches(render_patches, self.session)
+                element_count = len(self.session.elements)
+                logger.debug(
+                    "Initial render complete, sending PatchMessage (%d elements)", element_count
+                )
 
-            return PatchMessage(patches=wire_patches)
+                return PatchMessage(patches=wire_patches)
         except Exception as e:
             logger.exception(f"Error during initial render: {e}")
             return ErrorMessage(error=_format_exception(e), context="render")
@@ -375,23 +376,24 @@ class MessageHandler:
             ErrorMessage on callback error, or None. Re-rendering is handled
             by the background render loop, not per-message.
         """
-        if isinstance(msg, EventMessage):
-            logger.debug("Received EventMessage: callback_id=%s", msg.callback_id)
-            try:
-                await self._invoke_callback(msg.callback_id, msg.args)
-            except KeyError as e:
-                logger.exception(f"Unknown callback: {msg.callback_id}")
-                return ErrorMessage(error=_format_exception(e), context="callback")
-            except Exception as e:
-                logger.exception(f"Error in callback {msg.callback_id}: {e}")
-                return ErrorMessage(error=_format_exception(e), context="callback")
+        with self._message_handler_context():
+            if isinstance(msg, EventMessage):
+                logger.debug("Received EventMessage: callback_id=%s", msg.callback_id)
+                try:
+                    await self._invoke_callback(msg.callback_id, msg.args)
+                except KeyError as e:
+                    logger.exception(f"Unknown callback: {msg.callback_id}")
+                    return ErrorMessage(error=_format_exception(e), context="callback")
+                except Exception as e:
+                    logger.exception(f"Error in callback {msg.callback_id}: {e}")
+                    return ErrorMessage(error=_format_exception(e), context="callback")
 
-            # Callback executed successfully. State changes mark elements dirty.
-            # The render loop will pick them up on the next frame.
+                # Callback executed successfully. State changes mark elements dirty.
+                # The render loop will pick them up on the next frame.
+                return None
+
+            await dispatch(msg)
             return None
-
-        await dispatch(self, msg)
-        return None
 
     async def _invoke_callback(self, callback_id: str, args: list[tp.Any]) -> None:
         """Invoke callback with event conversion.
@@ -416,7 +418,7 @@ class MessageHandler:
         if inspect.iscoroutinefunction(callback):
             # Async: wrap to provide callback context
             async def run_async_with_context() -> None:
-                with self._message_handler_context(), callback_context(session, element_id):
+                with callback_context(session, element_id):
                     await callback(*processed_args, **kwargs)
 
             logger.debug("Callback %s is async, scheduled as task", callback_id)
@@ -426,7 +428,7 @@ class MessageHandler:
             )
         else:
             # Sync: call with callback context
-            with self._message_handler_context(), callback_context(session, element_id):
+            with callback_context(session, element_id):
                 callback(*processed_args, **kwargs)
 
     # -------------------------------------------------------------------------
@@ -453,7 +455,7 @@ class MessageHandler:
             logger.debug("Render loop: %d dirty elements", dirty_count)
 
             try:
-                render_patches = self._render_with_message_handler()
+                render_patches = render(self.session)
             except Exception as e:
                 try:
                     await self.send_message(
@@ -534,23 +536,24 @@ class MessageHandler:
         4. Loops receiving messages and sending responses
         """
         try:
-            await self.handle_hello()
-            await self.send_message(self.initial_render())
-            assert self.session is not None
+            with self._message_handler_context():
+                await self.handle_hello()
+                await self.send_message(self.initial_render())
+                assert self.session is not None
 
-            critical_tasks = {
-                asyncio.create_task(self._render_loop()),
-                asyncio.create_task(self._drain_message_send_queue()),
-            }
+                critical_tasks = {
+                    asyncio.create_task(self._render_loop()),
+                    asyncio.create_task(self._drain_message_send_queue()),
+                }
 
-            while True:
-                msg = await self._receive_message_or_critical(critical_tasks)
-                if msg is None:
-                    break
+                while True:
+                    msg = await self._receive_message_or_critical(critical_tasks)
+                    if msg is None:
+                        break
 
-                response = await self.handle_message(msg)
-                if response:
-                    await self.send_message(response)
+                    response = await self.handle_message(msg)
+                    if response:
+                        await self.send_message(response)
         except SessionDisconnected:
             return
         finally:
@@ -576,8 +579,3 @@ class MessageHandler:
             yield
         finally:
             set_message_handler(previous)
-
-    def _render_with_message_handler(self) -> list[RenderPatch]:
-        assert self.session is not None
-        with self._message_handler_context():
-            return render(self.session)
