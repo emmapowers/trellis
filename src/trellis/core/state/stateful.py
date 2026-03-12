@@ -510,7 +510,6 @@ class Stateful:
         if old_instance is not None and old_instance is not self:
             _mark_context_consumers_dirty(old_instance)
 
-        state._entered_context_types.add(ctx_type)
         state.context[ctx_type] = self
         logger.debug("Providing %s context at %s", type(self).__name__, element_id)
         return self

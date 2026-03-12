@@ -34,7 +34,6 @@ class ElementState:
     local_state: dict[tuple[type, int], tp.Any] = field(default_factory=dict)
     state_call_count: int = 0
     context: dict[type, tp.Any] = field(default_factory=dict)
-    _entered_context_types: set[type] = field(default_factory=set)
     parent_id: str | None = None
     element_type: type | None = None
     _trait_state: dict[type, tp.Any] = field(default_factory=dict)

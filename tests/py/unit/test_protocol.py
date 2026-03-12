@@ -300,15 +300,8 @@ class TestStatefulMessageHandlerMixin:
         reset_protocol,
     ) -> None:
         received: list[int] = []
-        show_state = True
+        show_host = [True]
         handler = MockMessageHandler()
-
-        @component
-        def App() -> None:
-            nonlocal show_state
-            if show_state:
-                with PingState():
-                    pass
 
         class PingState(StatefulMessageHandlerMixin, Stateful):
             @listen(Ping)
@@ -320,6 +313,18 @@ class TestStatefulMessageHandlerMixin:
                 del self, message_handler
                 received.append(message.value)
 
+        ping_state = PingState()
+
+        @component
+        def Host() -> None:
+            with ping_state:
+                pass
+
+        @component
+        def App() -> None:
+            if show_host[0]:
+                Host()
+
         session = RenderSession(App)
 
         set_message_handler(handler)
@@ -327,7 +332,7 @@ class TestStatefulMessageHandlerMixin:
             render(session)
             await dispatch(handler, Ping(13))
 
-            show_state = False
+            show_host[0] = False
             assert session.root_element_id is not None
             session.dirty.mark(session.root_element_id)
             render(session)

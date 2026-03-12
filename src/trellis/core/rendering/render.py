@@ -38,40 +38,21 @@ __all__ = [
 def render(session: RenderSession) -> list[RenderPatch]:
     """Render the session and return patches."""
     with session.lock:
-        (
-            patches,
-            pending_mounts,
-            pending_unmounts,
-            pending_context_mounts,
-            pending_context_unmounts,
-        ) = _render_impl(session)
+        patches, pending_mounts, pending_unmounts = _render_impl(session)
 
     # Process hooks AFTER session.active is cleared and lock is released.
     # This allows hooks to safely modify state (which marks elements dirty).
-    _process_pending_hooks(
-        session,
-        pending_mounts,
-        pending_unmounts,
-        pending_context_mounts,
-        pending_context_unmounts,
-    )
+    _process_pending_hooks(session, pending_mounts, pending_unmounts)
     return patches
 
 
 def _render_impl(
     session: RenderSession,
-) -> tuple[
-    list[RenderPatch],
-    list[str],
-    list[str],
-    list[tuple[str, Stateful]],
-    list[tuple[str, Stateful]],
-]:
+) -> tuple[list[RenderPatch], list[str], list[str]]:
     """Internal render implementation (called with lock held).
 
     Returns:
-        Tuple of (patches, pending_mounts, pending_unmounts,
-        pending_context_mounts, pending_context_unmounts).
+        Tuple of (patches, pending_mounts, pending_unmounts).
         Hooks are processed by the caller after session.active is cleared.
     """
     if get_active_session() is not None:
@@ -138,8 +119,6 @@ def _render_impl(
         # Extract pending hooks before clearing session.active
         pending_mounts = session.active.lifecycle.pop_mounts()
         pending_unmounts = session.active.lifecycle.pop_unmounts()
-        pending_context_mounts = session.active.lifecycle.pop_context_mounts()
-        pending_context_unmounts = session.active.lifecycle.pop_context_unmounts()
 
         # Build result patches
         root_element = (
@@ -157,21 +136,13 @@ def _render_impl(
                 ],
                 pending_mounts,
                 pending_unmounts,
-                pending_context_mounts,
-                pending_context_unmounts,
             )
 
         # Incremental render: return accumulated patches
         patches = session.active.patches.get_all()
         if patches:
             logger.debug("render complete: %d patches", len(patches))
-        return (
-            patches,
-            pending_mounts,
-            pending_unmounts,
-            pending_context_mounts,
-            pending_context_unmounts,
-        )
+        return patches, pending_mounts, pending_unmounts
 
     finally:
         set_active_session(None)
@@ -214,9 +185,6 @@ def _execute_single_element(
     session.elements.store(element)
 
     state.state_call_count = 0
-    previous_context = dict(state.context)
-    state._entered_context_types.clear()
-
     # Get props including children if component accepts them
     props = element.props.copy()
 
@@ -246,22 +214,6 @@ def _execute_single_element(
         for th in trait_hooks:
             if th.after_execute is not None:
                 th.after_execute(element, element, state, session)
-
-        stale_context_types = [
-            context_type
-            for context_type in state.context
-            if context_type not in state._entered_context_types
-        ]
-        for context_type in stale_context_types:
-            state.context.pop(context_type, None)
-
-        if was_mounted:
-            _track_context_lifecycle_transitions(
-                session,
-                element_id,
-                previous_context,
-                state.context,
-            )
 
         # Update element in-place with child_ids (execution of children happens in _execute_tree)
         element.child_ids = new_child_ids
@@ -484,45 +436,16 @@ def _get_lifecycle_statefuls(
     return lifecycle_statefuls
 
 
-def _track_context_lifecycle_transitions(
-    session: RenderSession,
-    element_id: str,
-    previous_context: dict[type, object],
-    current_context: dict[type, object],
-) -> None:
-    """Track context-provider lifecycle changes on rerendered elements."""
-    assert session.active is not None
-
-    for context_type, previous in previous_context.items():
-        current = current_context.get(context_type)
-        if previous is current:
-            continue
-        if isinstance(previous, Stateful):
-            session.active.lifecycle.track_context_unmount(element_id, previous)
-
-    for context_type, current in current_context.items():
-        previous = previous_context.get(context_type)
-        if current is previous:
-            continue
-        if isinstance(current, Stateful):
-            session.active.lifecycle.track_context_mount(element_id, current)
-
-
 def _process_pending_hooks(
     session: RenderSession,
     pending_mounts: list[str],
     pending_unmounts: list[str],
-    pending_context_mounts: list[tuple[str, Stateful]],
-    pending_context_unmounts: list[tuple[str, Stateful]],
 ) -> None:
     """Process all pending mount/unmount hooks.
 
     Called AFTER session.active is cleared, so hooks can safely modify state.
     """
     # Process unmounts first (cleanup before new mounts)
-    for element_id, stateful in pending_context_unmounts:
-        invoke_lifecycle_hook(session, element_id, stateful.on_unmount, "on_unmount")
-
     for element_id in pending_unmounts:
         _call_unmount_hooks(session, element_id)
         # With component identity in IDs, we can safely remove ElementState
@@ -531,9 +454,6 @@ def _process_pending_hooks(
     # Process mounts
     for element_id in pending_mounts:
         _call_mount_hooks(session, element_id)
-
-    for element_id, stateful in pending_context_mounts:
-        invoke_lifecycle_hook(session, element_id, stateful.on_mount, "on_mount")
 
 
 def _emit_update_patch_if_changed(session: RenderSession, element_id: str) -> None:

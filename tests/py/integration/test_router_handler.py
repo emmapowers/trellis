@@ -10,7 +10,7 @@ import asyncio
 import typing as tp
 
 from trellis.core.components.composition import CompositionComponent, component
-from trellis.core.protocol import listen
+from trellis.core.protocol import listen, set_message_handler
 from trellis.core.rendering.render import render
 from trellis.html.links import A
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
@@ -259,13 +259,17 @@ class TestUrlChangedMessage:
     def test_url_changed_does_not_update_router_state_after_unmount(self) -> None:
         """Unmounted RouterState listeners stop receiving UrlChanged messages."""
         router_state = RouterState(path="/")
-        show_router = [True]
+        show_router_host = [True]
+
+        @component
+        def RouterHost() -> None:
+            with router_state:
+                Label(text=router_state.path)
 
         @component
         def App() -> None:
-            if show_router[0]:
-                with router_state:
-                    Label(text=router_state.path)
+            if show_router_host[0]:
+                RouterHost()
 
         handler = MockMessageHandler(App)
         handler.queue_incoming(HelloMessage(client_id="test", path="/"))
@@ -275,9 +279,14 @@ class TestUrlChangedMessage:
             handler.initial_render()
             app_element_id = handler.session.root_element.child_ids[0]
 
-            show_router[0] = False
+            show_router_host[0] = False
             handler.session.dirty.mark(app_element_id)
-            render(handler.session)
+            previous = handler
+            set_message_handler(previous)
+            try:
+                render(handler.session)
+            finally:
+                set_message_handler(None)
 
             await handler.handle_message(UrlChanged(path="/detached"))
 
@@ -303,13 +312,17 @@ class TestUrlChangedMessage:
                 await super().on_url_changed(message_handler, message)
 
         router_state = RecordingRouterState(path="/")
-        show_router = [True]
+        show_router_host = [True]
+
+        @component
+        def RouterHost() -> None:
+            with router_state:
+                Label(text=router_state.path)
 
         @component
         def App() -> None:
-            if show_router[0]:
-                with router_state:
-                    Label(text=router_state.path)
+            if show_router_host[0]:
+                RouterHost()
 
         handler = MockMessageHandler(App)
         handler.queue_incoming(HelloMessage(client_id="test", path="/"))
@@ -317,15 +330,23 @@ class TestUrlChangedMessage:
         async def test() -> None:
             await handler.handle_hello()
             handler.initial_render()
-            assert handler.session.root_element_id is not None
+            app_element_id = handler.session.root_element.child_ids[0]
 
-            show_router[0] = False
-            handler.session.dirty.mark(handler.session.root_element_id)
-            render(handler.session)
+            show_router_host[0] = False
+            handler.session.dirty.mark(app_element_id)
+            set_message_handler(handler)
+            try:
+                render(handler.session)
+            finally:
+                set_message_handler(None)
 
-            show_router[0] = True
-            handler.session.dirty.mark(handler.session.root_element_id)
-            render(handler.session)
+            show_router_host[0] = True
+            handler.session.dirty.mark(app_element_id)
+            set_message_handler(handler)
+            try:
+                render(handler.session)
+            finally:
+                set_message_handler(None)
 
             await handler.handle_message(UrlChanged(path="/remounted"))
 
