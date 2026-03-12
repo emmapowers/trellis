@@ -76,6 +76,8 @@ from trellis import html as h
 
 ## Commands
 
+Run project tools through `uv run` unless you have confirmed the binary is already on PATH. Prefer `uv run just ci`, `uv run trellis ...`, `uv run ruff ...`, etc.
+
 - `just cleanup` - Format and lint with auto-fix
 - `just lint` - Check all linters (no fix)
 - `just typecheck` - Check for type errors

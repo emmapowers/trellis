@@ -168,12 +168,14 @@ class TestUrlChangedMessage:
 
     def test_url_changed_updates_router_state(self) -> None:
         """UrlChanged message updates RouterState path."""
-        router_state = RouterState(path="/")
+        router_states: list[RouterState] = []
         observed_paths: list[str] = []
 
         @component
         def App() -> None:
-            with router_state:
+            with RouterState(path="/") as router_state:
+                if not router_states:
+                    router_states.append(router_state)
                 observed_paths.append(router_state.path)
                 Label(text=router_state.path)
 
@@ -191,15 +193,14 @@ class TestUrlChangedMessage:
         asyncio.run(test())
 
         # RouterState should be updated
-        assert router_state.path == "/about"
+        assert router_states[0].path == "/about"
 
     def test_url_changed_triggers_rerender(self) -> None:
         """UrlChanged message marks dependent nodes dirty for re-render."""
-        router_state = RouterState(path="/")
 
         @component
         def App() -> None:
-            with router_state:
+            with RouterState(path="/") as router_state:
                 Label(text=f"Path: {router_state.path}")
 
         handler = MockMessageHandler(App)
@@ -218,7 +219,6 @@ class TestUrlChangedMessage:
 
     def test_url_changed_updates_route_matching(self) -> None:
         """UrlChanged causes Route components to re-match."""
-        router_state = RouterState(path="/")
         rendered_routes: list[str] = []
 
         @component
@@ -231,7 +231,7 @@ class TestUrlChangedMessage:
 
         @component
         def App() -> None:
-            with router_state:
+            with RouterState(path="/"):
                 with Routes():
                     with Route(pattern="/"):
                         HomePage()
@@ -258,12 +258,14 @@ class TestUrlChangedMessage:
 
     def test_url_changed_does_not_update_router_state_after_unmount(self) -> None:
         """Unmounted RouterState listeners stop receiving UrlChanged messages."""
-        router_state = RouterState(path="/")
         show_router_host = [True]
+        router_states: list[RouterState] = []
 
         @component
         def RouterHost() -> None:
-            with router_state:
+            with RouterState(path="/") as router_state:
+                if not router_states or router_states[-1] is not router_state:
+                    router_states.append(router_state)
                 Label(text=router_state.path)
 
         @component
@@ -292,7 +294,8 @@ class TestUrlChangedMessage:
 
         asyncio.run(test())
 
-        assert router_state.path == "/"
+        assert len(router_states) == 1
+        assert router_states[0].path == "/"
 
     def test_url_changed_updates_router_state_after_remount(self) -> None:
         """Remounted RouterState listeners resume receiving UrlChanged messages once."""
@@ -311,12 +314,14 @@ class TestUrlChangedMessage:
                 self.received_paths.append(message.path)
                 await super().on_url_changed(message_handler, message)
 
-        router_state = RecordingRouterState(path="/")
         show_router_host = [True]
+        router_states: list[RecordingRouterState] = []
 
         @component
         def RouterHost() -> None:
-            with router_state:
+            with RecordingRouterState(path="/") as router_state:
+                if not router_states or router_states[-1] is not router_state:
+                    router_states.append(router_state)
                 Label(text=router_state.path)
 
         @component
@@ -352,8 +357,10 @@ class TestUrlChangedMessage:
 
         asyncio.run(test())
 
-        assert router_state.path == "/remounted"
-        assert router_state.received_paths == ["/remounted"]
+        assert len(router_states) == 2
+        assert router_states[0].received_paths == []
+        assert router_states[1].path == "/remounted"
+        assert router_states[1].received_paths == ["/remounted"]
 
 
 class TestHistoryMessagesFromRouterState:

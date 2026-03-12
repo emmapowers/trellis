@@ -313,11 +313,9 @@ class TestStatefulMessageHandlerMixin:
                 del self, message_handler
                 received.append(message.value)
 
-        ping_state = PingState()
-
         @component
         def Host() -> None:
-            with ping_state:
+            with PingState():
                 pass
 
         @component

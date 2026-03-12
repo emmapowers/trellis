@@ -7,7 +7,6 @@ import time
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.element import Element, props_equal
-from trellis.core.rendering.element_state import ElementState
 from trellis.core.rendering.lifecycle import invoke_lifecycle_hook
 from trellis.core.rendering.patches import (
     RenderAddPatch,
@@ -22,7 +21,6 @@ from trellis.core.rendering.session import (
     set_active_session,
 )
 from trellis.core.rendering.traits import get_trait_hooks
-from trellis.core.state.stateful import Stateful
 from trellis.utils.logger import logger
 
 __all__ = [
@@ -168,8 +166,7 @@ def _execute_single_element(
     # Get or create ElementState.
     state = session.states.get_or_create(element_id)
     state.element_type = type(element)
-    was_mounted = state.mounted
-    if not was_mounted:
+    if not state.mounted:
         state.parent_id = parent_id
         state.mounted = True
         # Track mount hook (called after render completes)
@@ -373,11 +370,13 @@ def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
     if state is None:
         return
 
-    stateful_instances = _get_lifecycle_statefuls(state)
-    if stateful_instances:
-        logger.debug("Calling on_mount for %s (%d states)", element_id, len(stateful_instances))
+    items = list(state.local_state.items())
+    items.sort(key=lambda x: x[0][1])
 
-    for stateful in stateful_instances:
+    if items:
+        logger.debug("Calling on_mount for %s (%d states)", element_id, len(items))
+
+    for _, stateful in items:
         if hasattr(stateful, "on_mount"):
             invoke_lifecycle_hook(session, element_id, stateful.on_mount, "on_mount")
 
@@ -403,37 +402,15 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
             if th.on_unmount is not None:
                 th.on_unmount(element, element, state, session)
 
-    stateful_instances = _get_lifecycle_statefuls(state, reverse=True)
-    if stateful_instances:
+    items = list(state.local_state.items())
+    items.sort(key=lambda x: x[0][1], reverse=True)
+
+    if items:
         logger.debug("Calling on_unmount for %s", element_id)
 
-    for stateful in stateful_instances:
+    for _, stateful in items:
         if hasattr(stateful, "on_unmount"):
             invoke_lifecycle_hook(session, element_id, stateful.on_unmount, "on_unmount")
-
-
-def _get_lifecycle_statefuls(
-    state: ElementState,
-    reverse: bool = False,
-) -> list[Stateful]:
-    """Return unique stateful objects that should receive lifecycle hooks."""
-    local_state_items = list(state.local_state.items())
-    local_state_items.sort(key=lambda item: item[0][1], reverse=reverse)
-    local_statefuls = [instance for _, instance in local_state_items]
-
-    context_values = list(state.context.values())
-    if reverse:
-        context_values.reverse()
-
-    seen: set[int] = set()
-    lifecycle_statefuls: list[Stateful] = []
-    for stateful in [*local_statefuls, *context_values]:
-        stateful_id = id(stateful)
-        if stateful_id in seen:
-            continue
-        seen.add(stateful_id)
-        lifecycle_statefuls.append(stateful)
-    return lifecycle_statefuls
 
 
 def _process_pending_hooks(
