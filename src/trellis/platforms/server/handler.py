@@ -6,11 +6,10 @@ import msgspec
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from trellis.core.components.base import Component
-from trellis.core.protocol import decode_registered_message
+from trellis.core.protocol import decode_message
 from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.handler_registry import get_global_registry
-from trellis.platforms.common.messages import Message
 
 router = APIRouter()
 
@@ -72,10 +71,7 @@ class WebSocketMessageHandler(MessageHandler):
         except WebSocketDisconnect as exc:
             raise SessionDisconnected() from exc
         raw_message = self._decoder.decode(data)
-        extension_message = decode_registered_message(raw_message)
-        if extension_message is not None:
-            return extension_message
-        return msgspec.convert(raw_message, Message)
+        return decode_message(raw_message)
 
 
 @router.websocket("/ws")

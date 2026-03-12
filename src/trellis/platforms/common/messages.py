@@ -9,6 +9,8 @@ from typing import Literal
 
 import msgspec
 
+from trellis.core.protocol import Message, register_message_types
+
 # ============================================================================
 # Patch types for incremental updates
 # ============================================================================
@@ -39,14 +41,14 @@ class AddPatch(msgspec.Struct, tag="add", tag_field="op"):
 Patch = UpdatePatch | RemovePatch | AddPatch
 
 
-class EventMessage(msgspec.Struct, tag="event", tag_field="type"):
+class EventMessage(Message, tag="event"):
     """Client event triggering a server callback."""
 
     callback_id: str
-    args: list[tp.Any] = []
+    args: list[tp.Any] = msgspec.field(default_factory=list)
 
 
-class ErrorMessage(msgspec.Struct, tag="error", tag_field="type"):
+class ErrorMessage(Message, tag="error"):
     """Error message sent to client when an exception occurs.
 
     Contains a formatted traceback and context about where the error occurred.
@@ -56,7 +58,7 @@ class ErrorMessage(msgspec.Struct, tag="error", tag_field="type"):
     context: str  # "render" | "callback"
 
 
-class PatchMessage(msgspec.Struct, tag="patch", tag_field="type"):
+class PatchMessage(Message, tag="patch"):
     """Incremental update sent to client.
 
     Contains a list of patches to apply to the client-side tree.
@@ -66,7 +68,7 @@ class PatchMessage(msgspec.Struct, tag="patch", tag_field="type"):
     patches: list[Patch]
 
 
-class HelloMessage(msgspec.Struct, tag="hello", tag_field="type"):
+class HelloMessage(Message, tag="hello"):
     """Client hello message sent on connection.
 
     All platforms use this message for session initialization.
@@ -88,7 +90,7 @@ class DebugConfig(msgspec.Struct):
     categories: list[str]
 
 
-class HelloResponseMessage(msgspec.Struct, tag="hello_response", tag_field="type"):
+class HelloResponseMessage(Message, tag="hello_response"):
     """Server response to client hello.
 
     Contains session ID for tracking and server version for compatibility.
@@ -100,7 +102,7 @@ class HelloResponseMessage(msgspec.Struct, tag="hello_response", tag_field="type
     debug: DebugConfig | None = None
 
 
-class ReloadMessage(msgspec.Struct, tag="reload", tag_field="type"):
+class ReloadMessage(Message, tag="reload"):
     """Reload message sent when bundle is rebuilt.
 
     Sent by the server when watch mode detects changes and rebuilds
@@ -110,7 +112,11 @@ class ReloadMessage(msgspec.Struct, tag="reload", tag_field="type"):
     ...
 
 
-# Union type for all messages - used by MessageHandler
-Message = (
-    HelloMessage | HelloResponseMessage | PatchMessage | EventMessage | ErrorMessage | ReloadMessage
+register_message_types(
+    HelloMessage,
+    HelloResponseMessage,
+    PatchMessage,
+    EventMessage,
+    ErrorMessage,
+    ReloadMessage,
 )

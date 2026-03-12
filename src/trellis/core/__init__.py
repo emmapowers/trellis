@@ -15,6 +15,7 @@ from trellis.core.components import (
 
 # state
 from trellis.core.protocol import (
+    Message,
     MessageHandler,
     MessageHandlerProtocol,
     StatefulMessageHandlerMixin,
@@ -85,6 +86,7 @@ __all__ = [
     "KeyTrait",
     "LifecycleTracker",
     "Margin",
+    "Message",
     "MessageHandler",
     "MessageHandlerProtocol",
     "Mutable",

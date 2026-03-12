@@ -1,29 +1,27 @@
 """Router protocol messages."""
 
-import msgspec
-
-from trellis.core.protocol import register_message_types
+from trellis.core.protocol import Message, register_message_types
 
 
-class HistoryPush(msgspec.Struct, tag="history_push", tag_field="type"):
+class HistoryPush(Message, tag="history_push"):
     """Push a new path to browser history."""
 
     path: str
 
 
-class HistoryBack(msgspec.Struct, tag="history_back", tag_field="type"):
+class HistoryBack(Message, tag="history_back"):
     """Navigate back in browser history."""
 
     pass
 
 
-class HistoryForward(msgspec.Struct, tag="history_forward", tag_field="type"):
+class HistoryForward(Message, tag="history_forward"):
     """Navigate forward in browser history."""
 
     pass
 
 
-class UrlChanged(msgspec.Struct, tag="url_changed", tag_field="type"):
+class UrlChanged(Message, tag="url_changed"):
     """Browser URL changed outside a direct server-driven navigation."""
 
     path: str

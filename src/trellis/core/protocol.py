@@ -26,6 +26,10 @@ _HANDLER_LISTENERS: weakref.WeakKeyDictionary[object, dict[type[object], list[Li
 )
 
 
+class Message(msgspec.Struct, tag_field="type"):
+    """Base class for all top-level protocol messages."""
+
+
 @tp.runtime_checkable
 class MessageHandlerProtocol(tp.Protocol):
     """Core interface exposed to protocol listeners and senders."""
@@ -55,18 +59,18 @@ def register_message_types(*message_types: type[msgspec.Struct]) -> None:
         _MESSAGE_TAGS[message_type] = config.tag
 
 
-def decode_registered_message(payload: object) -> object | None:
-    """Decode an extension message from a builtins payload if it is registered."""
+def decode_message(payload: object) -> object:
+    """Decode a registered message from a builtins payload."""
     if not isinstance(payload, dict):
-        return None
+        raise msgspec.ValidationError("Expected builtins dict for protocol message decode.")
 
     tag = payload.get("type")
     if not isinstance(tag, str):
-        return None
+        raise msgspec.ValidationError("Expected message payload to include string 'type'.")
 
     message_type = _MESSAGE_TYPES.get(tag)
     if message_type is None:
-        return None
+        raise msgspec.ValidationError(f"Unknown message type {tag!r}.")
 
     return msgspec.convert(payload, message_type)
 

@@ -13,9 +13,9 @@ from collections.abc import Callable
 import msgspec
 
 from trellis.core.components.base import Component
-from trellis.core.protocol import decode_registered_message
+from trellis.core.protocol import Message, decode_message
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
-from trellis.platforms.common.messages import EventMessage, Message
+from trellis.platforms.common.messages import EventMessage
 
 __all__ = ["BrowserMessageHandler"]
 
@@ -121,9 +121,5 @@ def _message_to_dict(msg: object) -> dict[str, tp.Any]:
 
 def _dict_to_message(msg_dict: dict[str, tp.Any]) -> object:
     """Convert a dict from JavaScript to a protocol message struct."""
-    extension_message = decode_registered_message(msg_dict)
-    if extension_message is not None:
-        return extension_message
-
-    result: Message = msgspec.convert(msg_dict, Message)
+    result: Message = tp.cast("Message", decode_message(msg_dict))
     return result

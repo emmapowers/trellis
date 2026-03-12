@@ -12,9 +12,8 @@ from typing import TYPE_CHECKING
 
 import msgspec
 
-from trellis.core.protocol import decode_registered_message
+from trellis.core.protocol import decode_message
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
-from trellis.platforms.common.messages import Message
 
 if TYPE_CHECKING:
     from pytauri.ipc import Channel
@@ -65,10 +64,7 @@ class PyTauriMessageHandler(MessageHandler):
         """Receive message from queue (populated by trellis_send command)."""
         data = await self._queue.get()
         raw_message = self._decoder.decode(data)
-        extension_message = decode_registered_message(raw_message)
-        if extension_message is not None:
-            return extension_message
-        return msgspec.convert(raw_message, Message)
+        return decode_message(raw_message)
 
     def enqueue(self, data: bytes) -> None:
         """Enqueue incoming message data from trellis_send command."""

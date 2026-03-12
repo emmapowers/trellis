@@ -2,7 +2,8 @@
 
 import msgspec
 
-from trellis.platforms.common.messages import HelloMessage, Message
+from trellis.core.protocol import decode_message
+from trellis.platforms.common.messages import HelloMessage
 from trellis.routing import HistoryBack, HistoryForward, HistoryPush, UrlChanged
 
 
@@ -23,10 +24,9 @@ class TestHelloMessagePath:
     def test_hello_with_path_roundtrip(self) -> None:
         """HelloMessage with path survives msgpack roundtrip."""
         encoder = msgspec.msgpack.Encoder()
-        decoder = msgspec.msgpack.Decoder(Message)
 
         original = HelloMessage(client_id="test-client", path="/users/123")
-        decoded = decoder.decode(encoder.encode(original))
+        decoded = decode_message(msgspec.msgpack.decode(encoder.encode(original)))
 
         assert isinstance(decoded, HelloMessage)
         assert decoded.client_id == "test-client"
@@ -159,12 +159,11 @@ class TestRouterMessageOwnership:
         assert HistoryForward.__module__ == "trellis.routing.messages"
         assert UrlChanged.__module__ == "trellis.routing.messages"
 
-    def test_hello_message_still_roundtrips_through_common_union(self) -> None:
-        """Infrastructure messages remain in the common message union."""
+    def test_hello_message_still_roundtrips_through_common_registry(self) -> None:
+        """Infrastructure messages remain decodable through the shared registry."""
         encoder = msgspec.msgpack.Encoder()
-        decoder = msgspec.msgpack.Decoder(Message)
 
         original = HelloMessage(client_id="c1", path="/test")
-        decoded = decoder.decode(encoder.encode(original))
+        decoded = decode_message(msgspec.msgpack.decode(encoder.encode(original)))
 
         assert type(decoded) is HelloMessage

@@ -11,9 +11,11 @@ import pytest
 import trellis.core.protocol as protocol_module
 from trellis.core.components.composition import component
 from trellis.core.protocol import (
+    Message,
     MessageHandler,
     MessageHandlerProtocol,
     StatefulMessageHandlerMixin,
+    decode_message,
     dispatch,
     get_message_handler,
     listen,
@@ -26,15 +28,15 @@ from trellis.core.rendering.session import RenderSession
 from trellis.core.state.stateful import Stateful
 
 
-class Ping(msgspec.Struct, tag="ping", tag_field="type"):
+class Ping(Message, tag="ping"):
     value: int
 
 
-class Pong(msgspec.Struct, tag="pong", tag_field="type"):
+class Pong(Message, tag="pong"):
     value: int
 
 
-class Temp(msgspec.Struct, tag="temp", tag_field="type"):
+class Temp(Message, tag="temp"):
     value: int
 
 
@@ -57,11 +59,12 @@ class TestMessageTypeRegistration:
     def test_reset_for_tests_clears_registered_message_types(self, reset_protocol) -> None:
         register_message_types(Temp)
 
-        assert protocol_module.decode_registered_message({"type": "temp", "value": 1}) == Temp(1)
+        assert decode_message({"type": "temp", "value": 1}) == Temp(1)
 
         protocol_module._reset_for_tests()
 
-        assert protocol_module.decode_registered_message({"type": "temp", "value": 1}) is None
+        with pytest.raises(msgspec.ValidationError):
+            decode_message({"type": "temp", "value": 1})
 
 
 class TestMessageHandlerContext:
