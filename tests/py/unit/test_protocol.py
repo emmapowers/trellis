@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import gc
 import typing as tp
+import weakref
 
 import pytest
 
@@ -309,6 +311,42 @@ class TestMessageHandler:
         await TestListenerRegistration._dispatch_with_handler(handler, Ping(12))
 
         assert received == [11]
+
+    @pytest.mark.anyio
+    async def test_bound_method_listeners_do_not_keep_instances_alive(
+        self,
+        reset_protocol,
+    ) -> None:
+        received: list[int] = []
+        handler = MockMessageHandler()
+        listener_ref: weakref.ReferenceType[object] | None = None
+
+        class PingListener(MessageHandler):
+            @listen(Ping)
+            async def on_ping(
+                self,
+                message_handler: MessageHandlerProtocol,
+                message: Ping,
+            ) -> None:
+                del self, message_handler
+                received.append(message.value)
+
+        set_message_handler(handler)
+        try:
+            listener = PingListener()
+            listener_ref = weakref.ref(listener)
+        finally:
+            set_message_handler(None)
+
+        del listener
+        gc.collect()
+
+        assert listener_ref is not None
+        assert listener_ref() is None
+
+        await TestListenerRegistration._dispatch_with_handler(handler, Ping(15))
+
+        assert received == []
 
 
 class TestStatefulMessageHandlerMixin:

@@ -8,6 +8,7 @@ import inspect
 import typing as tp
 import weakref
 from collections import defaultdict
+from dataclasses import dataclass
 
 import msgspec
 
@@ -20,10 +21,31 @@ _handler_ctx: contextvars.ContextVar[MessageHandlerProtocol | None] = contextvar
 )
 _MESSAGE_TYPES: dict[str, type[object]] = {}
 _MESSAGE_TAGS: dict[type[object], str] = {}
-_GLOBAL_LISTENERS: dict[type[object], list[Listener]] = defaultdict(list)
-_HANDLER_LISTENERS: weakref.WeakKeyDictionary[object, dict[type[object], list[Listener]]] = (
+_GLOBAL_LISTENERS: dict[type[object], list[_ListenerRef]] = defaultdict(list)
+_HANDLER_LISTENERS: weakref.WeakKeyDictionary[object, dict[type[object], list[_ListenerRef]]] = (
     weakref.WeakKeyDictionary()
 )
+
+
+@dataclass(frozen=True)
+class _ListenerRef:
+    """Weakly-reference bound methods while leaving plain functions untouched."""
+
+    function: Listener | None = None
+    method: weakref.WeakMethod[tp.Any] | None = None
+
+    @classmethod
+    def from_listener(cls, listener: Listener) -> _ListenerRef:
+        if inspect.ismethod(listener):
+            return cls(method=weakref.WeakMethod(listener))
+        return cls(function=listener)
+
+    def resolve(self) -> Listener | None:
+        if self.function is not None:
+            return self.function
+        if self.method is None:
+            return None
+        return tp.cast("Listener | None", self.method())
 
 
 class Message(msgspec.Struct, tag_field="type"):
@@ -200,14 +222,12 @@ async def dispatch(message: object) -> None:
     if handler is None:
         raise RuntimeError("No active message handler is available for dispatch().")
 
-    for listener in tuple(_GLOBAL_LISTENERS.get(type(message), ())):
-        await listener(handler, message)
+    await _dispatch_listener_refs(_GLOBAL_LISTENERS, type(message), handler, message)
 
     scoped = _HANDLER_LISTENERS.get(handler)
     if scoped is None:
         return
-    for listener in tuple(scoped.get(type(message), ())):
-        await listener(handler, message)
+    await _dispatch_listener_refs(scoped, type(message), handler, message)
 
 
 def _register_listener(
@@ -215,14 +235,15 @@ def _register_listener(
     listener: Listener,
     handler: MessageHandlerProtocol | None,
 ) -> None:
+    listener_ref = _ListenerRef.from_listener(listener)
     listeners = (
         _GLOBAL_LISTENERS[message_type]
         if handler is None
         else _HANDLER_LISTENERS.setdefault(handler, {}).setdefault(message_type, [])
     )
-    if any(existing == listener for existing in listeners):
+    if listener_ref in listeners:
         return
-    listeners.append(listener)
+    listeners.append(listener_ref)
 
 
 def _unregister_listener(
@@ -230,6 +251,7 @@ def _unregister_listener(
     listener: Listener,
     handler: MessageHandlerProtocol | None,
 ) -> None:
+    listener_ref = _ListenerRef.from_listener(listener)
     listeners = (
         _GLOBAL_LISTENERS.get(message_type)
         if handler is None
@@ -238,7 +260,7 @@ def _unregister_listener(
     if not listeners:
         return
 
-    remaining = [existing for existing in listeners if existing != listener]
+    remaining = [existing for existing in listeners if existing != listener_ref]
     if handler is None:
         if remaining:
             _GLOBAL_LISTENERS[message_type] = remaining
@@ -255,6 +277,30 @@ def _unregister_listener(
         scoped.pop(message_type, None)
     if not scoped:
         _HANDLER_LISTENERS.pop(handler, None)
+
+
+async def _dispatch_listener_refs(
+    registry: dict[type[object], list[_ListenerRef]],
+    message_type: type[object],
+    handler: MessageHandlerProtocol,
+    message: object,
+) -> None:
+    listener_refs = registry.get(message_type)
+    if not listener_refs:
+        return
+
+    alive_refs: list[_ListenerRef] = []
+    for listener_ref in tuple(listener_refs):
+        listener = listener_ref.resolve()
+        if listener is None:
+            continue
+        alive_refs.append(listener_ref)
+        await listener(handler, message)
+
+    if alive_refs:
+        registry[message_type] = alive_refs
+    else:
+        registry.pop(message_type, None)
 
 
 def _looks_like_method(fn: tp.Callable[..., tp.Any]) -> bool:
