@@ -8,12 +8,14 @@ and sent via PyTauri channel, allowing the standard MessageHandler.run() loop.
 from __future__ import annotations
 
 import asyncio
+import typing as tp
 from typing import TYPE_CHECKING
 
 import msgspec
 
 from trellis.core.protocol import decode_message
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
+from trellis.platforms.common.messages import Message
 
 if TYPE_CHECKING:
     from pytauri.ipc import Channel
@@ -55,16 +57,16 @@ class PyTauriMessageHandler(MessageHandler):
         self._encoder = msgspec.msgpack.Encoder()
         self._decoder = msgspec.msgpack.Decoder()
 
-    async def send_message(self, msg: object) -> None:
+    async def send_message(self, msg: Message) -> None:
         """Send message to client via channel."""
         data = self._encoder.encode(msg)
         self._channel.send(bytes(data))
 
-    async def receive_message(self) -> object:
+    async def receive_message(self) -> Message:
         """Receive message from queue (populated by trellis_send command)."""
         data = await self._queue.get()
         raw_message = self._decoder.decode(data)
-        return decode_message(raw_message)
+        return tp.cast("Message", decode_message(raw_message))
 
     def enqueue(self, data: bytes) -> None:
         """Enqueue incoming message data from trellis_send command."""

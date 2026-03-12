@@ -271,7 +271,7 @@ class MessageHandler:
     session: RenderSession | None
     session_id: str | None
     batch_delay: float
-    message_send_queue: asyncio.Queue[object]
+    message_send_queue: asyncio.Queue[Message]
     _root_component: Component
     _app_wrapper: AppWrapper
 
@@ -366,7 +366,7 @@ class MessageHandler:
             logger.exception(f"Error during initial render: {e}")
             return ErrorMessage(error=_format_exception(e), context="render")
 
-    async def handle_message(self, msg: object) -> Message | None:
+    async def handle_message(self, msg: Message) -> Message | None:
         """Process incoming message, return response message.
 
         Args:
@@ -482,17 +482,17 @@ class MessageHandler:
     # Transport methods - subclasses must override
     # -------------------------------------------------------------------------
 
-    async def send_message(self, msg: object) -> None:
+    async def send_message(self, msg: Message) -> None:
         """Send message to client. Override in subclass."""
         raise NotImplementedError
 
-    async def receive_message(self) -> object:
+    async def receive_message(self) -> Message:
         """Receive message from client. Override in subclass."""
         raise NotImplementedError
 
     async def _receive_message_or_critical(
         self, critical_tasks: set[asyncio.Task[tp.Any]]
-    ) -> object | None:
+    ) -> Message | None:
         """Wait for the next client message or a critical task completion."""
         receive_task = asyncio.create_task(self.receive_message())
         tasks = set(critical_tasks)

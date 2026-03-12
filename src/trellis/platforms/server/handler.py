@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import typing as tp
+
 import msgspec
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
@@ -10,6 +12,7 @@ from trellis.core.protocol import decode_message
 from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.handler_registry import get_global_registry
+from trellis.platforms.common.messages import Message
 
 router = APIRouter()
 
@@ -53,7 +56,7 @@ class WebSocketMessageHandler(MessageHandler):
         self._encoder = msgspec.msgpack.Encoder()
         self._decoder = msgspec.msgpack.Decoder()
 
-    async def send_message(self, msg: object) -> None:
+    async def send_message(self, msg: Message) -> None:
         """Send message to client via WebSocket."""
         try:
             await self.websocket.send_bytes(self._encoder.encode(msg))
@@ -64,14 +67,14 @@ class WebSocketMessageHandler(MessageHandler):
                 raise SessionDisconnected() from exc
             raise
 
-    async def receive_message(self) -> object:
+    async def receive_message(self) -> Message:
         """Receive message from client via WebSocket."""
         try:
             data = await self.websocket.receive_bytes()
         except WebSocketDisconnect as exc:
             raise SessionDisconnected() from exc
         raw_message = self._decoder.decode(data)
-        return decode_message(raw_message)
+        return tp.cast("Message", decode_message(raw_message))
 
 
 @router.websocket("/ws")

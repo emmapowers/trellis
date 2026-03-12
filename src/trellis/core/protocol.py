@@ -56,7 +56,7 @@ class Message(msgspec.Struct, tag_field="type"):
 class MessageHandlerProtocol(tp.Protocol):
     """Core interface exposed to protocol listeners and senders."""
 
-    message_send_queue: asyncio.Queue[object]
+    message_send_queue: asyncio.Queue[Message]
 
 
 def get_message_handler() -> MessageHandlerProtocol | None:
@@ -208,7 +208,7 @@ class StatefulMessageHandlerMixin(_MessageHandlerBase):
         return None
 
 
-async def send(message: object) -> None:
+async def send(message: Message) -> None:
     """Enqueue a message for the current handler."""
     handler = get_message_handler()
     if handler is None:
@@ -216,7 +216,7 @@ async def send(message: object) -> None:
     await handler.message_send_queue.put(message)
 
 
-async def dispatch(message: object) -> None:
+async def dispatch(message: Message) -> None:
     """Dispatch a decoded message to global and handler-scoped listeners."""
     handler = get_message_handler()
     if handler is None:

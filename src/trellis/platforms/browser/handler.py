@@ -30,7 +30,7 @@ class BrowserMessageHandler(MessageHandler):
     and BrowserPlatform.run() connects this handler to the bridge.
     """
 
-    _inbox: asyncio.Queue[object]
+    _inbox: asyncio.Queue[Message]
     _send_callback: Callable[[tp.Any], None] | None
     _serializer: Callable[[dict[str, tp.Any]], tp.Any]
 
@@ -69,7 +69,7 @@ class BrowserMessageHandler(MessageHandler):
         if serializer is not None:
             self._serializer = serializer
 
-    async def send_message(self, msg: object) -> None:
+    async def send_message(self, msg: Message) -> None:
         """Send message to JavaScript via callback."""
         if self._send_callback is None:
             return
@@ -81,7 +81,7 @@ class BrowserMessageHandler(MessageHandler):
         serialized = self._serializer(msg_dict)
         self._send_callback(serialized)
 
-    async def receive_message(self) -> object:
+    async def receive_message(self) -> Message:
         """Receive message from queue (populated by enqueue_message)."""
         return await self._inbox.get()
 
@@ -109,7 +109,7 @@ class BrowserMessageHandler(MessageHandler):
         self._inbox.put_nowait(EventMessage(callback_id=callback_id, args=args or []))
 
 
-def _message_to_dict(msg: object) -> dict[str, tp.Any]:
+def _message_to_dict(msg: Message) -> dict[str, tp.Any]:
     """Convert a msgspec Message struct to a plain dict for JavaScript.
 
     Uses msgspec.to_builtins() for recursive conversion of nested structs,
@@ -119,7 +119,6 @@ def _message_to_dict(msg: object) -> dict[str, tp.Any]:
     return result
 
 
-def _dict_to_message(msg_dict: dict[str, tp.Any]) -> object:
+def _dict_to_message(msg_dict: dict[str, tp.Any]) -> Message:
     """Convert a dict from JavaScript to a protocol message struct."""
-    result: Message = tp.cast("Message", decode_message(msg_dict))
-    return result
+    return tp.cast("Message", decode_message(msg_dict))
