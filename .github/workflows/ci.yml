@@ -14,8 +14,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install desktop runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-0
+
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
 
       - name: Install dependencies
         run: uv sync --locked --dev

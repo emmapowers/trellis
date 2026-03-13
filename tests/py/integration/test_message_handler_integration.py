@@ -4,12 +4,21 @@ import asyncio
 import typing as tp
 from dataclasses import dataclass
 
-from tests.conftest import get_button_element
+import pytest
+
+from tests.conftest import bind_message_handler, get_button_element
 from trellis.core.components.composition import CompositionComponent, component
+from trellis.core.protocol import (
+    Message,
+    listen,
+    register_message_types,
+    send,
+)
 from trellis.core.rendering.patches import RenderUpdatePatch
 from trellis.core.rendering.render import render
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.browser import BrowserMessageHandler
+from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.handler import AppWrapper
 from trellis.platforms.common.messages import (
     AddPatch,
@@ -21,18 +30,24 @@ from trellis.platforms.common.messages import (
 from trellis.widgets import Button, Label
 
 
+class Ping(Message, tag="ping"):
+    value: int
+
+
 def init_handler_for_test(handler: BrowserMessageHandler) -> None:
     """Initialize handler by posting HelloMessage and calling handle_hello.
 
     This simulates the production flow where handle_hello creates the session.
     """
     handler._inbox.put_nowait(HelloMessage(client_id="test", system_theme="light"))
-    asyncio.run(handler.handle_hello())
+    with bind_message_handler(handler):
+        asyncio.run(handler.handle_hello())
 
 
 def get_initial_tree(handler: BrowserMessageHandler) -> dict[str, tp.Any]:
     """Helper to get tree dict from initial render."""
-    msg = handler.initial_render()
+    with bind_message_handler(handler):
+        msg = handler.initial_render()
     assert isinstance(msg, PatchMessage)
     assert len(msg.patches) == 1
     patch = msg.patches[0]
@@ -257,6 +272,144 @@ class TestMessageHandler:
         # (we can't easily test this without internal access,
         # but the method should not raise)
 
+    def test_run_exits_cleanly_on_transport_disconnect(self, app_wrapper: AppWrapper) -> None:
+        """run() treats a transport disconnect as normal shutdown."""
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        class DisconnectingHandler(BrowserMessageHandler):
+            _hello_sent: bool
+
+            def __init__(self) -> None:
+                super().__init__(App, app_wrapper, batch_delay=0.01)
+                self._hello_sent = False
+
+            async def receive_message(self):
+                if not self._hello_sent:
+                    self._hello_sent = True
+                    return HelloMessage(client_id="test", system_theme="light")
+                raise SessionDisconnected()
+
+        async def run_test() -> None:
+            handler = DisconnectingHandler()
+            await asyncio.wait_for(handler.run(), timeout=1.0)
+            assert handler.session is not None
+            assert not handler.session._tasks
+
+        asyncio.run(run_test())
+
+    def test_handle_message_dispatches_extension_messages(
+        self,
+        app_wrapper: AppWrapper,
+        reset_protocol,
+    ) -> None:
+        """Extension messages are routed through the protocol dispatcher."""
+        received: list[tuple[BrowserMessageHandler, int]] = []
+
+        register_message_types(Ping)
+
+        @listen(Ping)
+        async def on_ping(handler, message: Ping) -> None:
+            received.append((handler, message.value))
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+
+        with bind_message_handler(handler):
+            response = asyncio.run(handler.handle_message(Ping(9)))
+
+        assert response is None
+        assert received == [(handler, 9)]
+
+    def test_handle_message_requires_active_message_handler_for_protocol_dispatch(
+        self,
+        app_wrapper: AppWrapper,
+        reset_protocol,
+    ) -> None:
+        """Direct protocol handling requires the session handler context to be bound."""
+        register_message_types(Ping)
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+
+        with pytest.raises(RuntimeError, match="No active message handler"):
+            asyncio.run(handler.handle_message(Ping(9)))
+
+    def test_async_callback_can_send_protocol_message(
+        self,
+        app_wrapper: AppWrapper,
+        reset_protocol,
+    ) -> None:
+        """Async callbacks inherit handler context for send()."""
+        register_message_types(Ping)
+
+        @component
+        def App() -> None:
+            async def emit() -> None:
+                await send(Ping(11))
+
+            Button(text="Emit", on_click=emit)
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        tree = get_initial_tree(handler)
+
+        app_children = find_app_children(tree)
+        button = get_button_element(app_children[0])
+        cb_id = button["props"]["on_click"]["__callback__"]
+
+        async def run_test() -> None:
+            response = await handler.handle_message(EventMessage(callback_id=cb_id, args=[]))
+            assert response is None
+            queued = await asyncio.wait_for(handler.message_send_queue.get(), timeout=1.0)
+            assert queued == Ping(11)
+
+        with bind_message_handler(handler):
+            asyncio.run(run_test())
+
+    def test_message_send_queue_drains_to_transport(
+        self,
+        app_wrapper: AppWrapper,
+        reset_protocol,
+    ) -> None:
+        """Handler queue drain forwards queued protocol messages to send_message()."""
+        sent_messages: list[object] = []
+        register_message_types(Ping)
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        class QueueDrainHandler(BrowserMessageHandler):
+            async def send_message(self, msg: object) -> None:  # type: ignore[override]
+                sent_messages.append(msg)
+
+        handler = QueueDrainHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+        sent_messages.clear()
+
+        async def run_test() -> None:
+            drain_task = asyncio.create_task(handler._drain_message_send_queue())
+            await handler.message_send_queue.put(Ping(12))
+            await asyncio.sleep(0)
+            drain_task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await drain_task
+
+        asyncio.run(run_test())
+
+        assert sent_messages == [Ping(12)]
+
 
 class TestBrowserMessageHandler:
     """Tests for BrowserMessageHandler event handling."""
@@ -409,9 +562,9 @@ class TestAsyncCallbackHandling:
         asyncio.run(test())
 
     def test_background_tasks_tracked(self, app_wrapper: AppWrapper) -> None:
-        """Background tasks are tracked to prevent GC.
+        """Async callbacks are tracked on the session and cleaned up after completion.
 
-        INTERNAL TEST: _background_tasks is internal - verifies GC prevention.
+        INTERNAL TEST: session._tasks is internal - verifies session task ownership.
         """
         task_completed = []
 
@@ -435,14 +588,17 @@ class TestAsyncCallbackHandling:
             event_msg = EventMessage(callback_id=cb_id, args=[])
             await handler.handle_message(event_msg)
 
-            # Verify task tracking
-            assert len(handler._background_tasks) == 1
+            assert handler.session is not None
+            assert not hasattr(handler, "_background_tasks")
+
+            # Verify task tracking moved to the session
+            assert len(handler.session._tasks) == 1
 
             # Wait for completion
             await asyncio.sleep(0.02)
 
             # Task should be removed after completion
-            assert len(handler._background_tasks) == 0
+            assert len(handler.session._tasks) == 0
             assert task_completed == [True]
 
         asyncio.run(test())

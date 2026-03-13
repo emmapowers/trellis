@@ -53,6 +53,11 @@ src/trellis/
 - use the test-driven development skill when making changes
 - code comments should document the code that as it is. Do not leave comments saying what has changed. Make sure existing comments are updated when code associated with them changes.
 - prefer normal attribute access over `object.__getattribute__`/`object.__setattr__`. If a class owns an attribute, declare it on the class and initialize it in the constructor. Only use `object.__getattribute__`/`object.__setattr__` when working around framework limitations (e.g. `@dataclass` not calling `super().__init__`) or truly dynamic attribute access.
+- Declare all owned instance attributes in the class body with type annotations.
+- Initialize instance state in `__init__`, unless the class is intentionally using `@dataclass`.
+- Use `ClassVar[...]` only for true class-level data, not per-instance defaults.
+- Avoid class-body mutable instance defaults in plain classes.
+- Use `state_var()` for simple component-local state such as 1-2 independent values. Keep `Stateful` classes for structured, multi-field, shared, or behavior-heavy state.
 
 ### Import Style
 
@@ -65,10 +70,13 @@ from trellis import html as h
 ```
 
 - `trellis` exports core primitives (`component`, `Stateful`, `RenderSession`, etc.) plus `App`
+- Import state helpers like `state_var`, `on_mount`, and `load` directly from `trellis` when needed
 - Widgets are accessed via `w.Button`, `w.Label`, `w.Column`, etc.
 - HTML elements are accessed via `h.Div`, `h.Span`, `h.P`, etc.
 
 ## Commands
+
+Run project tools through `uv run` unless you have confirmed the binary is already on PATH. Prefer `uv run just ci`, `uv run trellis ...`, `uv run ruff ...`, etc.
 
 - `just cleanup` - Format and lint with auto-fix
 - `just lint` - Check all linters (no fix)
@@ -89,8 +97,7 @@ Run `just ci` before committing to catch formatting, lint, and type errors.
 - **pyproject.toml**: Runtime dependencies (shipped with pip package) and dev dependency groups
 - **justfile**: Task runner recipes (uses `uv run` to invoke dev tools)
 
-`uv sync --dev` installs the core dev toolchain for non-desktop development.
-For desktop development (including `just showcase --desktop`), use `uv sync --group desktop`, which includes the dev toolchain plus pytauri.
+`uv sync --dev` installs everything needed for development, including desktop dependencies (pytauri, pyinstaller).
 
 ## UI Testing with Playwright MCP
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextvars
+import logging
 import re
 import threading
 import typing as tp
@@ -27,6 +28,8 @@ __all__ = [
     "is_render_active",
     "set_active_session",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 # Thread-safe, task-local storage for the active render session.
@@ -78,14 +81,57 @@ class RenderSession:
     # Render count - incremented at the start of each render pass
     render_count: int = 0
 
-    # Background tasks for async lifecycle hooks (prevents GC)
-    _background_tasks: set[asyncio.Task[None]] = field(default_factory=set)
+    # Session-scoped async tasks for non-critical background work.
+    _tasks: set[asyncio.Task[tp.Any]] = field(default_factory=set)
+    _shutting_down: bool = False
 
     # Initial URL path from client HelloMessage (for routing)
     initial_path: str = "/"
 
     def __post_init__(self) -> None:
         self.dirty.set_lock(self.lock)
+
+    def spawn[T](
+        self,
+        coro: tp.Coroutine[tp.Any, tp.Any, T],
+        *,
+        label: str,
+    ) -> asyncio.Task[T]:
+        """Create and track a session-scoped task for non-critical background work."""
+        if self._shutting_down:
+            coro.close()
+            raise RuntimeError("Cannot spawn task on a shutting down session.")
+
+        async def run_managed_task() -> T | None:
+            try:
+                return await coro
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.exception("Error in %s", label)
+                return None
+
+        task = tp.cast("asyncio.Task[T]", asyncio.create_task(run_managed_task()))
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+        return task
+
+    async def shutdown(self) -> None:
+        """Cancel and await all remaining session-scoped tasks."""
+        if self._shutting_down:
+            return
+
+        self._shutting_down = True
+        current_task = asyncio.current_task()
+        tasks_to_cancel = [task for task in self._tasks if task is not current_task]
+
+        for task in tasks_to_cancel:
+            task.cancel()
+
+        if tasks_to_cancel:
+            await asyncio.gather(*tasks_to_cancel, return_exceptions=True)
+
+        self._tasks.clear()
 
     @property
     def root_element(self) -> Element | None:

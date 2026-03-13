@@ -60,14 +60,8 @@ The `mutable()` function captures a reference to the state property. When the wi
 State lives in one component but can be passed to children as props:
 
 ```python
-from dataclasses import dataclass
-from trellis import Stateful, component
-from trellis import html as h
+from trellis import component, state_var
 from trellis import widgets as w
-
-@dataclass
-class AppState(Stateful):
-    user_name: str = "Alice"
 
 @component
 def Header(name: str) -> None:
@@ -75,10 +69,10 @@ def Header(name: str) -> None:
 
 @component
 def App() -> None:
-    state = AppState()
+    user_name = state_var("Alice")
 
     with w.Column():
-        Header(name=state.user_name)  # Pass state as prop
+        Header(name=user_name.value)  # Pass state as prop
         w.Label(text="Content goes here")
 ```
 
@@ -90,23 +84,8 @@ Pass state methods as callbacks to child components:
 
 <TrellisDemo
   title="Callbacks"
-  code={`from dataclasses import dataclass
-from trellis import Stateful, component
-from trellis import html as h
+  code={`from trellis import component, state_var
 from trellis import widgets as w
-
-@dataclass
-class CounterState(Stateful):
-    count: int
-
-    def increment(self):
-        self.count += 1
-
-    def decrement(self):
-        self.count -= 1
-
-    def reset(self):
-        self.count = 0
 
 @component
 def Controls(on_increment, on_decrement, on_reset):
@@ -117,14 +96,14 @@ def Controls(on_increment, on_decrement, on_reset):
 
 @component
 def App():
-    state = CounterState(count=0)
+    count = state_var(0)
 
     with w.Column(gap=12):
-        w.Heading(text=f"Count: {state.count}", level=2)
+        w.Heading(text=f"Count: {count.value}", level=2)
         Controls(
-            on_increment=state.increment,
-            on_decrement=state.decrement,
-            on_reset=state.reset,
+            on_increment=lambda: count.set(count.value + 1),
+            on_decrement=lambda: count.set(count.value - 1),
+            on_reset=lambda: count.set(0),
         )
 
 App = App`}
@@ -152,32 +131,23 @@ def App() -> None:
 
 <TrellisDemo
   title="Conditional Rendering"
-  code={`from dataclasses import dataclass
-from trellis import Stateful, component
-from trellis import html as h
+  code={`from trellis import component, state_var
 from trellis import widgets as w
-
-@dataclass
-class ToggleState(Stateful):
-    show_details: bool
-
-    def toggle(self):
-        self.show_details = not self.show_details
 
 @component
 def App():
-    state = ToggleState(show_details=False)
+    show_details = state_var(False)
 
     with w.Column(gap=12):
         w.Heading(text="Product", level=2)
         w.Label(text="A great product for all your needs.")
 
         w.Button(
-            text="Hide Details" if state.show_details else "Show Details",
-            on_click=state.toggle,
+            text="Hide Details" if show_details.value else "Show Details",
+            on_click=lambda: show_details.set(not show_details.value),
         )
 
-        if state.show_details:
+        if show_details.value:
             with w.Card():
                 w.Label(text="Price: $99.99")
                 w.Label(text="In stock: Yes")

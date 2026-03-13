@@ -19,6 +19,7 @@ from uuid import uuid4
 
 from trellis.core.callback_context import callback_context
 from trellis.core.components.base import Component
+from trellis.core.protocol import dispatch, set_message_handler
 from trellis.core.rendering.patches import (
     RenderAddPatch,
     RenderPatch,
@@ -28,6 +29,7 @@ from trellis.core.rendering.patches import (
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession, get_session_registry
 from trellis.html.events import get_event_class
+from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.messages import (
     AddPatch,
     DebugConfig,
@@ -35,22 +37,17 @@ from trellis.platforms.common.messages import (
     EventMessage,
     HelloMessage,
     HelloResponseMessage,
-    HistoryBack,
-    HistoryForward,
-    HistoryPush,
     Message,
     Patch,
     PatchMessage,
     RemovePatch,
     UpdatePatch,
-    UrlChanged,
 )
 from trellis.platforms.common.serialization import (
     _serialize_props,
     parse_callback_id,
     serialize_element,
 )
-from trellis.routing.state import RouterState
 from trellis.utils.debug import get_enabled_categories
 
 logger = logging.getLogger(__name__)
@@ -273,10 +270,9 @@ class MessageHandler:
     session: RenderSession | None
     session_id: str | None
     batch_delay: float
+    message_send_queue: asyncio.Queue[Message]
     _root_component: Component
     _app_wrapper: AppWrapper
-    _background_tasks: set[asyncio.Task[tp.Any]]
-    _render_task: asyncio.Task[None] | None
 
     def __init__(
         self,
@@ -296,8 +292,7 @@ class MessageHandler:
         self.session = None  # Created in handle_hello after receiving theme info
         self.session_id = None
         self.batch_delay = batch_delay
-        self._background_tasks = set()
-        self._render_task = None
+        self.message_send_queue = asyncio.Queue()
 
     async def handle_hello(self) -> str:
         """Handle hello handshake with client.
@@ -352,8 +347,6 @@ class MessageHandler:
     def initial_render(self) -> Message:
         """Generate initial render message.
 
-        Also sets up router callbacks if RouterState exists.
-
         Returns:
             PatchMessage on success, ErrorMessage on exception
         """
@@ -365,9 +358,6 @@ class MessageHandler:
             logger.debug(
                 "Initial render complete, sending PatchMessage (%d elements)", element_count
             )
-
-            # Set up router callbacks after render creates the tree
-            self._setup_router_callbacks()
 
             return PatchMessage(patches=wire_patches)
         except Exception as e:
@@ -399,60 +389,8 @@ class MessageHandler:
             # The render loop will pick them up on the next frame.
             return None
 
-        if isinstance(msg, UrlChanged):
-            logger.debug("Received UrlChanged: path=%s", msg.path)
-            self._handle_url_changed(msg.path)
-            return None
-
+        await dispatch(msg)
         return None
-
-    def _handle_url_changed(self, path: str) -> None:
-        """Handle browser URL change (popstate event).
-
-        Finds RouterState in the session and updates its path.
-        """
-        router_state = self._find_router_state()
-        if router_state is not None:
-            router_state._update_path_from_url(path)
-
-    def _find_router_state(self) -> tp.Any:
-        """Find RouterState instance in session's element states.
-
-        Note: While this search is technically O(N) in the number of elements,
-        RouterState is typically placed on the root TrellisApp element, so in
-        practice it completes in O(1) as it's found immediately.
-
-        Returns:
-            RouterState instance or None if not found
-        """
-        if self.session is None:
-            return None
-
-        # Search through element states for RouterState in context
-        for element_id in self.session.states._state:
-            state = self.session.states.get(element_id)
-            if state is not None and RouterState in state.context:
-                return state.context[RouterState]
-        return None
-
-    def _setup_router_callbacks(self) -> None:
-        """Set up async callbacks on RouterState to send history messages."""
-        router_state = self._find_router_state()
-        if router_state is None:
-            return
-
-        async def on_navigate(path: str) -> None:
-            await self.send_message(HistoryPush(path=path))
-
-        async def on_go_back() -> None:
-            await self.send_message(HistoryBack())
-
-        async def on_go_forward() -> None:
-            await self.send_message(HistoryForward())
-
-        router_state._on_navigate = on_navigate
-        router_state._on_go_back = on_go_back
-        router_state._on_go_forward = on_go_forward
 
     async def _invoke_callback(self, callback_id: str, args: list[tp.Any]) -> None:
         """Invoke callback with event conversion.
@@ -481,9 +419,10 @@ class MessageHandler:
                     await callback(*processed_args, **kwargs)
 
             logger.debug("Callback %s is async, scheduled as task", callback_id)
-            task = asyncio.create_task(run_async_with_context())
-            self._background_tasks.add(task)
-            task.add_done_callback(self._background_tasks.discard)
+            session.spawn(
+                run_async_with_context(),
+                label=f"callback {callback_id}",
+            )
         else:
             # Sync: call with callback context
             with callback_context(session, element_id):
@@ -514,13 +453,27 @@ class MessageHandler:
 
             try:
                 render_patches = render(self.session)
-                if render_patches:
-                    wire_patches = _serialize_patches(render_patches, self.session)
-                    logger.debug("Sending PatchMessage with %d patches", len(wire_patches))
-                    await self.send_message(PatchMessage(patches=wire_patches))
             except Exception as e:
-                logger.exception(f"Error in render loop: {e}")
-                await self.send_message(ErrorMessage(error=_format_exception(e), context="render"))
+                try:
+                    await self.send_message(
+                        ErrorMessage(error=_format_exception(e), context="render")
+                    )
+                except Exception:
+                    logger.exception("Error sending render failure message")
+                raise
+
+            if not render_patches:
+                continue
+
+            wire_patches = _serialize_patches(render_patches, self.session)
+            logger.debug("Sending PatchMessage with %d patches", len(wire_patches))
+            await self.send_message(PatchMessage(patches=wire_patches))
+
+    async def _drain_message_send_queue(self) -> None:
+        """Send queued protocol messages over the transport."""
+        while True:
+            message = await self.message_send_queue.get()
+            await self.send_message(message)
 
     # -------------------------------------------------------------------------
     # Transport methods - subclasses must override
@@ -534,6 +487,39 @@ class MessageHandler:
         """Receive message from client. Override in subclass."""
         raise NotImplementedError
 
+    async def _receive_message_or_critical(
+        self, critical_tasks: set[asyncio.Task[tp.Any]]
+    ) -> Message | None:
+        """Wait for the next client message or a critical task completion."""
+        receive_task = asyncio.create_task(self.receive_message())
+        tasks = set(critical_tasks)
+        tasks.add(receive_task)
+
+        try:
+            done, _pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        except BaseException:
+            receive_task.cancel()
+            await asyncio.gather(receive_task, return_exceptions=True)
+            raise
+
+        if any(task in done for task in critical_tasks):
+            receive_task.cancel()
+            await asyncio.gather(receive_task, return_exceptions=True)
+            for task in critical_tasks:
+                if task not in done:
+                    continue
+                try:
+                    task.result()
+                except SessionDisconnected:
+                    return None
+                except Exception:
+                    logger.exception("Critical handler task failed")
+                    return None
+                logger.error("Critical handler task exited unexpectedly")
+                return None
+
+        return receive_task.result()
+
     # -------------------------------------------------------------------------
     # Main loop
     # -------------------------------------------------------------------------
@@ -542,30 +528,39 @@ class MessageHandler:
         """Main message loop - hello, initial render, then event loop.
 
         1. Performs hello handshake with client
-        2. Sends initial render (full tree, also sets up router callbacks)
+        2. Sends initial render (full tree)
         3. Starts background render loop (30fps batched updates)
         4. Loops receiving messages and sending responses
         """
-        await self.handle_hello()
-        await self.send_message(self.initial_render())
-
-        # Start background render loop for batched updates
-        self._render_task = asyncio.create_task(self._render_loop())
-
         try:
+            set_message_handler(self)
+            await self.handle_hello()
+            await self.send_message(self.initial_render())
+            assert self.session is not None
+
+            critical_tasks = {
+                asyncio.create_task(self._render_loop()),
+                asyncio.create_task(self._drain_message_send_queue()),
+            }
+
             while True:
-                msg = await self.receive_message()
+                msg = await self._receive_message_or_critical(critical_tasks)
+                if msg is None:
+                    break
+
                 response = await self.handle_message(msg)
                 if response:
                     await self.send_message(response)
+        except SessionDisconnected:
+            return
         finally:
-            # Cancel render loop on disconnect
-            if self._render_task:
-                self._render_task.cancel()
-                try:
-                    await self._render_task
-                except asyncio.CancelledError:
-                    pass
+            critical_tasks = locals().get("critical_tasks", set())
+            for task in critical_tasks:
+                task.cancel()
+            if critical_tasks:
+                await asyncio.gather(*critical_tasks, return_exceptions=True)
+            if self.session is not None:
+                await self.session.shutdown()
 
     def cleanup(self) -> None:
         """Clean up resources. Call when session ends."""

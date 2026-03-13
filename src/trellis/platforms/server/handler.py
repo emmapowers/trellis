@@ -2,15 +2,28 @@
 
 from __future__ import annotations
 
+import typing as tp
+
 import msgspec
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from trellis.core.components.base import Component
+from trellis.core.protocol import decode_message
+from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
 from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.common.messages import Message
 
 router = APIRouter()
+
+
+def _is_closed_websocket_error(exc: RuntimeError) -> bool:
+    """Return whether a Starlette/Uvicorn runtime error means the socket is closed."""
+    message = str(exc)
+    return (
+        "Unexpected ASGI message 'websocket.send'" in message
+        and "after sending 'websocket.close'" in message
+    )
 
 
 class WebSocketMessageHandler(MessageHandler):
@@ -21,7 +34,7 @@ class WebSocketMessageHandler(MessageHandler):
 
     websocket: WebSocket
     _encoder: msgspec.msgpack.Encoder
-    _decoder: msgspec.msgpack.Decoder[Message]
+    _decoder: msgspec.msgpack.Decoder[object]
 
     def __init__(
         self,
@@ -41,17 +54,27 @@ class WebSocketMessageHandler(MessageHandler):
         super().__init__(root_component, app_wrapper, batch_delay=batch_delay)
         self.websocket = websocket
         self._encoder = msgspec.msgpack.Encoder()
-        # Single decoder for all message types (including HelloMessage)
-        self._decoder = msgspec.msgpack.Decoder(Message)
+        self._decoder = msgspec.msgpack.Decoder()
 
     async def send_message(self, msg: Message) -> None:
         """Send message to client via WebSocket."""
-        await self.websocket.send_bytes(self._encoder.encode(msg))
+        try:
+            await self.websocket.send_bytes(self._encoder.encode(msg))
+        except WebSocketDisconnect as exc:
+            raise SessionDisconnected() from exc
+        except RuntimeError as exc:
+            if _is_closed_websocket_error(exc):
+                raise SessionDisconnected() from exc
+            raise
 
     async def receive_message(self) -> Message:
         """Receive message from client via WebSocket."""
-        data = await self.websocket.receive_bytes()
-        return self._decoder.decode(data)
+        try:
+            data = await self.websocket.receive_bytes()
+        except WebSocketDisconnect as exc:
+            raise SessionDisconnected() from exc
+        raw_message = self._decoder.decode(data)
+        return tp.cast("Message", decode_message(raw_message))
 
 
 @router.websocket("/ws")

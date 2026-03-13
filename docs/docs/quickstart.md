@@ -50,28 +50,18 @@ config = Config(name="My App", module="app")
 
 **app.py:**
 ```python
-from dataclasses import dataclass
-
-from trellis import App, Stateful, component
+from trellis import App, component, state_var
 from trellis import widgets as w
-
-
-@dataclass
-class Counter(Stateful):
-    count: int = 0
-
-    def increment(self) -> None:
-        self.count += 1
 
 
 @component
 def MyApp() -> None:
-    state = Counter()
+    count = state_var(0)
 
     with w.Column():
         w.Heading(text="My First Trellis App")
-        w.Label(text=f"Count: {state.count}")
-        w.Button(text="Increment", on_click=state.increment)
+        w.Label(text=f"Count: {count.value}")
+        w.Button(text="Increment", on_click=lambda: count.set(count.value + 1))
 
 
 app = App(MyApp)
@@ -93,7 +83,7 @@ trellis run --desktop
 
 ## What Just Happened?
 
-1. **`@dataclass` + `Stateful`** — You defined a state class. `Stateful` enables automatic reactivity.
+1. **`state_var()`** — You created a small slot-local piece of reactive state. When its value changes, readers re-render automatically.
 
 2. **`@component`** — You defined a component function. It describes what the UI should look like.
 
@@ -101,9 +91,9 @@ trellis run --desktop
 
 4. **`w.Heading()`, `w.Label()`** — Widgets for displaying text. `Heading` renders semantic HTML headings.
 
-5. **`w.Button(..., on_click=...)`** — A widget with an event handler. When clicked, it calls `state.increment()`.
+5. **`w.Button(..., on_click=...)`** — A widget with an event handler. When clicked, it updates `count`.
 
-6. **Automatic updates** — When `state.count` changes, components that read it re-render automatically.
+6. **Automatic updates** — When `count.value` changes, components that read it re-render automatically.
 
 ## Next Steps
 

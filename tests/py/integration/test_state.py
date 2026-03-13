@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from trellis.core.components.composition import component
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import RenderSession
-from trellis.core.state.stateful import Stateful
+from trellis.core.state.stateful import Stateful, Tracked
 
 if TYPE_CHECKING:
     from tests.conftest import PatchCapture, RenderResult
@@ -267,6 +267,64 @@ class TestLocalStatePersistence:
         indices = [k[1] for k in state_keys]
         assert 0 in indices
         assert 1 in indices
+
+
+class TestTrackedAnnotations:
+    def test_property_backed_by_private_tracked_attribute_rerenders(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """A property reading a private Tracked field still participates in reactivity."""
+
+        @dataclass(kw_only=True)
+        class MyState(Stateful):
+            _count: Tracked[int] = 0
+
+            @property
+            def count(self) -> int:
+                return self._count
+
+        state = MyState()
+        observed_counts: list[int] = []
+
+        @component
+        def Counter() -> None:
+            observed_counts.append(state.count)
+
+        capture = capture_patches(Counter)
+        capture.render()
+
+        state._count = 1
+        capture.render()
+
+        assert observed_counts == [0, 1]
+
+    def test_property_backed_by_private_untracked_attribute_does_not_rerender(
+        self, capture_patches: "type[PatchCapture]"
+    ) -> None:
+        """A private annotated field is inert unless it opts into Tracked."""
+
+        @dataclass(kw_only=True)
+        class MyState(Stateful):
+            _count: int = 0
+
+            @property
+            def count(self) -> int:
+                return self._count
+
+        state = MyState()
+        observed_counts: list[int] = []
+
+        @component
+        def Counter() -> None:
+            observed_counts.append(state.count)
+
+        capture = capture_patches(Counter)
+        capture.render()
+
+        state._count = 1
+        capture.render_dirty()
+
+        assert observed_counts == [0]
 
     def test_subclass_state_works(self, capture_patches: "type[PatchCapture]") -> None:
         """Subclassed state types work correctly."""
@@ -815,7 +873,7 @@ class TestAsyncLifecycleHooks:
     ) -> None:
         """Background tasks from async hooks are tracked on session.
 
-        INTERNAL TEST: _background_tasks is internal - verifies GC prevention.
+        INTERNAL TEST: _tasks is internal - verifies GC prevention.
         """
         completed: list[str] = []
         proceed_event = asyncio.Event()
@@ -841,7 +899,7 @@ class TestAsyncLifecycleHooks:
             await asyncio.sleep(0)
 
             # Task should be tracked
-            assert len(capture.session._background_tasks) == 1
+            assert len(capture.session._tasks) == 1
 
             # Let task complete
             proceed_event.set()
@@ -851,7 +909,7 @@ class TestAsyncLifecycleHooks:
             await asyncio.sleep(0)
 
             # Task should be removed after completion
-            assert len(capture.session._background_tasks) == 0
+            assert len(capture.session._tasks) == 0
             assert completed == ["done"]
 
         asyncio.run(test())
@@ -885,12 +943,12 @@ class TestAttributeTracking:
         assert "unannotated" not in state._state_props
         assert result.root_element is not None
 
-    def test_private_annotated_attributes_tracked(self, rendered: "type[RenderResult]") -> None:
-        """Private attributes with type annotations ARE tracked."""
+    def test_private_annotated_attributes_not_tracked(self, rendered: "type[RenderResult]") -> None:
+        """Private attributes with plain annotations are not tracked."""
 
         @dataclass(kw_only=True)
         class MyState(Stateful):
-            _private: str = ""  # Private but annotated
+            _private: str = ""
 
         state = MyState()
         state._private = "secret"
@@ -901,9 +959,7 @@ class TestAttributeTracking:
 
         result = rendered(MyComponent)
 
-        # INTERNAL TEST: private annotated attribute should be tracked
-        assert "_private" in state._state_props
-        assert len(state._state_props["_private"].watchers) == 1
+        assert not hasattr(state, "_state_props")
         assert result.root_element is not None
 
     def test_stateful_internal_attrs_not_tracked(self, rendered: "type[RenderResult]") -> None:

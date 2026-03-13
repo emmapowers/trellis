@@ -13,6 +13,20 @@ from trellis.core.components import (
     react,
 )
 
+# state
+from trellis.core.protocol import (
+    Message,
+    MessageHandler,
+    MessageHandlerProtocol,
+    StatefulMessageHandlerMixin,
+    dispatch,
+    get_message_handler,
+    listen,
+    register_message_types,
+    send,
+    set_message_handler,
+)
+
 # rendering
 from trellis.core.rendering import (
     ActiveRender,
@@ -40,12 +54,11 @@ from trellis.core.rendering import (
     render,
     set_active_session,
 )
-
-# state
 from trellis.core.state import (
     Mutable,
     Ref,
     Stateful,
+    Tracked,
     TrackedDict,
     TrackedList,
     TrackedSet,
@@ -73,6 +86,9 @@ __all__ = [
     "KeyTrait",
     "LifecycleTracker",
     "Margin",
+    "Message",
+    "MessageHandler",
+    "MessageHandlerProtocol",
     "Mutable",
     "Padding",
     "PatchCollector",
@@ -84,6 +100,8 @@ __all__ = [
     "RenderSession",
     "RenderUpdatePatch",
     "Stateful",
+    "StatefulMessageHandlerMixin",
+    "Tracked",
     "TrackedDict",
     "TrackedList",
     "TrackedSet",
@@ -91,14 +109,20 @@ __all__ = [
     "callback",
     "component",
     "convert_to_tracked",
+    "dispatch",
     "get_active_session",
+    "get_message_handler",
     "get_ref",
     "is_render_active",
+    "listen",
     "mutable",
     "props_equal",
     "react",
     "reconcile_children",
+    "register_message_types",
     "render",
+    "send",
     "set_active_session",
+    "set_message_handler",
     "set_ref",
 ]

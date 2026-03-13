@@ -7,7 +7,6 @@ individual sync/async hooks with error handling.
 
 from __future__ import annotations
 
-import asyncio
 import inspect
 import logging
 import typing as tp
@@ -43,15 +42,31 @@ def invoke_lifecycle_hook(
             except Exception:
                 logging.exception("Error in async %s", label)
 
-        task = asyncio.create_task(run_async_hook())
-        session._background_tasks.add(task)
-        task.add_done_callback(session._background_tasks.discard)
+        session.spawn(
+            run_async_hook(),
+            label=f"async {label}",
+        )
     else:
         try:
             with callback_context(session, element_id):
-                hook()
+                result = hook()
         except Exception:
             logging.exception("Error in %s", label)
+            return
+
+        if inspect.isawaitable(result):
+
+            async def run_async_result(async_result: tp.Awaitable[tp.Any]) -> None:
+                try:
+                    with callback_context(session, element_id):
+                        await async_result
+                except Exception:
+                    logging.exception("Error in async %s", label)
+
+            session.spawn(
+                run_async_result(result),
+                label=f"async {label}",
+            )
 
 
 class LifecycleTracker:

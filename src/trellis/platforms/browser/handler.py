@@ -13,11 +13,9 @@ from collections.abc import Callable
 import msgspec
 
 from trellis.core.components.base import Component
+from trellis.core.protocol import Message, decode_message
 from trellis.platforms.common.handler import AppWrapper, MessageHandler
-from trellis.platforms.common.messages import (
-    EventMessage,
-    Message,
-)
+from trellis.platforms.common.messages import EventMessage
 
 __all__ = ["BrowserMessageHandler"]
 
@@ -122,11 +120,5 @@ def _message_to_dict(msg: Message) -> dict[str, tp.Any]:
 
 
 def _dict_to_message(msg_dict: dict[str, tp.Any]) -> Message:
-    """Convert a dict from JavaScript to a msgspec Message struct.
-
-    Uses msgspec.convert() with the Message union type, which automatically
-    dispatches to the correct struct based on the 'type' tag field.
-    This is symmetric with msgspec.to_builtins() used in _message_to_dict().
-    """
-    result: Message = msgspec.convert(msg_dict, Message)
-    return result
+    """Convert a dict from JavaScript to a protocol message struct."""
+    return tp.cast("Message", decode_message(msg_dict))

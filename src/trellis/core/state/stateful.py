@@ -8,7 +8,8 @@ Key Features:
     - **Fine-grained reactivity**: Only components that read a specific property
       re-render when that property changes
     - **Annotation-based tracking**: Only attributes with type annotations are
-      tracked for reactivity. Private attributes (``_foo``) ARE tracked if annotated.
+      tracked for reactivity. Private attributes (``_foo``) must opt in with
+      ``Tracked[T]``.
     - **Component-local caching**: State instances are cached per-component,
       similar to React hooks
     - **Context API**: Share state with descendants via `with state:` blocks
@@ -50,7 +51,9 @@ Context API example:
 
 from __future__ import annotations
 
+import functools
 import logging
+import sys
 import typing as tp
 import weakref
 from dataclasses import dataclass, field
@@ -77,21 +80,88 @@ class _Missing:
 
 _MISSING = _Missing()
 
+_TRACKED_SENTINEL = object()
+type Tracked[T] = tp.Annotated[T, _TRACKED_SENTINEL]
 
-def _is_tracked_attribute(cls: type, name: str) -> bool:
-    """Check if attribute should be tracked for reactivity.
 
-    Returns True if the attribute has a type annotation defined in a
-    subclass of Stateful. This includes private attributes (_foo) if
-    annotated. Internal Stateful attributes are excluded because they're
-    defined on the base class.
+def _annotation_is_explicitly_tracked(annotation: tp.Any) -> bool:
+    """Return True when an annotation opts into tracked state explicitly."""
+    if isinstance(annotation, str):
+        normalized = annotation.replace(" ", "")
+        head = normalized.split("[", 1)[0]
+        if head.rsplit(".", 1)[-1] == "Tracked":
+            return True
+    annotation_origin = tp.get_origin(annotation)
+    if annotation_origin is Tracked:
+        return True
+    if annotation_origin is not tp.Annotated:
+        return False
+    return _TRACKED_SENTINEL in tp.get_args(annotation)[1:]
+
+
+def _get_class_annotations(cls: type) -> dict[str, tp.Any]:
+    """Resolve annotations for a class while preserving Annotated metadata.
+
+    `get_type_hints(..., include_extras=True)` gives access to Annotated metadata,
+    but resolving the whole class can fail because `Stateful` itself has
+    TYPE_CHECKING-only annotation imports. Resolve only the annotations declared
+    directly on `cls`, falling back to the raw value when a forward reference
+    still cannot be evaluated.
     """
+    raw_annotations = dict(getattr(cls, "__annotations__", {}))
+    if not raw_annotations:
+        return {}
+
+    module = sys.modules.get(cls.__module__)
+    globalns = vars(module) if module is not None else {}
+    localns = dict(vars(cls))
+
+    resolved: dict[str, tp.Any] = {}
+    for name, annotation in raw_annotations.items():
+        if not isinstance(annotation, str):
+            resolved[name] = annotation
+            continue
+
+        try:
+            resolved[name] = eval(annotation, globalns, localns)
+        except NameError:
+            resolved[name] = annotation
+
+    try:
+        return tp.get_type_hints(
+            cls,
+            globalns=globalns,
+            localns=localns,
+            include_extras=True,
+        )
+    except (NameError, TypeError):
+        return resolved
+
+
+@functools.cache
+def _tracked_attributes(cls: type) -> frozenset[str]:
+    """Return the names that participate in state tracking for a Stateful class."""
+    tracked: set[str] = set()
     for klass in cls.__mro__:
         if klass is Stateful or klass is object:
             continue
-        if name in getattr(klass, "__annotations__", {}):
-            return True
-    return False
+
+        for name, annotation in _get_class_annotations(klass).items():
+            if _annotation_is_explicitly_tracked(annotation):
+                tracked.add(name)
+                continue
+
+            if name.startswith("_"):
+                continue
+
+            tracked.add(name)
+
+    return frozenset(tracked)
+
+
+def _is_tracked_attribute(cls: type, name: str) -> bool:
+    """Check if attribute should be tracked for reactivity."""
+    return name in _tracked_attributes(cls)
 
 
 def _register_context_dependency(session: RenderSession, instance: Stateful) -> None:
@@ -167,7 +237,7 @@ class Stateful:
     _input_versions: dict[str, int]
     _initialized: bool
 
-    def __new__(cls, *args: tp.Any, **kwargs: tp.Any) -> Stateful:
+    def __new__(cls, *args: tp.Any, **kwargs: tp.Any) -> tp.Self:
         """Create or retrieve a cached Stateful instance.
 
         During component execution, state instances are cached on the
@@ -221,7 +291,7 @@ class Stateful:
                 cls.__name__,
                 call_idx,
             )
-            return tp.cast("Stateful", state.local_state[key])
+            return tp.cast("tp.Self", state.local_state[key])
 
         logger.debug(
             "State %s created (new instance, call_idx=%d)",
@@ -239,8 +309,8 @@ class Stateful:
         1. Dependency registration - so state changes trigger re-renders
         2. Property recording - so mutable() can capture the reference
 
-        Only type-annotated attributes in subclasses are tracked. Private
-        attributes (``_foo``) ARE tracked if they have type annotations.
+        Only tracked attributes in subclasses participate in reactivity:
+        public annotated attributes and private ``Tracked[...]`` attributes.
         Callables (methods) are never tracked.
 
         Args:
@@ -298,12 +368,12 @@ class Stateful:
     def __setattr__(self, name: str, value: tp.Any) -> None:
         """Set an attribute, marking dependent elements as dirty.
 
-        When a type-annotated attribute is modified, all elements that previously
+        When a tracked attribute is modified, all elements that previously
         read that attribute are marked dirty and will re-render.
 
-        Only type-annotated attributes in subclasses trigger reactivity. Private
-        attributes (``_foo``) ARE tracked if they have type annotations.
-        Non-annotated attributes can be set but won't trigger re-renders.
+        Only tracked attributes in subclasses trigger reactivity: public
+        annotated attributes and private ``Tracked[...]`` attributes.
+        Other attributes can be set but won't trigger re-renders.
 
         Plain list/dict/set values are auto-converted to TrackedList/Dict/Set
         for reactive collection tracking.

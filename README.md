@@ -83,23 +83,16 @@ All widgets support React Aria for accessibility (keyboard navigation, focus man
 ## Example
 
 ```python
-from dataclasses import dataclass
-from trellis import Stateful, component
-from trellis import html as h
+from trellis import component, state_var
 from trellis import widgets as w
-
-@dataclass
-class Counter(Stateful):
-    count: int = 0
-    def increment(self) -> None:
-        self.count += 1
 
 @component
 def App() -> None:
-    state = Counter()
+    count = state_var(0)
+
     with w.Column():
-        w.Label(text=f"Count: {state.count}", font_size=24)
-        w.Button(text="Increment", on_click=state.increment)
+        w.Label(text=f"Count: {count.value}", font_size=24)
+        w.Button(text="Increment", on_click=lambda: count.set(count.value + 1))
 ```
 
 ## Installation

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import typing as tp
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from unittest.mock import Mock
@@ -10,8 +11,10 @@ from unittest.mock import Mock
 import pytest
 
 import trellis.app.apploader as apploader_module
+import trellis.core.protocol as protocol_module
 from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent
+from trellis.core.protocol import MessageHandlerProtocol, get_message_handler, set_message_handler
 from trellis.core.rendering.element import Element
 from trellis.core.rendering.patches import RenderAddPatch, RenderPatch
 from trellis.core.rendering.render import render
@@ -31,6 +34,17 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "platform: cross-platform protocol tests")
 
 
+@contextmanager
+def bind_message_handler(handler: MessageHandlerProtocol) -> tp.Iterator[None]:
+    """Temporarily bind a message handler for tests that bypass handler.run()."""
+    previous = get_message_handler()
+    set_message_handler(handler)
+    try:
+        yield
+    finally:
+        set_message_handler(previous)
+
+
 # =============================================================================
 # AppLoader Fixtures
 # =============================================================================
@@ -42,6 +56,28 @@ def reset_apploader() -> tp.Generator[None]:
     apploader_module._apploader = None
     yield
     apploader_module._apploader = None
+
+
+@pytest.fixture
+def reset_protocol() -> tp.Generator[None]:
+    """Reset protocol registries and contextvars before and after test."""
+    message_types = dict(protocol_module._MESSAGE_TYPES)
+    message_tags = dict(protocol_module._MESSAGE_TAGS)
+    protocol_module._GLOBAL_LISTENERS.clear()
+    protocol_module._HANDLER_LISTENERS.clear()
+    protocol_module.set_message_handler(None)
+    protocol_module._MESSAGE_TYPES.clear()
+    protocol_module._MESSAGE_TYPES.update(message_types)
+    protocol_module._MESSAGE_TAGS.clear()
+    protocol_module._MESSAGE_TAGS.update(message_tags)
+    yield
+    protocol_module._GLOBAL_LISTENERS.clear()
+    protocol_module._HANDLER_LISTENERS.clear()
+    protocol_module.set_message_handler(None)
+    protocol_module._MESSAGE_TYPES.clear()
+    protocol_module._MESSAGE_TYPES.update(message_types)
+    protocol_module._MESSAGE_TAGS.clear()
+    protocol_module._MESSAGE_TAGS.update(message_tags)
 
 
 # =============================================================================

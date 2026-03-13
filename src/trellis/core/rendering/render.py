@@ -182,7 +182,6 @@ def _execute_single_element(
     session.elements.store(element)
 
     state.state_call_count = 0
-
     # Get props including children if component accepts them
     props = element.props.copy()
 
@@ -371,7 +370,6 @@ def _call_mount_hooks(session: RenderSession, element_id: str) -> None:
     if state is None:
         return
 
-    # Get states sorted by call index
     items = list(state.local_state.items())
     items.sort(key=lambda x: x[0][1])
 
@@ -404,7 +402,6 @@ def _call_unmount_hooks(session: RenderSession, element_id: str) -> None:
             if th.on_unmount is not None:
                 th.on_unmount(element, element, state, session)
 
-    # Get states sorted by call index, reversed
     items = list(state.local_state.items())
     items.sort(key=lambda x: x[0][1], reverse=True)
 
