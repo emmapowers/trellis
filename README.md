@@ -90,9 +90,13 @@ from trellis import widgets as w
 def App() -> None:
     count = state_var(0)
 
+    def increment() -> None:
+        nonlocal count
+        count += 1
+
     with w.Column():
-        w.Label(text=f"Count: {count.value}", font_size=24)
-        w.Button(text="Increment", on_click=lambda: count.set(count.value + 1))
+        w.Label(text=f"Count: {count}", font_size=24)
+        w.Button(text="Increment", on_click=increment)
 ```
 
 ## Installation

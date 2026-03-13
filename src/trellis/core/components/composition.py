@@ -10,6 +10,7 @@ import typing as tp
 from trellis.core.components.base import Component, ElementKind
 from trellis.core.rendering.element import ContainerElement, Element
 from trellis.core.rendering.traits import ContainerTrait
+from trellis.core.state.transform import compile_transformed, transform_component_source
 
 __all__ = ["CompositionComponent", "RenderFunc", "component"]
 
@@ -166,7 +167,6 @@ def _maybe_transform(func: RenderFunc) -> RenderFunc:
     Returns the original function unchanged when:
     - state_var is not referenced in the function's bytecode
     - Source code is unavailable (REPL, dynamically generated)
-    - libcst is not installed (Pyodide / emscripten)
     """
     if "state_var" not in func.__code__.co_names:
         return func
@@ -174,15 +174,6 @@ def _maybe_transform(func: RenderFunc) -> RenderFunc:
     try:
         source = textwrap.dedent(inspect.getsource(func))
     except OSError:
-        return func
-
-    try:
-        # libcst is unavailable on Pyodide (emscripten) — graceful fallback
-        from trellis.core.state.transform import (  # noqa: PLC0415
-            compile_transformed,
-            transform_component_source,
-        )
-    except ImportError:
         return func
 
     transformed, changed = transform_component_source(source)

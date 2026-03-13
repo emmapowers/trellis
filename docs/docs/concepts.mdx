@@ -80,10 +80,10 @@ from trellis import html as h
 @component
 def Counter() -> None:
     count = state_var(0)
-    h.P(f"Count: {count.value}")
+    h.P(f"Count: {count}")
 ```
 
-The state persists across re-renders. Each time the component renders, it gets the same slot-local state object.
+The state persists across re-renders. Each time the component renders, it gets the same slot-local state object. The `@component` decorator applies an AST transform that rewrites reads and writes of `count` to go through `.value` automatically, so your code stays clean.
 
 For more structured or shared state, define a class that inherits from `Stateful`:
 
@@ -112,16 +112,20 @@ from trellis import widgets as w
 def Counter():
     count = state_var(0)
 
+    def increment():
+        nonlocal count
+        count += 1
+
     with w.Column():
-        w.Label(text=f"Count: {count.value}")
-        w.Button(text="Increment", on_click=lambda: count.set(count.value + 1))
+        w.Label(text=f"Count: {count}")
+        w.Button(text="Increment", on_click=increment)
 
 App = Counter`}
 />
 
 **How it works:**
 
-1. When the component renders, it reads `count.value`
+1. When the component renders, it reads `count`
 2. Trellis records that this component depends on that value
 3. When the button updates `count`, Trellis marks the component as dirty
 4. On the next render cycle, only dirty components re-render
@@ -146,10 +150,14 @@ from trellis import html as h
 def Form() -> None:
     submitted = state_var(False)
 
-    if submitted.value:
+    def submit() -> None:
+        nonlocal submitted
+        submitted = True
+
+    if submitted:
         h.P("Form submitted!")
     else:
-        Button(text="Submit", on_click=lambda: submitted.set(True))
+        Button(text="Submit", on_click=submit)
 ```
 
 ### Callbacks with Arguments

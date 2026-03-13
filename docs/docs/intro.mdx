@@ -32,12 +32,20 @@ from trellis import widgets as w
 def Counter():
     count = state_var(0)
 
+    def decrement():
+        nonlocal count
+        count -= 1
+
+    def increment():
+        nonlocal count
+        count += 1
+
     with w.Column(padding=20):
         w.Heading(text="Trellis Counter")
-        w.Label(text=f"Count: {count.value}")
+        w.Label(text=f"Count: {count}")
         with w.Row():
-            w.Button(text="-", on_click=lambda: count.set(count.value - 1))
-            w.Button(text="+", on_click=lambda: count.set(count.value + 1))
+            w.Button(text="-", on_click=decrement)
+            w.Button(text="+", on_click=increment)
 
 App = Counter`}
 />

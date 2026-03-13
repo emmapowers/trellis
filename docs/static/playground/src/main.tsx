@@ -62,12 +62,20 @@ from trellis import widgets as w
 def Counter():
     count = state_var(0)
 
+    def decrement():
+        nonlocal count
+        count -= 1
+
+    def increment():
+        nonlocal count
+        count += 1
+
     with w.Column(gap=12, padding=20):
         w.Heading(text="Trellis Counter", level=2)
-        w.Label(text=f"Count: {count.value}", font_size=16)
+        w.Label(text=f"Count: {count}", font_size=16)
         with w.Row(gap=8):
-            w.Button(text="-", on_click=lambda: count.set(count.value - 1), size="sm")
-            w.Button(text="+", on_click=lambda: count.set(count.value + 1), size="sm")
+            w.Button(text="-", on_click=decrement, size="sm")
+            w.Button(text="+", on_click=increment, size="sm")
 
 # Export the root component
 App = Counter
@@ -208,6 +216,25 @@ function Playground(): React.ReactElement {
       runBtn.onclick = handleRun;
     }
   }, [editorReady, handleRun]);
+
+  // Handle share button
+  useEffect(() => {
+    const shareBtn = document.getElementById("share-btn");
+    if (shareBtn) {
+      shareBtn.onclick = async () => {
+        const currentCode = editorRef.current?.getValue() ?? code;
+        const encoded = btoa(encodeURIComponent(currentCode));
+        const url = `${window.location.origin}${window.location.pathname}#code=${encoded}`;
+        await navigator.clipboard.writeText(url);
+        shareBtn.textContent = "Copied!";
+        shareBtn.classList.add("copied");
+        setTimeout(() => {
+          shareBtn.textContent = "Share";
+          shareBtn.classList.remove("copied");
+        }, 2000);
+      };
+    }
+  }, [code]);
 
   // Handle theme toggle button
   useEffect(() => {
