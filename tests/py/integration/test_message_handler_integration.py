@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from tests.conftest import get_button_element
+from tests.conftest import bind_message_handler, get_button_element
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.protocol import (
     Message,
@@ -40,12 +40,14 @@ def init_handler_for_test(handler: BrowserMessageHandler) -> None:
     This simulates the production flow where handle_hello creates the session.
     """
     handler._inbox.put_nowait(HelloMessage(client_id="test", system_theme="light"))
-    asyncio.run(handler.handle_hello())
+    with bind_message_handler(handler):
+        asyncio.run(handler.handle_hello())
 
 
 def get_initial_tree(handler: BrowserMessageHandler) -> dict[str, tp.Any]:
     """Helper to get tree dict from initial render."""
-    msg = handler.initial_render()
+    with bind_message_handler(handler):
+        msg = handler.initial_render()
     assert isinstance(msg, PatchMessage)
     assert len(msg.patches) == 1
     patch = msg.patches[0]
@@ -319,10 +321,29 @@ class TestMessageHandler:
         handler = BrowserMessageHandler(App, app_wrapper)
         init_handler_for_test(handler)
 
-        response = asyncio.run(handler.handle_message(Ping(9)))
+        with bind_message_handler(handler):
+            response = asyncio.run(handler.handle_message(Ping(9)))
 
         assert response is None
         assert received == [(handler, 9)]
+
+    def test_handle_message_requires_active_message_handler_for_protocol_dispatch(
+        self,
+        app_wrapper: AppWrapper,
+        reset_protocol,
+    ) -> None:
+        """Direct protocol handling requires the session handler context to be bound."""
+        register_message_types(Ping)
+
+        @component
+        def App() -> None:
+            Label(text="Hello")
+
+        handler = BrowserMessageHandler(App, app_wrapper)
+        init_handler_for_test(handler)
+
+        with pytest.raises(RuntimeError, match="No active message handler"):
+            asyncio.run(handler.handle_message(Ping(9)))
 
     def test_async_callback_can_send_protocol_message(
         self,
@@ -353,7 +374,8 @@ class TestMessageHandler:
             queued = await asyncio.wait_for(handler.message_send_queue.get(), timeout=1.0)
             assert queued == Ping(11)
 
-        asyncio.run(run_test())
+        with bind_message_handler(handler):
+            asyncio.run(run_test())
 
     def test_message_send_queue_drains_to_transport(
         self,

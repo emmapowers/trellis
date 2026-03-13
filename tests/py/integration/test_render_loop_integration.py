@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 import pytest
 
-from tests.conftest import get_button_element
+from tests.conftest import bind_message_handler, get_button_element
 from trellis import on_mount
 from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent, component
@@ -50,12 +50,14 @@ def _init_handler_for_test(handler: BrowserMessageHandler) -> None:
     This simulates the production flow where handle_hello creates the session.
     """
     handler._inbox.put_nowait(HelloMessage(client_id="test", system_theme="light"))
-    asyncio.run(handler.handle_hello())
+    with bind_message_handler(handler):
+        asyncio.run(handler.handle_hello())
 
 
 def get_initial_tree(handler: MessageHandler) -> dict[str, tp.Any]:
     """Helper to get tree dict from initial render."""
-    msg = handler.initial_render()
+    with bind_message_handler(handler):
+        msg = handler.initial_render()
     assert isinstance(msg, PatchMessage)
     assert len(msg.patches) == 1
     patch = msg.patches[0]

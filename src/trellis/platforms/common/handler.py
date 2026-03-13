@@ -14,13 +14,12 @@ import traceback
 import types
 import typing as tp
 from collections.abc import Callable
-from contextlib import contextmanager
 from importlib.metadata import version as get_package_version
 from uuid import uuid4
 
 from trellis.core.callback_context import callback_context
 from trellis.core.components.base import Component
-from trellis.core.protocol import dispatch, get_message_handler, set_message_handler
+from trellis.core.protocol import dispatch, set_message_handler
 from trellis.core.rendering.patches import (
     RenderAddPatch,
     RenderPatch,
@@ -353,15 +352,14 @@ class MessageHandler:
         """
         assert self.session is not None, "handle_hello must be called before initial_render"
         try:
-            with self._message_handler_context():
-                render_patches = render(self.session)
-                wire_patches = _serialize_patches(render_patches, self.session)
-                element_count = len(self.session.elements)
-                logger.debug(
-                    "Initial render complete, sending PatchMessage (%d elements)", element_count
-                )
+            render_patches = render(self.session)
+            wire_patches = _serialize_patches(render_patches, self.session)
+            element_count = len(self.session.elements)
+            logger.debug(
+                "Initial render complete, sending PatchMessage (%d elements)", element_count
+            )
 
-                return PatchMessage(patches=wire_patches)
+            return PatchMessage(patches=wire_patches)
         except Exception as e:
             logger.exception(f"Error during initial render: {e}")
             return ErrorMessage(error=_format_exception(e), context="render")
@@ -376,24 +374,23 @@ class MessageHandler:
             ErrorMessage on callback error, or None. Re-rendering is handled
             by the background render loop, not per-message.
         """
-        with self._message_handler_context():
-            if isinstance(msg, EventMessage):
-                logger.debug("Received EventMessage: callback_id=%s", msg.callback_id)
-                try:
-                    await self._invoke_callback(msg.callback_id, msg.args)
-                except KeyError as e:
-                    logger.exception(f"Unknown callback: {msg.callback_id}")
-                    return ErrorMessage(error=_format_exception(e), context="callback")
-                except Exception as e:
-                    logger.exception(f"Error in callback {msg.callback_id}: {e}")
-                    return ErrorMessage(error=_format_exception(e), context="callback")
+        if isinstance(msg, EventMessage):
+            logger.debug("Received EventMessage: callback_id=%s", msg.callback_id)
+            try:
+                await self._invoke_callback(msg.callback_id, msg.args)
+            except KeyError as e:
+                logger.exception(f"Unknown callback: {msg.callback_id}")
+                return ErrorMessage(error=_format_exception(e), context="callback")
+            except Exception as e:
+                logger.exception(f"Error in callback {msg.callback_id}: {e}")
+                return ErrorMessage(error=_format_exception(e), context="callback")
 
-                # Callback executed successfully. State changes mark elements dirty.
-                # The render loop will pick them up on the next frame.
-                return None
-
-            await dispatch(msg)
+            # Callback executed successfully. State changes mark elements dirty.
+            # The render loop will pick them up on the next frame.
             return None
+
+        await dispatch(msg)
+        return None
 
     async def _invoke_callback(self, callback_id: str, args: list[tp.Any]) -> None:
         """Invoke callback with event conversion.
@@ -536,24 +533,24 @@ class MessageHandler:
         4. Loops receiving messages and sending responses
         """
         try:
-            with self._message_handler_context():
-                await self.handle_hello()
-                await self.send_message(self.initial_render())
-                assert self.session is not None
+            set_message_handler(self)
+            await self.handle_hello()
+            await self.send_message(self.initial_render())
+            assert self.session is not None
 
-                critical_tasks = {
-                    asyncio.create_task(self._render_loop()),
-                    asyncio.create_task(self._drain_message_send_queue()),
-                }
+            critical_tasks = {
+                asyncio.create_task(self._render_loop()),
+                asyncio.create_task(self._drain_message_send_queue()),
+            }
 
-                while True:
-                    msg = await self._receive_message_or_critical(critical_tasks)
-                    if msg is None:
-                        break
+            while True:
+                msg = await self._receive_message_or_critical(critical_tasks)
+                if msg is None:
+                    break
 
-                    response = await self.handle_message(msg)
-                    if response:
-                        await self.send_message(response)
+                response = await self.handle_message(msg)
+                if response:
+                    await self.send_message(response)
         except SessionDisconnected:
             return
         finally:
@@ -570,12 +567,3 @@ class MessageHandler:
         # No explicit cleanup needed - callbacks are stored in element props
         # and cleaned up when elements are unmounted
         pass
-
-    @contextmanager
-    def _message_handler_context(self) -> tp.Iterator[None]:
-        previous = get_message_handler()
-        set_message_handler(self)
-        try:
-            yield
-        finally:
-            set_message_handler(previous)

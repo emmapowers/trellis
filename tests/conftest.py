@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import typing as tp
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from unittest.mock import Mock
@@ -13,6 +14,7 @@ import trellis.app.apploader as apploader_module
 import trellis.core.protocol as protocol_module
 from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent
+from trellis.core.protocol import MessageHandlerProtocol, get_message_handler, set_message_handler
 from trellis.core.rendering.element import Element
 from trellis.core.rendering.patches import RenderAddPatch, RenderPatch
 from trellis.core.rendering.render import render
@@ -30,6 +32,17 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "slow: marks test as slow (>1s or subprocess)")
     config.addinivalue_line("markers", "network: requires network access")
     config.addinivalue_line("markers", "platform: cross-platform protocol tests")
+
+
+@contextmanager
+def bind_message_handler(handler: MessageHandlerProtocol) -> tp.Iterator[None]:
+    """Temporarily bind a message handler for tests that bypass handler.run()."""
+    previous = get_message_handler()
+    set_message_handler(handler)
+    try:
+        yield
+    finally:
+        set_message_handler(previous)
 
 
 # =============================================================================
