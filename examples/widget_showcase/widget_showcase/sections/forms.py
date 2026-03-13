@@ -77,12 +77,12 @@ def MultilineFormInput() -> None:
 
     with w.Column(gap=8):
         w.MultilineInput(
-            value=mutable(text_value.value),
+            value=mutable(text_value),
             placeholder="Write multiple lines...",
             rows=6,
             width=440,
         )
-        w.Label(text=f"Length: {len(text_value.value)} chars")
+        w.Label(text=f"Length: {len(text_value)} chars")
 
 
 @component

@@ -13,7 +13,7 @@ def TabsExample() -> None:
     """Tabbed content navigation."""
     selected_tab = state_var("overview")
     with w.Tabs(
-        selected=mutable(selected_tab.value),
+        selected=mutable(selected_tab),
     ):
         with w.Tab(id="overview", label="Overview", icon=IconName.HOME):
             w.Label(text="Overview tab content goes here.")
@@ -44,6 +44,11 @@ def TreeExample() -> None:
         return None
 
     selected_node = state_var(factory=initial_selection)
+
+    def select_node(v: str | None) -> None:
+        nonlocal selected_node
+        selected_node = v
+
     w.Tree(
         data=[
             {
@@ -64,8 +69,8 @@ def TreeExample() -> None:
             },
             {"id": "README.md", "label": "README.md"},
         ],
-        selected=selected_node.value,
-        on_select=selected_node.set,
+        selected=selected_node,
+        on_select=select_node,
     )
 
 
@@ -76,13 +81,13 @@ def CollapsibleExample() -> None:
     experimental_features = state_var(False)
     with w.Collapsible(
         title="Advanced Settings",
-        expanded=mutable(expanded.value),
+        expanded=mutable(expanded),
         icon=IconName.SETTINGS,
     ):
         with w.Column(gap=8):
             w.Label(text="This content can be collapsed.")
             w.Checkbox(
-                checked=mutable(experimental_features.value),
+                checked=mutable(experimental_features),
                 label="Enable experimental features",
             )
 

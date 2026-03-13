@@ -127,10 +127,11 @@ def on_mount(
             connected = state_var(False)
 
             async def connect() -> None:
-                connected.set(True)
+                nonlocal connected
+                connected = True
 
             on_mount(connect)
-            w.Badge(text="Connected" if connected.value else "Connecting")
+            w.Badge(text="Connected" if connected else "Connecting")
         ```
 
         ```python

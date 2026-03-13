@@ -10,11 +10,13 @@ from trellis.core.state.conversion import convert_to_tracked
 from trellis.core.state.mutable import Mutable, callback, mutable
 from trellis.core.state.ref import Ref, get_ref, set_ref
 from trellis.core.state.stateful import Stateful, Tracked
+from trellis.core.state.statevar import StateVar, state_var
 from trellis.core.state.tracked import TrackedDict, TrackedList, TrackedSet
 
 __all__ = [
     "Mutable",
     "Ref",
+    "StateVar",
     "Stateful",
     "Tracked",
     "TrackedDict",
@@ -25,4 +27,5 @@ __all__ = [
     "get_ref",
     "mutable",
     "set_ref",
+    "state_var",
 ]

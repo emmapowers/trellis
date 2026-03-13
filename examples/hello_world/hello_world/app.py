@@ -86,26 +86,29 @@ def HelloWorld() -> None:
     count = state_var(INITIAL_COUNT)
 
     def increment() -> None:
-        count.set(min(MAX_COUNT, count.value + 1))
+        nonlocal count
+        count = min(MAX_COUNT, count + 1)
 
     def decrement() -> None:
-        count.set(max(MIN_COUNT, count.value - 1))
+        nonlocal count
+        count = max(MIN_COUNT, count - 1)
 
     def reset() -> None:
-        count.set(INITIAL_COUNT)
+        nonlocal count
+        count = INITIAL_COUNT
 
     with w.Column(padding=24, align="center", justify="center"):
         with w.Card(padding=32, width=320):
             Header(title="Counter", subtitle="A simple interactive counter demo")
             CounterControls(
-                count=count.value,
+                count=count,
                 on_increment=increment,
                 on_decrement=decrement,
                 min_val=MIN_COUNT,
                 max_val=MAX_COUNT,
             )
             w.ProgressBar(
-                value=count.value,
+                value=count,
                 min=MIN_COUNT,
                 max=MAX_COUNT,
                 style=h.Style(margin_bottom=16),

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import inspect
+import textwrap
+import types
 import typing as tp
 
 from trellis.core.components.base import Component, ElementKind
@@ -19,6 +21,7 @@ class RenderFunc(tp.Protocol):
     """Protocol for render functions used with @component decorator."""
 
     __name__: str
+    __code__: types.CodeType
     __call__: tp.Callable[..., None]
 
 
@@ -142,12 +145,48 @@ def component(
     """
     if render_func is not None:
         # Called without parentheses: @component
+        transformed = _maybe_transform(render_func)
         return CompositionComponent(
-            render_func.__name__, render_func, element_class, is_container=is_container
+            render_func.__name__, transformed, element_class, is_container=is_container
         )
 
     # Called with parentheses: @component(is_container=True, element_class=X)
     def decorator(func: RenderFunc) -> CompositionComponent[Element]:
-        return CompositionComponent(func.__name__, func, element_class, is_container=is_container)
+        transformed = _maybe_transform(func)
+        return CompositionComponent(
+            func.__name__, transformed, element_class, is_container=is_container
+        )
 
     return decorator
+
+
+def _maybe_transform(func: RenderFunc) -> RenderFunc:
+    """Apply the state_var AST transform if the function uses state_var().
+
+    Returns the original function unchanged when:
+    - state_var is not referenced in the function's bytecode
+    - Source code is unavailable (REPL, dynamically generated)
+    - libcst is not installed (Pyodide / emscripten)
+    """
+    if "state_var" not in func.__code__.co_names:
+        return func
+
+    try:
+        source = textwrap.dedent(inspect.getsource(func))
+    except OSError:
+        return func
+
+    try:
+        # libcst is unavailable on Pyodide (emscripten) — graceful fallback
+        from trellis.core.state.transform import (  # noqa: PLC0415
+            compile_transformed,
+            transform_component_source,
+        )
+    except ImportError:
+        return func
+
+    transformed, changed = transform_component_source(source)
+    if not changed:
+        return func
+
+    return tp.cast("RenderFunc", compile_transformed(func, transformed))
