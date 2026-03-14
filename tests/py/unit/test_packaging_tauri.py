@@ -306,7 +306,7 @@ class TestInstallAppIntoPortablePython:
         assert "install" in cmd
         assert str(app_root) in cmd
 
-    def test_uninstalls_pytauri_wheel_after_install(self, tmp_path: Path) -> None:
+    def test_only_runs_pip_install(self, tmp_path: Path) -> None:
         standalone_base = tmp_path / "python-install"
         standalone_base.mkdir()
         bin_dir = standalone_base / "bin"
@@ -325,23 +325,14 @@ class TestInstallAppIntoPortablePython:
                 standalone_base=standalone_base, app_root=app_root, pyembed_dir=pyembed_dir
             )
 
+        assert mock_run.call_count == 1
         install_cmd = mock_run.call_args_list[0][0][0]
-        uninstall_cmd = mock_run.call_args_list[1][0][0]
-
         assert install_cmd[:5] == [
             str(pyembed_dir / "bin" / "python3"),
             "-m",
             "pip",
             "install",
             "--no-warn-script-location",
-        ]
-        assert uninstall_cmd == [
-            str(pyembed_dir / "bin" / "python3"),
-            "-m",
-            "pip",
-            "uninstall",
-            "-y",
-            "pytauri-wheel",
         ]
 
 

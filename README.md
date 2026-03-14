@@ -101,6 +101,10 @@ def App() -> None:
 pip install git+https://github.com/emmapowers/trellis.git
 ```
 
+The first `trellis run --desktop` may download a matching desktop runtime wheel.
+If no compatible published wheel exists for your Python/platform, install `pytauri-wheel`
+manually in that environment.
+
 ## Project Configuration
 
 Set app metadata in `trellis_config.py`:

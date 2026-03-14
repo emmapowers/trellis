@@ -75,6 +75,10 @@ Or run as a desktop app:
 trellis run --desktop
 ```
 
+The first desktop run may download a matching runtime wheel. If no compatible
+published wheel exists for your Python/platform, install `pytauri-wheel`
+manually in that environment.
+
 ## What Just Happened?
 
 1. **`state_var()`** — You created a small slot-local piece of reactive state. When its value changes, readers re-render automatically.

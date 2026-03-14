@@ -15,7 +15,8 @@ def test_desktop_runtime_is_in_base_dependencies() -> None:
     project = pyproject["project"]
     dependencies = project["dependencies"]
 
-    assert "pytauri-wheel>=0.8.0; sys_platform != 'emscripten'" in dependencies
+    assert "pytauri>=0.8.0; sys_platform != 'emscripten'" in dependencies
+    assert "pytauri-wheel>=0.8.0; sys_platform != 'emscripten'" not in dependencies
     assert "pydantic>=2.12" in dependencies
     assert "optional-dependencies" not in project
 

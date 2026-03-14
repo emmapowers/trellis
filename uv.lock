@@ -965,24 +965,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pytauri-wheel"
-version = "0.8.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytauri" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c4/97/62da6b7554598e9df2a06472e3035696ba7e96b492b595818c1028be6b26/pytauri_wheel-0.8.0.tar.gz", hash = "sha256:499825e6c0b06d819ded8f826d31aa15084373762180a6b9faa65aa762df4f98", size = 71178, upload-time = "2025-09-02T12:52:56.762Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/06/5e/298a578c00af26468082e1b6282190dc080d9b4b7f4025cb168054af57fd/pytauri_wheel-0.8.0-cp313-cp313-macosx_13_0_x86_64.whl", hash = "sha256:5c1b96352b7750e594b616dd1a3ae89a93374aac14e6826b17070b39497c7dfc", size = 10409836, upload-time = "2025-09-02T12:52:34.001Z" },
-    { url = "https://files.pythonhosted.org/packages/91/9a/65da5a3e8717b09032997cf772090ea419c0b1bf6cc496b83925588d98a7/pytauri_wheel-0.8.0-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:e5b7d77e00971a1af4ccb4e79ba9c3bc5cc5622136f3fe589aa227ab5b053a32", size = 10061354, upload-time = "2025-09-02T12:52:35.91Z" },
-    { url = "https://files.pythonhosted.org/packages/87/13/bc1a631729fb6b3543d4f2c520594de24feeeb4a4fb1bf3825f888471ce3/pytauri_wheel-0.8.0-cp313-cp313-manylinux_2_35_aarch64.whl", hash = "sha256:6d49ab4919e33f90f0dfd9d2b2a946f741a9e3e9c5c9fdd6aafb5b9a640dcde9", size = 12547637, upload-time = "2025-09-02T12:52:37.972Z" },
-    { url = "https://files.pythonhosted.org/packages/7d/87/71813121214a2032961d43a28b633ebdabc096ba04b072dc42c60985744c/pytauri_wheel-0.8.0-cp313-cp313-manylinux_2_35_x86_64.whl", hash = "sha256:8478b45cd68eb2a9ea65d3ef044f584827738222a969c34819e8c823da6c8052", size = 12702400, upload-time = "2025-09-02T12:52:39.962Z" },
-    { url = "https://files.pythonhosted.org/packages/d5/70/c55cc392c45304c3ed47ef5431ce064c6c975b105e2be0ccf0f303ba2982/pytauri_wheel-0.8.0-cp313-cp313-win_amd64.whl", hash = "sha256:6bc2007f8f32d97f41d37b0c753636f2d8e6de7c7153b6b2c3a296c7725b9d6a", size = 9274557, upload-time = "2025-09-02T12:52:41.93Z" },
-    { url = "https://files.pythonhosted.org/packages/7e/78/5396e01a0180d14cb052dbbe4ef6f76fab1ce7a62dd6d04e9c5fd63e7026/pytauri_wheel-0.8.0-cp313-cp313-win_arm64.whl", hash = "sha256:210ae1bb276f1205ea32a20e9fae2effe845f4b98bc0ce7418512d1d81eb8ffd", size = 8684901, upload-time = "2025-09-02T12:52:43.763Z" },
-]
-
-[[package]]
 name = "pytest"
 version = "8.4.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1293,7 +1275,7 @@ dependencies = [
     { name = "pip", marker = "sys_platform != 'emscripten'" },
     { name = "pydantic" },
     { name = "pygments" },
-    { name = "pytauri-wheel", marker = "sys_platform != 'emscripten'" },
+    { name = "pytauri", marker = "sys_platform != 'emscripten'" },
     { name = "questionary", marker = "sys_platform != 'emscripten'" },
     { name = "resvg-py", marker = "sys_platform != 'emscripten'" },
     { name = "rich" },
@@ -1328,7 +1310,7 @@ requires-dist = [
     { name = "pip", marker = "sys_platform != 'emscripten'", specifier = ">=24" },
     { name = "pydantic", specifier = ">=2.12" },
     { name = "pygments", specifier = ">=2.19" },
-    { name = "pytauri-wheel", marker = "sys_platform != 'emscripten'", specifier = ">=0.8.0" },
+    { name = "pytauri", marker = "sys_platform != 'emscripten'", specifier = ">=0.8.0" },
     { name = "questionary", marker = "sys_platform != 'emscripten'", specifier = ">=2.1" },
     { name = "resvg-py", marker = "sys_platform != 'emscripten'", specifier = ">=0.2" },
     { name = "rich", specifier = ">=13.9" },

@@ -7,24 +7,19 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from tests.helpers import requires_pytauri
-
 if TYPE_CHECKING:
     from tests.conftest import WriteTrellisConfig
 
 
 class TestStandalonePlatformSelection:
-    """Tests that apploader selects correct platform based on sys._pytauri_standalone."""
+    """Tests that desktop platform mode follows sys._pytauri_standalone."""
 
-    @requires_pytauri
     def test_selects_standalone_when_flag_set(
         self, write_trellis_config: WriteTrellisConfig, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """With sys._pytauri_standalone=True, selects DesktopStandalonePlatform."""
+        """With sys._pytauri_standalone=True, DesktopPlatform runs in standalone mode."""
         from trellis.app.apploader import AppLoader  # noqa: PLC0415
-        from trellis.platforms.desktop.standalone_platform import (  # noqa: PLC0415
-            DesktopStandalonePlatform,
-        )
+        from trellis.platforms.desktop.platform import DesktopPlatform  # noqa: PLC0415
 
         app_root = write_trellis_config(module="test", platform="DESKTOP")
         apploader = AppLoader(app_root)
@@ -32,13 +27,13 @@ class TestStandalonePlatformSelection:
 
         monkeypatch.setattr(sys, "_pytauri_standalone", True, raising=False)
 
-        assert type(apploader.platform) is DesktopStandalonePlatform
+        assert isinstance(apploader.platform, DesktopPlatform)
+        assert apploader.platform.is_standalone is True
 
-    @requires_pytauri
     def test_selects_dev_when_flag_not_set(
         self, write_trellis_config: WriteTrellisConfig, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Without sys._pytauri_standalone, selects DesktopPlatform."""
+        """Without sys._pytauri_standalone, DesktopPlatform runs in dev mode."""
         from trellis.app.apploader import AppLoader  # noqa: PLC0415
         from trellis.platforms.desktop.platform import DesktopPlatform  # noqa: PLC0415
 
@@ -51,3 +46,4 @@ class TestStandalonePlatformSelection:
             monkeypatch.delattr(sys, "_pytauri_standalone")
 
         assert isinstance(apploader.platform, DesktopPlatform)
+        assert apploader.platform.is_standalone is False

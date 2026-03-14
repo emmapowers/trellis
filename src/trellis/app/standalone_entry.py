@@ -13,7 +13,7 @@ import os
 from typing import Any
 
 from trellis.app.app import App
-from trellis.platforms.desktop.standalone_platform import DesktopStandalonePlatform
+from trellis.platforms.desktop import DesktopPlatform
 
 
 def _find_app(module_name: str) -> App:
@@ -37,7 +37,7 @@ def main() -> None:
         )
 
     app = _find_app(module_name)
-    platform = DesktopStandalonePlatform()
+    platform = DesktopPlatform()
 
     def app_wrapper(_component: Any, system_theme: str, theme_mode: str | None) -> Any:
         return app.get_wrapped_top(system_theme, theme_mode)

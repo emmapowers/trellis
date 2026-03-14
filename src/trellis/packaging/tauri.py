@@ -149,8 +149,8 @@ def install_app_into_portable_python(
     Copies the standalone Python to pyembed_dir first, then uses pip to
     install the app and its dependencies into the copy. This avoids
     polluting the cached standalone Python with app-specific packages.
-    The packaged runtime uses the standalone-built PyTauri extension, so
-    pytauri-wheel is removed from the embedded environment after install.
+    The packaged runtime uses the standalone-built PyTauri extension and
+    does not depend on pytauri-wheel being installed into pyembed.
     """
     if pyembed_dir.exists():
         shutil.rmtree(pyembed_dir)
@@ -171,18 +171,6 @@ def install_app_into_portable_python(
             "--no-warn-script-location",
             "--no-cache-dir",
             str(app_root),
-        ],
-        check=True,
-    )
-
-    subprocess.run(
-        [
-            str(python_bin),
-            "-m",
-            "pip",
-            "uninstall",
-            "-y",
-            "pytauri-wheel",
         ],
         check=True,
     )

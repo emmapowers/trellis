@@ -43,7 +43,7 @@ dependencies = [
     "Pillow>=10.0; sys_platform != 'emscripten'",
     "resvg-py>=0.2; sys_platform != 'emscripten'",
     # Desktop runtime
-    "pytauri-wheel>=0.8.0; sys_platform != 'emscripten'",
+    "pytauri>=0.8.0; sys_platform != 'emscripten'",
     "pydantic>=2.12",
     # Bundler uses `pip wheel` to build wheels for Pyodide deployment
     "pip>=24; sys_platform != 'emscripten'",
