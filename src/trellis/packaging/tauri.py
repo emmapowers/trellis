@@ -169,7 +169,6 @@ def install_app_into_portable_python(
             "--no-warn-script-location",
             "--no-cache-dir",
             str(app_root),
-            "pytauri-wheel>=0.8.0",
         ],
         check=True,
     )

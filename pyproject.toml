@@ -42,19 +42,15 @@ dependencies = [
     # Icon format conversion (SVG rasterization, ICO/ICNS generation)
     "Pillow>=10.0; sys_platform != 'emscripten'",
     "resvg-py>=0.2; sys_platform != 'emscripten'",
+    # Desktop runtime
+    "pytauri-wheel>=0.8.0; sys_platform != 'emscripten'",
+    "pydantic>=2.12",
     # Bundler uses `pip wheel` to build wheels for Pyodide deployment
     "pip>=24; sys_platform != 'emscripten'",
 ]
 
-[project.optional-dependencies]
-desktop = [
-    "pytauri-wheel>=0.8.0",
-    "pydantic>=2.12",
-]
-
 [dependency-groups]
 dev = [
-    "trellis[desktop]",
     "ruff>=0.8,<1",
     "pytest>=8,<9",
     "pytest-cov>=6,<7",

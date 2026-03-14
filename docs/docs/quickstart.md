@@ -15,12 +15,6 @@ Install Trellis from Git:
 pip install git+https://github.com/emmapowers/trellis.git
 ```
 
-For desktop app support, install with the desktop extra:
-
-```bash
-pip install "trellis[desktop] @ git+https://github.com/emmapowers/trellis.git"
-```
-
 ## Run the Demo
 
 Trellis includes a demo app. Run it to make sure everything works:
@@ -31,7 +25,7 @@ python -m trellis.examples.demo
 
 Open http://127.0.0.1:8000 in your browser. You should see an interactive counter.
 
-To run as a desktop app (requires desktop extra):
+To run as a desktop app:
 
 ```bash
 python -m trellis.examples.demo --desktop

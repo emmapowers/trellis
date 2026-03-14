@@ -101,12 +101,6 @@ def App() -> None:
 pip install git+https://github.com/emmapowers/trellis.git
 ```
 
-For desktop app support, install with the desktop extra:
-
-```bash
-pip install "trellis[desktop] @ git+https://github.com/emmapowers/trellis.git"
-```
-
 ## Project Configuration
 
 Set app metadata in `trellis_config.py`:

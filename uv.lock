@@ -1291,18 +1291,14 @@ dependencies = [
     { name = "packaging" },
     { name = "pillow", marker = "sys_platform != 'emscripten'" },
     { name = "pip", marker = "sys_platform != 'emscripten'" },
+    { name = "pydantic" },
     { name = "pygments" },
+    { name = "pytauri-wheel", marker = "sys_platform != 'emscripten'" },
     { name = "questionary", marker = "sys_platform != 'emscripten'" },
     { name = "resvg-py", marker = "sys_platform != 'emscripten'" },
     { name = "rich" },
     { name = "uvicorn", extra = ["standard"], marker = "sys_platform != 'emscripten'" },
     { name = "watchfiles", marker = "sys_platform != 'emscripten'" },
-]
-
-[package.optional-dependencies]
-desktop = [
-    { name = "pydantic" },
-    { name = "pytauri-wheel" },
 ]
 
 [package.dev-dependencies]
@@ -1315,7 +1311,6 @@ dev = [
     { name = "pytest-cov" },
     { name = "ruff" },
     { name = "rust-just" },
-    { name = "trellis", extra = ["desktop"] },
     { name = "types-pillow" },
 ]
 
@@ -1331,16 +1326,15 @@ requires-dist = [
     { name = "packaging", specifier = ">=24.0" },
     { name = "pillow", marker = "sys_platform != 'emscripten'", specifier = ">=10.0" },
     { name = "pip", marker = "sys_platform != 'emscripten'", specifier = ">=24" },
-    { name = "pydantic", marker = "extra == 'desktop'", specifier = ">=2.12" },
+    { name = "pydantic", specifier = ">=2.12" },
     { name = "pygments", specifier = ">=2.19" },
-    { name = "pytauri-wheel", marker = "extra == 'desktop'", specifier = ">=0.8.0" },
+    { name = "pytauri-wheel", marker = "sys_platform != 'emscripten'", specifier = ">=0.8.0" },
     { name = "questionary", marker = "sys_platform != 'emscripten'", specifier = ">=2.1" },
     { name = "resvg-py", marker = "sys_platform != 'emscripten'", specifier = ">=0.2" },
     { name = "rich", specifier = ">=13.9" },
     { name = "uvicorn", extras = ["standard"], marker = "sys_platform != 'emscripten'", specifier = ">=0.40" },
     { name = "watchfiles", marker = "sys_platform != 'emscripten'", specifier = ">=1.1" },
 ]
-provides-extras = ["desktop"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1352,7 +1346,6 @@ dev = [
     { name = "pytest-cov", specifier = ">=6,<7" },
     { name = "ruff", specifier = ">=0.8,<1" },
     { name = "rust-just", specifier = ">=1.46" },
-    { name = "trellis", extras = ["desktop"] },
     { name = "types-pillow", specifier = ">=10.0" },
 ]
 
