@@ -10,7 +10,7 @@ from trellis.core.protocol import (
     listen,
     send,
 )
-from trellis.core.rendering.session import get_active_session
+from trellis.core.rendering.session import get_render_session
 from trellis.core.state.stateful import Stateful, Tracked
 from trellis.routing.messages import HistoryBack, HistoryForward, HistoryPush, UrlChanged
 from trellis.routing.path_matching import match_path
@@ -83,7 +83,7 @@ class RouterState(StatefulMessageHandlerMixin, Stateful):
         """
         if path is None:
             # Try to get initial path from session
-            session = get_active_session()
+            session = get_render_session()
             if session is not None:
                 path = session.initial_path
             else:

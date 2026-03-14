@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import typing as tp
 
-from trellis.core.rendering.session import get_active_session
+from trellis.core.rendering.session import get_render_session
 
 if tp.TYPE_CHECKING:
     from trellis.core.state.stateful import Stateful
@@ -43,21 +43,21 @@ def record_property_access(owner: Stateful, attr: str, value: tp.Any) -> None:
     Called by Stateful.__getattribute__ during render to track the most
     recent property access. This enables mutable() to capture the reference.
     """
-    session = get_active_session()
+    session = get_render_session()
     if session is not None and session.active is not None:
         session.active.last_property_access = (owner, attr, value)
 
 
 def clear_property_access() -> None:
     """Clear the last recorded property access."""
-    session = get_active_session()
+    session = get_render_session()
     if session is not None and session.active is not None:
         session.active.last_property_access = None
 
 
 def _get_last_property_access() -> tuple[tp.Any, str, tp.Any] | None:
     """Get the last recorded property access from the active render session."""
-    session = get_active_session()
+    session = get_render_session()
     if session is not None and session.active is not None:
         return session.active.last_property_access
     return None

@@ -64,7 +64,7 @@ if tp.TYPE_CHECKING:
     from trellis.core.rendering.session import RenderSession
 
 from trellis.core.callback_context import get_callback_node_id, get_callback_session
-from trellis.core.rendering.session import get_active_session, is_render_active
+from trellis.core.rendering.session import get_render_session, is_render_active
 from trellis.core.state.conversion import convert_to_tracked
 from trellis.core.state.mutable import record_property_access
 
@@ -270,7 +270,7 @@ class Stateful:
             cls.__init__ = wrapped_init  # type: ignore[assignment]
             cls._init_wrapped = True
 
-        session = get_active_session()
+        session = get_render_session()
 
         # Outside execution context - create normally
         if session is None or not session.is_executing():
@@ -330,7 +330,7 @@ class Stateful:
             return value
 
         # Get render session
-        session = get_active_session()
+        session = get_render_session()
 
         # Outside render context - return raw value without tracking
         if session is None or not session.is_executing():
@@ -492,7 +492,7 @@ class Stateful:
         Raises:
             RuntimeError: If called outside of a render context
         """
-        session = get_active_session()
+        session = get_render_session()
         if session is None or not session.is_executing():
             raise RuntimeError(
                 f"Cannot use 'with {type(self).__name__}()' outside of render context. "
@@ -575,7 +575,7 @@ class Stateful:
                 and no default was provided
         """
         # Try render context first
-        session = get_active_session()
+        session = get_render_session()
         if session is not None and session.is_executing():
             is_render_context = True
             element_id: str | None = session.current_element_id

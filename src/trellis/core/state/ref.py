@@ -27,7 +27,7 @@ import weakref
 from dataclasses import dataclass, field
 
 from trellis.core.rendering.lifecycle import invoke_lifecycle_hook
-from trellis.core.rendering.session import get_active_session
+from trellis.core.rendering.session import get_render_session
 
 if tp.TYPE_CHECKING:
     from typing import Self
@@ -234,7 +234,7 @@ def get_ref(ref_type: type[T]) -> _RefHolder[T]:
     Raises:
         RuntimeError: If called outside render context
     """
-    session = get_active_session()
+    session = get_render_session()
     if session is None or not session.is_executing():
         raise RuntimeError(
             "get_ref() can only be called during component execution (render context)."
@@ -269,7 +269,7 @@ def set_ref(ref: tp.Any) -> None:
     Raises:
         RuntimeError: If called outside render context or called twice
     """
-    session = get_active_session()
+    session = get_render_session()
     if session is None or not session.is_executing():
         raise RuntimeError(
             "set_ref() can only be called during component execution (render context)."

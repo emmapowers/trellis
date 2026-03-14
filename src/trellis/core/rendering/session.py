@@ -23,36 +23,36 @@ if tp.TYPE_CHECKING:
 __all__ = [
     "RenderSession",
     "SessionRegistry",
-    "get_active_session",
+    "get_render_session",
     "get_session_registry",
     "is_render_active",
-    "set_active_session",
+    "set_render_session",
 ]
 
 logger = logging.getLogger(__name__)
 
 
-# Thread-safe, task-local storage for the active render session.
+# Task-local storage for the render session bound to this connection.
 # Using contextvars ensures each asyncio task or thread has its own context,
 # enabling concurrent rendering (e.g., multiple WebSocket connections).
-_active_session: contextvars.ContextVar[RenderSession | None] = contextvars.ContextVar(
-    "active_session", default=None
+_render_session: contextvars.ContextVar[RenderSession | None] = contextvars.ContextVar(
+    "render_session", default=None
 )
 
 
-def get_active_session() -> RenderSession | None:
-    """Get the currently active render session, if any."""
-    return _active_session.get()
+def get_render_session() -> RenderSession | None:
+    """Get the render session for the current connection, if any."""
+    return _render_session.get()
 
 
-def set_active_session(session: RenderSession | None) -> None:
-    """Set the active render session."""
-    _active_session.set(session)
+def set_render_session(session: RenderSession | None) -> None:
+    """Set the render session for the current connection."""
+    _render_session.set(session)
 
 
 def is_render_active() -> bool:
     """Check if currently inside a render context."""
-    session = _active_session.get()
+    session = _render_session.get()
     return session is not None and session.is_rendering()
 
 

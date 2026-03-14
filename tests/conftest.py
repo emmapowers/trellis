@@ -19,7 +19,7 @@ from trellis.core.protocol import MessageHandlerProtocol, get_message_handler, s
 from trellis.core.rendering.element import Element
 from trellis.core.rendering.patches import RenderAddPatch, RenderPatch
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, set_render_session
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.common.serialization import serialize_element
 
@@ -62,6 +62,18 @@ def bind_message_handler(handler: MessageHandlerProtocol) -> tp.Iterator[None]:
         yield
     finally:
         set_message_handler(previous)
+
+
+# =============================================================================
+# Session Cleanup
+# =============================================================================
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_render_session() -> tp.Iterator[None]:
+    """Ensure the render session ContextVar is cleared after every test."""
+    yield
+    set_render_session(None)
 
 
 # =============================================================================
@@ -132,7 +144,7 @@ def noop_component() -> CompositionComponent:
 
 
 @pytest.fixture
-def render_session(noop_component: CompositionComponent) -> RenderSession:
+def render_session(noop_component: CompositionComponent) -> tp.Iterator[RenderSession]:
     """Fresh RenderSession with a noop root for each test.
 
     Usage:
@@ -140,7 +152,10 @@ def render_session(noop_component: CompositionComponent) -> RenderSession:
             # render_session is ready to use
             render(render_session)
     """
-    return RenderSession(noop_component)
+    session = RenderSession(noop_component)
+    set_render_session(session)
+    yield session
+    set_render_session(None)
 
 
 @dataclass
@@ -158,7 +173,7 @@ class RenderResult:
 
 
 @pytest.fixture
-def rendered() -> tp.Callable[[CompositionComponent], RenderResult]:
+def rendered() -> tp.Iterator[tp.Callable[[CompositionComponent], RenderResult]]:
     """Render a component and return (session, patches, tree).
 
     Usage:
@@ -172,13 +187,19 @@ def rendered() -> tp.Callable[[CompositionComponent], RenderResult]:
             assert len(result.root_element.child_ids) == 1
     """
 
+    results: list[RenderResult] = []
+
     def _render(root: CompositionComponent) -> RenderResult:
         session = RenderSession(root)
+        set_render_session(session)
         patches = render(session)
         tree = serialize_element(session.root_element, session)
-        return RenderResult(session=session, patches=patches, tree=tree)
+        result = RenderResult(session=session, patches=patches, tree=tree)
+        results.append(result)
+        return result
 
-    return _render
+    yield _render
+    set_render_session(None)
 
 
 # =============================================================================
@@ -217,7 +238,7 @@ class PatchCapture:
 
 
 @pytest.fixture
-def capture_patches() -> tp.Callable[[CompositionComponent], PatchCapture]:
+def capture_patches() -> tp.Iterator[tp.Callable[[CompositionComponent], PatchCapture]]:
     """Create a patch capture helper for testing incremental renders.
 
     Usage:
@@ -234,11 +255,17 @@ def capture_patches() -> tp.Callable[[CompositionComponent], PatchCapture]:
             assert len(patches) > 0
     """
 
+    captures: list[PatchCapture] = []
+
     def _capture(root: CompositionComponent) -> PatchCapture:
         session = RenderSession(root)
-        return PatchCapture(session=session)
+        set_render_session(session)
+        capture = PatchCapture(session=session)
+        captures.append(capture)
+        return capture
 
-    return _capture
+    yield _capture
+    set_render_session(None)
 
 
 # =============================================================================

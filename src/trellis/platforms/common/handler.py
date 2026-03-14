@@ -27,7 +27,7 @@ from trellis.core.rendering.patches import (
     RenderUpdatePatch,
 )
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession, get_session_registry
+from trellis.core.rendering.session import RenderSession, get_session_registry, set_render_session
 from trellis.html._generated_events import get_event_class
 from trellis.platforms.common.errors import SessionDisconnected
 from trellis.platforms.common.messages import (
@@ -322,6 +322,7 @@ class MessageHandler:
             msg.theme_mode,  # "system", "light", "dark", or None
         )
         self.session = RenderSession(wrapped)
+        set_render_session(self.session)
 
         # Register session with global registry (used by hot reload and other features)
         get_session_registry().register(self.session)

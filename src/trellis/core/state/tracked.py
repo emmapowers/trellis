@@ -39,7 +39,7 @@ if tp.TYPE_CHECKING:
     from trellis.core.rendering.element import Element
     from trellis.core.state.stateful import Stateful
 
-from trellis.core.rendering.session import get_active_session, is_render_active
+from trellis.core.rendering.session import get_render_session, is_render_active
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +103,7 @@ class _TrackedMixin:
         Uses WeakSet[Element] so dependencies are automatically cleaned up
         when elements are replaced (on re-render) or removed (on unmount).
         """
-        session = get_active_session()
+        session = get_render_session()
         if session is None or session.active is None:
             return
 

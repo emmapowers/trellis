@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from enum import StrEnum
 
 from trellis.core.rendering.element import Element
-from trellis.core.rendering.session import get_active_session
+from trellis.core.rendering.session import get_render_session
 from trellis.utils.logger import logger
 
 __all__ = ["Component"]
@@ -59,7 +59,7 @@ class Component(ABC):
 
         # Ensure we're inside a render context - components cannot be created
         # in callbacks or other code outside of rendering
-        session = get_active_session()
+        session = get_render_session()
         if session is None:
             raise RuntimeError(
                 f"Cannot create component '{self.name}' outside of render context. "

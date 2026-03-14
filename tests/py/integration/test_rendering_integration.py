@@ -15,9 +15,9 @@ from trellis.core.rendering.frames import _escape_key
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import (
     RenderSession,
-    get_active_session,
+    get_render_session,
     is_render_active,
-    set_active_session,
+    set_render_session,
 )
 from trellis.core.state.stateful import Stateful
 from trellis.widgets import Button, Column, Label, Row
@@ -28,19 +28,19 @@ def make_component(name: str) -> CompositionComponent:
     return CompositionComponent(name=name, render_func=lambda: None)
 
 
-class TestActiveSession:
+class TestRenderSessionContextVar:
     def test_default_is_none(self) -> None:
-        assert get_active_session() is None
+        assert get_render_session() is None
 
     def test_set_and_get(self) -> None:
         comp = make_component("Root")
         ctx = RenderSession(comp)
 
-        set_active_session(ctx)
-        assert get_active_session() is ctx
+        set_render_session(ctx)
+        assert get_render_session() is ctx
 
-        set_active_session(None)
-        assert get_active_session() is None
+        set_render_session(None)
+        assert get_render_session() is None
 
 
 class TestRenderSession:
@@ -91,17 +91,17 @@ class TestConcurrentRenderSessionIsolation:
 
         def thread_a() -> None:
             ctx = RenderSession(AppA)
-            set_active_session(ctx)
+            set_render_session(ctx)
             barrier.wait()  # Sync with thread B
-            results["a"] = get_active_session()
-            set_active_session(None)
+            results["a"] = get_render_session()
+            set_render_session(None)
 
         def thread_b() -> None:
             ctx = RenderSession(AppB)
-            set_active_session(ctx)
+            set_render_session(ctx)
             barrier.wait()  # Sync with thread A
-            results["b"] = get_active_session()
-            set_active_session(None)
+            results["b"] = get_render_session()
+            set_render_session(None)
 
         t1 = threading.Thread(target=thread_a)
         t2 = threading.Thread(target=thread_b)
@@ -167,7 +167,7 @@ class TestComponentOutsideRenderSession:
             pass
 
         # Ensure no active context
-        set_active_session(None)
+        set_render_session(None)
 
         with pytest.raises(RuntimeError, match="outside of render context"):
             MyComponent()
@@ -180,7 +180,7 @@ class TestComponentOutsideRenderSession:
             for c in children:
                 c()
 
-        set_active_session(None)
+        set_render_session(None)
 
         with pytest.raises(RuntimeError, match="outside of render context"):
             with Container():
@@ -753,20 +753,21 @@ class TestIsRenderActiveSemantics:
         assert len(values_during_mount) == 1
         assert values_during_mount[0] is False
 
-    def test_session_active_none_during_hooks(self) -> None:
-        """session.active should be None during lifecycle hooks.
+    def test_session_available_but_not_rendering_during_hooks(self) -> None:
+        """Session is accessible during hooks but session.active is None.
 
-        This is the implementation requirement: hooks must run after
-        session.active is cleared, not just after current_element_id is None.
+        Hooks run after session.active is cleared. The render session ContextVar
+        remains set (it lives for the connection lifetime), so get_render_session()
+        returns the session, but session.active is None and is_render_active() is False.
         """
-        active_values: list[bool] = []
+        hook_observations: list[tuple[bool, bool]] = []
 
         @dataclass
         class CheckSessionActive(Stateful):
             def on_mount(self) -> None:
-                session = get_active_session()
-                # session.active should be None during hooks
-                active_values.append(session.active is None if session else True)
+                session = get_render_session()
+                assert session is not None
+                hook_observations.append((session.active is None, not is_render_active()))
 
         @component
         def App() -> None:
@@ -775,8 +776,10 @@ class TestIsRenderActiveSemantics:
         ctx = RenderSession(App)
         render(ctx)
 
-        assert len(active_values) == 1
-        assert active_values[0] is True, "session.active should be None during hooks"
+        assert len(hook_observations) == 1
+        active_is_none, render_not_active = hook_observations[0]
+        assert active_is_none, "session.active should be None during hooks"
+        assert render_not_active, "is_render_active() should be False during hooks"
 
 
 class TestLifecycleHooksCanModifyState:

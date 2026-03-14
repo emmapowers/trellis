@@ -16,7 +16,7 @@ import typing as tp
 import weakref
 from dataclasses import dataclass
 
-from trellis.core.rendering.session import get_active_session
+from trellis.core.rendering.session import get_render_session
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering.element import Element
@@ -50,7 +50,7 @@ class ChildRef:
         Raises:
             RuntimeError: If called outside of render context
         """
-        session = get_active_session()
+        session = get_render_session()
         if session is None or session.active is None:
             raise RuntimeError("Cannot render child outside of render context")
         if not session.active.frames.has_active():
