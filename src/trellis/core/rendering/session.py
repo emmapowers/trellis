@@ -19,6 +19,7 @@ if tp.TYPE_CHECKING:
     from trellis.core.components.base import Component
     from trellis.core.rendering.active import ActiveRender
     from trellis.core.rendering.element import Element
+    from trellis.core.state.dependency import StateDependency
 
 __all__ = [
     "RenderSession",
@@ -84,6 +85,11 @@ class RenderSession:
     # Session-scoped async tasks for non-critical background work.
     _tasks: set[asyncio.Task[tp.Any]] = field(default_factory=set)
     _shutting_down: bool = False
+
+    # The dependency (Element or ReactiveEffect) currently being executed.
+    # Set during element execution and reactive effect execution so that
+    # Stateful.__getattribute__ can register watchers via the protocol.
+    active_dependency: StateDependency | None = None
 
     # Initial URL path from client HelloMessage (for routing)
     initial_path: str = "/"

@@ -186,6 +186,8 @@ def _execute_single_element(
     # Set up execution context
     old_element_id = session.active.current_element_id
     session.active.current_element_id = element_id
+    old_dep = session.active_dependency
+    session.active_dependency = element
 
     # Dispatch trait _before_execute hooks
     trait_hooks = get_trait_hooks(type(element))
@@ -218,6 +220,7 @@ def _execute_single_element(
     finally:
         session.active.frames.pop()
         session.active.current_element_id = old_element_id
+        session.active_dependency = old_dep
 
 
 def _execute_tree(

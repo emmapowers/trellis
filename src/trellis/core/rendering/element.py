@@ -41,6 +41,12 @@ class Element(KeyTrait, RefTrait):
             (self.id, id(self._session_ref()) if self._session_ref() else None, self.render_count)
         )
 
+    def notify_dirty(self) -> None:
+        """Mark this element as needing re-render. Satisfies StateDependency protocol."""
+        session = self._session_ref()
+        if session is not None:
+            session.dirty.mark(self.id)
+
     @property
     def properties(self) -> dict[str, tp.Any]:
         """Get props as a mutable dictionary, including child_ids if present."""

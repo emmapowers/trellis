@@ -60,12 +60,12 @@ from dataclasses import dataclass, field
 from types import TracebackType
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering.element import Element
     from trellis.core.rendering.session import RenderSession
 
 from trellis.core.callback_context import get_callback_node_id, get_callback_session
 from trellis.core.rendering.session import get_render_session, is_render_active
 from trellis.core.state.conversion import convert_to_tracked
+from trellis.core.state.dependency import StateDependency
 from trellis.core.state.mutable import record_property_access
 
 logger = logging.getLogger(__name__)
@@ -165,32 +165,25 @@ def _is_tracked_attribute(cls: type, name: str) -> bool:
 
 
 def _register_context_dependency(session: RenderSession, instance: Stateful) -> None:
-    """Register the current element as a context watcher on a Stateful instance.
+    """Register the active dependency as a context watcher on a Stateful instance.
 
     Called during render when from_context() finds an instance. Adds the
-    current element to instance._context_watchers so that __enter__ can
+    active dependency to instance._context_watchers so that __enter__ can
     mark consumers dirty when a different instance replaces context.
     """
-    element_id = session.current_element_id
-    if element_id is None:
-        return
-    element = session.elements.get(element_id)
-    if element is None:
-        return
-
-    instance._context_watchers.add(element)
+    dep = session.active_dependency
+    if dep is not None:
+        instance._context_watchers.add(dep)
 
 
 def _mark_context_consumers_dirty(old_instance: Stateful) -> None:
-    """Mark all elements that consumed old_instance via from_context() as dirty.
+    """Notify all watchers that consumed old_instance via from_context().
 
     Called from __enter__ when a different Stateful instance replaces context
-    for the same type. Uses the same pattern as _TrackedMixin._mark_dirty().
+    for the same type.
     """
-    for element in old_instance._context_watchers:
-        element_session = element._session_ref()
-        if element_session is not None:
-            element_session.dirty.mark(element.id)
+    for dep in old_instance._context_watchers:
+        dep.notify_dirty()
 
 
 @dataclass(kw_only=True)
@@ -199,18 +192,18 @@ class StatePropertyInfo:
 
     When a component reads a state property during execution, the element
     is added to this property's dependency set. When the property changes,
-    all dependent elements are marked dirty.
+    all dependent watchers are notified.
 
-    Uses WeakSet[Element] so dependencies are automatically cleaned up
+    Uses WeakSet so dependencies are automatically cleaned up
     when elements are replaced (on re-render) or removed (on unmount).
 
     Attributes:
         name: The property name being tracked
-        watchers: WeakSet of Elements that depend on this property
+        watchers: WeakSet of StateDependency objects that depend on this property
     """
 
     name: str
-    watchers: weakref.WeakSet[Element] = field(default_factory=weakref.WeakSet)
+    watchers: weakref.WeakSet[StateDependency] = field(default_factory=weakref.WeakSet)
 
 
 class Stateful:
@@ -233,7 +226,7 @@ class Stateful:
     """
 
     _state_props: dict[str, StatePropertyInfo]
-    _context_watchers: weakref.WeakSet[Element]
+    _context_watchers: weakref.WeakSet[StateDependency]
     _input_versions: dict[str, int]
     _initialized: bool
 
@@ -329,11 +322,12 @@ class Stateful:
         if not _is_tracked_attribute(type(self), name):
             return value
 
-        # Get render session
+        # Check for active dependency (element or reactive effect)
         session = get_render_session()
-
-        # Outside render context - return raw value without tracking
-        if session is None or not session.is_executing():
+        if session is None:
+            return value
+        dep = session.active_dependency
+        if dep is None:
             return value
 
         # Lazy init _state_props (needed when @dataclass doesn't call super().__init__)
@@ -345,20 +339,9 @@ class Stateful:
 
         if name not in deps:
             deps[name] = StatePropertyInfo(name=name)
-        state_info = deps[name]
 
-        # Add the current Element to watchers (WeakSet auto-cleans on element death)
-        element_id = session.current_element_id
-        if element_id is not None:
-            element = session.elements.get(element_id)
-            if element is not None:
-                state_info.watchers.add(element)
-                logger.debug(
-                    "Dependency: %s reads %s.%s",
-                    element_id,
-                    type(self).__name__,
-                    name,
-                )
+        deps[name].watchers.add(dep)
+        logger.debug("Dependency: %s reads %s.%s", dep, type(self).__name__, name)
 
         # Record access for mutable() to capture
         record_property_access(self, name, value)
@@ -439,18 +422,10 @@ class Stateful:
             return  # Not initialized yet
 
         if name in deps:
-            state_info = deps[name]
-
-            # Mark watcher elements dirty (WeakSet auto-skips dead refs)
-            dirty_elements = []
-            for element in state_info.watchers:
-                element_session = element._session_ref()
-                if element_session is not None:
-                    element_session.dirty.mark(element.id)
-                    dirty_elements.append(element.id)
-
-            if dirty_elements:
-                logger.debug("Marking dirty: %s", dirty_elements)
+            # Notify all watchers (WeakSet auto-skips dead refs)
+            for watcher in deps[name].watchers:
+                watcher.notify_dirty()
+                logger.debug("Marking dirty: %s", watcher)
 
     def on_mount(self) -> None | tp.Coroutine[tp.Any, tp.Any, None]:
         """Called after owning element mounts. Override for initialization.
