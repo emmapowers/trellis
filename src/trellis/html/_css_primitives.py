@@ -38,3 +38,10 @@ class CssAngle(CssValue):
 @dataclass(frozen=True, slots=True)
 class CssColor(CssValue):
     """A CSS color value."""
+
+
+def format_number(value: int | float) -> str:
+    """Format a number for CSS output, dropping unnecessary decimals."""
+    if isinstance(value, int) or value.is_integer():
+        return str(int(value))
+    return format(value, "g")

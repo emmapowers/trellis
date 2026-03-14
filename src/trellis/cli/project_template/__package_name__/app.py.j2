@@ -7,17 +7,17 @@ from trellis.widgets import IconName
 
 @component
 def Root():
-    with w.Column(gap=0, style={"height": "100vh"}):
+    with w.Column(gap=0, style=h.Style(height="100vh")):
         # Header
         with w.Row(
             align="center",
             gap=12,
             padding=h.padding(16, 24),
-            style={
-                "border-bottom": f"1px solid {theme.border_default}",
-                "background-color": theme.bg_surface,
-                "flex-shrink": "0",
-            },
+            style=h.Style(
+                border_bottom=f"1px solid {theme.border_default}",
+                background_color=theme.bg_surface,
+                flex_shrink=0,
+            ),
         ):
             w.Icon(name=IconName.LAYOUT_DASHBOARD, size=24, color=theme.accent_primary)
             w.Heading(text="{{ title }}", level=3, flex=1)
@@ -28,7 +28,7 @@ def Root():
             align="center",
             justify="center",
             padding=24,
-            style={"background-color": theme.bg_page},
+            style=h.Style(background_color=theme.bg_page),
         ):
             with w.Card(padding=32, width=480):
                 with w.Column(gap=20, align="center"):
@@ -40,7 +40,7 @@ def Root():
                     w.Heading(
                         text="Welcome to {{ title }}",
                         level=2,
-                        style={"margin-bottom": "0"},
+                        style=h.Style(margin_bottom=0),
                     )
                     w.Label(
                         text="Your app is set up and ready to go.",

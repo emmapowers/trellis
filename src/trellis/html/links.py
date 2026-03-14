@@ -11,12 +11,10 @@ from collections.abc import Mapping
 
 from trellis.core.rendering.element import Element
 from trellis.html._generated_interactive_elements import _A
-from trellis.html._generated_runtime import Img
 from trellis.routing.state import router
 
 __all__ = [
     "A",
-    "Img",
 ]
 
 DataValue = str | int | float | bool | None
@@ -63,7 +61,7 @@ def _is_relative_url(href: str) -> bool:
 
 
 def _resolve_router_navigation(
-    props: dict[str, object],
+    props: dict[str, tp.Any],
     use_router: bool,
 ) -> None:
     """Conditionally inject router navigation into *props*."""

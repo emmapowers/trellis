@@ -4,13 +4,11 @@ from collections.abc import Mapping
 from typing import Any, Literal, overload
 
 from trellis.core.rendering.element import Element
-from trellis.html._generated_runtime import Img
 from trellis.html._style_runtime import StyleInput
 from trellis.html.base import HtmlContainerElement
 
 __all__ = [
     "A",
-    "Img",
 ]
 
 type DataValue = str | int | float | bool | None

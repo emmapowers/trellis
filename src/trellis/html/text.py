@@ -11,49 +11,9 @@ import typing as tp
 
 from trellis.core.components.base import Component, ElementKind
 from trellis.core.rendering.element import Element
-from trellis.html._generated_runtime import (
-    H1,
-    H2,
-    H3,
-    H4,
-    H5,
-    H6,
-    Abbr,
-    Br,
-    Code,
-    Em,
-    Hr,
-    Mark,
-    P,
-    Pre,
-    Small,
-    Strong,
-    Sub,
-    Sup,
-    Time,
-)
 
 __all__ = [
-    "H1",
-    "H2",
-    "H3",
-    "H4",
-    "H5",
-    "H6",
-    "Abbr",
-    "Br",
-    "Code",
-    "Em",
-    "Hr",
-    "Mark",
-    "P",
-    "Pre",
-    "Small",
-    "Strong",
-    "Sub",
-    "Sup",
     "Text",
-    "Time",
 ]
 
 

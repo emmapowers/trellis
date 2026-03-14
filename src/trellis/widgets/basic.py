@@ -357,7 +357,7 @@ def Checkbox(
 def Divider(
     *,
     orientation: tp.Literal["horizontal", "vertical"] = "horizontal",
-    margin: int | None = None,
+    margin: SpacingInput | None = None,
     color: str | None = None,
     class_name: str | None = None,
     style: StyleInput | None = None,
@@ -460,7 +460,7 @@ def Heading(
     pass
 
 
-@widget_style_props("margin", "width", "height", "flex")
+@widget_style_props("margin", "width", "flex")
 @react("client/ProgressBar.tsx")
 def ProgressBar(
     *,

@@ -21,6 +21,9 @@ from trellis.html._css_primitives import (
     CssTime,
     CssValue,
 )
+from trellis.html._css_primitives import (
+    format_number as _format_number,
+)
 
 if tp.TYPE_CHECKING:
     from trellis.html._generated_style_types import HeightValue, SpacingShorthand, WidthValue
@@ -36,6 +39,57 @@ else:
     type WidthInput = str | int | float | CssValue
     type HeightInput = str | int | float | CssValue
     type SpacingInput = str | int | float | CssValue
+
+__all__ = [
+    "CssAngle",
+    "CssColor",
+    "CssLength",
+    "CssPercent",
+    "CssTime",
+    "CssValue",
+    "HeightInput",
+    "MediaRule",
+    "RawStyleMapping",
+    "SpacingInput",
+    "Style",
+    "StyleInput",
+    "StyleScalar",
+    "WidthInput",
+    "border",
+    "calc",
+    "clamp",
+    "color",
+    "color_space",
+    "deg",
+    "em",
+    "hsl",
+    "hwb",
+    "inset",
+    "lab",
+    "lch",
+    "margin",
+    "max_",
+    "media",
+    "min_",
+    "ms",
+    "oklab",
+    "oklch",
+    "padding",
+    "pct",
+    "px",
+    "raw",
+    "rem",
+    "rgb",
+    "rgba",
+    "rotate",
+    "scale",
+    "sec",
+    "shadow",
+    "translate",
+    "var",
+    "vh",
+    "vw",
+]
 
 _PSEUDO_SELECTORS = {
     "hover": ":hover",
@@ -178,17 +232,14 @@ class Style:
 type StyleInput = Style | RawStyleMapping
 
 
-def _format_number(value: int | float) -> str:
-    if isinstance(value, int) or value.is_integer():
-        return str(int(value))
-    return format(value, "g")
+_CV = tp.TypeVar("_CV", bound=CssValue)
 
 
 def _wrap_value(
-    cls: type[CssValue],
+    cls: type[_CV],
     value: int | float | str,
     unit: str = "",
-) -> CssValue:
+) -> _CV:
     if isinstance(value, (int, float)):
         return cls(f"{_format_number(value)}{unit}")
     return cls(value)
@@ -206,47 +257,47 @@ def color(value: str) -> CssColor:
 
 def px(value: int | float) -> CssLength:
     """Return a CSS length in pixels."""
-    return tp.cast("CssLength", _wrap_value(CssLength, value, "px"))
+    return _wrap_value(CssLength, value, "px")
 
 
 def rem(value: int | float) -> CssLength:
     """Return a CSS length in rem units."""
-    return tp.cast("CssLength", _wrap_value(CssLength, value, "rem"))
+    return _wrap_value(CssLength, value, "rem")
 
 
 def em(value: int | float) -> CssLength:
     """Return a CSS length in em units."""
-    return tp.cast("CssLength", _wrap_value(CssLength, value, "em"))
+    return _wrap_value(CssLength, value, "em")
 
 
 def vw(value: int | float) -> CssLength:
     """Return a CSS length in viewport-width units."""
-    return tp.cast("CssLength", _wrap_value(CssLength, value, "vw"))
+    return _wrap_value(CssLength, value, "vw")
 
 
 def vh(value: int | float) -> CssLength:
     """Return a CSS length in viewport-height units."""
-    return tp.cast("CssLength", _wrap_value(CssLength, value, "vh"))
+    return _wrap_value(CssLength, value, "vh")
 
 
 def pct(value: int | float) -> CssPercent:
     """Return a CSS percentage value."""
-    return tp.cast("CssPercent", _wrap_value(CssPercent, value, "%"))
+    return _wrap_value(CssPercent, value, "%")
 
 
 def sec(value: int | float) -> CssTime:
     """Return a CSS time value in seconds."""
-    return tp.cast("CssTime", _wrap_value(CssTime, value, "s"))
+    return _wrap_value(CssTime, value, "s")
 
 
 def ms(value: int | float) -> CssTime:
     """Return a CSS time value in milliseconds."""
-    return tp.cast("CssTime", _wrap_value(CssTime, value, "ms"))
+    return _wrap_value(CssTime, value, "ms")
 
 
 def deg(value: int | float) -> CssAngle:
     """Return a CSS angle value in degrees."""
-    return tp.cast("CssAngle", _wrap_value(CssAngle, value, "deg"))
+    return _wrap_value(CssAngle, value, "deg")
 
 
 def rgb(red: int, green: int, blue: int) -> CssColor:

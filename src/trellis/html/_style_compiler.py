@@ -9,6 +9,7 @@ import typing as tp
 from collections.abc import Mapping
 
 from trellis.html._css_primitives import CssValue
+from trellis.html._css_primitives import format_number as _format_number
 from trellis.html._generated_style_metadata import AUTO_PX_FIELDS, CSS_NAME_BY_FIELD
 from trellis.html._style_runtime import MediaRule, Style
 
@@ -172,14 +173,6 @@ def _serialize_value(value: tp.Any, *, auto_px: bool) -> str | int | float:
             return f"{_format_number(value)}px"
         return value
     return str(value)
-
-
-def _format_number(value: int | float) -> str:
-    if isinstance(value, int):
-        return str(value)
-    if value.is_integer():
-        return str(int(value))
-    return format(value, "g")
 
 
 def _media_query(rule: MediaRule) -> str:
