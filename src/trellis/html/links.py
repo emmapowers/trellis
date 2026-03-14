@@ -6,10 +6,12 @@ the generated HTML bindings, primarily router-aware anchors.
 
 from __future__ import annotations
 
+import typing as tp
 from collections.abc import Mapping
 
 from trellis.core.rendering.element import Element
-from trellis.html._generated_runtime import _A, Img
+from trellis.html._generated_interactive_elements import _A
+from trellis.html._generated_runtime import Img
 from trellis.routing.state import router
 
 __all__ = [
@@ -93,11 +95,11 @@ def _resolve_router_navigation(
 
 
 def A(
-    inner_text: object | None = None,
+    inner_text: str | None = None,
     /,
     *,
     use_router: bool = True,
-    **kwargs: object,
+    **kwargs: tp.Any,
 ) -> Element:
     """Render an anchor element.
 
@@ -123,7 +125,7 @@ def A(
             Set to False to force browser navigation for relative URLs.
         data: Custom data-* attributes keyed by DOM suffix (e.g. ``{"test-id": "x"}``)
     """
-    props: dict[str, object] = dict(kwargs)
+    props: dict[str, tp.Any] = dict(kwargs)
     _resolve_router_navigation(props, use_router)
 
     if inner_text is None:

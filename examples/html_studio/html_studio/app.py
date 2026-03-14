@@ -87,13 +87,11 @@ FONT_BODY = '"Optima", Candara, "Noto Sans", system-ui, sans-serif'
 FONT_MONO = '"SF Mono", "Cascadia Mono", "IBM Plex Mono", monospace'
 
 HERO_IMAGE = (
-    "https://images.unsplash.com/photo-1518005020951-eccb494ad742"
-    "?auto=format&fit=crop&w=1200&q=80"
+    "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1200&q=80"
 )
 
 DETAIL_IMAGE = (
-    "https://images.unsplash.com/photo-1497366811353-6870744d04b2"
-    "?auto=format&fit=crop&w=1200&q=80"
+    "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1200&q=80"
 )
 
 

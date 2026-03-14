@@ -80,7 +80,6 @@ __all__ = [
     "FrameStack",
     "KeyTrait",
     "LifecycleTracker",
-    "Margin",
     "Message",
     "MessageHandler",
     "MessageHandlerProtocol",

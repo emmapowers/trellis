@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import subprocess
-import sys
 import textwrap
 from pathlib import Path
 
@@ -11,7 +10,8 @@ from pathlib import Path
 def test_container_html_wrappers_type_as_html_container_element(tmp_path: Path) -> None:
     """Container wrappers should narrow to HtmlContainerElement for static typing."""
     snippet = textwrap.dedent(
-        """
+        """\
+        # pyright: reportUnusedCallResult=false, reportPrivateUsage=false
         from typing import assert_type
 
         from trellis import html as h
@@ -36,7 +36,7 @@ def test_container_html_wrappers_type_as_html_container_element(tmp_path: Path) 
     snippet_path.write_text(snippet)
 
     result = subprocess.run(
-        [sys.executable, "-m", "mypy", str(snippet_path)],
+        ["basedpyright", str(snippet_path)],
         check=False,
         capture_output=True,
         text=True,
