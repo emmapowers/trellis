@@ -2,294 +2,23 @@
 // Extracts a bundled zip archive on first run, then launches the real executable.
 #![windows_subsystem = "windows"]
 
+mod common;
+
 use std::fs;
-use std::io::{self, Read, Seek, SeekFrom};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{Command, ExitCode};
 
-use sha2::{Sha256, Digest};
+use common::{acquire_lock, extract_archive, read_footer, release_lock, show_error};
 
-const MAGIC: &[u8; 8] = b"TRLSPACK";
-const FOOTER_SIZE: u64 = 48; // 32 hex hash + 8 archive size + 8 magic
 const CLEANUP_DAYS: u64 = 90;
 
-fn wide(s: &str) -> Vec<u16> {
-    s.encode_utf16().chain(std::iter::once(0)).collect()
+fn get_cache_dir() -> Result<PathBuf, String> {
+    std::env::var("LOCALAPPDATA")
+        .map(|p| PathBuf::from(p).join("{{ product_name }}"))
+        .map_err(|_| "LOCALAPPDATA not set".into())
 }
 
-fn show_error(msg: &str) -> ! {
-    #[link(name = "user32")]
-    extern "system" {
-        fn MessageBoxW(hwnd: *mut u8, text: *const u16, caption: *const u16, typ: u32) -> i32;
-    }
-    let text = wide(msg);
-    let caption = wide("{{ product_name }}");
-    unsafe { MessageBoxW(std::ptr::null_mut(), text.as_ptr(), caption.as_ptr(), 0x10) };
-    std::process::exit(1);
-}
-
-struct Footer {
-    hash: String,
-    archive_size: u64,
-}
-
-fn read_footer(exe_path: &Path) -> Result<Footer, String> {
-    let mut f = fs::File::open(exe_path).map_err(|e| format!("open self: {e}"))?;
-    let file_len = f.metadata().map_err(|e| format!("metadata: {e}"))?.len();
-    if file_len < FOOTER_SIZE {
-        return Err("file too small".into());
-    }
-    f.seek(SeekFrom::End(-(FOOTER_SIZE as i64)))
-        .map_err(|e| format!("seek: {e}"))?;
-
-    let mut footer = [0u8; FOOTER_SIZE as usize];
-    f.read_exact(&mut footer)
-        .map_err(|e| format!("read footer: {e}"))?;
-
-    if &footer[40..48] != MAGIC {
-        return Err("magic mismatch".into());
-    }
-
-    let hash = std::str::from_utf8(&footer[0..32])
-        .map_err(|_| "invalid hash")?
-        .to_string();
-    if hash.len() != 32 || !hash.chars().all(|c| c.is_ascii_hexdigit()) {
-        return Err("invalid hash: expected 32 hex characters".into());
-    }
-    let archive_size = u64::from_le_bytes(footer[32..40].try_into().unwrap());
-    if archive_size == 0 || archive_size > file_len - FOOTER_SIZE {
-        return Err("invalid archive size".into());
-    }
-
-    Ok(Footer { hash, archive_size })
-}
-
-fn extract_archive(exe_path: &Path, footer: &Footer, dest: &Path) -> Result<(), String> {
-    let mut f = fs::File::open(exe_path).map_err(|e| format!("open self: {e}"))?;
-    let file_len = f.metadata().map_err(|e| format!("metadata: {e}"))?.len();
-    let archive_start = file_len - FOOTER_SIZE - footer.archive_size;
-
-    f.seek(SeekFrom::Start(archive_start))
-        .map_err(|e| format!("seek: {e}"))?;
-
-    let mut archive_data = vec![0u8; footer.archive_size as usize];
-    f.read_exact(&mut archive_data)
-        .map_err(|e| format!("read archive: {e}"))?;
-
-    let computed = format!("{:x}", Sha256::digest(&archive_data));
-    if &computed[..32] != footer.hash {
-        return Err("archive integrity check failed: hash mismatch".into());
-    }
-
-    let cursor = io::Cursor::new(archive_data);
-    let mut archive = zip::ZipArchive::new(cursor).map_err(|e| format!("open zip: {e}"))?;
-
-    let total = archive.len();
-
-    // Progress window
-    let (hwnd, progress) = create_progress_window(total as u32);
-
-    for i in 0..total {
-        let mut entry = archive.by_index(i).map_err(|e| format!("zip entry: {e}"))?;
-        let name = entry.name().to_string();
-        if name.contains("..") || name.starts_with('/') || name.starts_with('\\') || name.contains(':') {
-            return Err(format!("zip entry contains path traversal: {name}"));
-        }
-        let out_path = dest.join(&name);
-
-        if entry.is_dir() {
-            fs::create_dir_all(&out_path).map_err(|e| format!("mkdir {name}: {e}"))?;
-        } else {
-            if let Some(parent) = out_path.parent() {
-                fs::create_dir_all(parent).map_err(|e| format!("mkdir parent: {e}"))?;
-            }
-            let mut out_file =
-                fs::File::create(&out_path).map_err(|e| format!("create {name}: {e}"))?;
-            io::copy(&mut entry, &mut out_file).map_err(|e| format!("write {name}: {e}"))?;
-        }
-        update_progress(progress, i as u32 + 1);
-    }
-
-    destroy_progress_window(hwnd);
-    Ok(())
-}
-
-// --- Win32 progress window ---
-
-#[link(name = "kernel32")]
-extern "system" {
-    fn GetModuleHandleW(name: *const u16) -> *mut u8;
-}
-
-#[link(name = "user32")]
-extern "system" {
-    fn RegisterClassExW(wc: *const WndClassExW) -> u16;
-    fn CreateWindowExW(
-        ex_style: u32,
-        class: *const u16,
-        title: *const u16,
-        style: u32,
-        x: i32, y: i32, w: i32, h: i32,
-        parent: *mut u8,
-        menu: *mut u8,
-        instance: *mut u8,
-        param: *mut u8,
-    ) -> *mut u8;
-    fn ShowWindow(hwnd: *mut u8, cmd: i32) -> i32;
-    fn UpdateWindow(hwnd: *mut u8) -> i32;
-    fn DestroyWindow(hwnd: *mut u8) -> i32;
-    fn DefWindowProcW(hwnd: *mut u8, msg: u32, wp: usize, lp: isize) -> isize;
-    fn PeekMessageW(msg: *mut [u8; 48], hwnd: *mut u8, min: u32, max: u32, remove: u32) -> i32;
-    fn TranslateMessage(msg: *const [u8; 48]) -> i32;
-    fn DispatchMessageW(msg: *const [u8; 48]) -> isize;
-    fn SendMessageW(hwnd: *mut u8, msg: u32, wp: usize, lp: isize) -> isize;
-}
-
-#[link(name = "comctl32")]
-extern "system" {
-    fn InitCommonControlsEx(icc: *const InitCommonControlsEx) -> i32;
-}
-
-#[repr(C)]
-struct InitCommonControlsEx {
-    size: u32,
-    icc: u32,
-}
-
-#[repr(C)]
-struct WndClassExW {
-    size: u32,
-    style: u32,
-    wnd_proc: unsafe extern "system" fn(*mut u8, u32, usize, isize) -> isize,
-    cls_extra: i32,
-    wnd_extra: i32,
-    instance: *mut u8,
-    icon: *mut u8,
-    cursor: *mut u8,
-    background: *mut u8,
-    menu_name: *const u16,
-    class_name: *const u16,
-    icon_sm: *mut u8,
-}
-
-unsafe extern "system" fn wnd_proc(hwnd: *mut u8, msg: u32, wp: usize, lp: isize) -> isize {
-    DefWindowProcW(hwnd, msg, wp, lp)
-}
-
-fn create_progress_window(total: u32) -> (*mut u8, *mut u8) {
-    unsafe {
-        let icc = InitCommonControlsEx { size: 8, icc: 0x20 }; // ICC_PROGRESS_CLASS
-        InitCommonControlsEx(&icc);
-
-        let instance = GetModuleHandleW(std::ptr::null());
-        let class_name = wide("TrlsLauncher");
-        let wc = WndClassExW {
-            size: std::mem::size_of::<WndClassExW>() as u32,
-            style: 0,
-            wnd_proc,
-            cls_extra: 0,
-            wnd_extra: 0,
-            instance,
-            icon: std::ptr::null_mut(),
-            cursor: std::ptr::null_mut(),
-            background: (5 + 1) as *mut u8, // COLOR_WINDOW + 1
-            menu_name: std::ptr::null(),
-            class_name: class_name.as_ptr(),
-            icon_sm: std::ptr::null_mut(),
-        };
-        RegisterClassExW(&wc);
-
-        // WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU
-        let style: u32 = 0x00C0_0000 | 0x0008_0000;
-        let title = wide("Extracting {{ product_name }}...");
-        let hwnd = CreateWindowExW(
-            0,
-            class_name.as_ptr(),
-            title.as_ptr(),
-            style,
-            0x8000_0000u32 as i32, 0x8000_0000u32 as i32, // CW_USEDEFAULT
-            420, 80,
-            std::ptr::null_mut(),
-            std::ptr::null_mut(),
-            instance,
-            std::ptr::null_mut(),
-        );
-
-        let progress_class = wide("msctls_progress32");
-        // WS_CHILD | WS_VISIBLE
-        let progress = CreateWindowExW(
-            0,
-            progress_class.as_ptr(),
-            std::ptr::null(),
-            0x4000_0000 | 0x1000_0000,
-            10, 10, 385, 25,
-            hwnd,
-            std::ptr::null_mut(),
-            instance,
-            std::ptr::null_mut(),
-        );
-
-        // PBM_SETRANGE32 = 0x0406
-        SendMessageW(progress, 0x0406, 0, total as isize);
-
-        ShowWindow(hwnd, 1); // SW_SHOWNORMAL
-        UpdateWindow(hwnd);
-
-        (hwnd, progress)
-    }
-}
-
-fn update_progress(progress: *mut u8, pos: u32) {
-    unsafe {
-        // PBM_SETPOS = 0x0402
-        SendMessageW(progress, 0x0402, pos as usize, 0);
-
-        // Pump messages to keep window responsive
-        let mut msg = [0u8; 48];
-        while PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, 1) != 0 {
-            TranslateMessage(&msg);
-            DispatchMessageW(&msg);
-        }
-    }
-}
-
-fn destroy_progress_window(hwnd: *mut u8) {
-    unsafe {
-        DestroyWindow(hwnd);
-    }
-}
-
-// --- Lock file ---
-
-fn acquire_lock(lock_path: &Path) -> Result<fs::File, String> {
-    fs::create_dir_all(lock_path.parent().unwrap())
-        .map_err(|e| format!("create lock dir: {e}"))?;
-
-    for _ in 0..300 {
-        // 30 seconds max
-        match fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(lock_path)
-        {
-            Ok(f) => return Ok(f),
-            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {
-                std::thread::sleep(std::time::Duration::from_millis(100));
-            }
-            Err(e) => return Err(format!("lock: {e}")),
-        }
-    }
-    Err("timeout waiting for lock".into())
-}
-
-fn release_lock(lock_file: fs::File, lock_path: &Path) {
-    drop(lock_file);
-    let _ = fs::remove_file(lock_path);
-}
-
-// --- Cleanup ---
-
-fn cleanup_old_versions(cache_dir: &Path, current_hash: &str) {
+fn cleanup_old_versions(cache_dir: &std::path::Path, current_hash: &str) {
     let Ok(entries) = fs::read_dir(cache_dir) else {
         return;
     };
@@ -312,12 +41,6 @@ fn cleanup_old_versions(cache_dir: &Path, current_hash: &str) {
             }
         }
     }
-}
-
-fn get_cache_dir() -> Result<PathBuf, String> {
-    std::env::var("LOCALAPPDATA")
-        .map(|p| PathBuf::from(p).join("{{ product_name }}"))
-        .map_err(|_| "LOCALAPPDATA not set".into())
 }
 
 fn main() -> ExitCode {
@@ -350,7 +73,7 @@ fn main() -> ExitCode {
                 let _ = fs::remove_dir_all(&temp_dir);
             }
 
-            if let Err(e) = extract_archive(&exe_path, &footer, &temp_dir) {
+            if let Err(e) = extract_archive(&exe_path, &footer, &temp_dir, "Extracting {{ product_name }}...") {
                 let _ = fs::remove_dir_all(&temp_dir);
                 release_lock(lock_file, &lock_path);
                 show_error(&format!("Extraction failed: {e}"));

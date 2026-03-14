@@ -1,48 +1,44 @@
 """Entry point for standalone packaged Trellis applications.
 
 Invoked by the pytauri standalone binary via PythonScript::Module.
-Reads the user's app module from TRELLIS_APP_MODULE environment variable,
-discovers the App instance, and starts the desktop runtime.
+Uses AppLoader to discover trellis_config.py (via TRELLIS_APP_ROOT)
+and load the app with full configuration support.
 """
 
 from __future__ import annotations
 
 import asyncio
-import importlib
-import os
 from typing import Any
 
-from trellis.app.app import App
-from trellis.platforms.desktop import DesktopPlatform
-
-
-def _find_app(module_name: str) -> App:
-    """Import the user module and find the App instance."""
-    mod = importlib.import_module(module_name)
-    obj = getattr(mod, "app", None)
-    if isinstance(obj, App):
-        return obj
-    raise RuntimeError(
-        f"No App instance found in {module_name}. "
-        "Your app module must define: app = App(RootComponent)"
-    )
+from trellis.app.apploader import AppLoader, resolve_app_root, set_apploader
 
 
 def main() -> None:
-    module_name = os.environ.get("TRELLIS_APP_MODULE")
-    if not module_name:
-        raise RuntimeError(
-            "TRELLIS_APP_MODULE environment variable not set. "
-            "This entry point is meant to be called from a pytauri standalone binary."
-        )
+    app_root = resolve_app_root()
+    apploader = AppLoader(app_root)
+    apploader.load_config()
+    set_apploader(apploader)
+    apploader.load_app()
 
-    app = _find_app(module_name)
-    platform = DesktopPlatform()
+    app = apploader.app
+    config = apploader.config
+    assert app is not None
+    assert config is not None
+
+    run_kwargs: dict[str, Any] = {
+        "batch_delay": config.batch_delay,
+        "hot_reload": False,
+        "window_title": config.title,
+    }
+    if config.window_size != "maximized":
+        parts = config.window_size.split("x")
+        run_kwargs["window_width"] = int(parts[0])
+        run_kwargs["window_height"] = int(parts[1])
 
     def app_wrapper(_component: Any, system_theme: str, theme_mode: str | None) -> Any:
         return app.get_wrapped_top(system_theme, theme_mode)
 
-    asyncio.run(platform.run(app.top, app_wrapper))
+    asyncio.run(apploader.platform.run(app.top, app_wrapper, **run_kwargs))
 
 
 main()

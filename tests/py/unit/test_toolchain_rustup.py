@@ -1,4 +1,4 @@
-"""Unit tests for trellis.toolchain.rustup module."""
+"""Unit tests for trellis.packaging.toolchain.rustup module."""
 
 from __future__ import annotations
 
@@ -7,9 +7,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from trellis.toolchain import MINIMUM_RUST_VERSION
-from trellis.toolchain.platform import get_rust_target
-from trellis.toolchain.rustup import RustToolchain, _check_rustc_version, ensure_rustup
+from trellis.packaging.toolchain import MINIMUM_RUST_VERSION
+from trellis.packaging.toolchain.platform import get_rust_target
+from trellis.packaging.toolchain.rustup import RustToolchain, _check_rustc_version, ensure_rustup
 
 
 class TestGetRustTarget:
@@ -130,7 +130,7 @@ class TestEnsureRustup:
 
         with (
             patch(
-                "trellis.toolchain.rustup.shutil.which",
+                "trellis.packaging.toolchain.rustup.shutil.which",
                 side_effect=which_map.get,
             ),
             patch("subprocess.run", mock_run),
@@ -159,12 +159,12 @@ class TestEnsureRustup:
 
         with (
             patch(
-                "trellis.toolchain.rustup.shutil.which",
+                "trellis.packaging.toolchain.rustup.shutil.which",
                 side_effect=which_map.get,
             ),
             patch("subprocess.run", mock_run),
             patch.dict("os.environ", {}, clear=True),
-            patch("trellis.toolchain.rustup.CACHE_DIR", tmp_path / "cache"),
+            patch("trellis.packaging.toolchain.rustup.CACHE_DIR", tmp_path / "cache"),
         ):
             ensure_rustup()
 
@@ -193,12 +193,12 @@ class TestEnsureRustup:
 
         with (
             patch(
-                "trellis.toolchain.rustup.shutil.which",
+                "trellis.packaging.toolchain.rustup.shutil.which",
                 side_effect=which_map.get,
             ),
             patch("subprocess.run", mock_run),
             patch.dict("os.environ", {}, clear=True),
-            patch("trellis.toolchain.rustup.CACHE_DIR", cache_dir),
+            patch("trellis.packaging.toolchain.rustup.CACHE_DIR", cache_dir),
         ):
             ensure_rustup()
 
@@ -227,7 +227,7 @@ class TestEnsureRustup:
 
         with (
             patch(
-                "trellis.toolchain.rustup.shutil.which",
+                "trellis.packaging.toolchain.rustup.shutil.which",
                 side_effect=which_map.get,
             ),
             patch("subprocess.run", mock_run),
@@ -252,10 +252,10 @@ class TestEnsureRustup:
         mock_run.return_value.stdout = f"rustc {MINIMUM_RUST_VERSION} (hash 2025-01-01)"
 
         with (
-            patch("trellis.toolchain.rustup.shutil.which", return_value=None),
+            patch("trellis.packaging.toolchain.rustup.shutil.which", return_value=None),
             patch("subprocess.run", mock_run),
             patch("httpx.stream", return_value=mock_response) as mock_stream,
-            patch("trellis.toolchain.rustup.CACHE_DIR", cache_dir),
+            patch("trellis.packaging.toolchain.rustup.CACHE_DIR", cache_dir),
             patch.dict("os.environ", {}, clear=True),
         ):
             result = ensure_rustup()

@@ -13,14 +13,14 @@ from typing import TYPE_CHECKING
 
 import jinja2
 
-from trellis.packaging.portable import _make_cargo_name, build_installer_exe, build_portable_exe
-from trellis.toolchain import (
+from trellis.packaging.portable import _make_cargo_name, build_windows_exe
+from trellis.packaging.toolchain import (
     PYTHON_STANDALONE_VERSION,
     ensure_python_standalone,
     ensure_rustup,
     ensure_tauri_cli,
 )
-from trellis.toolchain.rustup import RustToolchain
+from trellis.packaging.toolchain.rustup import RustToolchain
 
 if TYPE_CHECKING:
     from trellis.app.config import Config
@@ -36,12 +36,12 @@ def _generate_default_icon(path: Path) -> None:
     img.save(path, "PNG")
 
 
-def _parse_window_size(window_size: str) -> tuple[int, int]:
-    """Parse window size string into (width, height). Defaults to 1024x768 for 'maximized'."""
+def _parse_window_size(window_size: str) -> tuple[int, int, bool]:
+    """Parse window size string into (width, height, maximized)."""
     if window_size == "maximized":
-        return 1024, 768
+        return 1024, 768, True
     parts = window_size.split("x")
-    return int(parts[0]), int(parts[1])
+    return int(parts[0]), int(parts[1]), False
 
 
 def generate_tauri_scaffold(*, scaffold_dir: Path, config: Config, dist_path: Path) -> None:
@@ -62,7 +62,7 @@ def generate_tauri_scaffold(*, scaffold_dir: Path, config: Config, dist_path: Pa
     raw_slug = re.sub(r"[^a-z0-9-]", "-", config.name.lower()).strip("-")
     identifier = config.identifier or f"com.trellis.{raw_slug}"
     version = config.version or "0.1.0"
-    window_width, window_height = _parse_window_size(config.window_size)
+    window_width, window_height, window_maximized = _parse_window_size(config.window_size)
 
     # Cargo package names: lowercase, alphanumeric/hyphens/underscores only
     cargo_name = _make_cargo_name(config.name)
@@ -72,10 +72,10 @@ def generate_tauri_scaffold(*, scaffold_dir: Path, config: Config, dist_path: Pa
         "product_name": config.title or config.name,
         "version": version,
         "identifier": identifier,
-        "module": config.module,
         "window_title": config.title or config.name,
         "window_width": window_width,
         "window_height": window_height,
+        "window_maximized": window_maximized,
         "update_url": config.update_url,
         "update_pubkey": config.update_pubkey or "",
         "is_windows": sys.platform == "win32",
@@ -174,6 +174,11 @@ def install_app_into_portable_python(
         ],
         check=True,
     )
+
+    # Copy trellis_config.py so AppLoader can discover it at runtime
+    config_src = app_root / "trellis_config.py"
+    if config_src.exists():
+        shutil.copy2(config_src, pyembed_dir / "trellis_config.py")
 
 
 def _patch_libpython_install_name(pyembed_dir: Path) -> None:
@@ -305,6 +310,29 @@ _LINUX_REQUIRED_LIBS = [
 ]
 
 
+def _check_macos_dev_tools() -> None:
+    """Check that Xcode Command Line Tools are installed on macOS.
+
+    Raises RuntimeError with install instructions if missing.
+    """
+    if sys.platform != "darwin":
+        return
+
+    result = subprocess.run(
+        ["xcode-select", "-p"],
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            "Xcode Command Line Tools are required to build a Tauri desktop app on macOS.\n\n"
+            "Install them with:\n"
+            "  xcode-select --install\n\n"
+            "For more information, see:\n"
+            "  https://developer.apple.com/xcode/resources/"
+        )
+
+
 def _check_linux_system_deps() -> None:
     """Check that required system libraries are available on Linux.
 
@@ -337,11 +365,17 @@ def _check_linux_system_deps() -> None:
     )
 
 
-def _tauri_bundles(*, installer: bool, platform: str) -> list[str]:
+def _tauri_bundles(
+    *, installer: bool, platform: str, bundles: list[str] | None = None
+) -> list[str]:
     """Return the Tauri bundle types for a given mode and platform.
 
+    When *bundles* is provided, it is used directly. Otherwise, default
+    bundle types are chosen based on *installer* and *platform*.
     Windows uses self-extracting exe (post-processed), so Tauri gets --no-bundle.
     """
+    if bundles:
+        return bundles
     if platform == "win32":
         return []
     if platform == "darwin":
@@ -358,6 +392,7 @@ def run_tauri_build(
     pyembed_dir: Path,
     product_name: str,
     installer: bool = False,
+    bundles: list[str] | None = None,
 ) -> Path:
     """Run the Tauri build process.
 
@@ -372,7 +407,7 @@ def run_tauri_build(
     Returns:
         Path to the Tauri bundle output directory.
     """
-    tauri_bundles = _tauri_bundles(installer=installer, platform=sys.platform)
+    tauri_bundles = _tauri_bundles(installer=installer, platform=sys.platform, bundles=bundles)
 
     _patch_libpython_install_name(pyembed_dir)
     _generate_cargo_config(
@@ -470,6 +505,7 @@ def build_desktop_app_bundle(
     app_root: Path,
     output_dir: Path | None,
     installer: bool = False,
+    bundles: list[str] | None = None,
 ) -> Path:
     """Build a desktop app bundle with Tauri.
 
@@ -491,6 +527,7 @@ def build_desktop_app_bundle(
     Returns:
         Path to the output directory containing the built artifacts
     """
+    _check_macos_dev_tools()
     _check_linux_system_deps()
 
     # 1. Ensure toolchains
@@ -531,6 +568,7 @@ def build_desktop_app_bundle(
         pyembed_dir=pyembed_dir,
         product_name=product_name,
         installer=installer,
+        bundles=bundles,
     )
 
     # 5. Copy output to destination
@@ -548,24 +586,15 @@ def build_desktop_app_bundle(
         cargo_name = _make_cargo_name(product_name)
         exe_name = cargo_name + ".exe"
 
-        if installer:
-            build_installer_exe(
-                rust=rust,
-                scaffold_dir=scaffold_dir,
-                product_name=product_name,
-                exe_name=exe_name,
-                version=version,
-                output_dir=dest,
-            )
-        else:
-            build_portable_exe(
-                rust=rust,
-                scaffold_dir=scaffold_dir,
-                product_name=product_name,
-                exe_name=exe_name,
-                version=version,
-                output_dir=dest,
-            )
+        build_windows_exe(
+            rust=rust,
+            scaffold_dir=scaffold_dir,
+            product_name=product_name,
+            exe_name=exe_name,
+            version=version,
+            output_dir=dest,
+            installer=installer,
+        )
 
     return dest
 

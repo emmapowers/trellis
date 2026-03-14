@@ -14,7 +14,7 @@ import httpx
 from packaging.version import Version
 
 from trellis.bundler.utils import CACHE_DIR
-from trellis.toolchain.platform import get_rust_target
+from trellis.packaging.toolchain.platform import get_rust_target
 
 # Imported from __init__ at runtime; defined here to avoid circular import
 # during testing. Tests patch the constant via the module where it's used.

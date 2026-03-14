@@ -15,15 +15,17 @@ from trellis.app.config import Config
 from trellis.packaging.tauri import (
     _LINUX_REQUIRED_LIBS,
     _check_linux_system_deps,
+    _check_macos_dev_tools,
     _generate_cargo_config,
+    _parse_window_size,
     _tauri_bundles,
     build_desktop_app_bundle,
     generate_tauri_scaffold,
     install_app_into_portable_python,
     run_tauri_build,
 )
+from trellis.packaging.toolchain.rustup import RustToolchain
 from trellis.platforms.common.base import PlatformType
-from trellis.toolchain.rustup import RustToolchain
 
 
 def _make_rust_toolchain(tmp_path: Path) -> RustToolchain:
@@ -92,7 +94,8 @@ class TestGenerateTauriScaffold:
         assert tauri_conf["identifier"] == "com.example.myapp"
 
         main_rs = (scaffold_dir / "src" / "main.rs").read_text()
-        assert "myapp.main" in main_rs
+        assert "TRELLIS_APP_ROOT" in main_rs
+        assert "standalone_entry" in main_rs
 
     def test_updater_config_included_when_update_url_set(self, tmp_path: Path) -> None:
         config = Config(
@@ -335,6 +338,42 @@ class TestInstallAppIntoPortablePython:
             "--no-warn-script-location",
         ]
 
+    def test_copies_trellis_config_to_pyembed(self, tmp_path: Path) -> None:
+        standalone_base = tmp_path / "python-install"
+        standalone_base.mkdir()
+        bin_dir = standalone_base / "bin"
+        bin_dir.mkdir()
+        (bin_dir / "python3").write_text("fake")
+        app_root = tmp_path / "app"
+        app_root.mkdir()
+        (app_root / "trellis_config.py").write_text("config = 'test'")
+        pyembed_dir = tmp_path / "pyembed"
+
+        with (
+            patch("subprocess.run"),
+            patch("trellis.packaging.tauri.sys") as mock_sys,
+        ):
+            mock_sys.platform = "darwin"
+            install_app_into_portable_python(
+                standalone_base=standalone_base, app_root=app_root, pyembed_dir=pyembed_dir
+            )
+
+        assert (pyembed_dir / "trellis_config.py").exists()
+        assert (pyembed_dir / "trellis_config.py").read_text() == "config = 'test'"
+
+
+class TestParseWindowSize:
+    """Tests for _parse_window_size."""
+
+    def test_explicit_dimensions(self) -> None:
+        assert _parse_window_size("800x600") == (800, 600, False)
+
+    def test_maximized(self) -> None:
+        width, height, maximized = _parse_window_size("maximized")
+        assert maximized is True
+        assert width == 1024
+        assert height == 768
+
 
 class TestTauriBundles:
     """Tests for _tauri_bundles bundle type resolution."""
@@ -352,6 +391,9 @@ class TestTauriBundles:
     )
     def test_bundle_types(self, platform: str, installer: bool, expected: list[str]) -> None:
         assert _tauri_bundles(installer=installer, platform=platform) == expected
+
+    def test_explicit_bundles_override_defaults(self) -> None:
+        assert _tauri_bundles(installer=False, platform="linux", bundles=["rpm"]) == ["rpm"]
 
 
 class TestRunTauriBuild:
@@ -487,6 +529,7 @@ class TestBuildDesktopAppBundle:
             return mock_python
 
         with (
+            patch("trellis.packaging.tauri._check_macos_dev_tools"),
             patch("trellis.packaging.tauri._check_linux_system_deps"),
             patch("trellis.packaging.tauri.ensure_rustup", side_effect=track_rustup),
             patch("trellis.packaging.tauri.ensure_tauri_cli", side_effect=track_tauri_cli),
@@ -498,8 +541,7 @@ class TestBuildDesktopAppBundle:
                 return_value=tmp_path / "output",
             ),
             # Skip Windows self-extracting exe build in unit tests
-            patch("trellis.packaging.tauri.build_portable_exe", return_value=tmp_path / "out.exe"),
-            patch("trellis.packaging.tauri.build_installer_exe", return_value=tmp_path / "out.exe"),
+            patch("trellis.packaging.tauri.build_windows_exe", return_value=tmp_path / "out.exe"),
         ):
             build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
 
@@ -526,6 +568,7 @@ class TestBuildDesktopAppBundle:
         mock_python.base_dir = tmp_path / "python-install"
 
         with (
+            patch("trellis.packaging.tauri._check_macos_dev_tools"),
             patch("trellis.packaging.tauri._check_linux_system_deps"),
             patch("trellis.packaging.tauri.ensure_rustup", return_value=mock_rust),
             patch("trellis.packaging.tauri.ensure_tauri_cli", return_value=tmp_path / "cli"),
@@ -533,8 +576,7 @@ class TestBuildDesktopAppBundle:
             patch("trellis.packaging.tauri.generate_tauri_scaffold"),
             patch("trellis.packaging.tauri.install_app_into_portable_python"),
             patch("trellis.packaging.tauri.run_tauri_build", return_value=bundle_dir),
-            patch("trellis.packaging.tauri.build_portable_exe", return_value=tmp_path / "out.exe"),
-            patch("trellis.packaging.tauri.build_installer_exe", return_value=tmp_path / "out.exe"),
+            patch("trellis.packaging.tauri.build_windows_exe", return_value=tmp_path / "out.exe"),
         ):
             result = build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
 
@@ -652,6 +694,38 @@ class TestOutputCopying:
             )
 
         assert (result / "myapp-1.0.0.dmg").exists()
+
+
+class TestCheckMacosDevTools:
+    """Tests for _check_macos_dev_tools preflight check."""
+
+    def test_skipped_on_non_macos(self) -> None:
+        with patch("trellis.packaging.tauri.sys") as mock_sys:
+            mock_sys.platform = "linux"
+            _check_macos_dev_tools()  # Should not raise
+
+    def test_passes_when_xcode_tools_installed(self) -> None:
+        with (
+            patch("trellis.packaging.tauri.sys") as mock_sys,
+            patch("trellis.packaging.tauri.subprocess.run") as mock_run,
+        ):
+            mock_sys.platform = "darwin"
+            mock_run.return_value = MagicMock(returncode=0)
+            _check_macos_dev_tools()  # Should not raise
+
+    def test_raises_when_xcode_tools_missing(self) -> None:
+        with (
+            patch("trellis.packaging.tauri.sys") as mock_sys,
+            patch(
+                "trellis.packaging.tauri.subprocess.run",
+                return_value=MagicMock(returncode=2),
+            ),
+        ):
+            mock_sys.platform = "darwin"
+            with pytest.raises(RuntimeError, match="Xcode Command Line Tools") as exc_info:
+                _check_macos_dev_tools()
+
+        assert "xcode-select --install" in str(exc_info.value)
 
 
 class TestCheckLinuxSystemDeps:

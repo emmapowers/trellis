@@ -52,6 +52,43 @@ def test_package_builds_bundle_and_invokes_tauri(
     mock_build.assert_called_once()
 
 
+def test_package_rejects_bundles_with_installer(write_app: WriteApp) -> None:
+    app_root = write_app(name="desktop-app", module="main", platform="DESKTOP")
+    runner = CliRunner()
+
+    result = runner.invoke(
+        trellis,
+        ["--app-root", str(app_root), "package", "--bundles", "nsis", "--installer"],
+    )
+
+    assert result.exit_code != 0
+    assert "cannot be used together" in result.output.lower()
+
+
+def test_package_passes_bundles_to_build(
+    write_app: WriteApp,
+    reset_apploader: None,
+) -> None:
+    app_root = write_app(name="desktop-app", module="main", platform="DESKTOP")
+    expected_path = app_root / "package" / "desktop-app"
+    runner = CliRunner()
+
+    with (
+        patch.object(AppLoader, "bundle"),
+        patch(
+            "trellis.cli.package.build_desktop_app_bundle", return_value=expected_path
+        ) as mock_build,
+    ):
+        result = runner.invoke(
+            trellis,
+            ["--app-root", str(app_root), "package", "--bundles", "nsis,rpm"],
+        )
+
+    assert result.exit_code == 0, result.output
+    mock_build.assert_called_once()
+    assert mock_build.call_args.kwargs["bundles"] == ["nsis", "rpm"]
+
+
 def test_package_accepts_platform_override_and_bakes_desktop_config(
     write_app: WriteApp,
     reset_apploader: None,

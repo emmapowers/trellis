@@ -12,7 +12,7 @@ from pathlib import Path
 
 import jinja2
 
-from trellis.toolchain.rustup import RustToolchain
+from trellis.packaging.toolchain.rustup import RustToolchain
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 
@@ -145,6 +145,7 @@ def _generate_launcher_scaffold(
     file_map = {
         "Cargo.toml.j2": "Cargo.toml",
         main_template: "src/main.rs",
+        "common.rs.j2": "src/common.rs",
     }
 
     if icon_path and icon_path.exists():
@@ -192,7 +193,7 @@ def _assemble_portable_exe(launcher_exe: Path, archive_path: Path, output_path: 
         f.write(PORTABLE_MAGIC)
 
 
-def build_portable_exe(
+def build_windows_exe(
     *,
     rust: RustToolchain,
     scaffold_dir: Path,
@@ -200,13 +201,17 @@ def build_portable_exe(
     exe_name: str,
     version: str,
     output_dir: Path,
+    installer: bool = False,
 ) -> Path:
-    """Build a portable single-exe bundle.
+    """Build a self-extracting Windows exe (portable or installer).
 
     Orchestrates: collect files -> create archive -> build launcher -> assemble.
 
+    When *installer* is True, the launcher installs to %LOCALAPPDATA% with a
+    Start Menu shortcut and Add/Remove Programs uninstaller entry.
+
     Returns:
-        Path to the assembled portable exe
+        Path to the assembled exe
     """
     release_dir = scaffold_dir / "target" / "release"
 
@@ -214,7 +219,8 @@ def build_portable_exe(
     if not files:
         raise RuntimeError(f"No app files found in {release_dir}")
 
-    build_dir = scaffold_dir / "target" / "portable-build"
+    build_label = "installer-build" if installer else "portable-build"
+    build_dir = scaffold_dir / "target" / build_label
     build_dir.mkdir(parents=True, exist_ok=True)
     archive_path = build_dir / "app.zip"
     _create_archive(files, archive_path)
@@ -222,59 +228,19 @@ def build_portable_exe(
     cargo_name = _make_cargo_name(product_name)
     launcher_dir = build_dir / "launcher"
     icon_path = scaffold_dir / "icons" / "icon.ico"
-    _generate_launcher_scaffold(launcher_dir, product_name, exe_name, cargo_name, icon_path)
-    launcher_exe = _build_launcher(rust, launcher_dir, cargo_name)
-
-    output_path = output_dir / _output_filename(product_name, version, "exe")
-    _assemble_portable_exe(launcher_exe, archive_path, output_path)
-
-    return output_path
-
-
-def build_installer_exe(
-    *,
-    rust: RustToolchain,
-    scaffold_dir: Path,
-    product_name: str,
-    exe_name: str,
-    version: str,
-    output_dir: Path,
-) -> Path:
-    """Build an installer single-exe bundle.
-
-    Like build_portable_exe but installs to %LOCALAPPDATA% with a Start Menu
-    shortcut and Add/Remove Programs uninstaller. Uses the content hash to
-    detect changes and re-extract when the bundle contents differ.
-
-    Returns:
-        Path to the assembled installer exe
-    """
-    release_dir = scaffold_dir / "target" / "release"
-
-    files = _collect_app_files(release_dir, exe_name)
-    if not files:
-        raise RuntimeError(f"No app files found in {release_dir}")
-
-    build_dir = scaffold_dir / "target" / "installer-build"
-    build_dir.mkdir(parents=True, exist_ok=True)
-    archive_path = build_dir / "app.zip"
-    _create_archive(files, archive_path)
-
-    cargo_name = _make_cargo_name(product_name)
-    launcher_dir = build_dir / "launcher"
-    icon_path = scaffold_dir / "icons" / "icon.ico"
+    mode = "installer" if installer else "portable"
     _generate_launcher_scaffold(
         launcher_dir,
         product_name,
         exe_name,
         cargo_name,
         icon_path,
-        mode="installer",
+        mode=mode,
         version=version,
     )
     launcher_exe = _build_launcher(rust, launcher_dir, cargo_name)
 
-    output_path = output_dir / _output_filename(product_name, version, "exe", installer=True)
+    output_path = output_dir / _output_filename(product_name, version, "exe", installer=installer)
     _assemble_portable_exe(launcher_exe, archive_path, output_path)
 
     return output_path

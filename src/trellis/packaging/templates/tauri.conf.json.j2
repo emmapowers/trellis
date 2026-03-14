@@ -13,7 +13,8 @@
         "title": {{ window_title | tojson }},
         "width": {{ window_width }},
         "height": {{ window_height }},
-        "visible": false
+{% if window_maximized %}        "maximized": true,
+{% endif %}        "visible": false
       }
     ]
   },

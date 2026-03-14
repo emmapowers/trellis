@@ -1,4 +1,4 @@
-"""Unit tests for trellis.toolchain.tauri_cli module."""
+"""Unit tests for trellis.packaging.toolchain.tauri_cli module."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ import zipfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from trellis.toolchain.rustup import RustToolchain
-from trellis.toolchain.tauri_cli import ensure_tauri_cli
+from trellis.packaging.toolchain.rustup import RustToolchain
+from trellis.packaging.toolchain.tauri_cli import ensure_tauri_cli
 
 
 def _make_rust_toolchain(tmp_path: Path) -> RustToolchain:
@@ -38,10 +38,11 @@ class TestEnsureTauriCli:
         rust = _make_rust_toolchain(tmp_path)
 
         with (
-            patch("trellis.toolchain.tauri_cli.BIN_DIR", tmp_path),
-            patch("trellis.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
+            patch("trellis.packaging.toolchain.tauri_cli.BIN_DIR", tmp_path),
+            patch("trellis.packaging.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
             patch(
-                "trellis.toolchain.tauri_cli.get_rust_target", return_value="aarch64-apple-darwin"
+                "trellis.packaging.toolchain.tauri_cli.get_rust_target",
+                return_value="aarch64-apple-darwin",
             ),
         ):
             # Create fake cached binary (target-scoped)
@@ -72,10 +73,10 @@ class TestEnsureTauriCli:
         mock_response.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch("trellis.toolchain.tauri_cli.BIN_DIR", tmp_path),
-            patch("trellis.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
+            patch("trellis.packaging.toolchain.tauri_cli.BIN_DIR", tmp_path),
+            patch("trellis.packaging.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
             patch(
-                "trellis.toolchain.tauri_cli.get_rust_target",
+                "trellis.packaging.toolchain.tauri_cli.get_rust_target",
                 return_value="x86_64-unknown-linux-gnu",
             ),
             patch("httpx.stream", return_value=mock_response),
@@ -100,10 +101,11 @@ class TestEnsureTauriCli:
         mock_response.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch("trellis.toolchain.tauri_cli.BIN_DIR", tmp_path),
-            patch("trellis.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
+            patch("trellis.packaging.toolchain.tauri_cli.BIN_DIR", tmp_path),
+            patch("trellis.packaging.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
             patch(
-                "trellis.toolchain.tauri_cli.get_rust_target", return_value="aarch64-apple-darwin"
+                "trellis.packaging.toolchain.tauri_cli.get_rust_target",
+                return_value="aarch64-apple-darwin",
             ),
             patch("httpx.stream", return_value=mock_response),
         ):
@@ -127,10 +129,11 @@ class TestEnsureTauriCli:
         mock_response.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch("trellis.toolchain.tauri_cli.BIN_DIR", tmp_path),
-            patch("trellis.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
+            patch("trellis.packaging.toolchain.tauri_cli.BIN_DIR", tmp_path),
+            patch("trellis.packaging.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
             patch(
-                "trellis.toolchain.tauri_cli.get_rust_target", return_value="x86_64-pc-windows-msvc"
+                "trellis.packaging.toolchain.tauri_cli.get_rust_target",
+                return_value="x86_64-pc-windows-msvc",
             ),
             patch("httpx.stream", return_value=mock_response),
         ):
@@ -157,10 +160,10 @@ class TestEnsureTauriCli:
         mock_response.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch("trellis.toolchain.tauri_cli.BIN_DIR", tmp_path),
-            patch("trellis.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
+            patch("trellis.packaging.toolchain.tauri_cli.BIN_DIR", tmp_path),
+            patch("trellis.packaging.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
             patch(
-                "trellis.toolchain.tauri_cli.get_rust_target",
+                "trellis.packaging.toolchain.tauri_cli.get_rust_target",
                 return_value="x86_64-unknown-linux-gnu",
             ),
             patch("httpx.stream", return_value=mock_response) as mock_stream,
@@ -189,10 +192,10 @@ class TestEnsureTauriCli:
         mock_response.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch("trellis.toolchain.tauri_cli.BIN_DIR", tmp_path),
-            patch("trellis.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
+            patch("trellis.packaging.toolchain.tauri_cli.BIN_DIR", tmp_path),
+            patch("trellis.packaging.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
             patch(
-                "trellis.toolchain.tauri_cli.get_rust_target",
+                "trellis.packaging.toolchain.tauri_cli.get_rust_target",
                 return_value="aarch64-apple-darwin",
             ),
             patch("httpx.stream", return_value=mock_response) as mock_stream,
@@ -222,10 +225,10 @@ class TestEnsureTauriCli:
             return MagicMock()
 
         with (
-            patch("trellis.toolchain.tauri_cli.BIN_DIR", tmp_path),
-            patch("trellis.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
+            patch("trellis.packaging.toolchain.tauri_cli.BIN_DIR", tmp_path),
+            patch("trellis.packaging.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
             patch(
-                "trellis.toolchain.tauri_cli.get_rust_target",
+                "trellis.packaging.toolchain.tauri_cli.get_rust_target",
                 return_value="aarch64-unknown-linux-gnu",
             ),
             patch("httpx.stream", return_value=mock_response),
@@ -257,10 +260,10 @@ class TestEnsureTauriCli:
         mock_response.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch("trellis.toolchain.tauri_cli.BIN_DIR", tmp_path),
-            patch("trellis.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
+            patch("trellis.packaging.toolchain.tauri_cli.BIN_DIR", tmp_path),
+            patch("trellis.packaging.toolchain.tauri_cli.TAURI_CLI_VERSION", "2.10.0"),
             patch(
-                "trellis.toolchain.tauri_cli.get_rust_target",
+                "trellis.packaging.toolchain.tauri_cli.get_rust_target",
                 return_value="x86_64-unknown-linux-gnu",
             ),
             patch("httpx.stream", return_value=mock_response),

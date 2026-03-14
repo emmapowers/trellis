@@ -19,9 +19,9 @@ from trellis.packaging.portable import (
     _collect_app_files,
     _create_archive,
     _output_filename,
-    build_portable_exe,
+    build_windows_exe,
 )
-from trellis.toolchain.rustup import RustToolchain
+from trellis.packaging.toolchain.rustup import RustToolchain
 
 
 def _make_rust_toolchain(tmp_path: Path) -> RustToolchain:
@@ -271,7 +271,7 @@ class TestBuildPortableExe:
             launcher_exe_path.write_bytes(b"LAUNCHER-STUB")
 
         with patch("subprocess.run", side_effect=fake_cargo_build):
-            result = build_portable_exe(
+            result = build_windows_exe(
                 rust=rust,
                 scaffold_dir=scaffold_dir,
                 product_name="My App",
@@ -305,7 +305,7 @@ class TestBuildPortableExe:
             exe_path.write_bytes(b"LAUNCHER")
 
         with patch("subprocess.run", side_effect=fake_cargo_build) as mock_run:
-            build_portable_exe(
+            build_windows_exe(
                 rust=rust,
                 scaffold_dir=scaffold_dir,
                 product_name="My App",
@@ -326,7 +326,7 @@ class TestBuildPortableExe:
         release_dir.mkdir(parents=True)
 
         with pytest.raises(RuntimeError, match="Expected app executable"):
-            build_portable_exe(
+            build_windows_exe(
                 rust=rust,
                 scaffold_dir=scaffold_dir,
                 product_name="My App",

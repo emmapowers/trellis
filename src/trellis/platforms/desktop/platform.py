@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib
+import os
 import signal
 import sys
 from collections.abc import Callable
@@ -134,14 +135,9 @@ class DesktopPlatform(Platform):
         dist_dir = get_dist_dir()
         if sys.platform == "win32":
             # Tauri misinterprets absolute Windows paths (C:/...) as URLs.
-            # Create a junction next to the config dir so we can use a relative path.
+            # Use a relative path from the config directory instead.
             config_dir = Path(__file__).parent / "config"
-            dist_link = config_dir / "dist"
-            if not dist_link.exists():
-                import _winapi  # noqa: PLC0415
-
-                _winapi.CreateJunction(str(dist_dir.resolve()), str(dist_link))
-            dist_path = "./dist"
+            dist_path = os.path.relpath(dist_dir.resolve(), config_dir.resolve())
         else:
             dist_path = str(dist_dir)
         return _build_tauri_config_override(
@@ -154,7 +150,9 @@ class DesktopPlatform(Platform):
     def _load_pytauri_runtime(self) -> SimpleNamespace:
         """Load PyTauri runtime objects, provisioning the dev wheel when needed."""
         if not self.is_standalone:
-            from trellis.toolchain.pytauri_wheel import ensure_pytauri_runtime  # noqa: PLC0415
+            from trellis.packaging.toolchain.pytauri_wheel import (  # noqa: PLC0415
+                ensure_pytauri_runtime,
+            )
 
             ensure_pytauri_runtime()
 

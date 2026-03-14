@@ -77,10 +77,12 @@ class TestDesktopPlatformImports:
         original = sys.modules.pop(module_name, None)
 
         ensure_runtime = MagicMock()
-        fake_toolchain = ModuleType("trellis.toolchain.pytauri_wheel")
+        fake_toolchain = ModuleType("trellis.packaging.toolchain.pytauri_wheel")
         fake_toolchain.ensure_pytauri_runtime = ensure_runtime
 
-        monkeypatch.setitem(sys.modules, "trellis.toolchain.pytauri_wheel", fake_toolchain)
+        monkeypatch.setitem(
+            sys.modules, "trellis.packaging.toolchain.pytauri_wheel", fake_toolchain
+        )
 
         try:
             importlib.import_module(module_name)
@@ -98,7 +100,7 @@ class TestDesktopPlatformImports:
         original = sys.modules.pop(module_name, None)
 
         ensure_runtime = MagicMock()
-        fake_toolchain = ModuleType("trellis.toolchain.pytauri_wheel")
+        fake_toolchain = ModuleType("trellis.packaging.toolchain.pytauri_wheel")
         fake_toolchain.ensure_pytauri_runtime = ensure_runtime
         fake_pytauri = ModuleType("pytauri")
         fake_pytauri.AppHandle = object
@@ -112,7 +114,9 @@ class TestDesktopPlatformImports:
         fake_webview = ModuleType("pytauri.webview")
         fake_webview.WebviewWindow = object
 
-        monkeypatch.setitem(sys.modules, "trellis.toolchain.pytauri_wheel", fake_toolchain)
+        monkeypatch.setitem(
+            sys.modules, "trellis.packaging.toolchain.pytauri_wheel", fake_toolchain
+        )
         monkeypatch.setitem(sys.modules, "pytauri", fake_pytauri)
         monkeypatch.setitem(sys.modules, "pytauri.ipc", fake_ipc)
         monkeypatch.setitem(sys.modules, "pytauri.webview", fake_webview)

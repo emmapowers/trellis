@@ -42,8 +42,7 @@ _PLATFORM_HELP = {
     "--bundles",
     type=str,
     default=None,
-    hidden=True,
-    help="Deprecated. Use --installer instead.",
+    help="Comma-separated Tauri bundle types (e.g. nsis, rpm). Cannot be combined with --installer.",
 )
 @pass_cli_context
 @configvar_options(_cli_config_vars)
@@ -56,11 +55,8 @@ def package_app(
     **cli_kwargs: Any,
 ) -> None:
     """Build a desktop app bundle with Tauri."""
-    if bundles is not None:
-        raise click.UsageError(
-            "--bundles is no longer supported. "
-            "Use --installer for installer bundles, or omit for portable bundles."
-        )
+    if bundles is not None and installer:
+        raise click.UsageError("--bundles and --installer cannot be used together.")
 
     if "platform" in cli_kwargs:
         cli_kwargs["platform"] = PlatformType(cli_kwargs["platform"])
@@ -92,11 +88,13 @@ def package_app(
         apploader.bundle()
 
         try:
+            bundle_types = [b.strip() for b in bundles.split(",")] if bundles else None
             output_path = build_desktop_app_bundle(
                 config=config,
                 app_root=resolved_path,
                 output_dir=dest,
                 installer=installer,
+                bundles=bundle_types,
             )
         except (
             RuntimeError,

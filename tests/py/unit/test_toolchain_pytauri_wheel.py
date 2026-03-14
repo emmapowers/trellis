@@ -1,4 +1,4 @@
-"""Unit tests for trellis.toolchain.pytauri_wheel."""
+"""Unit tests for trellis.packaging.toolchain.pytauri_wheel."""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ class TestEnsurePytauriRuntime:
 
     def test_returns_immediately_in_standalone_mode(self) -> None:
         with patch.object(sys, "_pytauri_standalone", True, create=True):
-            module = importlib.import_module("trellis.toolchain.pytauri_wheel")
+            module = importlib.import_module("trellis.packaging.toolchain.pytauri_wheel")
 
             with (
                 patch.object(module, "_current_ext_mod_entry_points") as mock_entry_points,
@@ -51,7 +51,7 @@ class TestEnsurePytauriRuntime:
         mock_download.assert_not_called()
 
     def test_returns_when_runtime_provider_is_already_available(self) -> None:
-        module = importlib.import_module("trellis.toolchain.pytauri_wheel")
+        module = importlib.import_module("trellis.packaging.toolchain.pytauri_wheel")
 
         with (
             patch.object(
@@ -66,7 +66,7 @@ class TestEnsurePytauriRuntime:
         mock_download.assert_not_called()
 
     def test_raises_when_multiple_runtime_providers_are_visible(self) -> None:
-        module = importlib.import_module("trellis.toolchain.pytauri_wheel")
+        module = importlib.import_module("trellis.packaging.toolchain.pytauri_wheel")
 
         providers = [
             _make_entry_point("pytauri-wheel"),
@@ -77,7 +77,7 @@ class TestEnsurePytauriRuntime:
                 module.ensure_pytauri_runtime()
 
     def test_downloads_exact_matching_wheel_version(self, tmp_path: Path) -> None:
-        module = importlib.import_module("trellis.toolchain.pytauri_wheel")
+        module = importlib.import_module("trellis.packaging.toolchain.pytauri_wheel")
         cache_dir = tmp_path / "cache"
         download_dir = cache_dir / "pytauri-wheel" / "downloads"
         download_dir.mkdir(parents=True)
@@ -105,7 +105,7 @@ class TestEnsurePytauriRuntime:
         )
 
     def test_reuses_existing_extracted_wheel(self, tmp_path: Path) -> None:
-        module = importlib.import_module("trellis.toolchain.pytauri_wheel")
+        module = importlib.import_module("trellis.packaging.toolchain.pytauri_wheel")
         cache_dir = tmp_path / "cache"
         wheel_name = "pytauri_wheel-0.8.0-cp313-cp313-macosx_14_0_arm64"
         extract_dir = cache_dir / "pytauri-wheel" / wheel_name
@@ -130,7 +130,7 @@ class TestEnsurePytauriRuntime:
         mock_download.assert_called_once()
 
     def test_raises_clear_error_when_pip_download_fails(self) -> None:
-        module = importlib.import_module("trellis.toolchain.pytauri_wheel")
+        module = importlib.import_module("trellis.packaging.toolchain.pytauri_wheel")
 
         with (
             patch.object(module, "_current_ext_mod_entry_points", return_value=[]),
@@ -150,7 +150,7 @@ class TestEnsurePytauriRuntime:
                 module.ensure_pytauri_runtime()
 
     def test_download_wheel_uses_pip_download(self, tmp_path: Path) -> None:
-        module = importlib.import_module("trellis.toolchain.pytauri_wheel")
+        module = importlib.import_module("trellis.packaging.toolchain.pytauri_wheel")
         download_dir = tmp_path / "downloads"
         download_dir.mkdir()
 
@@ -176,7 +176,7 @@ class TestEnsurePytauriRuntime:
         assert cmd[8] == "pytauri-wheel==0.8.0"
 
     def test_download_wheel_rejects_sdist_only_results(self, tmp_path: Path) -> None:
-        module = importlib.import_module("trellis.toolchain.pytauri_wheel")
+        module = importlib.import_module("trellis.packaging.toolchain.pytauri_wheel")
         download_dir = tmp_path / "downloads"
         download_dir.mkdir()
         (download_dir / "pytauri_wheel-0.8.0.tar.gz").write_bytes(b"sdist")
@@ -190,7 +190,7 @@ class TestExtractWheel:
     """Tests for wheel extraction helpers."""
 
     def test_extracts_wheel_safely(self, tmp_path: Path) -> None:
-        module = importlib.import_module("trellis.toolchain.pytauri_wheel")
+        module = importlib.import_module("trellis.packaging.toolchain.pytauri_wheel")
         wheel_path = tmp_path / "pytauri_wheel-0.8.0-cp313-cp313-macosx_14_0_arm64.whl"
         extract_dir = tmp_path / "extract"
         _write_test_wheel(wheel_path)
@@ -202,7 +202,7 @@ class TestExtractWheel:
         assert (extract_dir / "pytauri_wheel-0.8.0.dist-info" / "entry_points.txt").exists()
 
     def test_reuses_existing_extracted_directory(self, tmp_path: Path) -> None:
-        module = importlib.import_module("trellis.toolchain.pytauri_wheel")
+        module = importlib.import_module("trellis.packaging.toolchain.pytauri_wheel")
         wheel_path = tmp_path / "pytauri_wheel-0.8.0-cp313-cp313-macosx_14_0_arm64.whl"
         extract_dir = tmp_path / "extract"
         extract_dir.mkdir()

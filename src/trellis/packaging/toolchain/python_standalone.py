@@ -9,7 +9,7 @@ from pathlib import Path
 import httpx
 
 from trellis.bundler.utils import BIN_DIR, safe_extract
-from trellis.toolchain.platform import get_rust_target
+from trellis.packaging.toolchain.platform import get_rust_target
 
 PYTHON_STANDALONE_VERSION = "3.13.1"
 PYTHON_STANDALONE_RELEASE = "20250106"

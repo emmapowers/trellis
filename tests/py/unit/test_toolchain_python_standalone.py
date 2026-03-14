@@ -1,4 +1,4 @@
-"""Unit tests for trellis.toolchain.python_standalone module."""
+"""Unit tests for trellis.packaging.toolchain.python_standalone module."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import tarfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from trellis.toolchain.python_standalone import ensure_python_standalone
+from trellis.packaging.toolchain.python_standalone import ensure_python_standalone
 
 
 class TestEnsurePythonStandalone:
@@ -16,10 +16,12 @@ class TestEnsurePythonStandalone:
     def test_returns_cached_binary(self, tmp_path: Path) -> None:
         """Returns existing installation without downloading."""
         with (
-            patch("trellis.toolchain.python_standalone.BIN_DIR", tmp_path),
-            patch("trellis.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"),
+            patch("trellis.packaging.toolchain.python_standalone.BIN_DIR", tmp_path),
             patch(
-                "trellis.toolchain.python_standalone.get_rust_target",
+                "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"
+            ),
+            patch(
+                "trellis.packaging.toolchain.python_standalone.get_rust_target",
                 return_value="aarch64-apple-darwin",
             ),
         ):
@@ -51,10 +53,12 @@ class TestEnsurePythonStandalone:
         mock_response.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch("trellis.toolchain.python_standalone.BIN_DIR", tmp_path),
-            patch("trellis.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"),
+            patch("trellis.packaging.toolchain.python_standalone.BIN_DIR", tmp_path),
             patch(
-                "trellis.toolchain.python_standalone.get_rust_target",
+                "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"
+            ),
+            patch(
+                "trellis.packaging.toolchain.python_standalone.get_rust_target",
                 return_value="aarch64-apple-darwin",
             ),
             patch("httpx.stream", return_value=mock_response),
@@ -80,10 +84,12 @@ class TestEnsurePythonStandalone:
         mock_response.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch("trellis.toolchain.python_standalone.BIN_DIR", tmp_path),
-            patch("trellis.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"),
+            patch("trellis.packaging.toolchain.python_standalone.BIN_DIR", tmp_path),
             patch(
-                "trellis.toolchain.python_standalone.get_rust_target",
+                "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"
+            ),
+            patch(
+                "trellis.packaging.toolchain.python_standalone.get_rust_target",
                 return_value="aarch64-apple-darwin",
             ),
             patch("httpx.stream", return_value=mock_response) as mock_stream,
@@ -112,10 +118,12 @@ class TestEnsurePythonStandalone:
         mock_response.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch("trellis.toolchain.python_standalone.BIN_DIR", tmp_path),
-            patch("trellis.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"),
+            patch("trellis.packaging.toolchain.python_standalone.BIN_DIR", tmp_path),
             patch(
-                "trellis.toolchain.python_standalone.get_rust_target",
+                "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"
+            ),
+            patch(
+                "trellis.packaging.toolchain.python_standalone.get_rust_target",
                 return_value="x86_64-pc-windows-msvc",
             ),
             patch("httpx.stream", return_value=mock_response) as mock_stream,
@@ -141,10 +149,12 @@ class TestEnsurePythonStandalone:
         mock_response.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch("trellis.toolchain.python_standalone.BIN_DIR", tmp_path),
-            patch("trellis.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"),
+            patch("trellis.packaging.toolchain.python_standalone.BIN_DIR", tmp_path),
             patch(
-                "trellis.toolchain.python_standalone.get_rust_target",
+                "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"
+            ),
+            patch(
+                "trellis.packaging.toolchain.python_standalone.get_rust_target",
                 return_value="aarch64-apple-darwin",
             ),
             patch("httpx.stream", return_value=mock_response),

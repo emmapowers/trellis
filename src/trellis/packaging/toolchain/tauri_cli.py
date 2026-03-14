@@ -11,8 +11,8 @@ from pathlib import Path
 import httpx
 
 from trellis.bundler.utils import BIN_DIR, safe_extract
-from trellis.toolchain.platform import get_rust_target
-from trellis.toolchain.rustup import RustToolchain
+from trellis.packaging.toolchain.platform import get_rust_target
+from trellis.packaging.toolchain.rustup import RustToolchain
 
 logger = logging.getLogger(__name__)
 
