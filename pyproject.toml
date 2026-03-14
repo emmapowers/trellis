@@ -42,6 +42,8 @@ dependencies = [
     # Icon format conversion (SVG rasterization, ICO/ICNS generation)
     "Pillow>=10.0; sys_platform != 'emscripten'",
     "resvg-py>=0.2; sys_platform != 'emscripten'",
+    # Desktop packaging (zstd compression for portable/installer bundles)
+    "zstandard>=0.23; sys_platform != 'emscripten'",
     # Desktop runtime
     "pytauri>=0.8.0; sys_platform != 'emscripten'",
     "pydantic>=2.12",

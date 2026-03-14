@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import os
 import re
 import shutil
@@ -96,17 +97,27 @@ def _collect_app_files(release_dir: Path, exe_name: str = "") -> list[tuple[Path
 
 
 def _create_archive(files: list[tuple[Path, str]], archive_path: Path) -> None:
-    """Create a deterministic zip archive from the collected files.
+    """Create a zstd-compressed zip archive from the collected files.
+
+    Entries are stored uncompressed inside the zip (ZIP_STORED) and the
+    entire zip is then compressed with zstd. This gives better compression
+    than per-file deflate because zstd can exploit cross-file redundancy.
 
     Uses a fixed timestamp so the archive hash depends only on file contents,
     not on filesystem modification times.
     """
-    with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as zf:
+    import zstandard  # noqa: PLC0415 - only needed during packaging
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as zf:
         for abs_path, arc_name in sorted(files, key=lambda item: item[1]):
             info = zipfile.ZipInfo(arc_name)
             info.date_time = (1980, 1, 1, 0, 0, 0)
-            info.compress_type = zipfile.ZIP_DEFLATED
+            info.compress_type = zipfile.ZIP_STORED
             zf.writestr(info, abs_path.read_bytes())
+
+    cctx = zstandard.ZstdCompressor(level=9)
+    archive_path.write_bytes(cctx.compress(buf.getvalue()))
 
 
 def _generate_launcher_scaffold(

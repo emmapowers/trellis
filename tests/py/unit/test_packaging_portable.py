@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+import zstandard
 
 from trellis.packaging.portable import (
     FOOTER_SIZE,
@@ -117,11 +118,14 @@ class TestCreateArchive:
     def test_round_trip(self, tmp_path: Path) -> None:
         release_dir = _make_release_dir(tmp_path)
         files = _collect_app_files(release_dir)
-        archive_path = tmp_path / "test.zip"
+        archive_path = tmp_path / "test.zip.zst"
 
         _create_archive(files, archive_path)
 
-        with zipfile.ZipFile(archive_path, "r") as zf:
+        # Decompress zstd outer layer, then read inner zip
+        dctx = zstandard.ZstdDecompressor()
+        zip_data = dctx.decompress(archive_path.read_bytes())
+        with zipfile.ZipFile(io.BytesIO(zip_data), "r") as zf:
             names = set(zf.namelist())
             assert "myapp.exe" in names
             assert "pyembed/python.exe" in names

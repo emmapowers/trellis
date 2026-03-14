@@ -89,7 +89,10 @@ pub fn extract_archive(exe_path: &Path, footer: &Footer, dest: &Path, title: &st
         return Err("archive integrity check failed: hash mismatch".into());
     }
 
-    let cursor = io::Cursor::new(archive_data);
+    // Decompress zstd-wrapped zip
+    let zip_data = zstd::bulk::decompress(&archive_data, 512 * 1024 * 1024)
+        .map_err(|e| format!("zstd decompress: {e}"))?;
+    let cursor = io::Cursor::new(zip_data);
     let mut archive = zip::ZipArchive::new(cursor).map_err(|e| format!("open zip: {e}"))?;
 
     let total = archive.len();
