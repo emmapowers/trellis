@@ -123,8 +123,26 @@ def _try_rustup_install() -> RustToolchain | None:
     if rustup_path is None:
         return None
 
-    cargo_home = Path(os.environ.get("CARGO_HOME", CACHE_DIR / "rust" / "cargo"))
-    rustup_home = Path(os.environ.get("RUSTUP_HOME", CACHE_DIR / "rust" / "rustup"))
+    env_cargo_home = os.environ.get("CARGO_HOME")
+    env_rustup_home = os.environ.get("RUSTUP_HOME")
+    if env_cargo_home is not None:
+        cargo_home = Path(env_cargo_home)
+    else:
+        rustup_bin = Path(rustup_path)
+        if rustup_bin.parent.name == "bin" and rustup_bin.parent.parent.name == ".cargo":
+            cargo_home = rustup_bin.parent.parent
+        else:
+            cargo_home = CACHE_DIR / "rust" / "cargo"
+
+    if env_rustup_home is not None:
+        rustup_home = Path(env_rustup_home)
+    elif cargo_home.name == ".cargo":
+        rustup_home = cargo_home.parent / ".rustup"
+    else:
+        rustup_home = CACHE_DIR / "rust" / "rustup"
+
+    cargo_home.mkdir(parents=True, exist_ok=True)
+    rustup_home.mkdir(parents=True, exist_ok=True)
 
     subprocess.run(
         [rustup_path, "toolchain", "install", MINIMUM_RUST_VERSION, "--profile", "minimal"],

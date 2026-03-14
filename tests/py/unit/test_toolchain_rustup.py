@@ -174,6 +174,71 @@ class TestEnsureRustup:
         ]
         assert len(install_call) > 0
 
+    def test_uses_rustup_creates_cache_homes(self, tmp_path: Path) -> None:
+        """Creates cache cargo/rustup homes before invoking rustup install."""
+        rustc_path = tmp_path / "rustc"
+        rustc_path.write_text("fake")
+        rustup_path = tmp_path / "rustup"
+        rustup_path.write_text("fake")
+        cache_dir = tmp_path / "cache"
+
+        mock_run = MagicMock()
+        mock_run.return_value.stdout = "rustc 1.50.0 (hash 2021-01-01)"
+
+        which_map = {
+            "rustc": str(rustc_path),
+            "rustup": str(rustup_path),
+            "cargo": None,
+        }
+
+        with (
+            patch(
+                "trellis.toolchain.rustup.shutil.which",
+                side_effect=which_map.get,
+            ),
+            patch("subprocess.run", mock_run),
+            patch.dict("os.environ", {}, clear=True),
+            patch("trellis.toolchain.rustup.CACHE_DIR", cache_dir),
+        ):
+            ensure_rustup()
+
+        assert (cache_dir / "rust" / "cargo").is_dir()
+        assert (cache_dir / "rust" / "rustup").is_dir()
+
+    def test_uses_existing_rustup_homes_when_rustup_is_in_dot_cargo(self, tmp_path: Path) -> None:
+        """Uses the existing ~/.cargo and ~/.rustup homes for a system rustup install."""
+        rustc_path = tmp_path / "rustc"
+        rustc_path.write_text("fake")
+        cargo_home = tmp_path / ".cargo"
+        rustup_home = tmp_path / ".rustup"
+        rustup_bin = cargo_home / "bin"
+        rustup_bin.mkdir(parents=True)
+        rustup_path = rustup_bin / "rustup"
+        rustup_path.write_text("fake")
+
+        mock_run = MagicMock()
+        mock_run.return_value.stdout = "rustc 1.50.0 (hash 2021-01-01)"
+
+        which_map = {
+            "rustc": str(rustc_path),
+            "rustup": str(rustup_path),
+            "cargo": None,
+        }
+
+        with (
+            patch(
+                "trellis.toolchain.rustup.shutil.which",
+                side_effect=which_map.get,
+            ),
+            patch("subprocess.run", mock_run),
+            patch.dict("os.environ", {}, clear=True),
+        ):
+            ensure_rustup()
+
+        rustup_install_env = mock_run.call_args_list[1].kwargs["env"]
+        assert rustup_install_env["CARGO_HOME"] == str(cargo_home)
+        assert rustup_install_env["RUSTUP_HOME"] == str(rustup_home)
+
     def test_downloads_rustup_when_nothing_found(self, tmp_path: Path) -> None:
         """Downloads rustup-init when no Rust toolchain found."""
         cache_dir = tmp_path / "cache"

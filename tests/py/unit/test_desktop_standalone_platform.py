@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import importlib
+
 import pytest
 
 from tests.helpers import requires_pytauri
@@ -10,6 +12,15 @@ from tests.helpers import requires_pytauri
 @requires_pytauri
 class TestDesktopStandalonePlatform:
     """Tests for DesktopStandalonePlatform runtime behavior."""
+
+    def test_uses_pytauri_builder_and_context_factories(self) -> None:
+        pytauri = importlib.import_module("pytauri")
+        standalone_platform = importlib.import_module(
+            "trellis.platforms.desktop.standalone_platform"
+        )
+
+        assert standalone_platform.builder_factory is pytauri.builder_factory
+        assert standalone_platform.context_factory is pytauri.context_factory
 
     def test_name_returns_desktop(self) -> None:
         from trellis.platforms.desktop.standalone_platform import (  # noqa: PLC0415

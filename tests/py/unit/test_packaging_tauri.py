@@ -298,13 +298,51 @@ class TestInstallAppIntoPortablePython:
                 standalone_base=standalone_base, app_root=app_root, pyembed_dir=pyembed_dir
             )
 
-        cmd = mock_run.call_args[0][0]
+        cmd = mock_run.call_args_list[0][0][0]
         # pip runs against the copy in pyembed_dir, not the original
         assert str(pyembed_dir / "bin" / "python3") in cmd
         assert "-m" in cmd
         assert "pip" in cmd
         assert "install" in cmd
         assert str(app_root) in cmd
+
+    def test_uninstalls_pytauri_wheel_after_install(self, tmp_path: Path) -> None:
+        standalone_base = tmp_path / "python-install"
+        standalone_base.mkdir()
+        bin_dir = standalone_base / "bin"
+        bin_dir.mkdir()
+        (bin_dir / "python3").write_text("fake")
+        app_root = tmp_path / "app"
+        app_root.mkdir()
+        pyembed_dir = tmp_path / "pyembed"
+
+        with (
+            patch("subprocess.run") as mock_run,
+            patch("trellis.packaging.tauri.sys") as mock_sys,
+        ):
+            mock_sys.platform = "darwin"
+            install_app_into_portable_python(
+                standalone_base=standalone_base, app_root=app_root, pyembed_dir=pyembed_dir
+            )
+
+        install_cmd = mock_run.call_args_list[0][0][0]
+        uninstall_cmd = mock_run.call_args_list[1][0][0]
+
+        assert install_cmd[:5] == [
+            str(pyembed_dir / "bin" / "python3"),
+            "-m",
+            "pip",
+            "install",
+            "--no-warn-script-location",
+        ]
+        assert uninstall_cmd == [
+            str(pyembed_dir / "bin" / "python3"),
+            "-m",
+            "pip",
+            "uninstall",
+            "-y",
+            "pytauri-wheel",
+        ]
 
 
 class TestTauriBundles:

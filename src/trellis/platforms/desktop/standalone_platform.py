@@ -16,10 +16,9 @@ from typing import TYPE_CHECKING, Any
 
 from anyio.from_thread import start_blocking_portal
 from pydantic import BaseModel
-from pytauri import AppHandle, Commands, Manager
+from pytauri import AppHandle, Commands, Manager, builder_factory, context_factory
 from pytauri.ipc import Channel, JavaScriptChannelId  # noqa: TC002 - runtime for pytauri
 from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
-from pytauri_wheel.lib import builder_factory, context_factory
 
 from trellis.desktop.dialogs import _clear_dialog_runtime, _set_dialog_runtime
 from trellis.platforms.common.base import Platform
