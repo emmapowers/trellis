@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass, field, fields
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from trellis.app.configvars import (
     ConfigVar,
@@ -126,6 +126,18 @@ def _default_routing_mode(platform: PlatformType) -> RoutingMode:
             raise ValueError(f"No default RoutingMode for PlatformType {platform!r}")
 
 
+def _resolve_python_path(value: list[Path | str] | None) -> list[Path]:
+    """Resolve python_path from constructor, environment, and CLI sources."""
+    return _PYTHON_PATH.resolve(cast("Any", value))
+
+
+def _resolve_optional_path(
+    config_var: ConfigVar[Path | None], value: Path | str | None
+) -> Path | None:
+    """Resolve an optional path field from constructor, environment, and CLI sources."""
+    return config_var.resolve(cast("Any", value))
+
+
 # Title (global - used for page title on server/browser, window title on desktop)
 _TITLE: ConfigVar[str | None] = ConfigVar(
     "title",
@@ -174,7 +186,7 @@ _UPDATE_PUBKEY: ConfigVar[str | None] = ConfigVar(
 )
 
 
-@dataclass
+@dataclass(init=False)
 class Config:
     """Configuration for a Trellis application.
 
@@ -194,7 +206,8 @@ class Config:
     Attributes:
         name: Application name (used for build artifacts, etc.)
         module: Python module path containing the entry point
-        python_path: Python import paths relative to app root (default: ["."])
+        python_path: Python import paths, typically relative to the app root
+            before file-backed configs are loaded (default: ["."])
         platform: Target platform (server, desktop, browser)
         force_build: Force rebuild of client bundle even if sources unchanged
         watch: Whether to watch for file changes
@@ -247,8 +260,34 @@ class Config:
     update_url: str | None = None
     update_pubkey: str | None = None
 
-    def __post_init__(self) -> None:
+    def __init__(
+        self,
+        name: str,
+        module: str,
+        python_path: list[Path | str] | None = None,
+        platform: PlatformType = PlatformType.SERVER,
+        force_build: bool = False,
+        watch: bool = False,
+        batch_delay: float = 1 / 30,
+        hot_reload: bool = True,
+        routing_mode: RoutingMode | None = None,
+        debug: str = "",
+        assets_dir: Path | str | None = None,
+        icon: Path | str | None = None,
+        title: str | None = None,
+        library: bool = False,
+        host: str = "127.0.0.1",
+        port: int | None = None,
+        window_size: str = "maximized",
+        identifier: str | None = None,
+        version: str | None = None,
+        update_url: str | None = None,
+        update_pubkey: str | None = None,
+    ) -> None:
         """Resolve all fields through ConfigVar system and validate."""
+        self.name = name
+        self.module = module
+
         # Validate required fields
         if not self.name:
             raise TypeError("Config() missing required argument: 'name'")
@@ -257,37 +296,37 @@ class Config:
 
         # Resolve each field through CLI > ENV > constructor_value > default
         # General settings
-        self.python_path = _PYTHON_PATH.resolve(self.python_path)
-        self.platform = _PLATFORM.resolve(self.platform)
-        self.force_build = _FORCE_BUILD.resolve(self.force_build)
-        self.watch = _WATCH.resolve(self.watch)
-        self.batch_delay = _BATCH_DELAY.resolve(self.batch_delay)
-        self.hot_reload = _HOT_RELOAD.resolve(self.hot_reload)
-        self.routing_mode = _ROUTING_MODE.resolve(self.routing_mode)
+        self.python_path = _resolve_python_path(python_path)
+        self.platform = _PLATFORM.resolve(platform)
+        self.force_build = _FORCE_BUILD.resolve(force_build)
+        self.watch = _WATCH.resolve(watch)
+        self.batch_delay = _BATCH_DELAY.resolve(batch_delay)
+        self.hot_reload = _HOT_RELOAD.resolve(hot_reload)
+        self.routing_mode = _ROUTING_MODE.resolve(routing_mode)
         if self.routing_mode is None:
             self.routing_mode = _default_routing_mode(self.platform)
-        self.debug = _DEBUG.resolve(self.debug)
-        self.assets_dir = _ASSETS_DIR.resolve(self.assets_dir)
-        self.icon = _ICON.resolve(self.icon)
-        self.title = _TITLE.resolve(self.title)
+        self.debug = _DEBUG.resolve(debug)
+        self.assets_dir = _resolve_optional_path(_ASSETS_DIR, assets_dir)
+        self.icon = _resolve_optional_path(_ICON, icon)
+        self.title = _TITLE.resolve(title)
         if self.title is None:
             self.title = self.name
 
         # Browser settings
-        self.library = _LIBRARY.resolve(self.library)
+        self.library = _LIBRARY.resolve(library)
 
         # Server settings
-        self.host = _HOST.resolve(self.host)
-        self.port = _PORT.resolve(self.port)
+        self.host = _HOST.resolve(host)
+        self.port = _PORT.resolve(port)
 
         # Desktop settings
-        self.window_size = _WINDOW_SIZE.resolve(self.window_size)
+        self.window_size = _WINDOW_SIZE.resolve(window_size)
 
         # Packaging settings
-        self.identifier = _IDENTIFIER.resolve(self.identifier)
-        self.version = _VERSION.resolve(self.version)
-        self.update_url = _UPDATE_URL.resolve(self.update_url)
-        self.update_pubkey = _UPDATE_PUBKEY.resolve(self.update_pubkey)
+        self.identifier = _IDENTIFIER.resolve(identifier)
+        self.version = _VERSION.resolve(version)
+        self.update_url = _UPDATE_URL.resolve(update_url)
+        self.update_pubkey = _UPDATE_PUBKEY.resolve(update_pubkey)
 
     def to_json(self) -> str:
         """Serialize this Config to a JSON string.

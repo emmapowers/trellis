@@ -20,6 +20,13 @@ if TYPE_CHECKING:
 ENV_VAR_APP_ROOT = "TRELLIS_APP_ROOT"
 
 
+def _normalize_config_path(path: Path, app_root: Path) -> Path:
+    """Normalize a config path to an absolute path for a file-backed app."""
+    if path.is_absolute():
+        return path.resolve(strict=False)
+    return (app_root / path).resolve(strict=False)
+
+
 def _is_pyodide() -> bool:
     """Check if running inside Pyodide.
 
@@ -144,7 +151,8 @@ class AppLoader:
 
         Used in Pyodide where there's no filesystem to load trellis_config.py
         from. Sets path to None and clears python_path since wheels are
-        already installed in site-packages.
+        already installed in site-packages. Without an app root, config paths
+        are left as-coerced rather than normalized to absolute paths.
 
         Args:
             config: A pre-built Config instance
@@ -200,17 +208,21 @@ class AppLoader:
                 "Use: config = Config(name=..., module=...)"
             )
 
-        # Resolve relative icon path against app root
-        if config.icon is not None and not config.icon.is_absolute():
-            config.icon = self.path / config.icon
+        app_root = self.path.resolve(strict=False)
+        config.python_path = [_normalize_config_path(path, app_root) for path in config.python_path]
+        if config.assets_dir is not None:
+            config.assets_dir = _normalize_config_path(config.assets_dir, app_root)
+        if config.icon is not None:
+            config.icon = _normalize_config_path(config.icon, app_root)
 
         self.config = config
 
     def import_module(self) -> ModuleType:
         """Import the application module specified in config.module.
 
-        Adds each path from config.python_path to sys.path (resolved relative
-        to app root), then imports the module.
+        Adds each path from config.python_path to sys.path, then imports the
+        module. File-backed configs are normalized to absolute paths during
+        load_config(); AppLoader.from_config() is the rootless exception.
 
         Returns:
             The imported module object
@@ -226,14 +238,10 @@ class AppLoader:
                 "Config not loaded. Call load_config() first before import_module()."
             )
 
-        # Add python_path entries to sys.path
-        for rel_path in self.config.python_path:
-            if self.path is None:
-                raise RuntimeError(
-                    "Cannot resolve python_path without an app root directory. "
-                    "Use from_config() with python_path=[] for Pyodide."
-                )
-            abs_path = str(self.path / rel_path)
+        # File-backed configs are normalized during load_config(); rootless
+        # AppLoader.from_config() clears python_path because there is no app root.
+        for path in self.config.python_path:
+            abs_path = str(path)
             if abs_path not in sys.path:
                 sys.path.insert(0, abs_path)
 

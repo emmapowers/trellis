@@ -7,5 +7,5 @@ config = Config(
     name="{{ name }}",
     module="{{ module }}",
     platform=PlatformType.{{ platform_upper }},
-    icon=Path("assets/icon.png") if Path("assets/icon.png").exists() else None,
+    icon="assets/icon.png" if Path("assets/icon.png").exists() else None,
 )

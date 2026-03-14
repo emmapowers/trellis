@@ -53,6 +53,10 @@ class TestConfigCreation:
         config = Config(name="myapp", module="main", python_path=["src", "lib"])
         assert config.python_path == [Path("src"), Path("lib")]
 
+    def test_python_path_from_mixed_constructor_values(self) -> None:
+        config = Config(name="myapp", module="main", python_path=["src", Path("lib")])
+        assert config.python_path == [Path("src"), Path("lib")]
+
 
 class TestConfigFromEnv:
     """Test Config resolution from environment variables."""
@@ -159,6 +163,10 @@ class TestConfigAssetsDir:
         config = Config(name="myapp", module="main")
         assert config.assets_dir == Path("./assets/")
 
+    def test_assets_dir_relative_path_stays_relative_before_load(self) -> None:
+        config = Config(name="myapp", module="main", assets_dir="assets")
+        assert config.assets_dir == Path("assets")
+
 
 class TestConfigIcon:
     """Test icon field defaults and overrides."""
@@ -179,6 +187,10 @@ class TestConfigIcon:
         monkeypatch.setenv("TRELLIS_ICON", "~/icon.png")
         config = Config(name="myapp", module="main")
         assert config.icon == Path.home() / "icon.png"
+
+    def test_icon_relative_path_stays_relative_before_load(self) -> None:
+        config = Config(name="myapp", module="main", icon="assets/icon.png")
+        assert config.icon == Path("assets/icon.png")
 
 
 class TestConfigRoutingMode:
@@ -363,6 +375,22 @@ class TestConfigFromJson:
         assert config.platform == PlatformType.SERVER
         assert config.host == "127.0.0.1"
         assert config.watch is False
+
+    def test_relative_paths_stay_relative_without_app_root(self) -> None:
+        json_str = json.dumps(
+            {
+                "name": "myapp",
+                "module": "main",
+                "python_path": ["src"],
+                "assets_dir": "assets",
+                "icon": "assets/icon.png",
+            }
+        )
+        config = Config.from_json(json_str)
+
+        assert config.python_path == [Path("src")]
+        assert config.assets_dir == Path("assets")
+        assert config.icon == Path("assets/icon.png")
 
 
 class TestConfigJsonRoundTrip:
