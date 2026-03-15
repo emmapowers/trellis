@@ -131,7 +131,7 @@ fn register_uninstaller(install_dir: &Path) {
     ));
 
     unsafe {
-        let mut hkey: HKEY = 0;
+        let mut hkey: HKEY = std::ptr::null_mut();
         let mut disposition: u32 = 0;
         if RegCreateKeyExW(
             HKEY_CURRENT_USER,

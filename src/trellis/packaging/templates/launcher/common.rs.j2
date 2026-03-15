@@ -6,13 +6,15 @@ use std::path::Path;
 
 use sha2::{Sha256, Digest};
 use windows_sys::Win32::Foundation::HWND;
-use windows_sys::Win32::Graphics::Gdi::UpdateWindow;
+use windows_sys::Win32::Graphics::Gdi::{COLOR_WINDOW, UpdateWindow};
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows_sys::Win32::UI::Controls::{InitCommonControlsEx, INITCOMMONCONTROLSEX, ICC_PROGRESS_CLASS};
+use windows_sys::Win32::UI::Controls::{
+    InitCommonControlsEx, INITCOMMONCONTROLSEX, ICC_PROGRESS_CLASS, PBM_SETPOS, PBM_SETRANGE32,
+};
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW,
     MessageBoxW, PeekMessageW, RegisterClassExW, SendMessageW, ShowWindow, TranslateMessage,
-    CW_USEDEFAULT, MB_ICONERROR, MSG, PM_REMOVE,
+    CW_USEDEFAULT, MB_ICONERROR, MB_ICONINFORMATION, MSG, PM_REMOVE,
     SW_SHOWNORMAL, WNDCLASSEXW, WS_CAPTION, WS_CHILD, WS_OVERLAPPED, WS_SYSMENU, WS_VISIBLE,
 };
 
@@ -39,7 +41,7 @@ pub fn show_error(msg: &str) -> ! {
 pub fn show_info(msg: &str) {
     let text = wide(msg);
     let caption = wide("{{ product_name }}");
-    unsafe { MessageBoxW(std::ptr::null_mut(), text.as_ptr(), caption.as_ptr(), 0x40) }; // MB_ICONINFORMATION
+    unsafe { MessageBoxW(std::ptr::null_mut(), text.as_ptr(), caption.as_ptr(), MB_ICONINFORMATION) };
 }
 
 pub fn read_footer(exe_path: &Path) -> Result<Footer, String> {
@@ -152,7 +154,7 @@ fn create_progress_window(total: u32, title: &str) -> (HWND, HWND) {
             hInstance: instance,
             hIcon: std::ptr::null_mut(),
             hCursor: std::ptr::null_mut(),
-            hbrBackground: (5 + 1) as _, // COLOR_WINDOW + 1
+            hbrBackground: (COLOR_WINDOW + 1) as _,
             lpszMenuName: std::ptr::null(),
             lpszClassName: class_name.as_ptr(),
             hIconSm: std::ptr::null_mut(),
@@ -187,8 +189,7 @@ fn create_progress_window(total: u32, title: &str) -> (HWND, HWND) {
             std::ptr::null(),
         );
 
-        // PBM_SETRANGE32 = 0x0406
-        SendMessageW(progress, 0x0406, 0, total as isize);
+        SendMessageW(progress, PBM_SETRANGE32, 0, total as isize);
 
         ShowWindow(hwnd, SW_SHOWNORMAL as i32);
         UpdateWindow(hwnd);
@@ -199,8 +200,7 @@ fn create_progress_window(total: u32, title: &str) -> (HWND, HWND) {
 
 fn update_progress(progress: HWND, pos: u32) {
     unsafe {
-        // PBM_SETPOS = 0x0402
-        SendMessageW(progress, 0x0402, pos as usize, 0);
+        SendMessageW(progress, PBM_SETPOS, pos as usize, 0);
 
         let mut msg: MSG = std::mem::zeroed();
         while PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) != 0 {
