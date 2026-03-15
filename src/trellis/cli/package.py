@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import click
+from rich.console import Console
 
 from trellis.app import AppLoader, resolve_app_root, set_apploader
 from trellis.app.configvars import cli_context, get_config_vars
@@ -15,6 +16,8 @@ from trellis.cli import CliContext, pass_cli_context, trellis
 from trellis.cli.options import configvar_options
 from trellis.packaging.tauri import build_desktop_app_bundle
 from trellis.platforms.common.base import PlatformType
+
+_console = Console()
 
 _cli_config_vars = [v for v in get_config_vars() if not v.hidden]
 
@@ -102,4 +105,25 @@ def package_app(
         ) as e:
             raise click.UsageError(str(e)) from None
 
-        click.echo(f"Package complete: {output_path}")
+        _print_package_complete(config.name, output_path)
+
+
+def _print_package_complete(name: str, output_dir: Path) -> None:
+    """Print a summary banner listing the built artifacts."""
+    if output_dir.is_dir():
+        artifacts = sorted(
+            p.name for p in output_dir.iterdir() if p.is_file() or p.suffix == ".app"
+        )
+    else:
+        artifacts = []
+
+    _console.print()
+    _console.print("  [bold green]Trellis[/bold green] [dim]package complete[/dim]")
+    _console.print()
+    _console.print(f"  [bold]>[/bold]  [cyan]App:[/cyan]      {name}")
+    _console.print(f"  [bold]>[/bold]  [cyan]Output:[/cyan]   {output_dir}")
+    if artifacts:
+        _console.print()
+        for artifact in artifacts:
+            _console.print(f"     [dim]-[/dim]  {artifact}")
+    _console.print()
