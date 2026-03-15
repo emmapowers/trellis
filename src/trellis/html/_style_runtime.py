@@ -18,17 +18,15 @@ from trellis.html._css_primitives import (
     CssColor,
     CssLength,
     CssPercent,
+    CssRawString,
     CssTime,
-    CssValue,
-)
-from trellis.html._css_primitives import (
     format_number as _format_number,
 )
 
 if tp.TYPE_CHECKING:
     from trellis.html._generated_style_types import HeightValue, SpacingShorthand, WidthValue
 
-type StyleScalar = str | int | float | CssValue
+type StyleScalar = str | int | float | CssRawString
 type RawStyleMapping = Mapping[str, tp.Any]
 
 if tp.TYPE_CHECKING:
@@ -36,9 +34,9 @@ if tp.TYPE_CHECKING:
     type HeightInput = HeightValue | int | float | str
     type SpacingInput = SpacingShorthand | int | float | str
 else:
-    type WidthInput = str | int | float | CssValue
-    type HeightInput = str | int | float | CssValue
-    type SpacingInput = str | int | float | CssValue
+    type WidthInput = str | int | float | CssRawString
+    type HeightInput = str | int | float | CssRawString
+    type SpacingInput = str | int | float | CssRawString
 
 __all__ = [
     "CssAngle",
@@ -46,7 +44,7 @@ __all__ = [
     "CssLength",
     "CssPercent",
     "CssTime",
-    "CssValue",
+    "CssRawString",
     "HeightInput",
     "MediaRule",
     "RawStyleMapping",
@@ -232,7 +230,7 @@ class Style:
 type StyleInput = Style | RawStyleMapping
 
 
-_CV = tp.TypeVar("_CV", bound=CssValue)
+_CV = tp.TypeVar("_CV")
 
 
 def _wrap_value(
@@ -245,9 +243,9 @@ def _wrap_value(
     return cls(value)
 
 
-def raw(value: str) -> CssValue:
+def raw(value: str) -> CssRawString:
     """Return a raw CSS value string without additional normalization."""
-    return CssValue(value)
+    return CssRawString(value)
 
 
 def color(value: str) -> CssColor:
@@ -431,35 +429,35 @@ def color_space(
     )
 
 
-def var(name: str, fallback: StyleScalar | None = None) -> CssValue:
+def var(name: str, fallback: StyleScalar | None = None) -> CssRawString:
     """Return a CSS custom-property reference."""
     if fallback is None:
-        return CssValue(f"var({name})")
-    return CssValue(f"var({name}, {_serialize_helper_value(fallback, auto_px=False)})")
+        return CssRawString(f"var({name})")
+    return CssRawString(f"var({name}, {_serialize_helper_value(fallback, auto_px=False)})")
 
 
-def calc(expression: str) -> CssValue:
+def calc(expression: str) -> CssRawString:
     """Return a CSS ``calc(...)`` value."""
-    return CssValue(f"calc({expression})")
+    return CssRawString(f"calc({expression})")
 
 
-def min_(*values: StyleScalar) -> CssValue:
+def min_(*values: StyleScalar) -> CssRawString:
     """Return a CSS ``min(...)`` value."""
-    return CssValue(
+    return CssRawString(
         f"min({', '.join(_serialize_helper_value(value, auto_px=False) for value in values)})"
     )
 
 
-def max_(*values: StyleScalar) -> CssValue:
+def max_(*values: StyleScalar) -> CssRawString:
     """Return a CSS ``max(...)`` value."""
-    return CssValue(
+    return CssRawString(
         f"max({', '.join(_serialize_helper_value(value, auto_px=False) for value in values)})"
     )
 
 
-def clamp(minimum: StyleScalar, preferred: StyleScalar, maximum: StyleScalar) -> CssValue:
+def clamp(minimum: StyleScalar, preferred: StyleScalar, maximum: StyleScalar) -> CssRawString:
     """Return a CSS ``clamp(...)`` value."""
-    return CssValue(
+    return CssRawString(
         "clamp("
         f"{_serialize_helper_value(minimum, auto_px=False)}, "
         f"{_serialize_helper_value(preferred, auto_px=False)}, "
@@ -467,52 +465,52 @@ def clamp(minimum: StyleScalar, preferred: StyleScalar, maximum: StyleScalar) ->
     )
 
 
-def margin(*values: StyleScalar) -> CssValue:
+def margin(*values: StyleScalar) -> CssRawString:
     """Return a CSS ``margin`` shorthand value."""
-    return CssValue(" ".join(_serialize_helper_value(value, auto_px=True) for value in values))
+    return CssRawString(" ".join(_serialize_helper_value(value, auto_px=True) for value in values))
 
 
-def padding(*values: StyleScalar) -> CssValue:
+def padding(*values: StyleScalar) -> CssRawString:
     """Return a CSS ``padding`` shorthand value."""
-    return CssValue(" ".join(_serialize_helper_value(value, auto_px=True) for value in values))
+    return CssRawString(" ".join(_serialize_helper_value(value, auto_px=True) for value in values))
 
 
-def inset(*values: StyleScalar) -> CssValue:
+def inset(*values: StyleScalar) -> CssRawString:
     """Return a CSS ``inset`` shorthand value."""
-    return CssValue(" ".join(_serialize_helper_value(value, auto_px=True) for value in values))
+    return CssRawString(" ".join(_serialize_helper_value(value, auto_px=True) for value in values))
 
 
-def border(width: StyleScalar, style: str, color_value: StyleScalar) -> CssValue:
+def border(width: StyleScalar, style: str, color_value: StyleScalar) -> CssRawString:
     """Return a CSS ``border`` shorthand value."""
-    return CssValue(
+    return CssRawString(
         f"{_serialize_helper_value(width, auto_px=True)} {style} {_serialize_helper_value(color_value, auto_px=False)}"
     )
 
 
-def shadow(*parts: StyleScalar) -> CssValue:
+def shadow(*parts: StyleScalar) -> CssRawString:
     """Return a CSS shadow shorthand value."""
-    return CssValue(" ".join(_serialize_helper_value(part, auto_px=True) for part in parts))
+    return CssRawString(" ".join(_serialize_helper_value(part, auto_px=True) for part in parts))
 
 
-def scale(value: int | float) -> CssValue:
+def scale(value: int | float) -> CssRawString:
     """Return a CSS ``scale(...)`` transform value."""
-    return CssValue(f"scale({_format_number(value)})")
+    return CssRawString(f"scale({_format_number(value)})")
 
 
-def rotate(value: CssAngle | int | float) -> CssValue:
+def rotate(value: CssAngle | int | float) -> CssRawString:
     """Return a CSS ``rotate(...)`` transform value."""
     serialized = _serialize_helper_value(
         value if isinstance(value, CssAngle) else deg(value), auto_px=False
     )
-    return CssValue(f"rotate({serialized})")
+    return CssRawString(f"rotate({serialized})")
 
 
-def translate(x_value: StyleScalar, y_value: StyleScalar | None = None) -> CssValue:
+def translate(x_value: StyleScalar, y_value: StyleScalar | None = None) -> CssRawString:
     """Return a CSS ``translate(...)`` transform value."""
     x = _serialize_helper_value(x_value, auto_px=True)
     if y_value is None:
-        return CssValue(f"translate({x})")
-    return CssValue(f"translate({x}, {_serialize_helper_value(y_value, auto_px=True)})")
+        return CssRawString(f"translate({x})")
+    return CssRawString(f"translate({x}, {_serialize_helper_value(y_value, auto_px=True)})")
 
 
 def media(*, style: StyleInput, query: str | None = None, **feature_values: tp.Any) -> MediaRule:
@@ -546,8 +544,11 @@ def _serialize_color_function(
     return f"{name}({' '.join(parts)} / {_format_number(alpha)})"
 
 
+_CSS_TYPES = (CssRawString, CssLength, CssPercent, CssTime, CssAngle, CssColor)
+
+
 def _serialize_helper_value(value: StyleScalar, *, auto_px: bool) -> str:
-    if isinstance(value, CssValue):
+    if isinstance(value, _CSS_TYPES):
         return value.css_text
     if isinstance(value, (int, float)):
         return f"{_format_number(value)}px" if auto_px else _format_number(value)

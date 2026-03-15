@@ -25,9 +25,9 @@ describe("webref css source extraction", () => {
     expect(surface.properties.get("box-shadow")?.is_shorthand).toBe(true);
 
     expect(surface.properties.get("color")?.value_type_name).toBe("ColorValue");
-    expect(surface.properties.get("font-family")?.value_type_name).toBe("CssValue");
-    expect(surface.properties.get("cursor")?.value_type_name).toBe("CssValue");
-    expect(surface.properties.get("list-style")?.value_type_name).toBe("CssValue");
+    expect(surface.properties.get("font-family")?.value_type_name).toBe("CssRawString");
+    expect(surface.properties.get("cursor")?.value_type_name).toBe("CssRawString");
+    expect(surface.properties.get("list-style")?.value_type_name).toBe("CssRawString");
     expect(surface.properties.get("font-size")?.value_type_name).toBe("LengthPercentage");
     expect(surface.properties.get("line-height")?.value_type_name).toBe("LineHeightValue");
     expect(surface.properties.get("line-height")?.accepts_auto_px).toBe(false);
@@ -36,7 +36,7 @@ describe("webref css source extraction", () => {
 
     // scrollbar-width only accepts keywords (auto | thin | none), not lengths
     expect(surface.properties.get("scrollbar-width")?.accepts_auto_px).toBe(false);
-    expect(surface.properties.get("scrollbar-width")?.value_type_name).toBe("CssValue");
+    expect(surface.properties.get("scrollbar-width")?.value_type_name).toBe("CssRawString");
 
     expect(surface.media_features.get("min-width")?.python_name).toBe("min_width");
     expect(surface.media_features.get("min-width")?.type_expr).toEqual({
@@ -74,7 +74,7 @@ describe("webref css source extraction", () => {
         { kind: "reference", name: "ColorKeyword" },
         { kind: "primitive", name: "str" },
         { kind: "reference", name: "CssColor" },
-        { kind: "reference", name: "CssValue" },
+        { kind: "reference", name: "CssRawString" },
       ]),
     });
     expect(surface.value_aliases.get("Length")).toMatchObject({
@@ -82,21 +82,21 @@ describe("webref css source extraction", () => {
       options: expect.arrayContaining([
         { kind: "reference", name: "CssLength" },
         { kind: "primitive", name: "str" },
-        { kind: "reference", name: "CssValue" },
+        { kind: "reference", name: "CssRawString" },
       ]),
     });
     expect(surface.value_aliases.get("WidthValue")).toMatchObject({
       kind: "union",
       options: expect.arrayContaining([
         { kind: "primitive", name: "str" },
-        { kind: "reference", name: "CssValue" },
+        { kind: "reference", name: "CssRawString" },
       ]),
     });
     expect(surface.value_aliases.get("SpacingShorthand")).toMatchObject({
       kind: "union",
       options: expect.arrayContaining([
         { kind: "primitive", name: "str" },
-        { kind: "reference", name: "CssValue" },
+        { kind: "reference", name: "CssRawString" },
       ]),
     });
     expect(surface.value_aliases.get("Display")).toMatchObject({
@@ -105,28 +105,28 @@ describe("webref css source extraction", () => {
         { kind: "literal", value: "flex" },
         { kind: "primitive", name: "str" },
         { kind: "literal", value: "inline-flex" },
-        { kind: "reference", name: "CssValue" },
+        { kind: "reference", name: "CssRawString" },
       ]),
     });
     expect(surface.value_aliases.get("ShadowValue")).toMatchObject({
       kind: "union",
       options: expect.arrayContaining([
         { kind: "primitive", name: "str" },
-        { kind: "reference", name: "CssValue" },
+        { kind: "reference", name: "CssRawString" },
       ]),
     });
     expect(surface.value_aliases.get("TransitionValue")).toMatchObject({
       kind: "union",
       options: expect.arrayContaining([
         { kind: "primitive", name: "str" },
-        { kind: "reference", name: "CssValue" },
+        { kind: "reference", name: "CssRawString" },
       ]),
     });
     expect(surface.value_aliases.get("Opacity")).toMatchObject({
       kind: "union",
       options: expect.arrayContaining([
         { kind: "primitive", name: "float" },
-        { kind: "reference", name: "CssValue" },
+        { kind: "reference", name: "CssRawString" },
       ]),
     });
     expect(surface.value_aliases.get("MediaFeatureValue")).toMatchObject({
@@ -135,7 +135,7 @@ describe("webref css source extraction", () => {
         { kind: "primitive", name: "str" },
         { kind: "primitive", name: "int" },
         { kind: "primitive", name: "float" },
-        { kind: "reference", name: "CssValue" },
+        { kind: "reference", name: "CssRawString" },
       ]),
     });
   });

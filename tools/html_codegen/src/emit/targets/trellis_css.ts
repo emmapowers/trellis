@@ -137,11 +137,11 @@ function qualify_field_primitives(type_expr: TypeExpr): TypeExpr {
 
 function field_type_expr(property: CssPropertyDef): TypeExpr {
   let type_expr = qualify_field_primitives(property.type_expr);
-  if (property.value_type_name === "CssValue") {
+  if (property.value_type_name === "CssRawString") {
     type_expr = append_type_expr(type_expr, { kind: "reference", name: "builtins.str" });
   }
   if (property.is_shorthand && !CSS_VALUE_CAPABLE_ALIASES.has(property.value_type_name)) {
-    type_expr = append_type_expr(type_expr, { kind: "reference", name: "CssValue" });
+    type_expr = append_type_expr(type_expr, { kind: "reference", name: "CssRawString" });
   }
   if (property.accepts_auto_px) {
     type_expr = append_type_expr(type_expr, {
@@ -218,7 +218,7 @@ function emit_types_module(document: CssDocument, generated_at: string): string 
     "",
     "from typing import Literal, TypedDict",
     "",
-    "from trellis.html._css_primitives import CssAngle, CssColor, CssLength, CssPercent, CssTime, CssValue",
+    "from trellis.html._css_primitives import CssAngle, CssColor, CssLength, CssPercent, CssTime, CssRawString",
     "",
     ...aliases,
     "",
@@ -277,7 +277,7 @@ function emit_style_runtime_stub(document: CssDocument, generated_at: string): s
     "    ) -> None: ...",
   ];
   const helper_lines = [
-    "def raw(value: builtins.str) -> CssValue: ...",
+    "def raw(value: builtins.str) -> CssRawString: ...",
     "def color(value: builtins.str) -> CssColor: ...",
     "def px(value: builtins.int | builtins.float) -> CssLength: ...",
     "def rem(value: builtins.int | builtins.float) -> CssLength: ...",
@@ -297,19 +297,19 @@ function emit_style_runtime_stub(document: CssDocument, generated_at: string): s
     "def oklab(lightness: builtins.int | builtins.float, a_value: builtins.int | builtins.float, b_value: builtins.int | builtins.float, *, alpha: builtins.float | None = None) -> CssColor: ...",
     "def oklch(lightness: builtins.int | builtins.float, chroma: builtins.int | builtins.float, hue: builtins.int | builtins.float, *, alpha: builtins.float | None = None) -> CssColor: ...",
     "def color_space(space: builtins.str, *components: builtins.int | builtins.float | builtins.str, alpha: builtins.float | None = None) -> CssColor: ...",
-    "def var(name: builtins.str, fallback: StyleScalar | None = None) -> CssValue: ...",
-    "def calc(expression: builtins.str) -> CssValue: ...",
-    "def min_(*values: StyleScalar) -> CssValue: ...",
-    "def max_(*values: StyleScalar) -> CssValue: ...",
-    "def clamp(minimum: StyleScalar, preferred: StyleScalar, maximum: StyleScalar) -> CssValue: ...",
-    "def margin(*values: StyleScalar) -> CssValue: ...",
-    "def padding(*values: StyleScalar) -> CssValue: ...",
-    "def inset(*values: StyleScalar) -> CssValue: ...",
-    "def border(width: StyleScalar, style: builtins.str, color_value: StyleScalar) -> CssValue: ...",
-    "def shadow(*parts: StyleScalar) -> CssValue: ...",
-    "def scale(value: builtins.int | builtins.float) -> CssValue: ...",
-    "def rotate(value: CssAngle | builtins.int | builtins.float) -> CssValue: ...",
-    "def translate(x_value: StyleScalar, y_value: StyleScalar | None = None) -> CssValue: ...",
+    "def var(name: builtins.str, fallback: StyleScalar | None = None) -> CssRawString: ...",
+    "def calc(expression: builtins.str) -> CssRawString: ...",
+    "def min_(*values: StyleScalar) -> CssRawString: ...",
+    "def max_(*values: StyleScalar) -> CssRawString: ...",
+    "def clamp(minimum: StyleScalar, preferred: StyleScalar, maximum: StyleScalar) -> CssRawString: ...",
+    "def margin(*values: StyleScalar) -> CssRawString: ...",
+    "def padding(*values: StyleScalar) -> CssRawString: ...",
+    "def inset(*values: StyleScalar) -> CssRawString: ...",
+    "def border(width: StyleScalar, style: builtins.str, color_value: StyleScalar) -> CssRawString: ...",
+    "def shadow(*parts: StyleScalar) -> CssRawString: ...",
+    "def scale(value: builtins.int | builtins.float) -> CssRawString: ...",
+    "def rotate(value: CssAngle | builtins.int | builtins.float) -> CssRawString: ...",
+    "def translate(x_value: StyleScalar, y_value: StyleScalar | None = None) -> CssRawString: ...",
     "def media(*, style: StyleInput, query: builtins.str | None = None, **feature_values: Unpack[_MediaRuleKwargs]) -> MediaRule: ...",
   ];
 
@@ -320,7 +320,7 @@ function emit_style_runtime_stub(document: CssDocument, generated_at: string): s
     return match ? match[1] : null;
   }).filter((name): name is string => name !== null);
   const all_names = [
-    "CssAngle", "CssColor", "CssLength", "CssPercent", "CssTime", "CssValue",
+    "CssAngle", "CssColor", "CssLength", "CssPercent", "CssTime", "CssRawString",
     "HeightInput", "MediaRule", "RawStyleMapping", "SpacingInput",
     "Style", "StyleInput", "StyleScalar", "WidthInput",
     ...helper_names,
@@ -338,14 +338,14 @@ function emit_style_runtime_stub(document: CssDocument, generated_at: string): s
     "from collections.abc import Mapping",
     "from typing import Any, Literal, Unpack",
     "",
-    "from trellis.html._css_primitives import CssAngle, CssColor, CssLength, CssPercent, CssTime, CssValue",
+    "from trellis.html._css_primitives import CssAngle, CssColor, CssLength, CssPercent, CssTime, CssRawString",
     `from trellis.html._generated_style_types import ${[...ordered_alias_names, "_MediaRuleKwargs"].join(", ")}`,
     "",
     "__all__ = [",
     ...all_names.map((name) => `    "${name}",`),
     "]",
     "",
-    "type StyleScalar = builtins.str | builtins.int | builtins.float | CssValue",
+    "type StyleScalar = builtins.str | builtins.int | builtins.float | CssRawString",
     "type RawStyleMapping = Mapping[builtins.str, Any]",
     "type StyleInput = Style | RawStyleMapping",
     "type WidthInput = WidthValue | builtins.int | builtins.float | builtins.str",

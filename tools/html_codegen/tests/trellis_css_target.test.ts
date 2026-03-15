@@ -93,8 +93,8 @@ function sample_css_document(): CssDocument {
       {
         css_name: "font-family",
         python_name: "font_family",
-        value_type_name: "CssValue",
-        type_expr: { kind: "reference", name: "CssValue" },
+        value_type_name: "CssRawString",
+        type_expr: { kind: "reference", name: "CssRawString" },
         accepts_auto_px: false,
         is_shorthand: false,
         source: {
@@ -178,7 +178,7 @@ function sample_css_document(): CssDocument {
             { kind: "literal", value: "none" },
             { kind: "literal", value: "inline-flex" },
             { kind: "primitive", name: "str" },
-            { kind: "reference", name: "CssValue" },
+            { kind: "reference", name: "CssRawString" },
           ],
         },
         source: {
@@ -195,7 +195,7 @@ function sample_css_document(): CssDocument {
           options: [
             { kind: "reference", name: "CssLength" },
             { kind: "primitive", name: "str" },
-            { kind: "reference", name: "CssValue" },
+            { kind: "reference", name: "CssRawString" },
           ],
         },
         source: {
@@ -245,7 +245,7 @@ function sample_css_document(): CssDocument {
             { kind: "reference", name: "ColorKeyword" },
             { kind: "primitive", name: "str" },
             { kind: "reference", name: "CssColor" },
-            { kind: "reference", name: "CssValue" },
+            { kind: "reference", name: "CssRawString" },
           ],
         },
         source: {
@@ -263,7 +263,7 @@ function sample_css_document(): CssDocument {
             { kind: "reference", name: "LengthPercentage" },
             { kind: "literal", value: "auto" },
             { kind: "primitive", name: "str" },
-            { kind: "reference", name: "CssValue" },
+            { kind: "reference", name: "CssRawString" },
           ],
         },
         source: {
@@ -280,7 +280,7 @@ function sample_css_document(): CssDocument {
           options: [
             { kind: "reference", name: "LengthPercentage" },
             { kind: "primitive", name: "str" },
-            { kind: "reference", name: "CssValue" },
+            { kind: "reference", name: "CssRawString" },
           ],
         },
         source: {
@@ -296,7 +296,7 @@ function sample_css_document(): CssDocument {
           kind: "union",
           options: [
             { kind: "primitive", name: "str" },
-            { kind: "reference", name: "CssValue" },
+            { kind: "reference", name: "CssRawString" },
           ],
         },
         source: {
@@ -312,7 +312,7 @@ function sample_css_document(): CssDocument {
           kind: "union",
           options: [
             { kind: "primitive", name: "str" },
-            { kind: "reference", name: "CssValue" },
+            { kind: "reference", name: "CssRawString" },
           ],
         },
         source: {
@@ -347,7 +347,7 @@ function sample_css_document(): CssDocument {
             { kind: "primitive", name: "str" },
             { kind: "primitive", name: "int" },
             { kind: "primitive", name: "float" },
-            { kind: "reference", name: "CssValue" },
+            { kind: "reference", name: "CssRawString" },
           ],
         },
         source: {
@@ -365,7 +365,7 @@ function sample_css_document(): CssDocument {
             { kind: "literal", value: "light" },
             { kind: "literal", value: "dark" },
             { kind: "primitive", name: "str" },
-            { kind: "reference", name: "CssValue" },
+            { kind: "reference", name: "CssRawString" },
           ],
         },
         source: {
@@ -381,7 +381,7 @@ function sample_css_document(): CssDocument {
           kind: "union",
           options: [
             { kind: "primitive", name: "float" },
-            { kind: "reference", name: "CssValue" },
+            { kind: "reference", name: "CssRawString" },
           ],
         },
         source: {
@@ -398,7 +398,7 @@ function sample_css_document(): CssDocument {
           options: [
             { kind: "primitive", name: "int" },
             { kind: "literal", value: "auto" },
-            { kind: "reference", name: "CssValue" },
+            { kind: "reference", name: "CssRawString" },
           ],
         },
         source: {
@@ -435,13 +435,13 @@ describe("trellis css target", () => {
     expect(types_module?.content).toContain(
       'ColorKeyword = NamedColor | Literal["transparent"] | Literal["currentColor"]',
     );
-    expect(types_module?.content).toContain("Length = CssLength | str | CssValue");
-    expect(types_module?.content).toContain("ColorValue = ColorKeyword | str | CssColor | CssValue");
+    expect(types_module?.content).toContain("Length = CssLength | str | CssRawString");
+    expect(types_module?.content).toContain("ColorValue = ColorKeyword | str | CssColor | CssRawString");
     expect(types_module?.content).toContain(
-      "MediaFeatureValue = str | int | float | CssValue",
+      "MediaFeatureValue = str | int | float | CssRawString",
     );
     expect(types_module?.content).toContain(
-      'Display = Literal["block"] | Literal["flex"] | Literal["none"] | Literal["inline-flex"] | str | CssValue',
+      'Display = Literal["block"] | Literal["flex"] | Literal["none"] | Literal["inline-flex"] | str | CssRawString',
     );
     expect(types_module?.content).toContain("Display = Literal[");
     expect(types_module?.content).toContain("class _MediaRuleKwargs(TypedDict, total=False):");
@@ -450,8 +450,8 @@ describe("trellis css target", () => {
     expect(runtime_stub_module?.content).toContain("class MediaRule:");
     expect(runtime_stub_module?.content).toContain("class Style:");
     expect(runtime_stub_module?.content).toContain("def __init__(");
-    expect(runtime_stub_module?.content).toContain("border: ColorValue | CssValue | None");
-    expect(runtime_stub_module?.content).toContain("font_family: CssValue | builtins.str | None");
+    expect(runtime_stub_module?.content).toContain("border: ColorValue | CssRawString | None");
+    expect(runtime_stub_module?.content).toContain("font_family: CssRawString | builtins.str | None");
     expect(runtime_stub_module?.content).toContain(
       "font_size: LengthPercentage | builtins.int | builtins.float | None",
     );

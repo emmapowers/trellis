@@ -1,4 +1,11 @@
-"""Internal typed CSS primitive values."""
+"""Internal typed CSS primitive values.
+
+Each type is an independent frozen dataclass wrapping a ``css_text`` string.
+They are deliberately *not* related by inheritance so that the type checker
+can distinguish between them — e.g. ``CssLength`` is not assignable to a
+slot expecting ``CssAngle``.  ``CssRawString`` is the explicit escape hatch
+returned by ``h.raw()``; it is accepted wherever any CSS value is needed.
+"""
 
 from __future__ import annotations
 
@@ -6,8 +13,8 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True, slots=True)
-class CssValue:
-    """Base wrapper for structured CSS values."""
+class CssRawString:
+    """Untyped CSS value — the explicit escape hatch via ``h.raw()``."""
 
     css_text: str
 
@@ -16,28 +23,53 @@ class CssValue:
 
 
 @dataclass(frozen=True, slots=True)
-class CssLength(CssValue):
-    """A CSS length value."""
+class CssLength:
+    """A CSS length value (px, rem, em, ch, vw, vh, …)."""
+
+    css_text: str
+
+    def __str__(self) -> str:
+        return self.css_text
 
 
 @dataclass(frozen=True, slots=True)
-class CssPercent(CssValue):
+class CssPercent:
     """A CSS percentage value."""
 
+    css_text: str
 
-@dataclass(frozen=True, slots=True)
-class CssTime(CssValue):
-    """A CSS time value."""
-
-
-@dataclass(frozen=True, slots=True)
-class CssAngle(CssValue):
-    """A CSS angle value."""
+    def __str__(self) -> str:
+        return self.css_text
 
 
 @dataclass(frozen=True, slots=True)
-class CssColor(CssValue):
+class CssTime:
+    """A CSS time value (s, ms)."""
+
+    css_text: str
+
+    def __str__(self) -> str:
+        return self.css_text
+
+
+@dataclass(frozen=True, slots=True)
+class CssAngle:
+    """A CSS angle value (deg, rad, turn, grad)."""
+
+    css_text: str
+
+    def __str__(self) -> str:
+        return self.css_text
+
+
+@dataclass(frozen=True, slots=True)
+class CssColor:
     """A CSS color value."""
+
+    css_text: str
+
+    def __str__(self) -> str:
+        return self.css_text
 
 
 def format_number(value: int | float) -> str:

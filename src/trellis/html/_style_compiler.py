@@ -8,7 +8,14 @@ import re
 import typing as tp
 from collections.abc import Mapping
 
-from trellis.html._css_primitives import CssValue
+from trellis.html._css_primitives import (
+    CssAngle,
+    CssColor,
+    CssLength,
+    CssPercent,
+    CssRawString,
+    CssTime,
+)
 from trellis.html._css_primitives import format_number as _format_number
 from trellis.html._generated_style_metadata import AUTO_PX_FIELDS, CSS_NAME_BY_FIELD
 from trellis.html._style_runtime import MediaRule, Style
@@ -166,7 +173,7 @@ def _should_auto_px(source_name: str, css_name: str) -> bool:
 
 
 def _serialize_value(value: tp.Any, *, auto_px: bool) -> str | int | float:
-    if isinstance(value, CssValue):
+    if isinstance(value, (CssRawString, CssLength, CssPercent, CssTime, CssAngle, CssColor)):
         return value.css_text
     if isinstance(value, (int, float)):
         if auto_px:
