@@ -20,14 +20,25 @@ def test_package_command_exists() -> None:
     assert "--platform [server|desktop|browser]" in result.output
 
 
-def test_package_rejects_non_desktop_platform(write_app: WriteApp) -> None:
+def test_package_overrides_platform_to_desktop(
+    write_app: WriteApp,
+    reset_apploader: None,
+) -> None:
     app_root = write_app(name="server-app", module="main", platform="SERVER")
+    expected_path = app_root / "package" / "server-app"
     runner = CliRunner()
 
-    result = runner.invoke(trellis, ["--app-root", str(app_root), "package"])
+    with (
+        patch.object(AppLoader, "bundle"),
+        patch(
+            "trellis.cli.package.build_desktop_app_bundle", return_value=expected_path
+        ) as mock_build,
+    ):
+        result = runner.invoke(trellis, ["--app-root", str(app_root), "package"])
 
-    assert result.exit_code != 0
-    assert "desktop" in result.output.lower()
+    assert result.exit_code == 0, result.output
+    called_config = mock_build.call_args.kwargs["config"]
+    assert called_config.platform.value == "desktop"
 
 
 def test_package_builds_bundle_and_invokes_tauri(
@@ -87,27 +98,3 @@ def test_package_passes_bundles_to_build(
     assert result.exit_code == 0, result.output
     mock_build.assert_called_once()
     assert mock_build.call_args.kwargs["bundles"] == ["nsis", "rpm"]
-
-
-def test_package_accepts_platform_override_and_bakes_desktop_config(
-    write_app: WriteApp,
-    reset_apploader: None,
-) -> None:
-    app_root = write_app(name="override-app", module="main", platform="SERVER")
-    expected_path = app_root / "package" / "override-app"
-    runner = CliRunner()
-
-    with (
-        patch.object(AppLoader, "bundle"),
-        patch(
-            "trellis.cli.package.build_desktop_app_bundle", return_value=expected_path
-        ) as mock_build,
-    ):
-        result = runner.invoke(
-            trellis,
-            ["--app-root", str(app_root), "package", "--platform", "desktop"],
-        )
-
-    assert result.exit_code == 0, result.output
-    called_config = mock_build.call_args.kwargs["config"]
-    assert called_config.platform.value == "desktop"

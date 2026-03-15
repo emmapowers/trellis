@@ -73,11 +73,10 @@ def package_app(
 
         config = apploader.config
         assert config is not None
-        if config.platform != PlatformType.DESKTOP:
-            raise click.UsageError(
-                "trellis package currently supports desktop apps only. "
-                "Set platform=desktop in trellis_config.py or pass --platform desktop."
-            )
+
+        # Packaging always produces a desktop app regardless of the
+        # platform set in trellis_config.py.
+        config.platform = PlatformType.DESKTOP
 
         try:
             apploader.load_app()
