@@ -46,6 +46,16 @@ def _make_rust_toolchain(tmp_path: Path) -> RustToolchain:
     )
 
 
+@pytest.fixture
+def _skip_preflight_checks():
+    """Patch macOS and Linux preflight checks for build_desktop_app_bundle tests."""
+    with (
+        patch("trellis.packaging.tauri._check_macos_dev_tools"),
+        patch("trellis.packaging.tauri._check_linux_system_deps"),
+    ):
+        yield
+
+
 class TestGenerateTauriScaffold:
     """Tests for generate_tauri_scaffold function."""
 
@@ -493,6 +503,7 @@ class TestRunTauriBuild:
         assert cmd == [str(tauri_cli), "build", "--bundles", expected_bundle]
 
 
+@pytest.mark.usefixtures("_skip_preflight_checks")
 class TestBuildDesktopAppBundle:
     """Tests for the full build_desktop_app_bundle orchestration."""
 
@@ -529,8 +540,6 @@ class TestBuildDesktopAppBundle:
             return mock_python
 
         with (
-            patch("trellis.packaging.tauri._check_macos_dev_tools"),
-            patch("trellis.packaging.tauri._check_linux_system_deps"),
             patch("trellis.packaging.tauri.ensure_rustup", side_effect=track_rustup),
             patch("trellis.packaging.tauri.ensure_tauri_cli", side_effect=track_tauri_cli),
             patch("trellis.packaging.tauri.ensure_python_standalone", side_effect=track_python),
@@ -568,8 +577,6 @@ class TestBuildDesktopAppBundle:
         mock_python.base_dir = tmp_path / "python-install"
 
         with (
-            patch("trellis.packaging.tauri._check_macos_dev_tools"),
-            patch("trellis.packaging.tauri._check_linux_system_deps"),
             patch("trellis.packaging.tauri.ensure_rustup", return_value=mock_rust),
             patch("trellis.packaging.tauri.ensure_tauri_cli", return_value=tmp_path / "cli"),
             patch("trellis.packaging.tauri.ensure_python_standalone", return_value=mock_python),
@@ -583,6 +590,7 @@ class TestBuildDesktopAppBundle:
         assert result == app_root / "dist"
 
 
+@pytest.mark.usefixtures("_skip_preflight_checks")
 class TestOutputCopying:
     """Tests for copying build output to the destination directory."""
 
