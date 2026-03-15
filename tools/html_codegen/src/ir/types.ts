@@ -125,6 +125,8 @@ export interface CssValueAliasDef {
   source: SourceProvenance;
 }
 
+export type CssValueTier = "string_native" | "shorthand" | "keyword" | "dimensional";
+
 export interface CssPropertyDef {
   css_name: string;
   python_name: string;
@@ -132,6 +134,7 @@ export interface CssPropertyDef {
   type_expr: TypeExpr;
   accepts_auto_px: boolean;
   is_shorthand: boolean;
+  value_tier: CssValueTier;
   source: SourceProvenance;
 }
 

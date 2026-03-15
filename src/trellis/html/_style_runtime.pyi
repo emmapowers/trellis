@@ -17,8 +17,8 @@ from trellis.html._css_primitives import (
     CssColor,
     CssLength,
     CssPercent,
+    CssRawString,
     CssTime,
-    CssValue,
 )
 from trellis.html._generated_style_types import (
     AlignItems,
@@ -59,8 +59,8 @@ __all__ = [
     "CssColor",
     "CssLength",
     "CssPercent",
+    "CssRawString",
     "CssTime",
-    "CssValue",
     "HeightInput",
     "MediaRule",
     "RawStyleMapping",
@@ -71,16 +71,24 @@ __all__ = [
     "WidthInput",
     "border",
     "calc",
+    "ch",
     "clamp",
     "color",
     "color_space",
+    "cqh",
+    "cqw",
     "deg",
+    "dvh",
+    "dvw",
     "em",
+    "fr",
     "hsl",
     "hwb",
     "inset",
     "lab",
     "lch",
+    "lvh",
+    "lvw",
     "margin",
     "max_",
     "media",
@@ -91,6 +99,7 @@ __all__ = [
     "padding",
     "pct",
     "px",
+    "rad",
     "raw",
     "rem",
     "rgb",
@@ -99,18 +108,32 @@ __all__ = [
     "scale",
     "sec",
     "shadow",
+    "svh",
+    "svw",
     "translate",
+    "turn",
     "var",
     "vh",
+    "vmax",
+    "vmin",
     "vw",
 ]
 
-type StyleScalar = builtins.str | builtins.int | builtins.float | CssValue
+type StyleScalar = (
+    builtins.int
+    | builtins.float
+    | CssRawString
+    | CssLength
+    | CssPercent
+    | CssTime
+    | CssAngle
+    | CssColor
+)
 type RawStyleMapping = Mapping[builtins.str, Any]
 type StyleInput = Style | RawStyleMapping
-type WidthInput = WidthValue | builtins.int | builtins.float | builtins.str
-type HeightInput = HeightValue | builtins.int | builtins.float | builtins.str
-type SpacingInput = SpacingShorthand | builtins.int | builtins.float | builtins.str
+type WidthInput = WidthValue | builtins.int | builtins.float
+type HeightInput = HeightValue | builtins.int | builtins.float
+type SpacingInput = SpacingShorthand | builtins.int | builtins.float
 
 class MediaRule:
     """Generated media query rule for `h.media(...)`.
@@ -180,358 +203,360 @@ class Style:
     selectors: builtins.dict[builtins.str, StyleInput]
     media: builtins.list[MediaRule]
     accent_color: ColorValue | None
-    align_content: CssValue | builtins.str | None
+    align_content: CssRawString | None
     align_items: AlignItems | None
-    align_self: CssValue | builtins.str | None
-    alignment_baseline: CssValue | builtins.str | None
-    all: CssValue | builtins.str | None
-    anchor_name: CssValue | builtins.str | None
-    anchor_scope: CssValue | builtins.str | None
-    animation: CssValue | builtins.str | None
-    animation_composition: CssValue | builtins.str | None
+    align_self: CssRawString | None
+    alignment_baseline: CssRawString | None
+    all: CssRawString | None
+    anchor_name: CssRawString | None
+    anchor_scope: CssRawString | None
+    animation: CssRawString | builtins.str | None
+    animation_composition: CssRawString | None
     animation_delay: TimeValue | None
-    animation_direction: CssValue | builtins.str | None
+    animation_direction: CssRawString | None
     animation_duration: TimeValue | None
-    animation_fill_mode: CssValue | builtins.str | None
-    animation_iteration_count: CssValue | builtins.str | None
-    animation_name: CssValue | builtins.str | None
-    animation_play_state: CssValue | builtins.str | None
-    animation_range: CssValue | builtins.str | None
+    animation_fill_mode: CssRawString | None
+    animation_iteration_count: CssRawString | None
+    animation_name: CssRawString | None
+    animation_play_state: CssRawString | None
+    animation_range: CssRawString | builtins.str | None
     animation_range_center: LengthPercentage | builtins.int | builtins.float | None
     animation_range_end: LengthPercentage | builtins.int | builtins.float | None
     animation_range_start: LengthPercentage | builtins.int | builtins.float | None
-    animation_timeline: CssValue | builtins.str | None
-    animation_timing_function: CssValue | builtins.str | None
-    animation_trigger: CssValue | builtins.str | None
-    appearance: CssValue | builtins.str | None
-    aspect_ratio: CssValue | builtins.str | None
-    backdrop_filter: CssValue | builtins.str | None
-    backface_visibility: CssValue | builtins.str | None
-    background: CssValue | builtins.str | None
-    background_attachment: CssValue | builtins.str | None
-    background_blend_mode: CssValue | builtins.str | None
-    background_clip: CssValue | builtins.str | None
+    animation_timeline: CssRawString | None
+    animation_timing_function: CssRawString | None
+    animation_trigger: CssRawString | None
+    appearance: CssRawString | None
+    aspect_ratio: CssRawString | None
+    backdrop_filter: CssRawString | None
+    backface_visibility: CssRawString | None
+    background: CssRawString | builtins.str | None
+    background_attachment: CssRawString | None
+    background_blend_mode: CssRawString | None
+    background_clip: CssRawString | None
     background_color: ColorValue | None
-    background_image: CssValue | builtins.str | None
-    background_origin: CssValue | builtins.str | None
-    background_position: CssValue | builtins.str | None
+    background_image: CssRawString | None
+    background_origin: CssRawString | None
+    background_position: CssRawString | builtins.str | None
     background_position_block: LengthPercentage | builtins.int | builtins.float | None
     background_position_inline: LengthPercentage | builtins.int | builtins.float | None
     background_position_x: LengthPercentage | builtins.int | builtins.float | None
     background_position_y: LengthPercentage | builtins.int | builtins.float | None
-    background_repeat: CssValue | builtins.str | None
-    background_repeat_block: CssValue | builtins.str | None
-    background_repeat_inline: CssValue | builtins.str | None
-    background_repeat_x: CssValue | builtins.str | None
-    background_repeat_y: CssValue | builtins.str | None
-    background_size: CssValue | builtins.str | None
-    background_tbd: CssValue | builtins.str | None
+    background_repeat: CssRawString | None
+    background_repeat_block: CssRawString | None
+    background_repeat_inline: CssRawString | None
+    background_repeat_x: CssRawString | None
+    background_repeat_y: CssRawString | None
+    background_size: CssRawString | None
+    background_tbd: CssRawString | None
     baseline_shift: LengthPercentage | builtins.int | builtins.float | None
-    baseline_source: CssValue | builtins.str | None
-    block_ellipsis: CssValue | builtins.str | None
+    baseline_source: CssRawString | None
+    block_ellipsis: CssRawString | builtins.str | None
     block_size: WidthValue | builtins.int | builtins.float | None
-    block_step: CssValue | builtins.str | None
-    block_step_align: CssValue | builtins.str | None
-    block_step_insert: CssValue | builtins.str | None
-    block_step_round: CssValue | builtins.str | None
+    block_step: CssRawString | builtins.str | None
+    block_step_align: CssRawString | None
+    block_step_insert: CssRawString | None
+    block_step_round: CssRawString | None
     block_step_size: Length | builtins.int | builtins.float | None
-    bookmark_label: CssValue | builtins.str | None
-    bookmark_level: CssValue | builtins.str | None
-    bookmark_state: CssValue | builtins.str | None
-    border: ColorValue | CssValue | None
-    border_block: CssValue | builtins.str | None
-    border_block_clip: CssValue | builtins.str | None
-    border_block_color: ColorValue | CssValue | None
-    border_block_end: ColorValue | CssValue | None
+    bookmark_label: CssRawString | None
+    bookmark_level: CssRawString | None
+    bookmark_state: CssRawString | None
+    border: ColorValue | CssRawString | None
+    border_block: CssRawString | builtins.str | None
+    border_block_clip: CssRawString | builtins.str | None
+    border_block_color: ColorValue | CssRawString | None
+    border_block_end: ColorValue | CssRawString | None
     border_block_end_clip: LengthPercentage | builtins.int | builtins.float | None
     border_block_end_color: ColorValue | None
     border_block_end_radius: BorderRadiusValue | builtins.int | builtins.float | None
-    border_block_end_style: CssValue | builtins.str | None
-    border_block_end_width: CssValue | builtins.str | None
-    border_block_start: ColorValue | CssValue | None
+    border_block_end_style: CssRawString | None
+    border_block_end_width: CssRawString | None
+    border_block_start: ColorValue | CssRawString | None
     border_block_start_clip: LengthPercentage | builtins.int | builtins.float | None
     border_block_start_color: ColorValue | None
     border_block_start_radius: BorderRadiusValue | builtins.int | builtins.float | None
-    border_block_start_style: CssValue | builtins.str | None
-    border_block_start_width: CssValue | builtins.str | None
-    border_block_style: CssValue | builtins.str | None
-    border_block_width: CssValue | builtins.str | None
-    border_bottom: ColorValue | CssValue | None
+    border_block_start_style: CssRawString | None
+    border_block_start_width: CssRawString | None
+    border_block_style: CssRawString | builtins.str | None
+    border_block_width: CssRawString | builtins.str | None
+    border_bottom: ColorValue | CssRawString | None
     border_bottom_clip: LengthPercentage | builtins.int | builtins.float | None
     border_bottom_color: ColorValue | None
     border_bottom_left_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_bottom_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_bottom_right_radius: BorderRadiusValue | builtins.int | builtins.float | None
-    border_bottom_style: CssValue | builtins.str | None
-    border_bottom_width: CssValue | builtins.str | None
-    border_boundary: CssValue | builtins.str | None
-    border_clip: CssValue | builtins.str | None
-    border_collapse: CssValue | builtins.str | None
-    border_color: ColorValue | CssValue | None
+    border_bottom_style: CssRawString | None
+    border_bottom_width: CssRawString | None
+    border_boundary: CssRawString | None
+    border_clip: CssRawString | builtins.str | None
+    border_collapse: CssRawString | None
+    border_color: ColorValue | CssRawString | None
     border_end_end_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_end_start_radius: BorderRadiusValue | builtins.int | builtins.float | None
-    border_image: CssValue | builtins.str | None
+    border_image: CssRawString | builtins.str | None
     border_image_outset: Length | builtins.int | builtins.float | None
-    border_image_repeat: CssValue | builtins.str | None
-    border_image_slice: CssValue | builtins.str | None
-    border_image_source: CssValue | builtins.str | None
+    border_image_repeat: CssRawString | None
+    border_image_slice: CssRawString | None
+    border_image_source: CssRawString | builtins.str | None
     border_image_width: LengthPercentage | builtins.int | builtins.float | None
-    border_inline: CssValue | builtins.str | None
-    border_inline_clip: CssValue | builtins.str | None
-    border_inline_color: ColorValue | CssValue | None
-    border_inline_end: ColorValue | CssValue | None
+    border_inline: CssRawString | builtins.str | None
+    border_inline_clip: CssRawString | builtins.str | None
+    border_inline_color: ColorValue | CssRawString | None
+    border_inline_end: ColorValue | CssRawString | None
     border_inline_end_clip: LengthPercentage | builtins.int | builtins.float | None
     border_inline_end_color: ColorValue | None
     border_inline_end_radius: BorderRadiusValue | builtins.int | builtins.float | None
-    border_inline_end_style: CssValue | builtins.str | None
-    border_inline_end_width: CssValue | builtins.str | None
-    border_inline_start: ColorValue | CssValue | None
+    border_inline_end_style: CssRawString | None
+    border_inline_end_width: CssRawString | None
+    border_inline_start: ColorValue | CssRawString | None
     border_inline_start_clip: LengthPercentage | builtins.int | builtins.float | None
     border_inline_start_color: ColorValue | None
     border_inline_start_radius: BorderRadiusValue | builtins.int | builtins.float | None
-    border_inline_start_style: CssValue | builtins.str | None
-    border_inline_start_width: CssValue | builtins.str | None
-    border_inline_style: CssValue | builtins.str | None
-    border_inline_width: CssValue | builtins.str | None
-    border_left: ColorValue | CssValue | None
+    border_inline_start_style: CssRawString | None
+    border_inline_start_width: CssRawString | None
+    border_inline_style: CssRawString | builtins.str | None
+    border_inline_width: CssRawString | builtins.str | None
+    border_left: ColorValue | CssRawString | None
     border_left_clip: LengthPercentage | builtins.int | builtins.float | None
     border_left_color: ColorValue | None
     border_left_radius: BorderRadiusValue | builtins.int | builtins.float | None
-    border_left_style: CssValue | builtins.str | None
-    border_left_width: CssValue | builtins.str | None
+    border_left_style: CssRawString | None
+    border_left_width: CssRawString | None
     border_limit: LengthPercentage | builtins.int | builtins.float | None
     border_radius: BorderRadiusValue | builtins.int | builtins.float | None
-    border_right: ColorValue | CssValue | None
+    border_right: ColorValue | CssRawString | None
     border_right_clip: LengthPercentage | builtins.int | builtins.float | None
     border_right_color: ColorValue | None
     border_right_radius: BorderRadiusValue | builtins.int | builtins.float | None
-    border_right_style: CssValue | builtins.str | None
-    border_right_width: CssValue | builtins.str | None
-    border_shape: CssValue | builtins.str | None
+    border_right_style: CssRawString | None
+    border_right_width: CssRawString | None
+    border_shape: CssRawString | None
     border_spacing: Length | builtins.int | builtins.float | None
     border_start_end_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_start_start_radius: BorderRadiusValue | builtins.int | builtins.float | None
-    border_style: CssValue | builtins.str | None
-    border_top: ColorValue | CssValue | None
+    border_style: CssRawString | builtins.str | None
+    border_top: ColorValue | CssRawString | None
     border_top_clip: LengthPercentage | builtins.int | builtins.float | None
     border_top_color: ColorValue | None
     border_top_left_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_top_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_top_right_radius: BorderRadiusValue | builtins.int | builtins.float | None
-    border_top_style: CssValue | builtins.str | None
-    border_top_width: CssValue | builtins.str | None
-    border_width: CssValue | builtins.str | None
+    border_top_style: CssRawString | None
+    border_top_width: CssRawString | None
+    border_width: CssRawString | builtins.str | None
     bottom: LengthPercentage | builtins.int | builtins.float | None
-    box_decoration_break: CssValue | builtins.str | None
+    box_decoration_break: CssRawString | None
     box_shadow: ShadowValue | None
     box_shadow_blur: Length | builtins.int | builtins.float | None
     box_shadow_color: ColorValue | None
     box_shadow_offset: Length | builtins.int | builtins.float | None
-    box_shadow_position: CssValue | builtins.str | None
+    box_shadow_position: CssRawString | None
     box_shadow_spread: Length | builtins.int | builtins.float | None
-    box_sizing: CssValue | builtins.str | None
-    box_snap: CssValue | builtins.str | None
-    break_after: CssValue | builtins.str | None
-    break_before: CssValue | builtins.str | None
-    break_inside: CssValue | builtins.str | None
-    caption_side: CssValue | builtins.str | None
-    caret: CssValue | builtins.str | None
-    caret_animation: CssValue | builtins.str | None
+    box_sizing: CssRawString | None
+    box_snap: CssRawString | None
+    break_after: CssRawString | None
+    break_before: CssRawString | None
+    break_inside: CssRawString | None
+    caption_side: CssRawString | None
+    caret: CssRawString | builtins.str | None
+    caret_animation: CssRawString | None
     caret_color: ColorValue | None
-    caret_shape: CssValue | builtins.str | None
-    clear: CssValue | builtins.str | None
-    clip: CssValue | builtins.str | None
-    clip_path: CssValue | builtins.str | None
-    clip_rule: CssValue | builtins.str | None
+    caret_shape: CssRawString | None
+    clear: CssRawString | None
+    clip: CssRawString | None
+    clip_path: CssRawString | None
+    clip_rule: CssRawString | None
     color: ColorValue | None
-    color_adjust: CssValue | builtins.str | None
-    color_interpolation: CssValue | builtins.str | None
-    color_interpolation_filters: CssValue | builtins.str | None
-    color_scheme: CssValue | builtins.str | None
-    column_count: CssValue | builtins.str | None
-    column_fill: CssValue | builtins.str | None
+    color_adjust: CssRawString | builtins.str | None
+    color_interpolation: CssRawString | None
+    color_interpolation_filters: CssRawString | None
+    color_scheme: CssRawString | None
+    column_count: CssRawString | None
+    column_fill: CssRawString | None
     column_gap: GapValue | builtins.int | builtins.float | None
     column_height: Length | builtins.int | builtins.float | None
-    column_rule: CssValue | builtins.str | None
-    column_rule_break: CssValue | builtins.str | None
+    column_rule: CssRawString | builtins.str | None
+    column_rule_break: CssRawString | None
     column_rule_color: ColorValue | None
-    column_rule_edge_inset: LengthPercentage | CssValue | builtins.int | builtins.float | None
+    column_rule_edge_inset: LengthPercentage | CssRawString | builtins.int | builtins.float | None
     column_rule_edge_inset_end: LengthPercentage | builtins.int | builtins.float | None
     column_rule_edge_inset_start: LengthPercentage | builtins.int | builtins.float | None
-    column_rule_inset: CssValue | builtins.str | None
-    column_rule_inset_end: LengthPercentage | CssValue | builtins.int | builtins.float | None
-    column_rule_inset_start: LengthPercentage | CssValue | builtins.int | builtins.float | None
-    column_rule_interior_inset: LengthPercentage | CssValue | builtins.int | builtins.float | None
+    column_rule_inset: CssRawString | builtins.str | None
+    column_rule_inset_end: LengthPercentage | CssRawString | builtins.int | builtins.float | None
+    column_rule_inset_start: LengthPercentage | CssRawString | builtins.int | builtins.float | None
+    column_rule_interior_inset: (
+        LengthPercentage | CssRawString | builtins.int | builtins.float | None
+    )
     column_rule_interior_inset_end: LengthPercentage | builtins.int | builtins.float | None
     column_rule_interior_inset_start: LengthPercentage | builtins.int | builtins.float | None
-    column_rule_style: CssValue | builtins.str | None
-    column_rule_visibility_items: CssValue | builtins.str | None
-    column_rule_width: CssValue | builtins.str | None
-    column_span: CssValue | builtins.str | None
+    column_rule_style: CssRawString | None
+    column_rule_visibility_items: CssRawString | None
+    column_rule_width: CssRawString | None
+    column_span: CssRawString | None
     column_width: WidthValue | builtins.int | builtins.float | None
-    column_wrap: CssValue | builtins.str | None
-    columns: CssValue | builtins.str | None
-    contain: CssValue | builtins.str | None
+    column_wrap: CssRawString | None
+    columns: CssRawString | builtins.str | None
+    contain: CssRawString | None
     contain_intrinsic_block_size: Length | builtins.int | builtins.float | None
     contain_intrinsic_height: Length | builtins.int | builtins.float | None
     contain_intrinsic_inline_size: Length | builtins.int | builtins.float | None
-    contain_intrinsic_size: Length | CssValue | builtins.int | builtins.float | None
+    contain_intrinsic_size: Length | CssRawString | builtins.int | builtins.float | None
     contain_intrinsic_width: Length | builtins.int | builtins.float | None
-    container: CssValue | builtins.str | None
-    container_name: CssValue | builtins.str | None
-    container_type: CssValue | builtins.str | None
-    content: CssValue | builtins.str | None
-    content_visibility: CssValue | builtins.str | None
-    continue_: CssValue | builtins.str | None
-    copy_into: CssValue | builtins.str | None
-    corner: CssValue | builtins.str | None
-    corner_block_end: CssValue | builtins.str | None
-    corner_block_end_shape: CssValue | builtins.str | None
-    corner_block_start: CssValue | builtins.str | None
-    corner_block_start_shape: CssValue | builtins.str | None
-    corner_bottom: CssValue | builtins.str | None
-    corner_bottom_left: CssValue | builtins.str | None
-    corner_bottom_left_shape: CssValue | builtins.str | None
-    corner_bottom_right: CssValue | builtins.str | None
-    corner_bottom_right_shape: CssValue | builtins.str | None
-    corner_bottom_shape: CssValue | builtins.str | None
-    corner_end_end: CssValue | builtins.str | None
-    corner_end_end_shape: CssValue | builtins.str | None
-    corner_end_start: CssValue | builtins.str | None
-    corner_end_start_shape: CssValue | builtins.str | None
-    corner_inline_end: CssValue | builtins.str | None
-    corner_inline_end_shape: CssValue | builtins.str | None
-    corner_inline_start: CssValue | builtins.str | None
-    corner_inline_start_shape: CssValue | builtins.str | None
-    corner_left: CssValue | builtins.str | None
-    corner_left_shape: CssValue | builtins.str | None
-    corner_right: CssValue | builtins.str | None
-    corner_right_shape: CssValue | builtins.str | None
-    corner_shape: CssValue | builtins.str | None
-    corner_start_end: CssValue | builtins.str | None
-    corner_start_end_shape: CssValue | builtins.str | None
-    corner_start_start: CssValue | builtins.str | None
-    corner_start_start_shape: CssValue | builtins.str | None
-    corner_top: CssValue | builtins.str | None
-    corner_top_left: CssValue | builtins.str | None
-    corner_top_left_shape: CssValue | builtins.str | None
-    corner_top_right: CssValue | builtins.str | None
-    corner_top_right_shape: CssValue | builtins.str | None
-    corner_top_shape: CssValue | builtins.str | None
-    counter_increment: CssValue | builtins.str | None
-    counter_reset: CssValue | builtins.str | None
-    counter_set: CssValue | builtins.str | None
-    cue: CssValue | builtins.str | None
-    cue_after: CssValue | builtins.str | None
-    cue_before: CssValue | builtins.str | None
-    cursor: CssValue | builtins.str | None
+    container: CssRawString | builtins.str | None
+    container_name: CssRawString | None
+    container_type: CssRawString | None
+    content: CssRawString | builtins.str | None
+    content_visibility: CssRawString | None
+    continue_: CssRawString | None
+    copy_into: CssRawString | None
+    corner: CssRawString | builtins.str | None
+    corner_block_end: CssRawString | builtins.str | None
+    corner_block_end_shape: CssRawString | builtins.str | None
+    corner_block_start: CssRawString | builtins.str | None
+    corner_block_start_shape: CssRawString | builtins.str | None
+    corner_bottom: CssRawString | builtins.str | None
+    corner_bottom_left: CssRawString | builtins.str | None
+    corner_bottom_left_shape: CssRawString | None
+    corner_bottom_right: CssRawString | builtins.str | None
+    corner_bottom_right_shape: CssRawString | None
+    corner_bottom_shape: CssRawString | builtins.str | None
+    corner_end_end: CssRawString | builtins.str | None
+    corner_end_end_shape: CssRawString | None
+    corner_end_start: CssRawString | builtins.str | None
+    corner_end_start_shape: CssRawString | None
+    corner_inline_end: CssRawString | builtins.str | None
+    corner_inline_end_shape: CssRawString | builtins.str | None
+    corner_inline_start: CssRawString | builtins.str | None
+    corner_inline_start_shape: CssRawString | builtins.str | None
+    corner_left: CssRawString | builtins.str | None
+    corner_left_shape: CssRawString | builtins.str | None
+    corner_right: CssRawString | builtins.str | None
+    corner_right_shape: CssRawString | builtins.str | None
+    corner_shape: CssRawString | builtins.str | None
+    corner_start_end: CssRawString | builtins.str | None
+    corner_start_end_shape: CssRawString | None
+    corner_start_start: CssRawString | builtins.str | None
+    corner_start_start_shape: CssRawString | None
+    corner_top: CssRawString | builtins.str | None
+    corner_top_left: CssRawString | builtins.str | None
+    corner_top_left_shape: CssRawString | None
+    corner_top_right: CssRawString | builtins.str | None
+    corner_top_right_shape: CssRawString | None
+    corner_top_shape: CssRawString | builtins.str | None
+    counter_increment: CssRawString | builtins.str | None
+    counter_reset: CssRawString | builtins.str | None
+    counter_set: CssRawString | builtins.str | None
+    cue: CssRawString | builtins.str | None
+    cue_after: CssRawString | None
+    cue_before: CssRawString | None
+    cursor: CssRawString | builtins.str | None
     cx: LengthPercentage | builtins.int | builtins.float | None
     cy: LengthPercentage | builtins.int | builtins.float | None
-    d: CssValue | builtins.str | None
-    direction: CssValue | builtins.str | None
+    d: CssRawString | builtins.str | None
+    direction: CssRawString | None
     display: Display | None
-    dominant_baseline: CssValue | builtins.str | None
-    dynamic_range_limit: CssValue | builtins.str | None
-    empty_cells: CssValue | builtins.str | None
-    event_trigger: CssValue | builtins.str | None
-    event_trigger_name: CssValue | builtins.str | None
-    event_trigger_source: CssValue | builtins.str | None
-    field_sizing: CssValue | builtins.str | None
-    fill: CssValue | builtins.str | None
-    fill_break: CssValue | builtins.str | None
+    dominant_baseline: CssRawString | None
+    dynamic_range_limit: CssRawString | None
+    empty_cells: CssRawString | None
+    event_trigger: CssRawString | None
+    event_trigger_name: CssRawString | None
+    event_trigger_source: CssRawString | None
+    field_sizing: CssRawString | None
+    fill: CssRawString | None
+    fill_break: CssRawString | None
     fill_color: ColorValue | None
-    fill_image: CssValue | builtins.str | None
-    fill_opacity: CssValue | builtins.str | None
-    fill_origin: CssValue | builtins.str | None
-    fill_position: CssValue | builtins.str | None
-    fill_repeat: CssValue | builtins.str | None
-    fill_rule: CssValue | builtins.str | None
-    fill_size: CssValue | builtins.str | None
-    filter: CssValue | builtins.str | None
-    flex: CssValue | builtins.str | None
+    fill_image: CssRawString | None
+    fill_opacity: CssRawString | None
+    fill_origin: CssRawString | None
+    fill_position: CssRawString | None
+    fill_repeat: CssRawString | None
+    fill_rule: CssRawString | None
+    fill_size: CssRawString | None
+    filter: CssRawString | None
+    flex: CssRawString | builtins.str | None
     flex_basis: WidthValue | builtins.int | builtins.float | None
     flex_direction: FlexDirection | None
-    flex_flow: CssValue | builtins.str | None
-    flex_grow: CssValue | builtins.str | None
-    flex_shrink: CssValue | builtins.str | None
+    flex_flow: CssRawString | builtins.str | None
+    flex_grow: CssRawString | None
+    flex_shrink: CssRawString | None
     flex_wrap: FlexWrap | None
-    float: CssValue | builtins.str | None
-    float_defer: CssValue | builtins.str | None
+    float: CssRawString | None
+    float_defer: CssRawString | None
     float_offset: LengthPercentage | builtins.int | builtins.float | None
-    float_reference: CssValue | builtins.str | None
+    float_reference: CssRawString | None
     flood_color: ColorValue | None
-    flood_opacity: CssValue | builtins.str | None
-    flow_from: CssValue | builtins.str | None
-    flow_into: CssValue | builtins.str | None
+    flood_opacity: CssRawString | None
+    flow_from: CssRawString | None
+    flow_into: CssRawString | None
     flow_tolerance: LengthPercentage | builtins.int | builtins.float | None
-    font: CssValue | builtins.str | None
-    font_family: CssValue | builtins.str | None
-    font_feature_settings: CssValue | builtins.str | None
-    font_kerning: CssValue | builtins.str | None
-    font_language_override: CssValue | builtins.str | None
-    font_optical_sizing: CssValue | builtins.str | None
-    font_palette: CssValue | builtins.str | None
+    font: CssRawString | builtins.str | None
+    font_family: CssRawString | builtins.str | None
+    font_feature_settings: CssRawString | builtins.str | None
+    font_kerning: CssRawString | None
+    font_language_override: CssRawString | builtins.str | None
+    font_optical_sizing: CssRawString | None
+    font_palette: CssRawString | None
     font_size: LengthPercentage | builtins.int | builtins.float | None
-    font_size_adjust: CssValue | builtins.str | None
-    font_stretch: CssValue | builtins.str | None
-    font_style: CssValue | builtins.str | None
-    font_synthesis: CssValue | builtins.str | None
-    font_synthesis_position: CssValue | builtins.str | None
-    font_synthesis_small_caps: CssValue | builtins.str | None
-    font_synthesis_style: CssValue | builtins.str | None
-    font_synthesis_weight: CssValue | builtins.str | None
-    font_variant: CssValue | builtins.str | None
-    font_variant_alternates: CssValue | builtins.str | None
-    font_variant_caps: CssValue | builtins.str | None
-    font_variant_east_asian: CssValue | builtins.str | None
-    font_variant_emoji: CssValue | builtins.str | None
-    font_variant_ligatures: CssValue | builtins.str | None
-    font_variant_numeric: CssValue | builtins.str | None
-    font_variant_position: CssValue | builtins.str | None
-    font_variation_settings: CssValue | builtins.str | None
+    font_size_adjust: CssRawString | None
+    font_stretch: CssRawString | None
+    font_style: CssRawString | None
+    font_synthesis: CssRawString | builtins.str | None
+    font_synthesis_position: CssRawString | None
+    font_synthesis_small_caps: CssRawString | None
+    font_synthesis_style: CssRawString | None
+    font_synthesis_weight: CssRawString | None
+    font_variant: CssRawString | builtins.str | None
+    font_variant_alternates: CssRawString | None
+    font_variant_caps: CssRawString | None
+    font_variant_east_asian: CssRawString | None
+    font_variant_emoji: CssRawString | None
+    font_variant_ligatures: CssRawString | None
+    font_variant_numeric: CssRawString | None
+    font_variant_position: CssRawString | None
+    font_variation_settings: CssRawString | builtins.str | None
     font_weight: FontWeight | None
-    font_width: CssValue | builtins.str | None
-    footnote_display: CssValue | builtins.str | None
-    footnote_policy: CssValue | builtins.str | None
-    forced_color_adjust: CssValue | builtins.str | None
+    font_width: CssRawString | None
+    footnote_display: CssRawString | None
+    footnote_policy: CssRawString | None
+    forced_color_adjust: CssRawString | None
     gap: GapValue | builtins.int | builtins.float | None
-    glyph_orientation_vertical: CssValue | builtins.str | None
-    grid: CssValue | builtins.str | None
-    grid_area: CssValue | builtins.str | None
-    grid_auto_columns: CssValue | builtins.str | None
-    grid_auto_flow: CssValue | builtins.str | None
-    grid_auto_rows: CssValue | builtins.str | None
-    grid_column: CssValue | builtins.str | None
-    grid_column_end: CssValue | builtins.str | None
+    glyph_orientation_vertical: CssRawString | None
+    grid: CssRawString | builtins.str | None
+    grid_area: CssRawString | builtins.str | None
+    grid_auto_columns: CssRawString | None
+    grid_auto_flow: CssRawString | None
+    grid_auto_rows: CssRawString | None
+    grid_column: CssRawString | builtins.str | None
+    grid_column_end: CssRawString | None
     grid_column_gap: GapValue | builtins.int | builtins.float | None
-    grid_column_start: CssValue | builtins.str | None
+    grid_column_start: CssRawString | None
     grid_gap: GapValue | builtins.int | builtins.float | None
-    grid_row: CssValue | builtins.str | None
-    grid_row_end: CssValue | builtins.str | None
+    grid_row: CssRawString | builtins.str | None
+    grid_row_end: CssRawString | None
     grid_row_gap: GapValue | builtins.int | builtins.float | None
-    grid_row_start: CssValue | builtins.str | None
-    grid_template: CssValue | builtins.str | None
-    grid_template_areas: CssValue | builtins.str | None
-    grid_template_columns: CssValue | builtins.str | None
-    grid_template_rows: CssValue | builtins.str | None
-    hanging_punctuation: CssValue | builtins.str | None
+    grid_row_start: CssRawString | None
+    grid_template: CssRawString | builtins.str | None
+    grid_template_areas: CssRawString | builtins.str | None
+    grid_template_columns: CssRawString | builtins.str | None
+    grid_template_rows: CssRawString | builtins.str | None
+    hanging_punctuation: CssRawString | None
     height: HeightValue | builtins.int | builtins.float | None
-    hyphenate_character: CssValue | builtins.str | None
-    hyphenate_limit_chars: CssValue | builtins.str | None
-    hyphenate_limit_last: CssValue | builtins.str | None
-    hyphenate_limit_lines: CssValue | builtins.str | None
+    hyphenate_character: CssRawString | builtins.str | None
+    hyphenate_limit_chars: CssRawString | None
+    hyphenate_limit_last: CssRawString | None
+    hyphenate_limit_lines: CssRawString | None
     hyphenate_limit_zone: LengthPercentage | builtins.int | builtins.float | None
-    hyphens: CssValue | builtins.str | None
-    image_animation: CssValue | builtins.str | None
-    image_orientation: CssValue | builtins.str | None
-    image_rendering: CssValue | builtins.str | None
-    image_resolution: CssValue | builtins.str | None
-    initial_letter: CssValue | builtins.str | None
-    initial_letter_align: CssValue | builtins.str | None
+    hyphens: CssRawString | None
+    image_animation: CssRawString | None
+    image_orientation: CssRawString | None
+    image_rendering: CssRawString | None
+    image_resolution: CssRawString | None
+    initial_letter: CssRawString | None
+    initial_letter_align: CssRawString | None
     initial_letter_wrap: LengthPercentage | builtins.int | builtins.float | None
     inline_size: WidthValue | builtins.int | builtins.float | None
-    inline_sizing: CssValue | builtins.str | None
-    input_security: CssValue | builtins.str | None
+    inline_sizing: CssRawString | None
+    input_security: CssRawString | None
     inset: SpacingShorthand | builtins.int | builtins.float | None
     inset_block: SpacingShorthand | builtins.int | builtins.float | None
     inset_block_end: SpacingShorthand | builtins.int | builtins.float | None
@@ -539,125 +564,125 @@ class Style:
     inset_inline: SpacingShorthand | builtins.int | builtins.float | None
     inset_inline_end: SpacingShorthand | builtins.int | builtins.float | None
     inset_inline_start: SpacingShorthand | builtins.int | builtins.float | None
-    interactivity: CssValue | builtins.str | None
-    interest_delay: CssValue | builtins.str | None
+    interactivity: CssRawString | None
+    interest_delay: CssRawString | builtins.str | None
     interest_delay_end: TimeValue | None
     interest_delay_start: TimeValue | None
-    interpolate_size: CssValue | builtins.str | None
-    isolation: CssValue | builtins.str | None
+    interpolate_size: CssRawString | None
+    isolation: CssRawString | None
     justify_content: JustifyContent | None
-    justify_items: CssValue | builtins.str | None
-    justify_self: CssValue | builtins.str | None
+    justify_items: CssRawString | None
+    justify_self: CssRawString | None
     left: LengthPercentage | builtins.int | builtins.float | None
     letter_spacing: LengthPercentage | builtins.int | builtins.float | None
     lighting_color: ColorValue | None
-    line_break: CssValue | builtins.str | None
-    line_clamp: CssValue | builtins.str | None
-    line_fit_edge: CssValue | builtins.str | None
-    line_grid: CssValue | builtins.str | None
+    line_break: CssRawString | None
+    line_clamp: CssRawString | builtins.str | None
+    line_fit_edge: CssRawString | None
+    line_grid: CssRawString | None
     line_height: LineHeightValue | None
     line_height_step: Length | builtins.int | builtins.float | None
     line_padding: Length | builtins.int | builtins.float | None
-    line_snap: CssValue | builtins.str | None
-    link_parameters: CssValue | builtins.str | None
-    list_style: CssValue | builtins.str | None
-    list_style_image: CssValue | builtins.str | None
-    list_style_position: CssValue | builtins.str | None
-    list_style_type: CssValue | builtins.str | None
+    line_snap: CssRawString | None
+    link_parameters: CssRawString | None
+    list_style: CssRawString | builtins.str | None
+    list_style_image: CssRawString | builtins.str | None
+    list_style_position: CssRawString | None
+    list_style_type: CssRawString | builtins.str | None
     margin: SpacingShorthand | builtins.int | builtins.float | None
     margin_block: SpacingShorthand | builtins.int | builtins.float | None
     margin_block_end: SpacingShorthand | builtins.int | builtins.float | None
     margin_block_start: SpacingShorthand | builtins.int | builtins.float | None
     margin_bottom: SpacingShorthand | builtins.int | builtins.float | None
-    margin_break: CssValue | builtins.str | None
+    margin_break: CssRawString | None
     margin_inline: SpacingShorthand | builtins.int | builtins.float | None
     margin_inline_end: SpacingShorthand | builtins.int | builtins.float | None
     margin_inline_start: SpacingShorthand | builtins.int | builtins.float | None
     margin_left: SpacingShorthand | builtins.int | builtins.float | None
     margin_right: SpacingShorthand | builtins.int | builtins.float | None
     margin_top: SpacingShorthand | builtins.int | builtins.float | None
-    margin_trim: CssValue | builtins.str | None
-    marker: CssValue | builtins.str | None
-    marker_end: CssValue | builtins.str | None
-    marker_mid: CssValue | builtins.str | None
-    marker_side: CssValue | builtins.str | None
-    marker_start: CssValue | builtins.str | None
-    mask: CssValue | builtins.str | None
-    mask_border: CssValue | builtins.str | None
-    mask_border_mode: CssValue | builtins.str | None
+    margin_trim: CssRawString | None
+    marker: CssRawString | builtins.str | None
+    marker_end: CssRawString | None
+    marker_mid: CssRawString | None
+    marker_side: CssRawString | None
+    marker_start: CssRawString | None
+    mask: CssRawString | builtins.str | None
+    mask_border: CssRawString | builtins.str | None
+    mask_border_mode: CssRawString | None
     mask_border_outset: Length | builtins.int | builtins.float | None
-    mask_border_repeat: CssValue | builtins.str | None
-    mask_border_slice: CssValue | builtins.str | None
-    mask_border_source: CssValue | builtins.str | None
+    mask_border_repeat: CssRawString | None
+    mask_border_slice: CssRawString | None
+    mask_border_source: CssRawString | builtins.str | None
     mask_border_width: LengthPercentage | builtins.int | builtins.float | None
-    mask_clip: CssValue | builtins.str | None
-    mask_composite: CssValue | builtins.str | None
-    mask_image: CssValue | builtins.str | None
-    mask_mode: CssValue | builtins.str | None
-    mask_origin: CssValue | builtins.str | None
-    mask_position: CssValue | builtins.str | None
-    mask_repeat: CssValue | builtins.str | None
-    mask_size: CssValue | builtins.str | None
-    mask_type: CssValue | builtins.str | None
-    math_depth: CssValue | builtins.str | None
-    math_shift: CssValue | builtins.str | None
-    math_style: CssValue | builtins.str | None
+    mask_clip: CssRawString | None
+    mask_composite: CssRawString | None
+    mask_image: CssRawString | builtins.str | None
+    mask_mode: CssRawString | None
+    mask_origin: CssRawString | None
+    mask_position: CssRawString | None
+    mask_repeat: CssRawString | None
+    mask_size: CssRawString | None
+    mask_type: CssRawString | None
+    math_depth: CssRawString | None
+    math_shift: CssRawString | None
+    math_style: CssRawString | None
     max_block_size: WidthValue | builtins.int | builtins.float | None
     max_height: HeightValue | builtins.int | builtins.float | None
     max_inline_size: WidthValue | builtins.int | builtins.float | None
-    max_lines: CssValue | builtins.str | None
+    max_lines: CssRawString | None
     max_width: WidthValue | builtins.int | builtins.float | None
     min_block_size: WidthValue | builtins.int | builtins.float | None
     min_height: HeightValue | builtins.int | builtins.float | None
     min_inline_size: WidthValue | builtins.int | builtins.float | None
-    min_intrinsic_sizing: CssValue | builtins.str | None
+    min_intrinsic_sizing: CssRawString | None
     min_width: WidthValue | builtins.int | builtins.float | None
-    mix_blend_mode: CssValue | builtins.str | None
-    nav_down: CssValue | builtins.str | None
-    nav_left: CssValue | builtins.str | None
-    nav_right: CssValue | builtins.str | None
-    nav_up: CssValue | builtins.str | None
-    object_fit: CssValue | builtins.str | None
-    object_position: CssValue | builtins.str | None
-    object_view_box: CssValue | builtins.str | None
-    offset: CssValue | builtins.str | None
-    offset_anchor: CssValue | builtins.str | None
+    mix_blend_mode: CssRawString | None
+    nav_down: CssRawString | None
+    nav_left: CssRawString | None
+    nav_right: CssRawString | None
+    nav_up: CssRawString | None
+    object_fit: CssRawString | None
+    object_position: CssRawString | None
+    object_view_box: CssRawString | None
+    offset: CssRawString | builtins.str | None
+    offset_anchor: CssRawString | None
     offset_distance: LengthPercentage | builtins.int | builtins.float | None
-    offset_path: CssValue | builtins.str | None
-    offset_position: CssValue | builtins.str | None
+    offset_path: CssRawString | None
+    offset_position: CssRawString | None
     offset_rotate: AngleValue | None
     opacity: Opacity | None
-    order: CssValue | builtins.str | None
-    orphans: CssValue | builtins.str | None
-    outline: CssValue | builtins.str | None
+    order: CssRawString | None
+    orphans: CssRawString | None
+    outline: CssRawString | builtins.str | None
     outline_color: ColorValue | None
     outline_offset: Length | builtins.int | builtins.float | None
-    outline_style: CssValue | builtins.str | None
-    outline_width: CssValue | builtins.str | None
-    overflow: Overflow | CssValue | None
-    overflow_anchor: CssValue | builtins.str | None
+    outline_style: CssRawString | None
+    outline_width: CssRawString | None
+    overflow: Overflow | CssRawString | None
+    overflow_anchor: CssRawString | None
     overflow_block: Overflow | None
-    overflow_clip_margin: Length | CssValue | builtins.int | builtins.float | None
-    overflow_clip_margin_block: Length | CssValue | builtins.int | builtins.float | None
+    overflow_clip_margin: Length | CssRawString | builtins.int | builtins.float | None
+    overflow_clip_margin_block: Length | CssRawString | builtins.int | builtins.float | None
     overflow_clip_margin_block_end: Length | builtins.int | builtins.float | None
     overflow_clip_margin_block_start: Length | builtins.int | builtins.float | None
     overflow_clip_margin_bottom: Length | builtins.int | builtins.float | None
-    overflow_clip_margin_inline: Length | CssValue | builtins.int | builtins.float | None
+    overflow_clip_margin_inline: Length | CssRawString | builtins.int | builtins.float | None
     overflow_clip_margin_inline_end: Length | builtins.int | builtins.float | None
     overflow_clip_margin_inline_start: Length | builtins.int | builtins.float | None
     overflow_clip_margin_left: Length | builtins.int | builtins.float | None
     overflow_clip_margin_right: Length | builtins.int | builtins.float | None
     overflow_clip_margin_top: Length | builtins.int | builtins.float | None
     overflow_inline: Overflow | None
-    overflow_wrap: CssValue | builtins.str | None
+    overflow_wrap: CssRawString | None
     overflow_x: Overflow | None
     overflow_y: Overflow | None
-    overlay: CssValue | builtins.str | None
-    overscroll_behavior: CssValue | builtins.str | None
-    overscroll_behavior_block: CssValue | builtins.str | None
-    overscroll_behavior_inline: CssValue | builtins.str | None
-    overscroll_behavior_x: CssValue | builtins.str | None
-    overscroll_behavior_y: CssValue | builtins.str | None
+    overlay: CssRawString | None
+    overscroll_behavior: CssRawString | builtins.str | None
+    overscroll_behavior_block: CssRawString | None
+    overscroll_behavior_inline: CssRawString | None
+    overscroll_behavior_x: CssRawString | None
+    overscroll_behavior_y: CssRawString | None
     padding: SpacingShorthand | builtins.int | builtins.float | None
     padding_block: SpacingShorthand | builtins.int | builtins.float | None
     padding_block_end: SpacingShorthand | builtins.int | builtins.float | None
@@ -669,257 +694,257 @@ class Style:
     padding_left: SpacingShorthand | builtins.int | builtins.float | None
     padding_right: SpacingShorthand | builtins.int | builtins.float | None
     padding_top: SpacingShorthand | builtins.int | builtins.float | None
-    page: CssValue | builtins.str | None
-    page_break_after: CssValue | builtins.str | None
-    page_break_before: CssValue | builtins.str | None
-    page_break_inside: CssValue | builtins.str | None
-    paint_order: CssValue | builtins.str | None
-    pause: CssValue | builtins.str | None
+    page: CssRawString | None
+    page_break_after: CssRawString | None
+    page_break_before: CssRawString | None
+    page_break_inside: CssRawString | None
+    paint_order: CssRawString | None
+    pause: CssRawString | builtins.str | None
     pause_after: TimeValue | None
     pause_before: TimeValue | None
     perspective: Length | builtins.int | builtins.float | None
-    perspective_origin: CssValue | builtins.str | None
-    place_content: CssValue | builtins.str | None
-    place_items: CssValue | builtins.str | None
-    place_self: CssValue | builtins.str | None
-    pointer_events: CssValue | builtins.str | None
-    pointer_timeline: CssValue | builtins.str | None
-    pointer_timeline_axis: CssValue | builtins.str | None
-    pointer_timeline_name: CssValue | builtins.str | None
+    perspective_origin: CssRawString | None
+    place_content: CssRawString | builtins.str | None
+    place_items: CssRawString | builtins.str | None
+    place_self: CssRawString | builtins.str | None
+    pointer_events: CssRawString | None
+    pointer_timeline: CssRawString | builtins.str | None
+    pointer_timeline_axis: CssRawString | None
+    pointer_timeline_name: CssRawString | None
     position: Position | None
-    position_anchor: CssValue | builtins.str | None
-    position_area: CssValue | builtins.str | None
-    position_try: CssValue | builtins.str | None
-    position_try_fallbacks: CssValue | builtins.str | None
-    position_try_order: CssValue | builtins.str | None
-    position_visibility: CssValue | builtins.str | None
-    print_color_adjust: CssValue | builtins.str | None
-    quotes: CssValue | builtins.str | None
+    position_anchor: CssRawString | None
+    position_area: CssRawString | None
+    position_try: CssRawString | builtins.str | None
+    position_try_fallbacks: CssRawString | None
+    position_try_order: CssRawString | None
+    position_visibility: CssRawString | None
+    print_color_adjust: CssRawString | None
+    quotes: CssRawString | builtins.str | None
     r: LengthPercentage | builtins.int | builtins.float | None
-    reading_flow: CssValue | builtins.str | None
-    reading_order: CssValue | builtins.str | None
-    region_fragment: CssValue | builtins.str | None
-    resize: CssValue | builtins.str | None
-    rest: CssValue | builtins.str | None
+    reading_flow: CssRawString | None
+    reading_order: CssRawString | None
+    region_fragment: CssRawString | None
+    resize: CssRawString | None
+    rest: CssRawString | builtins.str | None
     rest_after: TimeValue | None
     rest_before: TimeValue | None
     right: LengthPercentage | builtins.int | builtins.float | None
     rotate: AngleValue | None
     row_gap: GapValue | builtins.int | builtins.float | None
-    row_rule: CssValue | builtins.str | None
-    row_rule_break: CssValue | builtins.str | None
+    row_rule: CssRawString | builtins.str | None
+    row_rule_break: CssRawString | None
     row_rule_color: ColorValue | None
-    row_rule_edge_inset: LengthPercentage | CssValue | builtins.int | builtins.float | None
+    row_rule_edge_inset: LengthPercentage | CssRawString | builtins.int | builtins.float | None
     row_rule_edge_inset_end: LengthPercentage | builtins.int | builtins.float | None
     row_rule_edge_inset_start: LengthPercentage | builtins.int | builtins.float | None
-    row_rule_inset: CssValue | builtins.str | None
-    row_rule_inset_end: LengthPercentage | CssValue | builtins.int | builtins.float | None
-    row_rule_inset_start: LengthPercentage | CssValue | builtins.int | builtins.float | None
-    row_rule_interior_inset: LengthPercentage | CssValue | builtins.int | builtins.float | None
+    row_rule_inset: CssRawString | builtins.str | None
+    row_rule_inset_end: LengthPercentage | CssRawString | builtins.int | builtins.float | None
+    row_rule_inset_start: LengthPercentage | CssRawString | builtins.int | builtins.float | None
+    row_rule_interior_inset: LengthPercentage | CssRawString | builtins.int | builtins.float | None
     row_rule_interior_inset_end: LengthPercentage | builtins.int | builtins.float | None
     row_rule_interior_inset_start: LengthPercentage | builtins.int | builtins.float | None
-    row_rule_style: CssValue | builtins.str | None
-    row_rule_visibility_items: CssValue | builtins.str | None
-    row_rule_width: CssValue | builtins.str | None
-    ruby_align: CssValue | builtins.str | None
-    ruby_merge: CssValue | builtins.str | None
-    ruby_overhang: CssValue | builtins.str | None
-    ruby_position: CssValue | builtins.str | None
-    rule: CssValue | builtins.str | None
-    rule_break: CssValue | builtins.str | None
-    rule_color: ColorValue | CssValue | None
-    rule_edge_inset: CssValue | builtins.str | None
-    rule_inset: CssValue | builtins.str | None
-    rule_inset_end: CssValue | builtins.str | None
-    rule_inset_start: CssValue | builtins.str | None
-    rule_interior_inset: CssValue | builtins.str | None
-    rule_overlap: CssValue | builtins.str | None
-    rule_style: CssValue | builtins.str | None
-    rule_visibility_items: CssValue | builtins.str | None
-    rule_width: CssValue | builtins.str | None
+    row_rule_style: CssRawString | None
+    row_rule_visibility_items: CssRawString | None
+    row_rule_width: CssRawString | None
+    ruby_align: CssRawString | None
+    ruby_merge: CssRawString | None
+    ruby_overhang: CssRawString | None
+    ruby_position: CssRawString | None
+    rule: CssRawString | builtins.str | None
+    rule_break: CssRawString | builtins.str | None
+    rule_color: ColorValue | CssRawString | None
+    rule_edge_inset: CssRawString | builtins.str | None
+    rule_inset: CssRawString | builtins.str | None
+    rule_inset_end: CssRawString | builtins.str | None
+    rule_inset_start: CssRawString | builtins.str | None
+    rule_interior_inset: CssRawString | builtins.str | None
+    rule_overlap: CssRawString | None
+    rule_style: CssRawString | builtins.str | None
+    rule_visibility_items: CssRawString | builtins.str | None
+    rule_width: CssRawString | builtins.str | None
     rx: LengthPercentage | builtins.int | builtins.float | None
     ry: LengthPercentage | builtins.int | builtins.float | None
-    scale: CssValue | builtins.str | None
-    scroll_behavior: CssValue | builtins.str | None
-    scroll_initial_target: CssValue | builtins.str | None
-    scroll_margin: Length | CssValue | builtins.int | builtins.float | None
-    scroll_margin_block: Length | CssValue | builtins.int | builtins.float | None
+    scale: CssRawString | None
+    scroll_behavior: CssRawString | None
+    scroll_initial_target: CssRawString | None
+    scroll_margin: Length | CssRawString | builtins.int | builtins.float | None
+    scroll_margin_block: Length | CssRawString | builtins.int | builtins.float | None
     scroll_margin_block_end: Length | builtins.int | builtins.float | None
     scroll_margin_block_start: Length | builtins.int | builtins.float | None
     scroll_margin_bottom: Length | builtins.int | builtins.float | None
-    scroll_margin_inline: Length | CssValue | builtins.int | builtins.float | None
+    scroll_margin_inline: Length | CssRawString | builtins.int | builtins.float | None
     scroll_margin_inline_end: Length | builtins.int | builtins.float | None
     scroll_margin_inline_start: Length | builtins.int | builtins.float | None
     scroll_margin_left: Length | builtins.int | builtins.float | None
     scroll_margin_right: Length | builtins.int | builtins.float | None
     scroll_margin_top: Length | builtins.int | builtins.float | None
-    scroll_marker_group: CssValue | builtins.str | None
-    scroll_padding: LengthPercentage | CssValue | builtins.int | builtins.float | None
-    scroll_padding_block: LengthPercentage | CssValue | builtins.int | builtins.float | None
+    scroll_marker_group: CssRawString | None
+    scroll_padding: LengthPercentage | CssRawString | builtins.int | builtins.float | None
+    scroll_padding_block: LengthPercentage | CssRawString | builtins.int | builtins.float | None
     scroll_padding_block_end: LengthPercentage | builtins.int | builtins.float | None
     scroll_padding_block_start: LengthPercentage | builtins.int | builtins.float | None
     scroll_padding_bottom: LengthPercentage | builtins.int | builtins.float | None
-    scroll_padding_inline: LengthPercentage | CssValue | builtins.int | builtins.float | None
+    scroll_padding_inline: LengthPercentage | CssRawString | builtins.int | builtins.float | None
     scroll_padding_inline_end: LengthPercentage | builtins.int | builtins.float | None
     scroll_padding_inline_start: LengthPercentage | builtins.int | builtins.float | None
     scroll_padding_left: LengthPercentage | builtins.int | builtins.float | None
     scroll_padding_right: LengthPercentage | builtins.int | builtins.float | None
     scroll_padding_top: LengthPercentage | builtins.int | builtins.float | None
-    scroll_snap_align: CssValue | builtins.str | None
-    scroll_snap_stop: CssValue | builtins.str | None
-    scroll_snap_type: CssValue | builtins.str | None
-    scroll_target_group: CssValue | builtins.str | None
-    scroll_timeline: CssValue | builtins.str | None
-    scroll_timeline_axis: CssValue | builtins.str | None
-    scroll_timeline_name: CssValue | builtins.str | None
+    scroll_snap_align: CssRawString | None
+    scroll_snap_stop: CssRawString | None
+    scroll_snap_type: CssRawString | None
+    scroll_target_group: CssRawString | None
+    scroll_timeline: CssRawString | builtins.str | None
+    scroll_timeline_axis: CssRawString | None
+    scroll_timeline_name: CssRawString | None
     scrollbar_color: ColorValue | None
-    scrollbar_gutter: CssValue | builtins.str | None
-    scrollbar_width: CssValue | builtins.str | None
-    shape_image_threshold: CssValue | builtins.str | None
-    shape_inside: CssValue | builtins.str | None
+    scrollbar_gutter: CssRawString | None
+    scrollbar_width: CssRawString | None
+    shape_image_threshold: CssRawString | None
+    shape_inside: CssRawString | builtins.str | None
     shape_margin: LengthPercentage | builtins.int | builtins.float | None
-    shape_outside: CssValue | builtins.str | None
+    shape_outside: CssRawString | builtins.str | None
     shape_padding: LengthPercentage | builtins.int | builtins.float | None
-    shape_rendering: CssValue | builtins.str | None
-    shape_subtract: CssValue | builtins.str | None
-    slider_orientation: CssValue | builtins.str | None
-    spatial_navigation_action: CssValue | builtins.str | None
-    spatial_navigation_contain: CssValue | builtins.str | None
-    spatial_navigation_function: CssValue | builtins.str | None
-    speak: CssValue | builtins.str | None
-    speak_as: CssValue | builtins.str | None
+    shape_rendering: CssRawString | None
+    shape_subtract: CssRawString | None
+    slider_orientation: CssRawString | None
+    spatial_navigation_action: CssRawString | None
+    spatial_navigation_contain: CssRawString | None
+    spatial_navigation_function: CssRawString | None
+    speak: CssRawString | None
+    speak_as: CssRawString | None
     stop_color: ColorValue | None
-    stop_opacity: CssValue | builtins.str | None
-    string_set: CssValue | builtins.str | None
-    stroke: CssValue | builtins.str | None
-    stroke_align: CssValue | builtins.str | None
-    stroke_alignment: CssValue | builtins.str | None
-    stroke_break: CssValue | builtins.str | None
+    stop_opacity: CssRawString | None
+    string_set: CssRawString | builtins.str | None
+    stroke: CssRawString | None
+    stroke_align: CssRawString | None
+    stroke_alignment: CssRawString | None
+    stroke_break: CssRawString | None
     stroke_color: ColorValue | None
     stroke_dash_corner: Length | builtins.int | builtins.float | None
-    stroke_dash_justify: CssValue | builtins.str | None
-    stroke_dashadjust: CssValue | builtins.str | None
+    stroke_dash_justify: CssRawString | None
+    stroke_dashadjust: CssRawString | None
     stroke_dasharray: LengthPercentage | builtins.int | builtins.float | None
     stroke_dashcorner: Length | builtins.int | builtins.float | None
     stroke_dashoffset: LengthPercentage | builtins.int | builtins.float | None
-    stroke_image: CssValue | builtins.str | None
-    stroke_linecap: CssValue | builtins.str | None
-    stroke_linejoin: CssValue | builtins.str | None
-    stroke_miterlimit: CssValue | builtins.str | None
-    stroke_opacity: CssValue | builtins.str | None
-    stroke_origin: CssValue | builtins.str | None
-    stroke_position: CssValue | builtins.str | None
-    stroke_repeat: CssValue | builtins.str | None
-    stroke_size: CssValue | builtins.str | None
+    stroke_image: CssRawString | None
+    stroke_linecap: CssRawString | None
+    stroke_linejoin: CssRawString | None
+    stroke_miterlimit: CssRawString | None
+    stroke_opacity: CssRawString | None
+    stroke_origin: CssRawString | None
+    stroke_position: CssRawString | None
+    stroke_repeat: CssRawString | None
+    stroke_size: CssRawString | None
     stroke_width: LengthPercentage | builtins.int | builtins.float | None
     tab_size: Length | builtins.int | builtins.float | None
-    table_layout: CssValue | builtins.str | None
-    text_align: TextAlign | CssValue | None
-    text_align_all: CssValue | builtins.str | None
-    text_align_last: CssValue | builtins.str | None
-    text_anchor: CssValue | builtins.str | None
-    text_autospace: CssValue | builtins.str | None
-    text_box: CssValue | builtins.str | None
-    text_box_edge: CssValue | builtins.str | None
-    text_box_trim: CssValue | builtins.str | None
-    text_combine_upright: CssValue | builtins.str | None
-    text_decoration: CssValue | builtins.str | None
+    table_layout: CssRawString | None
+    text_align: TextAlign | CssRawString | None
+    text_align_all: CssRawString | builtins.str | None
+    text_align_last: CssRawString | None
+    text_anchor: CssRawString | None
+    text_autospace: CssRawString | None
+    text_box: CssRawString | None
+    text_box_edge: CssRawString | None
+    text_box_trim: CssRawString | None
+    text_combine_upright: CssRawString | None
+    text_decoration: CssRawString | builtins.str | None
     text_decoration_color: ColorValue | None
     text_decoration_inset: Length | builtins.int | builtins.float | None
-    text_decoration_line: CssValue | builtins.str | None
-    text_decoration_skip: CssValue | builtins.str | None
-    text_decoration_skip_box: CssValue | builtins.str | None
-    text_decoration_skip_ink: CssValue | builtins.str | None
-    text_decoration_skip_self: CssValue | builtins.str | None
-    text_decoration_skip_spaces: CssValue | builtins.str | None
-    text_decoration_style: CssValue | builtins.str | None
+    text_decoration_line: CssRawString | None
+    text_decoration_skip: CssRawString | builtins.str | None
+    text_decoration_skip_box: CssRawString | None
+    text_decoration_skip_ink: CssRawString | None
+    text_decoration_skip_self: CssRawString | None
+    text_decoration_skip_spaces: CssRawString | None
+    text_decoration_style: CssRawString | None
     text_decoration_thickness: LengthPercentage | builtins.int | builtins.float | None
-    text_emphasis: CssValue | builtins.str | None
+    text_emphasis: CssRawString | builtins.str | None
     text_emphasis_color: ColorValue | None
-    text_emphasis_position: CssValue | builtins.str | None
-    text_emphasis_skip: CssValue | builtins.str | None
-    text_emphasis_style: CssValue | builtins.str | None
-    text_group_align: CssValue | builtins.str | None
+    text_emphasis_position: CssRawString | None
+    text_emphasis_skip: CssRawString | None
+    text_emphasis_style: CssRawString | builtins.str | None
+    text_group_align: CssRawString | None
     text_indent: LengthPercentage | builtins.int | builtins.float | None
-    text_justify: CssValue | builtins.str | None
-    text_orientation: CssValue | builtins.str | None
-    text_overflow: CssValue | builtins.str | None
-    text_rendering: CssValue | builtins.str | None
-    text_shadow: CssValue | builtins.str | None
-    text_size_adjust: CssValue | builtins.str | None
-    text_spacing: CssValue | builtins.str | None
-    text_spacing_trim: CssValue | builtins.str | None
-    text_transform: CssValue | builtins.str | None
+    text_justify: CssRawString | None
+    text_orientation: CssRawString | None
+    text_overflow: CssRawString | builtins.str | None
+    text_rendering: CssRawString | None
+    text_shadow: CssRawString | None
+    text_size_adjust: CssRawString | None
+    text_spacing: CssRawString | builtins.str | None
+    text_spacing_trim: CssRawString | None
+    text_transform: CssRawString | None
     text_underline_offset: LengthPercentage | builtins.int | builtins.float | None
-    text_underline_position: CssValue | builtins.str | None
-    text_wrap: CssValue | builtins.str | None
-    text_wrap_mode: CssValue | builtins.str | None
-    text_wrap_style: CssValue | builtins.str | None
-    timeline_scope: CssValue | builtins.str | None
-    timeline_trigger: CssValue | builtins.str | None
-    timeline_trigger_activation_range: CssValue | builtins.str | None
+    text_underline_position: CssRawString | None
+    text_wrap: CssRawString | builtins.str | None
+    text_wrap_mode: CssRawString | None
+    text_wrap_style: CssRawString | None
+    timeline_scope: CssRawString | None
+    timeline_trigger: CssRawString | builtins.str | None
+    timeline_trigger_activation_range: CssRawString | builtins.str | None
     timeline_trigger_activation_range_end: LengthPercentage | builtins.int | builtins.float | None
     timeline_trigger_activation_range_start: LengthPercentage | builtins.int | builtins.float | None
-    timeline_trigger_active_range: CssValue | builtins.str | None
+    timeline_trigger_active_range: CssRawString | builtins.str | None
     timeline_trigger_active_range_end: LengthPercentage | builtins.int | builtins.float | None
     timeline_trigger_active_range_start: LengthPercentage | builtins.int | builtins.float | None
-    timeline_trigger_name: CssValue | builtins.str | None
-    timeline_trigger_source: CssValue | builtins.str | None
+    timeline_trigger_name: CssRawString | None
+    timeline_trigger_source: CssRawString | None
     top: LengthPercentage | builtins.int | builtins.float | None
-    touch_action: CssValue | builtins.str | None
+    touch_action: CssRawString | None
     transform: TransformValue | None
-    transform_box: CssValue | builtins.str | None
+    transform_box: CssRawString | None
     transform_origin: LengthPercentage | builtins.int | builtins.float | None
-    transform_style: CssValue | builtins.str | None
+    transform_style: CssRawString | None
     transition: TransitionValue | None
-    transition_behavior: CssValue | builtins.str | None
+    transition_behavior: CssRawString | None
     transition_delay: TimeValue | None
     transition_duration: TimeValue | None
-    transition_property: CssValue | builtins.str | None
-    transition_timing_function: CssValue | builtins.str | None
+    transition_property: CssRawString | None
+    transition_timing_function: CssRawString | None
     translate: LengthPercentage | builtins.int | builtins.float | None
-    trigger_scope: CssValue | builtins.str | None
-    unicode_bidi: CssValue | builtins.str | None
-    user_select: CssValue | builtins.str | None
-    vector_effect: CssValue | builtins.str | None
-    vertical_align: CssValue | builtins.str | None
-    view_timeline: CssValue | builtins.str | None
-    view_timeline_axis: CssValue | builtins.str | None
+    trigger_scope: CssRawString | None
+    unicode_bidi: CssRawString | None
+    user_select: CssRawString | None
+    vector_effect: CssRawString | None
+    vertical_align: CssRawString | builtins.str | None
+    view_timeline: CssRawString | builtins.str | None
+    view_timeline_axis: CssRawString | None
     view_timeline_inset: LengthPercentage | builtins.int | builtins.float | None
-    view_timeline_name: CssValue | builtins.str | None
-    view_transition_class: CssValue | builtins.str | None
-    view_transition_group: CssValue | builtins.str | None
-    view_transition_name: CssValue | builtins.str | None
-    view_transition_scope: CssValue | builtins.str | None
-    visibility: CssValue | builtins.str | None
-    voice_balance: CssValue | builtins.str | None
+    view_timeline_name: CssRawString | None
+    view_transition_class: CssRawString | None
+    view_transition_group: CssRawString | None
+    view_transition_name: CssRawString | None
+    view_transition_scope: CssRawString | None
+    visibility: CssRawString | None
+    voice_balance: CssRawString | None
     voice_duration: TimeValue | None
-    voice_family: CssValue | builtins.str | None
-    voice_pitch: CssValue | builtins.str | None
-    voice_range: CssValue | builtins.str | None
-    voice_rate: CssValue | builtins.str | None
-    voice_stress: CssValue | builtins.str | None
-    voice_volume: CssValue | builtins.str | None
-    white_space: CssValue | builtins.str | None
-    white_space_collapse: CssValue | builtins.str | None
-    white_space_trim: CssValue | builtins.str | None
-    widows: CssValue | builtins.str | None
+    voice_family: CssRawString | None
+    voice_pitch: CssRawString | None
+    voice_range: CssRawString | None
+    voice_rate: CssRawString | None
+    voice_stress: CssRawString | None
+    voice_volume: CssRawString | None
+    white_space: CssRawString | builtins.str | None
+    white_space_collapse: CssRawString | None
+    white_space_trim: CssRawString | None
+    widows: CssRawString | None
     width: WidthValue | builtins.int | builtins.float | None
-    will_change: CssValue | builtins.str | None
-    word_break: CssValue | builtins.str | None
-    word_space_transform: CssValue | builtins.str | None
+    will_change: CssRawString | builtins.str | None
+    word_break: CssRawString | None
+    word_space_transform: CssRawString | None
     word_spacing: LengthPercentage | builtins.int | builtins.float | None
-    word_wrap: CssValue | builtins.str | None
-    wrap_after: CssValue | builtins.str | None
-    wrap_before: CssValue | builtins.str | None
-    wrap_flow: CssValue | builtins.str | None
-    wrap_inside: CssValue | builtins.str | None
-    wrap_through: CssValue | builtins.str | None
-    writing_mode: CssValue | builtins.str | None
+    word_wrap: CssRawString | None
+    wrap_after: CssRawString | None
+    wrap_before: CssRawString | None
+    wrap_flow: CssRawString | None
+    wrap_inside: CssRawString | None
+    wrap_through: CssRawString | None
+    writing_mode: CssRawString | None
     x: LengthPercentage | builtins.int | builtins.float | None
     y: LengthPercentage | builtins.int | builtins.float | None
     z_index: ZIndex | None
-    zoom: CssValue | builtins.str | None
+    zoom: CssRawString | None
 
     def __init__(
         self,
@@ -942,87 +967,87 @@ class Style:
         after: Style | None = None,
         selection: Style | None = None,
         accent_color: ColorValue | None = None,
-        align_content: CssValue | builtins.str | None = None,
+        align_content: CssRawString | None = None,
         align_items: AlignItems | None = None,
-        align_self: CssValue | builtins.str | None = None,
-        alignment_baseline: CssValue | builtins.str | None = None,
-        all: CssValue | builtins.str | None = None,
-        anchor_name: CssValue | builtins.str | None = None,
-        anchor_scope: CssValue | builtins.str | None = None,
-        animation: CssValue | builtins.str | None = None,
-        animation_composition: CssValue | builtins.str | None = None,
+        align_self: CssRawString | None = None,
+        alignment_baseline: CssRawString | None = None,
+        all: CssRawString | None = None,
+        anchor_name: CssRawString | None = None,
+        anchor_scope: CssRawString | None = None,
+        animation: CssRawString | builtins.str | None = None,
+        animation_composition: CssRawString | None = None,
         animation_delay: TimeValue | None = None,
-        animation_direction: CssValue | builtins.str | None = None,
+        animation_direction: CssRawString | None = None,
         animation_duration: TimeValue | None = None,
-        animation_fill_mode: CssValue | builtins.str | None = None,
-        animation_iteration_count: CssValue | builtins.str | None = None,
-        animation_name: CssValue | builtins.str | None = None,
-        animation_play_state: CssValue | builtins.str | None = None,
-        animation_range: CssValue | builtins.str | None = None,
+        animation_fill_mode: CssRawString | None = None,
+        animation_iteration_count: CssRawString | None = None,
+        animation_name: CssRawString | None = None,
+        animation_play_state: CssRawString | None = None,
+        animation_range: CssRawString | builtins.str | None = None,
         animation_range_center: (LengthPercentage | builtins.int | builtins.float | None) = None,
         animation_range_end: (LengthPercentage | builtins.int | builtins.float | None) = None,
         animation_range_start: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        animation_timeline: CssValue | builtins.str | None = None,
-        animation_timing_function: CssValue | builtins.str | None = None,
-        animation_trigger: CssValue | builtins.str | None = None,
-        appearance: CssValue | builtins.str | None = None,
-        aspect_ratio: CssValue | builtins.str | None = None,
-        backdrop_filter: CssValue | builtins.str | None = None,
-        backface_visibility: CssValue | builtins.str | None = None,
-        background: CssValue | builtins.str | None = None,
-        background_attachment: CssValue | builtins.str | None = None,
-        background_blend_mode: CssValue | builtins.str | None = None,
-        background_clip: CssValue | builtins.str | None = None,
+        animation_timeline: CssRawString | None = None,
+        animation_timing_function: CssRawString | None = None,
+        animation_trigger: CssRawString | None = None,
+        appearance: CssRawString | None = None,
+        aspect_ratio: CssRawString | None = None,
+        backdrop_filter: CssRawString | None = None,
+        backface_visibility: CssRawString | None = None,
+        background: CssRawString | builtins.str | None = None,
+        background_attachment: CssRawString | None = None,
+        background_blend_mode: CssRawString | None = None,
+        background_clip: CssRawString | None = None,
         background_color: ColorValue | None = None,
-        background_image: CssValue | builtins.str | None = None,
-        background_origin: CssValue | builtins.str | None = None,
-        background_position: CssValue | builtins.str | None = None,
+        background_image: CssRawString | None = None,
+        background_origin: CssRawString | None = None,
+        background_position: CssRawString | builtins.str | None = None,
         background_position_block: (LengthPercentage | builtins.int | builtins.float | None) = None,
         background_position_inline: (
             LengthPercentage | builtins.int | builtins.float | None
         ) = None,
         background_position_x: (LengthPercentage | builtins.int | builtins.float | None) = None,
         background_position_y: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        background_repeat: CssValue | builtins.str | None = None,
-        background_repeat_block: CssValue | builtins.str | None = None,
-        background_repeat_inline: CssValue | builtins.str | None = None,
-        background_repeat_x: CssValue | builtins.str | None = None,
-        background_repeat_y: CssValue | builtins.str | None = None,
-        background_size: CssValue | builtins.str | None = None,
-        background_tbd: CssValue | builtins.str | None = None,
+        background_repeat: CssRawString | None = None,
+        background_repeat_block: CssRawString | None = None,
+        background_repeat_inline: CssRawString | None = None,
+        background_repeat_x: CssRawString | None = None,
+        background_repeat_y: CssRawString | None = None,
+        background_size: CssRawString | None = None,
+        background_tbd: CssRawString | None = None,
         baseline_shift: LengthPercentage | builtins.int | builtins.float | None = None,
-        baseline_source: CssValue | builtins.str | None = None,
-        block_ellipsis: CssValue | builtins.str | None = None,
+        baseline_source: CssRawString | None = None,
+        block_ellipsis: CssRawString | builtins.str | None = None,
         block_size: WidthValue | builtins.int | builtins.float | None = None,
-        block_step: CssValue | builtins.str | None = None,
-        block_step_align: CssValue | builtins.str | None = None,
-        block_step_insert: CssValue | builtins.str | None = None,
-        block_step_round: CssValue | builtins.str | None = None,
+        block_step: CssRawString | builtins.str | None = None,
+        block_step_align: CssRawString | None = None,
+        block_step_insert: CssRawString | None = None,
+        block_step_round: CssRawString | None = None,
         block_step_size: Length | builtins.int | builtins.float | None = None,
-        bookmark_label: CssValue | builtins.str | None = None,
-        bookmark_level: CssValue | builtins.str | None = None,
-        bookmark_state: CssValue | builtins.str | None = None,
-        border: ColorValue | CssValue | None = None,
-        border_block: CssValue | builtins.str | None = None,
-        border_block_clip: CssValue | builtins.str | None = None,
-        border_block_color: ColorValue | CssValue | None = None,
-        border_block_end: ColorValue | CssValue | None = None,
+        bookmark_label: CssRawString | None = None,
+        bookmark_level: CssRawString | None = None,
+        bookmark_state: CssRawString | None = None,
+        border: ColorValue | CssRawString | None = None,
+        border_block: CssRawString | builtins.str | None = None,
+        border_block_clip: CssRawString | builtins.str | None = None,
+        border_block_color: ColorValue | CssRawString | None = None,
+        border_block_end: ColorValue | CssRawString | None = None,
         border_block_end_clip: (LengthPercentage | builtins.int | builtins.float | None) = None,
         border_block_end_color: ColorValue | None = None,
         border_block_end_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
-        border_block_end_style: CssValue | builtins.str | None = None,
-        border_block_end_width: CssValue | builtins.str | None = None,
-        border_block_start: ColorValue | CssValue | None = None,
+        border_block_end_style: CssRawString | None = None,
+        border_block_end_width: CssRawString | None = None,
+        border_block_start: ColorValue | CssRawString | None = None,
         border_block_start_clip: (LengthPercentage | builtins.int | builtins.float | None) = None,
         border_block_start_color: ColorValue | None = None,
         border_block_start_radius: (
             BorderRadiusValue | builtins.int | builtins.float | None
         ) = None,
-        border_block_start_style: CssValue | builtins.str | None = None,
-        border_block_start_width: CssValue | builtins.str | None = None,
-        border_block_style: CssValue | builtins.str | None = None,
-        border_block_width: CssValue | builtins.str | None = None,
-        border_bottom: ColorValue | CssValue | None = None,
+        border_block_start_style: CssRawString | None = None,
+        border_block_start_width: CssRawString | None = None,
+        border_block_style: CssRawString | builtins.str | None = None,
+        border_block_width: CssRawString | builtins.str | None = None,
+        border_bottom: ColorValue | CssRawString | None = None,
         border_bottom_clip: (LengthPercentage | builtins.int | builtins.float | None) = None,
         border_bottom_color: ColorValue | None = None,
         border_bottom_left_radius: (
@@ -1032,105 +1057,105 @@ class Style:
         border_bottom_right_radius: (
             BorderRadiusValue | builtins.int | builtins.float | None
         ) = None,
-        border_bottom_style: CssValue | builtins.str | None = None,
-        border_bottom_width: CssValue | builtins.str | None = None,
-        border_boundary: CssValue | builtins.str | None = None,
-        border_clip: CssValue | builtins.str | None = None,
-        border_collapse: CssValue | builtins.str | None = None,
-        border_color: ColorValue | CssValue | None = None,
+        border_bottom_style: CssRawString | None = None,
+        border_bottom_width: CssRawString | None = None,
+        border_boundary: CssRawString | None = None,
+        border_clip: CssRawString | builtins.str | None = None,
+        border_collapse: CssRawString | None = None,
+        border_color: ColorValue | CssRawString | None = None,
         border_end_end_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
         border_end_start_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
-        border_image: CssValue | builtins.str | None = None,
+        border_image: CssRawString | builtins.str | None = None,
         border_image_outset: Length | builtins.int | builtins.float | None = None,
-        border_image_repeat: CssValue | builtins.str | None = None,
-        border_image_slice: CssValue | builtins.str | None = None,
-        border_image_source: CssValue | builtins.str | None = None,
+        border_image_repeat: CssRawString | None = None,
+        border_image_slice: CssRawString | None = None,
+        border_image_source: CssRawString | builtins.str | None = None,
         border_image_width: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        border_inline: CssValue | builtins.str | None = None,
-        border_inline_clip: CssValue | builtins.str | None = None,
-        border_inline_color: ColorValue | CssValue | None = None,
-        border_inline_end: ColorValue | CssValue | None = None,
+        border_inline: CssRawString | builtins.str | None = None,
+        border_inline_clip: CssRawString | builtins.str | None = None,
+        border_inline_color: ColorValue | CssRawString | None = None,
+        border_inline_end: ColorValue | CssRawString | None = None,
         border_inline_end_clip: (LengthPercentage | builtins.int | builtins.float | None) = None,
         border_inline_end_color: ColorValue | None = None,
         border_inline_end_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
-        border_inline_end_style: CssValue | builtins.str | None = None,
-        border_inline_end_width: CssValue | builtins.str | None = None,
-        border_inline_start: ColorValue | CssValue | None = None,
+        border_inline_end_style: CssRawString | None = None,
+        border_inline_end_width: CssRawString | None = None,
+        border_inline_start: ColorValue | CssRawString | None = None,
         border_inline_start_clip: (LengthPercentage | builtins.int | builtins.float | None) = None,
         border_inline_start_color: ColorValue | None = None,
         border_inline_start_radius: (
             BorderRadiusValue | builtins.int | builtins.float | None
         ) = None,
-        border_inline_start_style: CssValue | builtins.str | None = None,
-        border_inline_start_width: CssValue | builtins.str | None = None,
-        border_inline_style: CssValue | builtins.str | None = None,
-        border_inline_width: CssValue | builtins.str | None = None,
-        border_left: ColorValue | CssValue | None = None,
+        border_inline_start_style: CssRawString | None = None,
+        border_inline_start_width: CssRawString | None = None,
+        border_inline_style: CssRawString | builtins.str | None = None,
+        border_inline_width: CssRawString | builtins.str | None = None,
+        border_left: ColorValue | CssRawString | None = None,
         border_left_clip: (LengthPercentage | builtins.int | builtins.float | None) = None,
         border_left_color: ColorValue | None = None,
         border_left_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
-        border_left_style: CssValue | builtins.str | None = None,
-        border_left_width: CssValue | builtins.str | None = None,
+        border_left_style: CssRawString | None = None,
+        border_left_width: CssRawString | None = None,
         border_limit: LengthPercentage | builtins.int | builtins.float | None = None,
         border_radius: BorderRadiusValue | builtins.int | builtins.float | None = None,
-        border_right: ColorValue | CssValue | None = None,
+        border_right: ColorValue | CssRawString | None = None,
         border_right_clip: (LengthPercentage | builtins.int | builtins.float | None) = None,
         border_right_color: ColorValue | None = None,
         border_right_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
-        border_right_style: CssValue | builtins.str | None = None,
-        border_right_width: CssValue | builtins.str | None = None,
-        border_shape: CssValue | builtins.str | None = None,
+        border_right_style: CssRawString | None = None,
+        border_right_width: CssRawString | None = None,
+        border_shape: CssRawString | None = None,
         border_spacing: Length | builtins.int | builtins.float | None = None,
         border_start_end_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
         border_start_start_radius: (
             BorderRadiusValue | builtins.int | builtins.float | None
         ) = None,
-        border_style: CssValue | builtins.str | None = None,
-        border_top: ColorValue | CssValue | None = None,
+        border_style: CssRawString | builtins.str | None = None,
+        border_top: ColorValue | CssRawString | None = None,
         border_top_clip: LengthPercentage | builtins.int | builtins.float | None = None,
         border_top_color: ColorValue | None = None,
         border_top_left_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
         border_top_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
         border_top_right_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
-        border_top_style: CssValue | builtins.str | None = None,
-        border_top_width: CssValue | builtins.str | None = None,
-        border_width: CssValue | builtins.str | None = None,
+        border_top_style: CssRawString | None = None,
+        border_top_width: CssRawString | None = None,
+        border_width: CssRawString | builtins.str | None = None,
         bottom: LengthPercentage | builtins.int | builtins.float | None = None,
-        box_decoration_break: CssValue | builtins.str | None = None,
+        box_decoration_break: CssRawString | None = None,
         box_shadow: ShadowValue | None = None,
         box_shadow_blur: Length | builtins.int | builtins.float | None = None,
         box_shadow_color: ColorValue | None = None,
         box_shadow_offset: Length | builtins.int | builtins.float | None = None,
-        box_shadow_position: CssValue | builtins.str | None = None,
+        box_shadow_position: CssRawString | None = None,
         box_shadow_spread: Length | builtins.int | builtins.float | None = None,
-        box_sizing: CssValue | builtins.str | None = None,
-        box_snap: CssValue | builtins.str | None = None,
-        break_after: CssValue | builtins.str | None = None,
-        break_before: CssValue | builtins.str | None = None,
-        break_inside: CssValue | builtins.str | None = None,
-        caption_side: CssValue | builtins.str | None = None,
-        caret: CssValue | builtins.str | None = None,
-        caret_animation: CssValue | builtins.str | None = None,
+        box_sizing: CssRawString | None = None,
+        box_snap: CssRawString | None = None,
+        break_after: CssRawString | None = None,
+        break_before: CssRawString | None = None,
+        break_inside: CssRawString | None = None,
+        caption_side: CssRawString | None = None,
+        caret: CssRawString | builtins.str | None = None,
+        caret_animation: CssRawString | None = None,
         caret_color: ColorValue | None = None,
-        caret_shape: CssValue | builtins.str | None = None,
-        clear: CssValue | builtins.str | None = None,
-        clip: CssValue | builtins.str | None = None,
-        clip_path: CssValue | builtins.str | None = None,
-        clip_rule: CssValue | builtins.str | None = None,
+        caret_shape: CssRawString | None = None,
+        clear: CssRawString | None = None,
+        clip: CssRawString | None = None,
+        clip_path: CssRawString | None = None,
+        clip_rule: CssRawString | None = None,
         color: ColorValue | None = None,
-        color_adjust: CssValue | builtins.str | None = None,
-        color_interpolation: CssValue | builtins.str | None = None,
-        color_interpolation_filters: CssValue | builtins.str | None = None,
-        color_scheme: CssValue | builtins.str | None = None,
-        column_count: CssValue | builtins.str | None = None,
-        column_fill: CssValue | builtins.str | None = None,
+        color_adjust: CssRawString | builtins.str | None = None,
+        color_interpolation: CssRawString | None = None,
+        color_interpolation_filters: CssRawString | None = None,
+        color_scheme: CssRawString | None = None,
+        column_count: CssRawString | None = None,
+        column_fill: CssRawString | None = None,
         column_gap: GapValue | builtins.int | builtins.float | None = None,
         column_height: Length | builtins.int | builtins.float | None = None,
-        column_rule: CssValue | builtins.str | None = None,
-        column_rule_break: CssValue | builtins.str | None = None,
+        column_rule: CssRawString | builtins.str | None = None,
+        column_rule_break: CssRawString | None = None,
         column_rule_color: ColorValue | None = None,
         column_rule_edge_inset: (
-            LengthPercentage | CssValue | builtins.int | builtins.float | None
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
         ) = None,
         column_rule_edge_inset_end: (
             LengthPercentage | builtins.int | builtins.float | None
@@ -1138,15 +1163,15 @@ class Style:
         column_rule_edge_inset_start: (
             LengthPercentage | builtins.int | builtins.float | None
         ) = None,
-        column_rule_inset: CssValue | builtins.str | None = None,
+        column_rule_inset: CssRawString | builtins.str | None = None,
         column_rule_inset_end: (
-            LengthPercentage | CssValue | builtins.int | builtins.float | None
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
         ) = None,
         column_rule_inset_start: (
-            LengthPercentage | CssValue | builtins.int | builtins.float | None
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
         ) = None,
         column_rule_interior_inset: (
-            LengthPercentage | CssValue | builtins.int | builtins.float | None
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
         ) = None,
         column_rule_interior_inset_end: (
             LengthPercentage | builtins.int | builtins.float | None
@@ -1154,174 +1179,176 @@ class Style:
         column_rule_interior_inset_start: (
             LengthPercentage | builtins.int | builtins.float | None
         ) = None,
-        column_rule_style: CssValue | builtins.str | None = None,
-        column_rule_visibility_items: CssValue | builtins.str | None = None,
-        column_rule_width: CssValue | builtins.str | None = None,
-        column_span: CssValue | builtins.str | None = None,
+        column_rule_style: CssRawString | None = None,
+        column_rule_visibility_items: CssRawString | None = None,
+        column_rule_width: CssRawString | None = None,
+        column_span: CssRawString | None = None,
         column_width: WidthValue | builtins.int | builtins.float | None = None,
-        column_wrap: CssValue | builtins.str | None = None,
-        columns: CssValue | builtins.str | None = None,
-        contain: CssValue | builtins.str | None = None,
+        column_wrap: CssRawString | None = None,
+        columns: CssRawString | builtins.str | None = None,
+        contain: CssRawString | None = None,
         contain_intrinsic_block_size: (Length | builtins.int | builtins.float | None) = None,
         contain_intrinsic_height: Length | builtins.int | builtins.float | None = None,
         contain_intrinsic_inline_size: (Length | builtins.int | builtins.float | None) = None,
-        contain_intrinsic_size: (Length | CssValue | builtins.int | builtins.float | None) = None,
+        contain_intrinsic_size: (
+            Length | CssRawString | builtins.int | builtins.float | None
+        ) = None,
         contain_intrinsic_width: Length | builtins.int | builtins.float | None = None,
-        container: CssValue | builtins.str | None = None,
-        container_name: CssValue | builtins.str | None = None,
-        container_type: CssValue | builtins.str | None = None,
-        content: CssValue | builtins.str | None = None,
-        content_visibility: CssValue | builtins.str | None = None,
-        continue_: CssValue | builtins.str | None = None,
-        copy_into: CssValue | builtins.str | None = None,
-        corner: CssValue | builtins.str | None = None,
-        corner_block_end: CssValue | builtins.str | None = None,
-        corner_block_end_shape: CssValue | builtins.str | None = None,
-        corner_block_start: CssValue | builtins.str | None = None,
-        corner_block_start_shape: CssValue | builtins.str | None = None,
-        corner_bottom: CssValue | builtins.str | None = None,
-        corner_bottom_left: CssValue | builtins.str | None = None,
-        corner_bottom_left_shape: CssValue | builtins.str | None = None,
-        corner_bottom_right: CssValue | builtins.str | None = None,
-        corner_bottom_right_shape: CssValue | builtins.str | None = None,
-        corner_bottom_shape: CssValue | builtins.str | None = None,
-        corner_end_end: CssValue | builtins.str | None = None,
-        corner_end_end_shape: CssValue | builtins.str | None = None,
-        corner_end_start: CssValue | builtins.str | None = None,
-        corner_end_start_shape: CssValue | builtins.str | None = None,
-        corner_inline_end: CssValue | builtins.str | None = None,
-        corner_inline_end_shape: CssValue | builtins.str | None = None,
-        corner_inline_start: CssValue | builtins.str | None = None,
-        corner_inline_start_shape: CssValue | builtins.str | None = None,
-        corner_left: CssValue | builtins.str | None = None,
-        corner_left_shape: CssValue | builtins.str | None = None,
-        corner_right: CssValue | builtins.str | None = None,
-        corner_right_shape: CssValue | builtins.str | None = None,
-        corner_shape: CssValue | builtins.str | None = None,
-        corner_start_end: CssValue | builtins.str | None = None,
-        corner_start_end_shape: CssValue | builtins.str | None = None,
-        corner_start_start: CssValue | builtins.str | None = None,
-        corner_start_start_shape: CssValue | builtins.str | None = None,
-        corner_top: CssValue | builtins.str | None = None,
-        corner_top_left: CssValue | builtins.str | None = None,
-        corner_top_left_shape: CssValue | builtins.str | None = None,
-        corner_top_right: CssValue | builtins.str | None = None,
-        corner_top_right_shape: CssValue | builtins.str | None = None,
-        corner_top_shape: CssValue | builtins.str | None = None,
-        counter_increment: CssValue | builtins.str | None = None,
-        counter_reset: CssValue | builtins.str | None = None,
-        counter_set: CssValue | builtins.str | None = None,
-        cue: CssValue | builtins.str | None = None,
-        cue_after: CssValue | builtins.str | None = None,
-        cue_before: CssValue | builtins.str | None = None,
-        cursor: CssValue | builtins.str | None = None,
+        container: CssRawString | builtins.str | None = None,
+        container_name: CssRawString | None = None,
+        container_type: CssRawString | None = None,
+        content: CssRawString | builtins.str | None = None,
+        content_visibility: CssRawString | None = None,
+        continue_: CssRawString | None = None,
+        copy_into: CssRawString | None = None,
+        corner: CssRawString | builtins.str | None = None,
+        corner_block_end: CssRawString | builtins.str | None = None,
+        corner_block_end_shape: CssRawString | builtins.str | None = None,
+        corner_block_start: CssRawString | builtins.str | None = None,
+        corner_block_start_shape: CssRawString | builtins.str | None = None,
+        corner_bottom: CssRawString | builtins.str | None = None,
+        corner_bottom_left: CssRawString | builtins.str | None = None,
+        corner_bottom_left_shape: CssRawString | None = None,
+        corner_bottom_right: CssRawString | builtins.str | None = None,
+        corner_bottom_right_shape: CssRawString | None = None,
+        corner_bottom_shape: CssRawString | builtins.str | None = None,
+        corner_end_end: CssRawString | builtins.str | None = None,
+        corner_end_end_shape: CssRawString | None = None,
+        corner_end_start: CssRawString | builtins.str | None = None,
+        corner_end_start_shape: CssRawString | None = None,
+        corner_inline_end: CssRawString | builtins.str | None = None,
+        corner_inline_end_shape: CssRawString | builtins.str | None = None,
+        corner_inline_start: CssRawString | builtins.str | None = None,
+        corner_inline_start_shape: CssRawString | builtins.str | None = None,
+        corner_left: CssRawString | builtins.str | None = None,
+        corner_left_shape: CssRawString | builtins.str | None = None,
+        corner_right: CssRawString | builtins.str | None = None,
+        corner_right_shape: CssRawString | builtins.str | None = None,
+        corner_shape: CssRawString | builtins.str | None = None,
+        corner_start_end: CssRawString | builtins.str | None = None,
+        corner_start_end_shape: CssRawString | None = None,
+        corner_start_start: CssRawString | builtins.str | None = None,
+        corner_start_start_shape: CssRawString | None = None,
+        corner_top: CssRawString | builtins.str | None = None,
+        corner_top_left: CssRawString | builtins.str | None = None,
+        corner_top_left_shape: CssRawString | None = None,
+        corner_top_right: CssRawString | builtins.str | None = None,
+        corner_top_right_shape: CssRawString | None = None,
+        corner_top_shape: CssRawString | builtins.str | None = None,
+        counter_increment: CssRawString | builtins.str | None = None,
+        counter_reset: CssRawString | builtins.str | None = None,
+        counter_set: CssRawString | builtins.str | None = None,
+        cue: CssRawString | builtins.str | None = None,
+        cue_after: CssRawString | None = None,
+        cue_before: CssRawString | None = None,
+        cursor: CssRawString | builtins.str | None = None,
         cx: LengthPercentage | builtins.int | builtins.float | None = None,
         cy: LengthPercentage | builtins.int | builtins.float | None = None,
-        d: CssValue | builtins.str | None = None,
-        direction: CssValue | builtins.str | None = None,
+        d: CssRawString | builtins.str | None = None,
+        direction: CssRawString | None = None,
         display: Display | None = None,
-        dominant_baseline: CssValue | builtins.str | None = None,
-        dynamic_range_limit: CssValue | builtins.str | None = None,
-        empty_cells: CssValue | builtins.str | None = None,
-        event_trigger: CssValue | builtins.str | None = None,
-        event_trigger_name: CssValue | builtins.str | None = None,
-        event_trigger_source: CssValue | builtins.str | None = None,
-        field_sizing: CssValue | builtins.str | None = None,
-        fill: CssValue | builtins.str | None = None,
-        fill_break: CssValue | builtins.str | None = None,
+        dominant_baseline: CssRawString | None = None,
+        dynamic_range_limit: CssRawString | None = None,
+        empty_cells: CssRawString | None = None,
+        event_trigger: CssRawString | None = None,
+        event_trigger_name: CssRawString | None = None,
+        event_trigger_source: CssRawString | None = None,
+        field_sizing: CssRawString | None = None,
+        fill: CssRawString | None = None,
+        fill_break: CssRawString | None = None,
         fill_color: ColorValue | None = None,
-        fill_image: CssValue | builtins.str | None = None,
-        fill_opacity: CssValue | builtins.str | None = None,
-        fill_origin: CssValue | builtins.str | None = None,
-        fill_position: CssValue | builtins.str | None = None,
-        fill_repeat: CssValue | builtins.str | None = None,
-        fill_rule: CssValue | builtins.str | None = None,
-        fill_size: CssValue | builtins.str | None = None,
-        filter: CssValue | builtins.str | None = None,
-        flex: CssValue | builtins.str | None = None,
+        fill_image: CssRawString | None = None,
+        fill_opacity: CssRawString | None = None,
+        fill_origin: CssRawString | None = None,
+        fill_position: CssRawString | None = None,
+        fill_repeat: CssRawString | None = None,
+        fill_rule: CssRawString | None = None,
+        fill_size: CssRawString | None = None,
+        filter: CssRawString | None = None,
+        flex: CssRawString | builtins.str | None = None,
         flex_basis: WidthValue | builtins.int | builtins.float | None = None,
         flex_direction: FlexDirection | None = None,
-        flex_flow: CssValue | builtins.str | None = None,
-        flex_grow: CssValue | builtins.str | None = None,
-        flex_shrink: CssValue | builtins.str | None = None,
+        flex_flow: CssRawString | builtins.str | None = None,
+        flex_grow: CssRawString | None = None,
+        flex_shrink: CssRawString | None = None,
         flex_wrap: FlexWrap | None = None,
-        float: CssValue | builtins.str | None = None,
-        float_defer: CssValue | builtins.str | None = None,
+        float: CssRawString | None = None,
+        float_defer: CssRawString | None = None,
         float_offset: LengthPercentage | builtins.int | builtins.float | None = None,
-        float_reference: CssValue | builtins.str | None = None,
+        float_reference: CssRawString | None = None,
         flood_color: ColorValue | None = None,
-        flood_opacity: CssValue | builtins.str | None = None,
-        flow_from: CssValue | builtins.str | None = None,
-        flow_into: CssValue | builtins.str | None = None,
+        flood_opacity: CssRawString | None = None,
+        flow_from: CssRawString | None = None,
+        flow_into: CssRawString | None = None,
         flow_tolerance: LengthPercentage | builtins.int | builtins.float | None = None,
-        font: CssValue | builtins.str | None = None,
-        font_family: CssValue | builtins.str | None = None,
-        font_feature_settings: CssValue | builtins.str | None = None,
-        font_kerning: CssValue | builtins.str | None = None,
-        font_language_override: CssValue | builtins.str | None = None,
-        font_optical_sizing: CssValue | builtins.str | None = None,
-        font_palette: CssValue | builtins.str | None = None,
+        font: CssRawString | builtins.str | None = None,
+        font_family: CssRawString | builtins.str | None = None,
+        font_feature_settings: CssRawString | builtins.str | None = None,
+        font_kerning: CssRawString | None = None,
+        font_language_override: CssRawString | builtins.str | None = None,
+        font_optical_sizing: CssRawString | None = None,
+        font_palette: CssRawString | None = None,
         font_size: LengthPercentage | builtins.int | builtins.float | None = None,
-        font_size_adjust: CssValue | builtins.str | None = None,
-        font_stretch: CssValue | builtins.str | None = None,
-        font_style: CssValue | builtins.str | None = None,
-        font_synthesis: CssValue | builtins.str | None = None,
-        font_synthesis_position: CssValue | builtins.str | None = None,
-        font_synthesis_small_caps: CssValue | builtins.str | None = None,
-        font_synthesis_style: CssValue | builtins.str | None = None,
-        font_synthesis_weight: CssValue | builtins.str | None = None,
-        font_variant: CssValue | builtins.str | None = None,
-        font_variant_alternates: CssValue | builtins.str | None = None,
-        font_variant_caps: CssValue | builtins.str | None = None,
-        font_variant_east_asian: CssValue | builtins.str | None = None,
-        font_variant_emoji: CssValue | builtins.str | None = None,
-        font_variant_ligatures: CssValue | builtins.str | None = None,
-        font_variant_numeric: CssValue | builtins.str | None = None,
-        font_variant_position: CssValue | builtins.str | None = None,
-        font_variation_settings: CssValue | builtins.str | None = None,
+        font_size_adjust: CssRawString | None = None,
+        font_stretch: CssRawString | None = None,
+        font_style: CssRawString | None = None,
+        font_synthesis: CssRawString | builtins.str | None = None,
+        font_synthesis_position: CssRawString | None = None,
+        font_synthesis_small_caps: CssRawString | None = None,
+        font_synthesis_style: CssRawString | None = None,
+        font_synthesis_weight: CssRawString | None = None,
+        font_variant: CssRawString | builtins.str | None = None,
+        font_variant_alternates: CssRawString | None = None,
+        font_variant_caps: CssRawString | None = None,
+        font_variant_east_asian: CssRawString | None = None,
+        font_variant_emoji: CssRawString | None = None,
+        font_variant_ligatures: CssRawString | None = None,
+        font_variant_numeric: CssRawString | None = None,
+        font_variant_position: CssRawString | None = None,
+        font_variation_settings: CssRawString | builtins.str | None = None,
         font_weight: FontWeight | None = None,
-        font_width: CssValue | builtins.str | None = None,
-        footnote_display: CssValue | builtins.str | None = None,
-        footnote_policy: CssValue | builtins.str | None = None,
-        forced_color_adjust: CssValue | builtins.str | None = None,
+        font_width: CssRawString | None = None,
+        footnote_display: CssRawString | None = None,
+        footnote_policy: CssRawString | None = None,
+        forced_color_adjust: CssRawString | None = None,
         gap: GapValue | builtins.int | builtins.float | None = None,
-        glyph_orientation_vertical: CssValue | builtins.str | None = None,
-        grid: CssValue | builtins.str | None = None,
-        grid_area: CssValue | builtins.str | None = None,
-        grid_auto_columns: CssValue | builtins.str | None = None,
-        grid_auto_flow: CssValue | builtins.str | None = None,
-        grid_auto_rows: CssValue | builtins.str | None = None,
-        grid_column: CssValue | builtins.str | None = None,
-        grid_column_end: CssValue | builtins.str | None = None,
+        glyph_orientation_vertical: CssRawString | None = None,
+        grid: CssRawString | builtins.str | None = None,
+        grid_area: CssRawString | builtins.str | None = None,
+        grid_auto_columns: CssRawString | None = None,
+        grid_auto_flow: CssRawString | None = None,
+        grid_auto_rows: CssRawString | None = None,
+        grid_column: CssRawString | builtins.str | None = None,
+        grid_column_end: CssRawString | None = None,
         grid_column_gap: GapValue | builtins.int | builtins.float | None = None,
-        grid_column_start: CssValue | builtins.str | None = None,
+        grid_column_start: CssRawString | None = None,
         grid_gap: GapValue | builtins.int | builtins.float | None = None,
-        grid_row: CssValue | builtins.str | None = None,
-        grid_row_end: CssValue | builtins.str | None = None,
+        grid_row: CssRawString | builtins.str | None = None,
+        grid_row_end: CssRawString | None = None,
         grid_row_gap: GapValue | builtins.int | builtins.float | None = None,
-        grid_row_start: CssValue | builtins.str | None = None,
-        grid_template: CssValue | builtins.str | None = None,
-        grid_template_areas: CssValue | builtins.str | None = None,
-        grid_template_columns: CssValue | builtins.str | None = None,
-        grid_template_rows: CssValue | builtins.str | None = None,
-        hanging_punctuation: CssValue | builtins.str | None = None,
+        grid_row_start: CssRawString | None = None,
+        grid_template: CssRawString | builtins.str | None = None,
+        grid_template_areas: CssRawString | builtins.str | None = None,
+        grid_template_columns: CssRawString | builtins.str | None = None,
+        grid_template_rows: CssRawString | builtins.str | None = None,
+        hanging_punctuation: CssRawString | None = None,
         height: HeightValue | builtins.int | builtins.float | None = None,
-        hyphenate_character: CssValue | builtins.str | None = None,
-        hyphenate_limit_chars: CssValue | builtins.str | None = None,
-        hyphenate_limit_last: CssValue | builtins.str | None = None,
-        hyphenate_limit_lines: CssValue | builtins.str | None = None,
+        hyphenate_character: CssRawString | builtins.str | None = None,
+        hyphenate_limit_chars: CssRawString | None = None,
+        hyphenate_limit_last: CssRawString | None = None,
+        hyphenate_limit_lines: CssRawString | None = None,
         hyphenate_limit_zone: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        hyphens: CssValue | builtins.str | None = None,
-        image_animation: CssValue | builtins.str | None = None,
-        image_orientation: CssValue | builtins.str | None = None,
-        image_rendering: CssValue | builtins.str | None = None,
-        image_resolution: CssValue | builtins.str | None = None,
-        initial_letter: CssValue | builtins.str | None = None,
-        initial_letter_align: CssValue | builtins.str | None = None,
+        hyphens: CssRawString | None = None,
+        image_animation: CssRawString | None = None,
+        image_orientation: CssRawString | None = None,
+        image_rendering: CssRawString | None = None,
+        image_resolution: CssRawString | None = None,
+        initial_letter: CssRawString | None = None,
+        initial_letter_align: CssRawString | None = None,
         initial_letter_wrap: (LengthPercentage | builtins.int | builtins.float | None) = None,
         inline_size: WidthValue | builtins.int | builtins.float | None = None,
-        inline_sizing: CssValue | builtins.str | None = None,
-        input_security: CssValue | builtins.str | None = None,
+        inline_sizing: CssRawString | None = None,
+        input_security: CssRawString | None = None,
         inset: SpacingShorthand | builtins.int | builtins.float | None = None,
         inset_block: SpacingShorthand | builtins.int | builtins.float | None = None,
         inset_block_end: SpacingShorthand | builtins.int | builtins.float | None = None,
@@ -1329,113 +1356,113 @@ class Style:
         inset_inline: SpacingShorthand | builtins.int | builtins.float | None = None,
         inset_inline_end: (SpacingShorthand | builtins.int | builtins.float | None) = None,
         inset_inline_start: (SpacingShorthand | builtins.int | builtins.float | None) = None,
-        interactivity: CssValue | builtins.str | None = None,
-        interest_delay: CssValue | builtins.str | None = None,
+        interactivity: CssRawString | None = None,
+        interest_delay: CssRawString | builtins.str | None = None,
         interest_delay_end: TimeValue | None = None,
         interest_delay_start: TimeValue | None = None,
-        interpolate_size: CssValue | builtins.str | None = None,
-        isolation: CssValue | builtins.str | None = None,
+        interpolate_size: CssRawString | None = None,
+        isolation: CssRawString | None = None,
         justify_content: JustifyContent | None = None,
-        justify_items: CssValue | builtins.str | None = None,
-        justify_self: CssValue | builtins.str | None = None,
+        justify_items: CssRawString | None = None,
+        justify_self: CssRawString | None = None,
         left: LengthPercentage | builtins.int | builtins.float | None = None,
         letter_spacing: LengthPercentage | builtins.int | builtins.float | None = None,
         lighting_color: ColorValue | None = None,
-        line_break: CssValue | builtins.str | None = None,
-        line_clamp: CssValue | builtins.str | None = None,
-        line_fit_edge: CssValue | builtins.str | None = None,
-        line_grid: CssValue | builtins.str | None = None,
+        line_break: CssRawString | None = None,
+        line_clamp: CssRawString | builtins.str | None = None,
+        line_fit_edge: CssRawString | None = None,
+        line_grid: CssRawString | None = None,
         line_height: LineHeightValue | None = None,
         line_height_step: Length | builtins.int | builtins.float | None = None,
         line_padding: Length | builtins.int | builtins.float | None = None,
-        line_snap: CssValue | builtins.str | None = None,
-        link_parameters: CssValue | builtins.str | None = None,
-        list_style: CssValue | builtins.str | None = None,
-        list_style_image: CssValue | builtins.str | None = None,
-        list_style_position: CssValue | builtins.str | None = None,
-        list_style_type: CssValue | builtins.str | None = None,
+        line_snap: CssRawString | None = None,
+        link_parameters: CssRawString | None = None,
+        list_style: CssRawString | builtins.str | None = None,
+        list_style_image: CssRawString | builtins.str | None = None,
+        list_style_position: CssRawString | None = None,
+        list_style_type: CssRawString | builtins.str | None = None,
         margin: SpacingShorthand | builtins.int | builtins.float | None = None,
         margin_block: SpacingShorthand | builtins.int | builtins.float | None = None,
         margin_block_end: (SpacingShorthand | builtins.int | builtins.float | None) = None,
         margin_block_start: (SpacingShorthand | builtins.int | builtins.float | None) = None,
         margin_bottom: SpacingShorthand | builtins.int | builtins.float | None = None,
-        margin_break: CssValue | builtins.str | None = None,
+        margin_break: CssRawString | None = None,
         margin_inline: SpacingShorthand | builtins.int | builtins.float | None = None,
         margin_inline_end: (SpacingShorthand | builtins.int | builtins.float | None) = None,
         margin_inline_start: (SpacingShorthand | builtins.int | builtins.float | None) = None,
         margin_left: SpacingShorthand | builtins.int | builtins.float | None = None,
         margin_right: SpacingShorthand | builtins.int | builtins.float | None = None,
         margin_top: SpacingShorthand | builtins.int | builtins.float | None = None,
-        margin_trim: CssValue | builtins.str | None = None,
-        marker: CssValue | builtins.str | None = None,
-        marker_end: CssValue | builtins.str | None = None,
-        marker_mid: CssValue | builtins.str | None = None,
-        marker_side: CssValue | builtins.str | None = None,
-        marker_start: CssValue | builtins.str | None = None,
-        mask: CssValue | builtins.str | None = None,
-        mask_border: CssValue | builtins.str | None = None,
-        mask_border_mode: CssValue | builtins.str | None = None,
+        margin_trim: CssRawString | None = None,
+        marker: CssRawString | builtins.str | None = None,
+        marker_end: CssRawString | None = None,
+        marker_mid: CssRawString | None = None,
+        marker_side: CssRawString | None = None,
+        marker_start: CssRawString | None = None,
+        mask: CssRawString | builtins.str | None = None,
+        mask_border: CssRawString | builtins.str | None = None,
+        mask_border_mode: CssRawString | None = None,
         mask_border_outset: Length | builtins.int | builtins.float | None = None,
-        mask_border_repeat: CssValue | builtins.str | None = None,
-        mask_border_slice: CssValue | builtins.str | None = None,
-        mask_border_source: CssValue | builtins.str | None = None,
+        mask_border_repeat: CssRawString | None = None,
+        mask_border_slice: CssRawString | None = None,
+        mask_border_source: CssRawString | builtins.str | None = None,
         mask_border_width: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        mask_clip: CssValue | builtins.str | None = None,
-        mask_composite: CssValue | builtins.str | None = None,
-        mask_image: CssValue | builtins.str | None = None,
-        mask_mode: CssValue | builtins.str | None = None,
-        mask_origin: CssValue | builtins.str | None = None,
-        mask_position: CssValue | builtins.str | None = None,
-        mask_repeat: CssValue | builtins.str | None = None,
-        mask_size: CssValue | builtins.str | None = None,
-        mask_type: CssValue | builtins.str | None = None,
-        math_depth: CssValue | builtins.str | None = None,
-        math_shift: CssValue | builtins.str | None = None,
-        math_style: CssValue | builtins.str | None = None,
+        mask_clip: CssRawString | None = None,
+        mask_composite: CssRawString | None = None,
+        mask_image: CssRawString | builtins.str | None = None,
+        mask_mode: CssRawString | None = None,
+        mask_origin: CssRawString | None = None,
+        mask_position: CssRawString | None = None,
+        mask_repeat: CssRawString | None = None,
+        mask_size: CssRawString | None = None,
+        mask_type: CssRawString | None = None,
+        math_depth: CssRawString | None = None,
+        math_shift: CssRawString | None = None,
+        math_style: CssRawString | None = None,
         max_block_size: WidthValue | builtins.int | builtins.float | None = None,
         max_height: HeightValue | builtins.int | builtins.float | None = None,
         max_inline_size: WidthValue | builtins.int | builtins.float | None = None,
-        max_lines: CssValue | builtins.str | None = None,
+        max_lines: CssRawString | None = None,
         max_width: WidthValue | builtins.int | builtins.float | None = None,
         min_block_size: WidthValue | builtins.int | builtins.float | None = None,
         min_height: HeightValue | builtins.int | builtins.float | None = None,
         min_inline_size: WidthValue | builtins.int | builtins.float | None = None,
-        min_intrinsic_sizing: CssValue | builtins.str | None = None,
+        min_intrinsic_sizing: CssRawString | None = None,
         min_width: WidthValue | builtins.int | builtins.float | None = None,
-        mix_blend_mode: CssValue | builtins.str | None = None,
-        nav_down: CssValue | builtins.str | None = None,
-        nav_left: CssValue | builtins.str | None = None,
-        nav_right: CssValue | builtins.str | None = None,
-        nav_up: CssValue | builtins.str | None = None,
-        object_fit: CssValue | builtins.str | None = None,
-        object_position: CssValue | builtins.str | None = None,
-        object_view_box: CssValue | builtins.str | None = None,
-        offset: CssValue | builtins.str | None = None,
-        offset_anchor: CssValue | builtins.str | None = None,
+        mix_blend_mode: CssRawString | None = None,
+        nav_down: CssRawString | None = None,
+        nav_left: CssRawString | None = None,
+        nav_right: CssRawString | None = None,
+        nav_up: CssRawString | None = None,
+        object_fit: CssRawString | None = None,
+        object_position: CssRawString | None = None,
+        object_view_box: CssRawString | None = None,
+        offset: CssRawString | builtins.str | None = None,
+        offset_anchor: CssRawString | None = None,
         offset_distance: LengthPercentage | builtins.int | builtins.float | None = None,
-        offset_path: CssValue | builtins.str | None = None,
-        offset_position: CssValue | builtins.str | None = None,
+        offset_path: CssRawString | None = None,
+        offset_position: CssRawString | None = None,
         offset_rotate: AngleValue | None = None,
         opacity: Opacity | None = None,
-        order: CssValue | builtins.str | None = None,
-        orphans: CssValue | builtins.str | None = None,
-        outline: CssValue | builtins.str | None = None,
+        order: CssRawString | None = None,
+        orphans: CssRawString | None = None,
+        outline: CssRawString | builtins.str | None = None,
         outline_color: ColorValue | None = None,
         outline_offset: Length | builtins.int | builtins.float | None = None,
-        outline_style: CssValue | builtins.str | None = None,
-        outline_width: CssValue | builtins.str | None = None,
-        overflow: Overflow | CssValue | None = None,
-        overflow_anchor: CssValue | builtins.str | None = None,
+        outline_style: CssRawString | None = None,
+        outline_width: CssRawString | None = None,
+        overflow: Overflow | CssRawString | None = None,
+        overflow_anchor: CssRawString | None = None,
         overflow_block: Overflow | None = None,
-        overflow_clip_margin: (Length | CssValue | builtins.int | builtins.float | None) = None,
+        overflow_clip_margin: (Length | CssRawString | builtins.int | builtins.float | None) = None,
         overflow_clip_margin_block: (
-            Length | CssValue | builtins.int | builtins.float | None
+            Length | CssRawString | builtins.int | builtins.float | None
         ) = None,
         overflow_clip_margin_block_end: (Length | builtins.int | builtins.float | None) = None,
         overflow_clip_margin_block_start: (Length | builtins.int | builtins.float | None) = None,
         overflow_clip_margin_bottom: (Length | builtins.int | builtins.float | None) = None,
         overflow_clip_margin_inline: (
-            Length | CssValue | builtins.int | builtins.float | None
+            Length | CssRawString | builtins.int | builtins.float | None
         ) = None,
         overflow_clip_margin_inline_end: (Length | builtins.int | builtins.float | None) = None,
         overflow_clip_margin_inline_start: (Length | builtins.int | builtins.float | None) = None,
@@ -1443,15 +1470,15 @@ class Style:
         overflow_clip_margin_right: (Length | builtins.int | builtins.float | None) = None,
         overflow_clip_margin_top: Length | builtins.int | builtins.float | None = None,
         overflow_inline: Overflow | None = None,
-        overflow_wrap: CssValue | builtins.str | None = None,
+        overflow_wrap: CssRawString | None = None,
         overflow_x: Overflow | None = None,
         overflow_y: Overflow | None = None,
-        overlay: CssValue | builtins.str | None = None,
-        overscroll_behavior: CssValue | builtins.str | None = None,
-        overscroll_behavior_block: CssValue | builtins.str | None = None,
-        overscroll_behavior_inline: CssValue | builtins.str | None = None,
-        overscroll_behavior_x: CssValue | builtins.str | None = None,
-        overscroll_behavior_y: CssValue | builtins.str | None = None,
+        overlay: CssRawString | None = None,
+        overscroll_behavior: CssRawString | builtins.str | None = None,
+        overscroll_behavior_block: CssRawString | None = None,
+        overscroll_behavior_inline: CssRawString | None = None,
+        overscroll_behavior_x: CssRawString | None = None,
+        overscroll_behavior_y: CssRawString | None = None,
         padding: SpacingShorthand | builtins.int | builtins.float | None = None,
         padding_block: SpacingShorthand | builtins.int | builtins.float | None = None,
         padding_block_end: (SpacingShorthand | builtins.int | builtins.float | None) = None,
@@ -1463,60 +1490,60 @@ class Style:
         padding_left: SpacingShorthand | builtins.int | builtins.float | None = None,
         padding_right: SpacingShorthand | builtins.int | builtins.float | None = None,
         padding_top: SpacingShorthand | builtins.int | builtins.float | None = None,
-        page: CssValue | builtins.str | None = None,
-        page_break_after: CssValue | builtins.str | None = None,
-        page_break_before: CssValue | builtins.str | None = None,
-        page_break_inside: CssValue | builtins.str | None = None,
-        paint_order: CssValue | builtins.str | None = None,
-        pause: CssValue | builtins.str | None = None,
+        page: CssRawString | None = None,
+        page_break_after: CssRawString | None = None,
+        page_break_before: CssRawString | None = None,
+        page_break_inside: CssRawString | None = None,
+        paint_order: CssRawString | None = None,
+        pause: CssRawString | builtins.str | None = None,
         pause_after: TimeValue | None = None,
         pause_before: TimeValue | None = None,
         perspective: Length | builtins.int | builtins.float | None = None,
-        perspective_origin: CssValue | builtins.str | None = None,
-        place_content: CssValue | builtins.str | None = None,
-        place_items: CssValue | builtins.str | None = None,
-        place_self: CssValue | builtins.str | None = None,
-        pointer_events: CssValue | builtins.str | None = None,
-        pointer_timeline: CssValue | builtins.str | None = None,
-        pointer_timeline_axis: CssValue | builtins.str | None = None,
-        pointer_timeline_name: CssValue | builtins.str | None = None,
+        perspective_origin: CssRawString | None = None,
+        place_content: CssRawString | builtins.str | None = None,
+        place_items: CssRawString | builtins.str | None = None,
+        place_self: CssRawString | builtins.str | None = None,
+        pointer_events: CssRawString | None = None,
+        pointer_timeline: CssRawString | builtins.str | None = None,
+        pointer_timeline_axis: CssRawString | None = None,
+        pointer_timeline_name: CssRawString | None = None,
         position: Position | None = None,
-        position_anchor: CssValue | builtins.str | None = None,
-        position_area: CssValue | builtins.str | None = None,
-        position_try: CssValue | builtins.str | None = None,
-        position_try_fallbacks: CssValue | builtins.str | None = None,
-        position_try_order: CssValue | builtins.str | None = None,
-        position_visibility: CssValue | builtins.str | None = None,
-        print_color_adjust: CssValue | builtins.str | None = None,
-        quotes: CssValue | builtins.str | None = None,
+        position_anchor: CssRawString | None = None,
+        position_area: CssRawString | None = None,
+        position_try: CssRawString | builtins.str | None = None,
+        position_try_fallbacks: CssRawString | None = None,
+        position_try_order: CssRawString | None = None,
+        position_visibility: CssRawString | None = None,
+        print_color_adjust: CssRawString | None = None,
+        quotes: CssRawString | builtins.str | None = None,
         r: LengthPercentage | builtins.int | builtins.float | None = None,
-        reading_flow: CssValue | builtins.str | None = None,
-        reading_order: CssValue | builtins.str | None = None,
-        region_fragment: CssValue | builtins.str | None = None,
-        resize: CssValue | builtins.str | None = None,
-        rest: CssValue | builtins.str | None = None,
+        reading_flow: CssRawString | None = None,
+        reading_order: CssRawString | None = None,
+        region_fragment: CssRawString | None = None,
+        resize: CssRawString | None = None,
+        rest: CssRawString | builtins.str | None = None,
         rest_after: TimeValue | None = None,
         rest_before: TimeValue | None = None,
         right: LengthPercentage | builtins.int | builtins.float | None = None,
         rotate: AngleValue | None = None,
         row_gap: GapValue | builtins.int | builtins.float | None = None,
-        row_rule: CssValue | builtins.str | None = None,
-        row_rule_break: CssValue | builtins.str | None = None,
+        row_rule: CssRawString | builtins.str | None = None,
+        row_rule_break: CssRawString | None = None,
         row_rule_color: ColorValue | None = None,
         row_rule_edge_inset: (
-            LengthPercentage | CssValue | builtins.int | builtins.float | None
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
         ) = None,
         row_rule_edge_inset_end: (LengthPercentage | builtins.int | builtins.float | None) = None,
         row_rule_edge_inset_start: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        row_rule_inset: CssValue | builtins.str | None = None,
+        row_rule_inset: CssRawString | builtins.str | None = None,
         row_rule_inset_end: (
-            LengthPercentage | CssValue | builtins.int | builtins.float | None
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
         ) = None,
         row_rule_inset_start: (
-            LengthPercentage | CssValue | builtins.int | builtins.float | None
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
         ) = None,
         row_rule_interior_inset: (
-            LengthPercentage | CssValue | builtins.int | builtins.float | None
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
         ) = None,
         row_rule_interior_inset_end: (
             LengthPercentage | builtins.int | builtins.float | None
@@ -1524,45 +1551,47 @@ class Style:
         row_rule_interior_inset_start: (
             LengthPercentage | builtins.int | builtins.float | None
         ) = None,
-        row_rule_style: CssValue | builtins.str | None = None,
-        row_rule_visibility_items: CssValue | builtins.str | None = None,
-        row_rule_width: CssValue | builtins.str | None = None,
-        ruby_align: CssValue | builtins.str | None = None,
-        ruby_merge: CssValue | builtins.str | None = None,
-        ruby_overhang: CssValue | builtins.str | None = None,
-        ruby_position: CssValue | builtins.str | None = None,
-        rule: CssValue | builtins.str | None = None,
-        rule_break: CssValue | builtins.str | None = None,
-        rule_color: ColorValue | CssValue | None = None,
-        rule_edge_inset: CssValue | builtins.str | None = None,
-        rule_inset: CssValue | builtins.str | None = None,
-        rule_inset_end: CssValue | builtins.str | None = None,
-        rule_inset_start: CssValue | builtins.str | None = None,
-        rule_interior_inset: CssValue | builtins.str | None = None,
-        rule_overlap: CssValue | builtins.str | None = None,
-        rule_style: CssValue | builtins.str | None = None,
-        rule_visibility_items: CssValue | builtins.str | None = None,
-        rule_width: CssValue | builtins.str | None = None,
+        row_rule_style: CssRawString | None = None,
+        row_rule_visibility_items: CssRawString | None = None,
+        row_rule_width: CssRawString | None = None,
+        ruby_align: CssRawString | None = None,
+        ruby_merge: CssRawString | None = None,
+        ruby_overhang: CssRawString | None = None,
+        ruby_position: CssRawString | None = None,
+        rule: CssRawString | builtins.str | None = None,
+        rule_break: CssRawString | builtins.str | None = None,
+        rule_color: ColorValue | CssRawString | None = None,
+        rule_edge_inset: CssRawString | builtins.str | None = None,
+        rule_inset: CssRawString | builtins.str | None = None,
+        rule_inset_end: CssRawString | builtins.str | None = None,
+        rule_inset_start: CssRawString | builtins.str | None = None,
+        rule_interior_inset: CssRawString | builtins.str | None = None,
+        rule_overlap: CssRawString | None = None,
+        rule_style: CssRawString | builtins.str | None = None,
+        rule_visibility_items: CssRawString | builtins.str | None = None,
+        rule_width: CssRawString | builtins.str | None = None,
         rx: LengthPercentage | builtins.int | builtins.float | None = None,
         ry: LengthPercentage | builtins.int | builtins.float | None = None,
-        scale: CssValue | builtins.str | None = None,
-        scroll_behavior: CssValue | builtins.str | None = None,
-        scroll_initial_target: CssValue | builtins.str | None = None,
-        scroll_margin: Length | CssValue | builtins.int | builtins.float | None = None,
-        scroll_margin_block: (Length | CssValue | builtins.int | builtins.float | None) = None,
+        scale: CssRawString | None = None,
+        scroll_behavior: CssRawString | None = None,
+        scroll_initial_target: CssRawString | None = None,
+        scroll_margin: (Length | CssRawString | builtins.int | builtins.float | None) = None,
+        scroll_margin_block: (Length | CssRawString | builtins.int | builtins.float | None) = None,
         scroll_margin_block_end: Length | builtins.int | builtins.float | None = None,
         scroll_margin_block_start: Length | builtins.int | builtins.float | None = None,
         scroll_margin_bottom: Length | builtins.int | builtins.float | None = None,
-        scroll_margin_inline: (Length | CssValue | builtins.int | builtins.float | None) = None,
+        scroll_margin_inline: (Length | CssRawString | builtins.int | builtins.float | None) = None,
         scroll_margin_inline_end: Length | builtins.int | builtins.float | None = None,
         scroll_margin_inline_start: (Length | builtins.int | builtins.float | None) = None,
         scroll_margin_left: Length | builtins.int | builtins.float | None = None,
         scroll_margin_right: Length | builtins.int | builtins.float | None = None,
         scroll_margin_top: Length | builtins.int | builtins.float | None = None,
-        scroll_marker_group: CssValue | builtins.str | None = None,
-        scroll_padding: (LengthPercentage | CssValue | builtins.int | builtins.float | None) = None,
+        scroll_marker_group: CssRawString | None = None,
+        scroll_padding: (
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
+        ) = None,
         scroll_padding_block: (
-            LengthPercentage | CssValue | builtins.int | builtins.float | None
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
         ) = None,
         scroll_padding_block_end: (LengthPercentage | builtins.int | builtins.float | None) = None,
         scroll_padding_block_start: (
@@ -1570,7 +1599,7 @@ class Style:
         ) = None,
         scroll_padding_bottom: (LengthPercentage | builtins.int | builtins.float | None) = None,
         scroll_padding_inline: (
-            LengthPercentage | CssValue | builtins.int | builtins.float | None
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
         ) = None,
         scroll_padding_inline_end: (LengthPercentage | builtins.int | builtins.float | None) = None,
         scroll_padding_inline_start: (
@@ -1579,173 +1608,172 @@ class Style:
         scroll_padding_left: (LengthPercentage | builtins.int | builtins.float | None) = None,
         scroll_padding_right: (LengthPercentage | builtins.int | builtins.float | None) = None,
         scroll_padding_top: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        scroll_snap_align: CssValue | builtins.str | None = None,
-        scroll_snap_stop: CssValue | builtins.str | None = None,
-        scroll_snap_type: CssValue | builtins.str | None = None,
-        scroll_target_group: CssValue | builtins.str | None = None,
-        scroll_timeline: CssValue | builtins.str | None = None,
-        scroll_timeline_axis: CssValue | builtins.str | None = None,
-        scroll_timeline_name: CssValue | builtins.str | None = None,
+        scroll_snap_align: CssRawString | None = None,
+        scroll_snap_stop: CssRawString | None = None,
+        scroll_snap_type: CssRawString | None = None,
+        scroll_target_group: CssRawString | None = None,
+        scroll_timeline: CssRawString | builtins.str | None = None,
+        scroll_timeline_axis: CssRawString | None = None,
+        scroll_timeline_name: CssRawString | None = None,
         scrollbar_color: ColorValue | None = None,
-        scrollbar_gutter: CssValue | builtins.str | None = None,
-        scrollbar_width: CssValue | builtins.str | None = None,
-        shape_image_threshold: CssValue | builtins.str | None = None,
-        shape_inside: CssValue | builtins.str | None = None,
+        scrollbar_gutter: CssRawString | None = None,
+        scrollbar_width: CssRawString | None = None,
+        shape_image_threshold: CssRawString | None = None,
+        shape_inside: CssRawString | builtins.str | None = None,
         shape_margin: LengthPercentage | builtins.int | builtins.float | None = None,
-        shape_outside: CssValue | builtins.str | None = None,
+        shape_outside: CssRawString | builtins.str | None = None,
         shape_padding: LengthPercentage | builtins.int | builtins.float | None = None,
-        shape_rendering: CssValue | builtins.str | None = None,
-        shape_subtract: CssValue | builtins.str | None = None,
-        slider_orientation: CssValue | builtins.str | None = None,
-        spatial_navigation_action: CssValue | builtins.str | None = None,
-        spatial_navigation_contain: CssValue | builtins.str | None = None,
-        spatial_navigation_function: CssValue | builtins.str | None = None,
-        speak: CssValue | builtins.str | None = None,
-        speak_as: CssValue | builtins.str | None = None,
+        shape_rendering: CssRawString | None = None,
+        shape_subtract: CssRawString | None = None,
+        slider_orientation: CssRawString | None = None,
+        spatial_navigation_action: CssRawString | None = None,
+        spatial_navigation_contain: CssRawString | None = None,
+        spatial_navigation_function: CssRawString | None = None,
+        speak: CssRawString | None = None,
+        speak_as: CssRawString | None = None,
         stop_color: ColorValue | None = None,
-        stop_opacity: CssValue | builtins.str | None = None,
-        string_set: CssValue | builtins.str | None = None,
-        stroke: CssValue | builtins.str | None = None,
-        stroke_align: CssValue | builtins.str | None = None,
-        stroke_alignment: CssValue | builtins.str | None = None,
-        stroke_break: CssValue | builtins.str | None = None,
+        stop_opacity: CssRawString | None = None,
+        string_set: CssRawString | builtins.str | None = None,
+        stroke: CssRawString | None = None,
+        stroke_align: CssRawString | None = None,
+        stroke_alignment: CssRawString | None = None,
+        stroke_break: CssRawString | None = None,
         stroke_color: ColorValue | None = None,
         stroke_dash_corner: Length | builtins.int | builtins.float | None = None,
-        stroke_dash_justify: CssValue | builtins.str | None = None,
-        stroke_dashadjust: CssValue | builtins.str | None = None,
+        stroke_dash_justify: CssRawString | None = None,
+        stroke_dashadjust: CssRawString | None = None,
         stroke_dasharray: (LengthPercentage | builtins.int | builtins.float | None) = None,
         stroke_dashcorner: Length | builtins.int | builtins.float | None = None,
         stroke_dashoffset: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        stroke_image: CssValue | builtins.str | None = None,
-        stroke_linecap: CssValue | builtins.str | None = None,
-        stroke_linejoin: CssValue | builtins.str | None = None,
-        stroke_miterlimit: CssValue | builtins.str | None = None,
-        stroke_opacity: CssValue | builtins.str | None = None,
-        stroke_origin: CssValue | builtins.str | None = None,
-        stroke_position: CssValue | builtins.str | None = None,
-        stroke_repeat: CssValue | builtins.str | None = None,
-        stroke_size: CssValue | builtins.str | None = None,
+        stroke_image: CssRawString | None = None,
+        stroke_linecap: CssRawString | None = None,
+        stroke_linejoin: CssRawString | None = None,
+        stroke_miterlimit: CssRawString | None = None,
+        stroke_opacity: CssRawString | None = None,
+        stroke_origin: CssRawString | None = None,
+        stroke_position: CssRawString | None = None,
+        stroke_repeat: CssRawString | None = None,
+        stroke_size: CssRawString | None = None,
         stroke_width: LengthPercentage | builtins.int | builtins.float | None = None,
         tab_size: Length | builtins.int | builtins.float | None = None,
-        table_layout: CssValue | builtins.str | None = None,
-        text_align: TextAlign | CssValue | None = None,
-        text_align_all: CssValue | builtins.str | None = None,
-        text_align_last: CssValue | builtins.str | None = None,
-        text_anchor: CssValue | builtins.str | None = None,
-        text_autospace: CssValue | builtins.str | None = None,
-        text_box: CssValue | builtins.str | None = None,
-        text_box_edge: CssValue | builtins.str | None = None,
-        text_box_trim: CssValue | builtins.str | None = None,
-        text_combine_upright: CssValue | builtins.str | None = None,
-        text_decoration: CssValue | builtins.str | None = None,
+        table_layout: CssRawString | None = None,
+        text_align: TextAlign | CssRawString | None = None,
+        text_align_all: CssRawString | builtins.str | None = None,
+        text_align_last: CssRawString | None = None,
+        text_anchor: CssRawString | None = None,
+        text_autospace: CssRawString | None = None,
+        text_box: CssRawString | None = None,
+        text_box_edge: CssRawString | None = None,
+        text_box_trim: CssRawString | None = None,
+        text_combine_upright: CssRawString | None = None,
+        text_decoration: CssRawString | builtins.str | None = None,
         text_decoration_color: ColorValue | None = None,
         text_decoration_inset: Length | builtins.int | builtins.float | None = None,
-        text_decoration_line: CssValue | builtins.str | None = None,
-        text_decoration_skip: CssValue | builtins.str | None = None,
-        text_decoration_skip_box: CssValue | builtins.str | None = None,
-        text_decoration_skip_ink: CssValue | builtins.str | None = None,
-        text_decoration_skip_self: CssValue | builtins.str | None = None,
-        text_decoration_skip_spaces: CssValue | builtins.str | None = None,
-        text_decoration_style: CssValue | builtins.str | None = None,
+        text_decoration_line: CssRawString | None = None,
+        text_decoration_skip: CssRawString | builtins.str | None = None,
+        text_decoration_skip_box: CssRawString | None = None,
+        text_decoration_skip_ink: CssRawString | None = None,
+        text_decoration_skip_self: CssRawString | None = None,
+        text_decoration_skip_spaces: CssRawString | None = None,
+        text_decoration_style: CssRawString | None = None,
         text_decoration_thickness: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        text_emphasis: CssValue | builtins.str | None = None,
+        text_emphasis: CssRawString | builtins.str | None = None,
         text_emphasis_color: ColorValue | None = None,
-        text_emphasis_position: CssValue | builtins.str | None = None,
-        text_emphasis_skip: CssValue | builtins.str | None = None,
-        text_emphasis_style: CssValue | builtins.str | None = None,
-        text_group_align: CssValue | builtins.str | None = None,
+        text_emphasis_position: CssRawString | None = None,
+        text_emphasis_skip: CssRawString | None = None,
+        text_emphasis_style: CssRawString | builtins.str | None = None,
+        text_group_align: CssRawString | None = None,
         text_indent: LengthPercentage | builtins.int | builtins.float | None = None,
-        text_justify: CssValue | builtins.str | None = None,
-        text_orientation: CssValue | builtins.str | None = None,
-        text_overflow: CssValue | builtins.str | None = None,
-        text_rendering: CssValue | builtins.str | None = None,
-        text_shadow: CssValue | builtins.str | None = None,
-        text_size_adjust: CssValue | builtins.str | None = None,
-        text_spacing: CssValue | builtins.str | None = None,
-        text_spacing_trim: CssValue | builtins.str | None = None,
-        text_transform: CssValue | builtins.str | None = None,
+        text_justify: CssRawString | None = None,
+        text_orientation: CssRawString | None = None,
+        text_overflow: CssRawString | builtins.str | None = None,
+        text_rendering: CssRawString | None = None,
+        text_shadow: CssRawString | None = None,
+        text_size_adjust: CssRawString | None = None,
+        text_spacing: CssRawString | builtins.str | None = None,
+        text_spacing_trim: CssRawString | None = None,
+        text_transform: CssRawString | None = None,
         text_underline_offset: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        text_underline_position: CssValue | builtins.str | None = None,
-        text_wrap: CssValue | builtins.str | None = None,
-        text_wrap_mode: CssValue | builtins.str | None = None,
-        text_wrap_style: CssValue | builtins.str | None = None,
-        timeline_scope: CssValue | builtins.str | None = None,
-        timeline_trigger: CssValue | builtins.str | None = None,
-        timeline_trigger_activation_range: CssValue | builtins.str | None = None,
+        text_underline_position: CssRawString | None = None,
+        text_wrap: CssRawString | builtins.str | None = None,
+        text_wrap_mode: CssRawString | None = None,
+        text_wrap_style: CssRawString | None = None,
+        timeline_scope: CssRawString | None = None,
+        timeline_trigger: CssRawString | builtins.str | None = None,
+        timeline_trigger_activation_range: CssRawString | builtins.str | None = None,
         timeline_trigger_activation_range_end: (
             LengthPercentage | builtins.int | builtins.float | None
         ) = None,
         timeline_trigger_activation_range_start: (
             LengthPercentage | builtins.int | builtins.float | None
         ) = None,
-        timeline_trigger_active_range: CssValue | builtins.str | None = None,
+        timeline_trigger_active_range: CssRawString | builtins.str | None = None,
         timeline_trigger_active_range_end: (
             LengthPercentage | builtins.int | builtins.float | None
         ) = None,
         timeline_trigger_active_range_start: (
             LengthPercentage | builtins.int | builtins.float | None
         ) = None,
-        timeline_trigger_name: CssValue | builtins.str | None = None,
-        timeline_trigger_source: CssValue | builtins.str | None = None,
+        timeline_trigger_name: CssRawString | None = None,
+        timeline_trigger_source: CssRawString | None = None,
         top: LengthPercentage | builtins.int | builtins.float | None = None,
-        touch_action: CssValue | builtins.str | None = None,
+        touch_action: CssRawString | None = None,
         transform: TransformValue | None = None,
-        transform_box: CssValue | builtins.str | None = None,
+        transform_box: CssRawString | None = None,
         transform_origin: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        transform_style: CssValue | builtins.str | None = None,
+        transform_style: CssRawString | None = None,
         transition: TransitionValue | None = None,
-        transition_behavior: CssValue | builtins.str | None = None,
+        transition_behavior: CssRawString | None = None,
         transition_delay: TimeValue | None = None,
         transition_duration: TimeValue | None = None,
-        transition_property: CssValue | builtins.str | None = None,
-        transition_timing_function: CssValue | builtins.str | None = None,
+        transition_property: CssRawString | None = None,
+        transition_timing_function: CssRawString | None = None,
         translate: LengthPercentage | builtins.int | builtins.float | None = None,
-        trigger_scope: CssValue | builtins.str | None = None,
-        unicode_bidi: CssValue | builtins.str | None = None,
-        user_select: CssValue | builtins.str | None = None,
-        vector_effect: CssValue | builtins.str | None = None,
-        vertical_align: CssValue | builtins.str | None = None,
-        view_timeline: CssValue | builtins.str | None = None,
-        view_timeline_axis: CssValue | builtins.str | None = None,
+        trigger_scope: CssRawString | None = None,
+        unicode_bidi: CssRawString | None = None,
+        user_select: CssRawString | None = None,
+        vector_effect: CssRawString | None = None,
+        vertical_align: CssRawString | builtins.str | None = None,
+        view_timeline: CssRawString | builtins.str | None = None,
+        view_timeline_axis: CssRawString | None = None,
         view_timeline_inset: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        view_timeline_name: CssValue | builtins.str | None = None,
-        view_transition_class: CssValue | builtins.str | None = None,
-        view_transition_group: CssValue | builtins.str | None = None,
-        view_transition_name: CssValue | builtins.str | None = None,
-        view_transition_scope: CssValue | builtins.str | None = None,
-        visibility: CssValue | builtins.str | None = None,
-        voice_balance: CssValue | builtins.str | None = None,
+        view_timeline_name: CssRawString | None = None,
+        view_transition_class: CssRawString | None = None,
+        view_transition_group: CssRawString | None = None,
+        view_transition_name: CssRawString | None = None,
+        view_transition_scope: CssRawString | None = None,
+        visibility: CssRawString | None = None,
+        voice_balance: CssRawString | None = None,
         voice_duration: TimeValue | None = None,
-        voice_family: CssValue | builtins.str | None = None,
-        voice_pitch: CssValue | builtins.str | None = None,
-        voice_range: CssValue | builtins.str | None = None,
-        voice_rate: CssValue | builtins.str | None = None,
-        voice_stress: CssValue | builtins.str | None = None,
-        voice_volume: CssValue | builtins.str | None = None,
-        white_space: CssValue | builtins.str | None = None,
-        white_space_collapse: CssValue | builtins.str | None = None,
-        white_space_trim: CssValue | builtins.str | None = None,
-        widows: CssValue | builtins.str | None = None,
+        voice_family: CssRawString | None = None,
+        voice_pitch: CssRawString | None = None,
+        voice_range: CssRawString | None = None,
+        voice_rate: CssRawString | None = None,
+        voice_stress: CssRawString | None = None,
+        voice_volume: CssRawString | None = None,
+        white_space: CssRawString | builtins.str | None = None,
+        white_space_collapse: CssRawString | None = None,
+        white_space_trim: CssRawString | None = None,
+        widows: CssRawString | None = None,
         width: WidthValue | builtins.int | builtins.float | None = None,
-        will_change: CssValue | builtins.str | None = None,
-        word_break: CssValue | builtins.str | None = None,
-        word_space_transform: CssValue | builtins.str | None = None,
+        will_change: CssRawString | builtins.str | None = None,
+        word_break: CssRawString | None = None,
+        word_space_transform: CssRawString | None = None,
         word_spacing: LengthPercentage | builtins.int | builtins.float | None = None,
-        word_wrap: CssValue | builtins.str | None = None,
-        wrap_after: CssValue | builtins.str | None = None,
-        wrap_before: CssValue | builtins.str | None = None,
-        wrap_flow: CssValue | builtins.str | None = None,
-        wrap_inside: CssValue | builtins.str | None = None,
-        wrap_through: CssValue | builtins.str | None = None,
-        writing_mode: CssValue | builtins.str | None = None,
+        word_wrap: CssRawString | None = None,
+        wrap_after: CssRawString | None = None,
+        wrap_before: CssRawString | None = None,
+        wrap_flow: CssRawString | None = None,
+        wrap_inside: CssRawString | None = None,
+        wrap_through: CssRawString | None = None,
+        writing_mode: CssRawString | None = None,
         x: LengthPercentage | builtins.int | builtins.float | None = None,
         y: LengthPercentage | builtins.int | builtins.float | None = None,
         z_index: ZIndex | None = None,
-        zoom: CssValue | builtins.str | None = None,
-        **extra_styles: Any,
+        zoom: CssRawString | None = None,
     ) -> None: ...
 
-def raw(value: builtins.str) -> CssValue: ...
+def raw(value: builtins.str) -> CssRawString: ...
 def color(value: builtins.str) -> CssColor: ...
 def px(value: builtins.int | builtins.float) -> CssLength: ...
 def rem(value: builtins.int | builtins.float) -> CssLength: ...
@@ -1756,6 +1784,20 @@ def pct(value: builtins.int | builtins.float) -> CssPercent: ...
 def sec(value: builtins.int | builtins.float) -> CssTime: ...
 def ms(value: builtins.int | builtins.float) -> CssTime: ...
 def deg(value: builtins.int | builtins.float) -> CssAngle: ...
+def rad(value: builtins.int | builtins.float) -> CssAngle: ...
+def turn(value: builtins.int | builtins.float) -> CssAngle: ...
+def ch(value: builtins.int | builtins.float) -> CssLength: ...
+def vmin(value: builtins.int | builtins.float) -> CssLength: ...
+def vmax(value: builtins.int | builtins.float) -> CssLength: ...
+def dvh(value: builtins.int | builtins.float) -> CssLength: ...
+def dvw(value: builtins.int | builtins.float) -> CssLength: ...
+def svh(value: builtins.int | builtins.float) -> CssLength: ...
+def svw(value: builtins.int | builtins.float) -> CssLength: ...
+def lvh(value: builtins.int | builtins.float) -> CssLength: ...
+def lvw(value: builtins.int | builtins.float) -> CssLength: ...
+def cqw(value: builtins.int | builtins.float) -> CssLength: ...
+def cqh(value: builtins.int | builtins.float) -> CssLength: ...
+def fr(value: builtins.int | builtins.float) -> CssLength: ...
 def rgb(red: builtins.int, green: builtins.int, blue: builtins.int) -> CssColor: ...
 def rgba(
     red: builtins.int, green: builtins.int, blue: builtins.int, alpha: builtins.float
@@ -1805,19 +1847,19 @@ def color_space(
     *components: builtins.int | builtins.float | builtins.str,
     alpha: builtins.float | None = None,
 ) -> CssColor: ...
-def var(name: builtins.str, fallback: StyleScalar | None = None) -> CssValue: ...
-def calc(expression: builtins.str) -> CssValue: ...
-def min_(*values: StyleScalar) -> CssValue: ...
-def max_(*values: StyleScalar) -> CssValue: ...
-def clamp(minimum: StyleScalar, preferred: StyleScalar, maximum: StyleScalar) -> CssValue: ...
-def margin(*values: StyleScalar) -> CssValue: ...
-def padding(*values: StyleScalar) -> CssValue: ...
-def inset(*values: StyleScalar) -> CssValue: ...
-def border(width: StyleScalar, style: builtins.str, color_value: StyleScalar) -> CssValue: ...
-def shadow(*parts: StyleScalar) -> CssValue: ...
-def scale(value: builtins.int | builtins.float) -> CssValue: ...
-def rotate(value: CssAngle | builtins.int | builtins.float) -> CssValue: ...
-def translate(x_value: StyleScalar, y_value: StyleScalar | None = None) -> CssValue: ...
+def var(name: builtins.str, fallback: StyleScalar | None = None) -> CssRawString: ...
+def calc(expression: builtins.str) -> CssRawString: ...
+def min_(*values: StyleScalar) -> CssRawString: ...
+def max_(*values: StyleScalar) -> CssRawString: ...
+def clamp(minimum: StyleScalar, preferred: StyleScalar, maximum: StyleScalar) -> CssRawString: ...
+def margin(*values: StyleScalar) -> CssRawString: ...
+def padding(*values: StyleScalar) -> CssRawString: ...
+def inset(*values: StyleScalar) -> CssRawString: ...
+def border(width: StyleScalar, style: builtins.str, color_value: StyleScalar) -> CssRawString: ...
+def shadow(*parts: StyleScalar) -> CssRawString: ...
+def scale(value: builtins.int | builtins.float) -> CssRawString: ...
+def rotate(value: CssAngle | builtins.int | builtins.float) -> CssRawString: ...
+def translate(x_value: StyleScalar, y_value: StyleScalar | None = None) -> CssRawString: ...
 def media(
     *,
     style: StyleInput,

@@ -81,21 +81,22 @@ describe("webref css source extraction", () => {
       kind: "union",
       options: expect.arrayContaining([
         { kind: "reference", name: "CssLength" },
-        { kind: "primitive", name: "str" },
         { kind: "reference", name: "CssRawString" },
       ]),
     });
+    // Length should NOT contain str — use typed helpers or raw()
+    expect(surface.value_aliases.get("Length")?.options ?? []).not.toEqual(
+      expect.arrayContaining([{ kind: "primitive", name: "str" }]),
+    );
     expect(surface.value_aliases.get("WidthValue")).toMatchObject({
       kind: "union",
       options: expect.arrayContaining([
-        { kind: "primitive", name: "str" },
         { kind: "reference", name: "CssRawString" },
       ]),
     });
     expect(surface.value_aliases.get("SpacingShorthand")).toMatchObject({
       kind: "union",
       options: expect.arrayContaining([
-        { kind: "primitive", name: "str" },
         { kind: "reference", name: "CssRawString" },
       ]),
     });
@@ -103,7 +104,6 @@ describe("webref css source extraction", () => {
       kind: "union",
       options: expect.arrayContaining([
         { kind: "literal", value: "flex" },
-        { kind: "primitive", name: "str" },
         { kind: "literal", value: "inline-flex" },
         { kind: "reference", name: "CssRawString" },
       ]),

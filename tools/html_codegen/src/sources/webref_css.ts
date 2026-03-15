@@ -1,6 +1,6 @@
 import { index, type CssFeature } from "@webref/css";
 
-import type { CssMediaFeatureDef, CssPropertyDef, SourceProvenance, TypeExpr } from "../ir/types.js";
+import type { CssMediaFeatureDef, CssPropertyDef, CssValueTier, SourceProvenance, TypeExpr } from "../ir/types.js";
 
 export interface CssSurface {
   properties: Map<string, CssPropertyDef>;
@@ -264,15 +264,23 @@ function keyword_union(values: string[]): TypeExpr {
   return union(...values.map((value) => literal(value)));
 }
 
-function fallback_css_value(...options: TypeExpr[]): TypeExpr {
-  return union(...options, primitive("str"), reference("CssRawString"));
+// Build a type union with CssRawString as the escape hatch (no bare str).
+function with_raw_escape(...options: TypeExpr[]): TypeExpr {
+  return union(...options, reference("CssRawString"));
 }
 
 function value_aliases(): Map<string, TypeExpr> {
   return new Map<string, TypeExpr>([
     ["CssRawString", reference("CssRawString")],
-    ["Length", union(reference("CssLength"), primitive("str"), reference("CssRawString"))],
-    ["Percent", union(reference("CssPercent"), primitive("str"), reference("CssRawString"))],
+
+    // Dimensional types — no bare str, use typed helpers or raw()
+    ["Length", union(reference("CssLength"), reference("CssRawString"))],
+    ["Percent", union(reference("CssPercent"), reference("CssRawString"))],
+    ["LengthPercentage", union(reference("Length"), reference("Percent"))],
+    ["TimeValue", union(reference("CssTime"), reference("CssRawString"))],
+    ["AngleValue", union(reference("CssAngle"), reference("CssRawString"))],
+
+    // Color — keeps str for hex codes, named colors give autocomplete
     ["NamedColor", keyword_union([...NAMED_COLORS])],
     [
       "ColorKeyword",
@@ -282,11 +290,11 @@ function value_aliases(): Map<string, TypeExpr> {
       "ColorValue",
       union(reference("ColorKeyword"), primitive("str"), reference("CssColor"), reference("CssRawString")),
     ],
-    ["TimeValue", union(reference("CssTime"), primitive("str"), reference("CssRawString"))],
-    ["AngleValue", union(reference("CssAngle"), primitive("str"), reference("CssRawString"))],
+
+    // Keyword unions — no bare str, CssRawString is escape hatch
     [
       "Display",
-      fallback_css_value(
+      with_raw_escape(
         keyword_union([
           "block",
           "inline",
@@ -300,42 +308,49 @@ function value_aliases(): Map<string, TypeExpr> {
         ]),
       ),
     ],
-    ["Position", fallback_css_value(keyword_union(["static", "relative", "absolute", "fixed", "sticky"]))],
-    ["Overflow", fallback_css_value(keyword_union(["visible", "hidden", "clip", "scroll", "auto"]))],
-    ["TextAlign", fallback_css_value(keyword_union(["left", "right", "center", "justify", "start", "end"]))],
+    ["Position", with_raw_escape(keyword_union(["static", "relative", "absolute", "fixed", "sticky"]))],
+    ["Overflow", with_raw_escape(keyword_union(["visible", "hidden", "clip", "scroll", "auto"]))],
+    ["TextAlign", with_raw_escape(keyword_union(["left", "right", "center", "justify", "start", "end"]))],
     [
       "FontWeight",
-      fallback_css_value(union(primitive("int"), keyword_union(["normal", "bold", "lighter", "bolder"]))),
+      with_raw_escape(union(primitive("int"), keyword_union(["normal", "bold", "lighter", "bolder"]))),
     ],
-    ["FlexDirection", fallback_css_value(keyword_union(["row", "row-reverse", "column", "column-reverse"]))],
-    ["FlexWrap", fallback_css_value(keyword_union(["nowrap", "wrap", "wrap-reverse"]))],
+    ["FlexDirection", with_raw_escape(keyword_union(["row", "row-reverse", "column", "column-reverse"]))],
+    ["FlexWrap", with_raw_escape(keyword_union(["nowrap", "wrap", "wrap-reverse"]))],
     [
       "JustifyContent",
-      fallback_css_value(
+      with_raw_escape(
         keyword_union(["flex-start", "flex-end", "center", "space-between", "space-around", "space-evenly", "start", "end"]),
       ),
     ],
     [
       "AlignItems",
-      fallback_css_value(keyword_union(["stretch", "center", "start", "end", "flex-start", "flex-end", "baseline"])),
+      with_raw_escape(keyword_union(["stretch", "center", "start", "end", "flex-start", "flex-end", "baseline"])),
     ],
-    ["LengthPercentage", union(reference("Length"), reference("Percent"))],
-    ["WidthValue", fallback_css_value(reference("LengthPercentage"), keyword_union(["auto", "min-content", "max-content", "fit-content", "stretch", "contain"]))],
-    ["HeightValue", fallback_css_value(reference("LengthPercentage"), keyword_union(["auto", "min-content", "max-content", "fit-content", "stretch", "contain"]))],
-    ["BorderRadiusValue", fallback_css_value(reference("LengthPercentage"))],
-    ["SpacingShorthand", fallback_css_value(reference("LengthPercentage"))],
-    ["GapValue", fallback_css_value(reference("LengthPercentage"), keyword_union(["normal"]))],
-    ["LineHeightValue", fallback_css_value(reference("LengthPercentage"), primitive("float"), keyword_union(["normal"]))],
+
+    // Dimensional layout types
+    ["WidthValue", with_raw_escape(reference("LengthPercentage"), keyword_union(["auto", "min-content", "max-content", "fit-content", "stretch", "contain"]))],
+    ["HeightValue", with_raw_escape(reference("LengthPercentage"), keyword_union(["auto", "min-content", "max-content", "fit-content", "stretch", "contain"]))],
+    ["BorderRadiusValue", with_raw_escape(reference("LengthPercentage"))],
+    ["SpacingShorthand", with_raw_escape(reference("LengthPercentage"))],
+    ["GapValue", with_raw_escape(reference("LengthPercentage"), keyword_union(["normal"]))],
+    ["LineHeightValue", with_raw_escape(reference("LengthPercentage"), primitive("float"), keyword_union(["normal"]))],
+
+    // Shorthand/complex types — keep str for complex multi-value syntax
     ["ShadowValue", union(primitive("str"), reference("CssRawString"))],
     ["TransformValue", union(primitive("str"), reference("CssRawString"))],
     ["TransitionValue", union(primitive("str"), reference("CssRawString"))],
+
+    // Numeric types
     ["Opacity", union(primitive("float"), reference("CssRawString"))],
     ["ZIndex", union(primitive("int"), literal("auto"), reference("CssRawString"))],
+
+    // Media features
     ["MediaFeatureValue", union(primitive("str"), primitive("int"), primitive("float"), reference("CssRawString"))],
-    ["PrefersColorScheme", fallback_css_value(keyword_union(["light", "dark"]))],
-    ["PrefersReducedMotion", fallback_css_value(keyword_union(["reduce", "no-preference"]))],
-    ["PointerCapability", fallback_css_value(keyword_union(["none", "coarse", "fine"]))],
-    ["HoverCapability", fallback_css_value(keyword_union(["none", "hover"]))],
+    ["PrefersColorScheme", with_raw_escape(keyword_union(["light", "dark"]))],
+    ["PrefersReducedMotion", with_raw_escape(keyword_union(["reduce", "no-preference"]))],
+    ["PointerCapability", with_raw_escape(keyword_union(["none", "coarse", "fine"]))],
+    ["HoverCapability", with_raw_escape(keyword_union(["none", "hover"]))],
   ]);
 }
 
@@ -533,15 +548,77 @@ function is_property_shorthand(css_name: string, feature: CssFeature): boolean {
   return Boolean(feature.longhands?.length) || SHORTHAND_PROPERTIES.has(css_name);
 }
 
+// Properties whose values are genuinely free-form strings (font names, URLs,
+// content strings, etc.) — these accept bare `str` in the typed API.
+const STRING_NATIVE_PROPERTIES = new Set([
+  "content",
+  "counter-increment",
+  "counter-reset",
+  "counter-set",
+  "cursor",
+  "font-family",
+  "font-feature-settings",
+  "font-variation-settings",
+  "grid-template-areas",
+  "grid-template-columns",
+  "grid-template-rows",
+  "list-style-image",
+  "list-style-type",
+  "mask-image",
+  "quotes",
+  "will-change",
+]);
+
+// Properties where `str` is kept because the syntax contains <string>,
+// <url>, or <image> productions — free-form values that can't be typed.
+function is_string_native_by_syntax(feature: CssFeature): boolean {
+  const syntax = feature.syntax ?? "";
+  return syntax.includes("<string>") || syntax.includes("<url") || syntax.includes("<image>");
+}
+
+function classify_value_tier(
+  css_name: string,
+  feature: CssFeature,
+  value_type_name: string,
+  is_shorthand: boolean,
+): CssValueTier {
+  if (STRING_NATIVE_PROPERTIES.has(css_name) || is_string_native_by_syntax(feature)) {
+    return "string_native";
+  }
+  if (is_shorthand) {
+    return "shorthand";
+  }
+  // Aliases that represent dimensional values (lengths, percentages, etc.)
+  const dimensional_aliases = new Set([
+    "Length",
+    "Percent",
+    "LengthPercentage",
+    "WidthValue",
+    "HeightValue",
+    "BorderRadiusValue",
+    "SpacingShorthand",
+    "GapValue",
+    "LineHeightValue",
+    "TimeValue",
+    "AngleValue",
+  ]);
+  if (dimensional_aliases.has(value_type_name)) {
+    return "dimensional";
+  }
+  return "keyword";
+}
+
 function build_property_def(css_name: string, feature: CssFeature): CssPropertyDef {
   const value_type_name = infer_alias_name(css_name, feature);
+  const is_shorthand = is_property_shorthand(css_name, feature);
   return {
     css_name,
     python_name: to_snake_case(css_name),
     value_type_name,
     type_expr: infer_type_expr(value_type_name),
     accepts_auto_px: accepts_auto_px(feature, value_type_name),
-    is_shorthand: is_property_shorthand(css_name, feature),
+    is_shorthand,
+    value_tier: classify_value_tier(css_name, feature, value_type_name, is_shorthand),
     source: source("css_property"),
   };
 }
@@ -597,7 +674,7 @@ function supported_property_names(features: Record<string, CssFeature>): string[
 export async function extract_css_surface(): Promise<CssSurface> {
   const css = await index();
   const aliases = value_aliases();
-  aliases.set("Orientation", fallback_css_value(keyword_union(["portrait", "landscape"])));
+  aliases.set("Orientation", with_raw_escape(keyword_union(["portrait", "landscape"])));
 
   const properties = new Map<string, CssPropertyDef>();
   for (const name of supported_property_names(css.properties)) {

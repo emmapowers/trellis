@@ -137,9 +137,30 @@ function qualify_field_primitives(type_expr: TypeExpr): TypeExpr {
 
 function field_type_expr(property: CssPropertyDef): TypeExpr {
   let type_expr = qualify_field_primitives(property.type_expr);
-  if (property.value_type_name === "CssRawString") {
-    type_expr = append_type_expr(type_expr, { kind: "reference", name: "builtins.str" });
+
+  // Apply tier-based str/CssRawString rules:
+  // - string_native: add str | CssRawString (value is genuinely a string)
+  // - shorthand: add str | CssRawString (complex multi-value syntax)
+  // - keyword: CssRawString only (already in the alias via with_raw_escape)
+  // - dimensional: CssRawString only (already in the alias via with_raw_escape)
+  if (property.value_tier === "string_native" || property.value_tier === "shorthand") {
+    if (property.value_type_name === "CssRawString") {
+      // Catch-all properties with no specific alias — add str + CssRawString
+      type_expr = append_type_expr(type_expr, {
+        kind: "union",
+        options: [
+          { kind: "reference", name: "builtins.str" },
+          { kind: "reference", name: "CssRawString" },
+        ],
+      });
+    }
+    // For properties with a specific alias that already has str (e.g. ColorValue,
+    // ShadowValue, TransitionValue), no extra str needed — it's in the alias.
+  } else if (property.value_type_name === "CssRawString") {
+    // keyword/dimensional catch-all: CssRawString only, no bare str
+    type_expr = append_type_expr(type_expr, { kind: "reference", name: "CssRawString" });
   }
+
   if (property.is_shorthand && !CSS_VALUE_CAPABLE_ALIASES.has(property.value_type_name)) {
     type_expr = append_type_expr(type_expr, { kind: "reference", name: "CssRawString" });
   }
@@ -273,7 +294,6 @@ function emit_style_runtime_stub(document: CssDocument, generated_at: string): s
       (property) =>
         `        ${property.python_name}: ${render_type_expr(field_type_expr(property))} | None = None,`,
     ),
-    "        **extra_styles: Any,",
     "    ) -> None: ...",
   ];
   const helper_lines = [
@@ -288,6 +308,20 @@ function emit_style_runtime_stub(document: CssDocument, generated_at: string): s
     "def sec(value: builtins.int | builtins.float) -> CssTime: ...",
     "def ms(value: builtins.int | builtins.float) -> CssTime: ...",
     "def deg(value: builtins.int | builtins.float) -> CssAngle: ...",
+    "def rad(value: builtins.int | builtins.float) -> CssAngle: ...",
+    "def turn(value: builtins.int | builtins.float) -> CssAngle: ...",
+    "def ch(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def vmin(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def vmax(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def dvh(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def dvw(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def svh(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def svw(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def lvh(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def lvw(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def cqw(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def cqh(value: builtins.int | builtins.float) -> CssLength: ...",
+    "def fr(value: builtins.int | builtins.float) -> CssLength: ...",
     "def rgb(red: builtins.int, green: builtins.int, blue: builtins.int) -> CssColor: ...",
     "def rgba(red: builtins.int, green: builtins.int, blue: builtins.int, alpha: builtins.float) -> CssColor: ...",
     "def hsl(hue: builtins.int | builtins.float, saturation: builtins.int | builtins.float, lightness: builtins.int | builtins.float) -> CssColor: ...",
@@ -345,12 +379,12 @@ function emit_style_runtime_stub(document: CssDocument, generated_at: string): s
     ...all_names.map((name) => `    "${name}",`),
     "]",
     "",
-    "type StyleScalar = builtins.str | builtins.int | builtins.float | CssRawString",
+    "type StyleScalar = builtins.int | builtins.float | CssRawString | CssLength | CssPercent | CssTime | CssAngle | CssColor",
     "type RawStyleMapping = Mapping[builtins.str, Any]",
     "type StyleInput = Style | RawStyleMapping",
-    "type WidthInput = WidthValue | builtins.int | builtins.float | builtins.str",
-    "type HeightInput = HeightValue | builtins.int | builtins.float | builtins.str",
-    "type SpacingInput = SpacingShorthand | builtins.int | builtins.float | builtins.str",
+    "type WidthInput = WidthValue | builtins.int | builtins.float",
+    "type HeightInput = HeightValue | builtins.int | builtins.float",
+    "type SpacingInput = SpacingShorthand | builtins.int | builtins.float",
     "",
     ...media_rule_lines,
     "",

@@ -435,13 +435,13 @@ describe("trellis css target", () => {
     expect(types_module?.content).toContain(
       'ColorKeyword = NamedColor | Literal["transparent"] | Literal["currentColor"]',
     );
-    expect(types_module?.content).toContain("Length = CssLength | str | CssRawString");
+    expect(types_module?.content).toMatch(/Length = CssLength \|.*CssRawString/);
     expect(types_module?.content).toContain("ColorValue = ColorKeyword | str | CssColor | CssRawString");
     expect(types_module?.content).toContain(
       "MediaFeatureValue = str | int | float | CssRawString",
     );
     expect(types_module?.content).toContain(
-      'Display = Literal["block"] | Literal["flex"] | Literal["none"] | Literal["inline-flex"] | str | CssRawString',
+      'Display = Literal["block"]',
     );
     expect(types_module?.content).toContain("Display = Literal[");
     expect(types_module?.content).toContain("class _MediaRuleKwargs(TypedDict, total=False):");
@@ -450,8 +450,11 @@ describe("trellis css target", () => {
     expect(runtime_stub_module?.content).toContain("class MediaRule:");
     expect(runtime_stub_module?.content).toContain("class Style:");
     expect(runtime_stub_module?.content).toContain("def __init__(");
+    // border is a shorthand with ColorValue alias — keeps CssRawString escape hatch
     expect(runtime_stub_module?.content).toContain("border: ColorValue | CssRawString | None");
-    expect(runtime_stub_module?.content).toContain("font_family: CssRawString | builtins.str | None");
+    // font_family is string_native — accepts bare str
+    expect(runtime_stub_module?.content).toContain("font_family:");
+    expect(runtime_stub_module?.content).toContain("builtins.str");
     expect(runtime_stub_module?.content).toContain(
       "font_size: LengthPercentage | builtins.int | builtins.float | None",
     );

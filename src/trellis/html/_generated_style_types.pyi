@@ -16,15 +16,15 @@ from trellis.html._css_primitives import (
     CssColor,
     CssLength,
     CssPercent,
+    CssRawString,
     CssTime,
-    CssValue,
 )
 
-Length = CssLength | str | CssValue
-Percent = CssPercent | str | CssValue
+Length = CssLength | CssRawString
+Percent = CssPercent | CssRawString
 LengthPercentage = Length | Percent
-TimeValue = CssTime | str | CssValue
-AngleValue = CssAngle | str | CssValue
+TimeValue = CssTime | CssRawString
+AngleValue = CssAngle | CssRawString
 NamedColor = Literal[
     "aliceblue",
     "antiquewhite",
@@ -176,7 +176,7 @@ NamedColor = Literal[
     "yellowgreen",
 ]
 ColorKeyword = NamedColor | Literal["transparent"] | Literal["currentColor"]
-ColorValue = ColorKeyword | str | CssColor | CssValue
+ColorValue = ColorKeyword | str | CssColor | CssRawString
 Display = (
     Literal["block"]
     | Literal["inline"]
@@ -187,8 +187,7 @@ Display = (
     | Literal["inline-grid"]
     | Literal["none"]
     | Literal["contents"]
-    | str
-    | CssValue
+    | CssRawString
 )
 Position = (
     Literal["static"]
@@ -196,8 +195,7 @@ Position = (
     | Literal["absolute"]
     | Literal["fixed"]
     | Literal["sticky"]
-    | str
-    | CssValue
+    | CssRawString
 )
 Overflow = (
     Literal["visible"]
@@ -205,8 +203,7 @@ Overflow = (
     | Literal["clip"]
     | Literal["scroll"]
     | Literal["auto"]
-    | str
-    | CssValue
+    | CssRawString
 )
 TextAlign = (
     Literal["left"]
@@ -215,8 +212,7 @@ TextAlign = (
     | Literal["justify"]
     | Literal["start"]
     | Literal["end"]
-    | str
-    | CssValue
+    | CssRawString
 )
 FontWeight = (
     int
@@ -224,18 +220,16 @@ FontWeight = (
     | Literal["bold"]
     | Literal["lighter"]
     | Literal["bolder"]
-    | str
-    | CssValue
+    | CssRawString
 )
 FlexDirection = (
     Literal["row"]
     | Literal["row-reverse"]
     | Literal["column"]
     | Literal["column-reverse"]
-    | str
-    | CssValue
+    | CssRawString
 )
-FlexWrap = Literal["nowrap"] | Literal["wrap"] | Literal["wrap-reverse"] | str | CssValue
+FlexWrap = Literal["nowrap"] | Literal["wrap"] | Literal["wrap-reverse"] | CssRawString
 JustifyContent = (
     Literal["flex-start"]
     | Literal["flex-end"]
@@ -245,8 +239,7 @@ JustifyContent = (
     | Literal["space-evenly"]
     | Literal["start"]
     | Literal["end"]
-    | str
-    | CssValue
+    | CssRawString
 )
 AlignItems = (
     Literal["stretch"]
@@ -256,8 +249,7 @@ AlignItems = (
     | Literal["flex-start"]
     | Literal["flex-end"]
     | Literal["baseline"]
-    | str
-    | CssValue
+    | CssRawString
 )
 WidthValue = (
     LengthPercentage
@@ -267,8 +259,7 @@ WidthValue = (
     | Literal["fit-content"]
     | Literal["stretch"]
     | Literal["contain"]
-    | str
-    | CssValue
+    | CssRawString
 )
 HeightValue = (
     LengthPercentage
@@ -278,24 +269,23 @@ HeightValue = (
     | Literal["fit-content"]
     | Literal["stretch"]
     | Literal["contain"]
-    | str
-    | CssValue
+    | CssRawString
 )
-BorderRadiusValue = LengthPercentage | str | CssValue
-SpacingShorthand = LengthPercentage | str | CssValue
-GapValue = LengthPercentage | Literal["normal"] | str | CssValue
-LineHeightValue = LengthPercentage | float | Literal["normal"] | str | CssValue
-ShadowValue = str | CssValue
-TransformValue = str | CssValue
-TransitionValue = str | CssValue
-Opacity = float | CssValue
-ZIndex = int | Literal["auto"] | CssValue
-MediaFeatureValue = str | int | float | CssValue
-Orientation = Literal["portrait"] | Literal["landscape"] | str | CssValue
-PrefersColorScheme = Literal["light"] | Literal["dark"] | str | CssValue
-PrefersReducedMotion = Literal["reduce"] | Literal["no-preference"] | str | CssValue
-PointerCapability = Literal["none"] | Literal["coarse"] | Literal["fine"] | str | CssValue
-HoverCapability = Literal["none"] | Literal["hover"] | str | CssValue
+BorderRadiusValue = LengthPercentage | CssRawString
+SpacingShorthand = LengthPercentage | CssRawString
+GapValue = LengthPercentage | Literal["normal"] | CssRawString
+LineHeightValue = LengthPercentage | float | Literal["normal"] | CssRawString
+ShadowValue = str | CssRawString
+TransformValue = str | CssRawString
+TransitionValue = str | CssRawString
+Opacity = float | CssRawString
+ZIndex = int | Literal["auto"] | CssRawString
+MediaFeatureValue = str | int | float | CssRawString
+Orientation = Literal["portrait"] | Literal["landscape"] | CssRawString
+PrefersColorScheme = Literal["light"] | Literal["dark"] | CssRawString
+PrefersReducedMotion = Literal["reduce"] | Literal["no-preference"] | CssRawString
+PointerCapability = Literal["none"] | Literal["coarse"] | Literal["fine"] | CssRawString
+HoverCapability = Literal["none"] | Literal["hover"] | CssRawString
 
 class _MediaRuleKwargs(TypedDict, total=False):
     """Generated keyword surface for `h.media(...)`."""

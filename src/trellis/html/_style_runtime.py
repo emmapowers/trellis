@@ -20,31 +20,35 @@ from trellis.html._css_primitives import (
     CssPercent,
     CssRawString,
     CssTime,
+)
+from trellis.html._css_primitives import (
     format_number as _format_number,
 )
 
 if tp.TYPE_CHECKING:
     from trellis.html._generated_style_types import HeightValue, SpacingShorthand, WidthValue
 
-type StyleScalar = str | int | float | CssRawString
+type StyleScalar = (
+    int | float | CssRawString | CssLength | CssPercent | CssTime | CssAngle | CssColor
+)
 type RawStyleMapping = Mapping[str, tp.Any]
 
 if tp.TYPE_CHECKING:
-    type WidthInput = WidthValue | int | float | str
-    type HeightInput = HeightValue | int | float | str
-    type SpacingInput = SpacingShorthand | int | float | str
+    type WidthInput = WidthValue | int | float
+    type HeightInput = HeightValue | int | float
+    type SpacingInput = SpacingShorthand | int | float
 else:
-    type WidthInput = str | int | float | CssRawString
-    type HeightInput = str | int | float | CssRawString
-    type SpacingInput = str | int | float | CssRawString
+    type WidthInput = int | float | CssRawString | CssLength | CssPercent
+    type HeightInput = int | float | CssRawString | CssLength | CssPercent
+    type SpacingInput = int | float | CssRawString | CssLength | CssPercent
 
 __all__ = [
     "CssAngle",
     "CssColor",
     "CssLength",
     "CssPercent",
-    "CssTime",
     "CssRawString",
+    "CssTime",
     "HeightInput",
     "MediaRule",
     "RawStyleMapping",
@@ -55,16 +59,24 @@ __all__ = [
     "WidthInput",
     "border",
     "calc",
+    "ch",
     "clamp",
     "color",
     "color_space",
+    "cqh",
+    "cqw",
     "deg",
+    "dvh",
+    "dvw",
     "em",
+    "fr",
     "hsl",
     "hwb",
     "inset",
     "lab",
     "lch",
+    "lvh",
+    "lvw",
     "margin",
     "max_",
     "media",
@@ -75,6 +87,7 @@ __all__ = [
     "padding",
     "pct",
     "px",
+    "rad",
     "raw",
     "rem",
     "rgb",
@@ -83,9 +96,14 @@ __all__ = [
     "scale",
     "sec",
     "shadow",
+    "svh",
+    "svw",
     "translate",
+    "turn",
     "var",
     "vh",
+    "vmax",
+    "vmin",
     "vw",
 ]
 
@@ -230,7 +248,15 @@ class Style:
 type StyleInput = Style | RawStyleMapping
 
 
-_CV = tp.TypeVar("_CV")
+class _CssPrimitive(tp.Protocol):
+    """Protocol for CSS primitive types that wrap a css_text string."""
+
+    css_text: str
+
+    def __init__(self, css_text: str) -> None: ...
+
+
+_CV = tp.TypeVar("_CV", bound=_CssPrimitive)
 
 
 def _wrap_value(
@@ -296,6 +322,76 @@ def ms(value: int | float) -> CssTime:
 def deg(value: int | float) -> CssAngle:
     """Return a CSS angle value in degrees."""
     return _wrap_value(CssAngle, value, "deg")
+
+
+def rad(value: int | float) -> CssAngle:
+    """Return a CSS angle value in radians."""
+    return _wrap_value(CssAngle, value, "rad")
+
+
+def turn(value: int | float) -> CssAngle:
+    """Return a CSS angle value in turns."""
+    return _wrap_value(CssAngle, value, "turn")
+
+
+def ch(value: int | float) -> CssLength:
+    """Return a CSS length in ch units (character width)."""
+    return _wrap_value(CssLength, value, "ch")
+
+
+def vmin(value: int | float) -> CssLength:
+    """Return a CSS length in vmin units."""
+    return _wrap_value(CssLength, value, "vmin")
+
+
+def vmax(value: int | float) -> CssLength:
+    """Return a CSS length in vmax units."""
+    return _wrap_value(CssLength, value, "vmax")
+
+
+def dvh(value: int | float) -> CssLength:
+    """Return a CSS length in dynamic viewport height units."""
+    return _wrap_value(CssLength, value, "dvh")
+
+
+def dvw(value: int | float) -> CssLength:
+    """Return a CSS length in dynamic viewport width units."""
+    return _wrap_value(CssLength, value, "dvw")
+
+
+def svh(value: int | float) -> CssLength:
+    """Return a CSS length in small viewport height units."""
+    return _wrap_value(CssLength, value, "svh")
+
+
+def svw(value: int | float) -> CssLength:
+    """Return a CSS length in small viewport width units."""
+    return _wrap_value(CssLength, value, "svw")
+
+
+def lvh(value: int | float) -> CssLength:
+    """Return a CSS length in large viewport height units."""
+    return _wrap_value(CssLength, value, "lvh")
+
+
+def lvw(value: int | float) -> CssLength:
+    """Return a CSS length in large viewport width units."""
+    return _wrap_value(CssLength, value, "lvw")
+
+
+def cqw(value: int | float) -> CssLength:
+    """Return a CSS length in container query width units."""
+    return _wrap_value(CssLength, value, "cqw")
+
+
+def cqh(value: int | float) -> CssLength:
+    """Return a CSS length in container query height units."""
+    return _wrap_value(CssLength, value, "cqh")
+
+
+def fr(value: int | float) -> CssLength:
+    """Return a CSS flex fraction unit for grid layouts."""
+    return _wrap_value(CssLength, value, "fr")
 
 
 def rgb(red: int, green: int, blue: int) -> CssColor:
