@@ -653,6 +653,22 @@ class TestOutputCopying:
 
         assert (result / "myapp-1.0.0.dmg").exists()
 
+    def test_renames_deb_to_lowercase(self, tmp_path: Path) -> None:
+        bundle_dir = tmp_path / "scaffold" / "target" / "release" / "bundle"
+        deb_dir = bundle_dir / "deb"
+        deb_dir.mkdir(parents=True)
+        (deb_dir / "Widget Showcase_0.1.0_amd64.deb").write_text("fake deb")
+
+        self.pipeline.tauri_build.return_value = bundle_dir
+        self.pipeline.sys.platform = "linux"
+        result = build_desktop_app_bundle(
+            config=self.config, app_root=self.app_root, output_dir=None, installer=True
+        )
+
+        debs = list(result.glob("*.deb"))
+        assert len(debs) == 1
+        assert debs[0].name == "widget-showcase_0.1.0_amd64.deb"
+
 
 class TestCheckMacosDevTools:
     """Tests for _check_macos_dev_tools preflight check."""

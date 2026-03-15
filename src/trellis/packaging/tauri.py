@@ -493,11 +493,12 @@ def _copy_build_output(
             for pkg in appimage_dir.glob("*.AppImage"):
                 dest_name = _output_filename(product_name, version, "AppImage")
                 shutil.copy2(pkg, output_dir / dest_name)
-        # .deb keeps Debian naming conventions
         deb_dir = bundle_dir / "deb"
         if deb_dir.exists():
             for pkg in deb_dir.glob("*.deb"):
-                shutil.copy2(pkg, output_dir / pkg.name)
+                # Debian package names must be lowercase with no spaces
+                deb_name = pkg.name.lower().replace(" ", "-")
+                shutil.copy2(pkg, output_dir / deb_name)
 
 
 def build_desktop_app_bundle(
