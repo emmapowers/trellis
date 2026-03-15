@@ -11,7 +11,7 @@ from __future__ import annotations
 import inspect
 import textwrap
 import typing as tp
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 import libcst as cst
 
@@ -32,7 +32,7 @@ class SourceTransform(tp.Protocol):
 
 def apply_transforms(
     func: Callable[..., tp.Any],
-    transforms: list[SourceTransform],
+    transforms: Sequence[SourceTransform],
 ) -> Callable[..., tp.Any]:
     """Apply a sequence of source transforms to a function.
 
