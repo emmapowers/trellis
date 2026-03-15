@@ -20,7 +20,7 @@ def RouterDemo() -> None:
         with w.Column(flex=1, padding=h.padding(20, 24), style=h.Style(overflow="auto")):
             with w.Row(gap=0):
                 w.Button(
-                    text="",
+                    text="Back",
                     icon=IconName.CHEVRON_LEFT,
                     on_click=router().go_back,
                     disabled=not router().can_go_back,
@@ -29,7 +29,7 @@ def RouterDemo() -> None:
                     style=h.Style(width=16, padding=0),
                 )
                 w.Button(
-                    text="",
+                    text="Forward",
                     icon=IconName.CHEVRON_RIGHT,
                     on_click=router().go_forward,
                     disabled=not router().can_go_forward,

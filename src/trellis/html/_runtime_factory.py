@@ -44,6 +44,10 @@ def create_html_element(
             props["_text"] = args[0]
 
         if "inner_text" in props:
+            if "_text" in props:
+                raise TypeError(
+                    f"{component_name}() received both 'inner_text' and '_text' keyword arguments."
+                )
             text_value = props.pop("inner_text")
             if text_value is not None:
                 props["_text"] = text_value

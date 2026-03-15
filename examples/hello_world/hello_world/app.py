@@ -2,10 +2,10 @@
 
 from collections.abc import Callable
 
-from trellis import component, state_var
+from trellis import App, component, state_var
 from trellis import html as h
 from trellis import widgets as w
-from trellis.app import App, theme
+from trellis.app import theme
 
 # =============================================================================
 # Styles

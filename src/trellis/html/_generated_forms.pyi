@@ -2646,6 +2646,8 @@ def Select(
     data: Mapping[str, DataValue] | None = None,
 ) -> HtmlContainerElement: ...
 def Textarea(
+    inner_text: str | None = None,
+    /,
     *,
     about: str | None = None,
     access_key: str | None = None,
