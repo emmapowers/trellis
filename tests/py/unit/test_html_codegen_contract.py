@@ -14,7 +14,7 @@ from trellis.html._generated_runtime import Label as RawLabel
 
 def test_generated_runtime_keeps_internal_anchor_binding_private() -> None:
     assert _A.__name__ == "_A"
-    assert "_A" not in h.__all__
+    assert not hasattr(h, "_A")
 
 
 def test_public_html_uses_generated_button_and_label_names() -> None:
@@ -52,12 +52,11 @@ def test_public_html_still_exports_generated_event_types() -> None:
 def test_public_html_exports_full_generated_surface() -> None:
     for name in ("Area", "Canvas", "Map", "Picture", "Track", "Wbr"):
         assert hasattr(h, name)
-        assert name in h.__all__
 
 
 def test_public_html_exports_style_input() -> None:
     """The HTML namespace should expose the public style input alias."""
-    assert "StyleInput" in h.__all__
+    assert hasattr(h, "StyleInput")
 
 
 def test_base_module_no_longer_exports_legacy_style_alias() -> None:

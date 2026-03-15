@@ -43,7 +43,6 @@ def test_built_distributions_ship_html_typing_artifacts(tmp_path: Path) -> None:
 
     assert "trellis/py.typed" in wheel_names
     assert "trellis/html/__init__.pyi" in wheel_names
-    assert "trellis/html/links.pyi" in wheel_names
     assert "trellis/html/_generated_runtime.pyi" in wheel_names
     assert "trellis/html/_generated_style_types.pyi" in wheel_names
 
@@ -53,7 +52,6 @@ def test_built_distributions_ship_html_typing_artifacts(tmp_path: Path) -> None:
     prefix = sdist_path.name.removesuffix(".tar.gz")
     assert f"{prefix}/src/trellis/py.typed" in sdist_names
     assert f"{prefix}/src/trellis/html/__init__.pyi" in sdist_names
-    assert f"{prefix}/src/trellis/html/links.pyi" in sdist_names
 
 
 def test_public_html_import_surface_from_fresh_interpreter(tmp_path: Path) -> None:

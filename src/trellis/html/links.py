@@ -8,9 +8,12 @@ from __future__ import annotations
 
 import typing as tp
 from collections.abc import Mapping
+from typing import overload
 
 from trellis.core.rendering.element import Element
 from trellis.html._generated_interactive_elements import _A
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 from trellis.routing.state import router
 
 __all__ = [
@@ -92,13 +95,49 @@ def _resolve_router_navigation(
     props["data"] = effective_data
 
 
+@overload
+def A(
+    inner_text: str,
+    /,
+    *,
+    href: str | None = ...,
+    target: str | None = ...,
+    rel: str | None = ...,
+    class_name: str | None = ...,
+    style: StyleInput | None = ...,
+    aria_label: str | None = ...,
+    on_click: tp.Any = ...,
+    data: Mapping[str, DataValue] | None = ...,
+    use_router: bool = ...,
+    **extra_props: tp.Any,
+) -> Element: ...
+
+
+@overload
+def A(
+    inner_text: None = ...,
+    /,
+    *,
+    href: str | None = ...,
+    target: str | None = ...,
+    rel: str | None = ...,
+    class_name: str | None = ...,
+    style: StyleInput | None = ...,
+    aria_label: str | None = ...,
+    on_click: tp.Any = ...,
+    data: Mapping[str, DataValue] | None = ...,
+    use_router: bool = ...,
+    **extra_props: tp.Any,
+) -> HtmlContainerElement: ...
+
+
 def A(
     inner_text: str | None = None,
     /,
     *,
     use_router: bool = True,
     **kwargs: tp.Any,
-) -> Element:
+) -> Element | HtmlContainerElement:
     """Render an anchor element.
 
     Wraps the standard HTML ``<a>`` element and adds Trellis router navigation

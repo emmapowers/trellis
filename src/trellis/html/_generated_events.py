@@ -12,7 +12,6 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 
 __all__ = [
-    "EVENT_TYPE_MAP",
     "DataTransfer",
     "DragEvent",
     "DragEventHandler",
@@ -33,7 +32,6 @@ __all__ = [
     "UIEventHandler",
     "WheelEvent",
     "WheelEventHandler",
-    "get_event_class",
 ]
 
 
