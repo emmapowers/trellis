@@ -172,9 +172,9 @@ class TestAssemblePortableExe:
         stored_size = struct.unpack("<Q", size_bytes)[0]
         assert stored_size == len(archive_bytes)
 
-        # Verify hash
-        expected_hash = hashlib.sha256(archive_bytes).hexdigest()[:32]
-        stored_hash = data[-48:-16].decode("ascii")
+        # Verify hash (full 64-char SHA-256)
+        expected_hash = hashlib.sha256(archive_bytes).hexdigest()
+        stored_hash = data[-80:-16].decode("ascii")
         assert stored_hash == expected_hash
 
     def test_archive_extractable_from_assembled(self, tmp_path: Path) -> None:
@@ -210,8 +210,8 @@ class TestAssemblePortableExe:
         _assemble_portable_exe(launcher_exe, archive_path, output_path)
 
         data = output_path.read_bytes()
-        stored_hash = data[-48:-16].decode("ascii")
-        computed_hash = hashlib.sha256(archive_content).hexdigest()[:32]
+        stored_hash = data[-80:-16].decode("ascii")
+        computed_hash = hashlib.sha256(archive_content).hexdigest()
         assert stored_hash == computed_hash
 
     def test_creates_output_directory(self, tmp_path: Path) -> None:

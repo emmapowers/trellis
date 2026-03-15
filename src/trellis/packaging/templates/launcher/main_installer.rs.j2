@@ -7,7 +7,7 @@ mod common;
 use std::fs;
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitCode};
+use std::process::Command;
 
 use windows_sys::Win32::Foundation::HKEY;
 use windows_sys::Win32::System::Registry::{
@@ -165,7 +165,7 @@ fn register_uninstaller(install_dir: &Path) {
     }
 }
 
-fn main() -> ExitCode {
+fn main() {
     let exe_path =
         std::env::current_exe().unwrap_or_else(|e| show_error(&format!("current_exe: {e}")));
 
@@ -232,7 +232,7 @@ fn main() -> ExitCode {
     let status = Command::new(&real_exe).args(&args).status();
 
     match status {
-        Ok(s) => ExitCode::from(s.code().unwrap_or(1) as u8),
+        Ok(s) => std::process::exit(s.code().unwrap_or(1)),
         Err(e) => show_error(&format!("Failed to launch {}: {e}", real_exe.display())),
     }
 }

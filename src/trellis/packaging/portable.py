@@ -18,7 +18,7 @@ from trellis.packaging.toolchain.rustup import RustToolchain
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 PORTABLE_MAGIC = b"TRLSPACK"
-FOOTER_SIZE = 48  # 32 hex hash + 8 archive size + 8 magic
+FOOTER_SIZE = 80  # 64 hex hash + 8 archive size + 8 magic
 
 _WINDOWS_APP_EXTENSIONS = {".exe", ".dll"}
 _WINDOWS_SKIP_EXTENSIONS = {".pdb", ".d", ".lib", ".exp"}
@@ -189,10 +189,10 @@ def _build_launcher(rust: RustToolchain, launcher_dir: Path, cargo_name: str) ->
 def _assemble_portable_exe(launcher_exe: Path, archive_path: Path, output_path: Path) -> None:
     """Concatenate launcher + archive + footer into a single portable exe.
 
-    Footer format: [32-byte hex SHA-256][8-byte archive size LE][8-byte magic]
+    Footer format: [64-byte hex SHA-256][8-byte archive size LE][8-byte magic]
     """
     archive_bytes = archive_path.read_bytes()
-    content_hash = hashlib.sha256(archive_bytes).hexdigest()[:32]
+    content_hash = hashlib.sha256(archive_bytes).hexdigest()
     archive_size = len(archive_bytes)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)

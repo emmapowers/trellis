@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import shutil
 import tarfile
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -28,6 +30,10 @@ def ensure_python_standalone() -> PythonStandalone:
 
     Downloads from indygreg/python-build-standalone GitHub releases.
     Windows uses the `-shared` variant for embedding.
+
+    Extraction is atomic: files are extracted into a temporary directory
+    and renamed into place only on success, so concurrent runs or
+    interrupted extractions cannot leave a partial install.
 
     Returns:
         PythonStandalone with paths to python binary and base directory
@@ -64,14 +70,22 @@ def ensure_python_standalone() -> PythonStandalone:
         with open(archive_path, "wb") as f:
             f.writelines(r.iter_bytes())
 
-    install_dir.mkdir(parents=True, exist_ok=True)
-    with tarfile.open(archive_path, "r:gz") as tf:
-        safe_extract(tf, install_dir)
+    # Extract into a temp directory and atomically rename into place
+    temp_dir = Path(tempfile.mkdtemp(dir=BIN_DIR, prefix=f"{install_dir.name}."))
+    try:
+        with tarfile.open(archive_path, "r:gz") as tf:
+            safe_extract(tf, temp_dir)
 
-    archive_path.unlink()
+        temp_python_bin = temp_dir / "python" / ("python.exe" if is_windows else "bin/python3")
+        if not temp_python_bin.exists():
+            raise RuntimeError(f"Python binary missing after extraction: {temp_python_bin}")
 
-    if not python_bin.exists():
-        raise RuntimeError(f"Python binary missing after extraction: {python_bin}")
+        temp_python_bin.chmod(0o755)
+        temp_dir.rename(install_dir)
+    except Exception:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        raise
+    finally:
+        archive_path.unlink(missing_ok=True)
 
-    python_bin.chmod(0o755)
     return PythonStandalone(python_bin=python_bin, base_dir=base_dir)

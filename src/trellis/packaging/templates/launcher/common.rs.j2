@@ -16,7 +16,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
 };
 
 const MAGIC: &[u8; 8] = b"TRLSPACK";
-const FOOTER_SIZE: u64 = 48; // 32 hex hash + 8 archive size + 8 magic
+const FOOTER_SIZE: u64 = 80; // 64 hex hash + 8 archive size + 8 magic
 
 pub struct Footer {
     pub hash: String,
@@ -54,17 +54,17 @@ pub fn read_footer(exe_path: &Path) -> Result<Footer, String> {
     f.read_exact(&mut buf)
         .map_err(|e| format!("read footer: {e}"))?;
 
-    if &buf[40..48] != MAGIC {
+    if &buf[72..80] != MAGIC {
         return Err("magic mismatch".into());
     }
 
-    let hash = std::str::from_utf8(&buf[0..32])
+    let hash = std::str::from_utf8(&buf[0..64])
         .map_err(|_| "invalid hash")?
         .to_string();
-    if hash.len() != 32 || !hash.chars().all(|c| c.is_ascii_hexdigit()) {
-        return Err("invalid hash: expected 32 hex characters".into());
+    if hash.len() != 64 || !hash.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err("invalid hash: expected 64 hex characters".into());
     }
-    let archive_size = u64::from_le_bytes(buf[32..40].try_into().unwrap());
+    let archive_size = u64::from_le_bytes(buf[64..72].try_into().unwrap());
     if archive_size == 0 || archive_size > file_len - FOOTER_SIZE {
         return Err("invalid archive size".into());
     }
@@ -85,7 +85,7 @@ pub fn extract_archive(exe_path: &Path, footer: &Footer, dest: &Path, title: &st
         .map_err(|e| format!("read archive: {e}"))?;
 
     let computed = format!("{:x}", Sha256::digest(&archive_data));
-    if &computed[..32] != footer.hash {
+    if computed != footer.hash {
         return Err("archive integrity check failed: hash mismatch".into());
     }
 
@@ -98,29 +98,32 @@ pub fn extract_archive(exe_path: &Path, footer: &Footer, dest: &Path, title: &st
     let total = archive.len();
     let (hwnd, progress) = create_progress_window(total as u32, title);
 
-    for i in 0..total {
-        let mut entry = archive.by_index(i).map_err(|e| format!("zip entry: {e}"))?;
-        let name = entry.name().to_string();
-        if name.contains("..") || name.starts_with('/') || name.starts_with('\\') || name.contains(':') {
-            return Err(format!("zip entry contains path traversal: {name}"));
-        }
-        let out_path = dest.join(&name);
-
-        if entry.is_dir() {
-            fs::create_dir_all(&out_path).map_err(|e| format!("mkdir {name}: {e}"))?;
-        } else {
-            if let Some(parent) = out_path.parent() {
-                fs::create_dir_all(parent).map_err(|e| format!("mkdir parent: {e}"))?;
+    let result = (|| -> Result<(), String> {
+        for i in 0..total {
+            let mut entry = archive.by_index(i).map_err(|e| format!("zip entry: {e}"))?;
+            let name = entry.name().to_string();
+            if name.contains("..") || name.starts_with('/') || name.starts_with('\\') || name.contains(':') {
+                return Err(format!("zip entry contains path traversal: {name}"));
             }
-            let mut out_file =
-                fs::File::create(&out_path).map_err(|e| format!("create {name}: {e}"))?;
-            io::copy(&mut entry, &mut out_file).map_err(|e| format!("write {name}: {e}"))?;
+            let out_path = dest.join(&name);
+
+            if entry.is_dir() {
+                fs::create_dir_all(&out_path).map_err(|e| format!("mkdir {name}: {e}"))?;
+            } else {
+                if let Some(parent) = out_path.parent() {
+                    fs::create_dir_all(parent).map_err(|e| format!("mkdir parent: {e}"))?;
+                }
+                let mut out_file =
+                    fs::File::create(&out_path).map_err(|e| format!("create {name}: {e}"))?;
+                io::copy(&mut entry, &mut out_file).map_err(|e| format!("write {name}: {e}"))?;
+            }
+            update_progress(progress, i as u32 + 1);
         }
-        update_progress(progress, i as u32 + 1);
-    }
+        Ok(())
+    })();
 
     destroy_progress_window(hwnd);
-    Ok(())
+    result
 }
 
 // --- Win32 progress window ---

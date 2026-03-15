@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-import shutil
-import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -749,10 +747,6 @@ class TestCheckLinuxSystemDeps:
 class TestGenerateCargoConfig:
     """Tests for _generate_cargo_config."""
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" or shutil.which("pkg-config") is None,
-        reason="Requires pkg-config (Linux/macOS)",
-    )
     def test_generates_config_on_linux(self, tmp_path: Path) -> None:
         scaffold_dir = tmp_path / "src-tauri"
         scaffold_dir.mkdir()
@@ -760,7 +754,10 @@ class TestGenerateCargoConfig:
         pyembed_dir.mkdir()
         (pyembed_dir / "lib").mkdir()
 
-        with patch("trellis.packaging.tauri.sys") as mock_sys:
+        with (
+            patch("trellis.packaging.tauri.sys") as mock_sys,
+            patch("trellis.packaging.tauri._get_linux_system_lib_flags", return_value=[]),
+        ):
             mock_sys.platform = "linux"
             _generate_cargo_config(
                 scaffold_dir=scaffold_dir,

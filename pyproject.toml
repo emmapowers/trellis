@@ -46,7 +46,7 @@ dependencies = [
     "zstandard>=0.23; sys_platform != 'emscripten'",
     # Desktop runtime
     "pytauri>=0.8.0; sys_platform != 'emscripten'",
-    "pydantic>=2.12",
+    "pydantic>=2.12; sys_platform != 'emscripten'",
     # Bundler uses `pip wheel` to build wheels for Pyodide deployment
     "pip>=24; sys_platform != 'emscripten'",
 ]

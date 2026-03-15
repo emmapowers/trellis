@@ -21,6 +21,10 @@ class TestEnsurePythonStandalone:
                 "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"
             ),
             patch(
+                "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_RELEASE",
+                "20250106",
+            ),
+            patch(
                 "trellis.packaging.toolchain.python_standalone.get_rust_target",
                 return_value="aarch64-apple-darwin",
             ),
@@ -58,6 +62,10 @@ class TestEnsurePythonStandalone:
                 "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"
             ),
             patch(
+                "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_RELEASE",
+                "20250106",
+            ),
+            patch(
                 "trellis.packaging.toolchain.python_standalone.get_rust_target",
                 return_value="aarch64-apple-darwin",
             ),
@@ -89,6 +97,10 @@ class TestEnsurePythonStandalone:
                 "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"
             ),
             patch(
+                "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_RELEASE",
+                "20250106",
+            ),
+            patch(
                 "trellis.packaging.toolchain.python_standalone.get_rust_target",
                 return_value="aarch64-apple-darwin",
             ),
@@ -99,6 +111,7 @@ class TestEnsurePythonStandalone:
         url = mock_stream.call_args[0][1]
         assert "aarch64-apple-darwin" in url
         assert "3.13.1" in url
+        assert "20250106" in url
         assert "install_only_stripped" in url
         assert url.endswith(".tar.gz")
 
@@ -121,6 +134,10 @@ class TestEnsurePythonStandalone:
             patch("trellis.packaging.toolchain.python_standalone.BIN_DIR", tmp_path),
             patch(
                 "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"
+            ),
+            patch(
+                "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_RELEASE",
+                "20250106",
             ),
             patch(
                 "trellis.packaging.toolchain.python_standalone.get_rust_target",
@@ -152,6 +169,10 @@ class TestEnsurePythonStandalone:
             patch("trellis.packaging.toolchain.python_standalone.BIN_DIR", tmp_path),
             patch(
                 "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_VERSION", "3.13.1"
+            ),
+            patch(
+                "trellis.packaging.toolchain.python_standalone.PYTHON_STANDALONE_RELEASE",
+                "20250106",
             ),
             patch(
                 "trellis.packaging.toolchain.python_standalone.get_rust_target",
