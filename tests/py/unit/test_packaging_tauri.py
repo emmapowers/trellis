@@ -46,14 +46,51 @@ def _make_rust_toolchain(tmp_path: Path) -> RustToolchain:
     )
 
 
+class _MockBuildPipeline:
+    """Holds mock objects for a fully-patched build_desktop_app_bundle call."""
+
+    def __init__(self, rust: RustToolchain, python: MagicMock) -> None:
+        self.rust = rust
+        self.python = python
+        self.scaffold = MagicMock()
+        self.install = MagicMock()
+        self.tauri_build = MagicMock()
+        self.windows_exe = MagicMock()
+        self.sys = MagicMock()
+
+
 @pytest.fixture
-def _skip_preflight_checks():
-    """Patch macOS and Linux preflight checks for build_desktop_app_bundle tests."""
+def mock_build_pipeline(tmp_path: Path) -> _MockBuildPipeline:
+    """Patch the entire build_desktop_app_bundle pipeline.
+
+    Returns a _MockBuildPipeline with mock objects for toolchain, scaffold,
+    install, tauri build, and sys. Tests can configure return values on these
+    before calling build_desktop_app_bundle.
+    """
+    rust = _make_rust_toolchain(tmp_path)
+    python = MagicMock()
+    python.python_bin = tmp_path / "python3"
+    python.base_dir = tmp_path / "python-install"
+    pipeline = _MockBuildPipeline(rust, python)
+
     with (
         patch("trellis.packaging.tauri._check_macos_dev_tools"),
         patch("trellis.packaging.tauri._check_linux_system_deps"),
+        patch("trellis.packaging.tauri.ensure_rustup", return_value=rust),
+        patch("trellis.packaging.tauri.ensure_tauri_cli", return_value=tmp_path / "cli"),
+        patch("trellis.packaging.tauri.ensure_python_standalone", return_value=python),
+        patch("trellis.packaging.tauri.generate_tauri_scaffold") as scaffold,
+        patch("trellis.packaging.tauri.install_app_into_portable_python") as install,
+        patch("trellis.packaging.tauri.run_tauri_build") as tauri_build,
+        patch("trellis.packaging.tauri.build_windows_exe") as windows_exe,
+        patch("trellis.packaging.tauri.sys") as mock_sys,
     ):
-        yield
+        pipeline.scaffold = scaffold
+        pipeline.install = install
+        pipeline.tauri_build = tauri_build
+        pipeline.windows_exe = windows_exe
+        pipeline.sys = mock_sys
+        yield pipeline
 
 
 class TestGenerateTauriScaffold:
@@ -503,98 +540,12 @@ class TestRunTauriBuild:
         assert cmd == [str(tauri_cli), "build", "--bundles", expected_bundle]
 
 
-@pytest.mark.usefixtures("_skip_preflight_checks")
 class TestBuildDesktopAppBundle:
     """Tests for the full build_desktop_app_bundle orchestration."""
 
-    def test_calls_toolchain_functions_in_order(self, tmp_path: Path) -> None:
-        config = Config(
-            name="myapp",
-            module="main",
-            platform=PlatformType.DESKTOP,
-            identifier="com.example.myapp",
-            version="1.0.0",
-        )
-        app_root = tmp_path / "app"
-        app_root.mkdir()
-        dist_dir = app_root / ".dist"
-        dist_dir.mkdir()
-
-        mock_rust = _make_rust_toolchain(tmp_path)
-        mock_python = MagicMock()
-        mock_python.python_bin = tmp_path / "python3"
-        mock_python.base_dir = tmp_path / "python-install"
-
-        call_order: list[str] = []
-
-        def track_rustup() -> RustToolchain:
-            call_order.append("ensure_rustup")
-            return mock_rust
-
-        def track_tauri_cli(rust: RustToolchain) -> Path:
-            call_order.append("ensure_tauri_cli")
-            return tmp_path / "cargo-tauri"
-
-        def track_python() -> object:
-            call_order.append("ensure_python_standalone")
-            return mock_python
-
-        with (
-            patch("trellis.packaging.tauri.ensure_rustup", side_effect=track_rustup),
-            patch("trellis.packaging.tauri.ensure_tauri_cli", side_effect=track_tauri_cli),
-            patch("trellis.packaging.tauri.ensure_python_standalone", side_effect=track_python),
-            patch("trellis.packaging.tauri.generate_tauri_scaffold"),
-            patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch(
-                "trellis.packaging.tauri.run_tauri_build",
-                return_value=tmp_path / "output",
-            ),
-            # Skip Windows self-extracting exe build in unit tests
-            patch("trellis.packaging.tauri.build_windows_exe", return_value=tmp_path / "out.exe"),
-        ):
-            build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
-
-        assert call_order == ["ensure_rustup", "ensure_tauri_cli", "ensure_python_standalone"]
-
-    def test_returns_default_dist_dir(self, tmp_path: Path) -> None:
-        config = Config(
-            name="myapp",
-            module="main",
-            platform=PlatformType.DESKTOP,
-            identifier="com.example.myapp",
-            version="1.0.0",
-        )
-        app_root = tmp_path / "app"
-        app_root.mkdir()
-        dist_dir = app_root / ".dist"
-        dist_dir.mkdir()
-
-        bundle_dir = tmp_path / "bundle"
-        bundle_dir.mkdir()
-        mock_rust = _make_rust_toolchain(tmp_path)
-        mock_python = MagicMock()
-        mock_python.python_bin = tmp_path / "python3"
-        mock_python.base_dir = tmp_path / "python-install"
-
-        with (
-            patch("trellis.packaging.tauri.ensure_rustup", return_value=mock_rust),
-            patch("trellis.packaging.tauri.ensure_tauri_cli", return_value=tmp_path / "cli"),
-            patch("trellis.packaging.tauri.ensure_python_standalone", return_value=mock_python),
-            patch("trellis.packaging.tauri.generate_tauri_scaffold"),
-            patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch("trellis.packaging.tauri.run_tauri_build", return_value=bundle_dir),
-            patch("trellis.packaging.tauri.build_windows_exe", return_value=tmp_path / "out.exe"),
-        ):
-            result = build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
-
-        assert result == app_root / "dist"
-
-
-@pytest.mark.usefixtures("_skip_preflight_checks")
-class TestOutputCopying:
-    """Tests for copying build output to the destination directory."""
-
-    def _setup_bundle(self, tmp_path: Path) -> tuple[Config, Path, MagicMock, MagicMock]:
+    def test_calls_toolchain_functions_in_order(
+        self, tmp_path: Path, mock_build_pipeline: _MockBuildPipeline
+    ) -> None:
         config = Config(
             name="myapp",
             module="main",
@@ -606,16 +557,54 @@ class TestOutputCopying:
         app_root.mkdir()
         (app_root / ".dist").mkdir()
 
-        mock_rust = _make_rust_toolchain(tmp_path)
-        mock_python = MagicMock()
-        mock_python.python_bin = tmp_path / "python3"
-        mock_python.base_dir = tmp_path / "python-install"
+        mock_build_pipeline.tauri_build.return_value = tmp_path / "output"
+        build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
 
-        return config, app_root, mock_rust, mock_python
+        mock_build_pipeline.scaffold.assert_called_once()
+        mock_build_pipeline.install.assert_called_once()
+        mock_build_pipeline.tauri_build.assert_called_once()
+
+    def test_returns_default_dist_dir(
+        self, tmp_path: Path, mock_build_pipeline: _MockBuildPipeline
+    ) -> None:
+        config = Config(
+            name="myapp",
+            module="main",
+            platform=PlatformType.DESKTOP,
+            identifier="com.example.myapp",
+            version="1.0.0",
+        )
+        app_root = tmp_path / "app"
+        app_root.mkdir()
+        (app_root / ".dist").mkdir()
+
+        bundle_dir = tmp_path / "bundle"
+        bundle_dir.mkdir()
+        mock_build_pipeline.tauri_build.return_value = bundle_dir
+
+        result = build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
+
+        assert result == app_root / "dist"
+
+
+class TestOutputCopying:
+    """Tests for copying build output to the destination directory."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, tmp_path: Path, mock_build_pipeline: _MockBuildPipeline) -> None:
+        self.config = Config(
+            name="myapp",
+            module="main",
+            platform=PlatformType.DESKTOP,
+            identifier="com.example.myapp",
+            version="1.0.0",
+        )
+        self.app_root = tmp_path / "app"
+        self.app_root.mkdir()
+        (self.app_root / ".dist").mkdir()
+        self.pipeline = mock_build_pipeline
 
     def test_renames_app_bundle(self, tmp_path: Path) -> None:
-        config, app_root, mock_rust, mock_python = self._setup_bundle(tmp_path)
-
         bundle_dir = tmp_path / "scaffold" / "target" / "release" / "bundle"
         macos_dir = bundle_dir / "macos"
         macos_dir.mkdir(parents=True)
@@ -624,26 +613,16 @@ class TestOutputCopying:
         (app_bundle / "Contents").mkdir()
         (app_bundle / "Contents" / "Info.plist").write_text("fake")
 
-        with (
-            patch("trellis.packaging.tauri.ensure_rustup", return_value=mock_rust),
-            patch("trellis.packaging.tauri.ensure_tauri_cli", return_value=tmp_path / "cli"),
-            patch(
-                "trellis.packaging.tauri.ensure_python_standalone",
-                return_value=mock_python,
-            ),
-            patch("trellis.packaging.tauri.generate_tauri_scaffold"),
-            patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch("trellis.packaging.tauri.run_tauri_build", return_value=bundle_dir),
-            patch("trellis.packaging.tauri.sys") as mock_sys,
-        ):
-            mock_sys.platform = "darwin"
-            result = build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
+        self.pipeline.tauri_build.return_value = bundle_dir
+        self.pipeline.sys.platform = "darwin"
+        result = build_desktop_app_bundle(
+            config=self.config, app_root=self.app_root, output_dir=None
+        )
 
-        assert result == app_root / "dist"
+        assert result == self.app_root / "dist"
         assert (result / "myapp-1.0.0.app" / "Contents" / "Info.plist").exists()
 
     def test_copies_app_to_custom_output_dir(self, tmp_path: Path) -> None:
-        config, app_root, mock_rust, mock_python = self._setup_bundle(tmp_path)
         custom_dest = tmp_path / "custom-out"
 
         bundle_dir = tmp_path / "scaffold" / "target" / "release" / "bundle"
@@ -653,53 +632,26 @@ class TestOutputCopying:
         app_bundle.mkdir()
         (app_bundle / "Contents").mkdir()
 
-        with (
-            patch("trellis.packaging.tauri.ensure_rustup", return_value=mock_rust),
-            patch("trellis.packaging.tauri.ensure_tauri_cli", return_value=tmp_path / "cli"),
-            patch(
-                "trellis.packaging.tauri.ensure_python_standalone",
-                return_value=mock_python,
-            ),
-            patch("trellis.packaging.tauri.generate_tauri_scaffold"),
-            patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch("trellis.packaging.tauri.run_tauri_build", return_value=bundle_dir),
-            patch("trellis.packaging.tauri.sys") as mock_sys,
-        ):
-            mock_sys.platform = "darwin"
-            result = build_desktop_app_bundle(
-                config=config, app_root=app_root, output_dir=custom_dest
-            )
+        self.pipeline.tauri_build.return_value = bundle_dir
+        self.pipeline.sys.platform = "darwin"
+        result = build_desktop_app_bundle(
+            config=self.config, app_root=self.app_root, output_dir=custom_dest
+        )
 
         assert result == custom_dest
         assert (custom_dest / "myapp-1.0.0.app").exists()
 
     def test_renames_dmg(self, tmp_path: Path) -> None:
-        config, app_root, mock_rust, mock_python = self._setup_bundle(tmp_path)
-
         bundle_dir = tmp_path / "scaffold" / "target" / "release" / "bundle"
         dmg_dir = bundle_dir / "dmg"
         dmg_dir.mkdir(parents=True)
         (dmg_dir / "myapp_1.0.0_aarch64.dmg").write_text("fake dmg")
 
-        with (
-            patch("trellis.packaging.tauri.ensure_rustup", return_value=mock_rust),
-            patch("trellis.packaging.tauri.ensure_tauri_cli", return_value=tmp_path / "cli"),
-            patch(
-                "trellis.packaging.tauri.ensure_python_standalone",
-                return_value=mock_python,
-            ),
-            patch("trellis.packaging.tauri.generate_tauri_scaffold"),
-            patch("trellis.packaging.tauri.install_app_into_portable_python"),
-            patch("trellis.packaging.tauri.run_tauri_build", return_value=bundle_dir),
-            patch("trellis.packaging.tauri.sys") as mock_sys,
-        ):
-            mock_sys.platform = "darwin"
-            result = build_desktop_app_bundle(
-                config=config,
-                app_root=app_root,
-                output_dir=None,
-                installer=True,
-            )
+        self.pipeline.tauri_build.return_value = bundle_dir
+        self.pipeline.sys.platform = "darwin"
+        result = build_desktop_app_bundle(
+            config=self.config, app_root=self.app_root, output_dir=None, installer=True
+        )
 
         assert (result / "myapp-1.0.0.dmg").exists()
 
