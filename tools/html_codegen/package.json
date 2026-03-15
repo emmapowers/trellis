@@ -7,8 +7,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
-    "codegen:compare": "node --import tsx src/cli.ts compare",
-    "codegen:write": "node --import tsx src/cli.ts write"
+    "codegen:compare": "bun src/cli.ts compare",
+    "codegen:write": "bun src/cli.ts write"
   },
   "devDependencies": {
     "@types/node": "^24.6.0",

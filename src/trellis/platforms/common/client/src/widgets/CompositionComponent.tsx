@@ -5,11 +5,8 @@
  * React Fragment (no DOM node), with a dynamically-named component so the
  * Python component name appears in React DevTools as `Trellis(Name)`.
  *
- * Previous versions used a `<span style="display: contents">` wrapper with a
- * `data-trellis-component` attribute for debugging. That injected a real DOM
- * node which broke CSS child selectors like `& > * + *` — the selector matched
- * the invisible span instead of the actual children, and margin/padding
- * applied to a `display: contents` element has no visual effect.
+ * A Fragment is used instead of a wrapper DOM element to avoid breaking CSS
+ * child selectors like `& > * + *` in parent layouts.
  */
 
 import React from "react";

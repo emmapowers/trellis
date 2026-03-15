@@ -19,6 +19,8 @@ from collections.abc import Mapping
 
 from trellis.core.components.composition import CompositionComponent
 from trellis.core.state.mutable import Mutable
+
+# TODO: clean this up when we have a proper serialization registry
 from trellis.html._style_compiler import compile_style_props
 
 if tp.TYPE_CHECKING:

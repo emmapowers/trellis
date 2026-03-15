@@ -163,17 +163,6 @@ just lint                     # Check linters
 just cleanup                  # Format and lint with auto-fix
 ```
 
-**HTML codegen tool (manual):**
-
-```bash
-cd tools/html_codegen
-npm install
-npm run codegen:compare
-npm run codegen:write
-```
-
-`codegen:write` regenerates all `src/trellis/html/_generated_*.py` modules.
-
 **Project structure:**
 
 ```text
