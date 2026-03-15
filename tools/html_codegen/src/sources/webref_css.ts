@@ -339,10 +339,86 @@ function value_aliases(): Map<string, TypeExpr> {
   ]);
 }
 
+// Properties that use the Overflow type (visible|hidden|clip|scroll|auto).
+// Explicit list prevents overflow-anchor, overflow-wrap, overflow-clip-margin
+// from being misclassified.
+const OVERFLOW_PROPERTIES = new Set([
+  "overflow",
+  "overflow-x",
+  "overflow-y",
+  "overflow-block",
+  "overflow-inline",
+]);
+
+// Properties that use SpacingShorthand (length/percentage shorthand values).
+// Explicit list prevents margin-trim, margin-break (keyword-only) from being
+// misclassified.
+const SPACING_PROPERTIES = new Set([
+  "margin",
+  "margin-top",
+  "margin-right",
+  "margin-bottom",
+  "margin-left",
+  "margin-block",
+  "margin-block-start",
+  "margin-block-end",
+  "margin-inline",
+  "margin-inline-start",
+  "margin-inline-end",
+  "padding",
+  "padding-top",
+  "padding-right",
+  "padding-bottom",
+  "padding-left",
+  "padding-block",
+  "padding-block-start",
+  "padding-block-end",
+  "padding-inline",
+  "padding-inline-start",
+  "padding-inline-end",
+  "inset",
+  "inset-block",
+  "inset-block-start",
+  "inset-block-end",
+  "inset-inline",
+  "inset-inline-start",
+  "inset-inline-end",
+]);
+
+// Layout width/height properties. Border widths, outline-width, etc. use
+// <line-width> (thin|medium|thick|<length>) which is different from layout
+// widths (auto|min-content|max-content|fit-content|stretch|<length>).
+const WIDTH_PROPERTIES = new Set([
+  "width",
+  "min-width",
+  "max-width",
+  "block-size",
+  "min-block-size",
+  "max-block-size",
+  "inline-size",
+  "min-inline-size",
+  "max-inline-size",
+  "flex-basis",
+  "column-width",
+]);
+
+const HEIGHT_PROPERTIES = new Set([
+  "height",
+  "min-height",
+  "max-height",
+]);
+
+// Properties where the <angle> syntax fallback would give a wrong type
+// because they are primarily keyword-based with optional angle values.
+const ANGLE_SYNTAX_EXCLUSIONS = new Set([
+  "font-style",
+  "image-orientation",
+]);
+
 function infer_alias_name(css_name: string, feature: CssFeature): string {
   if (css_name === "display") return "Display";
   if (css_name === "position") return "Position";
-  if (css_name === "overflow" || css_name.startsWith("overflow-")) return "Overflow";
+  if (OVERFLOW_PROPERTIES.has(css_name)) return "Overflow";
   if (css_name === "text-align") return "TextAlign";
   if (css_name === "font-weight") return "FontWeight";
   if (css_name === "flex-direction") return "FlexDirection";
@@ -351,27 +427,16 @@ function infer_alias_name(css_name: string, feature: CssFeature): string {
   if (css_name === "align-items") return "AlignItems";
   if (css_name === "box-shadow") return "ShadowValue";
   if (css_name === "transform") return "TransformValue";
-  if (css_name === "transition" || css_name.startsWith("transition-")) return "TransitionValue";
+  if (css_name === "transition") return "TransitionValue";
   if (css_name === "color" || css_name.endsWith("-color") || css_name === "background-color") {
     return "ColorValue";
   }
   if (css_name === "line-height") return "LineHeightValue";
   if (css_name.includes("radius")) return "BorderRadiusValue";
-  if (
-    css_name === "margin" ||
-    css_name === "padding" ||
-    css_name.startsWith("margin-") ||
-    css_name.startsWith("padding-") ||
-    css_name === "inset" ||
-    css_name.startsWith("inset-")
-  ) {
-    return "SpacingShorthand";
-  }
+  if (SPACING_PROPERTIES.has(css_name)) return "SpacingShorthand";
   if (css_name === "gap" || css_name.endsWith("-gap")) return "GapValue";
-  // scrollbar-width only accepts keywords (auto | thin | none), not lengths
-  if (css_name === "width" || (css_name.endsWith("-width") && css_name !== "scrollbar-width"))
-    return "WidthValue";
-  if (css_name === "height" || css_name.endsWith("-height")) return "HeightValue";
+  if (WIDTH_PROPERTIES.has(css_name)) return "WidthValue";
+  if (HEIGHT_PROPERTIES.has(css_name)) return "HeightValue";
   if (css_name === "opacity") return "Opacity";
   if (css_name === "z-index") return "ZIndex";
 
@@ -380,7 +445,7 @@ function infer_alias_name(css_name: string, feature: CssFeature): string {
   if (syntax.includes("<length-percentage")) return "LengthPercentage";
   if (syntax.includes("<length")) return "Length";
   if (syntax.includes("<time")) return "TimeValue";
-  if (syntax.includes("<angle")) return "AngleValue";
+  if (!ANGLE_SYNTAX_EXCLUSIONS.has(css_name) && syntax.includes("<angle")) return "AngleValue";
   return "CssValue";
 }
 
@@ -443,21 +508,25 @@ function infer_type_expr(alias_name: string): TypeExpr {
   }
 }
 
+const AUTO_PX_ALIASES = new Set([
+  "WidthValue",
+  "HeightValue",
+  "BorderRadiusValue",
+  "SpacingShorthand",
+  "GapValue",
+  "Length",
+  "LengthPercentage",
+]);
+
 function accepts_auto_px(feature: CssFeature, value_type_name: string): boolean {
   if (value_type_name === "LineHeightValue") {
     return false;
   }
-  const syntax = feature.syntax ?? "";
-  if (syntax.includes("<length") || syntax.includes("<length-percentage")) {
+  if (AUTO_PX_ALIASES.has(value_type_name)) {
     return true;
   }
-  return new Set([
-    "WidthValue",
-    "HeightValue",
-    "BorderRadiusValue",
-    "SpacingShorthand",
-    "GapValue",
-  ]).has(value_type_name);
+  const syntax = feature.syntax ?? "";
+  return syntax.includes("<length") || syntax.includes("<length-percentage");
 }
 
 function is_property_shorthand(css_name: string, feature: CssFeature): boolean {

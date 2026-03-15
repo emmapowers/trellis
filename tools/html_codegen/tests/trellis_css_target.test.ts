@@ -451,7 +451,7 @@ describe("trellis css target", () => {
     expect(runtime_stub_module?.content).toContain("class Style:");
     expect(runtime_stub_module?.content).toContain("def __init__(");
     expect(runtime_stub_module?.content).toContain("border: ColorValue | CssValue | None");
-    expect(runtime_stub_module?.content).toContain("font_family: CssValue | str | None");
+    expect(runtime_stub_module?.content).toContain("font_family: CssValue | builtins.str | None");
     expect(runtime_stub_module?.content).toContain(
       "font_size: LengthPercentage | builtins.int | builtins.float | None",
     );

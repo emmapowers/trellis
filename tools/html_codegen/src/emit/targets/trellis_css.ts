@@ -138,7 +138,7 @@ function qualify_field_primitives(type_expr: TypeExpr): TypeExpr {
 function field_type_expr(property: CssPropertyDef): TypeExpr {
   let type_expr = qualify_field_primitives(property.type_expr);
   if (property.value_type_name === "CssValue") {
-    type_expr = append_type_expr(type_expr, { kind: "primitive", name: "str" });
+    type_expr = append_type_expr(type_expr, { kind: "reference", name: "builtins.str" });
   }
   if (property.is_shorthand && !CSS_VALUE_CAPABLE_ALIASES.has(property.value_type_name)) {
     type_expr = append_type_expr(type_expr, { kind: "reference", name: "CssValue" });
@@ -236,6 +236,18 @@ function emit_style_runtime_stub(document: CssDocument, generated_at: string): s
     .sort((left, right) => left.localeCompare(right));
   const style_field_lines = emit_style_fields(document.properties);
   const media_rule_lines = emit_media_rule(document.media_features);
+  // Names reserved by structural/pseudo-class params in Style.__init__.
+  // CSS properties with these python_names are handled by the runtime's
+  // _consume_kwargs, so they must not appear as duplicate __init__ params.
+  const reserved_init_params = new Set([
+    "vars", "selectors", "media",
+    "hover", "focus", "focus_visible", "focus_within",
+    "active", "visited", "disabled", "checked",
+    "placeholder", "before", "after", "selection",
+  ]);
+  const init_properties = ordered_properties.filter(
+    (property) => !reserved_init_params.has(property.python_name),
+  );
   const init_lines = [
     "    def __init__(",
     "        self,",
@@ -257,7 +269,7 @@ function emit_style_runtime_stub(document: CssDocument, generated_at: string): s
     '        before: Style | None = None,',
     '        after: Style | None = None,',
     '        selection: Style | None = None,',
-    ...ordered_properties.map(
+    ...init_properties.map(
       (property) =>
         `        ${property.python_name}: ${render_type_expr(field_type_expr(property))} | None = None,`,
     ),

@@ -99,7 +99,7 @@ describe("pipeline build", () => {
     expect(find_element("div")).toMatchObject({
       python_name: "Div",
       is_container: true,
-      text_behavior: "none",
+      text_behavior: "public_helper",
     });
     expect(find_element("img")).toMatchObject({
       python_name: "Img",
@@ -114,12 +114,12 @@ describe("pipeline build", () => {
     expect(find_element("textarea")).toMatchObject({
       python_name: "Textarea",
       is_container: false,
-      text_behavior: "none",
+      text_behavior: "public_helper",
     });
     expect(find_element("iframe")).toMatchObject({
       python_name: "Iframe",
       is_container: false,
-      text_behavior: "none",
+      text_behavior: "public_helper",
     });
     expect(find_element("script")).toMatchObject({
       python_name: "Script",
