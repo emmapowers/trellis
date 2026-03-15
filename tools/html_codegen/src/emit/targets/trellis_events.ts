@@ -29,7 +29,7 @@ function exported_names(document: IrDocument): string[] {
     (left, right) =>
       left.toLowerCase().localeCompare(right.toLowerCase()) || left.localeCompare(right),
   );
-  return ["EVENT_TYPE_MAP", ...middle_names, "get_event_class"];
+  return middle_names;
 }
 
 function is_float_type(field: DataclassFieldDef): boolean {

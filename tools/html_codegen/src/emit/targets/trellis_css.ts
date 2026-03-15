@@ -301,6 +301,19 @@ function emit_style_runtime_stub(document: CssDocument, generated_at: string): s
     "def media(*, style: StyleInput, query: builtins.str | None = None, **feature_values: Unpack[_MediaRuleKwargs]) -> MediaRule: ...",
   ];
 
+  // Public names exported by __all__ — types, classes, and helper functions.
+  // Must match the __all__ in _style_runtime.py to keep star imports consistent.
+  const helper_names = helper_lines.map((line) => {
+    const match = line.match(/^def (\w+)\(/);
+    return match ? match[1] : null;
+  }).filter((name): name is string => name !== null);
+  const all_names = [
+    "CssAngle", "CssColor", "CssLength", "CssPercent", "CssTime", "CssValue",
+    "HeightInput", "MediaRule", "RawStyleMapping", "SpacingInput",
+    "Style", "StyleInput", "StyleScalar", "WidthInput",
+    ...helper_names,
+  ].sort((a, b) => a.localeCompare(b));
+
   return [
     render_generated_module_docstring("Generated CSS runtime typing stubs.", generated_at, [
       "Internal codegen artifact describing the public runtime surface for trellis.html CSS helpers.",
@@ -315,6 +328,10 @@ function emit_style_runtime_stub(document: CssDocument, generated_at: string): s
     "",
     "from trellis.html._css_primitives import CssAngle, CssColor, CssLength, CssPercent, CssTime, CssValue",
     `from trellis.html._generated_style_types import ${[...ordered_alias_names, "_MediaRuleKwargs"].join(", ")}`,
+    "",
+    "__all__ = [",
+    ...all_names.map((name) => `    "${name}",`),
+    "]",
     "",
     "type StyleScalar = builtins.str | builtins.int | builtins.float | CssValue",
     "type RawStyleMapping = Mapping[builtins.str, Any]",

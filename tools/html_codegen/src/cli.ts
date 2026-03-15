@@ -37,7 +37,7 @@ async function format_python_source(
 
   const black_formatted = await new Promise<string>((resolve, reject) => {
     const child = spawn(
-      "pixi",
+      "uv",
       ["run", "black", "--quiet", "--stdin-filename", path, "-"],
       {
         cwd: formatter_root,
@@ -76,7 +76,7 @@ async function format_python_source(
     await writeFile(temp_path, black_formatted, "utf-8");
     await new Promise<void>((resolve, reject) => {
       const child = spawn(
-        "pixi",
+        "uv",
         ["run", "ruff", "check", "--select", "F401,I001,RUF022", "--fix", temp_path],
         {
           cwd: formatter_root,
