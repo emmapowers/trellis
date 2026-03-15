@@ -165,6 +165,7 @@ class TestEnsureBun:
         actual_url = mock_stream.call_args[0][1]
         assert actual_url == expected_url
 
+    @pytest.mark.platform(exclude="win32")
     def test_sets_executable_permission(self, tmp_path: Path) -> None:
         """Binary gets executable permission (0o755) after extraction."""
         zip_buffer = io.BytesIO()

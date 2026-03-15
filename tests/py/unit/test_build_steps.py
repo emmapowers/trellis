@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 import subprocess
-import sys
 import time
 from pathlib import Path
 from unittest.mock import patch
@@ -1936,7 +1935,7 @@ class TestIconAssetStep:
         favicon_png = Image.open(build_context.dist_dir / "favicon.png")
         assert favicon_png.size == (32, 32)
 
-    @pytest.mark.skipif(sys.platform != "darwin", reason="iconutil is macOS-only")
+    @pytest.mark.platform(only="darwin")
     def test_include_icns_generates_icns_file(
         self, build_context: BuildContext, png_icon: Path
     ) -> None:

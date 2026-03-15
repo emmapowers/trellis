@@ -101,11 +101,9 @@ def App() -> None:
 pip install git+https://github.com/emmapowers/trellis.git
 ```
 
-For desktop app support, install with the desktop extra:
-
-```bash
-pip install "trellis[desktop] @ git+https://github.com/emmapowers/trellis.git"
-```
+The first `trellis run --desktop` may download a matching desktop runtime wheel.
+If no compatible published wheel exists for your Python/platform, install `pytauri-wheel`
+manually in that environment.
 
 ## Project Configuration
 

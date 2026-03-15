@@ -42,20 +42,17 @@ dependencies = [
     # Icon format conversion (SVG rasterization, ICO/ICNS generation)
     "Pillow>=10.0; sys_platform != 'emscripten'",
     "resvg-py>=0.2; sys_platform != 'emscripten'",
+    # Desktop packaging (zstd compression for portable/installer bundles)
+    "zstandard>=0.23; sys_platform != 'emscripten'",
+    # Desktop runtime
+    "pytauri>=0.8.0; sys_platform != 'emscripten'",
+    "pydantic>=2.12; sys_platform != 'emscripten'",
     # Bundler uses `pip wheel` to build wheels for Pyodide deployment
     "pip>=24; sys_platform != 'emscripten'",
 ]
 
-[project.optional-dependencies]
-desktop = [
-    "pytauri-wheel>=0.8.0",
-    "pydantic>=2.12",
-    "pyinstaller>=6.12",
-]
-
 [dependency-groups]
 dev = [
-    "trellis[desktop]",
     "ruff>=0.8,<1",
     "pytest>=8,<9",
     "pytest-cov>=6,<7",
@@ -164,5 +161,5 @@ reportMissingImports = "warning"
 executionEnvironments = [
     { root = "src/trellis/platforms/desktop", reportMissingImports = false },
     { root = "src/trellis/desktop", reportMissingImports = false },
-    { root = "src/trellis/packaging", reportMissingImports = false },
+    { root = "src/trellis/packaging", reportMissingImports = false, reportUnreachable = false },
 ]

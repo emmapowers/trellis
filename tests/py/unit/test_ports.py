@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import socket
+import sys
 
 import pytest
 
@@ -11,6 +12,16 @@ from trellis.platforms.common.ports import (
     DEFAULT_PORT_START,
     find_available_port,
 )
+
+
+def _bind_port(host: str, port: int) -> socket.socket:
+    """Bind a socket that exclusively holds a port on all platforms."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if sys.platform == "win32":
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)  # type: ignore[attr-defined]
+    sock.bind((host, port))
+    sock.listen(1)
+    return sock
 
 
 class TestFindAvailablePort:
@@ -24,11 +35,7 @@ class TestFindAvailablePort:
 
     def test_returns_first_available(self) -> None:
         """Returns the first available port when others are busy."""
-        # Bind the first port
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(("127.0.0.1", 9100))
-        sock.listen(1)
+        sock = _bind_port("127.0.0.1", 9100)
 
         try:
             # Should skip 9100 and return 9101
@@ -39,14 +46,7 @@ class TestFindAvailablePort:
 
     def test_raises_when_all_ports_busy(self) -> None:
         """Raises RuntimeError when all ports in range are busy."""
-        # Bind all ports in a small range
-        sockets = []
-        for p in range(9200, 9203):
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            s.bind(("127.0.0.1", p))
-            s.listen(1)
-            sockets.append(s)
+        sockets = [_bind_port("127.0.0.1", p) for p in range(9200, 9203)]
 
         try:
             with pytest.raises(RuntimeError, match="No available port found"):

@@ -25,6 +25,21 @@
 </head>
 <body>
     <div id="root" class="trellis-root"></div>
+    <script>
+        function renderFatalError(title, details) {
+            var pre = document.createElement('pre');
+            pre.style.cssText = 'color:red;padding:20px';
+            pre.textContent = title + '\n' + details;
+            document.body.textContent = '';
+            document.body.appendChild(pre);
+        }
+        window.onerror = function(msg, url, line, col, err) {
+            renderFatalError('ERROR: ' + msg, url + ':' + line + ':' + col + '\n' + (err && err.stack || ''));
+        };
+        window.addEventListener('unhandledrejection', function(e) {
+            renderFatalError('UNHANDLED REJECTION: ' + e.reason, (e.reason && e.reason.stack || ''));
+        });
+    </script>
     <script type="module" src="bundle.js"></script>
 </body>
 </html>

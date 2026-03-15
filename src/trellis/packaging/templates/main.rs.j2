@@ -1,0 +1,45 @@
+// Hide the console window on Windows release builds
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+use pyo3::wrap_pymodule;
+use pytauri::standalone::{PythonInterpreterBuilder, PythonInterpreterEnv, PythonScript};
+
+use {{ name | replace('-', '_') }}_lib::_ext_mod;
+
+fn main() {
+    let current_exe = std::env::current_exe().expect("failed to get current exe path");
+
+    #[cfg(target_os = "macos")]
+    let pyembed_dir = current_exe
+        .parent()
+        .expect("failed to get parent dir")
+        .join("../Resources/pyembed");
+    #[cfg(target_os = "linux")]
+    let pyembed_dir = current_exe
+        .parent()
+        .expect("failed to get parent dir")
+        .join("../lib/{{ product_name }}/pyembed");
+    #[cfg(target_os = "windows")]
+    let pyembed_dir = current_exe
+        .parent()
+        .expect("failed to get parent dir")
+        .join("pyembed");
+
+    let pyembed_dir = pytauri::standalone::dunce::simplified(&pyembed_dir).to_owned();
+
+    // Point AppLoader at pyembed so it can find trellis_config.py
+    std::env::set_var("TRELLIS_APP_ROOT", &pyembed_dir);
+
+    let env = PythonInterpreterEnv::Standalone(pyembed_dir.into());
+    let script = PythonScript::Module("trellis.app.standalone_entry".into());
+
+    let interpreter = PythonInterpreterBuilder::new(
+        env,
+        script,
+        |py| wrap_pymodule!(_ext_mod)(py),
+    )
+    .build()
+    .expect("failed to build Python interpreter");
+
+    std::process::exit(interpreter.run());
+}

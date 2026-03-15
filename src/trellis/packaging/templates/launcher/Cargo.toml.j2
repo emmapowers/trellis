@@ -1,0 +1,30 @@
+[package]
+name = "{{ name }}-launcher"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+zip = { version = "2", default-features = false }
+zstd = { version = "0.13", default-features = false }
+sha2 = "0.10"
+
+[dependencies.windows-sys]
+version = "0.59"
+features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Security",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Registry",
+    "Win32_UI_Controls",
+    "Win32_UI_WindowsAndMessaging",
+]
+
+[build-dependencies]
+winres = "0.1"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+panic = "abort"

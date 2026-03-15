@@ -133,6 +133,65 @@ class TestAppLoader:
         assert apploader.config is not None
         assert apploader.config.name == "my-app"
         assert apploader.config.module == "my_app.main"
+        assert apploader.config.python_path == [app_root.resolve()]
+        assert apploader.config.assets_dir == (app_root / "assets").resolve()
+
+    def test_load_config_normalizes_relative_paths(
+        self, write_trellis_config: WriteTrellisConfig
+    ) -> None:
+        """load_config normalizes relative config paths against the app root."""
+        app_root = write_trellis_config(
+            content=(
+                "from trellis.app.config import Config\n"
+                "config = Config(\n"
+                '    name="test",\n'
+                '    module="main",\n'
+                '    python_path=["src", "lib"],\n'
+                '    assets_dir="static",\n'
+                '    icon="assets/icon.png",\n'
+                ")\n"
+            )
+        )
+        apploader = AppLoader(app_root)
+
+        apploader.load_config()
+
+        assert apploader.config is not None
+        assert apploader.config.python_path == [
+            (app_root / "src").resolve(),
+            (app_root / "lib").resolve(),
+        ]
+        assert apploader.config.assets_dir == (app_root / "static").resolve()
+        assert apploader.config.icon == (app_root / "assets" / "icon.png").resolve()
+
+    def test_load_config_preserves_absolute_paths(
+        self, tmp_path: Path, write_trellis_config: WriteTrellisConfig
+    ) -> None:
+        """load_config leaves absolute config paths absolute."""
+        abs_src = (tmp_path / "src").resolve()
+        abs_assets = (tmp_path / "assets").resolve()
+        abs_icon = (tmp_path / "icon.png").resolve()
+        app_root = write_trellis_config(
+            content=(
+                "from pathlib import Path\n"
+                "from trellis.app.config import Config\n"
+                "config = Config(\n"
+                '    name="test",\n'
+                '    module="main",\n'
+                f'    python_path=[Path("{abs_src.as_posix()}")],\n'
+                f'    assets_dir=Path("{abs_assets.as_posix()}"),\n'
+                f'    icon=Path("{abs_icon.as_posix()}"),\n'
+                ")\n"
+            )
+        )
+        apploader = AppLoader(app_root)
+
+        apploader.load_config()
+
+        assert apploader.config is not None
+        assert apploader.config.python_path == [abs_src]
+        assert apploader.config.assets_dir == abs_assets
+        assert apploader.config.icon == abs_icon
 
     def test_load_config_error_file_not_found(self, tmp_path: Path) -> None:
         """load_config raises FileNotFoundError when trellis_config.py doesn't exist."""
@@ -305,6 +364,8 @@ class TestAppLoaderImportModule:
         module = apploader.import_module()
 
         assert module.VALUE == "from_src"
+        assert apploader.config is not None
+        assert apploader.config.python_path == [(app_root / "src").resolve()]
 
     def test_import_with_multiple_python_paths(
         self, tmp_path: Path, write_trellis_config: WriteTrellisConfig
@@ -331,6 +392,11 @@ class TestAppLoaderImportModule:
         module = apploader.import_module()
 
         assert module.VALUE == "from_lib"
+        assert apploader.config is not None
+        assert apploader.config.python_path == [
+            (app_root / "src").resolve(),
+            (app_root / "lib").resolve(),
+        ]
 
     def test_import_default_python_path_includes_app_root(
         self,

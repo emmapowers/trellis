@@ -82,7 +82,7 @@ Run excluding slow tests: `pytest -m "not slow"`
 
 ## Optional Dependencies
 
-Some platforms have runtime dependencies not available in CI (pytauri for desktop).
+Some local test environments may still lack desktop runtime packages.
 
 ```python
 from tests.helpers import requires_pytauri

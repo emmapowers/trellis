@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-from tests.helpers import requires_pytauri
 from trellis.app.apploader import AppLoader, set_apploader
 from trellis.app.config import Config
 from trellis.app.configvars import cli_context
@@ -107,7 +106,6 @@ class TestServerGetBuildConfig:
         assert html_step._context["title"] == "Custom Title"
 
 
-@requires_pytauri
 class TestDesktopGetBuildConfig:
     """Tests for DesktopPlatform.get_build_config()."""
 

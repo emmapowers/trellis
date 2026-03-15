@@ -1,0 +1,105 @@
+// Portable launcher stub for {{ product_name }}.
+// Extracts a bundled zip archive on first run, then launches the real executable.
+#![windows_subsystem = "windows"]
+
+mod common;
+
+use std::fs;
+use std::path::PathBuf;
+use std::process::Command;
+
+use common::{acquire_lock, extract_archive, read_footer, release_lock, show_error};
+
+const CLEANUP_DAYS: u64 = 90;
+
+fn get_cache_dir() -> Result<PathBuf, String> {
+    std::env::var("LOCALAPPDATA")
+        .map(|p| PathBuf::from(p).join("{{ product_name }}"))
+        .map_err(|_| "LOCALAPPDATA not set".into())
+}
+
+fn cleanup_old_versions(cache_dir: &std::path::Path, current_hash: &str) {
+    let Ok(entries) = fs::read_dir(cache_dir) else {
+        return;
+    };
+    let cutoff = std::time::SystemTime::now()
+        - std::time::Duration::from_secs(CLEANUP_DAYS * 24 * 3600);
+
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name == current_hash || name.ends_with(".lock") || name.ends_with(".extracting") {
+            continue;
+        }
+        if let Ok(meta) = entry.metadata() {
+            if meta.is_dir() {
+                if let Ok(modified) = meta.modified() {
+                    if modified < cutoff {
+                        let _ = fs::remove_dir_all(entry.path());
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn main() {
+    let exe_path = std::env::current_exe().unwrap_or_else(|e| show_error(&format!("current_exe: {e}")));
+
+    let footer = match read_footer(&exe_path) {
+        Ok(f) => f,
+        Err(e) => show_error(&format!("Invalid portable exe: {e}")),
+    };
+
+    let cache_dir = match get_cache_dir() {
+        Ok(d) => d,
+        Err(e) => show_error(&e),
+    };
+
+    let version_dir = cache_dir.join(&footer.hash);
+    let real_exe = version_dir.join("{{ exe_name }}");
+
+    if !real_exe.exists() {
+        let lock_path = cache_dir.join(format!("{}.lock", footer.hash));
+        let lock_file = match acquire_lock(&lock_path) {
+            Ok(l) => l,
+            Err(e) => show_error(&format!("Failed to acquire lock: {e}")),
+        };
+
+        // Double-check after acquiring lock
+        if !real_exe.exists() {
+            let temp_dir = cache_dir.join(format!("{}.extracting", footer.hash));
+            if temp_dir.exists() {
+                let _ = fs::remove_dir_all(&temp_dir);
+            }
+
+            if let Err(e) = extract_archive(&exe_path, &footer, &temp_dir, "Extracting {{ product_name }}...") {
+                let _ = fs::remove_dir_all(&temp_dir);
+                release_lock(lock_file, &lock_path);
+                show_error(&format!("Extraction failed: {e}"));
+            }
+
+            if let Err(e) = fs::rename(&temp_dir, &version_dir) {
+                let _ = fs::remove_dir_all(&temp_dir);
+                release_lock(lock_file, &lock_path);
+                show_error(&format!("Failed to finalize extraction: {e}"));
+            }
+        }
+
+        release_lock(lock_file, &lock_path);
+    }
+
+    // Best-effort cleanup of old versions
+    cleanup_old_versions(&cache_dir, &footer.hash);
+
+    // Launch the real exe
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let status = Command::new(&real_exe)
+        .args(&args)
+        .status();
+
+    match status {
+        Ok(s) => std::process::exit(s.code().unwrap_or(1)),
+        Err(e) => show_error(&format!("Failed to launch {}: {e}", real_exe.display())),
+    }
+}

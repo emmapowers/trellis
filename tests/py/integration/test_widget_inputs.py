@@ -27,7 +27,7 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
-            TextInput(value="test", on_change=lambda v: values.append(v))
+            TextInput(value="test", on_change=values.append)
 
         result = rendered(App)
 
@@ -71,7 +71,7 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
-            NumberInput(value=10, on_change=lambda v: values.append(v))
+            NumberInput(value=10, on_change=values.append)
 
         result = rendered(App)
 
@@ -113,7 +113,7 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
-            Checkbox(checked=False, on_change=lambda v: states.append(v))
+            Checkbox(checked=False, on_change=states.append)
 
         result = rendered(App)
 
@@ -166,7 +166,7 @@ class TestInputWidgets:
             Select(
                 value="opt1",
                 options=[{"value": "opt1", "label": "Option 1"}],
-                on_change=lambda v: selections.append(v),
+                on_change=selections.append,
             )
 
         result = rendered(App)
@@ -209,7 +209,7 @@ class TestInputWidgets:
 
         @component
         def App() -> None:
-            MultilineInput(value="test", on_change=lambda v: values.append(v))
+            MultilineInput(value="test", on_change=values.append)
 
         result = rendered(App)
 

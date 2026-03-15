@@ -1,0 +1,238 @@
+// Installer stub for {{ product_name }}.
+// Extracts to %LOCALAPPDATA%, creates Start Menu shortcut, registers uninstaller.
+#![windows_subsystem = "windows"]
+
+mod common;
+
+use std::fs;
+use std::os::windows::process::CommandExt;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+use windows_sys::Win32::System::Registry::{
+    RegCloseKey, RegCreateKeyExW, RegSetValueExW, HKEY, HKEY_CURRENT_USER, KEY_WRITE, REG_DWORD,
+    REG_SZ,
+};
+
+use common::{acquire_lock, extract_archive, read_footer, release_lock, show_error, show_info};
+
+const VERSION: &str = "{{ version }}";
+const PRODUCT_NAME: &str = "{{ product_name }}";
+const EXE_NAME: &str = "{{ exe_name }}";
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+fn wide(s: &str) -> Vec<u16> {
+    s.encode_utf16().chain(std::iter::once(0)).collect()
+}
+
+fn get_install_dir() -> Result<PathBuf, String> {
+    std::env::var("LOCALAPPDATA")
+        .map(|p| PathBuf::from(p).join(PRODUCT_NAME))
+        .map_err(|_| "LOCALAPPDATA not set".into())
+}
+
+fn installed_hash(install_dir: &Path) -> Option<String> {
+    fs::read_to_string(install_dir.join(".hash"))
+        .ok()
+        .map(|s| s.trim().to_string())
+}
+
+fn write_hash(install_dir: &Path, hash: &str) {
+    let _ = fs::write(install_dir.join(".hash"), hash);
+}
+
+fn shortcut_path() -> Result<PathBuf, String> {
+    std::env::var("APPDATA")
+        .map(|p| {
+            PathBuf::from(p)
+                .join("Microsoft\\Windows\\Start Menu\\Programs")
+                .join(format!("{}.lnk", PRODUCT_NAME))
+        })
+        .map_err(|_| "APPDATA not set".into())
+}
+
+fn create_shortcut(target: &Path) {
+    let Ok(lnk) = shortcut_path() else { return };
+    let target_s = target.display().to_string().replace('\'', "''");
+    let lnk_s = lnk.display().to_string().replace('\'', "''");
+    let dir_s = target
+        .parent()
+        .unwrap()
+        .display()
+        .to_string()
+        .replace('\'', "''");
+
+    let ps = format!(
+        "$ws = New-Object -ComObject WScript.Shell; \
+         $s = $ws.CreateShortcut('{lnk_s}'); \
+         $s.TargetPath = '{target_s}'; \
+         $s.WorkingDirectory = '{dir_s}'; \
+         $s.Save()"
+    );
+
+    let _ = Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-Command", &ps])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output();
+}
+
+fn write_uninstall_script(install_dir: &Path) {
+    let lnk = shortcut_path().unwrap_or_default();
+    let reg_key = format!(
+        "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{}",
+        PRODUCT_NAME
+    );
+    let dir_s = install_dir.display();
+    let lnk_s = lnk.display();
+
+    let script = format!(
+        "@echo off\r\n\
+         reg delete \"{reg_key}\" /f >nul 2>&1\r\n\
+         if exist \"{lnk_s}\" del \"{lnk_s}\" >nul 2>&1\r\n\
+         cd /d \"%TEMP%\"\r\n\
+         start \"\" /b cmd /c \"timeout /t 3 /nocount >nul 2>&1 & rmdir /s /q \"\"{dir_s}\"\"\"\r\n\
+         exit /b 0\r\n"
+    );
+
+    let _ = fs::write(install_dir.join("uninstall.bat"), script);
+}
+
+// --- Registry ---
+
+unsafe fn set_reg_sz(hkey: HKEY, name: &str, value: &str) {
+    let name_w = wide(name);
+    let value_w = wide(value);
+    RegSetValueExW(
+        hkey,
+        name_w.as_ptr(),
+        0,
+        REG_SZ,
+        value_w.as_ptr() as *const u8,
+        (value_w.len() * 2) as u32,
+    );
+}
+
+unsafe fn set_reg_dword(hkey: HKEY, name: &str, value: u32) {
+    let name_w = wide(name);
+    RegSetValueExW(
+        hkey,
+        name_w.as_ptr(),
+        0,
+        REG_DWORD,
+        &value as *const u32 as *const u8,
+        4,
+    );
+}
+
+fn register_uninstaller(install_dir: &Path) {
+    let key_path = wide(&format!(
+        "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{}",
+        PRODUCT_NAME
+    ));
+
+    unsafe {
+        let mut hkey: HKEY = std::ptr::null_mut();
+        let mut disposition: u32 = 0;
+        if RegCreateKeyExW(
+            HKEY_CURRENT_USER,
+            key_path.as_ptr(),
+            0,
+            std::ptr::null(),
+            0,
+            KEY_WRITE,
+            std::ptr::null(),
+            &mut hkey,
+            &mut disposition,
+        ) != 0
+        {
+            return;
+        }
+
+        let uninstall_bat = install_dir.join("uninstall.bat");
+        let uninstall_cmd = format!("cmd /c \"{}\"", uninstall_bat.display());
+        let icon_path = install_dir.join("app").join(EXE_NAME);
+
+        set_reg_sz(hkey, "DisplayName", PRODUCT_NAME);
+        set_reg_sz(hkey, "DisplayVersion", VERSION);
+        set_reg_sz(hkey, "UninstallString", &uninstall_cmd);
+        set_reg_sz(hkey, "QuietUninstallString", &uninstall_cmd);
+        set_reg_sz(hkey, "InstallLocation", &install_dir.display().to_string());
+        set_reg_sz(hkey, "DisplayIcon", &icon_path.display().to_string());
+        set_reg_dword(hkey, "NoModify", 1);
+        set_reg_dword(hkey, "NoRepair", 1);
+
+        RegCloseKey(hkey);
+    }
+}
+
+fn main() {
+    let exe_path =
+        std::env::current_exe().unwrap_or_else(|e| show_error(&format!("current_exe: {e}")));
+
+    let footer = match read_footer(&exe_path) {
+        Ok(f) => f,
+        Err(e) => show_error(&format!("Invalid installer: {e}")),
+    };
+
+    let install_dir = match get_install_dir() {
+        Ok(d) => d,
+        Err(e) => show_error(&e),
+    };
+
+    let app_dir = install_dir.join("app");
+    let real_exe = app_dir.join(EXE_NAME);
+
+    let needs_install =
+        installed_hash(&install_dir).as_deref() != Some(&footer.hash) || !real_exe.exists();
+
+    if needs_install {
+        let lock_path = install_dir.join(".install.lock");
+        let lock_file = match acquire_lock(&lock_path) {
+            Ok(l) => l,
+            Err(e) => show_error(&format!("Failed to acquire lock: {e}")),
+        };
+
+        // Double-check after acquiring lock
+        if installed_hash(&install_dir).as_deref() != Some(&footer.hash) || !real_exe.exists() {
+            // Remove old version if present
+            if app_dir.exists() {
+                let _ = fs::remove_dir_all(&app_dir);
+            }
+
+            let temp_dir = install_dir.join("app.installing");
+            if temp_dir.exists() {
+                let _ = fs::remove_dir_all(&temp_dir);
+            }
+
+            if let Err(e) = extract_archive(&exe_path, &footer, &temp_dir, &format!("Installing {}...", PRODUCT_NAME)) {
+                let _ = fs::remove_dir_all(&temp_dir);
+                release_lock(lock_file, &lock_path);
+                show_error(&format!("Installation failed: {e}"));
+            }
+
+            if let Err(e) = fs::rename(&temp_dir, &app_dir) {
+                let _ = fs::remove_dir_all(&temp_dir);
+                release_lock(lock_file, &lock_path);
+                show_error(&format!("Failed to finalize installation: {e}"));
+            }
+
+            write_hash(&install_dir, &footer.hash);
+            create_shortcut(&real_exe);
+            write_uninstall_script(&install_dir);
+            register_uninstaller(&install_dir);
+
+            show_info(&format!("{} has been installed successfully.", PRODUCT_NAME));
+        }
+
+        release_lock(lock_file, &lock_path);
+    }
+
+    // Launch the app
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let status = Command::new(&real_exe).args(&args).status();
+
+    match status {
+        Ok(s) => std::process::exit(s.code().unwrap_or(1)),
+        Err(e) => show_error(&format!("Failed to launch {}: {e}", real_exe.display())),
+    }
+}

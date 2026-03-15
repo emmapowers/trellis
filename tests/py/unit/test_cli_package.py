@@ -20,28 +20,41 @@ def test_package_command_exists() -> None:
     assert "--platform [server|desktop|browser]" in result.output
 
 
-def test_package_rejects_non_desktop_platform(write_app: WriteApp) -> None:
+def test_package_overrides_platform_to_desktop(
+    write_app: WriteApp,
+    reset_apploader: None,
+) -> None:
     app_root = write_app(name="server-app", module="main", platform="SERVER")
+    expected_path = app_root / "package" / "server-app"
     runner = CliRunner()
 
-    result = runner.invoke(trellis, ["--app-root", str(app_root), "package"])
+    with (
+        patch.object(AppLoader, "bundle"),
+        patch(
+            "trellis.cli.package.build_desktop_app_bundle",
+            return_value=(expected_path, ["fake.app"]),
+        ) as mock_build,
+    ):
+        result = runner.invoke(trellis, ["--app-root", str(app_root), "package"])
 
-    assert result.exit_code != 0
-    assert "desktop" in result.output.lower()
+    assert result.exit_code == 0, result.output
+    called_config = mock_build.call_args.kwargs["config"]
+    assert called_config.platform.value == "desktop"
 
 
-def test_package_builds_bundle_and_invokes_pyinstaller(
+def test_package_builds_bundle_and_invokes_tauri(
     write_app: WriteApp,
     reset_apploader: None,
 ) -> None:
     app_root = write_app(name="desktop-app", module="main", platform="DESKTOP")
-    expected_path = app_root / "package" / "desktop-app.app"
+    expected_path = app_root / "package" / "desktop-app"
     runner = CliRunner()
 
     with (
         patch.object(AppLoader, "bundle") as mock_bundle,
         patch(
-            "trellis.cli.package.build_desktop_app_bundle", return_value=expected_path
+            "trellis.cli.package.build_desktop_app_bundle",
+            return_value=(expected_path, ["fake.app"]),
         ) as mock_build,
     ):
         result = runner.invoke(trellis, ["--app-root", str(app_root), "package"])
@@ -52,25 +65,39 @@ def test_package_builds_bundle_and_invokes_pyinstaller(
     mock_build.assert_called_once()
 
 
-def test_package_accepts_platform_override_and_bakes_desktop_config(
+def test_package_rejects_bundles_with_installer(write_app: WriteApp) -> None:
+    app_root = write_app(name="desktop-app", module="main", platform="DESKTOP")
+    runner = CliRunner()
+
+    result = runner.invoke(
+        trellis,
+        ["--app-root", str(app_root), "package", "--bundles", "nsis", "--installer"],
+    )
+
+    assert result.exit_code != 0
+    assert "cannot be used together" in result.output.lower()
+
+
+def test_package_passes_bundles_to_build(
     write_app: WriteApp,
     reset_apploader: None,
 ) -> None:
-    app_root = write_app(name="override-app", module="main", platform="SERVER")
-    expected_path = app_root / "package" / "override-app.app"
+    app_root = write_app(name="desktop-app", module="main", platform="DESKTOP")
+    expected_path = app_root / "package" / "desktop-app"
     runner = CliRunner()
 
     with (
         patch.object(AppLoader, "bundle"),
         patch(
-            "trellis.cli.package.build_desktop_app_bundle", return_value=expected_path
+            "trellis.cli.package.build_desktop_app_bundle",
+            return_value=(expected_path, ["fake.app"]),
         ) as mock_build,
     ):
         result = runner.invoke(
             trellis,
-            ["--app-root", str(app_root), "package", "--platform", "desktop"],
+            ["--app-root", str(app_root), "package", "--bundles", "nsis,rpm"],
         )
 
     assert result.exit_code == 0, result.output
-    called_config = mock_build.call_args.kwargs["config"]
-    assert called_config.platform.value == "desktop"
+    mock_build.assert_called_once()
+    assert mock_build.call_args.kwargs["bundles"] == ["nsis", "rpm"]

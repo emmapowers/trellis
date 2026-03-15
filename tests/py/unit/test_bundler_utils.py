@@ -394,11 +394,54 @@ class TestSafeExtract:
             with pytest.raises(ValueError, match="path traversal"):
                 safe_extract(tar, tmp_path)
 
-    def test_rejects_symlinks(self, tmp_path: Path) -> None:
-        """Rejects symlink entries to prevent link-based escapes."""
+    @pytest.mark.platform(exclude="win32")
+    def test_allows_internal_symlinks(self, tmp_path: Path) -> None:
+        """Allows symlinks whose target resolves within the destination."""
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-            # Add a symlink pointing outside destination
+            data = b"real content"
+            info = tarfile.TarInfo(name="package/real_file")
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+
+            link_info = tarfile.TarInfo(name="package/link")
+            link_info.type = tarfile.SYMTYPE
+            link_info.linkname = "real_file"
+            tar.addfile(link_info)
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            safe_extract(tar, tmp_path)
+
+        assert (tmp_path / "package" / "link").is_symlink()
+
+    @pytest.mark.platform(exclude="win32")
+    def test_rejects_symlink_traversal_via_earlier_link(self, tmp_path: Path) -> None:
+        """Rejects paths that escape via a symlink declared earlier in the archive."""
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            # First: symlink package/link -> subdir/..  (resolves to package/)
+            link_info = tarfile.TarInfo(name="package/link")
+            link_info.type = tarfile.SYMTYPE
+            link_info.linkname = "subdir/.."
+            tar.addfile(link_info)
+
+            # Second: file that traverses through the symlink to escape
+            # package/link/../../escape.txt -> package/(subdir/..)/../.. -> above dest
+            data = b"escaped"
+            info = tarfile.TarInfo(name="package/link/../../escape.txt")
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            with pytest.raises(ValueError, match="path traversal"):
+                safe_extract(tar, tmp_path)
+
+    def test_rejects_escaping_symlinks(self, tmp_path: Path) -> None:
+        """Rejects symlinks whose target resolves outside the destination."""
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
             info = tarfile.TarInfo(name="package/link")
             info.type = tarfile.SYMTYPE
             info.linkname = "/etc/passwd"
@@ -406,22 +449,55 @@ class TestSafeExtract:
 
         tar_buffer.seek(0)
         with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
-            with pytest.raises(ValueError, match="link entry"):
+            with pytest.raises(ValueError, match="Symlink escapes destination"):
                 safe_extract(tar, tmp_path)
 
-    def test_rejects_hardlinks(self, tmp_path: Path) -> None:
-        """Rejects hardlink entries to prevent link-based escapes."""
+    def test_rejects_relative_escaping_symlinks(self, tmp_path: Path) -> None:
+        """Rejects symlinks that use ../ to escape the destination."""
         tar_buffer = io.BytesIO()
         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-            # Add a hardlink
-            info = tarfile.TarInfo(name="package/hardlink")
-            info.type = tarfile.LNKTYPE
-            info.linkname = "package/original"
+            info = tarfile.TarInfo(name="package/link")
+            info.type = tarfile.SYMTYPE
+            info.linkname = "../../etc/passwd"
             tar.addfile(info)
 
         tar_buffer.seek(0)
         with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
-            with pytest.raises(ValueError, match="link entry"):
+            with pytest.raises(ValueError, match="Symlink escapes destination"):
+                safe_extract(tar, tmp_path)
+
+    def test_allows_internal_hardlinks(self, tmp_path: Path) -> None:
+        """Allows hardlinks whose target resolves within the destination."""
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            data = b"real content"
+            info = tarfile.TarInfo(name="package/original")
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+
+            link_info = tarfile.TarInfo(name="package/hardlink")
+            link_info.type = tarfile.LNKTYPE
+            link_info.linkname = "package/original"
+            tar.addfile(link_info)
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            safe_extract(tar, tmp_path)
+
+        assert (tmp_path / "package" / "hardlink").exists()
+
+    def test_rejects_escaping_hardlinks(self, tmp_path: Path) -> None:
+        """Rejects hardlinks whose target resolves outside the destination."""
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            info = tarfile.TarInfo(name="package/hardlink")
+            info.type = tarfile.LNKTYPE
+            info.linkname = "../../etc/passwd"
+            tar.addfile(info)
+
+        tar_buffer.seek(0)
+        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+            with pytest.raises(ValueError, match="Hardlink escapes destination"):
                 safe_extract(tar, tmp_path)
 
     def test_rejects_character_device(self, tmp_path: Path) -> None:

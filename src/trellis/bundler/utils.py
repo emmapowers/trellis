@@ -29,12 +29,35 @@ CACHE_DIR = _get_cache_dir()
 BIN_DIR = CACHE_DIR / "bin"
 
 
+def _resolve_through_symlinks(path: Path, dest: Path, symlinks: dict[Path, Path]) -> Path:
+    """Resolve a path accounting for symlinks declared earlier in the archive.
+
+    Walks each component of *path* (relative to *dest*) and, when a prefix
+    matches a known symlink, replaces it with the symlink's target before
+    continuing.  The final result is passed through ``Path.resolve()`` so
+    that ``..`` segments are collapsed.
+    """
+    try:
+        rel = path.relative_to(dest)
+    except ValueError:
+        # path is not under dest (e.g. absolute paths like /etc/passwd)
+        return path.resolve()
+    current = dest
+    for part in rel.parts:
+        current = current / part
+        if current in symlinks:
+            target = symlinks[current]
+            # Resolve relative symlink target against the link's parent
+            current = (current.parent / target).resolve()
+    return current.resolve()
+
+
 def safe_extract(tar: tarfile.TarFile, dest: Path) -> None:
     """Safely extract a tarball, preventing path traversal attacks.
 
     Validates that all extracted paths stay within the destination directory.
-    This prevents malicious tarballs from writing files outside the intended
-    directory via paths like "../../../etc/passwd".
+    Symlinks are allowed if their target resolves within the destination
+    (i.e. relative symlinks that stay inside the archive).
 
     Args:
         tar: The tarfile to extract
@@ -44,16 +67,33 @@ def safe_extract(tar: tarfile.TarFile, dest: Path) -> None:
         ValueError: If any member would extract outside the destination
     """
     dest = dest.resolve()
+    # Track symlinks declared so far so we can resolve paths through them
+    # when validating later members (e.g. package/link -> subdir then package/link/file).
+    symlinks: dict[Path, Path] = {}
+
     for member in tar.getmembers():
-        # Reject symlinks and hardlinks to prevent link-based escapes
-        if member.issym() or member.islnk():
-            raise ValueError(f"Tarball contains link entry: {member.name}")
         # Reject device files and FIFOs
         if member.ischr() or member.isblk() or member.isfifo():
             raise ValueError(f"Tarball contains device/fifo entry: {member.name}")
-        member_path = (dest / member.name).resolve()
+
+        member_path = _resolve_through_symlinks(dest / member.name, dest, symlinks)
         if not member_path.is_relative_to(dest):
             raise ValueError(f"Tarball contains path traversal: {member.name}")
+
+        if member.issym():
+            # Resolve the symlink target relative to the member's parent directory
+            link_dir = member_path.parent
+            target_path = (link_dir / member.linkname).resolve()
+            if not target_path.is_relative_to(dest):
+                raise ValueError(f"Symlink escapes destination: {member.name} -> {member.linkname}")
+            symlinks[dest / member.name] = Path(member.linkname)
+        elif member.islnk():
+            # Hardlink target must also be within dest
+            target_path = _resolve_through_symlinks(dest / member.linkname, dest, symlinks)
+            if not target_path.is_relative_to(dest):
+                raise ValueError(
+                    f"Hardlink escapes destination: {member.name} -> {member.linkname}"
+                )
     tar.extractall(dest, filter="data")
 
 

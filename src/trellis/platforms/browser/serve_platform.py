@@ -53,9 +53,9 @@ _console = Console()
 def _print_startup_banner(url: str) -> None:
     """Print a colorful startup banner for CLI mode."""
     _console.print()
-    _console.print("  [bold green]🌿 Trellis[/bold green] [dim]browser app[/dim]")
+    _console.print("  [bold green]Trellis[/bold green] [dim]browser app[/dim]")
     _console.print()
-    _console.print(f"  [bold]➜[/bold]  [cyan]Local:[/cyan]   {url}")
+    _console.print(f"  [bold]>[/bold]  [cyan]Local:[/cyan]   {url}")
     _console.print()
     _console.print("  [dim]Press Ctrl+C to stop[/dim]")
     _console.print()

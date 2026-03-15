@@ -98,7 +98,7 @@ class TestBasicWidgets:
 
         @component
         def App() -> None:
-            Slider(value=25, on_change=lambda v: values.append(v))
+            Slider(value=25, on_change=values.append)
 
         result = rendered(App)
 

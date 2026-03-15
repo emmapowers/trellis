@@ -1,0 +1,13 @@
+{
+  "identifier": "default",
+  "description": {{ ("Default capabilities for " ~ product_name) | tojson }},
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "pytauri:default",
+    "dialog:default",
+    "window-state:default",
+    "opener:default"{% if update_url %},
+    "updater:default"{% endif %}
+  ]
+}

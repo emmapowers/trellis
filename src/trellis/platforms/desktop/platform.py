@@ -1,40 +1,30 @@
-"""Desktop platform implementation using PyTauri."""
+"""Desktop platform implementation for both dev and packaged runtimes."""
 
 from __future__ import annotations
 
 import asyncio
 import importlib
+import os
 import signal
+import sys
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 from anyio.from_thread import start_blocking_portal
-from pydantic import BaseModel
-from pytauri import AppHandle, Commands, Manager
-from pytauri.ipc import Channel, JavaScriptChannelId  # noqa: TC002 - runtime for pytauri
-from pytauri.webview import WebviewWindow  # noqa: TC002 - runtime for pytauri
-from pytauri_wheel.lib import builder_factory, context_factory
+from pydantic import create_model
 from rich.console import Console
 
 from trellis.app.apploader import get_dist_dir
-from trellis.bundler import (
-    BuildConfig,
-    BundleBuildStep,
-    IconAssetStep,
-    IndexHtmlRenderStep,
-    PackageInstallStep,
-    RegistryGenerationStep,
-    StaticFileCopyStep,
-)
 from trellis.desktop.dialogs import _clear_dialog_runtime, _set_dialog_runtime
 from trellis.platforms.common.base import Platform
 from trellis.platforms.common.handler_registry import get_global_registry
 from trellis.platforms.desktop.handler import PyTauriMessageHandler
-from trellis.utils.hot_reload import get_or_create_hot_reload
 
 if TYPE_CHECKING:
     from trellis.app.config import Config
+    from trellis.bundler import BuildConfig
     from trellis.core.components.base import Component
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
@@ -45,9 +35,9 @@ _console = Console()
 def _print_startup_banner(title: str) -> None:
     """Print a colorful startup banner."""
     _console.print()
-    _console.print("  [bold green]🌿 Trellis[/bold green] [dim]desktop app[/dim]")
+    _console.print("  [bold green]Trellis[/bold green] [dim]desktop app[/dim]")
     _console.print()
-    _console.print(f"  [bold]➜[/bold]  [cyan]Window:[/cyan]   {title}")
+    _console.print(f"  [bold]>[/bold]  [cyan]Window:[/cyan]   {title}")
     _console.print()
     _console.print("  [dim]Press Ctrl+C or close window to exit[/dim]")
     _console.print()
@@ -72,35 +62,8 @@ def _build_tauri_config_override(
     }
 
 
-# PyTauri command request models
-
-
-class ConnectRequest(BaseModel):
-    """Request to establish channel connection."""
-
-    channel_id: JavaScriptChannelId
-
-
-class SendRequest(BaseModel):
-    """Request to send a message."""
-
-    data: list[int]  # msgpack bytes as list
-
-
-class LogRequest(BaseModel):
-    """Request to log a message."""
-
-    level: str
-    message: str
-
-
 class DesktopPlatform(Platform):
-    """Desktop platform using PyTauri.
-
-    Provides a native desktop application using the system webview.
-    Uses channel-based communication with the same message protocol
-    as the WebSocket server platform.
-    """
+    """Desktop platform for both development and packaged applications."""
 
     _root_component: Component | None
     _app_wrapper: AppWrapper | None
@@ -119,6 +82,11 @@ class DesktopPlatform(Platform):
     def name(self) -> str:
         return "desktop"
 
+    @property
+    def is_standalone(self) -> bool:
+        """Whether this runtime is running inside a packaged standalone app."""
+        return getattr(sys, "_pytauri_standalone", False)
+
     def get_build_config(self, config: Config) -> BuildConfig:
         """Get build configuration for this platform.
 
@@ -128,6 +96,23 @@ class DesktopPlatform(Platform):
         Returns:
             BuildConfig with entry point and build steps
         """
+        if self.is_standalone:
+            raise NotImplementedError(
+                "DesktopPlatform build config is unavailable in standalone mode."
+            )
+
+        # Bundler imports are local to this method so importing DesktopPlatform
+        # does not pull in the entire bundler module tree.
+        from trellis.bundler import (  # noqa: PLC0415
+            BuildConfig,
+            BundleBuildStep,
+            IconAssetStep,
+            IndexHtmlRenderStep,
+            PackageInstallStep,
+            RegistryGenerationStep,
+            StaticFileCopyStep,
+        )
+
         entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
         template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
         return BuildConfig(
@@ -137,51 +122,119 @@ class DesktopPlatform(Platform):
                 RegistryGenerationStep(),
                 BundleBuildStep(output_name="bundle"),
                 StaticFileCopyStep(),
-                IconAssetStep(icon_path=config.icon, include_icns=True),
+                IconAssetStep(icon_path=config.icon, include_icns=sys.platform == "darwin"),
                 IndexHtmlRenderStep(template_path, {"title": config.title}),
             ],
         )
 
-    def _create_commands(self) -> Commands:
+    def _get_config_override(self, **kwargs: Any) -> dict[str, Any] | None:
+        """Return Tauri config overrides for dev mode (frontendDist + window metadata)."""
+        if self.is_standalone:
+            return None
+
+        dist_dir = get_dist_dir()
+        if sys.platform == "win32":
+            # Tauri misinterprets absolute Windows paths (C:/...) as URLs.
+            # Use a relative path from the config directory instead.
+            config_dir = Path(__file__).parent / "config"
+            dist_path = os.path.relpath(dist_dir.resolve(), config_dir.resolve())
+        else:
+            dist_path = str(dist_dir)
+        return _build_tauri_config_override(
+            dist_path=dist_path,
+            window_title=kwargs.get("window_title", "Trellis App"),
+            window_width=kwargs.get("window_width", 1024),
+            window_height=kwargs.get("window_height", 768),
+        )
+
+    def _load_pytauri_runtime(self) -> SimpleNamespace:
+        """Load PyTauri runtime objects, provisioning the dev wheel when needed."""
+        if not self.is_standalone:
+            from trellis.packaging.toolchain.pytauri_wheel import (  # noqa: PLC0415
+                ensure_pytauri_runtime,
+            )
+
+            ensure_pytauri_runtime()
+
+        from pytauri import (  # noqa: PLC0415
+            AppHandle,
+            Commands,
+            Manager,
+            builder_factory,
+            context_factory,
+        )
+        from pytauri.ipc import Channel, JavaScriptChannelId  # noqa: PLC0415
+        from pytauri.webview import WebviewWindow  # noqa: PLC0415
+
+        return SimpleNamespace(
+            AppHandle=AppHandle,
+            Channel=Channel,
+            Commands=Commands,
+            JavaScriptChannelId=JavaScriptChannelId,
+            Manager=Manager,
+            WebviewWindow=WebviewWindow,
+            builder_factory=builder_factory,
+            context_factory=context_factory,
+        )
+
+    def _create_commands(self, runtime: SimpleNamespace) -> Any:
         """Create PyTauri commands with access to platform state via closure."""
+        Commands = runtime.Commands
+        ConnectRequest = create_model(
+            "ConnectRequest",
+            channel_id=(runtime.JavaScriptChannelId, ...),
+        )
+        SendRequest = create_model("SendRequest", data=(list[int], ...))
+        LogRequest = create_model(
+            "LogRequest",
+            level=(str, ...),
+            message=(str, ...),
+        )
+
         commands = Commands()
 
-        @commands.command()
-        async def trellis_connect(
-            body: ConnectRequest, webview_window: WebviewWindow, app_handle: AppHandle
-        ) -> str:
-            """Establish channel connection with frontend."""
-            channel: Channel = body.channel_id.channel_on(webview_window.as_ref_webview())
+        async def trellis_connect(body: Any, webview_window: Any, app_handle: Any) -> str:
+            channel = body.channel_id.channel_on(webview_window.as_ref_webview())
             _set_dialog_runtime(app_handle)
-            self._handler = PyTauriMessageHandler(
+            handler = PyTauriMessageHandler(
                 self._root_component,  # type: ignore[arg-type]
                 self._app_wrapper,  # type: ignore[arg-type]
                 channel,
                 batch_delay=self._batch_delay,
             )
-            # Register handler for broadcast (e.g., reload messages)
-            get_global_registry().register(self._handler)
+            self._handler = handler
+            get_global_registry().register(handler)
 
             def _on_handler_done(task: asyncio.Task[None]) -> None:
-                if self._handler is not None:
-                    get_global_registry().unregister(self._handler)
-                _clear_dialog_runtime()
+                get_global_registry().unregister(handler)
+                if self._handler is handler:
+                    self._handler = None
+                    _clear_dialog_runtime()
 
-            self._handler_task = asyncio.create_task(self._handler.run())
+            self._handler_task = asyncio.create_task(handler.run())
             self._handler_task.add_done_callback(_on_handler_done)
             return "ok"
 
-        @commands.command()
-        async def trellis_send(body: SendRequest) -> None:
-            """Receive message from frontend."""
+        async def trellis_send(body: Any) -> None:
             if self._handler is None:
                 raise RuntimeError("Not connected - call trellis_connect first")
             self._handler.enqueue(bytes(body.data))
 
-        @commands.command()
-        async def trellis_log(body: LogRequest) -> None:
-            """Log a message from frontend to stdout."""
+        async def trellis_log(body: Any) -> None:
             print(f"[JS {body.level}] {body.message}", flush=True)
+
+        trellis_connect.__annotations__ = {
+            "body": ConnectRequest,
+            "webview_window": runtime.WebviewWindow,
+            "app_handle": runtime.AppHandle,
+            "return": str,
+        }
+        trellis_send.__annotations__ = {"body": SendRequest, "return": type(None)}
+        trellis_log.__annotations__ = {"body": LogRequest, "return": type(None)}
+
+        commands.set_command("trellis_connect", trellis_connect)
+        commands.set_command("trellis_send", trellis_send)
+        commands.set_command("trellis_log", trellis_log)
 
         return commands
 
@@ -197,57 +250,36 @@ class DesktopPlatform(Platform):
         hot_reload: bool = True,
         **_kwargs: Any,
     ) -> None:
-        """Start PyTauri desktop application.
+        """Start the desktop application in either dev or standalone mode."""
+        if not self.is_standalone:
+            _print_startup_banner(window_title)
 
-        Args:
-            root_component: The root Trellis component to render
-            app_wrapper: Callback to wrap component with TrellisApp
-            window_title: Title for the application window
-            window_width: Initial window width in pixels
-            window_height: Initial window height in pixels
-            batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
-            hot_reload: Enable hot reload (default True)
-        """
-        # Store root component and config for handler access
         self._root_component = root_component  # type: ignore[assignment]
         self._app_wrapper = app_wrapper
         self._batch_delay = batch_delay
 
-        # Create commands with registered handlers
-        commands = self._create_commands()
+        runtime = self._load_pytauri_runtime()
+        commands = self._create_commands(runtime)
 
-        _print_startup_banner(window_title)
-
-        # Load Tauri configuration with dist path
         config_dir = Path(__file__).parent / "config"
-        dist_path = str(get_dist_dir())
-
-        # Override frontendDist and window metadata with runtime app config.
-        config_override = _build_tauri_config_override(
-            dist_path=dist_path,
+        config_override = self._get_config_override(
             window_title=window_title,
             window_width=window_width,
             window_height=window_height,
         )
 
-        # PyTauri runs its own event loop on main thread (app.run_return).
-        # start_blocking_portal creates an asyncio event loop in a background thread,
-        # allowing async command handlers to run while PyTauri blocks the main thread.
-        # The portal bridges sync PyTauri commands to async Trellis handlers.
         with start_blocking_portal("asyncio") as portal:
-            # Start hot reload with the portal's event loop (not the main thread's loop)
-            if hot_reload:
-                # portal.call runs the function in the portal's async context
+            if hot_reload and not self.is_standalone:
+                from trellis.utils.hot_reload import get_or_create_hot_reload  # noqa: PLC0415
+
                 loop = portal.call(asyncio.get_running_loop)
                 hr = get_or_create_hot_reload(loop)
                 hr.start()
 
-            app = builder_factory().build(
-                context=context_factory(config_dir, tauri_config=config_override),
+            app = runtime.builder_factory().build(
+                context=runtime.context_factory(config_dir, tauri_config=config_override),
                 invoke_handler=commands.generate_handler(portal),
             )
-            # Keep this runtime-only import local so non-desktop environments do not
-            # require desktop plugin modules during normal import/CI workflows.
             dialog_plugin: Any = importlib.import_module("pytauri_plugins.dialog")
             app.handle().plugin(dialog_plugin.init())
 
@@ -257,29 +289,14 @@ class DesktopPlatform(Platform):
             opener_plugin: Any = importlib.import_module("pytauri_plugins.opener")
             app.handle().plugin(opener_plugin.init())
 
-            # Replace asyncio's SIGINT handler (which raises KeyboardInterrupt)
-            # with one that closes all windows to trigger a clean exit.
-            #
-            # Why close windows instead of calling handle.exit()?
-            # handle.exit() sends a message via the tao event loop proxy, but
-            # the signal handler fires inside the run callback (the only time
-            # Python has the GIL).  tao's macOS event loop guards against
-            # re-entrant processing (in_callback flag), so the exit message
-            # sits in the channel unprocessed and run_return never returns.
-            # Closing windows dispatches OS-level events that bypass this guard.
-            #
-            # The callback (_on_run_event) is still needed even though it's a
-            # no-op: without it, pytauri uses a Rust-only noop that never
-            # acquires the GIL, so Python signals are never delivered.
             handle = app.handle()
             prev_sigint = signal.getsignal(signal.SIGINT)
 
-            def _on_run_event(app_handle: AppHandle, event: object) -> None:
+            def _on_run_event(app_handle: Any, event: object) -> None:
                 pass
 
             def _sigint_handler(signum: int, frame: Any) -> None:
-                _console.print("\n  [dim]Shutting down...[/dim]\n")
-                for window in Manager.webview_windows(handle).values():
+                for window in runtime.Manager.webview_windows(handle).values():
                     window.close()
 
             signal.signal(signal.SIGINT, _sigint_handler)
