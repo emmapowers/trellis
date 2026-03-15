@@ -967,7 +967,6 @@ def Td(
     inner_text: str,
     /,
     *,
-    abbr: str | None = None,
     about: str | None = None,
     access_key: str | None = None,
     align: Literal["left", "center", "right", "justify", "char"] | None = None,
@@ -1069,7 +1068,6 @@ def Td(
     rev: str | None = None,
     role: Role | None = None,
     row_span: int | float | None = None,
-    scope: str | None = None,
     security: str | None = None,
     slot: str | None = None,
     spell_check: bool | None = None,
@@ -1122,7 +1120,6 @@ def Td(
 @overload
 def Td(
     *,
-    abbr: str | None = None,
     about: str | None = None,
     access_key: str | None = None,
     align: Literal["left", "center", "right", "justify", "char"] | None = None,
@@ -1224,7 +1221,6 @@ def Td(
     rev: str | None = None,
     role: Role | None = None,
     row_span: int | float | None = None,
-    scope: str | None = None,
     security: str | None = None,
     slot: str | None = None,
     spell_check: bool | None = None,

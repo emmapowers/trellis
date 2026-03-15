@@ -200,12 +200,10 @@ class MediaRule:
     ) -> None: ...
 
 class Style:
-    """Generated typing stub for `trellis.html.Style`."""
+    """Generated typing stub for `trellis.html.Css` (inline CSS properties)."""
 
     props: builtins.dict[builtins.str, Any]
     vars: builtins.dict[builtins.str, StyleScalar]
-    selectors: builtins.dict[builtins.str, StyleInput]
-    media: builtins.list[MediaRule]
     accent_color: ColorValue | None
     align_content: CssRawString | None
     align_items: AlignItems | None
@@ -1777,6 +1775,19 @@ class Style:
         zoom: CssRawString | None = None,
     ) -> None: ...
 
+Css = Style
+
+class CssClass:
+    """Named CSS class with selectors and media queries."""
+
+    class_name: builtins.str
+    props: builtins.dict[builtins.str, Any]
+    vars: builtins.dict[builtins.str, StyleScalar]
+    selectors: builtins.dict[builtins.str, CssInput]
+    media: builtins.list[MediaRule]
+    def __init__(self, class_name: builtins.str, /, **kwargs: Any) -> None: ...
+    def __str__(self) -> builtins.str: ...
+
 def raw(value: builtins.str) -> CssRawString: ...
 def color(value: builtins.str) -> CssColor: ...
 def px(value: builtins.int | builtins.float) -> CssLength: ...
@@ -1870,42 +1881,3 @@ def media(
     query: builtins.str | None = None,
     **feature_values: Unpack[_MediaRuleKwargs],
 ) -> MediaRule: ...
-
-Css = Style
-
-class CssClass:
-    """Named CSS class with selectors and media queries.
-
-    Declare a class with hover/focus/media rules, then use ``str(...)``
-    to get the CSS rules for a ``<style>`` element, and ``.class_name``
-    to apply the class to elements.
-    """
-
-    class_name: builtins.str
-    props: builtins.dict[builtins.str, Any]
-    vars: builtins.dict[builtins.str, StyleScalar]
-    selectors: builtins.dict[builtins.str, CssInput]
-    media: builtins.list[MediaRule]
-    def __init__(
-        self,
-        class_name: builtins.str,
-        /,
-        *,
-        vars: builtins.dict[builtins.str, StyleScalar] | None = None,
-        selectors: builtins.dict[builtins.str, CssInput] | None = None,
-        media: (builtins.list[MediaRule] | builtins.dict[builtins.str, CssInput] | None) = None,
-        hover: Style | None = None,
-        focus: Style | None = None,
-        focus_visible: Style | None = None,
-        focus_within: Style | None = None,
-        active: Style | None = None,
-        visited: Style | None = None,
-        disabled: Style | None = None,
-        checked: Style | None = None,
-        placeholder: Style | None = None,
-        before: Style | None = None,
-        after: Style | None = None,
-        selection: Style | None = None,
-        **kwargs: Any,
-    ) -> None: ...
-    def __str__(self) -> builtins.str: ...

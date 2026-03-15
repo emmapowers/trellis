@@ -49,7 +49,9 @@ def test_css_class_compiles_hover_media_and_selectors() -> None:
     assert "padding:24px" in css
 
 
-def test_style_normalizes_raw_dict_keys(rendered) -> None:
+def test_style_preserves_raw_dict_keys(rendered) -> None:
+    """Raw dict style is the escape hatch — keys pass through verbatim."""
+
     @component
     def App() -> None:
         h.Div(
@@ -62,7 +64,7 @@ def test_style_normalizes_raw_dict_keys(rendered) -> None:
     result = rendered(App)
     div = result.tree["children"][0]
 
-    assert div["props"]["style"] == {"background-color": "red", "border-radius": "8px"}
+    assert div["props"]["style"] == {"backgroundColor": "red", "border_radius": "8px"}
 
 
 def test_style_serializes_modern_color_helpers(rendered) -> None:

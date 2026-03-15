@@ -106,13 +106,15 @@ def _compile_inline(style_input: tp.Any) -> StyleDict:
         return {}
 
     if isinstance(style_input, Mapping):
-        style = Css(style_input)
-    elif isinstance(style_input, Css):
-        style = style_input
-    else:
-        raise TypeError(f"Unsupported style value: {style_input!r}")
-
-    return _compile_css_props(style.props, style.vars)
+        # Raw mappings are the escape hatch — preserve keys verbatim
+        return {
+            str(name): _serialize_value(value, auto_px=False)
+            for name, value in style_input.items()
+            if value is not None
+        }
+    if isinstance(style_input, Css):
+        return _compile_css_props(style_input.props, style_input.vars)
+    raise TypeError(f"Unsupported style value: {style_input!r}")
 
 
 def _compile_css_props(props: dict[str, tp.Any], vars: dict[str, tp.Any]) -> StyleDict:

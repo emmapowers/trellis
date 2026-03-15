@@ -454,6 +454,18 @@ function attribute_default(tag_name: string, prop_name: string): string | number
   return ATTRIBUTE_DEFAULTS.get(`${tag_name}:${prop_name}`);
 }
 
+// Attributes that React types incorrectly assign to elements.
+// These are excluded from the generated stubs to match the HTML spec.
+const EXCLUDED_ELEMENT_ATTRIBUTES = new Map<string, Set<string>>([
+  // abbr and scope are Th-only attributes; React's TdHTMLAttributes
+  // incorrectly includes them.
+  ["td", new Set(["abbr", "scope"])],
+]);
+
+function should_exclude_attribute(tag_name: string, prop_name: string): boolean {
+  return EXCLUDED_ELEMENT_ATTRIBUTES.get(tag_name)?.has(prop_name) ?? false;
+}
+
 function attribute_type_override(tag_name: string, prop_name: string): TypeExpr | undefined {
   if (tag_name === "table" && prop_name === "frame") {
     return {
@@ -692,6 +704,7 @@ export async function build_ir_document(): Promise<IrDocument> {
 
     const prop_names = [...surface.attributes.keys()]
       .filter((prop_name) => is_supported_prop(prop_name))
+      .filter((prop_name) => !should_exclude_attribute(config.tag_name, prop_name))
       .sort(compare_prop_names);
 
     for (const prop_name of prop_names) {

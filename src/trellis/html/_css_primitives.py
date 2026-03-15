@@ -10,6 +10,7 @@ returned by ``h.raw()``; it is accepted wherever any CSS value is needed.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite as _isfinite
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +75,10 @@ class CssColor:
 
 def format_number(value: int | float) -> str:
     """Format a number for CSS output, dropping unnecessary decimals."""
+    if isinstance(value, bool):
+        raise TypeError("Boolean values are not valid CSS numbers.")
+    if isinstance(value, float) and not _isfinite(value):
+        raise ValueError("CSS numbers must be finite.")
     if isinstance(value, int) or value.is_integer():
         return str(int(value))
     return format(value, "g")
