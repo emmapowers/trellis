@@ -5,12 +5,14 @@ from __future__ import annotations
 import typing as tp
 
 from trellis.core.components.react import react
-from trellis.core.components.style_props import Margin
+from trellis.html._style_runtime import SpacingInput, StyleInput
+from trellis.widgets._style_props import widget_style_props
 
 _RECHARTS_PACKAGES = {"recharts": "3.6.0"}
 _UPLOT_PACKAGES = {"uplot": "1.6.31"}
 
 
+@widget_style_props("margin", "flex")
 @react("client/TimeSeriesChart.tsx", packages=_UPLOT_PACKAGES)
 def TimeSeriesChart(
     *,
@@ -21,10 +23,10 @@ def TimeSeriesChart(
     title: str | None = None,
     show_legend: bool = True,
     show_tooltip: bool = True,
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """High-performance time-series chart using uPlot.
 
@@ -44,7 +46,7 @@ def TimeSeriesChart(
         title: Optional chart title.
         show_legend: Whether to show the legend. Defaults to True.
         show_tooltip: Whether to show tooltip on hover. Defaults to True.
-        margin: Margin around the chart (Margin dataclass).
+        margin: Margin around the chart (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -67,6 +69,7 @@ def TimeSeriesChart(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/LineChart.tsx", packages=_RECHARTS_PACKAGES)
 def LineChart(
     *,
@@ -80,10 +83,10 @@ def LineChart(
     show_tooltip: bool = True,
     colors: list[str] | None = None,
     curve_type: tp.Literal["linear", "monotone", "step"] = "monotone",
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Line chart using Recharts.
 
@@ -102,7 +105,7 @@ def LineChart(
         show_tooltip: Whether to show tooltip on hover. Defaults to True.
         colors: List of colors for each data key. Defaults to theme palette.
         curve_type: Line interpolation type. Defaults to "monotone".
-        margin: Margin around the chart (Margin dataclass).
+        margin: Margin around the chart (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -121,6 +124,7 @@ def LineChart(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/BarChart.tsx", packages=_RECHARTS_PACKAGES)
 def BarChart(
     *,
@@ -135,10 +139,10 @@ def BarChart(
     colors: list[str] | None = None,
     stacked: bool = False,
     layout: tp.Literal["horizontal", "vertical"] = "horizontal",
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Bar chart using Recharts.
 
@@ -156,7 +160,7 @@ def BarChart(
         colors: List of colors for each data key. Defaults to theme palette.
         stacked: Whether to stack bars. Defaults to False.
         layout: Bar orientation. Defaults to "horizontal".
-        margin: Margin around the chart (Margin dataclass).
+        margin: Margin around the chart (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -175,6 +179,7 @@ def BarChart(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/AreaChart.tsx", packages=_RECHARTS_PACKAGES)
 def AreaChart(
     *,
@@ -189,10 +194,10 @@ def AreaChart(
     colors: list[str] | None = None,
     stacked: bool = False,
     curve_type: tp.Literal["linear", "monotone", "step"] = "monotone",
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Area chart using Recharts.
 
@@ -210,7 +215,7 @@ def AreaChart(
         colors: List of colors for each data key. Defaults to theme palette.
         stacked: Whether to stack areas. Defaults to False.
         curve_type: Line interpolation type. Defaults to "monotone".
-        margin: Margin around the chart (Margin dataclass).
+        margin: Margin around the chart (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -219,6 +224,7 @@ def AreaChart(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/PieChart.tsx", packages=_RECHARTS_PACKAGES)
 def PieChart(
     *,
@@ -232,10 +238,10 @@ def PieChart(
     show_tooltip: bool = True,
     show_labels: bool = False,
     colors: list[str] | None = None,
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Pie/donut chart using Recharts.
 
@@ -253,7 +259,7 @@ def PieChart(
         show_tooltip: Whether to show tooltip on hover. Defaults to True.
         show_labels: Whether to show labels on segments. Defaults to False.
         colors: List of colors for segments. Defaults to theme palette.
-        margin: Margin around the chart (Margin dataclass).
+        margin: Margin around the chart (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -272,6 +278,7 @@ def PieChart(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/Sparkline.tsx")
 def Sparkline(
     *,
@@ -280,10 +287,10 @@ def Sparkline(
     height: int = 24,
     color: str | None = None,
     show_area: bool = False,
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Inline mini-chart for compact data visualization.
 
@@ -295,7 +302,7 @@ def Sparkline(
         height: Chart height in pixels. Defaults to 24.
         color: Line/area color. Defaults to theme accent color.
         show_area: Whether to fill area under the line. Defaults to False.
-        margin: Margin around the sparkline (Margin dataclass).
+        margin: Margin around the sparkline (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.

@@ -62,7 +62,7 @@ from trellis import widgets as w
 def Counter():
     count = state_var(0)
 
-    with w.Column(gap=12, style={"padding": "20px"}):
+    with w.Column(gap=12, padding=20):
         w.Heading(text="Trellis Counter", level=2)
         w.Label(text=f"Count: {count.value}", font_size=16)
         with w.Row(gap=8):

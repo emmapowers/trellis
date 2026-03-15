@@ -203,7 +203,7 @@ def App():
         else:
             for item in state.items:
                 with w.Row(gap=8, align="center"):
-                    w.Label(text=item, style={"flex": "1"})
+                    w.Label(text=item, style=h.Style(flex=1))
                     w.Button(text="Remove", on_click=lambda i=item: state.remove(i), variant="ghost")
 
         w.Button(text="Add Item", on_click=state.add)
@@ -299,6 +299,7 @@ Access the current theme and style components accordingly:
 <TrellisDemo
   title="Theme-Aware Component"
   code={`from trellis import component
+from trellis import html as h
 from trellis.app import TrellisApp, ClientState, theme
 from trellis import widgets as w
 
@@ -306,11 +307,11 @@ from trellis import widgets as w
 def ThemeAwareCard():
     state = ClientState.from_context()
 
-    with w.Card(style={
-        "backgroundColor": theme.bg_surface,
-        "border": f"1px solid {theme.border_default}",
-        "padding": "16px",
-    }):
+    with w.Card(style=h.Style(
+        background_color=theme.bg_surface,
+        border=f"1px solid {theme.border_default}",
+        padding=16,
+    )):
         w.Label(
             text=f"Current theme: {'Dark' if state.is_dark else 'Light'}",
             color=theme.text_primary,

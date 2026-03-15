@@ -1,0 +1,28 @@
+{
+  "name": "html-codegen",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "codegen:compare": "bun src/cli.ts compare",
+    "codegen:write": "bun src/cli.ts write"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "@types/react": "^19.2.14",
+    "@webref/css": "^8.4.0",
+    "@webref/elements": "^2.7.0",
+    "@webref/events": "^1.22.0",
+    "@webref/idl": "^3.73.2",
+    "css-tree": "^3.2.1",
+    "csstype": "^3.2.3",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
+    "webidl2": "^24.5.0",
+    "zod": "^4.1.12"
+  }
+}

@@ -33,7 +33,7 @@ class TestCardAndDivider:
         result = rendered(App)
 
         card = result.session.elements.get(result.root_element.child_ids[0])
-        assert card.properties["padding"] == 32
+        assert card.properties["style"] == {"padding": "32px"}
 
     def test_card_nested_in_layout(self, rendered) -> None:
         """Card can be nested inside layout widgets."""
@@ -75,7 +75,7 @@ class TestCardAndDivider:
         result = rendered(App)
 
         divider = result.session.elements.get(result.root_element.child_ids[0])
-        assert divider.properties["margin"] == 24
+        assert divider.properties["style"] == {"margin": "24px"}
         assert divider.properties["color"] == "#6366f1"
 
     def test_divider_vertical_orientation(self, rendered) -> None:
@@ -154,12 +154,12 @@ class TestHeadingWidget:
 
         @component
         def App() -> None:
-            Heading(text="Styled", style={"marginBottom": "16px"})
+            Heading(text="Styled", style={"margin-bottom": "16px"})
 
         result = rendered(App)
 
         heading = result.session.elements.get(result.root_element.child_ids[0])
-        assert heading.properties["style"] == {"marginBottom": "16px"}
+        assert heading.properties["style"] == {"margin-bottom": "16px"}
 
     def test_heading_default_level(self, rendered) -> None:
         """Heading without explicit level has no level in properties."""

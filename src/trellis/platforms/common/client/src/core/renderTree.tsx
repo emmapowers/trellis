@@ -6,6 +6,13 @@
  */
 
 import React from "react";
+import {
+  applyCompiledStyleProps,
+  toReactDomProps,
+  serializeEventArg,
+  PREVENT_DEFAULT_HANDLERS,
+  shouldLetBrowserHandleClick,
+} from "./htmlProps";
 import { SerializedElement, ElementKind, EventHandler, isCallbackRef, isMutableRef, Mutable } from "./types";
 
 /** Widget component type. */
@@ -14,209 +21,8 @@ export type WidgetComponent = React.ComponentType<any>;
 /** Widget registry for looking up components by type name. */
 export type WidgetRegistry = (typeName: string) => WidgetComponent | undefined;
 
-function camelToSnakeKey(key: string): string {
-  return key.replace(/[A-Z]/g, (char) => `_${char.toLowerCase()}`);
-}
-
-function snakeToCamelKey(key: string): string {
-  return key.replace(/_([a-z])/g, (_, char: string) => char.toUpperCase());
-}
-
-function convertDeepKeysToSnake(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(convertDeepKeysToSnake);
-  }
-
-  if (value && typeof value === "object" && value.constructor === Object) {
-    const obj = value as Record<string, unknown>;
-    return Object.fromEntries(
-      Object.entries(obj).map(([key, nestedValue]) => [
-        camelToSnakeKey(key),
-        convertDeepKeysToSnake(nestedValue),
-      ])
-    );
-  }
-
-  return value;
-}
-
-function domPropNameFromSnake(prop: string): string {
-  if (prop.startsWith("aria_") || prop.startsWith("data_")) {
-    return prop.replaceAll("_", "-");
-  }
-  return snakeToCamelKey(prop);
-}
-
-export function toReactDomProps(props: Record<string, unknown>): Record<string, unknown> {
-  const mapped: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(props)) {
-    mapped[domPropNameFromSnake(key)] = value;
-  }
-  return mapped;
-}
-
-/**
- * Extract serializable data from a DOM event.
- * Converts React SyntheticEvents to plain objects matching Python dataclasses.
- */
-function serializeEventArg(arg: unknown): unknown {
-  // Check if this looks like a React SyntheticEvent or DOM Event
-  if (arg && typeof arg === "object" && "type" in arg && "nativeEvent" in arg) {
-    // React SyntheticEvent - get the native event for instanceof checks
-    const syntheticEvent = arg as React.SyntheticEvent;
-    const nativeEvent = syntheticEvent.nativeEvent;
-    const eventType = syntheticEvent.type;
-
-    const base = {
-      type: eventType,
-      timestamp: syntheticEvent.timeStamp,
-    };
-
-    // Wheel events (check before MouseEvent since WheelEvent extends MouseEvent)
-    if (nativeEvent instanceof WheelEvent) {
-      return convertDeepKeysToSnake({
-        ...base,
-        clientX: nativeEvent.clientX,
-        clientY: nativeEvent.clientY,
-        screenX: nativeEvent.screenX,
-        screenY: nativeEvent.screenY,
-        button: nativeEvent.button,
-        buttons: nativeEvent.buttons,
-        altKey: nativeEvent.altKey,
-        ctrlKey: nativeEvent.ctrlKey,
-        shiftKey: nativeEvent.shiftKey,
-        metaKey: nativeEvent.metaKey,
-        deltaX: nativeEvent.deltaX,
-        deltaY: nativeEvent.deltaY,
-        deltaZ: nativeEvent.deltaZ,
-        deltaMode: nativeEvent.deltaMode,
-      });
-    }
-
-    // Drag events (check before MouseEvent since DragEvent extends MouseEvent)
-    // Guard with typeof check for environments where DragEvent is not defined (e.g. jsdom)
-    if (typeof DragEvent !== "undefined" && nativeEvent instanceof DragEvent) {
-      const dt = nativeEvent.dataTransfer;
-      return convertDeepKeysToSnake({
-        ...base,
-        clientX: nativeEvent.clientX,
-        clientY: nativeEvent.clientY,
-        screenX: nativeEvent.screenX,
-        screenY: nativeEvent.screenY,
-        button: nativeEvent.button,
-        buttons: nativeEvent.buttons,
-        altKey: nativeEvent.altKey,
-        ctrlKey: nativeEvent.ctrlKey,
-        shiftKey: nativeEvent.shiftKey,
-        metaKey: nativeEvent.metaKey,
-        dataTransfer: dt ? {
-          dropEffect: dt.dropEffect,
-          effectAllowed: dt.effectAllowed,
-          types: Array.from(dt.types),
-          files: Array.from(dt.files).map(f => ({ name: f.name, size: f.size, type: f.type })),
-        } : null,
-      });
-    }
-
-    // Scroll events - extract scroll position from currentTarget
-    if (eventType === "scroll") {
-      const target = syntheticEvent.currentTarget as HTMLElement | null;
-      return convertDeepKeysToSnake({
-        ...base,
-        scrollTop: target?.scrollTop ?? 0,
-        scrollLeft: target?.scrollLeft ?? 0,
-        scrollWidth: target?.scrollWidth ?? 0,
-        scrollHeight: target?.scrollHeight ?? 0,
-        clientWidth: target?.clientWidth ?? 0,
-        clientHeight: target?.clientHeight ?? 0,
-      });
-    }
-
-    // Mouse events
-    if (nativeEvent instanceof MouseEvent) {
-      return convertDeepKeysToSnake({
-        ...base,
-        clientX: nativeEvent.clientX,
-        clientY: nativeEvent.clientY,
-        screenX: nativeEvent.screenX,
-        screenY: nativeEvent.screenY,
-        button: nativeEvent.button,
-        buttons: nativeEvent.buttons,
-        altKey: nativeEvent.altKey,
-        ctrlKey: nativeEvent.ctrlKey,
-        shiftKey: nativeEvent.shiftKey,
-        metaKey: nativeEvent.metaKey,
-      });
-    }
-
-    // Keyboard events
-    if (nativeEvent instanceof KeyboardEvent) {
-      return convertDeepKeysToSnake({
-        ...base,
-        key: nativeEvent.key,
-        code: nativeEvent.code,
-        altKey: nativeEvent.altKey,
-        ctrlKey: nativeEvent.ctrlKey,
-        shiftKey: nativeEvent.shiftKey,
-        metaKey: nativeEvent.metaKey,
-        repeat: nativeEvent.repeat,
-      });
-    }
-
-    // Input/Change events - extract target value
-    if (
-      "target" in syntheticEvent &&
-      syntheticEvent.target &&
-      typeof syntheticEvent.target === "object"
-    ) {
-      const target = syntheticEvent.target as
-        | HTMLInputElement
-        | HTMLTextAreaElement
-        | HTMLSelectElement;
-      return {
-        ...base,
-        value: target.value ?? "",
-        checked: "checked" in target ? target.checked : false,
-      };
-    }
-
-    // Generic event fallback
-    return base;
-  }
-
-  // Non-event args pass through as-is
-  return arg;
-}
-
-/** Event handler prop names that should call preventDefault before invoking callback. */
-const PREVENT_DEFAULT_HANDLERS = new Set(["on_click", "on_submit", "on_drag_over", "on_drop"]);
-
-/**
- * Check if a click event should be handled by the browser instead of our handler.
- * This allows Cmd+click (Mac) / Ctrl+click (Win/Linux) to open links in new tabs.
- */
-function shouldLetBrowserHandleClick(event: unknown): boolean {
-  if (!event || typeof event !== "object") return false;
-
-  const syntheticEvent = event as React.MouseEvent;
-  const nativeEvent = syntheticEvent.nativeEvent;
-
-  // Only applies to mouse events
-  if (!(nativeEvent instanceof MouseEvent)) return false;
-
-  // Check if clicking on an anchor with href
-  const target = syntheticEvent.currentTarget;
-  if (!(target instanceof HTMLAnchorElement) || !target.href) return false;
-
-  // Middle-click (button 1) opens in new tab
-  if (nativeEvent.button === 1) return true;
-
-  // Modifier keys: Cmd (Mac), Ctrl (Win/Linux), Shift (new window), Alt
-  const { metaKey, ctrlKey, shiftKey, altKey } = nativeEvent;
-  if (metaKey || ctrlKey || shiftKey || altKey) return true;
-
-  return false;
-}
+// Re-export for consumers that imported from this module
+export { applyCompiledStyleProps, toReactDomProps } from "./htmlProps";
 
 /**
  * Transform props, converting callback refs to handlers and mutable refs to Mutable objects.
@@ -284,7 +90,7 @@ export function renderNode(
   );
 
   // Process props (transforms callback refs to functions)
-  const processedProps = processProps(node.props, onEvent);
+  const processedProps = applyCompiledStyleProps(processProps(node.props, onEvent));
 
   // Plain text nodes
   if (node.kind === ElementKind.TEXT) {

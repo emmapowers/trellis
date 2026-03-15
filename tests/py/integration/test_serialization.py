@@ -1,7 +1,10 @@
 """Tests for Element tree serialization."""
 
+import typing as tp
+
 import trellis.html as h
 from trellis.core.components.composition import component
+from trellis.core.components.react import react
 from trellis.platforms.common.serialization import parse_callback_id, serialize_element
 from trellis.widgets.basic import Button
 
@@ -132,20 +135,19 @@ class TestSerializeNode:
         assert called == [True]
 
     def test_serialize_various_prop_types(self, rendered) -> None:
-        """Various prop types serialize correctly (using HTML element)."""
+        """Strict HTML data mappings serialize under the data prop."""
 
         @component
         def App() -> None:
-            # Use HTML element (a ReactComponent) to test prop serialization
             with h.Div(
                 id="test",
-                data_string="hello",
-                data_int=42,
-                data_float=3.14,
-                data_bool=True,
-                data_none=None,
-                data_list=[1, 2, 3],
-                data_dict={"a": 1, "b": 2},
+                data={
+                    "string": "hello",
+                    "int": 42,
+                    "float": 3.14,
+                    "bool": True,
+                    "none": None,
+                },
             ):
                 pass
 
@@ -156,16 +158,16 @@ class TestSerializeNode:
         props = child_serialized["props"]
 
         assert props["id"] == "test"
-        assert props["data_string"] == "hello"
-        assert props["data_int"] == 42
-        assert props["data_float"] == 3.14
-        assert props["data_bool"] is True
-        assert props["data_none"] is None
-        assert props["data_list"] == [1, 2, 3]
-        assert props["data_dict"] == {"a": 1, "b": 2}
+        assert props["data"] == {
+            "string": "hello",
+            "int": 42,
+            "float": 3.14,
+            "bool": True,
+            "none": None,
+        }
 
     def test_serialize_nested_callbacks(self, rendered) -> None:
-        """Callbacks nested in lists/dicts are handled (using HTML element)."""
+        """Callbacks nested in list props serialize for typed React components."""
         handler1_calls = []
         handler2_calls = []
 
@@ -175,18 +177,20 @@ class TestSerializeNode:
         def handler2() -> None:
             handler2_calls.append(2)
 
+        @react("client/TestNestedCallbacks.tsx")
+        def NestedCallbacks(*, handlers: list[tp.Callable[[], None]]) -> None:
+            pass
+
         @component
         def App() -> None:
-            # Use HTML element with data prop containing list of callbacks
-            with h.Div(data_handlers=[handler1, handler2]):
-                pass
+            NestedCallbacks(handlers=[handler1, handler2])
 
         result = rendered(App)
 
         child = result.session.elements.get(result.root_element.child_ids[0])
         child_serialized = serialize_element(child, result.session)
 
-        handlers = child_serialized["props"]["data_handlers"]
+        handlers = child_serialized["props"]["handlers"]
         assert len(handlers) == 2
         assert "__callback__" in handlers[0]
         assert "__callback__" in handlers[1]

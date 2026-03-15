@@ -1,6 +1,7 @@
 """Root application component for widget showcase."""
 
-from trellis import Margin, Padding, Route, Routes, component, router
+from trellis import Route, Routes, component, router
+from trellis import html as h
 from trellis import widgets as w
 from trellis.app import App, get_config, theme
 from trellis.core.components.composition import CompositionComponent
@@ -87,35 +88,35 @@ def WidgetShowcase() -> None:
     active_tab = path.strip("/") or "layout"
     tabs = resolve_tabs()
 
-    with w.Column(gap=0, style={"height": "100vh"}):
+    with w.Column(gap=0, style=h.Style(height=h.vh(100))):
         # Header
         with w.Row(
             align="center",
             gap=12,
-            padding=Padding(x=24, y=16),
-            style={
-                "borderBottom": f"1px solid {theme.border_default}",
-                "backgroundColor": theme.bg_surface,
-                "flexShrink": "0",
-            },
+            padding=h.padding(16, 24),
+            style=h.Style(
+                border_bottom=f"1px solid {theme.border_default}",
+                background_color=theme.bg_surface,
+                flex_shrink=h.raw("0"),
+            ),
         ):
             w.Icon(name=IconName.LAYOUT_DASHBOARD, size=24, color=theme.accent_primary)
             w.Heading(text="Trellis Widget Showcase", level=2, flex=1)
             ThemeSwitcher()
 
         # Main content with sidebar tabs
-        with w.Row(gap=0, flex=1, style={"minHeight": "0", "alignItems": "stretch"}):
+        with w.Row(gap=0, flex=1, style=h.Style(min_height=0, align_items="stretch")):
             # Sidebar
             with w.Column(
                 gap=2,
                 width=200,
                 padding=12,
-                style={
-                    "borderRight": f"1px solid {theme.border_default}",
-                    "backgroundColor": theme.bg_page,
-                    "overflow": "auto",
-                    "flexShrink": "0",
-                },
+                style=h.Style(
+                    border_right=f"1px solid {theme.border_default}",
+                    background_color=theme.bg_page,
+                    overflow="auto",
+                    flex_shrink=h.raw("0"),
+                ),
             ):
                 for tab_id, label, _icon, _ in tabs:
                     is_active = active_tab == tab_id
@@ -128,14 +129,14 @@ def WidgetShowcase() -> None:
                         size="sm",
                         href=href,
                         full_width=True,
-                        style={"justifyContent": "flex-start"},
+                        style=h.Style(justify_content="flex-start"),
                     )
 
             # Content area
             with w.Column(
                 flex=1,
                 padding=24,
-                style={"overflow": "auto"},
+                style=h.Style(overflow="auto"),
             ):
                 with Routes():
                     # Default route shows Layout section
@@ -165,7 +166,7 @@ def SectionContent(
 ) -> None:
     """Render a section with header and content card."""
     # Section header
-    with w.Row(align="center", gap=8, margin=Margin(bottom=16)):
+    with w.Row(align="center", gap=8, style=h.Style(margin_bottom=16)):
         w.Icon(name=icon, size=20, color=theme.accent_primary)
         w.Heading(text=label, level=3)
 

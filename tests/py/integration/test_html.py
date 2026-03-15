@@ -77,18 +77,66 @@ class TestHtmlElements:
         assert p.properties["_text"] == "Paragraph text"
         assert span.properties["_text"] == "Inline text"
 
+    def test_generated_wrapper_accepts_permissive_kwargs(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Div(
+                data_testid="hero-shell",
+                camelCaseProp="allowed-at-runtime",
+                aria_label="Hero shell",
+            )
+
+        result = rendered(App)
+        div = result.session.elements.get(result.root_element.child_ids[0])
+
+        assert div.properties["data_testid"] == "hero-shell"
+        assert div.properties["camelCaseProp"] == "allowed-at-runtime"
+        assert div.properties["aria_label"] == "Hero shell"
+
+    def test_generated_wrapper_normalizes_trailing_underscore_props(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Div(is_="hero-card")
+
+        result = rendered(App)
+        div = result.session.elements.get(result.root_element.child_ids[0])
+
+        assert "is_" not in div.properties
+        assert div.properties["is"] == "hero-card"
+
+    def test_generated_wrapper_supports_data_mapping(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Div(data={"test-id": "hero", "active": True})
+
+        result = rendered(App)
+        div = result.session.elements.get(result.root_element.child_ids[0])
+
+        assert div.properties["data"] == {"test-id": "hero", "active": True}
+
+    def test_generated_wrapper_preserves_hybrid_text_behavior(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.P("hello")
+
+        result = rendered(App)
+        paragraph = result.session.elements.get(result.root_element.child_ids[0])
+
+        assert paragraph.component.name == "P"
+        assert paragraph.properties["_text"] == "hello"
+
     def test_element_with_style(self, rendered) -> None:
         """Elements accept style dict."""
 
         @component
         def App() -> None:
-            with h.Div(style={"backgroundColor": "red", "padding": "10px"}):
+            with h.Div(style={"background-color": "red", "padding": "10px"}):
                 pass
 
         result = rendered(App)
 
         div = result.session.elements.get(result.root_element.child_ids[0])
-        assert div.properties["style"] == {"backgroundColor": "red", "padding": "10px"}
+        assert div.properties["style"] == {"background-color": "red", "padding": "10px"}
 
     def test_element_with_class_name(self, rendered) -> None:
         """Elements accept class_name prop."""
@@ -435,6 +483,18 @@ class TestTextElementsAsContainers:
         p = result.session.elements.get(result.root_element.child_ids[0])
         assert p.properties["_text"] == "text content"
 
+    def test_text_hybrid_does_not_forward_unset_optional_props(self, rendered) -> None:
+        """Hybrid text wrappers should not serialize unset optional props."""
+
+        @component
+        def App() -> None:
+            h.P("text content")
+
+        result = rendered(App)
+
+        p = result.session.elements.get(result.root_element.child_ids[0])
+        assert p.properties == {"_text": "text content"}
+
     def test_p_as_empty_text_still_works(self, rendered) -> None:
         """P("") stays in text mode with explicit empty text."""
 
@@ -775,6 +835,29 @@ class TestNewTableElements:
 class TestNewFormElements:
     """Tests for new form elements."""
 
+    def test_button_and_label_use_generated_public_names(self, rendered) -> None:
+        @component
+        def App() -> None:
+            h.Label("Name", html_for="name-input")
+            with h.Label(html_for="nested-name-input"):
+                h.Input(id="nested-name-input", type="text")
+            h.Button("Save", type="submit")
+
+        result = rendered(App)
+        label = result.session.elements.get(result.root_element.child_ids[0])
+        nested_label = result.session.elements.get(result.root_element.child_ids[1])
+        button = result.session.elements.get(result.root_element.child_ids[2])
+
+        assert label.component.name == "Label"
+        assert label.properties["_text"] == "Name"
+        assert label.properties["html_for"] == "name-input"
+        assert nested_label.component.name == "Label"
+        assert nested_label.properties["html_for"] == "nested-name-input"
+        assert len(nested_label.child_ids) == 1
+        assert button.component.name == "Button"
+        assert button.properties["_text"] == "Save"
+        assert button.properties["type"] == "submit"
+
     def test_fieldset_legend(self, rendered) -> None:
         @component
         def App() -> None:
@@ -861,13 +944,15 @@ class TestNewFormElements:
 class TestNewMediaElements:
     """Tests for media/embed elements."""
 
-    def test_img_requires_src_raises_type_error(self, rendered) -> None:
+    def test_img_allows_missing_src(self, rendered) -> None:
         @component
         def App() -> None:
             h.Img()
 
-        with pytest.raises(TypeError, match="missing a required keyword-only argument: 'src'"):
-            rendered(App)
+        result = rendered(App)
+        image = result.session.elements.get(result.root_element.child_ids[0])
+        assert image.component.name == "Img"
+        assert "src" not in image.properties
 
     def test_video_container(self, rendered) -> None:
         @component

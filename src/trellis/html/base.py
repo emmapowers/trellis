@@ -17,14 +17,11 @@ from trellis.core.rendering.element import ContainerElement, Element
 from trellis.core.rendering.traits import ContainerTrait
 
 __all__ = [
+    "HtmlContainerElement",
     "HtmlContainerTrait",
     "HtmlElement",
-    "Style",
     "html_element",
 ]
-
-# Type alias for inline styles
-Style = dict[str, str | int | float]
 
 # ParamSpec for preserving function signatures through the decorator
 P = ParamSpec("P")
@@ -49,14 +46,10 @@ class HtmlContainerTrait(ContainerTrait):
         return super().__enter__()
 
 
-# Default element class for HTML container elements.
-# Uses HtmlContainerTrait (not plain ContainerTrait) so that the hybrid
-# text/container check is enforced for all HTML elements.
-HtmlContainerElement = type(
-    "HtmlContainerElement",
-    (HtmlContainerTrait, ContainerElement),
-    {},
-)
+class HtmlContainerElement(HtmlContainerTrait, ContainerElement):
+    """HTML container element with hybrid text/container enforcement."""
+
+    pass
 
 
 class HtmlElement(Component):
@@ -129,7 +122,7 @@ def html_element(
     is_container: Literal[True],
     name: str | None = None,
     element_class: Literal[None] = None,
-) -> Callable[[Callable[P, tp.Any]], Callable[P, ContainerElement]]: ...
+) -> Callable[[Callable[P, tp.Any]], Callable[P, HtmlContainerElement]]: ...
 
 
 @overload
@@ -179,6 +172,7 @@ def html_element(
     Returns:
         A decorator that creates a callable returning Elements
     """
+    resolved_element_class: type[Element] | type[E]
     if element_class is not None:
         resolved_element_class = element_class
         if is_container and HtmlContainerTrait not in element_class.__mro__:
@@ -208,7 +202,7 @@ def html_element(
             None,
         )
         has_text_keyword = "_text" in signature.parameters
-        has_text_positional = "text" in signature.parameters
+        has_text_positional = "inner_text" in signature.parameters
 
         # Create a generated class with the element name
         class _Generated(HtmlElement):
@@ -248,22 +242,34 @@ def html_element(
             bound = signature.bind(*validation_args, **validation_kwargs)
             if has_text_keyword or has_text_positional:
                 # Preserve previous hybrid-wrapper behavior where default props
-                # were forwarded (e.g. HtmlButton(type="button")).
+                # were forwarded (e.g. Button(type="button")).
                 bound.apply_defaults()
             props = dict(bound.arguments)
             if var_keyword_param and var_keyword_param in props:
                 var_kwargs = props.pop(var_keyword_param)
                 props.update(var_kwargs)
 
-            if "text" in props:
-                text_value = props.pop("text")
+            if "inner_text" in props:
+                text_value = props.pop("inner_text")
                 if text_value is not None:
                     props["_text"] = text_value
 
             if "_text" in props and props["_text"] is None:
                 del props["_text"]
 
-            return _singleton._place(**props)
+            normalized_props: dict[str, tp.Any] = {}
+            for key, value in props.items():
+                if value is None:
+                    continue
+                normalized_key = key if key == "data_" else key.removesuffix("_")
+                if normalized_key in normalized_props:
+                    raise TypeError(
+                        f"{element_name}() received duplicate keyword arguments after "
+                        f"normalization ({normalized_key})."
+                    )
+                normalized_props[normalized_key] = value
+
+            return _singleton._place(**normalized_props)
 
         # Expose the underlying component for introspection
         wrapper._component = _singleton  # type: ignore[attr-defined]

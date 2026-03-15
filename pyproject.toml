@@ -62,6 +62,7 @@ dev = [
     "pybun>=1.3.10",
     "rust-just>=1.46",
     "playwright>=1.57.0,<2",
+    "build>=1.4.0",
 ]
 
 [project.urls]
@@ -156,6 +157,9 @@ exclude = [
     "**/.workspace/",
     "**/.trellis/",
     "**/node_modules/",
+    # Implementation files that have .pyi stubs; checking the .py alongside
+    # the stub causes false-positive Self-type mismatches in basedpyright.
+    "src/trellis/html/_style_runtime.py",
 ]
 reportMissingImports = "warning"
 executionEnvironments = [

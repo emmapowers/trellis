@@ -7,7 +7,16 @@
  */
 
 import React from "react";
-import { useNode, useRootId, NodeData, processProps, toReactDomProps, ElementKind, store } from "./core";
+import {
+  applyCompiledStyleProps,
+  useNode,
+  useRootId,
+  NodeData,
+  processProps,
+  toReactDomProps,
+  ElementKind,
+  store,
+} from "./core";
 import { getWidget } from "./widgets";
 import { useTrellisClient } from "./TrellisContext";
 
@@ -61,8 +70,8 @@ const NodeRenderer = React.memo(function NodeRenderer({
   }
 
   // Process props (transforms callback refs to functions)
-  const processedProps = processProps(node.props, (callbackId, args) =>
-    client.sendEvent(callbackId, args)
+  const processedProps = applyCompiledStyleProps(
+    processProps(node.props, (callbackId, args) => client.sendEvent(callbackId, args))
   );
 
   // Recursively render children by ID, wrapped with type metadata for compound components
@@ -71,8 +80,10 @@ const NodeRenderer = React.memo(function NodeRenderer({
     const componentType = childNode?.type ?? "Unknown";
     // Process props (convert callback refs to functions) for compound component inspection
     const componentProps = childNode
-      ? processProps(childNode.props, (callbackId, args) =>
-          client.sendEvent(callbackId, args)
+      ? applyCompiledStyleProps(
+          processProps(childNode.props, (callbackId, args) =>
+            client.sendEvent(callbackId, args)
+          )
         )
       : {};
     return (

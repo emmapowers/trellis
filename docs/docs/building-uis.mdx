@@ -188,21 +188,25 @@ w.TextInput(value=mutable(state.name), placeholder="Enter name")
 
 ### Inline Styles
 
-Pass a `style` dictionary to any element:
+Use `h.Style(...)` for typed, IDE-autocompleted CSS with automatic `px` conversion for numeric values:
 
 ```python
-h.Div(style={
-    "backgroundColor": "#f0f0f0",
-    "padding": "16px",
-    "borderRadius": "8px",
-})
+h.Div(
+    style=h.Style(
+        background_color="#f0f0f0",
+        padding=16,        # → 16px
+        border_radius=8,   # → 8px
+    )
+)
 ```
 
-Style property names use camelCase (like React), not kebab-case:
+`h.Style()` uses snake_case field names matching CSS properties: `background_color`, `font_size`, `border_radius`, etc.
 
-- `backgroundColor` not `background-color`
-- `fontSize` not `font-size`
-- `borderRadius` not `border-radius`
+Raw style dictionaries with kebab-case CSS names are also accepted as a fallback:
+
+```python
+h.Div(style={"background-color": "#f0f0f0", "padding": "16px"})
+```
 
 ### CSS Classes
 
@@ -219,24 +223,18 @@ h.Div(class_name="card card-primary")
   code={`from trellis import component
 from trellis import html as h
 
-CARD_STYLE = {
-    "backgroundColor": "#ffffff",
-    "border": "1px solid #e0e0e0",
-    "borderRadius": "8px",
-    "padding": "20px",
-    "boxShadow": "0 2px 4px rgba(0,0,0,0.1)",
-    "maxWidth": "300px",
-}
+CARD_STYLE = h.Style(
+    background_color="#ffffff",
+    border="1px solid #e0e0e0",
+    border_radius=8,
+    padding=20,
+    box_shadow="0 2px 4px rgba(0,0,0,0.1)",
+    max_width=300,
+)
 
-TITLE_STYLE = {
-    "margin": "0 0 8px 0",
-    "color": "#333",
-}
+TITLE_STYLE = h.Style(margin="0 0 8px 0", color="#333")
 
-TEXT_STYLE = {
-    "margin": "0",
-    "color": "#666",
-}
+TEXT_STYLE = h.Style(margin=0, color="#666")
 
 @component
 def StyledCard():
@@ -259,19 +257,19 @@ from trellis import widgets as w
 
 @component
 def SettingsPanel():
-    with h.Div(style={"padding": "20px", "fontFamily": "system-ui"}):
-        h.H1("Settings", style={"marginBottom": "20px"})
+    with h.Div(style=h.Style(padding=20, font_family="system-ui")):
+        h.H1("Settings", style=h.Style(margin_bottom=20))
 
         with w.Column(gap=12):
             with w.Row(gap=8, align="center"):
-                h.Span("Volume:", style={"width": "100px"})
+                h.Span("Volume:", style=h.Style(width=100))
                 w.Slider(value=50, min=0, max=100)
-                h.Span("50%", style={"width": "50px"})
+                h.Span("50%", style=h.Style(width=50))
 
             with w.Row(gap=8, align="center"):
-                h.Span("Brightness:", style={"width": "100px"})
+                h.Span("Brightness:", style=h.Style(width=100))
                 w.Slider(value=75, min=0, max=100)
-                h.Span("75%", style={"width": "50px"})
+                h.Span("75%", style=h.Style(width=50))
 
             with w.Row(gap=8):
                 w.Button(text="Reset", variant="outline")
@@ -285,29 +283,29 @@ App = SettingsPanel`}
 ### Centering Content
 
 ```python
-h.Div(style={
-    "display": "flex",
-    "justifyContent": "center",
-    "alignItems": "center",
-    "minHeight": "100vh",
-})
+h.Div(style=h.Style(
+    display="flex",
+    justify_content="center",
+    align_items="center",
+    min_height=h.vh(100),
+))
 ```
 
 ### Grid Layout
 
 ```python
-h.Div(style={
-    "display": "grid",
-    "gridTemplateColumns": "repeat(3, 1fr)",
-    "gap": "16px",
-})
+h.Div(style=h.Style(
+    display="grid",
+    grid_template_columns="repeat(3, 1fr)",
+    gap=16,
+))
 ```
 
 ### Spacing
 
 ```python
-h.Div(style={"marginBottom": "16px"})
-h.Div(style={"padding": "8px 16px"})
+h.Div(style=h.Style(margin_bottom=16))
+h.Div(style=h.Style(padding=h.padding(8, 16)))
 ```
 
 ## Next Steps

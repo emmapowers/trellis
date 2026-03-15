@@ -18,11 +18,11 @@ from trellis.app import theme
 from trellis import html as h
 
 h.Div(
-    style={
-        "backgroundColor": theme.bg_surface,
-        "color": theme.text_primary,
-        "border": f"1px solid {theme.border_default}",
-    }
+    style=h.Style(
+        background_color=theme.bg_surface,
+        color=theme.text_primary,
+        border=f"1px solid {theme.border_default}",
+    )
 )
 ```
 
@@ -88,11 +88,11 @@ from trellis.app import theme
 from trellis import html as h
 
 h.Div(
-    style={
-        "backgroundColor": theme.bg_surface,
-        "color": theme.text_primary,
-        "border": f"1px solid {theme.border_default}",
-    }
+    style=h.Style(
+        background_color=theme.bg_surface,
+        color=theme.text_primary,
+        border=f"1px solid {theme.border_default}",
+    )
 )
 ```
 
@@ -118,6 +118,7 @@ For logic that depends on the current theme:
   title="Conditional Styling"
   code={`from trellis import component
 from trellis.app import TrellisApp, ClientState
+from trellis import html as h
 from trellis import widgets as w
 from trellis.app import theme
 
@@ -125,7 +126,7 @@ from trellis.app import theme
 def ThemeAwareCard():
     state = ClientState.from_context()
 
-    with w.Card(style={"padding": "16px"}):
+    with w.Card(style=h.Style(padding=16)):
         w.Heading(text="Theme-Aware Card", level=3)
         w.Label(
             text=f"Current theme: {'Dark' if state.is_dark else 'Light'}",

@@ -61,7 +61,7 @@ class TestLayoutWidgets:
 
         column = result.session.elements.get(result.root_element.child_ids[0])
         assert column.properties["gap"] == 16
-        assert column.properties["padding"] == 8
+        assert column.properties["style"] == {"padding": "8px"}
 
     def test_nested_layout(self, rendered) -> None:
         """Layouts can be nested."""

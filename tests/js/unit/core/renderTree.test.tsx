@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { render, screen } from "../../test-utils";
-import { processProps, renderNode } from "@common/core/renderTree";
+import { processProps, renderNode, toReactDomProps } from "@common/core/renderTree";
 import { ElementKind, SerializedElement } from "@common/core/types";
 
 describe("processProps", () => {
@@ -154,6 +154,11 @@ describe("processProps", () => {
       currentTarget: document.createElement("button"),
       preventDefault: vi.fn(),
       timeStamp: 1234,
+      bubbles: true,
+      cancelable: false,
+      defaultPrevented: false,
+      eventPhase: 0,
+      isTrusted: false,
     };
 
     (result.on_click as (e: unknown) => void)(mockEvent);
@@ -163,11 +168,53 @@ describe("processProps", () => {
       [
         expect.objectContaining({
           type: "click",
-          timestamp: 1234,
+          time_stamp: 1234,
+          bubbles: true,
+          cancelable: false,
+          default_prevented: false,
+          event_phase: 0,
+          is_trusted: false,
           client_x: 15,
           client_y: 25,
           alt_key: false,
           ctrl_key: false,
+        }),
+      ]
+    );
+  });
+
+  it("serializes input events with source-native fields", () => {
+    const onEvent = vi.fn();
+    const props = {
+      on_input: { __callback__: "cb_input" },
+    };
+
+    const result = processProps(props, onEvent);
+    const nativeEvent = new InputEvent("input", {
+      data: "x",
+      bubbles: true,
+    });
+    const input = document.createElement("input");
+    const mockEvent = {
+      type: "input",
+      nativeEvent,
+      target: input,
+      currentTarget: input,
+      preventDefault: vi.fn(),
+      timeStamp: 4567,
+    };
+
+    (result.on_input as (e: unknown) => void)(mockEvent);
+
+    expect(onEvent).toHaveBeenCalledWith(
+      "cb_input",
+      [
+        expect.objectContaining({
+          type: "input",
+          time_stamp: 4567,
+          data: "x",
+          is_composing: false,
+          input_type: "",
         }),
       ]
     );
@@ -318,6 +365,78 @@ describe("processProps", () => {
   });
 });
 
+
+
+describe("compiled CSS runtime props", () => {
+  beforeEach(() => {
+    document.head.innerHTML = "";
+  });
+
+  it("maps DOM-style inline CSS to React style props", () => {
+    const props = toReactDomProps({
+      style: {
+        "border-radius": "8px",
+        "background-color": "red",
+      },
+    });
+
+    expect(props.style).toEqual({
+      borderRadius: "8px",
+      backgroundColor: "red",
+    });
+  });
+
+  it("preserves CSS custom properties verbatim in inline styles", () => {
+    const props = toReactDomProps({
+      style: {
+        "--paper": "oklch(0.98 0.01 95)",
+        "background-color": "var(--paper)",
+      },
+    });
+
+    expect(props.style).toEqual({
+      "--paper": "oklch(0.98 0.01 95)",
+      backgroundColor: "var(--paper)",
+    });
+  });
+
+  it("maps special DOM attribute names to the React runtime spellings", () => {
+    const props = toReactDomProps({
+      item_id: "story-1",
+      popover_target: "note-popover",
+      popover_target_action: "show",
+    });
+
+    expect(props.itemID).toBe("story-1");
+    expect(props.popovertarget).toBe("note-popover");
+    expect(props.popovertargetaction).toBe("show");
+  });
+
+  it("keeps escaped html attrs distinct from data-* mappings", () => {
+    const props = toReactDomProps({
+      data_: "/movie.swf",
+      data: { "asset-id": 1 },
+    });
+
+    expect(props.data).toBe("/movie.swf");
+    expect(props["data-asset-id"]).toBe(1);
+  });
+
+  it("does not inject dynamic style rules — CSS classes use StyleTag elements", () => {
+    const domProps = toReactDomProps({
+      class_name: "card-hover",
+      style: { color: "black" },
+    });
+    expect(domProps.className).toBe("card-hover");
+    expect(domProps.style).toEqual({ color: "black" });
+
+    // No dynamic style element should exist
+    const styleNode = document.head.querySelector('style[data-trellis-dynamic-styles="true"]');
+    expect(styleNode).toBeNull();
+  });
+});
+
+
 describe("renderNode", () => {
   const mockGetWidget = vi.fn();
   const mockOnEvent = vi.fn();
@@ -357,6 +476,21 @@ describe("renderNode", () => {
     const { container } = render(element);
 
     expect(container.querySelector(".test-class")).toBeInTheDocument();
+  });
+
+  it("expands data mappings to data-* DOM props", () => {
+    const domProps = toReactDomProps({
+      class_name: "test-class",
+      data: {
+        "test-id": "abc",
+        enabled: true,
+      },
+    });
+
+    expect(domProps.className).toBe("test-class");
+    expect(domProps["data-test-id"]).toBe("abc");
+    expect(domProps["data-enabled"]).toBe(true);
+    expect(domProps.data).toBeUndefined();
   });
 
   it("maps snake_case DOM attrs to browser prop names", () => {

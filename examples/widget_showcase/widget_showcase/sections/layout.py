@@ -1,6 +1,7 @@
 """Layout section of the widget showcase."""
 
 from trellis import component
+from trellis import html as h
 from trellis import widgets as w
 from trellis.app import theme
 
@@ -13,14 +14,17 @@ def RowLayout() -> None:
     """Horizontal flex container with justify options."""
     with w.Column(gap=8):
         w.Label(text="justify='start' (default)")
-        with w.Row(gap=8, padding=8, style={"backgroundColor": theme.bg_surface_raised}):
+        with w.Row(gap=8, padding=8, style=h.Style(background_color=theme.bg_surface_raised)):
             w.Button(text="A", size="sm")
             w.Button(text="B", size="sm")
             w.Button(text="C", size="sm")
 
         w.Label(text="justify='center'")
         with w.Row(
-            gap=8, justify="center", padding=8, style={"backgroundColor": theme.bg_surface_raised}
+            gap=8,
+            justify="center",
+            padding=8,
+            style=h.Style(background_color=theme.bg_surface_raised),
         ):
             w.Button(text="A", size="sm")
             w.Button(text="B", size="sm")
@@ -28,7 +32,10 @@ def RowLayout() -> None:
 
         w.Label(text="justify='between'")
         with w.Row(
-            gap=8, justify="between", padding=8, style={"backgroundColor": theme.bg_surface_raised}
+            gap=8,
+            justify="between",
+            padding=8,
+            style=h.Style(background_color=theme.bg_surface_raised),
         ):
             w.Button(text="A", size="sm")
             w.Button(text="B", size="sm")
@@ -46,7 +53,7 @@ def ColumnLayout() -> None:
                 align="start",
                 padding=8,
                 height=100,
-                style={"backgroundColor": theme.bg_surface_raised},
+                style=h.Style(background_color=theme.bg_surface_raised),
             ):
                 w.Button(text="A", size="sm")
                 w.Button(text="B", size="sm")
@@ -59,7 +66,7 @@ def ColumnLayout() -> None:
                 padding=8,
                 height=100,
                 width=120,
-                style={"backgroundColor": theme.bg_surface_raised},
+                style=h.Style(background_color=theme.bg_surface_raised),
             ):
                 w.Button(text="A", size="sm")
                 w.Button(text="B", size="sm")
@@ -72,7 +79,7 @@ def ColumnLayout() -> None:
                 padding=8,
                 height=100,
                 width=120,
-                style={"backgroundColor": theme.bg_surface_raised},
+                style=h.Style(background_color=theme.bg_surface_raised),
             ):
                 w.Button(text="A", size="sm")
                 w.Button(text="B", size="sm")
@@ -88,7 +95,7 @@ def LayoutDividers() -> None:
                 gap=12,
                 divider=True,
                 padding=8,
-                style={"backgroundColor": theme.bg_surface_raised},
+                style=h.Style(background_color=theme.bg_surface_raised),
             ):
                 w.Label(text="Item 1")
                 w.Label(text="Item 2")
@@ -100,7 +107,7 @@ def LayoutDividers() -> None:
                 gap=8,
                 divider=True,
                 padding=8,
-                style={"backgroundColor": theme.bg_surface_raised},
+                style=h.Style(background_color=theme.bg_surface_raised),
             ):
                 w.Label(text="Item 1")
                 w.Label(text="Item 2")
@@ -112,14 +119,17 @@ def DividerWidget() -> None:
     """Explicit divider widget examples in row and column layouts."""
     with w.Column(gap=12):
         w.Label(text="Horizontal divider")
-        with w.Column(gap=8, padding=8, style={"backgroundColor": theme.bg_surface_raised}):
+        with w.Column(gap=8, padding=8, style=h.Style(background_color=theme.bg_surface_raised)):
             w.Label(text="Top content")
             w.Divider()
             w.Label(text="Bottom content")
 
         w.Label(text="Vertical divider")
         with w.Row(
-            gap=12, align="center", padding=8, style={"backgroundColor": theme.bg_surface_raised}
+            gap=12,
+            align="center",
+            padding=8,
+            style=h.Style(background_color=theme.bg_surface_raised),
         ):
             w.Label(text="Left")
             w.Divider(orientation="vertical")
@@ -133,12 +143,12 @@ def SplitPaneLayout() -> None:
         split=0.4,
         min_size=100,
         height=220,
-        style={"border": f"1px solid {theme.border_default}", "borderRadius": "8px"},
+        style=h.Style(border=f"1px solid {theme.border_default}", border_radius=8),
     ):
-        with w.Column(gap=8, padding=12, style={"backgroundColor": theme.bg_surface_raised}):
+        with w.Column(gap=8, padding=12, style=h.Style(background_color=theme.bg_surface_raised)):
             w.Label(text="Left Pane", bold=True)
             w.Label(text="Use the divider to resize.")
-        with w.Column(gap=8, padding=12, style={"backgroundColor": theme.bg_surface}):
+        with w.Column(gap=8, padding=12, style=h.Style(background_color=theme.bg_surface)):
             w.Label(text="Right Pane", bold=True)
             w.Label(text="SplitPane keeps two resizable regions.")
 

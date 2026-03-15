@@ -6,9 +6,10 @@ import typing as tp
 
 from trellis.core.components.composition import component
 from trellis.core.components.react import react
-from trellis.core.components.style_props import Margin, Padding, Width
 from trellis.core.state.mutable import Mutable
+from trellis.html._style_runtime import SpacingInput, StyleInput, WidthInput
 from trellis.html.links import A
+from trellis.widgets._style_props import widget_style_props
 from trellis.widgets.icons import IconName
 
 if tp.TYPE_CHECKING:
@@ -18,6 +19,7 @@ if tp.TYPE_CHECKING:
 _ARIA_PACKAGES = {"react-aria": "3.35.0", "react-stately": "3.33.0"}
 
 
+@widget_style_props("padding", "margin", "width", "flex", "text_align", "font_weight")
 @react("client/Label.tsx")
 def Label(
     text: str = "",
@@ -28,12 +30,12 @@ def Label(
     italic: bool = False,
     text_align: tp.Literal["left", "center", "right"] | None = None,
     font_weight: tp.Literal["normal", "medium", "semibold", "bold"] | int | None = None,
-    padding: Padding | int | None = None,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    padding: SpacingInput | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Text display widget.
 
@@ -46,9 +48,9 @@ def Label(
         text_align: Text alignment ("left", "center", "right").
         font_weight: Font weight as name ("normal", "medium", "semibold", "bold")
             or numeric value (100-900).
-        padding: Padding around the text (Padding dataclass or int for all sides).
-        margin: Margin around the label (Margin dataclass).
-        width: Width of the label (Width dataclass, int for pixels, or str for CSS).
+        padding: Padding around the text (CSS padding value).
+        margin: Margin around the label (CSS margin value).
+        width: Width of the label (CSS width value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -76,10 +78,10 @@ def Button(
     variant: tp.Literal["primary", "secondary", "outline", "ghost", "danger"] = "primary",
     size: tp.Literal["sm", "md", "lg"] = "md",
     full_width: bool = False,
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Clickable button widget with modern styling.
 
@@ -98,7 +100,7 @@ def Button(
             - "danger": Red/destructive action
         size: Button size. One of "sm", "md" (default), "lg".
         full_width: Whether button should take full container width.
-        margin: Margin around the button (Margin dataclass).
+        margin: Margin around the button (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -148,6 +150,7 @@ def Button(
         )
 
 
+@widget_style_props("margin", "flex")
 @react("client/Button.tsx", export_name="Button", packages=_ARIA_PACKAGES)
 def _Button(
     text: str = "",
@@ -159,14 +162,15 @@ def _Button(
     variant: tp.Literal["primary", "secondary", "outline", "ghost", "danger"] = "primary",
     size: tp.Literal["sm", "md", "lg"] = "md",
     full_width: bool = False,
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     pass
 
 
+@widget_style_props("margin", "width", "flex")
 @react("client/Slider.tsx", packages=_ARIA_PACKAGES)
 def Slider(
     *,
@@ -175,11 +179,11 @@ def Slider(
     max: float = 100,
     step: float = 1,
     disabled: bool = False,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Range slider widget.
 
@@ -189,8 +193,8 @@ def Slider(
         max: Maximum value.
         step: Step increment.
         disabled: Whether the slider is disabled.
-        margin: Margin around the slider (Margin dataclass).
-        width: Width of the slider (Width dataclass, int for pixels, or str for CSS).
+        margin: Margin around the slider (CSS margin value).
+        width: Width of the slider (CSS width value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -205,17 +209,18 @@ def Slider(
     pass
 
 
+@widget_style_props("margin", "width", "flex")
 @react("client/TextInput.tsx", packages=_ARIA_PACKAGES)
 def TextInput(
     value: str | Mutable[str] = "",
     *,
     placeholder: str | None = None,
     disabled: bool = False,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Single-line text input widget.
 
@@ -223,8 +228,8 @@ def TextInput(
         value: Current input value. Use mutable(state.prop) for two-way binding.
         placeholder: Placeholder text when empty.
         disabled: Whether the input is disabled.
-        margin: Margin around the input (Margin dataclass).
-        width: Width of the input (Width dataclass, int for pixels, or str for CSS).
+        margin: Margin around the input (CSS margin value).
+        width: Width of the input (CSS width value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -239,6 +244,7 @@ def TextInput(
     pass
 
 
+@widget_style_props("margin", "width", "flex")
 @react("client/MultilineInput.tsx", packages=_ARIA_PACKAGES)
 def MultilineInput(
     value: str | Mutable[str] = "",
@@ -247,11 +253,11 @@ def MultilineInput(
     rows: int = 4,
     disabled: bool = False,
     read_only: bool = False,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Multi-line text input widget.
 
@@ -261,8 +267,8 @@ def MultilineInput(
         rows: Initial visible row count.
         disabled: Whether the input is disabled.
         read_only: Whether input text is read-only.
-        margin: Margin around the input (Margin dataclass).
-        width: Width of the input (Width dataclass, int for pixels, or str for CSS).
+        margin: Margin around the input (CSS margin value).
+        width: Width of the input (CSS width value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -273,6 +279,7 @@ def MultilineInput(
     pass
 
 
+@widget_style_props("margin", "width", "flex")
 @react("client/NumberInput.tsx", packages={**_ARIA_PACKAGES, "@internationalized/date": "3.5.6"})
 def NumberInput(
     *,
@@ -281,11 +288,11 @@ def NumberInput(
     max: float | None = None,
     step: float | None = None,
     disabled: bool = False,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Numeric input widget.
 
@@ -296,8 +303,8 @@ def NumberInput(
         max: Maximum allowed value.
         step: Step increment for value changes.
         disabled: Whether the input is disabled.
-        margin: Margin around the input (Margin dataclass).
-        width: Width of the input (Width dataclass, int for pixels, or str for CSS).
+        margin: Margin around the input (CSS margin value).
+        width: Width of the input (CSS width value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -312,16 +319,17 @@ def NumberInput(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/Checkbox.tsx", packages=_ARIA_PACKAGES)
 def Checkbox(
     *,
     checked: bool | Mutable[bool] = False,
     label: str | None = None,
     disabled: bool = False,
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Checkbox toggle widget.
 
@@ -329,7 +337,7 @@ def Checkbox(
         checked: Whether the checkbox is checked. Use mutable(state.prop) for two-way binding.
         label: Optional label text displayed next to the checkbox.
         disabled: Whether the checkbox is disabled.
-        margin: Margin around the checkbox (Margin dataclass).
+        margin: Margin around the checkbox (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -344,14 +352,15 @@ def Checkbox(
     pass
 
 
+@widget_style_props("margin")
 @react("client/Divider.tsx")
 def Divider(
     *,
     orientation: tp.Literal["horizontal", "vertical"] = "horizontal",
-    margin: int | None = None,
+    margin: SpacingInput | None = None,
     color: str | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Divider line for separating content.
 
@@ -375,6 +384,7 @@ def Divider(
     pass
 
 
+@widget_style_props("margin", "width", "flex")
 @react("client/Select.tsx", packages=_ARIA_PACKAGES)
 def Select(
     *,
@@ -382,11 +392,11 @@ def Select(
     options: list[dict[str, str]] | None = None,
     placeholder: str | None = None,
     disabled: bool = False,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Single-selection dropdown widget.
 
@@ -395,8 +405,8 @@ def Select(
         options: List of option dicts with "value" and "label" keys.
         placeholder: Placeholder text when no value selected.
         disabled: Whether the select is disabled.
-        margin: Margin around the select (Margin dataclass).
-        width: Width of the select (Width dataclass, int for pixels, or str for CSS).
+        margin: Margin around the select (CSS margin value).
+        width: Width of the select (CSS width value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -414,16 +424,17 @@ def Select(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/Heading.tsx")
 def Heading(
     text: str = "",
     *,
     level: tp.Literal[1, 2, 3, 4, 5, 6] = 1,
     color: str | None = None,
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Semantic heading widget.
 
@@ -433,7 +444,7 @@ def Heading(
         text: The heading text to display.
         level: Heading level from 1-6, corresponding to <h1>-<h6>. Defaults to 1.
         color: Text color (CSS color string).
-        margin: Margin around the heading (Margin dataclass).
+        margin: Margin around the heading (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -449,6 +460,7 @@ def Heading(
     pass
 
 
+@widget_style_props("margin", "width", "flex")
 @react("client/ProgressBar.tsx")
 def ProgressBar(
     *,
@@ -459,11 +471,11 @@ def ProgressBar(
     disabled: bool = False,
     color: str | None = None,
     height: int | None = None,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Progress bar widget.
 
@@ -477,8 +489,8 @@ def ProgressBar(
         disabled: Whether the progress bar is disabled (grayed out). Defaults to False.
         color: Fill color (CSS color string). Defaults to indigo (#6366f1).
         height: Bar height in pixels. Defaults to 8.
-        margin: Margin around the progress bar (Margin dataclass).
-        width: Width of the progress bar (Width dataclass, int for pixels, or str for CSS).
+        margin: Margin around the progress bar (CSS margin value).
+        width: Width of the progress bar (CSS width value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -494,6 +506,7 @@ def ProgressBar(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/StatusIndicator.tsx")
 def StatusIndicator(
     *,
@@ -501,10 +514,10 @@ def StatusIndicator(
     label: str | None = None,
     show_icon: bool = True,
     size: tp.Literal["sm", "md"] = "md",
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Status indicator with icon and optional label.
 
@@ -522,7 +535,7 @@ def StatusIndicator(
         label: Optional text label to display next to the icon.
         show_icon: Whether to show the status icon. Defaults to True.
         size: Icon and text size. One of "sm", "md" (default).
-        margin: Margin around the indicator (Margin dataclass).
+        margin: Margin around the indicator (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -539,16 +552,17 @@ def StatusIndicator(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/Badge.tsx")
 def Badge(
     text: str = "",
     *,
     variant: tp.Literal["default", "success", "error", "warning", "info"] = "default",
     size: tp.Literal["sm", "md"] = "sm",
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Small badge for counts or status labels.
 
@@ -564,7 +578,7 @@ def Badge(
             - "warning": Amber
             - "info": Blue
         size: Badge size. One of "sm" (default), "md".
-        margin: Margin around the badge (Margin dataclass).
+        margin: Margin around the badge (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -581,16 +595,17 @@ def Badge(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/Tooltip.tsx", is_container=True, packages=_ARIA_PACKAGES)
 def Tooltip(
     content: str = "",
     *,
     position: tp.Literal["top", "bottom", "left", "right"] = "top",
     delay: int = 200,
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Tooltip wrapper for hover hints.
 
@@ -605,7 +620,7 @@ def Tooltip(
             - "left": To the left of the element
             - "right": To the right of the element
         delay: Delay in milliseconds before showing tooltip. Defaults to 200.
-        margin: Margin around the tooltip wrapper (Margin dataclass).
+        margin: Margin around the tooltip wrapper (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply to the wrapper.
         style: Additional inline styles to apply to the wrapper.

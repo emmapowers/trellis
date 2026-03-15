@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from trellis import Margin, Padding, Route, Routes, component, router
+from trellis import Route, Routes, component, router
 from trellis import html as h
 from trellis import widgets as w
 from trellis.app import App, theme
@@ -12,36 +12,36 @@ from trellis.widgets import IconName, ThemeSwitcher
 @component
 def RouterDemo() -> None:
     """Main application with routing setup."""
-    with w.Column(gap=0, style={"height": "100vh"}):
+    with w.Column(gap=0, style=h.Style(height=h.vh(100))):
         # Header
         Header()
 
         # Main content
-        with w.Column(flex=1, padding=Padding(x=24, y=20), style={"overflow": "auto"}):
+        with w.Column(flex=1, padding=h.padding(20, 24), style=h.Style(overflow="auto")):
             with w.Row(gap=0):
                 w.Button(
-                    text="",
+                    text="Back",
                     icon=IconName.CHEVRON_LEFT,
                     on_click=router().go_back,
                     disabled=not router().can_go_back,
                     variant="ghost",
                     size="sm",
-                    style={"width": "16px", "padding": "0px"},
+                    style=h.Style(width=16, padding=0),
                 )
                 w.Button(
-                    text="",
+                    text="Forward",
                     icon=IconName.CHEVRON_RIGHT,
                     on_click=router().go_forward,
                     disabled=not router().can_go_forward,
                     variant="ghost",
                     size="sm",
-                    style={"width": "16px", "padding": "0px", "marginRight": "4px"},
+                    style=h.Style(width=16, padding=0, margin_right=4),
                 )
                 # Breadcrumb navigation
                 BreadcrumbNav()
 
             # Route content
-            with w.Card(padding=24, margin=Margin(top=16)):
+            with w.Card(padding=24, style=h.Style(margin_top=16)):
                 with Routes():
                     with Route(pattern="/"):
                         HomePage()
@@ -61,12 +61,12 @@ def Header() -> None:
     with w.Row(
         align="center",
         gap=16,
-        padding=Padding(x=24, y=12),
-        style={
-            "borderBottom": f"1px solid {theme.border_default}",
-            "backgroundColor": theme.bg_surface,
-            "flexShrink": "0",
-        },
+        padding=h.padding(12, 24),
+        style=h.Style(
+            border_bottom=f"1px solid {theme.border_default}",
+            background_color=theme.bg_surface,
+            flex_shrink=h.raw("0"),
+        ),
     ):
         # Logo/title
         with w.Row(align="center", gap=8):
@@ -148,7 +148,7 @@ def HomePage() -> None:
         w.Divider()
 
         w.Label(text="Quick Links", bold=True)
-        with w.Row(gap=8, margin=Margin(top=4)):
+        with w.Row(gap=8, style=h.Style(margin_top=4)):
             w.Button(
                 text="Alice", icon=IconName.USER, variant="outline", size="sm", href="/users/1"
             )
@@ -181,7 +181,7 @@ def AboutPage() -> None:
         w.Divider()
 
         w.Label(text="Features", bold=True)
-        with w.Column(gap=8, margin=Margin(top=8)):
+        with w.Column(gap=8, style=h.Style(margin_top=8)):
             FeatureItem(icon=IconName.COMPASS, text="Path-based routing with pattern matching")
             FeatureItem(icon=IconName.CODE, text="URL parameters (/users/:id)")
             FeatureItem(icon=IconName.CLOCK, text="Browser history integration")
@@ -229,7 +229,7 @@ def UserCard(user_id: str, user: dict[str, str]) -> None:
     with h.A(href=f"/users/{user_id}"):
         with w.Card(
             padding=16,
-            style={"cursor": "pointer", "transition": "box-shadow 0.15s ease"},
+            style=h.Style(cursor="pointer", transition="box-shadow 0.15s ease"),
         ):
             with w.Row(gap=12, align="center"):
                 w.Icon(name=IconName.USER, size=20, color=theme.text_secondary)
@@ -259,7 +259,7 @@ def UserDetailPage() -> None:
                 DetailRow(label="Role", value=user["role"], icon=IconName.TAG)
                 DetailRow(label="ID", value=user_id, icon=IconName.HASH)
 
-            with w.Row(margin=Margin(top=8)):
+            with w.Row(style=h.Style(margin_top=8)):
                 w.Button(
                     text="Back to Users",
                     icon=IconName.ARROW_LEFT,
@@ -285,7 +285,7 @@ def DetailRow(label: str, value: str, icon: IconName) -> None:
     """User detail row with icon."""
     with w.Row(gap=12, align="center"):
         w.Icon(name=icon, size=16, color=theme.text_secondary)
-        w.Label(text=label, bold=True, style={"width": "80px"})
+        w.Label(text=label, bold=True, style=h.Style(width=80))
         w.Label(text=value, color=theme.text_secondary)
 
 
@@ -300,7 +300,7 @@ def NotFoundPage() -> None:
         w.Heading(text="Page Not Found", level=3)
         w.Label(text=f'The path "{state.path}" does not exist.', color=theme.text_secondary)
 
-        with w.Row(margin=Margin(top=8)):
+        with w.Row(style=h.Style(margin_top=8)):
             w.Button(
                 text="Go Home",
                 icon=IconName.HOME,

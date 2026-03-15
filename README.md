@@ -146,7 +146,7 @@ trellis package --platform desktop
 | 🚧 | Widget toolkit |
 | ✅ | Bidirectional binding (`mutable()`) |
 | ✅ | Partial updates (diff patches) |
-| ❌ | Routing |
+| ✅ | Routing |
 | ✅ | Hot reload |
 
 ## Development

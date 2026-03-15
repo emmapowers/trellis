@@ -6,8 +6,9 @@ import typing as tp
 
 from trellis.core.components.composition import component
 from trellis.core.components.react import react
-from trellis.core.components.style_props import Height, Margin, Padding, Width
 from trellis.core.state.mutable import Mutable
+from trellis.html._style_runtime import HeightInput, SpacingInput, StyleInput, WidthInput
+from trellis.widgets._style_props import widget_style_props
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering.child_ref import ChildRef
@@ -15,6 +16,7 @@ if tp.TYPE_CHECKING:
 _SPLIT_PANE_REQUIRED_CHILDREN = 2
 
 
+@widget_style_props("padding", "margin", "width", "height", "flex")
 @react("client/Column.tsx", is_container=True)
 def Column(
     *,
@@ -22,13 +24,13 @@ def Column(
     align: tp.Literal["start", "center", "end", "stretch"] | None = None,
     justify: tp.Literal["start", "center", "end", "between", "around"] | None = None,
     divider: bool = False,
-    padding: Padding | int | None = None,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
-    height: Height | int | str | None = None,
+    padding: SpacingInput | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
+    height: HeightInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Vertical flex container.
 
@@ -40,10 +42,10 @@ def Column(
         align: Cross-axis alignment of children. Defaults to "stretch".
         justify: Main-axis alignment of children. Defaults to "start".
         divider: Whether to show dividers between children. Defaults to False.
-        padding: Padding inside the container (Padding dataclass or int for all sides).
-        margin: Margin around the container (Margin dataclass).
-        width: Width of the container (Width dataclass, int for pixels, or str for CSS).
-        height: Height of the container (Height dataclass, int for pixels, or str for CSS).
+        padding: Padding inside the container (CSS padding value).
+        margin: Margin around the container (CSS margin value).
+        width: Width of the container (CSS width value).
+        height: Height of the container (CSS height value).
         flex: Flex grow/shrink value for the container.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -61,6 +63,7 @@ def Column(
     pass
 
 
+@widget_style_props("padding", "margin", "width", "height", "flex")
 @react("client/Row.tsx", is_container=True)
 def Row(
     *,
@@ -68,13 +71,13 @@ def Row(
     align: tp.Literal["start", "center", "end", "stretch"] | None = None,
     justify: tp.Literal["start", "center", "end", "between", "around"] | None = None,
     divider: bool = False,
-    padding: Padding | int | None = None,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
-    height: Height | int | str | None = None,
+    padding: SpacingInput | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
+    height: HeightInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Horizontal flex container.
 
@@ -86,10 +89,10 @@ def Row(
         align: Cross-axis alignment of children. Defaults to "center".
         justify: Main-axis alignment of children. Defaults to "start".
         divider: Whether to show dividers between children. Defaults to False.
-        padding: Padding inside the container (Padding dataclass or int for all sides).
-        margin: Margin around the container (Margin dataclass).
-        width: Width of the container (Width dataclass, int for pixels, or str for CSS).
-        height: Height of the container (Height dataclass, int for pixels, or str for CSS).
+        padding: Padding inside the container (CSS padding value).
+        margin: Margin around the container (CSS margin value).
+        width: Width of the container (CSS width value).
+        height: Height of the container (CSS height value).
         flex: Flex grow/shrink value for the container.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -103,16 +106,17 @@ def Row(
     pass
 
 
+@widget_style_props("padding", "margin", "width", "height", "flex")
 @react("client/Card.tsx", is_container=True)
 def Card(
     *,
-    padding: Padding | int | None = None,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
-    height: Height | int | str | None = None,
+    padding: SpacingInput | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
+    height: HeightInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Visual container with card styling.
 
@@ -120,10 +124,10 @@ def Card(
     and shadow. Use as a context manager to add children.
 
     Args:
-        padding: Padding inside the card (Padding dataclass or int for all sides).
-        margin: Margin around the card (Margin dataclass).
-        width: Width of the card (Width dataclass, int for pixels, or str for CSS).
-        height: Height of the card (Height dataclass, int for pixels, or str for CSS).
+        padding: Padding inside the card (CSS padding value).
+        margin: Margin around the card (CSS margin value).
+        width: Width of the card (CSS width value).
+        height: Height of the card (CSS height value).
         flex: Flex grow/shrink value for the card.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.
@@ -144,12 +148,12 @@ def SplitPane(
     split: float | Mutable[float] = 0.5,
     min_size: int = 120,
     divider_size: int = 8,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
-    height: Height | int | str | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
+    height: HeightInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
     children: list[ChildRef] | None = None,
 ) -> None:
     """Resizable two-pane layout container.
@@ -188,6 +192,7 @@ def SplitPane(
     )
 
 
+@widget_style_props("margin", "width", "height", "flex")
 @react("client/SplitPane.tsx", export_name="SplitPane", is_container=True)
 def _SplitPane(
     *,
@@ -195,12 +200,12 @@ def _SplitPane(
     split: float | Mutable[float] = 0.5,
     min_size: int = 120,
     divider_size: int = 8,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
-    height: Height | int | str | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
+    height: HeightInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
     children: list[ChildRef] | None = None,
 ) -> None:
     pass

@@ -10,11 +10,11 @@ Usage:
 
 from __future__ import annotations
 
-import typing as tp
 from enum import StrEnum
 
 from trellis.core.components.react import react
-from trellis.core.components.style_props import Margin
+from trellis.html._style_runtime import SpacingInput, StyleInput
+from trellis.widgets._style_props import widget_style_props
 
 
 class IconName(StrEnum):
@@ -373,6 +373,7 @@ class IconName(StrEnum):
     POWER_OFF = "power-off"
 
 
+@widget_style_props("margin", "flex")
 @react("client/Icon.tsx", packages={"lucide-react": "0.468.0"})
 def Icon(
     name: IconName | str,
@@ -380,10 +381,10 @@ def Icon(
     size: int = 16,
     color: str | None = None,
     stroke_width: float = 2,
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Render a Lucide icon.
 
@@ -392,7 +393,7 @@ def Icon(
         size: Icon size in pixels. Defaults to 16.
         color: Icon color (CSS color string). Defaults to theme text color.
         stroke_width: Stroke width for the icon. Defaults to 2.
-        margin: Margin around the icon (Margin dataclass).
+        margin: Margin around the icon (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: CSS class name(s) to apply.
         style: Additional inline styles to apply.

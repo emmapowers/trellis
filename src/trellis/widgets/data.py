@@ -9,12 +9,14 @@ import typing as tp
 from typing import Literal
 
 from trellis.core.components.react import react
-from trellis.core.components.style_props import Margin, Padding, Width
+from trellis.html._style_runtime import SpacingInput, StyleInput, WidthInput
+from trellis.widgets._style_props import widget_style_props
 
 if tp.TYPE_CHECKING:
     from collections.abc import Callable
 
 
+@widget_style_props("padding", "margin", "width", "flex")
 @react("client/Stat.tsx")
 def Stat(
     *,
@@ -24,12 +26,12 @@ def Stat(
     delta_type: Literal["increase", "decrease", "neutral"] | None = None,
     icon: str | None = None,
     size: Literal["sm", "md", "lg"] = "md",
-    padding: Padding | int | None = None,
-    margin: Margin | None = None,
-    width: Width | int | str | None = None,
+    padding: SpacingInput | None = None,
+    margin: SpacingInput | None = None,
+    width: WidthInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Display a key metric with label, value, and optional trend.
 
@@ -40,9 +42,9 @@ def Stat(
         delta_type: Visual style for delta ("increase" = green, "decrease" = red)
         icon: Optional icon name to display
         size: Size variant ("sm", "md", "lg")
-        padding: Padding inside the stat (Padding dataclass or int for all sides).
-        margin: Margin around the stat (Margin dataclass).
-        width: Width of the stat (Width dataclass, int for pixels, or str for CSS).
+        padding: Padding inside the stat (CSS padding value).
+        margin: Margin around the stat (CSS margin value).
+        width: Width of the stat (CSS width value).
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles
@@ -51,6 +53,7 @@ def Stat(
     pass
 
 
+@widget_style_props("margin", "flex")
 @react("client/Tag.tsx")
 def Tag(
     text: str = "",
@@ -58,10 +61,10 @@ def Tag(
     variant: Literal["default", "primary", "success", "warning", "error"] = "default",
     removable: bool = False,
     on_remove: Callable[[], None] | None = None,
-    margin: Margin | None = None,
+    margin: SpacingInput | None = None,
     flex: int | None = None,
     class_name: str | None = None,
-    style: dict[str, tp.Any] | None = None,
+    style: StyleInput | None = None,
 ) -> None:
     """Display a tag/chip label.
 
@@ -70,7 +73,7 @@ def Tag(
         variant: Color variant
         removable: Whether to show a remove button
         on_remove: Callback when remove is clicked
-        margin: Margin around the tag (Margin dataclass).
+        margin: Margin around the tag (CSS margin value).
         flex: Flex grow/shrink value.
         class_name: Additional CSS classes
         style: Inline styles

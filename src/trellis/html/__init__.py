@@ -1,14 +1,15 @@
-"""Native HTML element wrappers for Trellis.
+"""Native HTML and CSS wrappers for Trellis.
 
-Provides Python wrappers for common HTML elements that render directly
-as native DOM elements in React, without requiring separate React components.
+Provides Python wrappers for standard HTML elements plus typed CSS helpers that
+render directly to native DOM elements in React, without requiring separate
+React components.
 
 Example:
     ```python
     from trellis import html as h
 
-    with h.Div(class_name="container", style={"padding": "16px"}):
-        h.H1("Welcome", style={"color": "blue"})
+    with h.Div(class_name="container", style=h.Style(padding=16)):
+        h.H1("Welcome", style=h.Style(color="blue"))
         h.P("This is a paragraph.")
         h.A("Click here", href="/about")
     ```
@@ -20,249 +21,17 @@ Categories:
             Abbr, Time
     - Lists: Ul, Ol, Li, Dl, Dt, Dd
     - Links: A, Img
-    - Forms: Form, Input, HtmlButton, Textarea, Select, Option, HtmlLabel,
+    - Forms: Form, Input, Button, Textarea, Select, Option, Label,
              Fieldset, Legend, Optgroup, Progress, Meter, Output, Datalist
     - Tables: Table, Thead, Tbody, Tfoot, Tr, Th, Td, Caption
     - Media: Video, Audio, Source, Iframe
+    - CSS: Style, media, px, rem, rgb, border, padding, margin, shadow
 """
 
-# Base types
-from trellis.html.base import HtmlContainerTrait, HtmlElement, Style
-
-# Event types
-from trellis.html.events import (
-    BaseEvent,
-    ChangeEvent,
-    ChangeEventHandler,
-    ChangeHandler,
-    DragDataTransfer,
-    DragDataTransferFile,
-    DragEvent,
-    DragEventHandler,
-    DragHandler,
-    EventHandler,
-    FocusEvent,
-    FocusEventHandler,
-    FocusHandler,
-    FormEvent,
-    FormEventHandler,
-    FormHandler,
-    InputEvent,
-    InputEventHandler,
-    InputHandler,
-    KeyboardEvent,
-    KeyboardEventHandler,
-    KeyboardHandler,
-    MouseEvent,
-    MouseEventHandler,
-    MouseHandler,
-    ScrollEvent,
-    ScrollEventHandler,
-    ScrollHandler,
-    WheelEvent,
-    WheelEventHandler,
-    WheelHandler,
-)
-
-# Form elements
-from trellis.html.forms import (
-    Datalist,
-    Fieldset,
-    Form,
-    HtmlButton,
-    HtmlLabel,
-    Input,
-    Legend,
-    Meter,
-    Optgroup,
-    Option,
-    Output,
-    Progress,
-    Select,
-    Textarea,
-)
-
-# Layout elements
-from trellis.html.layout import (
-    Address,
-    Article,
-    Aside,
-    Blockquote,
-    Details,
-    Div,
-    Figcaption,
-    Figure,
-    Footer,
-    Header,
-    Main,
-    Nav,
-    Section,
-    Span,
-    Summary,
-)
-
-# Link and media elements
-from trellis.html.links import (
-    A,
-    Img,
-)
-
-# List elements
-from trellis.html.lists import (
-    Dd,
-    Dl,
-    Dt,
-    Li,
-    Ol,
-    Ul,
-)
-
-# Media elements
-from trellis.html.media import (
-    Audio,
-    Iframe,
-    Source,
-    Video,
-)
-
-# Table elements
-from trellis.html.tables import (
-    Caption,
-    Table,
-    Tbody,
-    Td,
-    Tfoot,
-    Th,
-    Thead,
-    Tr,
-)
-
-# Text elements
-from trellis.html.text import (
-    H1,
-    H2,
-    H3,
-    H4,
-    H5,
-    H6,
-    Abbr,
-    Br,
-    Code,
-    Em,
-    Hr,
-    Mark,
-    P,
-    Pre,
-    Small,
-    Strong,
-    Sub,
-    Sup,
-    Text,
-    Time,
-)
-
-__all__ = [
-    "H1",
-    "H2",
-    "H3",
-    "H4",
-    "H5",
-    "H6",
-    "A",
-    "Abbr",
-    "Address",
-    "Article",
-    "Aside",
-    "Audio",
-    "BaseEvent",
-    "Blockquote",
-    "Br",
-    "Caption",
-    "ChangeEvent",
-    "ChangeEventHandler",
-    "ChangeHandler",
-    "Code",
-    "Datalist",
-    "Dd",
-    "Details",
-    "Div",
-    "Dl",
-    "DragDataTransfer",
-    "DragDataTransferFile",
-    "DragEvent",
-    "DragEventHandler",
-    "DragHandler",
-    "Dt",
-    "Em",
-    "EventHandler",
-    "Fieldset",
-    "Figcaption",
-    "Figure",
-    "FocusEvent",
-    "FocusEventHandler",
-    "FocusHandler",
-    "Footer",
-    "Form",
-    "FormEvent",
-    "FormEventHandler",
-    "FormHandler",
-    "Header",
-    "Hr",
-    "HtmlButton",
-    "HtmlContainerTrait",
-    "HtmlElement",
-    "HtmlLabel",
-    "Iframe",
-    "Img",
-    "Input",
-    "InputEvent",
-    "InputEventHandler",
-    "InputHandler",
-    "KeyboardEvent",
-    "KeyboardEventHandler",
-    "KeyboardHandler",
-    "Legend",
-    "Li",
-    "Main",
-    "Mark",
-    "Meter",
-    "MouseEvent",
-    "MouseEventHandler",
-    "MouseHandler",
-    "Nav",
-    "Ol",
-    "Optgroup",
-    "Option",
-    "Output",
-    "P",
-    "Pre",
-    "Progress",
-    "ScrollEvent",
-    "ScrollEventHandler",
-    "ScrollHandler",
-    "Section",
-    "Select",
-    "Small",
-    "Source",
-    "Span",
-    "Strong",
-    "Style",
-    "Sub",
-    "Summary",
-    "Sup",
-    "Table",
-    "Tbody",
-    "Td",
-    "Text",
-    "Textarea",
-    "Tfoot",
-    "Th",
-    "Thead",
-    "Time",
-    "Tr",
-    "Ul",
-    "Video",
-    "WheelEvent",
-    "WheelEventHandler",
-    "WheelHandler",
-]
+from trellis.html._generated_events import *
+from trellis.html._generated_runtime import *
+from trellis.html._style_runtime import *
+from trellis.html.base import HtmlContainerTrait as HtmlContainerTrait
+from trellis.html.base import HtmlElement as HtmlElement
+from trellis.html.links import A as A
+from trellis.html.text import Text as Text

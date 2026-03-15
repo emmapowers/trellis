@@ -1,245 +1,148 @@
-"""Link and media HTML elements.
+"""Handwritten public wrappers for link-oriented HTML elements.
 
-Elements for hyperlinks and images.
+This module holds Trellis-specific behavior that intentionally sits on top of
+the generated HTML bindings, primarily router-aware anchors.
 """
 
 from __future__ import annotations
 
 import typing as tp
+from collections.abc import Mapping
 from typing import overload
 
-from trellis.core.rendering.element import ContainerElement, Element
-from trellis.html.base import Style, html_element
-from trellis.html.events import KeyboardHandler, MouseHandler
+from trellis.core.rendering.element import Element
+from trellis.html._generated_interactive_elements import _A
+from trellis.html._style_runtime import StyleInput
+from trellis.html.base import HtmlContainerElement
 from trellis.routing.state import router
 
 __all__ = [
     "A",
-    "Img",
 ]
+
+DataValue = str | int | float | bool | None
+
+# Schemes that always bypass the client-side router. We check a known set
+# rather than using urlparse because urlparse treats any "word:rest" as a
+# scheme (e.g. "localhost:3000" parses as scheme="localhost").
+_NON_RELATIVE_PREFIXES = (
+    "http://",
+    "https://",
+    "mailto:",
+    "tel:",
+    "javascript:",
+    "data:",
+    "file:",
+    "ftp://",
+)
+
+
+def _has_uri_scheme(href: str) -> bool:
+    """Detect arbitrary URI schemes (e.g. ``tauri://``, ``custom:``)."""
+    colon_pos = href.find(":")
+    if colon_pos <= 0:
+        return False
+    before_colon = href[:colon_pos]
+    if not (
+        before_colon.isascii()
+        and before_colon.replace("+", "").replace("-", "").replace(".", "").isalnum()
+    ):
+        return False
+    after_colon = href[colon_pos + 1 :]
+    return after_colon.startswith("//") or not after_colon[:1].isdigit()
 
 
 def _is_relative_url(href: str) -> bool:
-    """Check if a URL is relative (no host/protocol).
-
-    Relative URLs should use client-side router navigation.
-    Absolute URLs (http://, https://, //) and special schemes (mailto:, tel:, etc.)
-    should use browser navigation.
-
-    Fragment-only (#section) and query-only (?foo=bar) URLs also bypass the router
-    since they modify the current page rather than navigating to a new route.
-
-    Args:
-        href: The URL to check
-
-    Returns:
-        True if the URL is relative (should use router), False if absolute or special scheme
-    """
-    # Protocol-relative, fragment-only, and query-only URLs bypass the router.
+    """Check if a URL is relative (no host/protocol)."""
     if href.startswith(("//", "#", "?")):
         return False
-
-    # Explicit schemes bypass the router. We check a known set rather than using
-    # urlparse because urlparse treats any "word:rest" as a scheme (e.g.
-    # "localhost:3000" parses as scheme="localhost").
-    _NON_RELATIVE_PREFIXES = (
-        "http://",
-        "https://",
-        "mailto:",
-        "tel:",
-        "javascript:",
-        "data:",
-        "file:",
-        "ftp://",
-    )
     if href.startswith(_NON_RELATIVE_PREFIXES):
         return False
-
-    # Catch any other URI scheme pattern (e.g. "tauri://...", "custom:...")
-    # by checking for "word:" where the word contains only valid scheme chars.
-    colon_pos = href.find(":")
-    if colon_pos > 0:
-        before_colon = href[:colon_pos]
-        if (
-            before_colon.isascii()
-            and before_colon.replace("+", "").replace("-", "").replace(".", "").isalnum()
-        ):
-            # Looks like a URI scheme — but exclude port-like patterns (e.g. "localhost:3000")
-            after_colon = href[colon_pos + 1 :]
-            if after_colon.startswith("//") or not after_colon[:1].isdigit():
-                return False
-
+    if _has_uri_scheme(href):
+        return False
     return True
 
 
-@html_element("img")
-def Img(
-    *,
-    src: str,
-    alt: str = "",
-    width: int | str | None = None,
-    height: int | str | None = None,
-    loading: str | None = None,
-    class_name: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    **props: tp.Any,
-) -> Element:
-    """An image element."""
-    ...
-
-
-# Hybrid element needs special handling
-@html_element("a", is_container=True, name="A")
-def _A(
-    *,
-    _text: str | None = None,
-    href: str | None = None,
-    target: str | None = None,
-    rel: str | None = None,
-    download: str | bool | None = None,
-    class_name: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
-    **props: tp.Any,
-) -> Element:
-    """An anchor (link) element."""
-    ...
-
-
-def _make_a(
-    text: str | None,
-    *,
-    href: str | None,
-    target: str | None,
-    rel: str | None,
-    download: str | bool | None,
-    class_name: str | None,
-    style: Style | None,
-    id: str | None,
-    on_click: MouseHandler | None,
-    on_double_click: MouseHandler | None,
-    on_context_menu: MouseHandler | None,
-    on_key_down: KeyboardHandler | None,
-    on_key_up: KeyboardHandler | None,
+def _resolve_router_navigation(
+    props: dict[str, tp.Any],
     use_router: bool,
-    **props: tp.Any,
-) -> Element:
-    """Shared implementation for A() overloads."""
-    # For relative URLs without custom on_click, add router navigation
-    effective_onclick = on_click
-    effective_props = dict(props)
-    if (
+) -> None:
+    """Conditionally inject router navigation into *props*."""
+    href = props.get("href")
+    if not (
         href
-        and on_click is None
+        and props.get("on_click") is None
         and use_router
-        and target != "_blank"
-        and (download is None or download is False)
-        and _is_relative_url(href)
+        and props.get("target") != "_blank"
+        and (props.get("download") is None or props.get("download") is False)
+        and _is_relative_url(str(href))
     ):
-        # Capture href in closure for the async callback
-        nav_href = href
+        return
 
-        async def router_click(_event: object) -> None:
-            await router().navigate(nav_href)
+    nav_href = str(href)
 
-        effective_onclick = router_click
-        effective_props["data-trellis-router-link"] = "true"
+    async def router_click(_event: object) -> None:
+        await router().navigate(nav_href)
 
-    return _A(
-        **({"_text": text} if text is not None else {}),
-        href=href,
-        target=target,
-        rel=rel,
-        download=download,
-        class_name=class_name,
-        style=style,
-        id=id,
-        on_click=effective_onclick,
-        on_double_click=on_double_click,
-        on_context_menu=on_context_menu,
-        on_key_down=on_key_down,
-        on_key_up=on_key_up,
-        **effective_props,
+    props["on_click"] = router_click
+
+    existing_data = props.get("data")
+    existing_mapping = existing_data if isinstance(existing_data, Mapping) else None
+    effective_data: dict[str, DataValue] = (
+        dict(existing_mapping) if existing_mapping is not None else {}
     )
+    effective_data["trellis-router-link"] = "true"
+    props["data"] = effective_data
 
 
 @overload
 def A(
-    text: str,
+    inner_text: str,
     /,
     *,
-    href: str | None = None,
-    target: str | None = None,
-    rel: str | None = None,
-    download: str | bool | None = None,
-    class_name: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
-    use_router: bool = True,
-    **props: tp.Any,
+    href: str | None = ...,
+    target: str | None = ...,
+    rel: str | None = ...,
+    class_name: str | None = ...,
+    style: StyleInput | None = ...,
+    aria_label: str | None = ...,
+    on_click: tp.Any = ...,
+    data: Mapping[str, DataValue] | None = ...,
+    use_router: bool = ...,
+    **extra_props: tp.Any,
 ) -> Element: ...
 
 
 @overload
 def A(
+    inner_text: None = ...,
+    /,
     *,
-    href: str | None = None,
-    target: str | None = None,
-    rel: str | None = None,
-    download: str | bool | None = None,
-    class_name: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
-    use_router: bool = True,
-    **props: tp.Any,
-) -> ContainerElement: ...
+    href: str | None = ...,
+    target: str | None = ...,
+    rel: str | None = ...,
+    class_name: str | None = ...,
+    style: StyleInput | None = ...,
+    aria_label: str | None = ...,
+    on_click: tp.Any = ...,
+    data: Mapping[str, DataValue] | None = ...,
+    use_router: bool = ...,
+    **extra_props: tp.Any,
+) -> HtmlContainerElement: ...
 
 
 def A(
-    text: str | None = None,
+    inner_text: str | None = None,
     /,
     *,
-    href: str | None = None,
-    target: str | None = None,
-    rel: str | None = None,
-    download: str | bool | None = None,
-    class_name: str | None = None,
-    style: Style | None = None,
-    id: str | None = None,
-    on_click: MouseHandler | None = None,
-    on_double_click: MouseHandler | None = None,
-    on_context_menu: MouseHandler | None = None,
-    on_key_down: KeyboardHandler | None = None,
-    on_key_up: KeyboardHandler | None = None,
     use_router: bool = True,
-    **props: tp.Any,
-) -> Element:
-    """An anchor (link) element.
+    **kwargs: tp.Any,
+) -> Element | HtmlContainerElement:
+    """Render an anchor element.
 
-    For relative URLs (paths without http://, https://, or //), automatically
-    uses client-side router navigation instead of full page reload. This
-    enables SPA-style navigation when used within a RouterState context.
-
-    For absolute URLs, uses normal browser navigation.
+    Wraps the standard HTML ``<a>`` element and adds Trellis router navigation
+    for relative links by default. Absolute URLs, fragment links, and special
+    schemes use normal browser navigation.
 
     Can be used as text-only or as a container:
         h.A("Click here", href="/path")  # Text only
@@ -248,7 +151,7 @@ def A(
             h.Span("Link text")
 
     Args:
-        text: Text content for the link
+        inner_text: Text content for the link
         href: URL to navigate to. Relative URLs use router, absolute use browser.
         target: Target window/frame (e.g., "_blank")
         rel: Relationship to linked document (e.g., "noopener")
@@ -257,22 +160,11 @@ def A(
         on_click: Custom click handler (overrides auto-routing for relative URLs)
         use_router: Whether to use client-side router for relative URLs (default True).
             Set to False to force browser navigation for relative URLs.
-        **props: Additional HTML attributes
+        data: Custom data-* attributes keyed by DOM suffix (e.g. ``{"test-id": "x"}``)
     """
-    return _make_a(
-        text,
-        href=href,
-        target=target,
-        rel=rel,
-        download=download,
-        class_name=class_name,
-        style=style,
-        id=id,
-        on_click=on_click,
-        on_double_click=on_double_click,
-        on_context_menu=on_context_menu,
-        on_key_down=on_key_down,
-        on_key_up=on_key_up,
-        use_router=use_router,
-        **props,
-    )
+    props: dict[str, tp.Any] = dict(kwargs)
+    _resolve_router_navigation(props, use_router)
+
+    if inner_text is None:
+        return _A(**props)
+    return _A(inner_text, **props)

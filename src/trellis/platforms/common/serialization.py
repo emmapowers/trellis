@@ -15,9 +15,13 @@ Two modes:
 from __future__ import annotations
 
 import typing as tp
+from collections.abc import Mapping
 
 from trellis.core.components.composition import CompositionComponent
 from trellis.core.state.mutable import Mutable
+
+# TODO: clean this up when we have a proper serialization registry
+from trellis.html._style_compiler import compile_style_props
 
 if tp.TYPE_CHECKING:
     from trellis.core.rendering.element import Element
@@ -95,7 +99,7 @@ def _serialize_value(
             _serialize_value(v, session, element_id, f"{prop_name}[{i}]")
             for i, v in enumerate(value)
         ]
-    if isinstance(value, dict):
+    if isinstance(value, Mapping):
         return {
             k: _serialize_value(v, session, element_id, f"{prop_name}.{k}")
             for k, v in value.items()
@@ -159,8 +163,9 @@ def _serialize_props(
     Returns:
         Serialized props dict
     """
+    compiled_props = compile_style_props(props)
     result = {}
-    for key, value in props.items():
+    for key, value in compiled_props.items():
         if key == "child_ids":
             continue
         result[key] = _serialize_value(value, session, element_id, key)

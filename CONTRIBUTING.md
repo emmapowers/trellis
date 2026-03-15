@@ -20,6 +20,23 @@ just lint       # Check linting (no fix)
 just ci         # Full CI checks
 ```
 
+## HTML Codegen Tool
+
+The HTML codegen tool is a manual developer workflow:
+
+```bash
+cd tools/html_codegen
+npm install
+npm run codegen:compare
+npm run codegen:write
+```
+
+`codegen:write` updates generated artifacts under `src/trellis/html/_generated_*.py`,
+including `src/trellis/html/_generated_runtime.py` and
+`src/trellis/html/_generated_events.py`.
+
+After writing outputs, run `pixi run ci` and commit the resulting diffs.
+
 ## Code Style
 
 - Formatting: Ruff (100 char line length)

@@ -209,7 +209,7 @@ def MyApp():
 
 @component
 def Column(children: list[ChildRef]):
-    with h.Div(style={"display": "flex", "flexDirection": "column"}):
+    with h.Div(style=h.Style(display="flex", flex_direction="column")):
         for child in children:
             child()  # Position child here in the tree
 ```
@@ -408,10 +408,10 @@ This decorator:
 from trellis import html as h
 
 # Leaf usage
-h.H1("Title", style={"color": "#333"})
+h.H1("Title", style=h.Style(color="#333"))
 
 # Container usage
-with h.Div(class_name="container", style={"padding": "20px"}):
+with h.Div(class_name="container", style=h.Style(padding=20)):
     h.P("Content inside div")
     h.Span("Some text")
 ```
@@ -1418,7 +1418,7 @@ HTMLElements map to JSX elements:
 ```python
 h.Div(
     class_name="container",
-    style={"padding": "20px"},
+    style=h.Style(padding=20),
     on_click=handler
 )
 ```

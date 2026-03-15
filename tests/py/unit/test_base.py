@@ -1,11 +1,17 @@
 """Tests for core component types and props functions."""
 
+import weakref
+
 from trellis.core.components.base import ElementKind
 from trellis.core.components.composition import component
 from trellis.core.components.react import ReactComponentBase
 from trellis.core.rendering.element import Element
 from trellis.html.base import html_element
 from trellis.html.text import TextNode
+
+
+class _DummySession:
+    pass
 
 
 class TestElementKind:
@@ -78,6 +84,62 @@ class TestIComponentProtocolConformance:
         text_node = TextNode(name="Text")
         assert text_node.element_kind == ElementKind.TEXT
         assert text_node.element_name == "__text__"
+
+    def test_html_element_normalizes_python_keyword_props(self, monkeypatch) -> None:
+        """Trailing underscore kwargs map back to DOM prop names."""
+
+        @html_element("script")
+        def Script(*, async_: bool | None = None) -> Element: ...
+
+        captured: dict[str, object] = {}
+        dummy_session = _DummySession()
+
+        def fake_place(**props: object) -> Element:
+            captured.update(props)
+            return Element(
+                component=Script._component,
+                _session_ref=weakref.ref(dummy_session),
+                render_count=0,
+                props={},
+                id="test-1",
+            )
+
+        monkeypatch.setattr(Script._component, "_place", fake_place)
+
+        Script(async_=True)
+        assert captured["async"] is True
+        assert "async_" not in captured
+
+    def test_html_element_preserves_escaped_data_attr_alongside_data_mapping(
+        self, monkeypatch
+    ) -> None:
+        """Escaped HTML attrs should not collide with the data-* mapping helper."""
+
+        @html_element("object")
+        def Object(
+            *,
+            data_: str | None = None,
+            data: dict[str, object] | None = None,
+        ) -> Element: ...
+
+        captured: dict[str, object] = {}
+        dummy_session = _DummySession()
+
+        def fake_place(**props: object) -> Element:
+            captured.update(props)
+            return Element(
+                component=Object._component,
+                _session_ref=weakref.ref(dummy_session),
+                render_count=0,
+                props={},
+                id="test-2",
+            )
+
+        monkeypatch.setattr(Object._component, "_place", fake_place)
+
+        Object(data_="/asset.bin", data={"asset-id": 1})
+        assert captured["data_"] == "/asset.bin"
+        assert captured["data"] == {"asset-id": 1}
 
     def test_react_component_has_react_component_kind(self) -> None:
         """ReactComponentBase subclass should return REACT_COMPONENT kind."""
