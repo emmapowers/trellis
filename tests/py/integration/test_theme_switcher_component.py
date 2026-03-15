@@ -5,6 +5,7 @@ import pytest
 from trellis.app import ClientState, ThemeMode, TrellisApp
 from trellis.core.components.composition import component
 from trellis.core.rendering import RenderSession, render
+from trellis.core.rendering.session import set_render_session
 from trellis.widgets.theme_switcher import ThemeSwitcher
 
 
@@ -19,6 +20,7 @@ class TestThemeSwitcherComponent:
             ThemeSwitcher()
 
         tree = RenderSession(App)
+        set_render_session(tree)
         with pytest.raises(LookupError):
             render(tree)
 
@@ -37,6 +39,7 @@ class TestThemeSwitcherComponent:
             TrellisApp(app=App)
 
         tree = RenderSession(Root)
+        set_render_session(tree)
         render(tree)
 
         assert rendered is True
@@ -58,6 +61,7 @@ class TestThemeSwitcherComponent:
             TrellisApp(app=App, client_state=client_state)
 
         tree = RenderSession(Root)
+        set_render_session(tree)
         render(tree)
 
         assert rendered_mode == ThemeMode.DARK

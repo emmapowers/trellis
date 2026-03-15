@@ -8,7 +8,7 @@ from pathlib import Path
 import trellis
 from trellis import component
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession, SessionRegistry
+from trellis.core.rendering.session import RenderSession, SessionRegistry, set_render_session
 from trellis.utils.hot_reload import HotReload, is_user_module
 from trellis.widgets import Column, Label
 
@@ -68,6 +68,7 @@ class TestHotReload:
                 Label(text="World")
 
         session = RenderSession(root_component=TestApp)
+        set_render_session(session)
         render(session)
 
         # Session should have multiple elements

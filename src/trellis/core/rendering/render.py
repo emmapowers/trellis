@@ -15,7 +15,7 @@ from trellis.core.rendering.patches import (
     RenderUpdatePatch,
 )
 from trellis.core.rendering.reconcile import reconcile_children
-from trellis.core.rendering.session import RenderSession, set_render_session
+from trellis.core.rendering.session import RenderSession
 from trellis.core.rendering.traits import get_trait_hooks
 from trellis.utils.logger import logger
 
@@ -31,11 +31,6 @@ __all__ = [
 
 def render(session: RenderSession) -> list[RenderPatch]:
     """Render the session and return patches."""
-    # Ensure the session is visible in the current context.
-    # In production this is already set at connection start; in tests and
-    # thread pools this ensures the correct session is bound to this context.
-    set_render_session(session)
-
     with session.lock:
         patches, pending_mounts, pending_unmounts = _render_impl(session)
 
@@ -186,8 +181,6 @@ def _execute_single_element(
     # Set up execution context
     old_element_id = session.active.current_element_id
     session.active.current_element_id = element_id
-    old_dep = session.active_dependency
-    session.active_dependency = element
 
     # Dispatch trait _before_execute hooks
     trait_hooks = get_trait_hooks(type(element))
@@ -198,8 +191,9 @@ def _execute_single_element(
     # Push a frame for child IDs created during execution
     session.active.frames.push(parent_id=element_id)
     try:
-        # Execute the component - children are created via _place() but NOT executed yet
-        element.component.execute(**props)
+        with session.tracking(element):
+            # Execute the component - children are created via _place() but NOT executed yet
+            element.component.execute(**props)
 
         # Get child IDs from current frame before popping
         frame = session.active.frames.current()
@@ -220,7 +214,6 @@ def _execute_single_element(
     finally:
         session.active.frames.pop()
         session.active.current_element_id = old_element_id
-        session.active_dependency = old_dep
 
 
 def _execute_tree(

@@ -8,7 +8,7 @@ from tests.conftest import PatchCapture, render_to_tree
 from trellis import widgets as w
 from trellis.core.components.composition import component
 from trellis.core.rendering.patches import RenderUpdatePatch
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, set_render_session
 from trellis.core.state.mutable import Mutable, callback, mutable
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.common.serialization import parse_callback_id, serialize_element
@@ -148,6 +148,7 @@ class TestMutableSerialization:
             w.TextInput(value=mutable(state.text))
 
         ctx = RenderSession(TestComponent)
+        set_render_session(ctx)
         result = render_to_tree(ctx)
 
         # Find the TextInput node
@@ -176,6 +177,7 @@ class TestMutableSerialization:
             w.TextInput(value=mutable(state.text))
 
         ctx = RenderSession(TestComponent)
+        set_render_session(ctx)
         result = render_to_tree(ctx)
 
         # Get the callback ID
@@ -210,6 +212,7 @@ class TestMutableWidgets:
             w.NumberInput(value=mutable(state.count))
 
         ctx = RenderSession(TestComponent)
+        set_render_session(ctx)
         result = render_to_tree(ctx)
 
         number_input = result["children"][0]
@@ -240,6 +243,7 @@ class TestMutableWidgets:
             w.Checkbox(checked=mutable(state.enabled), label="Test")
 
         ctx = RenderSession(TestComponent)
+        set_render_session(ctx)
         result = render_to_tree(ctx)
 
         checkbox = result["children"][0]
@@ -273,6 +277,7 @@ class TestMutableWidgets:
             )
 
         ctx = RenderSession(TestComponent)
+        set_render_session(ctx)
         result = render_to_tree(ctx)
 
         select = result["children"][0]
@@ -303,6 +308,7 @@ class TestMutableWidgets:
             w.Slider(value=mutable(state.volume), min=0, max=100)
 
         ctx = RenderSession(TestComponent)
+        set_render_session(ctx)
         result = render_to_tree(ctx)
 
         slider = result["children"][0]
@@ -337,6 +343,7 @@ class TestMutableWidgets:
                     w.Label(text="Second tab")
 
         ctx = RenderSession(TestComponent)
+        set_render_session(ctx)
         result = render_to_tree(ctx)
 
         tabs = result["children"][0]
@@ -368,6 +375,7 @@ class TestMutableWidgets:
                 w.Label(text="Content")
 
         ctx = RenderSession(TestComponent)
+        set_render_session(ctx)
         result = render_to_tree(ctx)
 
         collapsible = result["children"][0]
@@ -460,6 +468,7 @@ class TestCallbackFunction:
             w.TextInput(value=callback(state.text, custom_handler))
 
         ctx = RenderSession(TestComponent)
+        set_render_session(ctx)
         result = render_to_tree(ctx)
 
         # Find the TextInput node
@@ -497,6 +506,7 @@ class TestCallbackFunction:
             w.TextInput(value=callback(state.name, state.set_name))
 
         ctx = RenderSession(TestComponent)
+        set_render_session(ctx)
         result = render_to_tree(ctx)
 
         text_input = result["children"][0]
@@ -526,6 +536,7 @@ class TestMutableVersionFlow:
             w.TextInput(value=mutable(state.text))
 
         ctx = RenderSession(TestComponent)
+        set_render_session(ctx)
         result = render_to_tree(ctx)
 
         text_input = result["children"][0]
@@ -587,6 +598,7 @@ class TestMutableVersionFlow:
             w.TextInput(value=callback(state.text, custom_handler))
 
         ctx = RenderSession(TestComponent)
+        set_render_session(ctx)
         result = render_to_tree(ctx)
 
         text_input = result["children"][0]

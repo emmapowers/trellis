@@ -9,9 +9,9 @@ from tests.conftest import render_to_tree
 from trellis import component, mutable, state_var
 from trellis import widgets as w
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, set_render_session
+from trellis.core.state import state_var as core_state_var
 from trellis.platforms.common.serialization import parse_callback_id
-from trellis.state import state_var as package_state_var
 
 if TYPE_CHECKING:
     from tests.conftest import PatchCapture
@@ -145,6 +145,7 @@ class TestStateHelper:
             w.Slider(value=mutable(slider), min=0, max=100)
 
         session = RenderSession(App)
+        set_render_session(session)
         tree = render_to_tree(session)
 
         text_input = tree["children"][0]
@@ -173,5 +174,5 @@ class TestStateHelper:
 
         rendered(App)
 
-        assert state_var is package_state_var
+        assert state_var is core_state_var
         assert captured[0] == "hello"

@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import contextvars
 import logging
 import re
 import threading
 import typing as tp
 import weakref
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 from trellis.core.rendering.dirty_tracker import DirtyTracker
@@ -160,6 +162,20 @@ class RenderSession:
         if self.active is None:
             return None
         return self.active.current_element_id
+
+    @contextlib.contextmanager
+    def tracking(self, dep: StateDependency) -> Iterator[None]:
+        """Set the active dependency for the duration of a block.
+
+        Used during element execution and reactive effect execution so that
+        Stateful.__getattribute__ registers the correct watcher.
+        """
+        previous = self.active_dependency
+        self.active_dependency = dep
+        try:
+            yield
+        finally:
+            self.active_dependency = previous
 
     def get_callback(self, element_id: str, prop_name: str) -> tp.Callable[..., tp.Any] | None:
         """Get a callback from a element's props by path."""

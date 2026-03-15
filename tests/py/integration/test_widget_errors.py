@@ -10,7 +10,7 @@ import pytest
 
 from trellis.core.components.composition import component
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, set_render_session
 from trellis.widgets import (
     Button,
     Heading,
@@ -33,6 +33,7 @@ class TestSliderEdgeCases:
             Slider(value=-10, min=0, max=100)
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         slider = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -47,6 +48,7 @@ class TestSliderEdgeCases:
             Slider(value=200, min=0, max=100)
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         slider = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -61,6 +63,7 @@ class TestSliderEdgeCases:
             Slider(value=50, min=100, max=0)
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         slider = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -75,6 +78,7 @@ class TestSliderEdgeCases:
             Slider(value=50, step=0)
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         slider = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -88,6 +92,7 @@ class TestSliderEdgeCases:
             Slider(value=50, step=-5)
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         slider = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -105,6 +110,7 @@ class TestNumberInputEdgeCases:
             NumberInput(value=-10, min=0, max=100)
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         input_el = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -119,6 +125,7 @@ class TestNumberInputEdgeCases:
             NumberInput(value=200, min=0, max=100)
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         input_el = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -137,6 +144,7 @@ class TestSelectEdgeCases:
             Select(options=[], value="")
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         select = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -154,6 +162,7 @@ class TestSelectEdgeCases:
             Select(options=options, value="not_in_list")
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         select = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -170,6 +179,7 @@ class TestSelectEdgeCases:
             Select(options=options, value=None)  # type: ignore[arg-type]
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         select = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -187,6 +197,7 @@ class TestHeadingEdgeCases:
             Heading(text="Zero", level=0)
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         heading = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -200,6 +211,7 @@ class TestHeadingEdgeCases:
             Heading(text="Seven", level=7)
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         heading = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -217,6 +229,7 @@ class TestButtonEdgeCases:
             Button(text="No callback", on_click=None)
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         button = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -233,6 +246,7 @@ class TestButtonEdgeCases:
             Button(text="Fail", on_click=failing_callback)
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         button = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -252,6 +266,7 @@ class TestTextInputEdgeCases:
             TextInput(value="test", on_change=None)
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         input_el = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -269,6 +284,7 @@ class TestLabelEdgeCases:
             Label(text="")
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         label = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -282,6 +298,7 @@ class TestLabelEdgeCases:
             Label()  # No text argument
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         label = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -296,6 +313,7 @@ class TestLabelEdgeCases:
             Label(text="Tiny?", font_size=-10)
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         label = ctx.elements.get(ctx.root_element.child_ids[0])

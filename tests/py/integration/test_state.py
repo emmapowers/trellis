@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from trellis.core.components.composition import component
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, set_render_session
 from trellis.core.state.stateful import Stateful, Tracked
 
 if TYPE_CHECKING:
@@ -644,6 +644,7 @@ class TestStateDependencyTracking:
                 _ = state.value
 
         ctx = RenderSession(Consumer)
+        set_render_session(ctx)
         render(ctx)
 
         node_id = ctx.root_element.id

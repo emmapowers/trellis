@@ -55,8 +55,9 @@ from trellis.core import (
     set_ref,
     set_render_session,
 )
+from trellis.core.state import state_var
 from trellis.routing import Route, RouterState, Routes, router
-from trellis.state import load, on_mount, state_var
+from trellis.state import load, on_mount
 
 __version__ = "0.1.0"
 __all__ = [
