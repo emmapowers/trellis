@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import sys
 from typing import TYPE_CHECKING
+from unittest.mock import MagicMock, patch
 
 import pytest
+
+from trellis.platforms.common.base import PlatformType
 
 if TYPE_CHECKING:
     from tests.conftest import WriteTrellisConfig
@@ -47,3 +50,36 @@ class TestStandalonePlatformSelection:
 
         assert isinstance(apploader.platform, DesktopPlatform)
         assert apploader.platform.is_standalone is False
+
+    def test_standalone_entry_overrides_platform_to_desktop(
+        self,
+        write_trellis_config: WriteTrellisConfig,
+        monkeypatch: pytest.MonkeyPatch,
+        reset_apploader: None,
+    ) -> None:
+        """Standalone entry forces DESKTOP even when config says SERVER."""
+        from trellis.app.apploader import AppLoader, get_apploader  # noqa: PLC0415
+
+        app_root = write_trellis_config(module="test", platform="SERVER")
+        monkeypatch.setenv("TRELLIS_APP_ROOT", str(app_root))
+
+        # standalone_entry.main() calls load_app and asyncio.run which we
+        # can't run in a test. Patch both, then reload the module to trigger
+        # main() inside the patch context.
+        monkeypatch.delitem(sys.modules, "trellis.app.standalone_entry", raising=False)
+
+        def fake_load_app(self: AppLoader) -> None:
+            self.app = MagicMock()
+            self.app.top = MagicMock()
+
+        with (
+            patch("asyncio.run"),
+            patch.object(AppLoader, "load_app", fake_load_app),
+        ):
+            import importlib  # noqa: PLC0415
+
+            importlib.import_module("trellis.app.standalone_entry")
+
+        config = get_apploader().config
+        assert config is not None
+        assert config.platform == PlatformType.DESKTOP

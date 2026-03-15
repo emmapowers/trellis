@@ -11,6 +11,7 @@ import asyncio
 from typing import Any
 
 from trellis.app.apploader import AppLoader, resolve_app_root, set_apploader
+from trellis.platforms.common.base import PlatformType
 
 
 def main() -> None:
@@ -18,12 +19,19 @@ def main() -> None:
     apploader = AppLoader(app_root)
     apploader.load_config()
     set_apploader(apploader)
+
+    config = apploader.config
+    assert config is not None
+
+    # The packaged binary is always a desktop app regardless of what
+    # trellis_config.py says (the user may have packaged with --platform desktop
+    # while the config defaults to server).
+    config.platform = PlatformType.DESKTOP
+
     apploader.load_app()
 
     app = apploader.app
-    config = apploader.config
     assert app is not None
-    assert config is not None
 
     run_kwargs: dict[str, Any] = {
         "batch_delay": config.batch_delay,
