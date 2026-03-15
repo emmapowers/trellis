@@ -9,9 +9,9 @@ use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use windows_sys::Win32::Foundation::HKEY;
 use windows_sys::Win32::System::Registry::{
-    RegCloseKey, RegCreateKeyExW, RegSetValueExW, HKEY_CURRENT_USER, KEY_WRITE, REG_DWORD, REG_SZ,
+    RegCloseKey, RegCreateKeyExW, RegSetValueExW, HKEY, HKEY_CURRENT_USER, KEY_WRITE, REG_DWORD,
+    REG_SZ,
 };
 
 use common::{acquire_lock, extract_archive, read_footer, release_lock, show_error, show_info};
