@@ -460,14 +460,14 @@ def _copy_build_output(
     *,
     bundle_dir: Path,
     output_dir: Path,
-    platform: str,
     product_name: str,
     version: str,
+    tauri_bundles: list[str],
 ) -> list[str]:
     """Copy build artifacts from Tauri's bundle directory to output_dir.
 
-    Renames files to a consistent pattern: {Product-Name}-{version}.{ext}.
-    Deb files are normalized to lowercase with hyphens.
+    Only copies artifact types listed in *tauri_bundles* so stale outputs
+    from previous builds are not included.
 
     Returns:
         List of artifact filenames written to output_dir.
@@ -477,35 +477,38 @@ def _copy_build_output(
     output_dir.mkdir(parents=True, exist_ok=True)
     artifacts: list[str] = []
 
-    if platform == "darwin":
-        macos_dir = bundle_dir / "macos"
-        if macos_dir.exists():
-            for app in macos_dir.glob("*.app"):
-                dest_name = _output_filename(product_name, version, "app")
-                dest = output_dir / dest_name
-                if dest.exists():
-                    shutil.rmtree(dest)
-                shutil.copytree(app, dest)
-                artifacts.append(dest_name)
-        dmg_dir = bundle_dir / "dmg"
-        if dmg_dir.exists():
-            for dmg in dmg_dir.glob("*.dmg"):
-                dest_name = _output_filename(product_name, version, "dmg")
-                shutil.copy2(dmg, output_dir / dest_name)
-                artifacts.append(dest_name)
-    elif platform == "linux":
-        appimage_dir = bundle_dir / "appimage"
-        if appimage_dir.exists():
-            for pkg in appimage_dir.glob("*.AppImage"):
-                dest_name = _output_filename(product_name, version, "AppImage")
-                shutil.copy2(pkg, output_dir / dest_name)
-                artifacts.append(dest_name)
-        deb_dir = bundle_dir / "deb"
-        if deb_dir.exists():
-            for pkg in deb_dir.glob("*.deb"):
-                deb_name = pkg.name.lower().replace(" ", "-")
-                shutil.copy2(pkg, output_dir / deb_name)
-                artifacts.append(deb_name)
+    for bundle_type in tauri_bundles:
+        if bundle_type == "app":
+            macos_dir = bundle_dir / "macos"
+            if macos_dir.exists():
+                for app in macos_dir.glob("*.app"):
+                    dest_name = _output_filename(product_name, version, "app")
+                    dest = output_dir / dest_name
+                    if dest.exists():
+                        shutil.rmtree(dest)
+                    shutil.copytree(app, dest)
+                    artifacts.append(dest_name)
+        elif bundle_type == "dmg":
+            dmg_dir = bundle_dir / "dmg"
+            if dmg_dir.exists():
+                for dmg in dmg_dir.glob("*.dmg"):
+                    dest_name = _output_filename(product_name, version, "dmg")
+                    shutil.copy2(dmg, output_dir / dest_name)
+                    artifacts.append(dest_name)
+        elif bundle_type == "appimage":
+            appimage_dir = bundle_dir / "appimage"
+            if appimage_dir.exists():
+                for pkg in appimage_dir.glob("*.AppImage"):
+                    dest_name = _output_filename(product_name, version, "AppImage")
+                    shutil.copy2(pkg, output_dir / dest_name)
+                    artifacts.append(dest_name)
+        elif bundle_type == "deb":
+            deb_dir = bundle_dir / "deb"
+            if deb_dir.exists():
+                for pkg in deb_dir.glob("*.deb"):
+                    deb_name = pkg.name.lower().replace(" ", "-")
+                    shutil.copy2(pkg, output_dir / deb_name)
+                    artifacts.append(deb_name)
 
     return artifacts
 
@@ -571,6 +574,7 @@ def build_desktop_app_bundle(
     # 4. Run Tauri build
     product_name = config.title or config.name
     version = config.version or "0.1.0"
+    resolved_bundles = _tauri_bundles(installer=installer, platform=sys.platform, bundles=bundles)
     bundle_dir = run_tauri_build(
         tauri_cli=tauri_cli,
         rust=rust,
@@ -586,9 +590,9 @@ def build_desktop_app_bundle(
     artifacts = _copy_build_output(
         bundle_dir=bundle_dir,
         output_dir=dest,
-        platform=sys.platform,
         product_name=product_name,
         version=version,
+        tauri_bundles=resolved_bundles,
     )
 
     # 6. On Windows, build self-extracting exe (post-processing after Tauri compile)
