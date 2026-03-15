@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import textwrap
 
-from trellis.core.state.transform import transform_component_source
+from trellis.core.transforms.state_var import transform_source as transform_component_source
 
 
 def _t(source: str) -> str:

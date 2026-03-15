@@ -1,4 +1,4 @@
-"""AST transform for state_var() — eliminates .value boilerplate in @component.
+"""AST transform for state_var() — eliminates .value boilerplate.
 
 Every Name("x") node where x was assigned from state_var(...) gets replaced with
 Attribute(Name("x"), "value"), EXCEPT the initial binding target. This single rule
@@ -13,86 +13,46 @@ from collections.abc import Callable
 
 import libcst as cst
 
-__all__ = ["compile_transformed", "transform_component_source"]
+from trellis.core.transforms.base import _find_function_def
 
 
-def transform_component_source(source: str) -> tuple[str, bool]:
-    """Transform a component function's source, inserting .value for state_var names.
+class StateVarTransform:
+    """Rewrites state_var() bindings so reads/writes go through .value."""
 
-    Returns:
-        (transformed_source, changed) — the bare ``def`` without decorators,
-        or the original source unchanged when no state vars are found.
+    def applies_to(self, func: Callable[..., tp.Any]) -> bool:
+        return "state_var" in func.__code__.co_names
+
+    def transform(self, func_def: cst.FunctionDef) -> cst.FunctionDef:
+        names = _collect_state_var_names(func_def)
+        if not names:
+            return func_def
+        transformer = _StateVarTransformer(names)
+        return func_def.with_changes(body=func_def.body.visit(transformer))
+
+
+def transform_source(source: str) -> tuple[str, bool]:
+    """Transform raw source text. Useful for testing without a real function object.
+
+    Returns (transformed_source, changed).
     """
     module = cst.parse_module(source)
-
-    # Find the FunctionDef node
     func_def = _find_function_def(module)
     if func_def is None:
         return (source, False)
 
-    # Collect state var names from x = state_var(...) and x: T = state_var(...)
-    state_var_names = _collect_state_var_names(func_def)
-    if not state_var_names:
+    t = StateVarTransform()
+    new_func_def = t.transform(func_def)
+    if new_func_def is func_def:
         return (source, False)
 
-    # Apply the transform to the function body
-    transformer = _StateVarTransformer(state_var_names)
-    new_func = func_def.with_changes(
-        body=func_def.body.visit(transformer),
-        decorators=[],
-    )
-
-    # Reconstruct as a module with just the bare def
-    new_module = module.with_changes(body=[new_func])
-
+    new_func_def = new_func_def.with_changes(decorators=[])
+    new_module = module.with_changes(body=[new_func_def])
     return (new_module.code, True)
-
-
-def compile_transformed(func: Callable[..., tp.Any], source: str) -> Callable[..., tp.Any]:
-    """Compile transformed source and extract the new function object.
-
-    Pads with newlines to preserve original line numbers for tracebacks.
-    Uses the original function's globals (plus any closure variables) so the
-    re-compiled function can access the same imports, module-level names, and
-    enclosing-scope variables.
-    """
-    padded = "\n" * (func.__code__.co_firstlineno - 1) + source
-    code = compile(padded, func.__code__.co_filename, "exec")
-
-    # If the original function is a closure, inject its free variables into
-    # the globals dict so the re-compiled function can access them at runtime.
-    run_globals: dict[str, tp.Any]
-    if func.__closure__ and func.__code__.co_freevars:
-        run_globals = {**func.__globals__}
-        for name, cell in zip(func.__code__.co_freevars, func.__closure__, strict=True):
-            try:
-                run_globals[name] = cell.cell_contents
-            except ValueError:
-                pass  # Unbound cell — variable not yet assigned
-    else:
-        run_globals = func.__globals__
-
-    # Safe: source comes from inspect.getsource() on the user's own function,
-    # transformed only by our deterministic CST rewriter.
-    exec(code, run_globals)
-    new_func = run_globals[func.__name__]
-    new_func.__module__ = func.__module__
-    new_func.__qualname__ = func.__qualname__
-    new_func.__doc__ = func.__doc__
-    return new_func
 
 
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
-
-
-def _find_function_def(module: cst.Module) -> cst.FunctionDef | None:
-    """Find the first FunctionDef in a module."""
-    for stmt in module.body:
-        if isinstance(stmt, cst.FunctionDef):
-            return stmt
-    return None
 
 
 def _is_state_var_call(node: cst.BaseExpression) -> bool:

@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import inspect
-import textwrap
 import types
 import typing as tp
 
 from trellis.core.components.base import Component, ElementKind
 from trellis.core.rendering.element import ContainerElement, Element
 from trellis.core.rendering.traits import ContainerTrait
-from trellis.core.state.transform import compile_transformed, transform_component_source
+from trellis.core.transforms import StateVarTransform, apply_transforms
 
 __all__ = ["CompositionComponent", "RenderFunc", "component"]
 
@@ -144,40 +143,20 @@ def component(
         is_container: Whether this component accepts children via ``with`` blocks.
             When True, the render function must have a ``children`` parameter.
     """
+    _transforms = [StateVarTransform()]
+
     if render_func is not None:
         # Called without parentheses: @component
-        transformed = _maybe_transform(render_func)
+        transformed = tp.cast("RenderFunc", apply_transforms(render_func, _transforms))
         return CompositionComponent(
             render_func.__name__, transformed, element_class, is_container=is_container
         )
 
     # Called with parentheses: @component(is_container=True, element_class=X)
     def decorator(func: RenderFunc) -> CompositionComponent[Element]:
-        transformed = _maybe_transform(func)
+        transformed = tp.cast("RenderFunc", apply_transforms(func, _transforms))
         return CompositionComponent(
             func.__name__, transformed, element_class, is_container=is_container
         )
 
     return decorator
-
-
-def _maybe_transform(func: RenderFunc) -> RenderFunc:
-    """Apply the state_var AST transform if the function uses state_var().
-
-    Returns the original function unchanged when:
-    - state_var is not referenced in the function's bytecode
-    - Source code is unavailable (REPL, dynamically generated)
-    """
-    if "state_var" not in func.__code__.co_names:
-        return func
-
-    try:
-        source = textwrap.dedent(inspect.getsource(func))
-    except OSError:
-        return func
-
-    transformed, changed = transform_component_source(source)
-    if not changed:
-        return func
-
-    return tp.cast("RenderFunc", compile_transformed(func, transformed))
