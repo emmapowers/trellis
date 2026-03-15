@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -128,13 +130,19 @@ class TestEnsureRustup:
             "cargo": str(cargo_path),
         }
 
+        # Keep home dir env vars so Path.home() works when inferring cargo_home
+        home_env: dict[str, str] = {}
+        for key in ("HOME", "USERPROFILE"):
+            if key in os.environ:
+                home_env[key] = os.environ[key]
+
         with (
             patch(
                 "trellis.packaging.toolchain.rustup.shutil.which",
                 side_effect=which_map.get,
             ),
             patch("subprocess.run", mock_run),
-            patch.dict("os.environ", {}, clear=True),
+            patch.dict("os.environ", home_env, clear=True),
         ):
             result = ensure_rustup()
 
@@ -256,6 +264,10 @@ class TestEnsureRustup:
             patch("subprocess.run", mock_run),
             patch("httpx.stream", return_value=mock_response) as mock_stream,
             patch("trellis.packaging.toolchain.rustup.CACHE_DIR", cache_dir),
+            patch(
+                "trellis.packaging.toolchain.rustup.get_rust_target",
+                return_value="x86_64-pc-windows-msvc",
+            ),
             patch.dict("os.environ", {}, clear=True),
         ):
             result = ensure_rustup()
@@ -274,9 +286,10 @@ class TestEnsureRustup:
         rustup_home = tmp_path / "rustup"
         cargo_bin = cargo_home / "bin"
         cargo_bin.mkdir(parents=True)
-        rustc = cargo_bin / "rustc"
+        ext = ".exe" if sys.platform == "win32" else ""
+        rustc = cargo_bin / f"rustc{ext}"
         rustc.write_text("fake")
-        cargo = cargo_bin / "cargo"
+        cargo = cargo_bin / f"cargo{ext}"
         cargo.write_text("fake")
 
         mock_run = MagicMock()

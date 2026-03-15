@@ -259,7 +259,6 @@ class TestBuildPortableExe:
 
         output_dir = tmp_path / "output"
 
-        # cargo_name for "My App" is "my-app"; Cargo compiles hyphens to underscores
         launcher_exe_path = (
             scaffold_dir
             / "target"
@@ -267,7 +266,7 @@ class TestBuildPortableExe:
             / "launcher"
             / "target"
             / "release"
-            / "my_app_launcher.exe"
+            / "my-app-launcher.exe"
         )
 
         def fake_cargo_build(cmd, *, cwd, env, check):
@@ -304,7 +303,7 @@ class TestBuildPortableExe:
         output_dir = tmp_path / "output"
 
         def fake_cargo_build(cmd, *, cwd, env, check):
-            exe_path = cwd / "target" / "release" / "my_app_launcher.exe"
+            exe_path = cwd / "target" / "release" / "my-app-launcher.exe"
             exe_path.parent.mkdir(parents=True, exist_ok=True)
             exe_path.write_bytes(b"LAUNCHER")
 

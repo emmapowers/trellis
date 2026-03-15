@@ -254,7 +254,9 @@ def _generate_cargo_config(*, scaffold_dir: Path, pyembed_dir: Path, product_nam
 
     elif _platform == "win32":
         lib_dir = pyembed_dir / "libs"
-        rustflags = ["-L", str(lib_dir)]
+        # Use forward slashes to avoid TOML unicode escape interpretation
+        # (e.g. \U in C:\Users would be parsed as a unicode escape sequence)
+        rustflags = ["-L", lib_dir.as_posix()]
         flags_toml = ", ".join(f'"{f}"' for f in rustflags)
         for target in ("x86_64-pc-windows-msvc", "aarch64-pc-windows-msvc"):
             lines.append(f"[target.{target}]")

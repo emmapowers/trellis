@@ -182,7 +182,7 @@ def _build_launcher(rust: RustToolchain, launcher_dir: Path, cargo_name: str) ->
         env=env,
         check=True,
     )
-    binary_name = (cargo_name + "-launcher").replace("-", "_") + ".exe"
+    binary_name = cargo_name + "-launcher" + ".exe"
     return launcher_dir / "target" / "release" / binary_name
 
 
