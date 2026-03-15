@@ -28,7 +28,6 @@ def test_container_html_wrappers_type_as_html_container_element(tmp_path: Path) 
         assert_type(h.Audio(auto_play=True, controls=True), HtmlContainerElement)
         assert_type(h.P("hello"), Element)
         assert_type(h.Style(color="red", background_color="blue"), h.Style)
-        assert_type(h.Style(backgroundColor="red"), h.Style)
         assert_type(h.media(min_width=640, style=h.Style(color="red")), h.MediaRule)
         """
     )

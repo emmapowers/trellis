@@ -248,15 +248,7 @@ class Style:
 type StyleInput = Style | RawStyleMapping
 
 
-class _CssPrimitive(tp.Protocol):
-    """Protocol for CSS primitive types that wrap a css_text string."""
-
-    css_text: str
-
-    def __init__(self, css_text: str) -> None: ...
-
-
-_CV = tp.TypeVar("_CV", bound=_CssPrimitive)
+_CV = tp.TypeVar("_CV", CssRawString, CssLength, CssPercent, CssTime, CssAngle, CssColor)
 
 
 def _wrap_value(

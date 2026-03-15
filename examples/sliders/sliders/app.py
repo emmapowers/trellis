@@ -105,7 +105,7 @@ def SliderColumn() -> None:
                         font_size=13,
                         bold=True,
                         width=36,
-                        style=h.Style(font_variant_numeric="tabular-nums"),
+                        style=h.Style(font_variant_numeric=h.raw("tabular-nums")),
                     )
 
 

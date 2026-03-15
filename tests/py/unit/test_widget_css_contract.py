@@ -7,6 +7,7 @@ import pytest
 
 import trellis
 from trellis import widgets as w
+from trellis.html._css_primitives import CssRawString
 from trellis.html._style_runtime import SpacingInput, StyleInput, WidthInput
 from trellis.widgets.icons import Icon
 
@@ -19,12 +20,15 @@ def test_widget_signatures_use_shared_css_types() -> None:
     assert label_hints["style"] == StyleInput | None
 
 
-def test_public_style_input_aliases_accept_plain_strings() -> None:
+def test_public_style_input_aliases_reject_plain_strings() -> None:
+    """WidthInput/SpacingInput should not accept bare str — use typed helpers."""
     spacing_value = getattr(SpacingInput, "__value__", SpacingInput)
     width_value = getattr(WidthInput, "__value__", WidthInput)
 
-    assert str in tp.get_args(spacing_value)
-    assert str in tp.get_args(width_value)
+    assert str not in tp.get_args(spacing_value)
+    assert str not in tp.get_args(width_value)
+    assert CssRawString in tp.get_args(spacing_value)
+    assert CssRawString in tp.get_args(width_value)
 
 
 def test_legacy_style_dataclasses_are_removed() -> None:

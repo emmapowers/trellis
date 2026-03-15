@@ -97,7 +97,7 @@ def WidgetShowcase() -> None:
             style=h.Style(
                 border_bottom=f"1px solid {theme.border_default}",
                 background_color=theme.bg_surface,
-                flex_shrink="0",
+                flex_shrink=h.raw("0"),
             ),
         ):
             w.Icon(name=IconName.LAYOUT_DASHBOARD, size=24, color=theme.accent_primary)
@@ -115,7 +115,7 @@ def WidgetShowcase() -> None:
                     border_right=f"1px solid {theme.border_default}",
                     background_color=theme.bg_page,
                     overflow="auto",
-                    flex_shrink="0",
+                    flex_shrink=h.raw("0"),
                 ),
             ):
                 for tab_id, label, _icon, _ in tabs:

@@ -111,7 +111,7 @@ def _shell_style() -> h.Style:
         min_height=h.vh(100),
         color=h.var("--ink"),
         background_color=h.var("--paper"),
-        background_image=(
+        background_image=h.raw(
             "radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--lagoon) 14%, transparent) 0, transparent 30%), "
             "radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--ember) 12%, transparent) 0, transparent 28%), "
             "linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,250,244,0.96))"
@@ -139,8 +139,8 @@ def _page_frame_style() -> h.Style:
         display="flex",
         flex_direction="column",
         gap=56,
-        width="min(1220px, 100%)",
-        margin="0 auto",
+        width=h.min_(h.px(1220), h.pct(100)),
+        margin=h.raw("0 auto"),
         media=[h.media(min_width=960, style=h.Style(gap=72))],
     )
 
@@ -185,8 +185,8 @@ def _eyebrow_style() -> h.Style:
         color=h.var("--muted"),
         font_size=12,
         font_family=FONT_MONO,
-        letter_spacing="0.14em",
-        text_transform="uppercase",
+        letter_spacing=h.em(0.14),
+        text_transform=h.raw("uppercase"),
     )
 
 
@@ -194,10 +194,10 @@ def _section_title_style() -> h.Style:
     return h.Style(
         margin=0,
         font_family=FONT_DISPLAY,
-        font_size=h.clamp(h.px(30), "3.6vw", h.px(48)),
+        font_size=h.clamp(h.px(30), h.vw(3.6), h.px(48)),
         line_height=1.1,
-        letter_spacing="-0.02em",
-        max_width="18ch",
+        letter_spacing=h.em(-0.02),
+        max_width=h.ch(18),
     )
 
 
@@ -205,20 +205,20 @@ def _headline_style() -> h.Style:
     return h.Style(
         margin=0,
         font_family=FONT_DISPLAY,
-        font_size=h.clamp(h.px(44), "6.6vw", h.px(80)),
+        font_size=h.clamp(h.px(44), h.vw(6.6), h.px(80)),
         line_height=1.02,
-        letter_spacing="-0.025em",
-        max_width="14ch",
+        letter_spacing=h.em(-0.025),
+        max_width=h.ch(14),
     )
 
 
 def _body_copy_style() -> h.Style:
     return h.Style(
         margin=0,
-        font_size=h.clamp(h.px(17), "1.8vw", h.px(20)),
+        font_size=h.clamp(h.px(17), h.vw(1.8), h.px(20)),
         line_height=1.65,
         color=h.var("--muted"),
-        max_width="38rem",
+        max_width=h.rem(38),
     )
 
 
@@ -253,7 +253,7 @@ def _cta_link_style(*, tone: str) -> h.Style:
         text_decoration="none",
         font_size=15,
         font_weight=600,
-        letter_spacing="0.01em",
+        letter_spacing=h.em(0.01),
         transition="transform 160ms ease, opacity 160ms ease",
         hover=h.Style(transform=h.translate(0, -1), opacity=0.96),
         active=h.Style(transform=h.translate(0, 0)),
@@ -282,7 +282,7 @@ def _hero_media_shell_style() -> h.Style:
     return h.Style(
         display="grid",
         gap=20,
-        align_content="start",
+        align_content=h.raw("start"),
     )
 
 
@@ -396,7 +396,7 @@ def _timeline_style() -> h.Style:
 
 def _input_style() -> h.Style:
     return h.Style(
-        width="100%",
+        width=h.pct(100),
         padding=h.padding(14, 20),
         border=h.border(1, "solid", h.var("--line")),
         border_radius=12,
@@ -421,7 +421,7 @@ def _button_style() -> h.Style:
         color="white",
         font_size=15,
         font_weight=600,
-        letter_spacing="0.02em",
+        letter_spacing=h.em(0.02),
         cursor="pointer",
         transition="transform 160ms ease, opacity 160ms ease",
         hover=h.Style(transform=h.translate(0, -1), opacity=0.96),
@@ -462,9 +462,9 @@ def ChromeHeader() -> None:
                 style=h.Style(
                     margin=0,
                     font_family=FONT_DISPLAY,
-                    font_size=h.clamp(h.px(22), "2.2vw", h.px(30)),
+                    font_size=h.clamp(h.px(22), h.vw(2.2), h.px(30)),
                     line_height=1.08,
-                    max_width="18ch",
+                    max_width=h.ch(18),
                 ),
             )
         with h.Nav(aria_label="Section links"):
@@ -548,10 +548,10 @@ def HeroSection() -> None:
                     alt="Warm daylight falling across a contemporary studio building interior.",
                     style=h.Style(
                         display="block",
-                        width="100%",
+                        width=h.pct(100),
                         height=360,
-                        object_fit="cover",
-                        object_position="center",
+                        object_fit=h.raw("cover"),
+                        object_position=h.raw("center"),
                     ),
                 )
                 with h.Figcaption(style=_figure_caption_style()):
@@ -603,7 +603,7 @@ def CapabilityCard(card: FeatureCard) -> None:
                 font_family=FONT_DISPLAY,
                 font_size=26,
                 line_height=1.1,
-                max_width="15ch",
+                max_width=h.ch(15),
             ),
         )
         h.P(card.body, style=h.Style(margin=0, color=h.var("--muted"), font_size=15))
@@ -674,10 +674,10 @@ def NotesSection() -> None:
                     alt="A soft-focus design workspace with notebooks, a table lamp, and neutral materials.",
                     style=h.Style(
                         display="block",
-                        width="100%",
+                        width=h.pct(100),
                         height=260,
-                        object_fit="cover",
-                        object_position="center",
+                        object_fit=h.raw("cover"),
+                        object_position=h.raw("center"),
                     ),
                 )
             with h.Div(style=_timeline_style()):
@@ -749,7 +749,7 @@ def DispatchSection() -> None:
         )
         h.P(
             "The form is static, but it demonstrates native labels, placeholders, button states, and a typed media layout inside the same HTML layer.",
-            style=h.Style(margin=0, color=h.var("--muted"), max_width="34rem"),
+            style=h.Style(margin=0, color=h.var("--muted"), max_width=h.rem(34)),
         )
         with h.Form(
             action="#",
@@ -809,7 +809,7 @@ def FooterRail() -> None:
     ):
         h.P(
             "HTML Studio is intentionally small: it shows how semantic trellis.html and typed CSS feel in a real page without collapsing into a widget demo.",
-            style=h.Style(margin=0, color=h.var("--muted"), max_width="46rem"),
+            style=h.Style(margin=0, color=h.var("--muted"), max_width=h.rem(46)),
         )
         with h.Div(style=h.Style(display="flex", gap=14, flex_wrap="wrap")):
             h.A(

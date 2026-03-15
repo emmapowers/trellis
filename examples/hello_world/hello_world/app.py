@@ -60,7 +60,7 @@ def CounterControls(
                 text=str(count),
                 font_size=36,
                 bold=True,
-                style=h.Style(font_variant_numeric="tabular-nums"),
+                style=h.Style(font_variant_numeric=h.raw("tabular-nums")),
             )
 
         w.Button(

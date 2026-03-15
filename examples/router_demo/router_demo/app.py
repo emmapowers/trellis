@@ -65,7 +65,7 @@ def Header() -> None:
         style=h.Style(
             border_bottom=f"1px solid {theme.border_default}",
             background_color=theme.bg_surface,
-            flex_shrink="0",
+            flex_shrink=h.raw("0"),
         ),
     ):
         # Logo/title
