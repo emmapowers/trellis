@@ -5,8 +5,8 @@ from trellis import html as h
 
 def test_html_public_css_api_has_user_facing_docstrings() -> None:
     assert h.Style.__doc__ is not None
-    assert "Structured CSS style input" in h.Style.__doc__
-    assert "raw dicts using DOM-style CSS keys" in h.Style.__doc__
+    assert "CSS properties" in h.Style.__doc__
+    assert "raw dicts" in h.Style.__doc__ or "CssClass" in h.Style.__doc__
 
     assert h.media.__doc__ is not None
     assert "typed CSS media rule" in h.media.__doc__

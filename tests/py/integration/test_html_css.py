@@ -27,51 +27,26 @@ def test_style_compiles_inline_css(rendered) -> None:
         "color": "rebeccapurple",
         "background-color": "#f0f0f0",
     }
-    assert "_style_rules" not in div["props"]
 
 
-def test_style_compiles_hover_media_and_selectors(rendered) -> None:
-    @component
-    def App() -> None:
-        h.Div(
-            style=h.Style(
-                color=h.rgb(0, 0, 0),
-                hover=h.Style(color=h.rgb(255, 0, 0)),
-                media=[
-                    h.media(min_width=h.px(768), style=h.Style(padding=h.px(24))),
-                ],
-                selectors={"& > *": h.Style(margin_bottom=h.px(8))},
-            )
-        )
+def test_css_class_compiles_hover_media_and_selectors() -> None:
+    """CssClass compiles pseudo-selectors and media rules to CSS text."""
+    cls = h.CssClass(
+        "test-cls",
+        color="black",
+        hover=h.Css(color="red"),
+        media=[
+            h.media(min_width=768, style=h.Css(padding=24)),
+        ],
+    )
 
-    result = rendered(App)
-    div = result.tree["children"][0]
-
-    assert div["props"]["class_name"].startswith("tcss_")
-    assert ":hover" in div["props"]["_style_rules"]
-    assert "@media (min-width: 768px)" in div["props"]["_style_rules"]
-    assert "> *" in div["props"]["_style_rules"]
-    assert div["props"]["style"] == {"color": "rgb(0 0 0)"}
-
-
-def test_style_accepts_dom_dict_escape_hatch(rendered) -> None:
-    @component
-    def App() -> None:
-        h.Div(
-            style={
-                "border-radius": "8px",
-                ":hover": {"color": "red"},
-                "@media (min-width: 768px)": {"padding": "24px"},
-            }
-        )
-
-    result = rendered(App)
-    div = result.tree["children"][0]
-
-    assert div["props"]["style"] == {"border-radius": "8px"}
-    assert div["props"]["class_name"].startswith("tcss_")
-    assert ":hover" in div["props"]["_style_rules"]
-    assert "@media (min-width: 768px)" in div["props"]["_style_rules"]
+    css = str(cls)
+    assert ".test-cls{" in css
+    assert "color:black" in css
+    assert ".test-cls:hover{" in css
+    assert "color:red" in css
+    assert "@media (min-width: 768px)" in css
+    assert "padding:24px" in css
 
 
 def test_style_normalizes_raw_dict_keys(rendered) -> None:
@@ -128,43 +103,32 @@ def test_style_serializes_shadow_helper_lengths_with_units(rendered) -> None:
     assert div["props"]["style"]["box-shadow"] == "0px 18px 40px rgb(8 15 30 / 0.16)"
 
 
-def test_style_accepts_permissive_kwargs_and_nested_raw_mappings(rendered) -> None:
-    @component
-    def App() -> None:
-        h.Div(
-            style=h.Style(
-                backgroundColor="red",
-                border_radius=8,
-                vars={"--accent": h.rgb(10, 20, 30)},
-                selectors={
-                    "& > span": h.Style(margin_top=4),
-                    "&:focus-visible": {"outlineWidth": 3},
-                },
-                media=[
-                    h.media(
-                        min_width=640,
-                        style={
-                            "paddingInline": "2rem",
-                            "& > strong": {"fontWeight": 700},
-                        },
-                    ),
-                ],
-            )
-        )
+def test_css_class_compiles_permissive_kwargs_and_nested_raw_mappings() -> None:
+    """CssClass handles selectors and media with nested raw mappings."""
+    cls = h.CssClass(
+        "test-permissive",
+        backgroundColor="red",
+        border_radius=8,
+        vars={"--accent": h.rgb(10, 20, 30)},
+        selectors={
+            "& > span": h.Css(margin_top=4),
+            "&:focus-visible": {"outlineWidth": 3},
+        },
+        media=[
+            h.media(
+                min_width=640,
+                style=h.Css(padding_inline=h.rem(2)),
+            ),
+        ],
+    )
 
-    result = rendered(App)
-    div = result.tree["children"][0]
-
-    assert div["props"]["style"] == {
-        "background-color": "red",
-        "border-radius": "8px",
-        "--accent": "rgb(10 20 30)",
-    }
-    assert div["props"]["class_name"].startswith("tcss_")
-    assert "& > span".replace("&", f".{div['props']['class_name']}")[:5]  # sanity on class use
-    assert ".tcss_" in div["props"]["_style_rules"]
-    assert "> span" in div["props"]["_style_rules"]
-    assert ":focus-visible" in div["props"]["_style_rules"]
-    assert "@media (min-width: 640px)" in div["props"]["_style_rules"]
-    assert "padding-inline:2rem" in div["props"]["_style_rules"]
-    assert "font-weight:700" in div["props"]["_style_rules"]
+    css = str(cls)
+    assert ".test-permissive{" in css
+    assert "background-color:red" in css
+    assert "border-radius:8px" in css
+    assert "--accent:rgb(10 20 30)" in css
+    assert "> span" in css
+    assert "margin-top:4px" in css
+    assert ":focus-visible" in css
+    assert "@media (min-width: 640px)" in css
+    assert "padding-inline:2rem" in css

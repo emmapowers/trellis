@@ -43,8 +43,11 @@ else:
     type SpacingInput = int | float | CssRawString | CssLength | CssPercent
 
 __all__ = [
+    "Css",
     "CssAngle",
+    "CssClass",
     "CssColor",
+    "CssInput",
     "CssLength",
     "CssPercent",
     "CssRawString",
@@ -140,37 +143,33 @@ class MediaRule:
         self.features = {name: value for name, value in feature_values.items() if value is not None}
 
 
-class Style:
-    """Structured CSS style input for ``trellis.html``.
+class Css:
+    """Inline CSS properties for ``style=`` on HTML elements and widgets.
 
-    Use ``Style(...)`` for structured CSS properties, pseudo states, media
-    queries, selectors, and custom properties. For unsupported or highly
-    dynamic cases, ``style`` also accepts raw dicts using DOM-style CSS keys.
+    Use ``Css(...)`` for structured CSS properties and custom properties.
+    For unsupported or highly dynamic cases, ``style`` also accepts raw
+    dicts using DOM-style CSS keys.
+
+    For hover, media queries, and selectors, use ``CssClass`` instead.
     """
 
-    __slots__ = ("media", "props", "selectors", "vars")
+    __slots__ = ("props", "vars")
 
     props: dict[str, tp.Any]
     vars: dict[str, StyleScalar]
-    selectors: dict[str, StyleInput]
-    media: list[MediaRule]
 
-    def __init__(self, _mapping: StyleInput | None = None, /, **kwargs: tp.Any) -> None:
+    def __init__(self, _mapping: CssInput | None = None, /, **kwargs: tp.Any) -> None:
         self.props = {}
         self.vars = {}
-        self.selectors = {}
-        self.media = []
 
         if _mapping is not None:
             self._consume_input(_mapping)
         self._consume_kwargs(kwargs)
 
-    def _consume_input(self, style_input: StyleInput) -> None:
-        if isinstance(style_input, Style):
+    def _consume_input(self, style_input: CssInput) -> None:
+        if isinstance(style_input, Css):
             self.props.update(style_input.props)
             self.vars.update(style_input.vars)
-            self.selectors.update(style_input.selectors)
-            self.media.extend(style_input.media)
             return
 
         for key, value in style_input.items():
@@ -179,40 +178,12 @@ class Style:
             if key == "vars":
                 self._consume_vars(tp.cast("Mapping[str, StyleScalar]", value))
                 continue
-            if key == "selectors":
-                self._consume_selectors(tp.cast("Mapping[str, StyleInput]", value))
-                continue
-            if key == "media":
-                self._consume_media(value)
-                continue
-            if key in _PSEUDO_SELECTORS:
-                self.selectors[_PSEUDO_SELECTORS[key]] = tp.cast("StyleInput", value)
-                continue
-            if key.startswith("@media "):
-                self.media.append(MediaRule(query=key.removeprefix("@media ").strip(), style=value))
-                continue
-            if key.startswith(":") or "&" in key:
-                self.selectors[key] = tp.cast("StyleInput", value)
-                continue
             self.props[key] = value
 
     def _consume_kwargs(self, kwargs: dict[str, tp.Any]) -> None:
         vars_value = kwargs.pop("vars", None)
         if vars_value is not None:
             self._consume_vars(tp.cast("Mapping[str, StyleScalar]", vars_value))
-
-        selectors_value = kwargs.pop("selectors", None)
-        if selectors_value is not None:
-            self._consume_selectors(tp.cast("Mapping[str, StyleInput]", selectors_value))
-
-        media_value = kwargs.pop("media", None)
-        if media_value is not None:
-            self._consume_media(media_value)
-
-        for pseudo_name, selector in _PSEUDO_SELECTORS.items():
-            pseudo_value = kwargs.pop(pseudo_name, None)
-            if pseudo_value is not None:
-                self.selectors[selector] = tp.cast("StyleInput", pseudo_value)
 
         for key, value in kwargs.items():
             if value is None:
@@ -223,9 +194,66 @@ class Style:
         for key, value in vars_mapping.items():
             self.vars[key] = value
 
-    def _consume_selectors(self, selectors: Mapping[str, StyleInput]) -> None:
-        for selector, nested_style in selectors.items():
-            self.selectors[selector] = nested_style
+
+class CssClass:
+    """Named CSS class with selectors and media queries.
+
+    Declare a class with hover/focus/media rules, then use ``str(...)``
+    to get the CSS rules for a ``<style>`` element, and ``.class_name``
+    to apply the class to elements.
+
+    Example::
+
+        card_style = h.CssClass("card",
+            background_color="white",
+            hover=h.Css(background_color="blue"),
+            media=[h.media(min_width=640, style=h.Css(padding=24))],
+        )
+        with h.StyleTag(str(card_style)):
+            pass
+        h.Div(class_name=card_style.class_name)
+    """
+
+    __slots__ = ("class_name", "media", "props", "selectors", "vars")
+
+    class_name: str
+    props: dict[str, tp.Any]
+    vars: dict[str, StyleScalar]
+    selectors: dict[str, CssInput]
+    media: list[MediaRule]
+
+    def __init__(self, class_name: str, /, **kwargs: tp.Any) -> None:
+        self.class_name = class_name
+        self.props = {}
+        self.vars = {}
+        self.selectors = {}
+        self.media = []
+        self._consume_kwargs(kwargs)
+
+    def _consume_kwargs(self, kwargs: dict[str, tp.Any]) -> None:
+        vars_value = kwargs.pop("vars", None)
+        if vars_value is not None:
+            for key, value in vars_value.items():
+                self.vars[key] = value
+
+        selectors_value = kwargs.pop("selectors", None)
+        if selectors_value is not None:
+            for selector, nested_style in selectors_value.items():
+                self.selectors[selector] = nested_style
+
+        media_value = kwargs.pop("media", None)
+        if media_value is not None:
+            self._consume_media(media_value)
+
+        for pseudo_name, selector in _PSEUDO_SELECTORS.items():
+            pseudo_value = kwargs.pop(pseudo_name, None)
+            if pseudo_value is not None:
+                self.selectors[selector] = tp.cast("CssInput", pseudo_value)
+
+        for key, value in kwargs.items():
+            if value is None:
+                continue
+            self.props[key] = value
 
     def _consume_media(self, media_value: tp.Any) -> None:
         if isinstance(media_value, Mapping):
@@ -239,13 +267,24 @@ class Style:
                 if isinstance(item, MediaRule):
                     self.media.append(item)
                     continue
-                raise TypeError("Style.media entries must be MediaRule instances")
+                raise TypeError("CssClass.media entries must be MediaRule instances")
             return
 
-        raise TypeError("Style.media must be a mapping or iterable of MediaRule values")
+        raise TypeError("CssClass.media must be a mapping or iterable of MediaRule values")
+
+    def __str__(self) -> str:
+        # Local import to avoid circular dependency: _style_compiler imports from this module.
+        from trellis.html._style_compiler import compile_css_class  # noqa: PLC0415
+
+        return compile_css_class(self)
 
 
-type StyleInput = Style | RawStyleMapping
+# Keep Style as an alias during migration
+Style = Css
+
+type CssInput = Css | RawStyleMapping
+# Legacy alias
+type StyleInput = CssInput
 
 
 _CV = tp.TypeVar("_CV", CssRawString, CssLength, CssPercent, CssTime, CssAngle, CssColor)

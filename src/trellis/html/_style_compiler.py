@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import re
 import typing as tp
 from collections.abc import Mapping
@@ -18,10 +16,9 @@ from trellis.html._css_primitives import (
 )
 from trellis.html._css_primitives import format_number as _format_number
 from trellis.html._generated_style_metadata import AUTO_PX_FIELDS, CSS_NAME_BY_FIELD
-from trellis.html._style_runtime import MediaRule, Style
+from trellis.html._style_runtime import Css, CssClass, MediaRule
 
 StyleDict = dict[str, tp.Any]
-CompiledStyle = tuple[StyleDict, str | None, str | None]
 
 _CAMEL_BOUNDARY = re.compile(r"(?<!^)(?=[A-Z])")
 _CSS_NAME_BY_FIELD_REVERSED = {
@@ -30,39 +27,50 @@ _CSS_NAME_BY_FIELD_REVERSED = {
 
 
 def compile_style_props(props: dict[str, tp.Any]) -> dict[str, tp.Any]:
+    """Compile a Css object or raw dict in the ``style`` prop to inline CSS."""
+
     style_input = props.get("style")
     if style_input is None:
         return dict(props)
 
-    inline, class_name, style_rules = compile_style(style_input)
+    inline = _compile_inline(style_input)
     result = dict(props)
     result["style"] = inline
-    if class_name is not None:
-        existing_class_name = result.get("class_name")
-        if isinstance(existing_class_name, str) and existing_class_name:
-            result["class_name"] = f"{existing_class_name} {class_name}"
-        else:
-            result["class_name"] = class_name
-    if style_rules is not None:
-        result["_style_rules"] = style_rules
     return result
 
 
-def compile_style(style_input: tp.Any) -> CompiledStyle:
-    inline, nested_rules = _normalize_style(style_input)
-    if not nested_rules:
-        return inline, None, None
+def compile_css_class(css_class: CssClass) -> str:
+    """Compile a CssClass into a CSS rule block string."""
+    selector = f".{css_class.class_name}"
+    parts: list[str] = []
 
-    canonical = json.dumps(
-        {
-            "inline": inline,
-            "rules": nested_rules,
-        },
-        sort_keys=True,
-    )
-    class_name = f"tcss_{hashlib.sha1(canonical.encode('utf-8')).hexdigest()[:12]}"
-    css_text = "\n".join(_emit_rule(rule, f".{class_name}") for rule in nested_rules)
-    return inline, class_name, css_text
+    # Base rule (plain CSS properties on the class itself)
+    base_inline = _compile_css_props(css_class.props, css_class.vars)
+    if base_inline:
+        declarations = "".join(f"{name}:{_css_text(value)};" for name, value in base_inline.items())
+        parts.append(f"{selector}{{{declarations}}}")
+
+    # Selector rules (hover, focus, etc.)
+    for child_selector, nested_style in css_class.selectors.items():
+        nested_inline = _compile_inline(nested_style)
+        if nested_inline:
+            resolved = _resolve_selector(selector, child_selector)
+            declarations = "".join(
+                f"{name}:{_css_text(value)};" for name, value in nested_inline.items()
+            )
+            parts.append(f"{resolved}{{{declarations}}}")
+
+    # Media rules
+    for rule in css_class.media:
+        query = _media_query(rule)
+        nested_inline = _compile_inline(rule.style)
+        if nested_inline:
+            declarations = "".join(
+                f"{name}:{_css_text(value)};" for name, value in nested_inline.items()
+            )
+            parts.append(f"@media {query}{{{selector}{{{declarations}}}}}")
+
+    return "\n".join(parts)
 
 
 def merge_style_inputs(
@@ -92,59 +100,37 @@ def _deep_merge_style_mappings(
     return merged
 
 
-def _normalize_style(style_input: tp.Any) -> tuple[StyleDict, list[dict[str, tp.Any]]]:
-    inline: StyleDict = {}
-    nested_rules: list[dict[str, tp.Any]] = []
-
+def _compile_inline(style_input: tp.Any) -> StyleDict:
+    """Compile a Css object or raw mapping to a flat CSS property dict."""
     if style_input is None:
-        return inline, nested_rules
+        return {}
 
     if isinstance(style_input, Mapping):
-        style = Style(style_input)
-    elif isinstance(style_input, Style):
+        style = Css(style_input)
+    elif isinstance(style_input, Css):
         style = style_input
     else:
         raise TypeError(f"Unsupported style value: {style_input!r}")
 
-    _consume_style_object(style, inline, nested_rules)
-    return inline, nested_rules
+    return _compile_css_props(style.props, style.vars)
 
 
-def _style_input_to_mapping(style_input: tp.Any) -> dict[str, tp.Any]:
-    inline, nested_rules = _normalize_style(style_input)
-    mapping = dict(inline)
-    for rule in nested_rules:
-        if "media" in rule:
-            mapping[f"@media {rule['media']}"] = _nested_rule_to_mapping(rule)
-        elif "selector" in rule:
-            mapping[rule["selector"]] = _nested_rule_to_mapping(rule)
-    return mapping
-
-
-def _consume_style_object(
-    style: Style,
-    inline: StyleDict,
-    nested_rules: list[dict[str, tp.Any]],
-) -> None:
-    for name, value in style.props.items():
+def _compile_css_props(props: dict[str, tp.Any], vars: dict[str, tp.Any]) -> StyleDict:
+    """Compile props and vars into a flat CSS property dict."""
+    inline: StyleDict = {}
+    for name, value in props.items():
         css_name = _normalize_css_name(name)
         inline[css_name] = _serialize_value(value, auto_px=_should_auto_px(name, css_name))
 
-    for key, raw_value in style.vars.items():
+    for key, raw_value in vars.items():
         inline[key if key.startswith("--") else f"--{key}"] = _serialize_value(
             raw_value, auto_px=False
         )
+    return inline
 
-    for selector, nested_style in style.selectors.items():
-        nested_inline, nested_children = _normalize_style(nested_style)
-        nested_rules.append(
-            {"selector": selector, "inline": nested_inline, "children": nested_children}
-        )
 
-    for rule in style.media:
-        query = _media_query(rule)
-        nested_inline, nested_children = _normalize_style(rule.style)
-        nested_rules.append({"media": query, "inline": nested_inline, "children": nested_children})
+def _style_input_to_mapping(style_input: tp.Any) -> dict[str, tp.Any]:
+    return dict(_compile_inline(style_input))
 
 
 def _normalize_css_name(name: str) -> str:
@@ -199,31 +185,6 @@ def _is_auto_px_media_feature(css_name: str) -> bool:
     return "width" in css_name or "height" in css_name
 
 
-def _emit_rule(rule: dict[str, tp.Any], base_selector: str) -> str:
-    selector = rule.get("selector")
-    media = rule.get("media")
-    inline = rule.get("inline", {})
-    children = rule.get("children", [])
-
-    if selector is not None:
-        selector_text = _resolve_selector(base_selector, selector)
-        body = _emit_rule_block(selector_text, inline, children)
-    else:
-        body = _emit_rule_block(base_selector, inline, children)
-
-    if media is not None:
-        return f"@media {media} {{{body}}}"
-    return body
-
-
-def _emit_rule_block(selector: str, inline: StyleDict, children: list[dict[str, tp.Any]]) -> str:
-    declarations = "".join(f"{name}:{_css_text(value)};" for name, value in inline.items())
-    child_css = "".join(_emit_rule(child, selector) for child in children)
-    if not declarations:
-        return child_css
-    return f"{selector}{{{declarations}}}{child_css}"
-
-
 def _resolve_selector(base_selector: str, selector: str) -> str:
     if "&" in selector:
         return selector.replace("&", base_selector)
@@ -234,13 +195,3 @@ def _resolve_selector(base_selector: str, selector: str) -> str:
 
 def _css_text(value: str | int | float) -> str:
     return str(value)
-
-
-def _nested_rule_to_mapping(rule: dict[str, tp.Any]) -> dict[str, tp.Any]:
-    mapping = dict(rule.get("inline", {}))
-    for child in rule.get("children", []):
-        if "media" in child:
-            mapping[f"@media {child['media']}"] = _nested_rule_to_mapping(child)
-        elif "selector" in child:
-            mapping[child["selector"]] = _nested_rule_to_mapping(child)
-    return mapping

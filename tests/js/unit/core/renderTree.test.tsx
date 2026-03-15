@@ -422,33 +422,17 @@ describe("compiled CSS runtime props", () => {
     expect(props["data-asset-id"]).toBe(1);
   });
 
-  it("injects compiled style rules once and strips internal props from html nodes", () => {
-    const node: SerializedElement = {
-      kind: ElementKind.JSX_ELEMENT,
-      type: "div",
-      name: "Div",
-      key: "node-1",
-      props: {
-        class_name: "existing tcss_demo",
-        _style_rules: ".tcss_demo:hover{color:red}",
-        style: { color: "black" },
-      },
-      children: [],
-    };
-
-    renderNode(node, {
-      onEvent: vi.fn(),
-      getWidget: () => undefined,
-    });
-
-    const styleNode = document.head.querySelector('style[data-trellis-dynamic-styles="true"]');
-    expect(styleNode?.textContent).toContain('.tcss_demo:hover{color:red}');
-
+  it("does not inject dynamic style rules — CSS classes use StyleTag elements", () => {
     const domProps = toReactDomProps({
-      class_name: "existing tcss_demo",
+      class_name: "card-hover",
       style: { color: "black" },
     });
-    expect(domProps.className).toBe("existing tcss_demo");
+    expect(domProps.className).toBe("card-hover");
+    expect(domProps.style).toEqual({ color: "black" });
+
+    // No dynamic style element should exist
+    const styleNode = document.head.querySelector('style[data-trellis-dynamic-styles="true"]');
+    expect(styleNode).toBeNull();
   });
 });
 

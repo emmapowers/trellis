@@ -37,10 +37,7 @@ def test_widget_style_props_merges_declared_style_sugar() -> None:
     result = wrapped(
         margin=8,
         width=240,
-        style=h.Style(
-            hover=h.Style(color="blue"),
-            media=[h.media(min_width=768, style=h.Style(padding=16))],
-        ),
+        style=h.Css(color="red"),
     )
 
     assert result == {
@@ -49,7 +46,6 @@ def test_widget_style_props_merges_declared_style_sugar() -> None:
         "style": {
             "margin": "8px",
             "width": "240px",
-            ":hover": {"color": "blue"},
-            "@media (min-width: 768px)": {"padding": "16px"},
+            "color": "red",
         },
     }

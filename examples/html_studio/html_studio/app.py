@@ -95,8 +95,23 @@ DETAIL_IMAGE = (
 )
 
 
-def _shell_style() -> h.Style:
-    return h.Style(
+_shell_cls = h.CssClass(
+    "shell",
+    selection=h.Css(
+        background_color=h.var("--lagoon"),
+        color="white",
+    ),
+    media=[
+        h.media(
+            min_width=880,
+            style=h.Css(padding=h.padding(64, 48, 120)),
+        )
+    ],
+)
+
+
+def _shell_style() -> h.Css:
+    return h.Css(
         vars={
             "--paper": h.oklch(0.979, 0.008, 92),
             "--ink": h.oklch(0.25, 0.024, 258),
@@ -119,36 +134,62 @@ def _shell_style() -> h.Style:
         padding=h.padding(48, 28, 96),
         font_family=FONT_BODY,
         line_height=1.6,
-        selection=h.Style(
-            background_color=h.var("--lagoon"),
-            color="white",
-        ),
-        media=[
-            h.media(
-                min_width=880,
-                style=h.Style(padding=h.padding(64, 48, 120)),
-            )
-        ],
     )
 
 
-def _page_frame_style() -> h.Style:
+_page_frame_cls = h.CssClass(
+    "page-frame",
+    media=[h.media(min_width=960, style=h.Css(gap=72))],
+)
+
+
+def _page_frame_style() -> h.Css:
     # Use flex + gap instead of "& > * + *" margin because Trellis wraps
     # each component in a <span display="contents">, which swallows margin.
-    return h.Style(
+    return h.Css(
         display="flex",
         flex_direction="column",
         gap=56,
         width=h.min_(h.px(1220), h.pct(100)),
         margin=h.raw("0 auto"),
-        media=[h.media(min_width=960, style=h.Style(gap=72))],
     )
 
 
-def _panel_style(*, accent: str | None = None) -> h.Style:
+_panel_cls = h.CssClass(
+    "panel",
+    media=[
+        h.media(
+            min_width=960,
+            style=h.Css(padding=40),
+        ),
+    ],
+)
+
+_panel_accent_classes: dict[str, h.CssClass] = {}
+
+
+def _panel_accent_cls(accent: str) -> h.CssClass:
+    """Return a CssClass for a panel with an accent-colored ::before bar."""
+    if accent not in _panel_accent_classes:
+        _panel_accent_classes[accent] = h.CssClass(
+            f"panel-accent-{accent.strip('-')}",
+            before=h.Css(
+                content='""',
+                display="block",
+                width=48,
+                height=2,
+                border_radius=999,
+                background_color=h.var(accent),
+                margin_bottom=24,
+            ),
+        )
+    return _panel_accent_classes[accent]
+
+
+def _panel_style() -> h.Css:
     # Use flex + gap for internal spacing: inline margin=0 on headings
     # would override a class-level "& > * + *" margin-top rule.
-    return h.Style(
+    return h.Css(
         display="flex",
         flex_direction="column",
         gap=20,
@@ -157,25 +198,6 @@ def _panel_style(*, accent: str | None = None) -> h.Style:
         border_radius=14,
         padding=32,
         box_shadow="0 2px 4px -2px var(--shadow), 0 16px 40px -16px var(--shadow)",
-        media=[
-            h.media(
-                min_width=960,
-                style=h.Style(padding=40),
-            ),
-        ],
-        before=(
-            h.Style(
-                content='""',
-                display="block",
-                width=48,
-                height=2,
-                border_radius=999,
-                background_color=h.var(accent),
-                margin_bottom=24,
-            )
-            if accent is not None
-            else None
-        ),
     )
 
 
@@ -222,25 +244,38 @@ def _body_copy_style() -> h.Style:
     )
 
 
-def _hero_grid_style() -> h.Style:
-    return h.Style(
+_hero_grid_cls = h.CssClass(
+    "hero-grid",
+    media=[
+        h.media(
+            min_width=980,
+            style=h.Css(
+                grid_template_columns="minmax(0, 1.1fr) minmax(23rem, 0.95fr)",
+                gap=48,
+            ),
+        )
+    ],
+)
+
+
+def _hero_grid_style() -> h.Css:
+    return h.Css(
         display="grid",
         gap=36,
         align_items="start",
-        media=[
-            h.media(
-                min_width=980,
-                style=h.Style(
-                    grid_template_columns="minmax(0, 1.1fr) minmax(23rem, 0.95fr)",
-                    gap=48,
-                ),
-            )
-        ],
     )
 
 
-def _cta_link_style(*, tone: str) -> h.Style:
-    return h.Style(
+_cta_link_cls = h.CssClass(
+    "cta-link",
+    hover=h.Css(transform=h.translate(0, -1), opacity=0.96),
+    active=h.Css(transform=h.translate(0, 0)),
+    focus_visible=h.Css(outline=h.border(2, "solid", h.var("--ink")), outline_offset=3),
+)
+
+
+def _cta_link_style(*, tone: str) -> h.Css:
+    return h.Css(
         display="inline-flex",
         align_items="center",
         justify_content="center",
@@ -255,14 +290,18 @@ def _cta_link_style(*, tone: str) -> h.Style:
         font_weight=600,
         letter_spacing=h.em(0.01),
         transition="transform 160ms ease, opacity 160ms ease",
-        hover=h.Style(transform=h.translate(0, -1), opacity=0.96),
-        active=h.Style(transform=h.translate(0, 0)),
-        focus_visible=h.Style(outline=h.border(2, "solid", h.var("--ink")), outline_offset=3),
     )
 
 
-def _ghost_link_style() -> h.Style:
-    return h.Style(
+_ghost_link_cls = h.CssClass(
+    "ghost-link",
+    hover=h.Css(background_color=h.rgba(255, 255, 255, 0.88)),
+    focus_visible=h.Css(outline=h.border(2, "solid", h.var("--lagoon")), outline_offset=3),
+)
+
+
+def _ghost_link_style() -> h.Css:
+    return h.Css(
         display="inline-flex",
         align_items="center",
         gap=8,
@@ -273,8 +312,6 @@ def _ghost_link_style() -> h.Style:
         text_decoration="none",
         font_size=15,
         background_color=h.rgba(255, 255, 255, 0.58),
-        hover=h.Style(background_color=h.rgba(255, 255, 255, 0.88)),
-        focus_visible=h.Style(outline=h.border(2, "solid", h.var("--lagoon")), outline_offset=3),
     )
 
 
@@ -309,17 +346,22 @@ def _figure_caption_style() -> h.Style:
     )
 
 
-def _metrics_style() -> h.Style:
-    return h.Style(
+_metrics_cls = h.CssClass(
+    "metrics",
+    media=[
+        h.media(
+            min_width=560,
+            style=h.Css(grid_template_columns="repeat(3, minmax(0, 1fr))"),
+        ),
+    ],
+)
+
+
+def _metrics_style() -> h.Css:
+    return h.Css(
         display="grid",
         gap=14,
         margin=0,
-        media=[
-            h.media(
-                min_width=560,
-                style=h.Style(grid_template_columns="repeat(3, minmax(0, 1fr))"),
-            ),
-        ],
     )
 
 
@@ -333,26 +375,49 @@ def _metrics_panel_style() -> h.Style:
     )
 
 
-def _feature_grid_style() -> h.Style:
-    return h.Style(
+_feature_grid_cls = h.CssClass(
+    "feature-grid",
+    media=[
+        h.media(
+            min_width=760,
+            style=h.Css(grid_template_columns="repeat(2, minmax(0, 1fr))"),
+        ),
+        h.media(
+            min_width=1120,
+            style=h.Css(grid_template_columns="repeat(3, minmax(0, 1fr))"),
+        ),
+    ],
+)
+
+
+def _feature_grid_style() -> h.Css:
+    return h.Css(
         display="grid",
         gap=24,
         align_items="stretch",
-        media=[
-            h.media(
-                min_width=760,
-                style=h.Style(grid_template_columns="repeat(2, minmax(0, 1fr))"),
-            ),
-            h.media(
-                min_width=1120,
-                style=h.Style(grid_template_columns="repeat(3, minmax(0, 1fr))"),
-            ),
-        ],
     )
 
 
-def _feature_card_style(accent: str) -> h.Style:
-    return h.Style(
+_feature_card_classes: dict[str, h.CssClass] = {}
+
+
+def _feature_card_cls(accent: str) -> h.CssClass:
+    """Return a CssClass for a feature card with accent-colored hover/focus."""
+    if accent not in _feature_card_classes:
+        _feature_card_classes[accent] = h.CssClass(
+            f"feature-card-{accent.strip('-')}",
+            hover=h.Css(
+                transform=h.translate(0, -2),
+                border_color=h.var(accent),
+                background_color=h.rgba(255, 255, 255, 0.8),
+            ),
+            focus_visible=h.Css(outline=h.border(2, "solid", h.var(accent)), outline_offset=3),
+        )
+    return _feature_card_classes[accent]
+
+
+def _feature_card_style() -> h.Css:
+    return h.Css(
         display="flex",
         flex_direction="column",
         gap=18,
@@ -365,12 +430,6 @@ def _feature_card_style(accent: str) -> h.Style:
         min_height=h.px(320),
         box_shadow="0 2px 4px -2px var(--shadow), 0 12px 30px -16px var(--shadow)",
         transition="transform 160ms ease, border-color 160ms ease, background-color 160ms ease",
-        hover=h.Style(
-            transform=h.translate(0, -2),
-            border_color=h.var(accent),
-            background_color=h.rgba(255, 255, 255, 0.8),
-        ),
-        focus_visible=h.Style(outline=h.border(2, "solid", h.var(accent)), outline_offset=3),
     )
 
 
@@ -394,8 +453,19 @@ def _timeline_style() -> h.Style:
     )
 
 
-def _input_style() -> h.Style:
-    return h.Style(
+_input_cls = h.CssClass(
+    "dispatch-input",
+    placeholder=h.Css(color=h.var("--muted")),
+    focus_visible=h.Css(
+        border_color=h.var("--lagoon"),
+        outline=h.border(2, "solid", h.rgba(0, 0, 0, 0)),
+        box_shadow="0 0 0 3px color-mix(in srgb, var(--lagoon) 18%, transparent)",
+    ),
+)
+
+
+def _input_style() -> h.Css:
+    return h.Css(
         width=h.pct(100),
         padding=h.padding(14, 20),
         border=h.border(1, "solid", h.var("--line")),
@@ -403,17 +473,19 @@ def _input_style() -> h.Style:
         background_color=h.rgba(255, 255, 255, 0.76),
         color=h.var("--ink"),
         font_size=16,
-        placeholder=h.Style(color=h.var("--muted")),
-        focus_visible=h.Style(
-            border_color=h.var("--lagoon"),
-            outline=h.border(2, "solid", h.rgba(0, 0, 0, 0)),
-            box_shadow="0 0 0 3px color-mix(in srgb, var(--lagoon) 18%, transparent)",
-        ),
     )
 
 
-def _button_style() -> h.Style:
-    return h.Style(
+_button_cls = h.CssClass(
+    "dispatch-button",
+    hover=h.Css(transform=h.translate(0, -1), opacity=0.96),
+    active=h.Css(transform=h.translate(0, 0)),
+    focus_visible=h.Css(outline=h.border(2, "solid", h.var("--lagoon")), outline_offset=3),
+)
+
+
+def _button_style() -> h.Css:
+    return h.Css(
         padding=h.padding(14, 28),
         border=h.border(1, "solid", h.var("--ink")),
         border_radius=12,
@@ -424,33 +496,49 @@ def _button_style() -> h.Style:
         letter_spacing=h.em(0.02),
         cursor="pointer",
         transition="transform 160ms ease, opacity 160ms ease",
-        hover=h.Style(transform=h.translate(0, -1), opacity=0.96),
-        active=h.Style(transform=h.translate(0, 0)),
-        focus_visible=h.Style(outline=h.border(2, "solid", h.var("--lagoon")), outline_offset=3),
     )
+
+
+_chrome_header_cls = h.CssClass(
+    "chrome-header",
+    media=[
+        h.media(
+            min_width=760,
+            style=h.Css(
+                flex_direction="row",
+                align_items="end",
+                justify_content="space-between",
+            ),
+        )
+    ],
+)
+
+_nav_link_cls = h.CssClass(
+    "nav-link",
+    hover=h.Css(
+        color=h.var("--ink"),
+        background_color=h.rgba(255, 255, 255, 0.48),
+    ),
+    focus_visible=h.Css(
+        outline=h.border(2, "solid", h.var("--lagoon")),
+        outline_offset=3,
+    ),
+)
 
 
 @component
 def ChromeHeader() -> None:
     """Render the editorial header and compact navigation."""
+    h.StyleTag(str(_chrome_header_cls) + str(_nav_link_cls))
     with h.Header(
-        style=h.Style(
+        style=h.Css(
             display="flex",
             flex_direction="column",
             gap=20,
             padding_bottom=12,
             border_bottom=h.border(1, "solid", h.rgba(31, 28, 37, 0.06)),
-            media=[
-                h.media(
-                    min_width=760,
-                    style=h.Style(
-                        flex_direction="row",
-                        align_items="end",
-                        justify_content="space-between",
-                    ),
-                )
-            ],
-        )
+        ),
+        class_name=_chrome_header_cls.class_name,
     ):
         with h.Div(style=h.Style(display="flex", flex_direction="column", gap=10)):
             h.P(
@@ -488,27 +576,21 @@ def ChromeHeader() -> None:
                             label,
                             href=href,
                             use_router=False,
-                            style=h.Style(
+                            style=h.Css(
                                 color=h.var("--muted"),
                                 text_decoration="none",
                                 padding=h.padding(8, 14),
                                 border_radius=999,
-                                hover=h.Style(
-                                    color=h.var("--ink"),
-                                    background_color=h.rgba(255, 255, 255, 0.48),
-                                ),
-                                focus_visible=h.Style(
-                                    outline=h.border(2, "solid", h.var("--lagoon")),
-                                    outline_offset=3,
-                                ),
                             ),
+                            class_name=_nav_link_cls.class_name,
                         )
 
 
 @component
 def HeroSection() -> None:
     """Render the hero with structured styles and a responsive metrics panel."""
-    with h.Section(style=_hero_grid_style()):
+    h.StyleTag(str(_hero_grid_cls) + str(_cta_link_cls) + str(_ghost_link_cls) + str(_metrics_cls))
+    with h.Section(style=_hero_grid_style(), class_name=_hero_grid_cls.class_name):
         with h.Div(style=h.Style(display="flex", flex_direction="column", gap=24)):
             h.P("March field notes / typed HTML + CSS", style=_eyebrow_style())
             h.H1(
@@ -533,12 +615,14 @@ def HeroSection() -> None:
                     target="_blank",
                     rel="noreferrer",
                     style=_cta_link_style(tone="--lagoon"),
+                    class_name=_cta_link_cls.class_name,
                 )
                 h.A(
                     "Review the CSS model",
                     href="#dispatch",
                     use_router=False,
                     style=_ghost_link_style(),
+                    class_name=_ghost_link_cls.class_name,
                 )
 
         with h.Div(style=_hero_media_shell_style()):
@@ -562,7 +646,7 @@ def HeroSection() -> None:
                     "What this page is exercising",
                     style=h.Style(margin=0, color=h.var("--muted"), font_size=13),
                 )
-                with h.Dl(style=_metrics_style()):
+                with h.Dl(style=_metrics_style(), class_name=_metrics_cls.class_name):
                     for value, label in (
                         ("12", "semantic tags"),
                         ("5", "CSS helper families"),
@@ -592,7 +676,9 @@ def HeroSection() -> None:
 @component
 def CapabilityCard(card: FeatureCard) -> None:
     """Render a feature card for a single HTML/CSS capability."""
-    with h.Article(style=_feature_card_style(card.accent)):
+    card_cls = _feature_card_cls(card.accent)
+    h.StyleTag(str(card_cls))
+    with h.Article(style=_feature_card_style(), class_name=card_cls.class_name):
         with h.Div(style=h.Style(display="flex", align_items="center", gap=12)):
             w.Icon(name=card.icon, size=18, color=f"var({card.accent})")
             h.P(card.eyebrow, style=_eyebrow_style())
@@ -625,6 +711,7 @@ def CapabilityCard(card: FeatureCard) -> None:
 @component
 def CapabilitiesSection() -> None:
     """Render the capability cards and a semantic note panel."""
+    h.StyleTag(str(_feature_grid_cls))
     with h.Section(
         id="capabilities", style=h.Style(display="flex", flex_direction="column", gap=24)
     ):
@@ -633,28 +720,52 @@ def CapabilitiesSection() -> None:
             "A single page can show the full authoring model without pretending to be a CSS playground.",
             style=_section_title_style(),
         )
-        with h.Div(style=_feature_grid_style()):
+        with h.Div(style=_feature_grid_style(), class_name=_feature_grid_cls.class_name):
             for card in FEATURE_CARDS:
                 CapabilityCard(card=card)
+
+
+_notes_section_cls = h.CssClass(
+    "notes-section",
+    media=[
+        h.media(
+            min_width=980,
+            style=h.Css(grid_template_columns="minmax(0, 1.08fr) minmax(22rem, 0.92fr)"),
+        )
+    ],
+)
+
+_summary_cls = h.CssClass(
+    "details-summary",
+    hover=h.Css(color=h.var("--violet")),
+    focus_visible=h.Css(outline=h.border(2, "solid", h.var("--violet")), outline_offset=3),
+)
 
 
 @component
 def NotesSection() -> None:
     """Render release notes plus an explainer details block."""
+    ember_accent_cls = _panel_accent_cls("--ember")
+    violet_accent_cls = _panel_accent_cls("--violet")
+    h.StyleTag(
+        str(_notes_section_cls)
+        + str(_panel_cls)
+        + str(ember_accent_cls)
+        + str(violet_accent_cls)
+        + str(_summary_cls)
+    )
     with h.Section(
         id="notes",
-        style=h.Style(
+        style=h.Css(
             display="grid",
             gap=24,
-            media=[
-                h.media(
-                    min_width=980,
-                    style=h.Style(grid_template_columns="minmax(0, 1.08fr) minmax(22rem, 0.92fr)"),
-                )
-            ],
         ),
+        class_name=_notes_section_cls.class_name,
     ):
-        with h.Div(style=_panel_style(accent="--ember")):
+        with h.Div(
+            style=_panel_style(),
+            class_name=f"{_panel_cls.class_name} {ember_accent_cls.class_name}",
+        ):
             h.P("Release notes", style=_eyebrow_style())
             h.H2(
                 "The CSS layer stays close to the DOM, so layout decisions remain visible in component code.",
@@ -699,18 +810,19 @@ def NotesSection() -> None:
                         h.H3(note.title, style=h.Style(margin=0, font_size=20, line_height=1.1))
                         h.P(note.body, style=h.Style(margin=0, color=h.var("--muted")))
 
-        with h.Details(open=True, style=_panel_style(accent="--violet")):
+        with h.Details(
+            open=True,
+            style=_panel_style(),
+            class_name=f"{_panel_cls.class_name} {violet_accent_cls.class_name}",
+        ):
             h.Summary(
                 "What this page is intentionally showing",
-                style=h.Style(
+                style=h.Css(
                     cursor="pointer",
                     font_weight=600,
                     list_style="none",
-                    hover=h.Style(color=h.var("--violet")),
-                    focus_visible=h.Style(
-                        outline=h.border(2, "solid", h.var("--violet")), outline_offset=3
-                    ),
                 ),
+                class_name=_summary_cls.class_name,
             )
             with h.Div(
                 style=h.Style(display="flex", flex_direction="column", gap=14, margin_top=24)
@@ -738,10 +850,36 @@ def NotesSection() -> None:
                     )
 
 
+_dispatch_form_cls = h.CssClass(
+    "dispatch-form",
+    media=[
+        h.media(
+            min_width=760,
+            style=h.Css(
+                grid_template_columns="minmax(0, 1fr) minmax(12rem, auto)",
+                align_items="end",
+            ),
+        )
+    ],
+)
+
+
 @component
 def DispatchSection() -> None:
     """Render a native HTML form with typed CSS helpers and focus states."""
-    with h.Section(id="dispatch", style=_panel_style(accent="--lagoon")):
+    lagoon_accent_cls = _panel_accent_cls("--lagoon")
+    h.StyleTag(
+        str(_panel_cls)
+        + str(lagoon_accent_cls)
+        + str(_dispatch_form_cls)
+        + str(_input_cls)
+        + str(_button_cls)
+    )
+    with h.Section(
+        id="dispatch",
+        style=_panel_style(),
+        class_name=f"{_panel_cls.class_name} {lagoon_accent_cls.class_name}",
+    ):
         h.P("Dispatch form", style=_eyebrow_style())
         h.H2(
             "Finish with native form controls and typed focus styling.",
@@ -753,20 +891,12 @@ def DispatchSection() -> None:
         )
         with h.Form(
             action="#",
-            style=h.Style(
+            style=h.Css(
                 display="grid",
                 gap=16,
                 margin_top=16,
-                media=[
-                    h.media(
-                        min_width=760,
-                        style=h.Style(
-                            grid_template_columns="minmax(0, 1fr) minmax(12rem, auto)",
-                            align_items="end",
-                        ),
-                    )
-                ],
             ),
+            class_name=_dispatch_form_cls.class_name,
         ):
             with h.Div(style=h.Style(display="flex", flex_direction="column", gap=12)):
                 h.Label(
@@ -781,31 +911,44 @@ def DispatchSection() -> None:
                     placeholder="you@studio.dev",
                     auto_complete="email",
                     style=_input_style(),
+                    class_name=_input_cls.class_name,
                 )
-            h.Button("Request notes", type="button", style=_button_style())
+            h.Button(
+                "Request notes",
+                type="button",
+                style=_button_style(),
+                class_name=_button_cls.class_name,
+            )
+
+
+_footer_cls = h.CssClass(
+    "footer-rail",
+    media=[
+        h.media(
+            min_width=760,
+            style=h.Css(
+                flex_direction="row",
+                align_items="center",
+                justify_content="space-between",
+            ),
+        )
+    ],
+)
 
 
 @component
 def FooterRail() -> None:
     """Render the closing note and link rail."""
+    h.StyleTag(str(_footer_cls) + str(_ghost_link_cls))
     with h.Footer(
-        style=h.Style(
+        style=h.Css(
             display="flex",
             flex_direction="column",
             gap=20,
             padding_top=24,
             border_top=h.border(1, "solid", h.var("--line")),
-            media=[
-                h.media(
-                    min_width=760,
-                    style=h.Style(
-                        flex_direction="row",
-                        align_items="center",
-                        justify_content="space-between",
-                    ),
-                )
-            ],
-        )
+        ),
+        class_name=_footer_cls.class_name,
     ):
         h.P(
             "HTML Studio is intentionally small: it shows how semantic trellis.html and typed CSS feel in a real page without collapsing into a widget demo.",
@@ -818,6 +961,7 @@ def FooterRail() -> None:
                 target="_blank",
                 rel="noreferrer",
                 style=_ghost_link_style(),
+                class_name=_ghost_link_cls.class_name,
             )
             h.A(
                 "MDN CSS",
@@ -825,14 +969,16 @@ def FooterRail() -> None:
                 target="_blank",
                 rel="noreferrer",
                 style=_ghost_link_style(),
+                class_name=_ghost_link_cls.class_name,
             )
 
 
 @component
 def HtmlStudio() -> None:
     """Render the standalone trellis.html example."""
-    with h.Main(style=_shell_style()):
-        with h.Div(style=_page_frame_style()):
+    h.StyleTag(str(_shell_cls) + str(_page_frame_cls))
+    with h.Main(style=_shell_style(), class_name=_shell_cls.class_name):
+        with h.Div(style=_page_frame_style(), class_name=_page_frame_cls.class_name):
             ChromeHeader()
             HeroSection()
             CapabilitiesSection()

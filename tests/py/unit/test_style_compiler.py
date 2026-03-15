@@ -3,135 +3,116 @@ from __future__ import annotations
 import pytest
 
 from trellis import html as h
-from trellis.html._style_compiler import compile_style, merge_style_inputs
+from trellis.html._style_compiler import compile_css_class, compile_style_props, merge_style_inputs
 
 
-def test_merge_style_inputs_deep_merges_nested_selectors_and_media() -> None:
+def test_merge_style_inputs_combines_flat_properties() -> None:
     merged = merge_style_inputs(
-        h.Style(
-            color="red",
-            hover=h.Style(color="blue", background_color="white"),
-            media=[h.media(min_width=768, style=h.Style(padding=16, gap=8))],
-        ),
-        {
-            ":hover": {"border-color": "black"},
-            "@media (min-width: 768px)": {"gap": "12px", "margin": "4px"},
-        },
+        h.Css(color="red", padding=16),
+        h.Css(padding=24, gap=8),
     )
 
-    assert merged == {
-        "color": "red",
-        ":hover": {
-            "color": "blue",
-            "background-color": "white",
-            "border-color": "black",
-        },
-        "@media (min-width: 768px)": {
-            "padding": "16px",
-            "gap": "12px",
-            "margin": "4px",
-        },
-    }
+    assert merged is not None
+    assert merged["color"] == "red"
+    assert merged["padding"] == "24px"
+    assert merged["gap"] == "8px"
 
 
-def test_merge_style_inputs_overlay_wins_at_leaf_level() -> None:
+def test_merge_style_inputs_overlay_wins() -> None:
     merged = merge_style_inputs(
-        {":hover": {"color": "blue"}},
-        {":hover": {"color": "green"}},
+        h.Css(color="red"),
+        h.Css(color="green"),
     )
 
-    assert merged == {
-        ":hover": {
-            "color": "green",
-        }
-    }
+    assert merged is not None
+    assert merged["color"] == "green"
 
 
-def test_compile_style_keeps_unitless_line_height_numeric() -> None:
-    inline, class_name, style_rules = compile_style(
-        h.Style(
-            line_height=1.5,
-            hover=h.Style(line_height=1.1),
-        )
-    )
-
-    assert inline["line-height"] == 1.5
-    assert class_name is not None
-    assert style_rules is not None
-    assert "line-height:1.1;" in style_rules
-    assert "line-height:1.1px;" not in style_rules
-
-
-def test_compile_style_omits_empty_selector_blocks_inside_media_rules() -> None:
-    inline, class_name, style_rules = compile_style(
-        h.Style(
-            selectors={"& > * + *": h.Style(margin_top=24)},
-            media=[
-                h.media(
-                    min_width=960,
-                    style=h.Style(
-                        selectors={"& > * + *": h.Style(margin_top=32)},
-                    ),
-                )
-            ],
-        )
-    )
-
-    assert inline == {}
-    assert class_name is not None
-    assert style_rules is not None
-    assert f"{class_name}{{}}" not in style_rules
-    assert ">{}" not in style_rules
-    assert "@media (min-width: 960px)" in style_rules
-    assert "> * + *{margin-top:32px;}" in style_rules
-
-
-def test_compile_style_serializes_full_media_rule_surface() -> None:
-    _, class_name, style_rules = compile_style(
-        h.Style(
-            media=[
-                h.media(
-                    style=h.Style(color="red"),
-                    min_width=720,
-                    display_mode="browser",
-                    any_hover="hover",
-                    color=8,
-                    aspect_ratio="16/9",
-                )
-            ]
-        )
-    )
-
-    assert class_name is not None
-    assert style_rules is not None
-    assert "@media" in style_rules
-    assert "(min-width: 720px)" in style_rules
-    assert "(display-mode: browser)" in style_rules
-    assert "(any-hover: hover)" in style_rules
-    assert "(color: 8)" in style_rules
-    assert "(aspect-ratio: 16/9)" in style_rules
-
-
-def test_compile_style_rejects_empty_media_rules() -> None:
-    with pytest.raises(ValueError, match="MediaRule must define"):
-        compile_style(h.Style(media=[h.MediaRule(style=h.Style())]))
-
-
-def test_compile_style_class_name_is_deterministic() -> None:
-    """Same Style input must always produce the same class name."""
-    style = h.Style(
-        color="red",
-        padding=16,
+def test_compile_css_class_keeps_unitless_line_height_numeric() -> None:
+    cls = h.CssClass(
+        "test-lh",
         line_height=1.5,
-        hover=h.Style(color="blue", opacity=0.9),
-        selectors={"& > * + *": h.Style(margin_top=24)},
+        hover=h.Css(line_height=1.1),
+    )
+
+    css = compile_css_class(cls)
+    assert "line-height:1.5" in css
+    assert "line-height:1.1" in css
+    assert "line-height:1.1px" not in css
+
+
+def test_compile_css_class_emits_selector_and_media_rules() -> None:
+    cls = h.CssClass(
+        "test-combo",
+        color="red",
+        hover=h.Css(color="blue"),
         media=[
-            h.media(min_width=768, style=h.Style(padding=32, gap=12)),
+            h.media(
+                min_width=960,
+                style=h.Css(padding=32),
+            )
         ],
     )
 
-    _, first_class, first_rules = compile_style(style)
+    css = compile_css_class(cls)
+    assert ".test-combo{" in css
+    assert "color:red" in css
+    assert ".test-combo:hover{" in css
+    assert "color:blue" in css
+    assert "@media (min-width: 960px)" in css
+    assert "padding:32px" in css
+
+
+def test_compile_css_class_serializes_full_media_rule_surface() -> None:
+    cls = h.CssClass(
+        "test-media",
+        media=[
+            h.media(
+                style=h.Css(color="red"),
+                min_width=720,
+                display_mode="browser",
+                any_hover="hover",
+                color=8,
+                aspect_ratio="16/9",
+            )
+        ],
+    )
+
+    css = compile_css_class(cls)
+    assert "@media" in css
+    assert "(min-width: 720px)" in css
+    assert "(display-mode: browser)" in css
+    assert "(any-hover: hover)" in css
+    assert "(color: 8)" in css
+    assert "(aspect-ratio: 16/9)" in css
+
+
+def test_compile_css_class_rejects_empty_media_rules() -> None:
+    with pytest.raises(ValueError, match="MediaRule must define"):
+        compile_css_class(h.CssClass("test-empty", media=[h.MediaRule(style=h.Css())]))
+
+
+def test_compile_css_class_is_deterministic() -> None:
+    """Same CssClass input must always produce the same CSS output."""
+    cls = h.CssClass(
+        "test-deterministic",
+        color="red",
+        padding=16,
+        line_height=1.5,
+        hover=h.Css(color="blue", opacity=0.9),
+        media=[
+            h.media(min_width=768, style=h.Css(padding=32, gap=12)),
+        ],
+    )
+
+    first = compile_css_class(cls)
     for _ in range(20):
-        _, cls, rules = compile_style(style)
-        assert cls == first_class
-        assert rules == first_rules
+        assert compile_css_class(cls) == first
+
+
+def test_compile_style_props_compiles_inline_style() -> None:
+    """compile_style_props converts a Css object to a flat CSS dict."""
+    props = {"style": h.Css(color="red", padding=16)}
+    result = compile_style_props(props)
+    assert result["style"]["color"] == "red"
+    assert result["style"]["padding"] == "16px"

@@ -74,65 +74,15 @@ function normalizeInlineStyle(value: unknown): unknown {
   );
 }
 
-let dynamicStyleElement: HTMLStyleElement | null = null;
-const injectedStyleRules = new Set<string>();
-
-function ensureDynamicStyleElement(): HTMLStyleElement | null {
-  if (typeof document === "undefined") {
-    return null;
-  }
-  if (dynamicStyleElement && document.head.contains(dynamicStyleElement)) {
-    return dynamicStyleElement;
-  }
-  if (dynamicStyleElement && !document.head.contains(dynamicStyleElement)) {
-    dynamicStyleElement = null;
-    injectedStyleRules.clear();
-  }
-
-  dynamicStyleElement = document.head.querySelector('style[data-trellis-dynamic-styles="true"]');
-  if (dynamicStyleElement) {
-    return dynamicStyleElement;
-  }
-
-  const style = document.createElement("style");
-  style.setAttribute("data-trellis-dynamic-styles", "true");
-  document.head.appendChild(style);
-  dynamicStyleElement = style;
-  return dynamicStyleElement;
-}
-
-function injectDynamicStyleRules(styleRules: unknown): void {
-  if (typeof styleRules !== "string" || styleRules.length === 0 || injectedStyleRules.has(styleRules)) {
-    return;
-  }
-
-  const style = ensureDynamicStyleElement();
-  if (!style) {
-    return;
-  }
-
-  style.appendChild(document.createTextNode(styleRules));
-  injectedStyleRules.add(styleRules);
-}
-
 export function applyCompiledStyleProps(
   props: Record<string, unknown>
 ): Record<string, unknown> {
-  const { _style_rules, ...rest } = props as Record<string, unknown> & {
-    _style_rules?: unknown;
-  };
-
-  injectDynamicStyleRules(_style_rules);
-  return rest;
+  return props;
 }
 
 export function toReactDomProps(props: Record<string, unknown>): Record<string, unknown> {
   const mapped: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(props)) {
-    if (key === "_style_rules") {
-      continue;
-    }
-
     if (key === "style") {
       mapped.style = normalizeInlineStyle(value);
       continue;

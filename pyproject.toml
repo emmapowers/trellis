@@ -157,6 +157,9 @@ exclude = [
     "**/.workspace/",
     "**/.trellis/",
     "**/node_modules/",
+    # Implementation files that have .pyi stubs; checking the .py alongside
+    # the stub causes false-positive Self-type mismatches in basedpyright.
+    "src/trellis/html/_style_runtime.py",
 ]
 reportMissingImports = "warning"
 executionEnvironments = [

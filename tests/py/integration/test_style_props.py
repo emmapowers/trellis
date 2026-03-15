@@ -36,7 +36,6 @@ def test_widget_style_accepts_dom_dict_escape_hatch(rendered) -> None:
             width=240,
             style={
                 "border-radius": "8px",
-                ":hover": {"color": "red"},
             },
         )
 
@@ -48,8 +47,6 @@ def test_widget_style_accepts_dom_dict_escape_hatch(rendered) -> None:
         "border-radius": "8px",
         "width": "240px",
     }
-    assert slider["props"]["class_name"].startswith("tcss_")
-    assert ":hover" in slider["props"]["_style_rules"]
 
 
 def test_table_uses_shared_widget_style_normalization(rendered) -> None:
