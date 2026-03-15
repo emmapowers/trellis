@@ -164,8 +164,10 @@ def _serialize_value(value: tp.Any, *, auto_px: bool) -> str | int | float:
     if isinstance(value, (CssRawString, CssLength, CssPercent, CssTime, CssAngle, CssColor)):
         return value.css_text
     if isinstance(value, (int, float)):
+        # _format_number validates (rejects bool, nan, inf)
+        formatted = _format_number(value)
         if auto_px:
-            return f"{_format_number(value)}px"
+            return f"{formatted}px"
         return value
     return str(value)
 
