@@ -31,7 +31,8 @@ def test_package_overrides_platform_to_desktop(
     with (
         patch.object(AppLoader, "bundle"),
         patch(
-            "trellis.cli.package.build_desktop_app_bundle", return_value=expected_path
+            "trellis.cli.package.build_desktop_app_bundle",
+            return_value=(expected_path, ["fake.app"]),
         ) as mock_build,
     ):
         result = runner.invoke(trellis, ["--app-root", str(app_root), "package"])
@@ -52,7 +53,8 @@ def test_package_builds_bundle_and_invokes_tauri(
     with (
         patch.object(AppLoader, "bundle") as mock_bundle,
         patch(
-            "trellis.cli.package.build_desktop_app_bundle", return_value=expected_path
+            "trellis.cli.package.build_desktop_app_bundle",
+            return_value=(expected_path, ["fake.app"]),
         ) as mock_build,
     ):
         result = runner.invoke(trellis, ["--app-root", str(app_root), "package"])
@@ -87,7 +89,8 @@ def test_package_passes_bundles_to_build(
     with (
         patch.object(AppLoader, "bundle"),
         patch(
-            "trellis.cli.package.build_desktop_app_bundle", return_value=expected_path
+            "trellis.cli.package.build_desktop_app_bundle",
+            return_value=(expected_path, ["fake.app"]),
         ) as mock_build,
     ):
         result = runner.invoke(

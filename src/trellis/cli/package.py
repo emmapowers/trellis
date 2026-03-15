@@ -91,7 +91,7 @@ def package_app(
 
         try:
             bundle_types = [b.strip() for b in bundles.split(",")] if bundles else None
-            output_path = build_desktop_app_bundle(
+            output_path, artifacts = build_desktop_app_bundle(
                 config=config,
                 app_root=resolved_path,
                 output_dir=dest,
@@ -105,18 +105,11 @@ def package_app(
         ) as e:
             raise click.UsageError(str(e)) from None
 
-        _print_package_complete(config.name, output_path)
+        _print_package_complete(config.name, output_path, artifacts)
 
 
-def _print_package_complete(name: str, output_dir: Path) -> None:
+def _print_package_complete(name: str, output_dir: Path, artifacts: list[str]) -> None:
     """Print a summary banner listing the built artifacts."""
-    if output_dir.is_dir():
-        artifacts = sorted(
-            p.name for p in output_dir.iterdir() if p.is_file() or p.suffix == ".app"
-        )
-    else:
-        artifacts = []
-
     _console.print()
     _console.print("  [bold green]Trellis[/bold green] [dim]package complete[/dim]")
     _console.print()
@@ -124,6 +117,6 @@ def _print_package_complete(name: str, output_dir: Path) -> None:
     _console.print(f"  [bold]>[/bold]  [cyan]Output:[/cyan]   {output_dir}")
     if artifacts:
         _console.print()
-        for artifact in artifacts:
+        for artifact in sorted(artifacts):
             _console.print(f"     [dim]-[/dim]  {artifact}")
     _console.print()

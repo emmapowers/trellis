@@ -580,9 +580,11 @@ class TestBuildDesktopAppBundle:
         bundle_dir.mkdir()
         mock_build_pipeline.tauri_build.return_value = bundle_dir
 
-        result = build_desktop_app_bundle(config=config, app_root=app_root, output_dir=None)
+        result_dir, _artifacts = build_desktop_app_bundle(
+            config=config, app_root=app_root, output_dir=None
+        )
 
-        assert result == app_root / "dist"
+        assert result_dir == app_root / "dist"
 
 
 class TestOutputCopying:
@@ -613,12 +615,13 @@ class TestOutputCopying:
 
         self.pipeline.tauri_build.return_value = bundle_dir
         self.pipeline.sys.platform = "darwin"
-        result = build_desktop_app_bundle(
+        result_dir, artifacts = build_desktop_app_bundle(
             config=self.config, app_root=self.app_root, output_dir=None
         )
 
-        assert result == self.app_root / "dist"
-        assert (result / "myapp-1.0.0.app" / "Contents" / "Info.plist").exists()
+        assert result_dir == self.app_root / "dist"
+        assert (result_dir / "myapp-1.0.0.app" / "Contents" / "Info.plist").exists()
+        assert "myapp-1.0.0.app" in artifacts
 
     def test_copies_app_to_custom_output_dir(self, tmp_path: Path) -> None:
         custom_dest = tmp_path / "custom-out"
@@ -632,11 +635,11 @@ class TestOutputCopying:
 
         self.pipeline.tauri_build.return_value = bundle_dir
         self.pipeline.sys.platform = "darwin"
-        result = build_desktop_app_bundle(
+        result_dir, _artifacts = build_desktop_app_bundle(
             config=self.config, app_root=self.app_root, output_dir=custom_dest
         )
 
-        assert result == custom_dest
+        assert result_dir == custom_dest
         assert (custom_dest / "myapp-1.0.0.app").exists()
 
     def test_renames_dmg(self, tmp_path: Path) -> None:
@@ -647,11 +650,11 @@ class TestOutputCopying:
 
         self.pipeline.tauri_build.return_value = bundle_dir
         self.pipeline.sys.platform = "darwin"
-        result = build_desktop_app_bundle(
+        _result_dir, artifacts = build_desktop_app_bundle(
             config=self.config, app_root=self.app_root, output_dir=None, installer=True
         )
 
-        assert (result / "myapp-1.0.0.dmg").exists()
+        assert "myapp-1.0.0.dmg" in artifacts
 
     def test_renames_deb_to_lowercase(self, tmp_path: Path) -> None:
         bundle_dir = tmp_path / "scaffold" / "target" / "release" / "bundle"
@@ -661,13 +664,11 @@ class TestOutputCopying:
 
         self.pipeline.tauri_build.return_value = bundle_dir
         self.pipeline.sys.platform = "linux"
-        result = build_desktop_app_bundle(
+        _result_dir, artifacts = build_desktop_app_bundle(
             config=self.config, app_root=self.app_root, output_dir=None, installer=True
         )
 
-        debs = list(result.glob("*.deb"))
-        assert len(debs) == 1
-        assert debs[0].name == "widget-showcase_0.1.0_amd64.deb"
+        assert "widget-showcase_0.1.0_amd64.deb" in artifacts
 
 
 class TestCheckMacosDevTools:

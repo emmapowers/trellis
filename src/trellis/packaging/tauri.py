@@ -463,15 +463,19 @@ def _copy_build_output(
     platform: str,
     product_name: str,
     version: str,
-) -> None:
+) -> list[str]:
     """Copy build artifacts from Tauri's bundle directory to output_dir.
 
     Renames files to a consistent pattern: {Product-Name}-{version}.{ext}.
-    Exception: .deb files keep Debian naming conventions.
+    Deb files are normalized to lowercase with hyphens.
+
+    Returns:
+        List of artifact filenames written to output_dir.
     """
     from trellis.packaging.portable import _output_filename  # noqa: PLC0415
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    artifacts: list[str] = []
 
     if platform == "darwin":
         macos_dir = bundle_dir / "macos"
@@ -482,23 +486,28 @@ def _copy_build_output(
                 if dest.exists():
                     shutil.rmtree(dest)
                 shutil.copytree(app, dest)
+                artifacts.append(dest_name)
         dmg_dir = bundle_dir / "dmg"
         if dmg_dir.exists():
             for dmg in dmg_dir.glob("*.dmg"):
                 dest_name = _output_filename(product_name, version, "dmg")
                 shutil.copy2(dmg, output_dir / dest_name)
+                artifacts.append(dest_name)
     elif platform == "linux":
         appimage_dir = bundle_dir / "appimage"
         if appimage_dir.exists():
             for pkg in appimage_dir.glob("*.AppImage"):
                 dest_name = _output_filename(product_name, version, "AppImage")
                 shutil.copy2(pkg, output_dir / dest_name)
+                artifacts.append(dest_name)
         deb_dir = bundle_dir / "deb"
         if deb_dir.exists():
             for pkg in deb_dir.glob("*.deb"):
-                # Debian package names must be lowercase with no spaces
                 deb_name = pkg.name.lower().replace(" ", "-")
                 shutil.copy2(pkg, output_dir / deb_name)
+                artifacts.append(deb_name)
+
+    return artifacts
 
 
 def build_desktop_app_bundle(
@@ -507,7 +516,7 @@ def build_desktop_app_bundle(
     output_dir: Path | None,
     installer: bool = False,
     bundles: list[str] | None = None,
-) -> Path:
+) -> tuple[Path, list[str]]:
     """Build a desktop app bundle with Tauri.
 
     Orchestrates the full packaging pipeline:
@@ -526,7 +535,7 @@ def build_desktop_app_bundle(
         installer: If True, build installer bundle instead of portable
 
     Returns:
-        Path to the output directory containing the built artifacts
+        (output_dir, artifacts) tuple where artifacts is a list of filenames.
     """
     _check_macos_dev_tools()
     _check_linux_system_deps()
@@ -574,7 +583,7 @@ def build_desktop_app_bundle(
 
     # 5. Copy output to destination
     dest = output_dir or (app_root / "dist")
-    _copy_build_output(
+    artifacts = _copy_build_output(
         bundle_dir=bundle_dir,
         output_dir=dest,
         platform=sys.platform,
@@ -587,7 +596,7 @@ def build_desktop_app_bundle(
         cargo_name = _make_cargo_name(product_name)
         exe_name = cargo_name + ".exe"
 
-        build_windows_exe(
+        exe_path = build_windows_exe(
             rust=rust,
             scaffold_dir=scaffold_dir,
             product_name=product_name,
@@ -596,8 +605,9 @@ def build_desktop_app_bundle(
             output_dir=dest,
             installer=installer,
         )
+        artifacts.append(exe_path.name)
 
-    return dest
+    return dest, artifacts
 
 
 __all__ = [
