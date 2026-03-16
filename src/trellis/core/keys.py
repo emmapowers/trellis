@@ -133,8 +133,7 @@ def parse_key_filter(spec: str) -> KeyFilter:
     # Validate: Shift + punctuation is layout-dependent
     if modifiers.get("shift") and key in _PUNCTUATION_KEYS:
         raise ValueError(
-            f"Shift+punctuation in {spec!r}: "
-            f"Shift changes punctuation keys across keyboard layouts"
+            f"Shift+punctuation in {spec!r}: Shift changes punctuation keys across keyboard layouts"
         )
 
     return KeyFilter(

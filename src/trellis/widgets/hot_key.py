@@ -17,7 +17,7 @@ from trellis.core.rendering.on_key_trait import (
     KeyBindingSpec,
     _serialize_binding,
 )
-from trellis.core.rendering.session import get_active_session
+from trellis.core.rendering.session import get_render_session
 
 if tp.TYPE_CHECKING:
     from trellis.core.hotkey_types import Hotkey
@@ -56,7 +56,7 @@ def HotKey(
         enabled=enabled,
     )
 
-    session = get_active_session()
+    session = get_render_session()
     if session is None or session.active is None:
         return
 

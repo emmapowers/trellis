@@ -81,7 +81,6 @@ __all__ = [
     "ElementStore",
     "Frame",
     "FrameStack",
-    "Height",
     "KeyFilter",
     "KeySequence",
     "KeyTrait",

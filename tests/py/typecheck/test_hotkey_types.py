@@ -63,14 +63,10 @@ alias_ctrl: Hotkey = "Ctrl+S"  # pyright: ignore[reportAssignmentType]  # alias 
 shift_punct: Hotkey = "Shift+/"  # pyright: ignore[reportAssignmentType]  # shift+punctuation
 mod_ctrl: Hotkey = "Mod+Control+S"  # pyright: ignore[reportAssignmentType]  # mod+control conflict
 mod_meta: Hotkey = "Mod+Meta+S"  # pyright: ignore[reportAssignmentType]  # mod+meta conflict
-wrong_order: Hotkey = (
-    "Alt+Control+S"  # pyright: ignore[reportAssignmentType]  # wrong modifier order
-)
+wrong_order: Hotkey = "Alt+Control+S"  # pyright: ignore[reportAssignmentType]  # wrong modifier order
 upper_enter: Hotkey = "ENTER"  # pyright: ignore[reportAssignmentType]  # wrong case
 lower_f1: Hotkey = "f1"  # pyright: ignore[reportAssignmentType]  # wrong case
-ctrl_shift_punct: Hotkey = (
-    "Control+Shift+/"  # pyright: ignore[reportAssignmentType]  # shift+punctuation
-)
+ctrl_shift_punct: Hotkey = "Control+Shift+/"  # pyright: ignore[reportAssignmentType]  # shift+punctuation
 gibberish: Hotkey = "gibberish"  # pyright: ignore[reportAssignmentType]  # not a real key
 
 # ============================================================

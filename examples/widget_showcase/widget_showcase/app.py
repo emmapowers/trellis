@@ -3,7 +3,7 @@
 import sys
 from dataclasses import dataclass
 
-from trellis import HotKey, Margin, Padding, Route, Routes, Stateful, component, router, sequence
+from trellis import HotKey, Route, Routes, Stateful, component, router, sequence
 from trellis import html as h
 from trellis import widgets as w
 from trellis.app import App, get_config, theme

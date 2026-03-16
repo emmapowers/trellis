@@ -7,17 +7,18 @@ from unittest.mock import AsyncMock
 import msgspec
 import pytest
 
+from trellis.core.protocol import decode_message
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, set_render_session
 from trellis.platforms.common.handler import MessageHandler
-from trellis.platforms.common.messages import KeyEventResponseMessage, Message
+from trellis.platforms.common.messages import KeyEventResponseMessage
 
 
 class TestKeyEventResponseMessage:
     def test_encode_decode(self):
         msg = KeyEventResponseMessage(request_id="req-123", handled=True)
         encoded = msgspec.json.encode(msg)
-        decoded = msgspec.json.decode(encoded, type=Message)
+        decoded = decode_message(msgspec.json.decode(encoded))
         assert isinstance(decoded, KeyEventResponseMessage)
         assert decoded.request_id == "req-123"
         assert decoded.handled is True
@@ -25,7 +26,7 @@ class TestKeyEventResponseMessage:
     def test_handled_false(self):
         msg = KeyEventResponseMessage(request_id="req-456", handled=False)
         encoded = msgspec.json.encode(msg)
-        decoded = msgspec.json.decode(encoded, type=Message)
+        decoded = decode_message(msgspec.json.decode(encoded))
         assert isinstance(decoded, KeyEventResponseMessage)
         assert decoded.handled is False
 
@@ -45,6 +46,7 @@ class TestKeyCallbackHandling:
         comp = make_component("TestRoot")
         handler = MessageHandler(comp, app_wrapper)
         handler.session = RenderSession(comp)
+        set_render_session(handler.session)
         render(handler.session)
         handler.send_message = AsyncMock()
         return handler

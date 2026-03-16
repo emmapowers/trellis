@@ -112,7 +112,7 @@ class ReloadMessage(Message, tag="reload"):
     ...
 
 
-class KeyEventResponseMessage(msgspec.Struct, tag="key_event_response", tag_field="type"):
+class KeyEventResponseMessage(Message, tag="key_event_response"):
     """Server response to a key event, telling the client whether it was handled.
 
     Sent from server to client after a key event callback completes.
@@ -131,4 +131,5 @@ register_message_types(
     EventMessage,
     ErrorMessage,
     ReloadMessage,
+    KeyEventResponseMessage,
 )

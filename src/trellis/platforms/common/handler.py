@@ -44,13 +44,13 @@ from trellis.platforms.common.messages import (
     RemovePatch,
     UpdatePatch,
 )
-from trellis.routing import RouterState
-from trellis.routing.messages import HistoryBack, HistoryForward, HistoryPush
 from trellis.platforms.common.serialization import (
     _serialize_props,
     parse_callback_id,
     serialize_element,
 )
+from trellis.routing import RouterState
+from trellis.routing.messages import HistoryBack, HistoryForward, HistoryPush
 from trellis.utils.debug import get_enabled_categories
 
 logger = logging.getLogger(__name__)
@@ -449,6 +449,7 @@ class MessageHandler:
         return prop_name.startswith("__key_filters__") or prop_name.startswith(
             "__global_key_filters__"
         )
+
     async def _invoke_callback(self, callback_id: str, args: list[tp.Any]) -> None:
         """Invoke callback with event conversion.
 
