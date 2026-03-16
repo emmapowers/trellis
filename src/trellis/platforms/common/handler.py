@@ -515,13 +515,27 @@ class MessageHandler:
         handler_args = args[1:]
         processed_args, kwargs = _process_callback_args(handler_args)
 
+        # Only pass event args if the handler accepts them — most key handlers
+        # take zero args and would TypeError if given the keyboard event.
+        try:
+            sig = inspect.signature(callback)
+            accepts_args = any(
+                p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD, p.VAR_POSITIONAL)
+                for p in sig.parameters.values()
+            )
+        except (ValueError, TypeError):
+            accepts_args = True
+
+        call_args = processed_args if accepts_args else []
+        call_kwargs = kwargs if accepts_args else {}
+
         handled = True
         try:
             with callback_context(session, element_id):
                 if inspect.iscoroutinefunction(callback):
-                    result = await callback(*processed_args, **kwargs)
+                    result = await callback(*call_args, **call_kwargs)
                 else:
-                    result = callback(*processed_args, **kwargs)
+                    result = callback(*call_args, **call_kwargs)
             # None or True = handled, False = pass
             if result is False:
                 handled = False
