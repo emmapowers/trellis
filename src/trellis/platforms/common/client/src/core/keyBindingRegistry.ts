@@ -129,17 +129,21 @@ export class KeyBindingRegistry {
       if (binding.ignore_in_inputs && inTextInput) continue;
 
       const bindingId = `global-seq-${binding.handler.__callback__}`;
-      const complete = this.keyState.advanceSequence(
+      const result = this.keyState.advanceSequence(
         bindingId,
         binding.sequence.steps,
         binding.sequence.timeout_ms,
         event
       );
-      if (complete) {
+      if (result === "complete") {
         event.preventDefault();
         event.stopPropagation();
         this.fireAndChain(binding.handler.__callback__, event, i);
         return;
+      }
+      if (result === "advanced") {
+        event.preventDefault();
+        event.stopPropagation();
       }
     }
 

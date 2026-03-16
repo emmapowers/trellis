@@ -118,8 +118,8 @@ describe("KeyState.advanceSequence", () => {
     const steps = [makeFilter({ key: "G" }), makeFilter({ key: "G" })];
     const event = makeKeyEvent({ key: "g" });
 
-    expect(keyState.advanceSequence("seq-1", steps, 1000, event)).toBe(false);
-    expect(keyState.advanceSequence("seq-1", steps, 1000, event)).toBe(true);
+    expect(keyState.advanceSequence("seq-1", steps, 1000, event)).toBe("advanced");
+    expect(keyState.advanceSequence("seq-1", steps, 1000, event)).toBe("complete");
   });
 
   it("resets on timeout", () => {
@@ -130,15 +130,16 @@ describe("KeyState.advanceSequence", () => {
     vi.spyOn(Date, "now").mockReturnValue(now);
 
     // First key press
-    expect(keyState.advanceSequence("seq-1", steps, 100, event)).toBe(false);
+    expect(keyState.advanceSequence("seq-1", steps, 100, event)).toBe("advanced");
 
     // Advance past timeout — second press should NOT complete the sequence
+    // but it does restart, matching step 0 again
     vi.spyOn(Date, "now").mockReturnValue(now + 200);
-    expect(keyState.advanceSequence("seq-1", steps, 100, event)).toBe(false);
+    expect(keyState.advanceSequence("seq-1", steps, 100, event)).toBe("advanced");
 
     // Sequence restarted, so this is step 2 of a fresh attempt
     vi.spyOn(Date, "now").mockReturnValue(now + 250);
-    expect(keyState.advanceSequence("seq-1", steps, 100, event)).toBe(true);
+    expect(keyState.advanceSequence("seq-1", steps, 100, event)).toBe("complete");
 
     vi.restoreAllMocks();
   });
@@ -148,11 +149,11 @@ describe("KeyState.advanceSequence", () => {
     const gEvent = makeKeyEvent({ key: "g" });
     const xEvent = makeKeyEvent({ key: "x" });
 
-    expect(keyState.advanceSequence("seq-1", steps, 1000, gEvent)).toBe(false);
-    expect(keyState.advanceSequence("seq-1", steps, 1000, xEvent)).toBe(false);
+    expect(keyState.advanceSequence("seq-1", steps, 1000, gEvent)).toBe("advanced");
+    expect(keyState.advanceSequence("seq-1", steps, 1000, xEvent)).toBe("none");
     // Should have reset — need to start over
-    expect(keyState.advanceSequence("seq-1", steps, 1000, gEvent)).toBe(false);
-    expect(keyState.advanceSequence("seq-1", steps, 1000, gEvent)).toBe(true);
+    expect(keyState.advanceSequence("seq-1", steps, 1000, gEvent)).toBe("advanced");
+    expect(keyState.advanceSequence("seq-1", steps, 1000, gEvent)).toBe("complete");
   });
 
   it("restarts from step 0 on partial mismatch", () => {
@@ -160,11 +161,12 @@ describe("KeyState.advanceSequence", () => {
     const gEvent = makeKeyEvent({ key: "g" });
 
     // G, then another G (wrong for step 2 but valid for step 1)
-    expect(keyState.advanceSequence("seq-1", steps, 1000, gEvent)).toBe(false);
-    expect(keyState.advanceSequence("seq-1", steps, 1000, gEvent)).toBe(false);
+    expect(keyState.advanceSequence("seq-1", steps, 1000, gEvent)).toBe("advanced");
+    // Mismatch at step 2, but G matches step 0 — restarts and advances
+    expect(keyState.advanceSequence("seq-1", steps, 1000, gEvent)).toBe("advanced");
     // After restart, we're at step 1 again
     const iEvent = makeKeyEvent({ key: "i" });
-    expect(keyState.advanceSequence("seq-1", steps, 1000, iEvent)).toBe(true);
+    expect(keyState.advanceSequence("seq-1", steps, 1000, iEvent)).toBe("complete");
   });
 
   it("ignores repeat keydown events", () => {
@@ -173,11 +175,65 @@ describe("KeyState.advanceSequence", () => {
     const repeatEvent = makeKeyEvent({ key: "g", repeat: true });
 
     // First press advances to step 1
-    expect(keyState.advanceSequence("seq-1", steps, 1000, event)).toBe(false);
-    // Repeat events should be ignored (return false without advancing)
-    expect(keyState.advanceSequence("seq-1", steps, 1000, repeatEvent)).toBe(false);
-    expect(keyState.advanceSequence("seq-1", steps, 1000, repeatEvent)).toBe(false);
+    expect(keyState.advanceSequence("seq-1", steps, 1000, event)).toBe("advanced");
+    // Repeat events should be ignored (return "none" without advancing)
+    expect(keyState.advanceSequence("seq-1", steps, 1000, repeatEvent)).toBe("none");
+    expect(keyState.advanceSequence("seq-1", steps, 1000, repeatEvent)).toBe("none");
     // Real second press completes the sequence
-    expect(keyState.advanceSequence("seq-1", steps, 1000, event)).toBe(true);
+    expect(keyState.advanceSequence("seq-1", steps, 1000, event)).toBe("complete");
+  });
+
+  it("returns none for empty steps", () => {
+    const event = makeKeyEvent({ key: "g" });
+    expect(keyState.advanceSequence("seq-1", [], 1000, event)).toBe("none");
+  });
+
+  it("shared prefix advances both sequences independently", () => {
+    // Two sequences share the same first step: Ctrl+K
+    const stepsA = [makeFilter({ key: "K", ctrl: true }), makeFilter({ key: "S" })];
+    const stepsB = [makeFilter({ key: "K", ctrl: true }), makeFilter({ key: "D" })];
+    const kEvent = makeKeyEvent({ key: "k", ctrlKey: true });
+
+    // First step advances both
+    expect(keyState.advanceSequence("seq-a", stepsA, 1000, kEvent)).toBe("advanced");
+    expect(keyState.advanceSequence("seq-b", stepsB, 1000, kEvent)).toBe("advanced");
+
+    // S completes A, resets B
+    const sEvent = makeKeyEvent({ key: "s" });
+    expect(keyState.advanceSequence("seq-a", stepsA, 1000, sEvent)).toBe("complete");
+    expect(keyState.advanceSequence("seq-b", stepsB, 1000, sEvent)).toBe("none");
+  });
+
+  it("shared prefix: second sequence still works after first completes", () => {
+    const stepsA = [makeFilter({ key: "K", ctrl: true }), makeFilter({ key: "S" })];
+    const stepsB = [makeFilter({ key: "K", ctrl: true }), makeFilter({ key: "D" })];
+    const kEvent = makeKeyEvent({ key: "k", ctrlKey: true });
+
+    // Advance both
+    keyState.advanceSequence("seq-a", stepsA, 1000, kEvent);
+    keyState.advanceSequence("seq-b", stepsB, 1000, kEvent);
+
+    // Complete A with S
+    const sEvent = makeKeyEvent({ key: "s" });
+    expect(keyState.advanceSequence("seq-a", stepsA, 1000, sEvent)).toBe("complete");
+
+    // B was reset by the mismatch. Start fresh for B.
+    expect(keyState.advanceSequence("seq-b", stepsB, 1000, kEvent)).toBe("advanced");
+    const dEvent = makeKeyEvent({ key: "d" });
+    expect(keyState.advanceSequence("seq-b", stepsB, 1000, dEvent)).toBe("complete");
+  });
+
+  it("modifier-only keydown returns none without resetting", () => {
+    const steps = [makeFilter({ key: "K", ctrl: true }), makeFilter({ key: "S" })];
+    const kEvent = makeKeyEvent({ key: "k", ctrlKey: true });
+    const ctrlEvent = makeKeyEvent({ key: "Control" });
+
+    // Advance to step 1
+    expect(keyState.advanceSequence("seq-1", steps, 1000, kEvent)).toBe("advanced");
+    // Bare modifier keydown should be ignored, not reset
+    expect(keyState.advanceSequence("seq-1", steps, 1000, ctrlEvent)).toBe("none");
+    // Can still complete
+    const sEvent = makeKeyEvent({ key: "s" });
+    expect(keyState.advanceSequence("seq-1", steps, 1000, sEvent)).toBe("complete");
   });
 });

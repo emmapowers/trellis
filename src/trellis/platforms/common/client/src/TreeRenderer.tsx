@@ -231,17 +231,21 @@ function createOnKeyHandler(
         const seq = entry.sequence as { steps: any[]; timeout_ms: number };
         const handlerRef = entry.handler as { __callback__: string };
         const bindingId = `onkey-seq-${handlerRef.__callback__}`;
-        const complete = keyState.advanceSequence(
+        const result = keyState.advanceSequence(
           bindingId,
           seq.steps,
           seq.timeout_ms,
           native
         );
-        if (complete) {
+        if (result === "complete") {
           event.preventDefault();
           event.stopPropagation();
           fireOnKeyEvent(client, handlerRef.__callback__, native, event);
           return;
+        }
+        if (result === "advanced") {
+          event.preventDefault();
+          event.stopPropagation();
         }
         continue;
       }

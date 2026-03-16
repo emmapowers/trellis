@@ -4,6 +4,8 @@
 
 import { matchesKeyFilter, SerializedKeyFilter } from "./keyFilters";
 
+export type SequenceResult = "complete" | "advanced" | "none";
+
 const MODIFIER_KEYS = new Set([
   "Control",
   "Shift",
@@ -79,20 +81,24 @@ export class KeyState {
   }
 
   /**
-   * Advance a sequence state machine. Returns true if the sequence is complete.
+   * Advance a sequence state machine.
+   *
+   * Returns "complete" when the final step matches, "advanced" when an
+   * intermediate step matches (caller should preventDefault), or "none"
+   * when the event didn't match.
    */
   advanceSequence(
     bindingId: string,
     steps: SerializedKeyFilter[],
     timeoutMs: number,
     event: KeyboardEvent
-  ): boolean {
-    if (steps.length === 0) return false;
+  ): SequenceResult {
+    if (steps.length === 0) return "none";
 
     // Ignore modifier-only keydown events — they don't advance or reset
     // sequences. Without this, chords like Mod+K,Mod+S break because the
     // bare Meta keydown between the two presses resets the state machine.
-    if (MODIFIER_KEYS.has(event.key) || event.repeat) return false;
+    if (MODIFIER_KEYS.has(event.key) || event.repeat) return "none";
 
     const now = Date.now();
     let state = this.sequenceStates.get(bindingId);
@@ -115,9 +121,9 @@ export class KeyState {
       if (state.currentIndex >= steps.length) {
         // Sequence complete
         state.currentIndex = 0;
-        return true;
+        return "complete";
       }
-      return false;
+      return "advanced";
     }
 
     // No match at current step — try restarting from step 0
@@ -126,10 +132,11 @@ export class KeyState {
       if (matchesKeyFilter(event, steps[0])) {
         state.currentIndex = 1;
         state.lastKeyTime = now;
+        return "advanced";
       }
     }
 
-    return false;
+    return "none";
   }
 
   dispose(): void {
