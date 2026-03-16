@@ -87,7 +87,7 @@ manually in that environment.
 
 1. **`state_var()`** — You created a small slot-local piece of reactive state. When its value changes, readers re-render automatically.
 
-2. **`@component`** — You defined a component function. It describes what the UI should look like. The decorator applies an AST transform so you can read and write `count` directly — no `.value` needed.
+2. **`@component`** — You defined a component function. It describes what the UI should look like. The decorator applies an AST transform so you can read and write `count` directly — no `.value` needed. The `nonlocal` declaration is not strictly required after the transform (since the transform rewrites assignments to `.value` access), but is recommended to satisfy linters like ruff and type checkers.
 
 3. **`with w.Column():`** — Components nest using Python's `with` blocks. `Column` arranges children vertically.
 

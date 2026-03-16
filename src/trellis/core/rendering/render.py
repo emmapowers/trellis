@@ -15,7 +15,7 @@ from trellis.core.rendering.patches import (
     RenderUpdatePatch,
 )
 from trellis.core.rendering.reconcile import reconcile_children
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, get_render_session
 from trellis.core.rendering.traits import get_trait_hooks
 from trellis.utils.logger import logger
 
@@ -31,6 +31,11 @@ __all__ = [
 
 def render(session: RenderSession) -> list[RenderPatch]:
     """Render the session and return patches."""
+    if get_render_session() is not session:
+        raise RuntimeError(
+            "render() called but the session is not bound to the current context. "
+            "Call set_render_session(session) first."
+        )
     with session.lock:
         patches, pending_mounts, pending_unmounts = _render_impl(session)
 

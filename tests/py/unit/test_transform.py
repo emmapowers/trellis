@@ -243,6 +243,28 @@ class TestKeywordArguments:
         assert "f(value=x.value)" in result
 
 
+class TestSelfReferential:
+    def test_self_referential_state_var_init(self) -> None:
+        """state_var(count) where count is also the binding name should not transform RHS."""
+        result = _t("""\
+            def App(count: int):
+                count = state_var(count)
+                f(count)
+        """)
+        assert "state_var(count)" in result  # RHS count is NOT transformed
+        assert "f(count.value)" in result  # subsequent reads ARE transformed
+
+    def test_self_referential_annotated(self) -> None:
+        """Annotated form: count: T = state_var(count) should not transform RHS."""
+        result = _t("""\
+            def App(count: int):
+                count: int = state_var(count)
+                f(count)
+        """)
+        assert "state_var(count)" in result
+        assert "f(count.value)" in result
+
+
 class TestEdgeCases:
     def test_state_var_in_rhs_of_non_state_var_assignment(self) -> None:
         """state_var() on the RHS of a non-Name target should not break."""

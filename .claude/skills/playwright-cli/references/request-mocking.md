@@ -42,12 +42,12 @@ For conditional responses, request body inspection, response modification, or de
 
 ```bash
 playwright-cli run-code "async page => {
-  await page.route('**/api/login', route => {
+  await page.route('**/api/login', async route => {
     const body = route.request().postDataJSON();
     if (body.username === 'admin') {
-      route.fulfill({ body: JSON.stringify({ token: 'mock-token' }) });
+      await route.fulfill({ body: JSON.stringify({ token: 'mock-token' }) });
     } else {
-      route.fulfill({ status: 401, body: JSON.stringify({ error: 'Invalid' }) });
+      await route.fulfill({ status: 401, body: JSON.stringify({ error: 'Invalid' }) });
     }
   });
 }"
@@ -81,7 +81,7 @@ playwright-cli run-code "async page => {
 playwright-cli run-code "async page => {
   await page.route('**/api/slow', async route => {
     await new Promise(r => setTimeout(r, 3000));
-    route.fulfill({ body: JSON.stringify({ data: 'loaded' }) });
+    await route.fulfill({ body: JSON.stringify({ data: 'loaded' }) });
   });
 }"
 ```

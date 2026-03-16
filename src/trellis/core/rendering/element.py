@@ -19,7 +19,7 @@ __all__ = [
 ]
 
 
-@dataclass
+@dataclass(eq=False)
 class Element(KeyTrait, RefTrait):
     """Tree node representing a component invocation (leaf — no `with` block)."""
 

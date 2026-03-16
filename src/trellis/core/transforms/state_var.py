@@ -63,6 +63,15 @@ def _is_state_var_call(node: cst.BaseExpression) -> bool:
     return isinstance(func, cst.Name) and func.value == "state_var"
 
 
+def _collect_name_ids(node: cst.CSTNode, target: set[int]) -> None:
+    """Recursively find all Name nodes inside *node* and add their ids to *target*."""
+    if isinstance(node, cst.Name):
+        target.add(id(node))
+    for child in node.children:
+        if isinstance(child, cst.CSTNode):
+            _collect_name_ids(child, target)
+
+
 def _collect_state_var_names(func_def: cst.FunctionDef) -> set[str]:
     """Collect names assigned from state_var() in the function body."""
     collector = _StateVarNameCollector()
@@ -113,12 +122,17 @@ class _StateVarTransformer(cst.CSTTransformer):
             for target in node.targets:
                 if isinstance(target.target, cst.Name):
                     self._skip_targets.add(id(target.target))
+            # Also skip Name nodes inside the state_var() call arguments
+            # to handle self-referential cases like count = state_var(count)
+            _collect_name_ids(node.value, self._skip_targets)
         return True
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
         if node.value is not None and _is_state_var_call(node.value):
             if isinstance(node.target, cst.Name):
                 self._skip_targets.add(id(node.target))
+            # Also skip Name nodes inside the state_var() call arguments
+            _collect_name_ids(node.value, self._skip_targets)
         return True
 
     def visit_Arg(self, node: cst.Arg) -> bool | None:

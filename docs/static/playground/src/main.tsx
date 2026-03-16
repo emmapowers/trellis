@@ -220,20 +220,30 @@ function Playground(): React.ReactElement {
   // Handle share button
   useEffect(() => {
     const shareBtn = document.getElementById("share-btn");
-    if (shareBtn) {
-      shareBtn.onclick = async () => {
-        const currentCode = editorRef.current?.getValue() ?? code;
-        const encoded = btoa(encodeURIComponent(currentCode));
-        const url = `${window.location.origin}${window.location.pathname}#code=${encoded}`;
+    if (!shareBtn) return;
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    shareBtn.onclick = async () => {
+      const currentCode = editorRef.current?.getValue() ?? code;
+      const encoded = btoa(encodeURIComponent(currentCode));
+      const url = `${window.location.origin}${window.location.pathname}#code=${encoded}`;
+      try {
         await navigator.clipboard.writeText(url);
         shareBtn.textContent = "Copied!";
-        shareBtn.classList.add("copied");
-        setTimeout(() => {
-          shareBtn.textContent = "Share";
-          shareBtn.classList.remove("copied");
-        }, 2000);
-      };
-    }
+      } catch {
+        shareBtn.textContent = "Copy failed";
+      }
+      shareBtn.classList.add("copied");
+      timeoutId = setTimeout(() => {
+        shareBtn.textContent = "Share";
+        shareBtn.classList.remove("copied");
+      }, 2000);
+    };
+
+    return () => {
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
   }, [code]);
 
   // Handle theme toggle button
