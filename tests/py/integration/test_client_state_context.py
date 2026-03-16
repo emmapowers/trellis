@@ -7,6 +7,7 @@ requires an active render context.
 from trellis.app import ClientState, ThemeMode
 from trellis.core.components.composition import component
 from trellis.core.rendering import RenderSession, render
+from trellis.core.rendering.session import set_render_session
 
 
 class TestClientStateContext:
@@ -28,6 +29,7 @@ class TestClientStateContext:
                 ChildComponent()
 
         tree = RenderSession(ParentComponent)
+        set_render_session(tree)
         render(tree)
 
         assert retrieved_state is not None
@@ -46,6 +48,7 @@ class TestClientStateContext:
                 error_raised = True
 
         tree = RenderSession(ComponentWithoutContext)
+        set_render_session(tree)
         render(tree)
 
         assert error_raised is True
@@ -60,6 +63,7 @@ class TestClientStateContext:
             result = ClientState.from_context(default=None)
 
         tree = RenderSession(ComponentWithDefault)
+        set_render_session(tree)
         render(tree)
 
         assert result is None

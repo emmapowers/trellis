@@ -25,7 +25,7 @@ from trellis.core.protocol import (
     set_message_handler,
 )
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, set_render_session
 from trellis.core.state.stateful import Stateful
 
 
@@ -380,6 +380,7 @@ class TestStatefulMessageHandlerMixin:
                 Host()
 
         session = RenderSession(App)
+        set_render_session(session)
 
         set_message_handler(handler)
         try:

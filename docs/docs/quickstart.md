@@ -52,10 +52,14 @@ from trellis import widgets as w
 def MyApp() -> None:
     count = state_var(0)
 
+    def increment() -> None:
+        nonlocal count
+        count += 1
+
     with w.Column():
         w.Heading(text="My First Trellis App")
-        w.Label(text=f"Count: {count.value}")
-        w.Button(text="Increment", on_click=lambda: count.set(count.value + 1))
+        w.Label(text=f"Count: {count}")
+        w.Button(text="Increment", on_click=increment)
 
 
 app = App(MyApp)
@@ -83,7 +87,7 @@ manually in that environment.
 
 1. **`state_var()`** — You created a small slot-local piece of reactive state. When its value changes, readers re-render automatically.
 
-2. **`@component`** — You defined a component function. It describes what the UI should look like.
+2. **`@component`** — You defined a component function. It describes what the UI should look like. The decorator applies an AST transform so you can read and write `count` directly — no `.value` needed. The `nonlocal` declaration is not strictly required after the transform (since the transform rewrites assignments to `.value` access), but is recommended to satisfy linters like ruff and type checkers.
 
 3. **`with w.Column():`** — Components nest using Python's `with` blocks. `Column` arranges children vertically.
 
@@ -91,7 +95,7 @@ manually in that environment.
 
 5. **`w.Button(..., on_click=...)`** — A widget with an event handler. When clicked, it updates `count`.
 
-6. **Automatic updates** — When `count.value` changes, components that read it re-render automatically.
+6. **Automatic updates** — When `count` changes, components that read it re-render automatically.
 
 ## Next Steps
 

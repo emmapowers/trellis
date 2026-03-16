@@ -72,7 +72,7 @@ def App() -> None:
     user_name = state_var("Alice")
 
     with w.Column():
-        Header(name=user_name.value)  # Pass state as prop
+        Header(name=user_name)  # Pass state as prop
         w.Label(text="Content goes here")
 ```
 
@@ -80,7 +80,7 @@ The `Header` component re-renders when `user_name` changes, even though it doesn
 
 ## Callbacks That Modify State
 
-Pass state methods as callbacks to child components:
+Pass callbacks that update state down to child components:
 
 <TrellisDemo
   title="Callbacks"
@@ -98,12 +98,24 @@ def Controls(on_increment, on_decrement, on_reset):
 def App():
     count = state_var(0)
 
+    def increment():
+        nonlocal count
+        count += 1
+
+    def decrement():
+        nonlocal count
+        count -= 1
+
+    def reset():
+        nonlocal count
+        count = 0
+
     with w.Column(gap=12):
-        w.Heading(text=f"Count: {count.value}", level=2)
+        w.Heading(text=f"Count: {count}", level=2)
         Controls(
-            on_increment=lambda: count.set(count.value + 1),
-            on_decrement=lambda: count.set(count.value - 1),
-            on_reset=lambda: count.set(0),
+            on_increment=increment,
+            on_decrement=decrement,
+            on_reset=reset,
         )
 
 App = App`}
@@ -138,16 +150,20 @@ from trellis import widgets as w
 def App():
     show_details = state_var(False)
 
+    def toggle_details():
+        nonlocal show_details
+        show_details = not show_details
+
     with w.Column(gap=12):
         w.Heading(text="Product", level=2)
         w.Label(text="A great product for all your needs.")
 
         w.Button(
-            text="Hide Details" if show_details.value else "Show Details",
-            on_click=lambda: show_details.set(not show_details.value),
+            text="Hide Details" if show_details else "Show Details",
+            on_click=toggle_details,
         )
 
-        if show_details.value:
+        if show_details:
             with w.Card():
                 w.Label(text="Price: $99.99")
                 w.Label(text="In stock: Yes")

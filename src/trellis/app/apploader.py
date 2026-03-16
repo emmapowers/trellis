@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import linecache
 import os
 import sys
 from pathlib import Path
@@ -303,8 +304,19 @@ class AppLoader:
                 "before load_app_from_source()."
             )
 
+        # Register source in linecache so inspect.getsource() works for
+        # functions defined in this code. This enables the @component AST
+        # transform for state_var() in playground and TrellisDemo contexts.
+        filename = "<source>"
+        linecache.cache[filename] = (
+            len(code),
+            None,
+            code.splitlines(True),
+            filename,
+        )
+
         namespace: dict[str, object] = {}
-        exec(compile(code, "<source>", "exec"), namespace)
+        exec(compile(code, filename, "exec"), namespace)
 
         if "app" not in namespace:
             raise ValueError(

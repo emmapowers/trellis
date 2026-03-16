@@ -4,6 +4,7 @@ from trellis import widgets as w
 from trellis.app import ClientState, ThemeMode, TrellisApp
 from trellis.core.components.composition import component
 from trellis.core.rendering import RenderSession, render
+from trellis.core.rendering.session import set_render_session
 
 
 class TestTrellisApp:
@@ -27,6 +28,7 @@ class TestTrellisApp:
             TrellisApp(app=MyApp)
 
         tree = RenderSession(Root)
+        set_render_session(tree)
         render(tree)
 
         assert retrieved_state is not None
@@ -47,6 +49,7 @@ class TestTrellisApp:
             TrellisApp(app=MyApp, client_state=custom_state)
 
         tree = RenderSession(Root)
+        set_render_session(tree)
         render(tree)
 
         assert retrieved_state is custom_state
@@ -66,6 +69,7 @@ class TestTrellisApp:
             TrellisApp(app=MyApp)
 
         tree = RenderSession(Root)
+        set_render_session(tree)
         render(tree)
 
         assert retrieved_state is not None
@@ -86,6 +90,7 @@ class TestTrellisApp:
             TrellisApp(app=MyApp)
 
         tree = RenderSession(Root)
+        set_render_session(tree)
         render(tree)
 
         assert label_rendered is True
@@ -107,6 +112,7 @@ class TestTrellisApp:
             TrellisApp(app=MyApp, client_state=ClientState(theme_setting=ThemeMode.DARK))
 
         tree = RenderSession(Root)
+        set_render_session(tree)
         render(tree)
 
         assert is_dark is True

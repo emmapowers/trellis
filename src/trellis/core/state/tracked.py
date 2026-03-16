@@ -36,10 +36,10 @@ from collections.abc import Iterable, Iterator
 from typing import SupportsIndex
 
 if tp.TYPE_CHECKING:
-    from trellis.core.rendering.element import Element
     from trellis.core.state.stateful import Stateful
 
-from trellis.core.rendering.session import get_active_session, is_render_active
+from trellis.core.rendering.session import get_render_session, is_render_active
+from trellis.core.state.dependency import StateDependency
 
 logger = logging.getLogger(__name__)
 
@@ -59,12 +59,12 @@ class _TrackedMixin:
     Attributes:
         _owner: Weak reference to the owning Stateful instance
         _attr: The attribute name on the owner this collection is stored in
-        _deps: Dict mapping dep_key -> WeakSet[Element] for automatic cleanup
+        _deps: Dict mapping dep_key -> WeakSet[StateDependency] for automatic cleanup
     """
 
     _owner: weakref.ref[Stateful] | None
     _attr: str
-    _deps: dict[tp.Any, weakref.WeakSet[Element]]
+    _deps: dict[tp.Any, weakref.WeakSet[StateDependency]]
 
     def __init__(self, owner: Stateful | None = None, attr: str = "") -> None:
         """Initialize tracking state.
@@ -95,62 +95,37 @@ class _TrackedMixin:
             )
 
     def _register_access(self, dep_key: tp.Any) -> None:
-        """Register that current render context accessed this dependency key.
+        """Register that the active dependency accessed this key.
 
-        Called during __getitem__, __iter__, etc. to track which elements
+        Called during __getitem__, __iter__, etc. to track which watchers
         depend on which parts of the collection.
-
-        Uses WeakSet[Element] so dependencies are automatically cleaned up
-        when elements are replaced (on re-render) or removed (on unmount).
         """
-        session = get_active_session()
-        if session is None or session.active is None:
+        session = get_render_session()
+        if session is None:
             return
-
-        element_id = session.active.current_element_id
-        assert element_id is not None  # Guaranteed by is_active() check above
-
-        element = session.elements.get(element_id)
-        if element is None:
+        dep = session.active_dependency
+        if dep is None:
             return
 
         deps = self._deps
         if dep_key not in deps:
             deps[dep_key] = weakref.WeakSet()
-        deps[dep_key].add(element)
+        deps[dep_key].add(dep)
 
-        logger.debug(
-            "Tracked[%s] access: key=%r by %s",
-            self._attr,
-            dep_key,
-            element_id,
-        )
+        logger.debug("Tracked[%s] access: key=%r by %s", self._attr, dep_key, dep)
 
     def _mark_dirty(self, dep_key: tp.Any) -> None:
-        """Mark all elements that depend on this key as dirty.
+        """Notify all watchers that depend on this key.
 
         Called when the collection is mutated at this key.
-        Uses element's _session_ref to get the RenderSession for marking dirty.
         """
         deps = self._deps
         if dep_key not in deps:
             return
 
-        # WeakSet automatically handles cleanup of dead references
-        dirty_elements = []
-        for element in deps[dep_key]:
-            session = element._session_ref()
-            if session is not None:
-                session.dirty.mark(element.id)
-                dirty_elements.append(element.id)
-
-        if dirty_elements:
-            logger.debug(
-                "Tracked[%s] mutation at key=%r → dirty: %s",
-                self._attr,
-                dep_key,
-                dirty_elements,
-            )
+        for watcher in deps[dep_key]:
+            watcher.notify_dirty()
+            logger.debug("Tracked[%s] mutation at key=%r → dirty: %s", self._attr, dep_key, watcher)
 
         # Remove empty dep_key entries
         if not deps.get(dep_key):

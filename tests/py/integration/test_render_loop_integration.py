@@ -12,6 +12,7 @@ from trellis.core.components.base import Component
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.rendering.patches import RenderAddPatch, RenderRemovePatch, RenderUpdatePatch
 from trellis.core.rendering.render import render
+from trellis.core.rendering.session import set_render_session
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.browser.handler import BrowserMessageHandler
 from trellis.platforms.common.errors import SessionDisconnected
@@ -48,10 +49,13 @@ def _init_handler_for_test(handler: BrowserMessageHandler) -> None:
     """Initialize handler by posting HelloMessage and calling handle_hello.
 
     This simulates the production flow where handle_hello creates the session.
+    asyncio.run() creates a fresh context, so we re-set the session in the
+    calling thread's context afterward.
     """
     handler._inbox.put_nowait(HelloMessage(client_id="test", system_theme="light"))
     with bind_message_handler(handler):
         asyncio.run(handler.handle_hello())
+    set_render_session(handler.session)
 
 
 def get_initial_tree(handler: MessageHandler) -> dict[str, tp.Any]:

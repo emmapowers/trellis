@@ -44,11 +44,11 @@ class TestMountHelper:
         @component
         def App() -> None:
             status = state_var("idle")
-            observed.append(status.value)
+            observed.append(status)
 
             async def start() -> None:
-                await asyncio.sleep(0)
-                status.set("ready")
+                nonlocal status
+                status = "ready"
                 done.set()
 
             on_mount(start)
@@ -172,7 +172,7 @@ class TestMountHelper:
         """A mounted slot keeps its first callable and does not rerun on rerender."""
         calls: list[str] = []
         current_label = ["first"]
-        counter_state_var = []
+        setters: list[tp.Callable[[int], None]] = []
 
         def run_current() -> None:
             calls.append(current_label[0])
@@ -180,14 +180,19 @@ class TestMountHelper:
         @component
         def App() -> None:
             counter = state_var(0)
-            counter_state_var[:] = [counter]
+
+            def _set(v: int) -> None:
+                nonlocal counter
+                counter = v
+
+            setters[:] = [_set]
             on_mount(run_current)
 
         capture = capture_patches(App)
         capture.render()
 
         current_label[0] = "second"
-        counter_state_var[0].set(1)
+        setters[0](1)
         capture.render()
 
         assert calls == ["first"]

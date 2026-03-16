@@ -19,7 +19,7 @@ __all__ = [
 ]
 
 
-@dataclass
+@dataclass(eq=False)
 class Element(KeyTrait, RefTrait):
     """Tree node representing a component invocation (leaf — no `with` block)."""
 
@@ -40,6 +40,12 @@ class Element(KeyTrait, RefTrait):
         return hash(
             (self.id, id(self._session_ref()) if self._session_ref() else None, self.render_count)
         )
+
+    def notify_dirty(self) -> None:
+        """Mark this element as needing re-render. Satisfies StateDependency protocol."""
+        session = self._session_ref()
+        if session is not None:
+            session.dirty.mark(self.id)
 
     @property
     def properties(self) -> dict[str, tp.Any]:

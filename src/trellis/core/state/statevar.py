@@ -48,20 +48,16 @@ class StateVar[T](Stateful):
 
         self.value = resolved
 
-    def set(self, value: T) -> None:
-        """Replace the current value."""
-        self.value = value
-
     def __repr__(self) -> str:
         return f"StateVar({self.value!r})"
 
 
 @tp.overload
-def state_var(initial: T, /) -> StateVar[T]: ...
+def state_var(initial: T, /) -> T: ...
 
 
 @tp.overload
-def state_var(*, factory: tp.Callable[[], T]) -> StateVar[T]: ...
+def state_var(*, factory: tp.Callable[[], T]) -> T: ...
 
 
 def state_var(
@@ -69,8 +65,12 @@ def state_var(
     /,
     *,
     factory: tp.Callable[[], T] | None = None,
-) -> StateVar[T]:
+) -> T:
     """Create slot-local reactive state for the current component.
+
+    Inside a ``@component`` function, an AST transform rewrites all reads and
+    writes of the bound name to go through ``.value`` automatically, so user
+    code never needs to mention ``.value``.
 
     Example:
         ```python
@@ -80,20 +80,17 @@ def state_var(
             count = state_var(0)
 
             def rename() -> None:
-                name.value = "Grace"
+                nonlocal name
+                name = "Grace"
 
-            w.TextInput(value=mutable(name.value))
+            w.TextInput(value=mutable(name))
             w.Button(text="Rename", on_click=rename)
-            w.Button(text="+", on_click=lambda: count.set(count.value + 1))
-            w.Label(text=f"Hello, {name.value}")
-            w.Label(text=f"Count: {count.value}")
+            w.Label(text=f"Hello, {name}")
+            w.Label(text=f"Count: {count}")
         ```
 
-    In ordinary Python code, assign to `.value` directly. Use `.set(...)` when
-    passing a setter callback around or when it reads more clearly at the call site.
-
     Returns:
-        A per-element `StateVar[T]` that persists across re-renders.
+        A per-element reactive value that persists across re-renders.
     """
 
-    return StateVar(initial, factory=factory)
+    return tp.cast("T", StateVar(initial, factory=factory))

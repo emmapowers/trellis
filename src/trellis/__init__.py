@@ -44,19 +44,20 @@ from trellis.core import (
     callback,
     component,
     convert_to_tracked,
-    get_active_session,
     get_ref,
+    get_render_session,
     is_render_active,
     mutable,
     props_equal,
     react,
     reconcile_children,
     render,
-    set_active_session,
     set_ref,
+    set_render_session,
 )
+from trellis.core.state import state_var
 from trellis.routing import Route, RouterState, Routes, router
-from trellis.state import load, on_mount, state_var
+from trellis.state import load, on_mount
 
 __version__ = "0.1.0"
 __all__ = [
@@ -94,8 +95,8 @@ __all__ = [
     "callback",
     "component",
     "convert_to_tracked",
-    "get_active_session",
     "get_ref",
+    "get_render_session",
     "is_render_active",
     "load",
     "mutable",
@@ -105,7 +106,7 @@ __all__ = [
     "reconcile_children",
     "render",
     "router",
-    "set_active_session",
     "set_ref",
+    "set_render_session",
     "state_var",
 ]

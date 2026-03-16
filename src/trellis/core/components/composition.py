@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import inspect
+import types
 import typing as tp
 
 from trellis.core.components.base import Component, ElementKind
 from trellis.core.rendering.element import ContainerElement, Element
 from trellis.core.rendering.traits import ContainerTrait
+from trellis.core.transforms import StateVarTransform, apply_transforms
 
 __all__ = ["CompositionComponent", "RenderFunc", "component"]
 
@@ -19,6 +21,7 @@ class RenderFunc(tp.Protocol):
     """Protocol for render functions used with @component decorator."""
 
     __name__: str
+    __code__: types.CodeType
     __call__: tp.Callable[..., None]
 
 
@@ -140,14 +143,20 @@ def component(
         is_container: Whether this component accepts children via ``with`` blocks.
             When True, the render function must have a ``children`` parameter.
     """
+    _transforms = [StateVarTransform()]
+
     if render_func is not None:
         # Called without parentheses: @component
+        transformed = tp.cast("RenderFunc", apply_transforms(render_func, _transforms))
         return CompositionComponent(
-            render_func.__name__, render_func, element_class, is_container=is_container
+            render_func.__name__, transformed, element_class, is_container=is_container
         )
 
     # Called with parentheses: @component(is_container=True, element_class=X)
     def decorator(func: RenderFunc) -> CompositionComponent[Element]:
-        return CompositionComponent(func.__name__, func, element_class, is_container=is_container)
+        transformed = tp.cast("RenderFunc", apply_transforms(func, _transforms))
+        return CompositionComponent(
+            func.__name__, transformed, element_class, is_container=is_container
+        )
 
     return decorator

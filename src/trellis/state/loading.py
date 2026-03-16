@@ -8,7 +8,7 @@ import weakref
 from dataclasses import dataclass, field
 
 from trellis.core.callback_context import callback_context
-from trellis.core.rendering.session import RenderSession, get_active_session
+from trellis.core.rendering.session import RenderSession, get_render_session
 from trellis.core.state.stateful import Stateful
 
 T = tp.TypeVar("T")
@@ -171,7 +171,7 @@ class _LoadState(Stateful):
         key: object | _NoKey,
     ) -> Load[T]:
         """Update the semantic inputs for this slot and restart if needed."""
-        session = get_active_session()
+        session = get_render_session()
         if session is None or not session.is_executing():
             raise RuntimeError(
                 "load() can only be called during component execution (render context)."

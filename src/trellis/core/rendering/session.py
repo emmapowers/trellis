@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import contextvars
 import logging
 import re
 import threading
 import typing as tp
 import weakref
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 from trellis.core.rendering.dirty_tracker import DirtyTracker
@@ -19,40 +21,41 @@ if tp.TYPE_CHECKING:
     from trellis.core.components.base import Component
     from trellis.core.rendering.active import ActiveRender
     from trellis.core.rendering.element import Element
+    from trellis.core.state.dependency import StateDependency
 
 __all__ = [
     "RenderSession",
     "SessionRegistry",
-    "get_active_session",
+    "get_render_session",
     "get_session_registry",
     "is_render_active",
-    "set_active_session",
+    "set_render_session",
 ]
 
 logger = logging.getLogger(__name__)
 
 
-# Thread-safe, task-local storage for the active render session.
+# Task-local storage for the render session bound to this connection.
 # Using contextvars ensures each asyncio task or thread has its own context,
 # enabling concurrent rendering (e.g., multiple WebSocket connections).
-_active_session: contextvars.ContextVar[RenderSession | None] = contextvars.ContextVar(
-    "active_session", default=None
+_render_session: contextvars.ContextVar[RenderSession | None] = contextvars.ContextVar(
+    "render_session", default=None
 )
 
 
-def get_active_session() -> RenderSession | None:
-    """Get the currently active render session, if any."""
-    return _active_session.get()
+def get_render_session() -> RenderSession | None:
+    """Get the render session for the current connection, if any."""
+    return _render_session.get()
 
 
-def set_active_session(session: RenderSession | None) -> None:
-    """Set the active render session."""
-    _active_session.set(session)
+def set_render_session(session: RenderSession | None) -> None:
+    """Set the render session for the current connection."""
+    _render_session.set(session)
 
 
 def is_render_active() -> bool:
     """Check if currently inside a render context."""
-    session = _active_session.get()
+    session = _render_session.get()
     return session is not None and session.is_rendering()
 
 
@@ -84,6 +87,11 @@ class RenderSession:
     # Session-scoped async tasks for non-critical background work.
     _tasks: set[asyncio.Task[tp.Any]] = field(default_factory=set)
     _shutting_down: bool = False
+
+    # The dependency (Element or ReactiveEffect) currently being executed.
+    # Set during element execution and reactive effect execution so that
+    # Stateful.__getattribute__ can register watchers via the protocol.
+    active_dependency: StateDependency | None = None
 
     # Initial URL path from client HelloMessage (for routing)
     initial_path: str = "/"
@@ -154,6 +162,20 @@ class RenderSession:
         if self.active is None:
             return None
         return self.active.current_element_id
+
+    @contextlib.contextmanager
+    def tracking(self, dep: StateDependency) -> Iterator[None]:
+        """Set the active dependency for the duration of a block.
+
+        Used during element execution and reactive effect execution so that
+        Stateful.__getattribute__ registers the correct watcher.
+        """
+        previous = self.active_dependency
+        self.active_dependency = dep
+        try:
+            yield
+        finally:
+            self.active_dependency = previous
 
     def get_callback(self, element_id: str, prop_name: str) -> tp.Callable[..., tp.Any] | None:
         """Get a callback from a element's props by path."""

@@ -15,9 +15,9 @@ from trellis.core.rendering.frames import _escape_key
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import (
     RenderSession,
-    get_active_session,
+    get_render_session,
     is_render_active,
-    set_active_session,
+    set_render_session,
 )
 from trellis.core.state.stateful import Stateful
 from trellis.widgets import Button, Column, Label, Row
@@ -28,19 +28,19 @@ def make_component(name: str) -> CompositionComponent:
     return CompositionComponent(name=name, render_func=lambda: None)
 
 
-class TestActiveSession:
+class TestRenderSessionContextVar:
     def test_default_is_none(self) -> None:
-        assert get_active_session() is None
+        assert get_render_session() is None
 
     def test_set_and_get(self) -> None:
         comp = make_component("Root")
         ctx = RenderSession(comp)
 
-        set_active_session(ctx)
-        assert get_active_session() is ctx
+        set_render_session(ctx)
+        assert get_render_session() is ctx
 
-        set_active_session(None)
-        assert get_active_session() is None
+        set_render_session(None)
+        assert get_render_session() is None
 
 
 class TestRenderSession:
@@ -58,6 +58,7 @@ class TestRenderSession:
             pass
 
         ctx = RenderSession(Root)
+        set_render_session(ctx)
         render(ctx)
 
         # The root node should have an ID now
@@ -91,17 +92,17 @@ class TestConcurrentRenderSessionIsolation:
 
         def thread_a() -> None:
             ctx = RenderSession(AppA)
-            set_active_session(ctx)
+            set_render_session(ctx)
             barrier.wait()  # Sync with thread B
-            results["a"] = get_active_session()
-            set_active_session(None)
+            results["a"] = get_render_session()
+            set_render_session(None)
 
         def thread_b() -> None:
             ctx = RenderSession(AppB)
-            set_active_session(ctx)
+            set_render_session(ctx)
             barrier.wait()  # Sync with thread A
-            results["b"] = get_active_session()
-            set_active_session(None)
+            results["b"] = get_render_session()
+            set_render_session(None)
 
         t1 = threading.Thread(target=thread_a)
         t2 = threading.Thread(target=thread_b)
@@ -141,10 +142,12 @@ class TestConcurrentRenderSessionIsolation:
 
         def render_app_a() -> None:
             ctx = RenderSession(AppA)
+            set_render_session(ctx)
             render(ctx)
 
         def render_app_b() -> None:
             ctx = RenderSession(AppB)
+            set_render_session(ctx)
             render(ctx)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
@@ -167,7 +170,7 @@ class TestComponentOutsideRenderSession:
             pass
 
         # Ensure no active context
-        set_active_session(None)
+        set_render_session(None)
 
         with pytest.raises(RuntimeError, match="outside of render context"):
             MyComponent()
@@ -180,7 +183,7 @@ class TestComponentOutsideRenderSession:
             for c in children:
                 c()
 
-        set_active_session(None)
+        set_render_session(None)
 
         with pytest.raises(RuntimeError, match="outside of render context"):
             with Container():
@@ -202,6 +205,7 @@ class TestDescriptorStackCleanupOnException:
             FailingChild()
 
         ctx = RenderSession(Parent)
+        set_render_session(ctx)
 
         with pytest.raises(ValueError, match="intentional failure"):
             render(ctx)
@@ -227,6 +231,7 @@ class TestDescriptorStackCleanupOnException:
                 FailingComponent()
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
 
         with pytest.raises(RuntimeError, match="nested failure"):
             render(ctx)
@@ -254,6 +259,7 @@ class TestThreadSafeStateUpdates:
                 results[name] = state.value
 
             ctx = RenderSession(LocalApp)
+            set_render_session(ctx)
             render(ctx)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
@@ -279,6 +285,7 @@ class TestThreadSafeStateUpdates:
             pass
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         # Store a callback in a node's props
@@ -332,6 +339,7 @@ class TestThreadSafeStateUpdates:
                 events.append("rerender_started")
 
         ctx = RenderSession(SlowApp)
+        set_render_session(ctx)
 
         def background_update() -> None:
             # Wait for render to start and state to be created
@@ -377,6 +385,7 @@ class TestElementStateParentId:
             Child()
 
         ctx = RenderSession(Parent)
+        set_render_session(ctx)
         render(ctx)
 
         # Root has no parent
@@ -408,6 +417,7 @@ class TestElementStateParentId:
             Child()
 
         ctx = RenderSession(Parent)
+        set_render_session(ctx)
         render(ctx)
 
         child_id = ctx.elements.get(ctx.root_element.child_ids[0]).id
@@ -442,6 +452,7 @@ class TestPropsComparison:
             Child(value=value_ref[0])
 
         ctx = RenderSession(Parent)
+        set_render_session(ctx)
         render(ctx)
 
         assert render_counts["child"] == 1
@@ -487,6 +498,7 @@ class TestPropsComparison:
             Child(on_click=handler_ref[0])
 
         ctx = RenderSession(Parent)
+        set_render_session(ctx)
         render(ctx)
 
         assert render_counts["child"] == 1
@@ -517,6 +529,7 @@ class TestPropsComparison:
             NoProps()
 
         ctx = RenderSession(Parent)
+        set_render_session(ctx)
         render(ctx)
 
         assert render_counts["no_props"] == 1
@@ -541,6 +554,7 @@ class TestPropsComparison:
             Child(items=tuple_ref[0])
 
         ctx = RenderSession(Parent)
+        set_render_session(ctx)
         render(ctx)
 
         assert render_counts["child"] == 1
@@ -584,6 +598,7 @@ class TestBuiltinWidgetsReconciliation:
             Button(text="Add")  # Fixed tail
 
         ctx = RenderSession(TodoList)
+        set_render_session(ctx)
         render(ctx)
 
         # Should have: H1, Row, Row, Row, Row, Button = 6 children
@@ -608,6 +623,7 @@ class TestBuiltinWidgetsReconciliation:
                     h.Span(item)
 
         ctx = RenderSession(List)
+        set_render_session(ctx)
         render(ctx)
 
         assert len(ctx.root_element.child_ids) == 3
@@ -632,6 +648,7 @@ class TestBuiltinWidgetsReconciliation:
                         Button(text="Delete")
 
         ctx = RenderSession(List)
+        set_render_session(ctx)
         render(ctx)
 
         column = ctx.elements.get(ctx.root_element.child_ids[0])
@@ -659,6 +676,7 @@ class TestBuiltinWidgetsReconciliation:
                 CustomItem(name=item)
 
         ctx = RenderSession(List)
+        set_render_session(ctx)
         render(ctx)
 
         assert len(ctx.root_element.child_ids) == 3
@@ -729,6 +747,7 @@ class TestIsRenderActiveSemantics:
             values_during_execution.append(is_render_active())
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         assert len(values_during_execution) == 1
@@ -748,35 +767,40 @@ class TestIsRenderActiveSemantics:
             CheckDuringMount()
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         assert len(values_during_mount) == 1
         assert values_during_mount[0] is False
 
-    def test_session_active_none_during_hooks(self) -> None:
-        """session.active should be None during lifecycle hooks.
+    def test_session_available_but_not_rendering_during_hooks(self) -> None:
+        """Session is accessible during hooks but session.active is None.
 
-        This is the implementation requirement: hooks must run after
-        session.active is cleared, not just after current_element_id is None.
+        Hooks run after session.active is cleared. The render session ContextVar
+        remains set (it lives for the connection lifetime), so get_render_session()
+        returns the session, but session.active is None and is_render_active() is False.
         """
-        active_values: list[bool] = []
+        hook_observations: list[tuple[bool, bool]] = []
 
         @dataclass
         class CheckSessionActive(Stateful):
             def on_mount(self) -> None:
-                session = get_active_session()
-                # session.active should be None during hooks
-                active_values.append(session.active is None if session else True)
+                session = get_render_session()
+                assert session is not None
+                hook_observations.append((session.active is None, not is_render_active()))
 
         @component
         def App() -> None:
             CheckSessionActive()
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
-        assert len(active_values) == 1
-        assert active_values[0] is True, "session.active should be None during hooks"
+        assert len(hook_observations) == 1
+        active_is_none, render_not_active = hook_observations[0]
+        assert active_is_none, "session.active should be None during hooks"
+        assert render_not_active, "is_render_active() should be False during hooks"
 
 
 class TestLifecycleHooksCanModifyState:
@@ -827,6 +851,7 @@ class TestLifecycleHooksCanModifyState:
         shared = SharedState()
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         # Hook should have modified shared state
@@ -860,6 +885,7 @@ class TestLifecycleHooksCanModifyState:
 
         shared = SharedState()
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         # Remove child to trigger unmount
@@ -898,6 +924,7 @@ class TestHookErrorHandling:
                 Child()
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         child_id = ctx.root_element.child_ids[0]
@@ -940,6 +967,7 @@ class TestHookErrorHandling:
             Child(name="child2")
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
 
         with caplog.at_level(logging.ERROR):
             render(ctx)  # Should not raise
@@ -962,6 +990,7 @@ class TestPositionIdGeneration:
             pass
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         # Format: /@{id(component)}
@@ -982,6 +1011,7 @@ class TestPositionIdGeneration:
             Child()
 
         ctx = RenderSession(Parent)
+        set_render_session(ctx)
         render(ctx)
 
         # Children should have /0@, /1@, /2@ in their IDs
@@ -1003,6 +1033,7 @@ class TestPositionIdGeneration:
             Child(key="submit")
 
         ctx = RenderSession(Parent)
+        set_render_session(ctx)
         render(ctx)
 
         child_id = ctx.root_element.child_ids[0]
@@ -1029,6 +1060,7 @@ class TestPositionIdGeneration:
                 TypeB()
 
         ctx = RenderSession(Parent)
+        set_render_session(ctx)
         render(ctx)
         id_a = ctx.root_element.child_ids[0]
 
@@ -1094,6 +1126,7 @@ class TestConditionalRendering:
                 Child()
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         assert render_counts.get("child", 0) == 1
@@ -1159,6 +1192,7 @@ class TestConditionalRendering:
                 ChildC()
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         assert render_counts == {"app": 1, "a": 1}
@@ -1215,6 +1249,7 @@ class TestConditionalRendering:
                     DeepChild()
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         assert render_counts == {"app": 1, "outer": 1, "inner": 1, "deep": 1}
@@ -1274,6 +1309,7 @@ class TestElementRemovalStorage:
                 Child()
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         container_id = ctx.root_element.child_ids[0]
@@ -1305,6 +1341,7 @@ class TestElementRemovalStorage:
                 Child()
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         child_id = ctx.root_element.child_ids[0]
@@ -1355,6 +1392,7 @@ class TestElementRemovalStorage:
                 Child()
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         render(ctx)
 
         container_id = ctx.root_element.child_ids[0]

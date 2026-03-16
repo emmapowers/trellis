@@ -125,6 +125,24 @@
             color: var(--trellis-text-muted);
             font-weight: normal;
         }
+
+        .share-btn {
+            padding: 6px 16px;
+            background: var(--trellis-bg-surface-raised);
+            color: var(--trellis-text-primary);
+            border: 1px solid var(--trellis-border-default);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .share-btn:hover {
+            background: var(--trellis-bg-surface-hover);
+        }
+
+        .share-btn.copied {
+            color: var(--trellis-success);
+        }
     </style>
 </head>
 <body class="trellis-root">
@@ -135,6 +153,7 @@
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <span class="shortcut-hint">Ctrl+Enter to run</span>
                     <button id="run-btn" disabled>Run</button>
+                    <button id="share-btn" class="share-btn">Share</button>
                     <button id="theme-toggle" class="theme-toggle" title="Theme: system">💻</button>
                 </div>
             </div>

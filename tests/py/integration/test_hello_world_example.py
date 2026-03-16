@@ -9,7 +9,7 @@ import pytest
 
 from tests.conftest import render_to_tree
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, set_render_session
 from trellis.platforms.common.serialization import parse_callback_id, serialize_element
 
 
@@ -49,6 +49,7 @@ class TestHelloWorldExample:
         monkeypatch.setattr(hello_world_app, "INITIAL_COUNT", 7)
 
         session = RenderSession(hello_world_app.HelloWorld)
+        set_render_session(session)
         tree = render_to_tree(session)
 
         increment_button = _find_button_by_text(tree, "+")

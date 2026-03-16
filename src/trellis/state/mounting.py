@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import typing as tp
 
-from trellis.core.rendering.session import get_active_session
+from trellis.core.rendering.session import get_render_session
 from trellis.core.state.stateful import Stateful
 
 type OnMountFn = (
@@ -127,10 +127,11 @@ def on_mount(
             connected = state_var(False)
 
             async def connect() -> None:
-                connected.set(True)
+                nonlocal connected
+                connected = True
 
             on_mount(connect)
-            w.Badge(text="Connected" if connected.value else "Connecting")
+            w.Badge(text="Connected" if connected else "Connecting")
         ```
 
         ```python
@@ -145,7 +146,7 @@ def on_mount(
             w.Label(text="Streaming updates")
         ```
     """
-    session = get_active_session()
+    session = get_render_session()
     if session is None or not session.is_executing():
         raise RuntimeError(
             "on_mount() can only be called during component execution (render context)."

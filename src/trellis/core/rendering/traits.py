@@ -21,7 +21,7 @@ import weakref
 from dataclasses import dataclass
 
 from trellis.core.rendering.child_ref import ChildRef
-from trellis.core.rendering.session import get_active_session
+from trellis.core.rendering.session import get_render_session
 from trellis.utils.logger import logger
 
 if tp.TYPE_CHECKING:
@@ -112,7 +112,7 @@ class ContainerTrait:
 
     def __enter__(self) -> Self:
         """Enter a `with` block to collect children for a container component."""
-        session = get_active_session()
+        session = get_render_session()
         if session is None or session.active is None:
             raise RuntimeError(
                 f"Cannot use 'with {self.component.name}()' outside of render context. "
@@ -137,7 +137,7 @@ class ContainerTrait:
         exc_tb: tp.Any,
     ) -> None:
         """Exit the `with` block, storing ChildRefs in props["children"]."""
-        session = get_active_session()
+        session = get_render_session()
         if session is None or session.active is None:
             return
 

@@ -6,7 +6,7 @@ import pytest
 
 from tests.conftest import render_to_tree
 from trellis.core.components.composition import component
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, set_render_session
 from trellis.core.state.mutable import mutable
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.common.serialization import parse_callback_id
@@ -138,6 +138,7 @@ class TestLayoutWidgets:
                 Label(text="Right")
 
         ctx = RenderSession(App)
+        set_render_session(ctx)
         result = render_to_tree(ctx)
 
         # SplitPane component → inner _SplitPane react element

@@ -19,10 +19,10 @@ from trellis.core.rendering.reconcile import reconcile_children
 from trellis.core.rendering.render import render
 from trellis.core.rendering.session import (
     RenderSession,
-    get_active_session,
+    get_render_session,
     get_session_registry,
     is_render_active,
-    set_active_session,
+    set_render_session,
 )
 from trellis.core.rendering.traits import ContainerTrait, KeyTrait
 
@@ -46,11 +46,11 @@ __all__ = [
     "RenderRemovePatch",
     "RenderSession",
     "RenderUpdatePatch",
-    "get_active_session",
+    "get_render_session",
     "get_session_registry",
     "is_render_active",
     "props_equal",
     "reconcile_children",
     "render",
-    "set_active_session",
+    "set_render_session",
 ]

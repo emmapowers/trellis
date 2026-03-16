@@ -5,7 +5,7 @@ import pytest
 from trellis.core.components.composition import component
 from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, set_render_session
 
 
 class TestContainerComponent:
@@ -113,6 +113,7 @@ class TestContainerComponent:
                 pass
 
         ctx = RenderSession(Parent)
+        set_render_session(ctx)
         with pytest.raises(TypeError, match="does not support the context manager protocol"):
             render(ctx)
 
@@ -138,6 +139,7 @@ class TestContainerComponent:
                 pass
 
         ctx = RenderSession(Parent)
+        set_render_session(ctx)
         with pytest.raises(RuntimeError, match=r"Cannot provide 'children'.*and use 'with' block"):
             render(ctx)
 
