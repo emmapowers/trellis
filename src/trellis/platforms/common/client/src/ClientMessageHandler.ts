@@ -27,6 +27,8 @@ export class ClientMessageHandler {
   private connectionState: ConnectionState = "disconnected";
   private callbacks: ClientMessageHandlerCallbacks;
   private store: TrellisStore;
+  /** Pending key event responses, keyed by request_id. */
+  pendingKeyEvents: Map<string, (handled: boolean) => void> = new Map();
 
   /**
    * Create a new message handler.
@@ -93,6 +95,15 @@ export class ClientMessageHandler {
         debugLog("messages", "Reload requested, refreshing page");
         window.location.reload();
         break;
+
+      case MessageType.KEY_EVENT_RESPONSE: {
+        const resolver = this.pendingKeyEvents.get(msg.request_id);
+        if (resolver) {
+          this.pendingKeyEvents.delete(msg.request_id);
+          resolver(msg.handled);
+        }
+        break;
+      }
     }
   }
 
@@ -114,7 +125,18 @@ export class ClientMessageHandler {
     const oldState = this.connectionState;
     this.connectionState = state;
     debugLog("messages", `Connection: ${oldState} → ${state}`);
+    if (state === "disconnected") {
+      this.flushPendingKeyEvents();
+    }
     this.callbacks.onConnectionStateChange?.(state);
+  }
+
+  /** Resolve all pending key event promises as unhandled and clear the map. */
+  private flushPendingKeyEvents(): void {
+    for (const resolver of this.pendingKeyEvents.values()) {
+      resolver(false);
+    }
+    this.pendingKeyEvents.clear();
   }
 
   getConnectionState(): ConnectionState {

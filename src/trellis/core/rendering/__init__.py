@@ -3,11 +3,12 @@
 from trellis.core.rendering.active import ActiveRender
 from trellis.core.rendering.child_ref import ChildRef
 from trellis.core.rendering.dirty_tracker import DirtyTracker
-from trellis.core.rendering.element import ContainerElement, Element, props_equal
+from trellis.core.rendering.element import ContainerElement, Element, diff_props
 from trellis.core.rendering.element_state import ElementState, ElementStateStore
 from trellis.core.rendering.element_store import ElementStore
 from trellis.core.rendering.frames import Frame, FrameStack
 from trellis.core.rendering.lifecycle import LifecycleTracker
+from trellis.core.rendering.on_key_trait import OnKeyTrait
 from trellis.core.rendering.patches import (
     PatchCollector,
     RenderAddPatch,
@@ -40,16 +41,17 @@ __all__ = [
     "FrameStack",
     "KeyTrait",
     "LifecycleTracker",
+    "OnKeyTrait",
     "PatchCollector",
     "RenderAddPatch",
     "RenderPatch",
     "RenderRemovePatch",
     "RenderSession",
     "RenderUpdatePatch",
+    "diff_props",
     "get_render_session",
     "get_session_registry",
     "is_render_active",
-    "props_equal",
     "reconcile_children",
     "render",
     "set_render_session",

@@ -31,8 +31,29 @@ describe("webref css source extraction", () => {
     expect(surface.properties.get("font-size")?.value_type_name).toBe("LengthPercentage");
     expect(surface.properties.get("line-height")?.value_type_name).toBe("LineHeightValue");
     expect(surface.properties.get("line-height")?.accepts_auto_px).toBe(false);
+    // Numeric properties — direct <number> in syntax
+    expect(surface.properties.get("flex-shrink")?.value_type_name).toBe("NumberValue");
+    expect(surface.properties.get("flex-grow")?.value_type_name).toBe("NumberValue");
+
+    // Numeric properties — resolved through value definition indirection
+    // opacity: <opacity-value> -> <number> | <percentage>
+    expect(surface.properties.get("opacity")?.value_type_name).toBe("NumberValue");
     expect(surface.properties.get("opacity")?.accepts_auto_px).toBe(false);
+    // fill-opacity: <'opacity'> -> <opacity-value> -> <number> | <percentage>
+    expect(surface.properties.get("fill-opacity")?.value_type_name).toBe("NumberValue");
+    expect(surface.properties.get("stop-opacity")?.value_type_name).toBe("NumberValue");
+
+    // z-index keeps explicit alias for the "auto" literal
+    expect(surface.properties.get("z-index")?.value_type_name).toBe("ZIndex");
     expect(surface.properties.get("z-index")?.accepts_auto_px).toBe(false);
+
+    // Percentage properties — resolved from <percentage> in syntax
+    expect(surface.properties.get("font-stretch")?.value_type_name).toBe("PercentageValue");
+    expect(surface.properties.get("text-size-adjust")?.value_type_name).toBe("PercentageValue");
+
+    // Complex syntax properties should NOT resolve through references
+    // cursor: [<cursor-image>,]* <cursor-predefined> — has [] brackets, stays CssRawString
+    expect(surface.properties.get("cursor")?.value_type_name).toBe("CssRawString");
 
     // scrollbar-width only accepts keywords (auto | thin | none), not lengths
     expect(surface.properties.get("scrollbar-width")?.accepts_auto_px).toBe(false);
@@ -122,10 +143,20 @@ describe("webref css source extraction", () => {
         { kind: "reference", name: "CssRawString" },
       ]),
     });
-    expect(surface.value_aliases.get("Opacity")).toMatchObject({
+    expect(surface.value_aliases.get("NumberValue")).toMatchObject({
       kind: "union",
       options: expect.arrayContaining([
+        { kind: "primitive", name: "int" },
         { kind: "primitive", name: "float" },
+        { kind: "reference", name: "CssRawString" },
+      ]),
+    });
+    expect(surface.value_aliases.get("PercentageValue")).toMatchObject({
+      kind: "union",
+      options: expect.arrayContaining([
+        { kind: "primitive", name: "int" },
+        { kind: "primitive", name: "float" },
+        { kind: "reference", name: "CssPercent" },
         { kind: "reference", name: "CssRawString" },
       ]),
     });

@@ -147,7 +147,7 @@ export class TrellisStore {
     if (patch.props) {
       newProps = { ...node.props };
       for (const [key, value] of Object.entries(patch.props)) {
-        if (value === null) {
+        if (value != null && typeof value === "object" && (value as Record<string, unknown>).__removed__ === true) {
           delete newProps[key];
         } else {
           newProps[key] = value;

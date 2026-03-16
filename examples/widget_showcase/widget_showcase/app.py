@@ -1,10 +1,14 @@
 """Root application component for widget showcase."""
 
-from trellis import Route, Routes, component, router
+import sys
+from dataclasses import dataclass
+
+from trellis import HotKey, Route, Routes, Stateful, component, router, sequence
 from trellis import html as h
 from trellis import widgets as w
 from trellis.app import App, get_config, theme
 from trellis.core.components.composition import CompositionComponent
+from trellis.core.hotkey_types import Hotkey
 from trellis.platforms.common.base import PlatformType
 from trellis.widgets import IconName, ThemeSwitcher
 
@@ -15,6 +19,7 @@ from .sections.data import DataDisplaySection
 from .sections.feedback import FeedbackSection
 from .sections.forms import FormInputsSection
 from .sections.icons import IconsSection
+from .sections.keyboard import KeyboardSection
 from .sections.layout import LayoutSection
 from .sections.navigation import NavigationSection
 from .sections.progress import ProgressSection
@@ -41,7 +46,29 @@ _BASE_TABS: list[ShowcaseTab] = [
     ("navigation", "Navigation", IconName.COMPASS, NavigationSection),
     ("feedback", "Feedback", IconName.BELL, FeedbackSection),
     ("actions", "Actions", IconName.MENU, ActionsSection),
+    ("keyboard", "Keyboard", IconName.HASH, KeyboardSection),
 ]
+
+# Map a single letter to each section for Mod+K → <letter> shortcuts.
+# Uses first unused letter from the section name, like menu accelerators.
+_SECTION_KEYS: dict[Hotkey, str] = {
+    "L": "layout",
+    "B": "buttons",
+    "F": "forms",
+    "S": "status",
+    "T": "tables",
+    "P": "progress",
+    "O": "tooltips",  # t-O-oltips (T taken)
+    "Y": "typography",  # t-Y-pography (T taken)
+    "I": "icons",
+    "C": "charts",
+    "D": "data",
+    "N": "navigation",
+    "E": "feedback",  # f-E-edback (F taken)
+    "A": "actions",
+    "K": "keyboard",
+    "X": "desktop",  # des-X-top (all other letters taken)
+}
 
 
 def _resolve_desktop_tab() -> ShowcaseTab:
@@ -80,13 +107,65 @@ def resolve_tabs(platform: PlatformType | None = None) -> list[ShowcaseTab]:
     return tabs
 
 
+def _tab_path(tab_id: str) -> str:
+    return "/" if tab_id == "layout" else f"/{tab_id}"
+
+
+def _active_tab_from_path(path: str) -> str:
+    return path.strip("/") or "layout"
+
+
+@dataclass
+class HelpPanelState(Stateful):
+    """State for the keyboard shortcut help panel."""
+
+    visible: bool = False
+
+
 @component
 def WidgetShowcase() -> None:
     """Main application component with routed navigation."""
-    # Get active tab from URL path (e.g., "/buttons" -> "buttons", "/" -> "layout")
     path = router().path
-    active_tab = path.strip("/") or "layout"
+    active_tab = _active_tab_from_path(path)
     tabs = resolve_tabs()
+    help_state = HelpPanelState()
+
+    # Build tab IDs list for next/prev navigation
+    tab_ids = [tab_id for tab_id, *_ in tabs]
+    r = router()
+
+    # --- Navigation hotkeys ---
+
+    async def go_next() -> bool:
+        idx = tab_ids.index(active_tab) if active_tab in tab_ids else 0
+        next_id = tab_ids[(idx + 1) % len(tab_ids)]
+        await r.navigate(_tab_path(next_id))
+        return True
+
+    async def go_prev() -> bool:
+        idx = tab_ids.index(active_tab) if active_tab in tab_ids else 0
+        prev_id = tab_ids[(idx - 1) % len(tab_ids)]
+        await r.navigate(_tab_path(prev_id))
+        return True
+
+    HotKey(filter=sequence("Mod+K", "]"), handler=go_next)
+    HotKey(filter=sequence("Mod+K", "["), handler=go_prev)
+
+    # Desktop-only: platform-native back/forward keys for router history
+    if _resolve_platform() == PlatformType.DESKTOP:
+        _HistoryHotKeys()
+
+    # Section jump: Mod+K → <letter>
+    for letter, section_id in _SECTION_KEYS.items():
+        if section_id in tab_ids:
+            _SectionHotKey(letter=letter, section_id=section_id)
+
+    # Help panel toggle
+    def toggle_help() -> bool:
+        help_state.visible = not help_state.visible
+        return True
+
+    HotKey(filter="Shift+?", handler=toggle_help)
 
     with w.Column(gap=0, style=h.Style(height=h.vh(100))):
         # Header
@@ -102,6 +181,17 @@ def WidgetShowcase() -> None:
         ):
             w.Icon(name=IconName.LAYOUT_DASHBOARD, size=24, color=theme.accent_primary)
             w.Heading(text="Trellis Widget Showcase", level=2, flex=1)
+            w.Button(
+                text="?",
+                variant="ghost",
+                size="sm",
+                on_click=toggle_help,
+                style={
+                    "fontFamily": "ui-monospace, SFMono-Regular, Menlo, monospace",
+                    "fontSize": "14px",
+                    "width": "32px",
+                },
+            )
             ThemeSwitcher()
 
         # Main content with sidebar tabs
@@ -120,14 +210,11 @@ def WidgetShowcase() -> None:
             ):
                 for tab_id, label, _icon, _ in tabs:
                     is_active = active_tab == tab_id
-                    # Use href for client-side navigation
-                    href = "/" if tab_id == "layout" else f"/{tab_id}"
-
                     w.Button(
                         text=label,
                         variant="primary" if is_active else "ghost",
                         size="sm",
-                        href=href,
+                        href=_tab_path(tab_id),
                         full_width=True,
                         style=h.Style(justify_content="flex-start"),
                     )
@@ -149,13 +236,148 @@ def WidgetShowcase() -> None:
 
                     # Generate routes for each tab
                     for tab_id, label, icon, SectionComponent in tabs:
-                        if tab_id != "layout":  # Skip layout, it's the default
+                        if tab_id != "layout":
                             with Route(pattern=f"/{tab_id}"):
                                 SectionContent(
                                     label=label,
                                     icon=icon,
                                     section=SectionComponent,
                                 )
+
+            # Help panel (slides in from right)
+            if help_state.visible:
+                HelpPanel(tabs=tabs, on_close=toggle_help)
+
+
+@component
+def _SectionHotKey(*, letter: Hotkey, section_id: str) -> None:
+    """Register a Mod+K → <letter> hotkey for a section."""
+    r = router()
+
+    async def handler() -> bool:
+        await r.navigate(_tab_path(section_id))
+        return True
+
+    HotKey(filter=sequence("Mod+K", letter), handler=handler)
+
+
+@component
+def _HistoryHotKeys() -> None:
+    """Register platform-native back/forward hotkeys for desktop."""
+    r = router()
+
+    async def go_back() -> bool:
+        await r.go_back()
+        return True
+
+    async def go_forward() -> bool:
+        await r.go_forward()
+        return True
+
+    if sys.platform == "darwin":
+        HotKey(filter="Meta+ArrowLeft", handler=go_back)
+        HotKey(filter="Meta+ArrowRight", handler=go_forward)
+        HotKey(filter="Meta+[", handler=go_back)
+        HotKey(filter="Meta+]", handler=go_forward)
+    else:
+        HotKey(filter="Alt+ArrowLeft", handler=go_back)
+        HotKey(filter="Alt+ArrowRight", handler=go_forward)
+
+
+@component
+def HelpPanel(*, tabs: list[ShowcaseTab], on_close: object) -> None:
+    """Keyboard shortcut reference panel that slides in from the right."""
+    with h.Div(
+        style={
+            "width": "300px",
+            "flexShrink": "0",
+            "borderLeft": f"1px solid {theme.border_default}",
+            "backgroundColor": theme.bg_surface,
+            "overflow": "auto",
+            "padding": "20px",
+        },
+    ):
+        with w.Column(gap=16):
+            # Header
+            with w.Row(justify="between", align="center"):
+                w.Label(
+                    text="Keyboard Shortcuts",
+                    font_size=13,
+                    bold=True,
+                    color=theme.text_primary,
+                )
+                w.Button(
+                    text="\u00d7",
+                    variant="ghost",
+                    size="sm",
+                    on_click=on_close,
+                    style={"fontSize": "18px", "width": "28px", "padding": "0"},
+                )
+
+            # Navigation section
+            nav_shortcuts: list[tuple[str, str]] = [
+                ("Mod+K  ]", "Next section"),
+                ("Mod+K  [", "Previous section"),
+            ]
+            if _resolve_platform() == PlatformType.DESKTOP:
+                if sys.platform == "darwin":
+                    nav_shortcuts.append(("Meta+ArrowLeft", "Back"))
+                    nav_shortcuts.append(("Meta+ArrowRight", "Forward"))
+                else:
+                    nav_shortcuts.append(("Alt+ArrowLeft", "Back"))
+                    nav_shortcuts.append(("Alt+ArrowRight", "Forward"))
+            _HelpSection(title="Navigation", shortcuts=nav_shortcuts)
+
+            # Section jump
+            section_shortcuts = []
+            for letter, section_id in sorted(_SECTION_KEYS.items(), key=lambda kv: kv[1]):
+                label = next((name for tid, name, *_ in tabs if tid == section_id), None)
+                if label:
+                    section_shortcuts.append((f"Mod+K  {letter}", label))
+
+            _HelpSection(title="Jump to Section", shortcuts=section_shortcuts)
+
+            # Other
+            _HelpSection(
+                title="Other",
+                shortcuts=[
+                    ("Shift+?", "Toggle this panel"),
+                ],
+            )
+
+
+@component
+def _HelpSection(*, title: str, shortcuts: list[tuple[str, str]]) -> None:
+    """A group of shortcuts in the help panel."""
+    with w.Column(gap=8):
+        w.Label(
+            text=title,
+            font_size=11,
+            bold=True,
+            color=theme.text_muted,
+            style={"textTransform": "uppercase", "letterSpacing": "0.05em"},
+        )
+        for keys, label in shortcuts:
+            with w.Row(justify="between", align="center"):
+                w.Label(text=label, font_size=13, color=theme.text_secondary)
+                _ShortcutKeys(keys=keys)
+
+
+@component
+def _ShortcutKeys(*, keys: str) -> None:
+    """Render a shortcut like 'Mod+K  J' as key caps with spacing for sequences."""
+    parts = keys.split("  ")
+    with h.Div(
+        style={
+            "display": "inline-flex",
+            "alignItems": "center",
+            "gap": "6px",
+        },
+    ):
+        for i, part in enumerate(parts):
+            if i > 0:
+                w.Label(text="\u2192", font_size=10, color=theme.text_muted)
+            w.Kbd(keys=part)
 
 
 @component

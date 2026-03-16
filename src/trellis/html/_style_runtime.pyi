@@ -32,13 +32,15 @@ from trellis.html._generated_style_types import (
     GapValue,
     HeightValue,
     HoverCapability,
+    IntegerValue,
     JustifyContent,
     Length,
     LengthPercentage,
     LineHeightValue,
     MediaFeatureValue,
-    Opacity,
+    NumberValue,
     Overflow,
+    PercentageValue,
     PointerCapability,
     Position,
     PrefersColorScheme,
@@ -218,7 +220,7 @@ class Style:
     animation_direction: CssRawString | None
     animation_duration: TimeValue | None
     animation_fill_mode: CssRawString | None
-    animation_iteration_count: CssRawString | None
+    animation_iteration_count: NumberValue | None
     animation_name: CssRawString | None
     animation_play_state: CssRawString | None
     animation_range: CssRawString | builtins.str | None
@@ -239,7 +241,7 @@ class Style:
     background_color: ColorValue | None
     background_image: CssRawString | None
     background_origin: CssRawString | None
-    background_position: CssRawString | builtins.str | None
+    background_position: LengthPercentage | CssRawString | builtins.int | builtins.float | None
     background_position_block: LengthPercentage | builtins.int | builtins.float | None
     background_position_inline: LengthPercentage | builtins.int | builtins.float | None
     background_position_x: LengthPercentage | builtins.int | builtins.float | None
@@ -249,7 +251,7 @@ class Style:
     background_repeat_inline: CssRawString | None
     background_repeat_x: CssRawString | None
     background_repeat_y: CssRawString | None
-    background_size: CssRawString | None
+    background_size: LengthPercentage | builtins.int | builtins.float | None
     background_tbd: CssRawString | None
     baseline_shift: LengthPercentage | builtins.int | builtins.float | None
     baseline_source: CssRawString | None
@@ -261,24 +263,24 @@ class Style:
     block_step_round: CssRawString | None
     block_step_size: Length | builtins.int | builtins.float | None
     bookmark_label: CssRawString | None
-    bookmark_level: CssRawString | None
+    bookmark_level: IntegerValue | None
     bookmark_state: CssRawString | None
     border: ColorValue | CssRawString | None
-    border_block: CssRawString | builtins.str | None
-    border_block_clip: CssRawString | builtins.str | None
+    border_block: ColorValue | CssRawString | None
+    border_block_clip: LengthPercentage | CssRawString | builtins.int | builtins.float | None
     border_block_color: ColorValue | CssRawString | None
     border_block_end: ColorValue | CssRawString | None
     border_block_end_clip: LengthPercentage | builtins.int | builtins.float | None
     border_block_end_color: ColorValue | None
     border_block_end_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_block_end_style: CssRawString | None
-    border_block_end_width: CssRawString | None
+    border_block_end_width: Length | builtins.int | builtins.float | None
     border_block_start: ColorValue | CssRawString | None
     border_block_start_clip: LengthPercentage | builtins.int | builtins.float | None
     border_block_start_color: ColorValue | None
     border_block_start_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_block_start_style: CssRawString | None
-    border_block_start_width: CssRawString | None
+    border_block_start_width: Length | builtins.int | builtins.float | None
     border_block_style: CssRawString | builtins.str | None
     border_block_width: CssRawString | builtins.str | None
     border_bottom: ColorValue | CssRawString | None
@@ -288,9 +290,9 @@ class Style:
     border_bottom_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_bottom_right_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_bottom_style: CssRawString | None
-    border_bottom_width: CssRawString | None
+    border_bottom_width: Length | builtins.int | builtins.float | None
     border_boundary: CssRawString | None
-    border_clip: CssRawString | builtins.str | None
+    border_clip: LengthPercentage | CssRawString | builtins.int | builtins.float | None
     border_collapse: CssRawString | None
     border_color: ColorValue | CssRawString | None
     border_end_end_radius: BorderRadiusValue | builtins.int | builtins.float | None
@@ -298,24 +300,24 @@ class Style:
     border_image: CssRawString | builtins.str | None
     border_image_outset: Length | builtins.int | builtins.float | None
     border_image_repeat: CssRawString | None
-    border_image_slice: CssRawString | None
+    border_image_slice: NumberValue | None
     border_image_source: CssRawString | builtins.str | None
     border_image_width: LengthPercentage | builtins.int | builtins.float | None
-    border_inline: CssRawString | builtins.str | None
-    border_inline_clip: CssRawString | builtins.str | None
+    border_inline: ColorValue | CssRawString | None
+    border_inline_clip: LengthPercentage | CssRawString | builtins.int | builtins.float | None
     border_inline_color: ColorValue | CssRawString | None
     border_inline_end: ColorValue | CssRawString | None
     border_inline_end_clip: LengthPercentage | builtins.int | builtins.float | None
     border_inline_end_color: ColorValue | None
     border_inline_end_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_inline_end_style: CssRawString | None
-    border_inline_end_width: CssRawString | None
+    border_inline_end_width: Length | builtins.int | builtins.float | None
     border_inline_start: ColorValue | CssRawString | None
     border_inline_start_clip: LengthPercentage | builtins.int | builtins.float | None
     border_inline_start_color: ColorValue | None
     border_inline_start_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_inline_start_style: CssRawString | None
-    border_inline_start_width: CssRawString | None
+    border_inline_start_width: Length | builtins.int | builtins.float | None
     border_inline_style: CssRawString | builtins.str | None
     border_inline_width: CssRawString | builtins.str | None
     border_left: ColorValue | CssRawString | None
@@ -323,7 +325,7 @@ class Style:
     border_left_color: ColorValue | None
     border_left_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_left_style: CssRawString | None
-    border_left_width: CssRawString | None
+    border_left_width: Length | builtins.int | builtins.float | None
     border_limit: LengthPercentage | builtins.int | builtins.float | None
     border_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_right: ColorValue | CssRawString | None
@@ -331,7 +333,7 @@ class Style:
     border_right_color: ColorValue | None
     border_right_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_right_style: CssRawString | None
-    border_right_width: CssRawString | None
+    border_right_width: Length | builtins.int | builtins.float | None
     border_shape: CssRawString | None
     border_spacing: Length | builtins.int | builtins.float | None
     border_start_end_radius: BorderRadiusValue | builtins.int | builtins.float | None
@@ -344,7 +346,7 @@ class Style:
     border_top_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_top_right_radius: BorderRadiusValue | builtins.int | builtins.float | None
     border_top_style: CssRawString | None
-    border_top_width: CssRawString | None
+    border_top_width: Length | builtins.int | builtins.float | None
     border_width: CssRawString | builtins.str | None
     bottom: LengthPercentage | builtins.int | builtins.float | None
     box_decoration_break: CssRawString | None
@@ -373,11 +375,11 @@ class Style:
     color_interpolation: CssRawString | None
     color_interpolation_filters: CssRawString | None
     color_scheme: CssRawString | None
-    column_count: CssRawString | None
+    column_count: IntegerValue | None
     column_fill: CssRawString | None
     column_gap: GapValue | builtins.int | builtins.float | None
     column_height: Length | builtins.int | builtins.float | None
-    column_rule: CssRawString | builtins.str | None
+    column_rule: ColorValue | CssRawString | None
     column_rule_break: CssRawString | None
     column_rule_color: ColorValue | None
     column_rule_edge_inset: LengthPercentage | CssRawString | builtins.int | builtins.float | None
@@ -394,7 +396,7 @@ class Style:
     column_rule_style: CssRawString | None
     column_rule_visibility_items: CssRawString | None
     column_rule_width: CssRawString | None
-    column_span: CssRawString | None
+    column_span: IntegerValue | None
     column_width: WidthValue | builtins.int | builtins.float | None
     column_wrap: CssRawString | None
     columns: CssRawString | builtins.str | None
@@ -445,9 +447,9 @@ class Style:
     corner_top_right: CssRawString | builtins.str | None
     corner_top_right_shape: CssRawString | None
     corner_top_shape: CssRawString | builtins.str | None
-    counter_increment: CssRawString | builtins.str | None
-    counter_reset: CssRawString | builtins.str | None
-    counter_set: CssRawString | builtins.str | None
+    counter_increment: IntegerValue | None
+    counter_reset: IntegerValue | None
+    counter_set: IntegerValue | None
     cue: CssRawString | builtins.str | None
     cue_after: CssRawString | None
     cue_before: CssRawString | None
@@ -464,43 +466,43 @@ class Style:
     event_trigger_name: CssRawString | None
     event_trigger_source: CssRawString | None
     field_sizing: CssRawString | None
-    fill: CssRawString | None
+    fill: IntegerValue | None
     fill_break: CssRawString | None
     fill_color: ColorValue | None
-    fill_image: CssRawString | None
-    fill_opacity: CssRawString | None
+    fill_image: IntegerValue | None
+    fill_opacity: NumberValue | None
     fill_origin: CssRawString | None
-    fill_position: CssRawString | None
+    fill_position: LengthPercentage | builtins.int | builtins.float | None
     fill_repeat: CssRawString | None
     fill_rule: CssRawString | None
-    fill_size: CssRawString | None
+    fill_size: LengthPercentage | builtins.int | builtins.float | None
     filter: CssRawString | None
     flex: CssRawString | builtins.str | None
     flex_basis: WidthValue | builtins.int | builtins.float | None
     flex_direction: FlexDirection | None
     flex_flow: CssRawString | builtins.str | None
-    flex_grow: CssRawString | None
-    flex_shrink: CssRawString | None
+    flex_grow: NumberValue | None
+    flex_shrink: NumberValue | None
     flex_wrap: FlexWrap | None
     float: CssRawString | None
-    float_defer: CssRawString | None
+    float_defer: IntegerValue | None
     float_offset: LengthPercentage | builtins.int | builtins.float | None
     float_reference: CssRawString | None
     flood_color: ColorValue | None
-    flood_opacity: CssRawString | None
+    flood_opacity: NumberValue | None
     flow_from: CssRawString | None
     flow_into: CssRawString | None
     flow_tolerance: LengthPercentage | builtins.int | builtins.float | None
     font: CssRawString | builtins.str | None
     font_family: CssRawString | builtins.str | None
-    font_feature_settings: CssRawString | builtins.str | None
+    font_feature_settings: IntegerValue | None
     font_kerning: CssRawString | None
     font_language_override: CssRawString | builtins.str | None
     font_optical_sizing: CssRawString | None
     font_palette: CssRawString | None
     font_size: LengthPercentage | builtins.int | builtins.float | None
-    font_size_adjust: CssRawString | None
-    font_stretch: CssRawString | None
+    font_size_adjust: NumberValue | None
+    font_stretch: PercentageValue | None
     font_style: CssRawString | None
     font_synthesis: CssRawString | builtins.str | None
     font_synthesis_position: CssRawString | None
@@ -515,9 +517,9 @@ class Style:
     font_variant_ligatures: CssRawString | None
     font_variant_numeric: CssRawString | None
     font_variant_position: CssRawString | None
-    font_variation_settings: CssRawString | builtins.str | None
+    font_variation_settings: NumberValue | None
     font_weight: FontWeight | None
-    font_width: CssRawString | None
+    font_width: PercentageValue | None
     footnote_display: CssRawString | None
     footnote_policy: CssRawString | None
     forced_color_adjust: CssRawString | None
@@ -525,18 +527,18 @@ class Style:
     glyph_orientation_vertical: CssRawString | None
     grid: CssRawString | builtins.str | None
     grid_area: CssRawString | builtins.str | None
-    grid_auto_columns: CssRawString | None
+    grid_auto_columns: LengthPercentage | builtins.int | builtins.float | None
     grid_auto_flow: CssRawString | None
-    grid_auto_rows: CssRawString | None
+    grid_auto_rows: LengthPercentage | builtins.int | builtins.float | None
     grid_column: CssRawString | builtins.str | None
-    grid_column_end: CssRawString | None
+    grid_column_end: IntegerValue | None
     grid_column_gap: GapValue | builtins.int | builtins.float | None
-    grid_column_start: CssRawString | None
+    grid_column_start: IntegerValue | None
     grid_gap: GapValue | builtins.int | builtins.float | None
     grid_row: CssRawString | builtins.str | None
-    grid_row_end: CssRawString | None
+    grid_row_end: IntegerValue | None
     grid_row_gap: GapValue | builtins.int | builtins.float | None
-    grid_row_start: CssRawString | None
+    grid_row_start: IntegerValue | None
     grid_template: CssRawString | builtins.str | None
     grid_template_areas: CssRawString | builtins.str | None
     grid_template_columns: CssRawString | builtins.str | None
@@ -544,16 +546,16 @@ class Style:
     hanging_punctuation: CssRawString | None
     height: HeightValue | builtins.int | builtins.float | None
     hyphenate_character: CssRawString | builtins.str | None
-    hyphenate_limit_chars: CssRawString | None
+    hyphenate_limit_chars: IntegerValue | None
     hyphenate_limit_last: CssRawString | None
-    hyphenate_limit_lines: CssRawString | None
+    hyphenate_limit_lines: IntegerValue | None
     hyphenate_limit_zone: LengthPercentage | builtins.int | builtins.float | None
     hyphens: CssRawString | None
     image_animation: CssRawString | None
     image_orientation: CssRawString | None
     image_rendering: CssRawString | None
     image_resolution: CssRawString | None
-    initial_letter: CssRawString | None
+    initial_letter: NumberValue | None
     initial_letter_align: CssRawString | None
     initial_letter_wrap: LengthPercentage | builtins.int | builtins.float | None
     inline_size: WidthValue | builtins.int | builtins.float | None
@@ -579,7 +581,7 @@ class Style:
     letter_spacing: LengthPercentage | builtins.int | builtins.float | None
     lighting_color: ColorValue | None
     line_break: CssRawString | None
-    line_clamp: CssRawString | builtins.str | None
+    line_clamp: IntegerValue | CssRawString | None
     line_fit_edge: CssRawString | None
     line_grid: CssRawString | None
     line_height: LineHeightValue | None
@@ -614,7 +616,7 @@ class Style:
     mask_border_mode: CssRawString | None
     mask_border_outset: Length | builtins.int | builtins.float | None
     mask_border_repeat: CssRawString | None
-    mask_border_slice: CssRawString | None
+    mask_border_slice: NumberValue | None
     mask_border_source: CssRawString | builtins.str | None
     mask_border_width: LengthPercentage | builtins.int | builtins.float | None
     mask_clip: CssRawString | None
@@ -622,17 +624,17 @@ class Style:
     mask_image: CssRawString | builtins.str | None
     mask_mode: CssRawString | None
     mask_origin: CssRawString | None
-    mask_position: CssRawString | None
+    mask_position: LengthPercentage | builtins.int | builtins.float | None
     mask_repeat: CssRawString | None
-    mask_size: CssRawString | None
+    mask_size: LengthPercentage | builtins.int | builtins.float | None
     mask_type: CssRawString | None
-    math_depth: CssRawString | None
+    math_depth: IntegerValue | None
     math_shift: CssRawString | None
     math_style: CssRawString | None
     max_block_size: WidthValue | builtins.int | builtins.float | None
     max_height: HeightValue | builtins.int | builtins.float | None
     max_inline_size: WidthValue | builtins.int | builtins.float | None
-    max_lines: CssRawString | None
+    max_lines: IntegerValue | None
     max_width: WidthValue | builtins.int | builtins.float | None
     min_block_size: WidthValue | builtins.int | builtins.float | None
     min_height: HeightValue | builtins.int | builtins.float | None
@@ -645,22 +647,22 @@ class Style:
     nav_right: CssRawString | None
     nav_up: CssRawString | None
     object_fit: CssRawString | None
-    object_position: CssRawString | None
+    object_position: LengthPercentage | builtins.int | builtins.float | None
     object_view_box: CssRawString | None
     offset: CssRawString | builtins.str | None
-    offset_anchor: CssRawString | None
+    offset_anchor: LengthPercentage | builtins.int | builtins.float | None
     offset_distance: LengthPercentage | builtins.int | builtins.float | None
     offset_path: CssRawString | None
-    offset_position: CssRawString | None
+    offset_position: LengthPercentage | builtins.int | builtins.float | None
     offset_rotate: AngleValue | None
-    opacity: Opacity | None
-    order: CssRawString | None
-    orphans: CssRawString | None
+    opacity: NumberValue | None
+    order: IntegerValue | None
+    orphans: IntegerValue | None
     outline: CssRawString | builtins.str | None
     outline_color: ColorValue | None
     outline_offset: Length | builtins.int | builtins.float | None
     outline_style: CssRawString | None
-    outline_width: CssRawString | None
+    outline_width: Length | builtins.int | builtins.float | None
     overflow: Overflow | CssRawString | None
     overflow_anchor: CssRawString | None
     overflow_block: Overflow | None
@@ -701,11 +703,11 @@ class Style:
     page_break_before: CssRawString | None
     page_break_inside: CssRawString | None
     paint_order: CssRawString | None
-    pause: CssRawString | builtins.str | None
+    pause: TimeValue | CssRawString | None
     pause_after: TimeValue | None
     pause_before: TimeValue | None
     perspective: Length | builtins.int | builtins.float | None
-    perspective_origin: CssRawString | None
+    perspective_origin: LengthPercentage | builtins.int | builtins.float | None
     place_content: CssRawString | builtins.str | None
     place_items: CssRawString | builtins.str | None
     place_self: CssRawString | builtins.str | None
@@ -724,16 +726,16 @@ class Style:
     quotes: CssRawString | builtins.str | None
     r: LengthPercentage | builtins.int | builtins.float | None
     reading_flow: CssRawString | None
-    reading_order: CssRawString | None
+    reading_order: IntegerValue | None
     region_fragment: CssRawString | None
     resize: CssRawString | None
-    rest: CssRawString | builtins.str | None
+    rest: TimeValue | CssRawString | None
     rest_after: TimeValue | None
     rest_before: TimeValue | None
     right: LengthPercentage | builtins.int | builtins.float | None
     rotate: AngleValue | None
     row_gap: GapValue | builtins.int | builtins.float | None
-    row_rule: CssRawString | builtins.str | None
+    row_rule: ColorValue | CssRawString | None
     row_rule_break: CssRawString | None
     row_rule_color: ColorValue | None
     row_rule_edge_inset: LengthPercentage | CssRawString | builtins.int | builtins.float | None
@@ -752,21 +754,21 @@ class Style:
     ruby_merge: CssRawString | None
     ruby_overhang: CssRawString | None
     ruby_position: CssRawString | None
-    rule: CssRawString | builtins.str | None
+    rule: ColorValue | CssRawString | None
     rule_break: CssRawString | builtins.str | None
     rule_color: ColorValue | CssRawString | None
-    rule_edge_inset: CssRawString | builtins.str | None
+    rule_edge_inset: LengthPercentage | CssRawString | builtins.int | builtins.float | None
     rule_inset: CssRawString | builtins.str | None
-    rule_inset_end: CssRawString | builtins.str | None
-    rule_inset_start: CssRawString | builtins.str | None
-    rule_interior_inset: CssRawString | builtins.str | None
+    rule_inset_end: LengthPercentage | CssRawString | builtins.int | builtins.float | None
+    rule_inset_start: LengthPercentage | CssRawString | builtins.int | builtins.float | None
+    rule_interior_inset: LengthPercentage | CssRawString | builtins.int | builtins.float | None
     rule_overlap: CssRawString | None
-    rule_style: CssRawString | builtins.str | None
+    rule_style: IntegerValue | CssRawString | None
     rule_visibility_items: CssRawString | builtins.str | None
-    rule_width: CssRawString | builtins.str | None
+    rule_width: Length | CssRawString | builtins.int | builtins.float | None
     rx: LengthPercentage | builtins.int | builtins.float | None
     ry: LengthPercentage | builtins.int | builtins.float | None
-    scale: CssRawString | None
+    scale: NumberValue | None
     scroll_behavior: CssRawString | None
     scroll_initial_target: CssRawString | None
     scroll_margin: Length | CssRawString | builtins.int | builtins.float | None
@@ -802,7 +804,7 @@ class Style:
     scrollbar_color: ColorValue | None
     scrollbar_gutter: CssRawString | None
     scrollbar_width: CssRawString | None
-    shape_image_threshold: CssRawString | None
+    shape_image_threshold: NumberValue | None
     shape_inside: CssRawString | builtins.str | None
     shape_margin: LengthPercentage | builtins.int | builtins.float | None
     shape_outside: CssRawString | builtins.str | None
@@ -816,9 +818,9 @@ class Style:
     speak: CssRawString | None
     speak_as: CssRawString | None
     stop_color: ColorValue | None
-    stop_opacity: CssRawString | None
+    stop_opacity: NumberValue | None
     string_set: CssRawString | builtins.str | None
-    stroke: CssRawString | None
+    stroke: IntegerValue | None
     stroke_align: CssRawString | None
     stroke_alignment: CssRawString | None
     stroke_break: CssRawString | None
@@ -829,15 +831,15 @@ class Style:
     stroke_dasharray: LengthPercentage | builtins.int | builtins.float | None
     stroke_dashcorner: Length | builtins.int | builtins.float | None
     stroke_dashoffset: LengthPercentage | builtins.int | builtins.float | None
-    stroke_image: CssRawString | None
+    stroke_image: IntegerValue | None
     stroke_linecap: CssRawString | None
     stroke_linejoin: CssRawString | None
-    stroke_miterlimit: CssRawString | None
-    stroke_opacity: CssRawString | None
+    stroke_miterlimit: NumberValue | None
+    stroke_opacity: NumberValue | None
     stroke_origin: CssRawString | None
-    stroke_position: CssRawString | None
+    stroke_position: LengthPercentage | builtins.int | builtins.float | None
     stroke_repeat: CssRawString | None
-    stroke_size: CssRawString | None
+    stroke_size: LengthPercentage | builtins.int | builtins.float | None
     stroke_width: LengthPercentage | builtins.int | builtins.float | None
     tab_size: Length | builtins.int | builtins.float | None
     table_layout: CssRawString | None
@@ -849,7 +851,7 @@ class Style:
     text_box: CssRawString | None
     text_box_edge: CssRawString | None
     text_box_trim: CssRawString | None
-    text_combine_upright: CssRawString | None
+    text_combine_upright: IntegerValue | None
     text_decoration: CssRawString | builtins.str | None
     text_decoration_color: ColorValue | None
     text_decoration_inset: Length | builtins.int | builtins.float | None
@@ -872,8 +874,8 @@ class Style:
     text_orientation: CssRawString | None
     text_overflow: CssRawString | builtins.str | None
     text_rendering: CssRawString | None
-    text_shadow: CssRawString | None
-    text_size_adjust: CssRawString | None
+    text_shadow: ColorValue | None
+    text_size_adjust: PercentageValue | None
     text_spacing: CssRawString | builtins.str | None
     text_spacing_trim: CssRawString | None
     text_transform: CssRawString | None
@@ -919,18 +921,18 @@ class Style:
     view_transition_name: CssRawString | None
     view_transition_scope: CssRawString | None
     visibility: CssRawString | None
-    voice_balance: CssRawString | None
+    voice_balance: NumberValue | None
     voice_duration: TimeValue | None
     voice_family: CssRawString | None
-    voice_pitch: CssRawString | None
-    voice_range: CssRawString | None
-    voice_rate: CssRawString | None
+    voice_pitch: PercentageValue | None
+    voice_range: PercentageValue | None
+    voice_rate: PercentageValue | None
     voice_stress: CssRawString | None
     voice_volume: CssRawString | None
     white_space: CssRawString | builtins.str | None
     white_space_collapse: CssRawString | None
     white_space_trim: CssRawString | None
-    widows: CssRawString | None
+    widows: IntegerValue | None
     width: WidthValue | builtins.int | builtins.float | None
     will_change: CssRawString | builtins.str | None
     word_break: CssRawString | None
@@ -946,7 +948,7 @@ class Style:
     x: LengthPercentage | builtins.int | builtins.float | None
     y: LengthPercentage | builtins.int | builtins.float | None
     z_index: ZIndex | None
-    zoom: CssRawString | None
+    zoom: NumberValue | None
 
     def __init__(
         self,
@@ -982,7 +984,7 @@ class Style:
         animation_direction: CssRawString | None = None,
         animation_duration: TimeValue | None = None,
         animation_fill_mode: CssRawString | None = None,
-        animation_iteration_count: CssRawString | None = None,
+        animation_iteration_count: NumberValue | None = None,
         animation_name: CssRawString | None = None,
         animation_play_state: CssRawString | None = None,
         animation_range: CssRawString | builtins.str | None = None,
@@ -1003,7 +1005,9 @@ class Style:
         background_color: ColorValue | None = None,
         background_image: CssRawString | None = None,
         background_origin: CssRawString | None = None,
-        background_position: CssRawString | builtins.str | None = None,
+        background_position: (
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
+        ) = None,
         background_position_block: (LengthPercentage | builtins.int | builtins.float | None) = None,
         background_position_inline: (
             LengthPercentage | builtins.int | builtins.float | None
@@ -1015,7 +1019,7 @@ class Style:
         background_repeat_inline: CssRawString | None = None,
         background_repeat_x: CssRawString | None = None,
         background_repeat_y: CssRawString | None = None,
-        background_size: CssRawString | None = None,
+        background_size: LengthPercentage | builtins.int | builtins.float | None = None,
         background_tbd: CssRawString | None = None,
         baseline_shift: LengthPercentage | builtins.int | builtins.float | None = None,
         baseline_source: CssRawString | None = None,
@@ -1027,18 +1031,20 @@ class Style:
         block_step_round: CssRawString | None = None,
         block_step_size: Length | builtins.int | builtins.float | None = None,
         bookmark_label: CssRawString | None = None,
-        bookmark_level: CssRawString | None = None,
+        bookmark_level: IntegerValue | None = None,
         bookmark_state: CssRawString | None = None,
         border: ColorValue | CssRawString | None = None,
-        border_block: CssRawString | builtins.str | None = None,
-        border_block_clip: CssRawString | builtins.str | None = None,
+        border_block: ColorValue | CssRawString | None = None,
+        border_block_clip: (
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
+        ) = None,
         border_block_color: ColorValue | CssRawString | None = None,
         border_block_end: ColorValue | CssRawString | None = None,
         border_block_end_clip: (LengthPercentage | builtins.int | builtins.float | None) = None,
         border_block_end_color: ColorValue | None = None,
         border_block_end_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
         border_block_end_style: CssRawString | None = None,
-        border_block_end_width: CssRawString | None = None,
+        border_block_end_width: Length | builtins.int | builtins.float | None = None,
         border_block_start: ColorValue | CssRawString | None = None,
         border_block_start_clip: (LengthPercentage | builtins.int | builtins.float | None) = None,
         border_block_start_color: ColorValue | None = None,
@@ -1046,7 +1052,7 @@ class Style:
             BorderRadiusValue | builtins.int | builtins.float | None
         ) = None,
         border_block_start_style: CssRawString | None = None,
-        border_block_start_width: CssRawString | None = None,
+        border_block_start_width: Length | builtins.int | builtins.float | None = None,
         border_block_style: CssRawString | builtins.str | None = None,
         border_block_width: CssRawString | builtins.str | None = None,
         border_bottom: ColorValue | CssRawString | None = None,
@@ -1060,9 +1066,11 @@ class Style:
             BorderRadiusValue | builtins.int | builtins.float | None
         ) = None,
         border_bottom_style: CssRawString | None = None,
-        border_bottom_width: CssRawString | None = None,
+        border_bottom_width: Length | builtins.int | builtins.float | None = None,
         border_boundary: CssRawString | None = None,
-        border_clip: CssRawString | builtins.str | None = None,
+        border_clip: (
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
+        ) = None,
         border_collapse: CssRawString | None = None,
         border_color: ColorValue | CssRawString | None = None,
         border_end_end_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
@@ -1070,18 +1078,20 @@ class Style:
         border_image: CssRawString | builtins.str | None = None,
         border_image_outset: Length | builtins.int | builtins.float | None = None,
         border_image_repeat: CssRawString | None = None,
-        border_image_slice: CssRawString | None = None,
+        border_image_slice: NumberValue | None = None,
         border_image_source: CssRawString | builtins.str | None = None,
         border_image_width: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        border_inline: CssRawString | builtins.str | None = None,
-        border_inline_clip: CssRawString | builtins.str | None = None,
+        border_inline: ColorValue | CssRawString | None = None,
+        border_inline_clip: (
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
+        ) = None,
         border_inline_color: ColorValue | CssRawString | None = None,
         border_inline_end: ColorValue | CssRawString | None = None,
         border_inline_end_clip: (LengthPercentage | builtins.int | builtins.float | None) = None,
         border_inline_end_color: ColorValue | None = None,
         border_inline_end_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
         border_inline_end_style: CssRawString | None = None,
-        border_inline_end_width: CssRawString | None = None,
+        border_inline_end_width: Length | builtins.int | builtins.float | None = None,
         border_inline_start: ColorValue | CssRawString | None = None,
         border_inline_start_clip: (LengthPercentage | builtins.int | builtins.float | None) = None,
         border_inline_start_color: ColorValue | None = None,
@@ -1089,7 +1099,7 @@ class Style:
             BorderRadiusValue | builtins.int | builtins.float | None
         ) = None,
         border_inline_start_style: CssRawString | None = None,
-        border_inline_start_width: CssRawString | None = None,
+        border_inline_start_width: Length | builtins.int | builtins.float | None = None,
         border_inline_style: CssRawString | builtins.str | None = None,
         border_inline_width: CssRawString | builtins.str | None = None,
         border_left: ColorValue | CssRawString | None = None,
@@ -1097,7 +1107,7 @@ class Style:
         border_left_color: ColorValue | None = None,
         border_left_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
         border_left_style: CssRawString | None = None,
-        border_left_width: CssRawString | None = None,
+        border_left_width: Length | builtins.int | builtins.float | None = None,
         border_limit: LengthPercentage | builtins.int | builtins.float | None = None,
         border_radius: BorderRadiusValue | builtins.int | builtins.float | None = None,
         border_right: ColorValue | CssRawString | None = None,
@@ -1105,7 +1115,7 @@ class Style:
         border_right_color: ColorValue | None = None,
         border_right_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
         border_right_style: CssRawString | None = None,
-        border_right_width: CssRawString | None = None,
+        border_right_width: Length | builtins.int | builtins.float | None = None,
         border_shape: CssRawString | None = None,
         border_spacing: Length | builtins.int | builtins.float | None = None,
         border_start_end_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
@@ -1120,7 +1130,7 @@ class Style:
         border_top_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
         border_top_right_radius: (BorderRadiusValue | builtins.int | builtins.float | None) = None,
         border_top_style: CssRawString | None = None,
-        border_top_width: CssRawString | None = None,
+        border_top_width: Length | builtins.int | builtins.float | None = None,
         border_width: CssRawString | builtins.str | None = None,
         bottom: LengthPercentage | builtins.int | builtins.float | None = None,
         box_decoration_break: CssRawString | None = None,
@@ -1149,11 +1159,11 @@ class Style:
         color_interpolation: CssRawString | None = None,
         color_interpolation_filters: CssRawString | None = None,
         color_scheme: CssRawString | None = None,
-        column_count: CssRawString | None = None,
+        column_count: IntegerValue | None = None,
         column_fill: CssRawString | None = None,
         column_gap: GapValue | builtins.int | builtins.float | None = None,
         column_height: Length | builtins.int | builtins.float | None = None,
-        column_rule: CssRawString | builtins.str | None = None,
+        column_rule: ColorValue | CssRawString | None = None,
         column_rule_break: CssRawString | None = None,
         column_rule_color: ColorValue | None = None,
         column_rule_edge_inset: (
@@ -1184,7 +1194,7 @@ class Style:
         column_rule_style: CssRawString | None = None,
         column_rule_visibility_items: CssRawString | None = None,
         column_rule_width: CssRawString | None = None,
-        column_span: CssRawString | None = None,
+        column_span: IntegerValue | None = None,
         column_width: WidthValue | builtins.int | builtins.float | None = None,
         column_wrap: CssRawString | None = None,
         columns: CssRawString | builtins.str | None = None,
@@ -1237,9 +1247,9 @@ class Style:
         corner_top_right: CssRawString | builtins.str | None = None,
         corner_top_right_shape: CssRawString | None = None,
         corner_top_shape: CssRawString | builtins.str | None = None,
-        counter_increment: CssRawString | builtins.str | None = None,
-        counter_reset: CssRawString | builtins.str | None = None,
-        counter_set: CssRawString | builtins.str | None = None,
+        counter_increment: IntegerValue | None = None,
+        counter_reset: IntegerValue | None = None,
+        counter_set: IntegerValue | None = None,
         cue: CssRawString | builtins.str | None = None,
         cue_after: CssRawString | None = None,
         cue_before: CssRawString | None = None,
@@ -1256,43 +1266,43 @@ class Style:
         event_trigger_name: CssRawString | None = None,
         event_trigger_source: CssRawString | None = None,
         field_sizing: CssRawString | None = None,
-        fill: CssRawString | None = None,
+        fill: IntegerValue | None = None,
         fill_break: CssRawString | None = None,
         fill_color: ColorValue | None = None,
-        fill_image: CssRawString | None = None,
-        fill_opacity: CssRawString | None = None,
+        fill_image: IntegerValue | None = None,
+        fill_opacity: NumberValue | None = None,
         fill_origin: CssRawString | None = None,
-        fill_position: CssRawString | None = None,
+        fill_position: LengthPercentage | builtins.int | builtins.float | None = None,
         fill_repeat: CssRawString | None = None,
         fill_rule: CssRawString | None = None,
-        fill_size: CssRawString | None = None,
+        fill_size: LengthPercentage | builtins.int | builtins.float | None = None,
         filter: CssRawString | None = None,
         flex: CssRawString | builtins.str | None = None,
         flex_basis: WidthValue | builtins.int | builtins.float | None = None,
         flex_direction: FlexDirection | None = None,
         flex_flow: CssRawString | builtins.str | None = None,
-        flex_grow: CssRawString | None = None,
-        flex_shrink: CssRawString | None = None,
+        flex_grow: NumberValue | None = None,
+        flex_shrink: NumberValue | None = None,
         flex_wrap: FlexWrap | None = None,
         float: CssRawString | None = None,
-        float_defer: CssRawString | None = None,
+        float_defer: IntegerValue | None = None,
         float_offset: LengthPercentage | builtins.int | builtins.float | None = None,
         float_reference: CssRawString | None = None,
         flood_color: ColorValue | None = None,
-        flood_opacity: CssRawString | None = None,
+        flood_opacity: NumberValue | None = None,
         flow_from: CssRawString | None = None,
         flow_into: CssRawString | None = None,
         flow_tolerance: LengthPercentage | builtins.int | builtins.float | None = None,
         font: CssRawString | builtins.str | None = None,
         font_family: CssRawString | builtins.str | None = None,
-        font_feature_settings: CssRawString | builtins.str | None = None,
+        font_feature_settings: IntegerValue | None = None,
         font_kerning: CssRawString | None = None,
         font_language_override: CssRawString | builtins.str | None = None,
         font_optical_sizing: CssRawString | None = None,
         font_palette: CssRawString | None = None,
         font_size: LengthPercentage | builtins.int | builtins.float | None = None,
-        font_size_adjust: CssRawString | None = None,
-        font_stretch: CssRawString | None = None,
+        font_size_adjust: NumberValue | None = None,
+        font_stretch: PercentageValue | None = None,
         font_style: CssRawString | None = None,
         font_synthesis: CssRawString | builtins.str | None = None,
         font_synthesis_position: CssRawString | None = None,
@@ -1307,9 +1317,9 @@ class Style:
         font_variant_ligatures: CssRawString | None = None,
         font_variant_numeric: CssRawString | None = None,
         font_variant_position: CssRawString | None = None,
-        font_variation_settings: CssRawString | builtins.str | None = None,
+        font_variation_settings: NumberValue | None = None,
         font_weight: FontWeight | None = None,
-        font_width: CssRawString | None = None,
+        font_width: PercentageValue | None = None,
         footnote_display: CssRawString | None = None,
         footnote_policy: CssRawString | None = None,
         forced_color_adjust: CssRawString | None = None,
@@ -1317,18 +1327,18 @@ class Style:
         glyph_orientation_vertical: CssRawString | None = None,
         grid: CssRawString | builtins.str | None = None,
         grid_area: CssRawString | builtins.str | None = None,
-        grid_auto_columns: CssRawString | None = None,
+        grid_auto_columns: (LengthPercentage | builtins.int | builtins.float | None) = None,
         grid_auto_flow: CssRawString | None = None,
-        grid_auto_rows: CssRawString | None = None,
+        grid_auto_rows: LengthPercentage | builtins.int | builtins.float | None = None,
         grid_column: CssRawString | builtins.str | None = None,
-        grid_column_end: CssRawString | None = None,
+        grid_column_end: IntegerValue | None = None,
         grid_column_gap: GapValue | builtins.int | builtins.float | None = None,
-        grid_column_start: CssRawString | None = None,
+        grid_column_start: IntegerValue | None = None,
         grid_gap: GapValue | builtins.int | builtins.float | None = None,
         grid_row: CssRawString | builtins.str | None = None,
-        grid_row_end: CssRawString | None = None,
+        grid_row_end: IntegerValue | None = None,
         grid_row_gap: GapValue | builtins.int | builtins.float | None = None,
-        grid_row_start: CssRawString | None = None,
+        grid_row_start: IntegerValue | None = None,
         grid_template: CssRawString | builtins.str | None = None,
         grid_template_areas: CssRawString | builtins.str | None = None,
         grid_template_columns: CssRawString | builtins.str | None = None,
@@ -1336,16 +1346,16 @@ class Style:
         hanging_punctuation: CssRawString | None = None,
         height: HeightValue | builtins.int | builtins.float | None = None,
         hyphenate_character: CssRawString | builtins.str | None = None,
-        hyphenate_limit_chars: CssRawString | None = None,
+        hyphenate_limit_chars: IntegerValue | None = None,
         hyphenate_limit_last: CssRawString | None = None,
-        hyphenate_limit_lines: CssRawString | None = None,
+        hyphenate_limit_lines: IntegerValue | None = None,
         hyphenate_limit_zone: (LengthPercentage | builtins.int | builtins.float | None) = None,
         hyphens: CssRawString | None = None,
         image_animation: CssRawString | None = None,
         image_orientation: CssRawString | None = None,
         image_rendering: CssRawString | None = None,
         image_resolution: CssRawString | None = None,
-        initial_letter: CssRawString | None = None,
+        initial_letter: NumberValue | None = None,
         initial_letter_align: CssRawString | None = None,
         initial_letter_wrap: (LengthPercentage | builtins.int | builtins.float | None) = None,
         inline_size: WidthValue | builtins.int | builtins.float | None = None,
@@ -1371,7 +1381,7 @@ class Style:
         letter_spacing: LengthPercentage | builtins.int | builtins.float | None = None,
         lighting_color: ColorValue | None = None,
         line_break: CssRawString | None = None,
-        line_clamp: CssRawString | builtins.str | None = None,
+        line_clamp: IntegerValue | CssRawString | None = None,
         line_fit_edge: CssRawString | None = None,
         line_grid: CssRawString | None = None,
         line_height: LineHeightValue | None = None,
@@ -1406,7 +1416,7 @@ class Style:
         mask_border_mode: CssRawString | None = None,
         mask_border_outset: Length | builtins.int | builtins.float | None = None,
         mask_border_repeat: CssRawString | None = None,
-        mask_border_slice: CssRawString | None = None,
+        mask_border_slice: NumberValue | None = None,
         mask_border_source: CssRawString | builtins.str | None = None,
         mask_border_width: (LengthPercentage | builtins.int | builtins.float | None) = None,
         mask_clip: CssRawString | None = None,
@@ -1414,17 +1424,17 @@ class Style:
         mask_image: CssRawString | builtins.str | None = None,
         mask_mode: CssRawString | None = None,
         mask_origin: CssRawString | None = None,
-        mask_position: CssRawString | None = None,
+        mask_position: LengthPercentage | builtins.int | builtins.float | None = None,
         mask_repeat: CssRawString | None = None,
-        mask_size: CssRawString | None = None,
+        mask_size: LengthPercentage | builtins.int | builtins.float | None = None,
         mask_type: CssRawString | None = None,
-        math_depth: CssRawString | None = None,
+        math_depth: IntegerValue | None = None,
         math_shift: CssRawString | None = None,
         math_style: CssRawString | None = None,
         max_block_size: WidthValue | builtins.int | builtins.float | None = None,
         max_height: HeightValue | builtins.int | builtins.float | None = None,
         max_inline_size: WidthValue | builtins.int | builtins.float | None = None,
-        max_lines: CssRawString | None = None,
+        max_lines: IntegerValue | None = None,
         max_width: WidthValue | builtins.int | builtins.float | None = None,
         min_block_size: WidthValue | builtins.int | builtins.float | None = None,
         min_height: HeightValue | builtins.int | builtins.float | None = None,
@@ -1437,22 +1447,22 @@ class Style:
         nav_right: CssRawString | None = None,
         nav_up: CssRawString | None = None,
         object_fit: CssRawString | None = None,
-        object_position: CssRawString | None = None,
+        object_position: LengthPercentage | builtins.int | builtins.float | None = None,
         object_view_box: CssRawString | None = None,
         offset: CssRawString | builtins.str | None = None,
-        offset_anchor: CssRawString | None = None,
+        offset_anchor: LengthPercentage | builtins.int | builtins.float | None = None,
         offset_distance: LengthPercentage | builtins.int | builtins.float | None = None,
         offset_path: CssRawString | None = None,
-        offset_position: CssRawString | None = None,
+        offset_position: LengthPercentage | builtins.int | builtins.float | None = None,
         offset_rotate: AngleValue | None = None,
-        opacity: Opacity | None = None,
-        order: CssRawString | None = None,
-        orphans: CssRawString | None = None,
+        opacity: NumberValue | None = None,
+        order: IntegerValue | None = None,
+        orphans: IntegerValue | None = None,
         outline: CssRawString | builtins.str | None = None,
         outline_color: ColorValue | None = None,
         outline_offset: Length | builtins.int | builtins.float | None = None,
         outline_style: CssRawString | None = None,
-        outline_width: CssRawString | None = None,
+        outline_width: Length | builtins.int | builtins.float | None = None,
         overflow: Overflow | CssRawString | None = None,
         overflow_anchor: CssRawString | None = None,
         overflow_block: Overflow | None = None,
@@ -1497,11 +1507,11 @@ class Style:
         page_break_before: CssRawString | None = None,
         page_break_inside: CssRawString | None = None,
         paint_order: CssRawString | None = None,
-        pause: CssRawString | builtins.str | None = None,
+        pause: TimeValue | CssRawString | None = None,
         pause_after: TimeValue | None = None,
         pause_before: TimeValue | None = None,
         perspective: Length | builtins.int | builtins.float | None = None,
-        perspective_origin: CssRawString | None = None,
+        perspective_origin: (LengthPercentage | builtins.int | builtins.float | None) = None,
         place_content: CssRawString | builtins.str | None = None,
         place_items: CssRawString | builtins.str | None = None,
         place_self: CssRawString | builtins.str | None = None,
@@ -1520,16 +1530,16 @@ class Style:
         quotes: CssRawString | builtins.str | None = None,
         r: LengthPercentage | builtins.int | builtins.float | None = None,
         reading_flow: CssRawString | None = None,
-        reading_order: CssRawString | None = None,
+        reading_order: IntegerValue | None = None,
         region_fragment: CssRawString | None = None,
         resize: CssRawString | None = None,
-        rest: CssRawString | builtins.str | None = None,
+        rest: TimeValue | CssRawString | None = None,
         rest_after: TimeValue | None = None,
         rest_before: TimeValue | None = None,
         right: LengthPercentage | builtins.int | builtins.float | None = None,
         rotate: AngleValue | None = None,
         row_gap: GapValue | builtins.int | builtins.float | None = None,
-        row_rule: CssRawString | builtins.str | None = None,
+        row_rule: ColorValue | CssRawString | None = None,
         row_rule_break: CssRawString | None = None,
         row_rule_color: ColorValue | None = None,
         row_rule_edge_inset: (
@@ -1560,21 +1570,29 @@ class Style:
         ruby_merge: CssRawString | None = None,
         ruby_overhang: CssRawString | None = None,
         ruby_position: CssRawString | None = None,
-        rule: CssRawString | builtins.str | None = None,
+        rule: ColorValue | CssRawString | None = None,
         rule_break: CssRawString | builtins.str | None = None,
         rule_color: ColorValue | CssRawString | None = None,
-        rule_edge_inset: CssRawString | builtins.str | None = None,
+        rule_edge_inset: (
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
+        ) = None,
         rule_inset: CssRawString | builtins.str | None = None,
-        rule_inset_end: CssRawString | builtins.str | None = None,
-        rule_inset_start: CssRawString | builtins.str | None = None,
-        rule_interior_inset: CssRawString | builtins.str | None = None,
+        rule_inset_end: (
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
+        ) = None,
+        rule_inset_start: (
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
+        ) = None,
+        rule_interior_inset: (
+            LengthPercentage | CssRawString | builtins.int | builtins.float | None
+        ) = None,
         rule_overlap: CssRawString | None = None,
-        rule_style: CssRawString | builtins.str | None = None,
+        rule_style: IntegerValue | CssRawString | None = None,
         rule_visibility_items: CssRawString | builtins.str | None = None,
-        rule_width: CssRawString | builtins.str | None = None,
+        rule_width: Length | CssRawString | builtins.int | builtins.float | None = None,
         rx: LengthPercentage | builtins.int | builtins.float | None = None,
         ry: LengthPercentage | builtins.int | builtins.float | None = None,
-        scale: CssRawString | None = None,
+        scale: NumberValue | None = None,
         scroll_behavior: CssRawString | None = None,
         scroll_initial_target: CssRawString | None = None,
         scroll_margin: (Length | CssRawString | builtins.int | builtins.float | None) = None,
@@ -1620,7 +1638,7 @@ class Style:
         scrollbar_color: ColorValue | None = None,
         scrollbar_gutter: CssRawString | None = None,
         scrollbar_width: CssRawString | None = None,
-        shape_image_threshold: CssRawString | None = None,
+        shape_image_threshold: NumberValue | None = None,
         shape_inside: CssRawString | builtins.str | None = None,
         shape_margin: LengthPercentage | builtins.int | builtins.float | None = None,
         shape_outside: CssRawString | builtins.str | None = None,
@@ -1634,9 +1652,9 @@ class Style:
         speak: CssRawString | None = None,
         speak_as: CssRawString | None = None,
         stop_color: ColorValue | None = None,
-        stop_opacity: CssRawString | None = None,
+        stop_opacity: NumberValue | None = None,
         string_set: CssRawString | builtins.str | None = None,
-        stroke: CssRawString | None = None,
+        stroke: IntegerValue | None = None,
         stroke_align: CssRawString | None = None,
         stroke_alignment: CssRawString | None = None,
         stroke_break: CssRawString | None = None,
@@ -1647,15 +1665,15 @@ class Style:
         stroke_dasharray: (LengthPercentage | builtins.int | builtins.float | None) = None,
         stroke_dashcorner: Length | builtins.int | builtins.float | None = None,
         stroke_dashoffset: (LengthPercentage | builtins.int | builtins.float | None) = None,
-        stroke_image: CssRawString | None = None,
+        stroke_image: IntegerValue | None = None,
         stroke_linecap: CssRawString | None = None,
         stroke_linejoin: CssRawString | None = None,
-        stroke_miterlimit: CssRawString | None = None,
-        stroke_opacity: CssRawString | None = None,
+        stroke_miterlimit: NumberValue | None = None,
+        stroke_opacity: NumberValue | None = None,
         stroke_origin: CssRawString | None = None,
-        stroke_position: CssRawString | None = None,
+        stroke_position: LengthPercentage | builtins.int | builtins.float | None = None,
         stroke_repeat: CssRawString | None = None,
-        stroke_size: CssRawString | None = None,
+        stroke_size: LengthPercentage | builtins.int | builtins.float | None = None,
         stroke_width: LengthPercentage | builtins.int | builtins.float | None = None,
         tab_size: Length | builtins.int | builtins.float | None = None,
         table_layout: CssRawString | None = None,
@@ -1667,7 +1685,7 @@ class Style:
         text_box: CssRawString | None = None,
         text_box_edge: CssRawString | None = None,
         text_box_trim: CssRawString | None = None,
-        text_combine_upright: CssRawString | None = None,
+        text_combine_upright: IntegerValue | None = None,
         text_decoration: CssRawString | builtins.str | None = None,
         text_decoration_color: ColorValue | None = None,
         text_decoration_inset: Length | builtins.int | builtins.float | None = None,
@@ -1690,8 +1708,8 @@ class Style:
         text_orientation: CssRawString | None = None,
         text_overflow: CssRawString | builtins.str | None = None,
         text_rendering: CssRawString | None = None,
-        text_shadow: CssRawString | None = None,
-        text_size_adjust: CssRawString | None = None,
+        text_shadow: ColorValue | None = None,
+        text_size_adjust: PercentageValue | None = None,
         text_spacing: CssRawString | builtins.str | None = None,
         text_spacing_trim: CssRawString | None = None,
         text_transform: CssRawString | None = None,
@@ -1745,18 +1763,18 @@ class Style:
         view_transition_name: CssRawString | None = None,
         view_transition_scope: CssRawString | None = None,
         visibility: CssRawString | None = None,
-        voice_balance: CssRawString | None = None,
+        voice_balance: NumberValue | None = None,
         voice_duration: TimeValue | None = None,
         voice_family: CssRawString | None = None,
-        voice_pitch: CssRawString | None = None,
-        voice_range: CssRawString | None = None,
-        voice_rate: CssRawString | None = None,
+        voice_pitch: PercentageValue | None = None,
+        voice_range: PercentageValue | None = None,
+        voice_rate: PercentageValue | None = None,
         voice_stress: CssRawString | None = None,
         voice_volume: CssRawString | None = None,
         white_space: CssRawString | builtins.str | None = None,
         white_space_collapse: CssRawString | None = None,
         white_space_trim: CssRawString | None = None,
-        widows: CssRawString | None = None,
+        widows: IntegerValue | None = None,
         width: WidthValue | builtins.int | builtins.float | None = None,
         will_change: CssRawString | builtins.str | None = None,
         word_break: CssRawString | None = None,
@@ -1772,7 +1790,7 @@ class Style:
         x: LengthPercentage | builtins.int | builtins.float | None = None,
         y: LengthPercentage | builtins.int | builtins.float | None = None,
         z_index: ZIndex | None = None,
-        zoom: CssRawString | None = None,
+        zoom: NumberValue | None = None,
     ) -> None: ...
 
 Css = Style
