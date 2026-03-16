@@ -65,7 +65,7 @@ def ActionIndicator(*, state: ActionState) -> None:
                 height=5,
                 border_radius=h.pct(50),
                 background=theme.accent_primary,
-                flex_shrink=h.raw("0"),
+                flex_shrink=0,
             ),
         ):
             pass

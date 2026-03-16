@@ -342,7 +342,9 @@ function value_aliases(): Map<string, TypeExpr> {
     ["TransitionValue", union(primitive("str"), reference("CssRawString"))],
 
     // Numeric types
-    ["Opacity", union(primitive("float"), reference("CssRawString"))],
+    ["NumberValue", union(primitive("int"), primitive("float"), reference("CssRawString"))],
+    ["IntegerValue", union(primitive("int"), reference("CssRawString"))],
+    ["PercentageValue", union(primitive("int"), primitive("float"), reference("CssPercent"), reference("CssRawString"))],
     ["ZIndex", union(primitive("int"), literal("auto"), reference("CssRawString"))],
 
     // Media features
@@ -430,7 +432,59 @@ const ANGLE_SYNTAX_EXCLUSIONS = new Set([
   "image-orientation",
 ]);
 
-function infer_alias_name(css_name: string, feature: CssFeature): string {
+/**
+ * Resolves value definition and property references in a CSS syntax string.
+ *
+ * Expands `<type-name>` and `<'property-name'>` references by inlining
+ * the referenced syntax, so pattern checks like `includes("<number")`
+ * work even when the numeric type is behind an indirection.
+ *
+ * Only resolves "simple" references — those separated by ` | ` with optional
+ * multipliers like `#`. Complex grammars with combinators (`||`, `&&`, `[]`)
+ * or positional grouping are left as-is to avoid false positives.
+ */
+class SyntaxResolver {
+  private types: Record<string, { syntax?: string }>;
+  private properties: Record<string, CssFeature>;
+  private cache = new Map<string, string>();
+
+  constructor(types: Record<string, { syntax?: string }>, properties: Record<string, CssFeature>) {
+    this.types = types;
+    this.properties = properties;
+  }
+
+  resolve(syntax: string, depth = 0): string {
+    if (depth > 3) return syntax;
+
+    const cached = this.cache.get(syntax);
+    if (cached !== undefined) return cached;
+
+    // Only resolve syntaxes that are simple alternations of references and keywords.
+    // Skip complex grammars with combinators, grouping brackets, or positional syntax.
+    if (/[[\]{}]|&&|\|\|/.test(syntax)) {
+      this.cache.set(syntax, syntax);
+      return syntax;
+    }
+
+    const resolved = syntax.replace(/<'([a-z][a-z0-9-]*)'>/g, (_match, propName: string) => {
+      const prop = this.properties[propName];
+      return prop?.syntax ? this.resolve(prop.syntax, depth + 1) : _match;
+    }).replace(/<([a-z][a-z0-9-]*)(?:\s*\[[^\]]*\])?>/g, (_match, typeName: string) => {
+      // Skip primitive types that are already handled as-is
+      if (["color", "length", "length-percentage", "time", "angle",
+           "number", "integer", "percentage", "string", "url", "image"].includes(typeName)) {
+        return _match;
+      }
+      const typeDef = this.types[typeName];
+      return typeDef?.syntax ? this.resolve(typeDef.syntax, depth + 1) : _match;
+    });
+
+    this.cache.set(syntax, resolved);
+    return resolved;
+  }
+}
+
+function infer_alias_name(css_name: string, feature: CssFeature, resolver: SyntaxResolver): string {
   if (css_name === "display") return "Display";
   if (css_name === "position") return "Position";
   if (OVERFLOW_PROPERTIES.has(css_name)) return "Overflow";
@@ -452,15 +506,17 @@ function infer_alias_name(css_name: string, feature: CssFeature): string {
   if (css_name === "gap" || css_name.endsWith("-gap")) return "GapValue";
   if (WIDTH_PROPERTIES.has(css_name)) return "WidthValue";
   if (HEIGHT_PROPERTIES.has(css_name)) return "HeightValue";
-  if (css_name === "opacity") return "Opacity";
   if (css_name === "z-index") return "ZIndex";
 
-  const syntax = feature.syntax ?? "";
+  const syntax = resolver.resolve(feature.syntax ?? "");
   if (syntax.includes("<color>")) return "ColorValue";
   if (syntax.includes("<length-percentage")) return "LengthPercentage";
   if (syntax.includes("<length")) return "Length";
   if (syntax.includes("<time")) return "TimeValue";
   if (!ANGLE_SYNTAX_EXCLUSIONS.has(css_name) && syntax.includes("<angle")) return "AngleValue";
+  if (syntax.includes("<number")) return "NumberValue";
+  if (syntax.includes("<integer")) return "IntegerValue";
+  if (syntax.includes("<percentage")) return "PercentageValue";
   return "CssRawString";
 }
 
@@ -512,8 +568,12 @@ function infer_type_expr(alias_name: string): TypeExpr {
       return reference("TransformValue");
     case "TransitionValue":
       return reference("TransitionValue");
-    case "Opacity":
-      return reference("Opacity");
+    case "NumberValue":
+      return reference("NumberValue");
+    case "IntegerValue":
+      return reference("IntegerValue");
+    case "PercentageValue":
+      return reference("PercentageValue");
     case "ZIndex":
       return reference("ZIndex");
     case "MediaFeatureValue":
@@ -608,8 +668,8 @@ function classify_value_tier(
   return "keyword";
 }
 
-function build_property_def(css_name: string, feature: CssFeature): CssPropertyDef {
-  const value_type_name = infer_alias_name(css_name, feature);
+function build_property_def(css_name: string, feature: CssFeature, resolver: SyntaxResolver): CssPropertyDef {
+  const value_type_name = infer_alias_name(css_name, feature, resolver);
   const is_shorthand = is_property_shorthand(css_name, feature);
   return {
     css_name,
@@ -673,12 +733,13 @@ function supported_property_names(features: Record<string, CssFeature>): string[
 
 export async function extract_css_surface(): Promise<CssSurface> {
   const css = await index();
+  const resolver = new SyntaxResolver(css.types, css.properties);
   const aliases = value_aliases();
   aliases.set("Orientation", with_raw_escape(keyword_union(["portrait", "landscape"])));
 
   const properties = new Map<string, CssPropertyDef>();
   for (const name of supported_property_names(css.properties)) {
-    properties.set(name, build_property_def(name, css.properties[name]!));
+    properties.set(name, build_property_def(name, css.properties[name]!, resolver));
   }
 
   const media_features = new Map<string, CssMediaFeatureDef>();
