@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from trellis.core.rendering.patches import RenderPatch
 from trellis.core.rendering.render import _process_pending_hooks, _render_impl
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, get_render_session, set_render_session
 
 __all__ = [
     "SSRRenderResult",
@@ -34,9 +34,17 @@ def render_for_ssr(session: RenderSession) -> SSRRenderResult:
     Like render(), calls _render_impl() to build the element tree and produce
     patches, but does NOT call _process_pending_hooks(). The deferred hooks
     are returned so they can be replayed when the WebSocket connects.
+
+    Temporarily binds the session to the current context so that component
+    creation (which checks get_render_session()) works correctly.
     """
-    with session.lock:
-        patches, pending_mounts, pending_unmounts = _render_impl(session)
+    previous = get_render_session()
+    set_render_session(session)
+    try:
+        with session.lock:
+            patches, pending_mounts, pending_unmounts = _render_impl(session)
+    finally:
+        set_render_session(previous)
 
     return SSRRenderResult(
         patches=patches,

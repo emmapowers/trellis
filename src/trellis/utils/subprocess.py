@@ -150,7 +150,7 @@ def _start_windows(cmd: list[str], **popen_kwargs: tp.Any) -> subprocess.Popen[b
         try:
             # Set JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
             class JOBOBJECT_BASIC_LIMIT_INFORMATION(ctypes.Structure):
-                _fields_ = [  # noqa: RUF012 — ctypes API
+                _fields_ = [
                     ("PerProcessUserTimeLimit", ctypes.c_int64),
                     ("PerJobUserTimeLimit", ctypes.c_int64),
                     ("LimitFlags", ctypes.wintypes.DWORD),
@@ -163,7 +163,7 @@ def _start_windows(cmd: list[str], **popen_kwargs: tp.Any) -> subprocess.Popen[b
                 ]
 
             class JOBOBJECT_EXTENDED_LIMIT_INFORMATION(ctypes.Structure):
-                _fields_ = [  # noqa: RUF012 — ctypes API
+                _fields_ = [
                     ("BasicLimitInformation", JOBOBJECT_BASIC_LIMIT_INFORMATION),
                     ("IoInfo", ctypes.c_byte * 48),
                     ("ProcessMemoryLimit", ctypes.c_size_t),

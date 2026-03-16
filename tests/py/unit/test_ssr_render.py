@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from trellis.core.components.composition import CompositionComponent, component
 from trellis.core.rendering.patches import RenderAddPatch
 from trellis.core.rendering.render import render
-from trellis.core.rendering.session import RenderSession
+from trellis.core.rendering.session import RenderSession, set_render_session
 from trellis.core.rendering.ssr import SSRRenderResult, execute_deferred_hooks, render_for_ssr
 from trellis.core.state.stateful import Stateful
 from trellis.platforms.common.serialization import serialize_element
@@ -64,6 +64,7 @@ class TestRenderForSSR:
 
         # Regular render
         regular_session = RenderSession(App)
+        set_render_session(regular_session)
         render(regular_session)
         regular_tree = serialize_element(regular_session.root_element, regular_session)
 
@@ -124,6 +125,7 @@ class TestExecuteDeferredHooks:
 
         # Verify the session can still do incremental renders
         # Mark root dirty to force re-render
+        set_render_session(session)
         session.dirty.mark(session.root_element_id)
         patches = render(session)
         assert patches is not None
