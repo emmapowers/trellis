@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from trellis.core import component
 from trellis.core.keys import KeyFilter, KeySequence, sequence
-from trellis.core.rendering.on_key_trait import _resolve_ignore_in_inputs
+from trellis.core.rendering.on_key_trait import _should_ignore_when_input_focused
 from trellis.widgets.basic import Label
 
 
@@ -100,24 +100,36 @@ class TestOnKeySerialization:
 
 class TestSmartIgnoreDefaults:
     def test_bare_key_ignored_in_inputs(self):
-        assert _resolve_ignore_in_inputs(None, KeyFilter(key="K")) is True
+        assert _should_ignore_when_input_focused(None, KeyFilter(key="K")) is True
 
     def test_mod_combo_fires_in_inputs(self):
-        assert _resolve_ignore_in_inputs(None, KeyFilter(key="S", mod=True)) is False
+        assert _should_ignore_when_input_focused(None, KeyFilter(key="S", mod=True)) is False
 
     def test_ctrl_combo_fires_in_inputs(self):
-        assert _resolve_ignore_in_inputs(None, KeyFilter(key="S", ctrl=True)) is False
+        assert _should_ignore_when_input_focused(None, KeyFilter(key="S", ctrl=True)) is False
 
     def test_meta_combo_fires_in_inputs(self):
-        assert _resolve_ignore_in_inputs(None, KeyFilter(key="S", meta=True)) is False
+        assert _should_ignore_when_input_focused(None, KeyFilter(key="S", meta=True)) is False
 
     def test_escape_fires_in_inputs(self):
-        assert _resolve_ignore_in_inputs(None, KeyFilter(key="Escape")) is False
+        assert _should_ignore_when_input_focused(None, KeyFilter(key="Escape")) is False
 
-    def test_sequence_ignored_in_inputs(self):
+    def test_bare_key_sequence_ignored_in_inputs(self):
         ks = KeySequence(steps=(KeyFilter(key="G"), KeyFilter(key="G")))
-        assert _resolve_ignore_in_inputs(None, ks) is True
+        assert _should_ignore_when_input_focused(None, ks) is True
+
+    def test_modifier_sequence_fires_in_inputs(self):
+        ks = KeySequence(steps=(KeyFilter(key="K", mod=True), KeyFilter(key="S")))
+        assert _should_ignore_when_input_focused(None, ks) is False
+
+    def test_ctrl_sequence_fires_in_inputs(self):
+        ks = KeySequence(steps=(KeyFilter(key="K", ctrl=True), KeyFilter(key="D")))
+        assert _should_ignore_when_input_focused(None, ks) is False
+
+    def test_empty_sequence_ignored_in_inputs(self):
+        ks = KeySequence(steps=())
+        assert _should_ignore_when_input_focused(None, ks) is True
 
     def test_explicit_override(self):
-        assert _resolve_ignore_in_inputs(False, KeyFilter(key="K")) is False
-        assert _resolve_ignore_in_inputs(True, KeyFilter(key="S", mod=True)) is True
+        assert _should_ignore_when_input_focused(False, KeyFilter(key="K")) is False
+        assert _should_ignore_when_input_focused(True, KeyFilter(key="S", mod=True)) is True

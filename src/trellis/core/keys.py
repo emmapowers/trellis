@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Literal
 
 from trellis.core.hotkey_types import Hotkey, Key
@@ -22,14 +22,7 @@ class KeyFilter:
     mod: bool = False  # Cmd on Mac, Ctrl on Win/Linux — resolved client-side
 
     def to_dict(self) -> dict[str, object]:
-        return {
-            "key": self.key,
-            "ctrl": self.ctrl,
-            "shift": self.shift,
-            "alt": self.alt,
-            "meta": self.meta,
-            "mod": self.mod,
-        }
+        return asdict(self)
 
 
 @dataclass(frozen=True)
@@ -40,10 +33,7 @@ class KeySequence:
     timeout_ms: int = 1000
 
     def to_dict(self) -> dict[str, object]:
-        return {
-            "steps": [step.to_dict() for step in self.steps],
-            "timeout_ms": self.timeout_ms,
-        }
+        return asdict(self)
 
 
 def sequence(*specs: Hotkey) -> KeySequence:

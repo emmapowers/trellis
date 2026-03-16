@@ -119,6 +119,7 @@ export class KeyBindingRegistry {
     if (event.isComposing) return;
 
     const inTextInput = isTextInput(document.activeElement);
+    let sequenceAdvanced = false;
 
     // Pass 1: Check sequence bindings first. A sequence that completes
     // takes priority over single bindings (e.g. Mod+K,Mod+S wins over Mod+S).
@@ -144,8 +145,12 @@ export class KeyBindingRegistry {
       if (result === "advanced") {
         event.preventDefault();
         event.stopPropagation();
+        sequenceAdvanced = true;
       }
     }
+
+    // A prefix key was consumed by a sequence — don't fire single-key bindings
+    if (sequenceAdvanced) return;
 
     // Pass 2: Check single key bindings.
     for (let i = 0; i < this.bindings.length; i++) {
@@ -200,6 +205,9 @@ export class KeyBindingRegistry {
       )
         continue;
       if (!matchesKeyFilter(event, binding.filter)) continue;
+
+      const bindingId = `global-${binding.handler.__callback__}`;
+      if (!this.keyState.shouldFire(bindingId, binding.require_reset, event)) return;
 
       await this.fireAndChain(binding.handler.__callback__, event, i);
       return;

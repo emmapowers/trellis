@@ -39,7 +39,7 @@ class OnKeyTraitState:
     bindings: list[KeyBindingSpec] = field(default_factory=list)
 
 
-def _resolve_ignore_in_inputs(ignore: bool | None, filter: KeyFilter | KeySequence) -> bool:
+def _should_ignore_when_input_focused(ignore: bool | None, filter: KeyFilter | KeySequence) -> bool:
     """Apply smart defaults for ignore_in_inputs.
 
     - Modifier combos (Mod+S, Control+X): False — fire even in inputs
@@ -51,7 +51,8 @@ def _resolve_ignore_in_inputs(ignore: bool | None, filter: KeyFilter | KeySequen
         return ignore
 
     if isinstance(filter, KeySequence):
-        return True
+        # Apply the same modifier rules to the first step of the sequence
+        return _should_ignore_when_input_focused(None, filter.steps[0]) if filter.steps else True
 
     if filter.key == "Escape":
         return False
@@ -69,12 +70,12 @@ def _serialize_binding(
 
     When focus_scoped=True (on_key), defaults ignore_in_inputs to False — the
     whole point is to handle keys on the focused element.
-    When focus_scoped=False (HotKey), uses smart defaults via _resolve_ignore_in_inputs.
+    When focus_scoped=False (HotKey), uses smart defaults via _should_ignore_when_input_focused.
     """
     if focus_scoped:
         ignore = binding.ignore_in_inputs if binding.ignore_in_inputs is not None else False
     else:
-        ignore = _resolve_ignore_in_inputs(binding.ignore_in_inputs, binding.filter)
+        ignore = _should_ignore_when_input_focused(binding.ignore_in_inputs, binding.filter)
 
     result: dict[str, tp.Any] = {
         "event_type": binding.event_type,

@@ -217,6 +217,7 @@ function createOnKeyHandler(
     if (native.isComposing) return;
 
     const eventType = native.type as "keydown" | "keyup";
+    let sequenceAdvanced = false;
 
     for (const raw of rawBindings) {
       const entry = raw as Record<string, unknown>;
@@ -246,9 +247,13 @@ function createOnKeyHandler(
         if (result === "advanced") {
           event.preventDefault();
           event.stopPropagation();
+          sequenceAdvanced = true;
         }
         continue;
       }
+
+      // A prefix key was consumed by a sequence — don't fire single-key bindings
+      if (sequenceAdvanced) return;
 
       // Single filter binding
       const filter = entry.filter as any;
