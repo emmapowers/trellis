@@ -77,7 +77,8 @@ function normalizeInlineStyle(value: unknown): unknown {
 export function applyCompiledStyleProps(
   props: Record<string, unknown>
 ): Record<string, unknown> {
-  return props;
+  if (!("style" in props)) return props;
+  return { ...props, style: normalizeInlineStyle(props.style) };
 }
 
 export function toReactDomProps(props: Record<string, unknown>): Record<string, unknown> {
