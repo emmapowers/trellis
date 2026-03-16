@@ -19,11 +19,12 @@ import {
 } from "./core";
 import { KeyBindingRegistry } from "./core/keyBindingRegistry";
 import {
-  isTextInput,
-  matchesKeyFilter,
-  SerializedKeyBinding,
-  SerializedSequenceBinding,
-} from "./core/keyFilters";
+  isSequenceBinding,
+  matchBindings,
+  serializeKeyboardEvent,
+  type NormalizedBinding,
+} from "./core/keyBindingMatcher";
+import { isTextInput } from "./core/keyFilters";
 import { KeyState } from "./core/keyState";
 import { getWidget } from "./widgets";
 import { useTrellisClient } from "./TrellisContext";
@@ -205,76 +206,42 @@ function OnKeyWrapper({
   );
 }
 
+function normalizeBindings(rawBindings: unknown[]): NormalizedBinding[] {
+  return rawBindings.map((raw) => {
+    const entry = raw as Record<string, unknown>;
+    const callbackId = (entry.handler as { __callback__: string }).__callback__;
+    const isSeq = isSequenceBinding(entry as any);
+    return {
+      id: isSeq ? `onkey-seq-${callbackId}` : `onkey-${callbackId}`,
+      callbackId,
+      binding: entry as any,
+    };
+  });
+}
+
 function createOnKeyHandler(
   rawBindings: unknown[],
   keyState: KeyState,
   client: TrellisClient,
 ): (event: React.KeyboardEvent) => void {
+  const normalized = normalizeBindings(rawBindings);
+
   return (event: React.KeyboardEvent) => {
     const native = event.nativeEvent;
-    // Skip re-dispatched events
     if ((native as any).__trellis_redispatch__) return;
     if (native.isComposing) return;
 
     const eventType = native.type as "keydown" | "keyup";
-    let sequenceAdvanced = false;
+    const inTextInput = isTextInput(document.activeElement);
+    const result = matchBindings(normalized, native, eventType, inTextInput, keyState);
 
-    for (const raw of rawBindings) {
-      const entry = raw as Record<string, unknown>;
-      if ((entry.event_type as string) !== eventType) continue;
-      if (
-        (entry.ignore_in_inputs as boolean) &&
-        isTextInput(document.activeElement)
-      ) continue;
-
-      // Sequence binding
-      if (entry.sequence) {
-        const seq = entry.sequence as { steps: any[]; timeout_ms: number };
-        const handlerRef = entry.handler as { __callback__: string };
-        const bindingId = `onkey-seq-${handlerRef.__callback__}`;
-        const result = keyState.advanceSequence(
-          bindingId,
-          seq.steps,
-          seq.timeout_ms,
-          native
-        );
-        if (result === "complete") {
-          event.preventDefault();
-          event.stopPropagation();
-          fireOnKeyEvent(client, handlerRef.__callback__, native, event);
-          return;
-        }
-        if (result === "advanced") {
-          event.preventDefault();
-          event.stopPropagation();
-          sequenceAdvanced = true;
-        }
-        continue;
-      }
-
-      // A prefix key was consumed by a sequence — don't fire single-key bindings
-      if (sequenceAdvanced) return;
-
-      // Single filter binding
-      const filter = entry.filter as any;
-      if (!filter || !matchesKeyFilter(native, filter)) continue;
-
-      const handlerRef = entry.handler as { __callback__: string };
-      const bindingId = `onkey-${handlerRef.__callback__}`;
-      const shouldFire = keyState.shouldFire(
-        bindingId,
-        entry.require_reset as boolean,
-        native
-      );
-
-      // Always preventDefault for matched bindings
+    if (result.action === "fire") {
       event.preventDefault();
       event.stopPropagation();
-
-      if (!shouldFire) return;
-
-      fireOnKeyEvent(client, handlerRef.__callback__, native, event);
-      return;
+      fireOnKeyEvent(client, result.callbackId, native, event);
+    } else if (result.action === "suppress") {
+      event.preventDefault();
+      event.stopPropagation();
     }
   };
 }
@@ -288,20 +255,9 @@ async function fireOnKeyEvent(
   // Capture target before await — React recycles synthetic events.
   const target = reactEvent.currentTarget;
   const requestId = crypto.randomUUID();
-  const serialized = {
-    type: native.type,
-    key: native.key,
-    code: native.code,
-    location: native.location,
-    alt_key: native.altKey,
-    ctrl_key: native.ctrlKey,
-    shift_key: native.shiftKey,
-    meta_key: native.metaKey,
-    repeat: native.repeat,
-    is_composing: native.isComposing,
-    timestamp: native.timeStamp,
-  };
-  const handled = await client.sendKeyEvent(callbackId, requestId, [serialized]);
+  const handled = await client.sendKeyEvent(callbackId, requestId, [
+    serializeKeyboardEvent(native),
+  ]);
 
   if (!handled) {
     // Re-dispatch event from wrapper div so DOM bubbling resumes to parent

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
-from trellis.core.hotkey_types import Hotkey, Key
+if TYPE_CHECKING:
+    from trellis.core.hotkey_types import Hotkey, Key
 
 _MAX_FUNCTION_KEY = 12
 

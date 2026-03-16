@@ -8,10 +8,16 @@
 import {
   isTextInput,
   matchesKeyFilter,
-  SerializedKeyBinding,
-  SerializedSequenceBinding,
+  type SerializedKeyBinding,
+  type SerializedSequenceBinding,
 } from "./keyFilters";
-import { KeyState } from "./keyState";
+import {
+  isSequenceBinding,
+  matchBindings,
+  serializeKeyboardEvent,
+  type NormalizedBinding,
+} from "./keyBindingMatcher";
+import type { KeyState } from "./keyState";
 
 interface RegisteredBinding {
   elementId: string;
@@ -24,26 +30,6 @@ type SendKeyEvent = (
   requestId: string,
   args: unknown[]
 ) => Promise<boolean>;
-
-function serializeKeyboardEvent(event: KeyboardEvent): Record<string, unknown> {
-  return {
-    type: event.type,
-    key: event.key,
-    code: event.code,
-    alt_key: event.altKey,
-    ctrl_key: event.ctrlKey,
-    shift_key: event.shiftKey,
-    meta_key: event.metaKey,
-    repeat: event.repeat,
-    timestamp: event.timeStamp,
-  };
-}
-
-function isSequenceBinding(
-  b: SerializedKeyBinding | SerializedSequenceBinding
-): b is SerializedSequenceBinding {
-  return "sequence" in b;
-}
 
 export class KeyBindingRegistry {
   private bindings: RegisteredBinding[] = [];
@@ -119,63 +105,25 @@ export class KeyBindingRegistry {
     if (event.isComposing) return;
 
     const inTextInput = isTextInput(document.activeElement);
-    let sequenceAdvanced = false;
+    const normalized: NormalizedBinding[] = this.bindings.map((rb) => {
+      const callbackId = rb.binding.handler.__callback__;
+      const isSeq = isSequenceBinding(rb.binding);
+      return {
+        id: isSeq ? `global-seq-${callbackId}` : `global-${callbackId}`,
+        callbackId,
+        binding: rb.binding,
+      };
+    });
 
-    // Pass 1: Check sequence bindings first. A sequence that completes
-    // takes priority over single bindings (e.g. Mod+K,Mod+S wins over Mod+S).
-    for (let i = 0; i < this.bindings.length; i++) {
-      const { binding } = this.bindings[i];
-      if (!isSequenceBinding(binding)) continue;
-      if (binding.event_type !== eventType) continue;
-      if (binding.ignore_in_inputs && inTextInput) continue;
+    const result = matchBindings(normalized, event, eventType, inTextInput, this.keyState);
 
-      const bindingId = `global-seq-${binding.handler.__callback__}`;
-      const result = this.keyState.advanceSequence(
-        bindingId,
-        binding.sequence.steps,
-        binding.sequence.timeout_ms,
-        event
-      );
-      if (result === "complete") {
-        event.preventDefault();
-        event.stopPropagation();
-        this.fireAndChain(binding.handler.__callback__, event, i);
-        return;
-      }
-      if (result === "advanced") {
-        event.preventDefault();
-        event.stopPropagation();
-        sequenceAdvanced = true;
-      }
-    }
-
-    // A prefix key was consumed by a sequence — don't fire single-key bindings
-    if (sequenceAdvanced) return;
-
-    // Pass 2: Check single key bindings.
-    for (let i = 0; i < this.bindings.length; i++) {
-      const { binding } = this.bindings[i];
-      if (isSequenceBinding(binding)) continue;
-      if (binding.event_type !== eventType) continue;
-      if (binding.ignore_in_inputs && inTextInput) continue;
-
-      if (!matchesKeyFilter(event, binding.filter)) continue;
-
-      const bindingId = `global-${binding.handler.__callback__}`;
-      const shouldFire = this.keyState.shouldFire(
-        bindingId,
-        binding.require_reset,
-        event
-      );
-
-      // Always preventDefault for matched bindings (even repeats)
+    if (result.action === "fire") {
       event.preventDefault();
       event.stopPropagation();
-
-      if (!shouldFire) return; // Repeat suppressed
-
-      this.fireAndChain(binding.handler.__callback__, event, i);
-      return;
+      this.fireAndChain(result.callbackId, event, result.bindingIndex);
+    } else if (result.action === "suppress") {
+      event.preventDefault();
+      event.stopPropagation();
     }
   }
 
