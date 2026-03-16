@@ -1,8 +1,8 @@
 """Keyboard handling section of the widget showcase."""
 
+import asyncio
 import typing as tp
 from dataclasses import dataclass
-from threading import Timer
 
 from trellis import HotKey, Stateful, component, mutable, sequence
 from trellis import html as h
@@ -30,19 +30,16 @@ class ToggleState(Stateful):
     active: bool = False
 
 
-def _flash(state: ActionState, label: str) -> tp.Callable[[], bool]:
+def _flash(state: ActionState, label: str) -> tp.Callable[[], tp.Awaitable[bool]]:
     """Create a handler that briefly shows a label, then clears it."""
 
-    def handler() -> bool:
+    async def handler() -> bool:
         state.label = label
-        Timer(_INDICATOR_DURATION, _clear, args=(state,)).start()
+        await asyncio.sleep(_INDICATOR_DURATION)
+        state.label = ""
         return True
 
     return handler
-
-
-def _clear(state: ActionState) -> None:
-    state.label = ""
 
 
 @component

@@ -283,11 +283,13 @@ async function fireOnKeyEvent(
     type: native.type,
     key: native.key,
     code: native.code,
+    location: native.location,
     alt_key: native.altKey,
     ctrl_key: native.ctrlKey,
     shift_key: native.shiftKey,
     meta_key: native.metaKey,
     repeat: native.repeat,
+    is_composing: native.isComposing,
     timestamp: native.timeStamp,
   };
   const handled = await client.sendKeyEvent(callbackId, requestId, [serialized]);

@@ -87,6 +87,8 @@ export class KeyState {
     timeoutMs: number,
     event: KeyboardEvent
   ): boolean {
+    if (steps.length === 0) return false;
+
     // Ignore modifier-only keydown events — they don't advance or reset
     // sequences. Without this, chords like Mod+K,Mod+S break because the
     // bare Meta keydown between the two presses resets the state machine.

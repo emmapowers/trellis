@@ -512,14 +512,16 @@ class MessageHandler:
             return
 
         request_id = args[0]
+        handler_args = args[1:]
+        processed_args, kwargs = _process_callback_args(handler_args)
 
         handled = True
         try:
             with callback_context(session, element_id):
                 if inspect.iscoroutinefunction(callback):
-                    result = await callback()
+                    result = await callback(*processed_args, **kwargs)
                 else:
-                    result = callback()
+                    result = callback(*processed_args, **kwargs)
             # None or True = handled, False = pass
             if result is False:
                 handled = False
