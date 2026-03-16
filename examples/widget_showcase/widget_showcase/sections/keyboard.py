@@ -49,33 +49,33 @@ def ActionIndicator(*, state: ActionState) -> None:
         return
 
     with h.Div(
-        style={
-            "display": "inline-flex",
-            "alignItems": "center",
-            "gap": "6px",
-            "padding": "3px 10px",
-            "borderRadius": "4px",
-            "background": theme.accent_subtle,
-            "marginTop": "4px",
-        },
+        style=h.Css(
+            display="inline-flex",
+            align_items="center",
+            gap=6,
+            padding=h.padding(3, 10),
+            border_radius=4,
+            background=theme.accent_subtle,
+            margin_top=4,
+        ),
     ):
         with h.Div(
-            style={
-                "width": "5px",
-                "height": "5px",
-                "borderRadius": "50%",
-                "background": theme.accent_primary,
-                "flexShrink": "0",
-            },
+            style=h.Css(
+                width=5,
+                height=5,
+                border_radius=h.pct(50),
+                background=theme.accent_primary,
+                flex_shrink=h.raw("0"),
+            ),
         ):
             pass
         w.Label(
             text=state.label,
             font_size=12,
             color=theme.accent_primary,
-            style={
-                "fontFamily": "ui-monospace, SFMono-Regular, Menlo, monospace",
-            },
+            style=h.Css(
+                font_family="ui-monospace, SFMono-Regular, Menlo, monospace",
+            ),
         )
 
 
@@ -83,11 +83,7 @@ def ActionIndicator(*, state: ActionState) -> None:
 def KeyHint(*, keys: str, label: str) -> None:
     """Keyboard shortcut hint: [keys] description."""
     with h.Div(
-        style={
-            "display": "flex",
-            "alignItems": "center",
-            "gap": "8px",
-        },
+        style=h.Css(display="flex", align_items="center", gap=8),
     ):
         w.Kbd(keys=keys)
         w.Label(text=label, font_size=13, color=theme.text_secondary)
@@ -97,11 +93,7 @@ def KeyHint(*, keys: str, label: str) -> None:
 def SequenceHint(*, keys: list[str], label: str) -> None:
     """Key sequence hint: [key1] then [key2] description."""
     with h.Div(
-        style={
-            "display": "flex",
-            "alignItems": "center",
-            "gap": "8px",
-        },
+        style=h.Css(display="flex", align_items="center", gap=8),
     ):
         for i, key in enumerate(keys):
             if i > 0:
