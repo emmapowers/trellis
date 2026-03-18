@@ -55,17 +55,23 @@
 
 ## Needs discussion
 
-18. **`steps.py:801`** (emma) — Should `SSRBundleBuildStep` move out of `bundler/steps.py`? It's used by all 3 platforms now.
+18. **`steps.py:801`** (emma) — Should `SSRBundleBuildStep` move out of `bundler/steps.py`?
+    → ✅ **Resolved** — Keeping in `bundler/`. It's a build step used by all 3 platforms, and that's where build steps live.
 
-19. **`steps.py:828`** (emma) — Same for `SSRPreRenderStep`. Both are build steps used by all platforms. Keeping in `bundler/` seems right since they're build steps, not runtime code.
+19. **`steps.py:828`** (emma) — Same for `SSRPreRenderStep`.
+    → ✅ **Resolved** — Same reasoning.
 
-20. **`main.tsx:48`** (emma) — Audit platform JS, move shared SSR/hydration code to common. How much can realistically be shared given platform-specific transports?
+20. **`main.tsx:48`** (emma) — Audit platform JS, move shared SSR/hydration code to common.
+    → **Open** — Needs investigation into how much can realistically be shared given platform-specific transports.
 
-21. **`routes.py:74`** + **`ssr.py:55`** (emma) — Drop theme from server SSR? CSS variables make it unnecessary, and it halves the cache.
+21. **`routes.py:74`** + **`ssr.py:55`** (emma) — Drop theme from server SSR.
+    → ✅ **Fixed** — Removed theme detection, params, and cache dimension. Cache keyed by route only.
 
-22. **`subprocess.py:110`** (emma) — Make `stop_child_process` async to avoid blocking the event loop.
+22. **`subprocess.py:110`** (emma) — Make `stop_child_process` async.
+    → **Open** — Use `asyncio.create_subprocess_exec` for native async.
 
-23. **`ssr_renderer.py:28`** (emma) — Make SSRRenderer fully async (related to #22).
+23. **`ssr_renderer.py:28`** (emma) — Make SSRRenderer fully async.
+    → **Open** — `httpx.AsyncClient` + `asyncio.create_subprocess_exec`. Related to #22.
 
 ## Already resolved
 
@@ -79,11 +85,11 @@
 
 29. **`steps.py:754`** (coderabbit) — Include `output_name` in SSR bundle cache key. Minor edge case.
 30. **`routes.py:53`** (coderabbit) — Don't run SSR for every 404. Already guarded by `_is_document_request`.
-31. **`routes.py:87`** (coderabbit) — Advertise theme-dependent HTML with Vary header. Already done.
+31. **`routes.py:87`** (coderabbit) — Vary header. Moot — theme removed from SSR.
 32. **`session_store.py:62`** (coderabbit) — Session cleanup/expiry. Already has TTL-based cleanup.
 33. **`ssr_cache.py`** (coderabbit) — Bound cache key space / validate max_entries. Nice-to-have.
 34. **`ssr_renderer.py:60,file`** (coderabbit) — PIPE draining, lock protection, restart safety. Subsumed by #23.
-35. **`ssr.py:file`** (coderabbit) — Include theme_mode in cache key. Moot if we drop themes (#21).
+35. **`ssr.py:file`** (coderabbit) — Include theme_mode in cache key. Moot — theme removed from SSR.
 36. **`ssr.py:file`** (coderabbit) — Escape dehydration payload. Already handled by `ssr_utils.py`.
 37. **`check_hydration.js`** (coderabbit) — Minor test cleanup.
 38. **`test_ssr_hydration.py`** (coderabbit) — Don't skip on exit code 2. Test robustness.
