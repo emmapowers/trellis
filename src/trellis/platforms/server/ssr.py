@@ -24,10 +24,12 @@ logger = logging.getLogger(__name__)
 class SSROrchestrator:
     """Orchestrates SSR: creates session, renders, stores for resumption.
 
-    Caches the rendered HTML fragment (renderToString output) per
-    route+theme.  Dehydration data (patches, session ID) is always
-    computed fresh because element IDs are non-deterministic across
-    sessions.
+    Caches the rendered HTML fragment (renderToString output) per route.
+    Dehydration data (patches, session ID) is always computed fresh
+    because element IDs are non-deterministic across sessions.
+
+    Theme is not a cache dimension — all rendered HTML uses CSS variables,
+    so light and dark themes produce identical markup.
     """
 
     def __init__(
@@ -46,23 +48,16 @@ class SSROrchestrator:
     def render_to_response(
         self,
         path: str,
-        system_theme: str,
-        theme_mode: str | None,
         html_template: str,
     ) -> str:
         """Render the app to a complete HTML response.
 
         Every request creates a fresh session and computes dehydration
-        data.  The expensive renderToString() call is cached per
-        route+theme so only the first request for each combination hits
-        the Bun sidecar.
+        data.  The expensive renderToString() call is cached per route
+        so only the first request for each path hits the Bun sidecar.
         """
         # Create session and render (always — patches are per-session)
-        wrapped = self._app_wrapper(
-            self._root_component,
-            system_theme,
-            theme_mode,
-        )
+        wrapped = self._app_wrapper(self._root_component, "light", None)
         session = RenderSession(wrapped)
         session.initial_path = path
         session_id = str(uuid4())
@@ -80,7 +75,7 @@ class SSROrchestrator:
         self._session_store.store(session_id, entry)
 
         # Get rendered HTML — from cache or Bun sidecar
-        ssr_html = self._get_ssr_html(path, system_theme, theme_mode, session)
+        ssr_html = self._get_ssr_html(path, session)
 
         # Build dehydration data (always fresh — element IDs are per-session)
         dehydration_data = build_dehydration_data(session_id, wire_patches)
@@ -94,12 +89,9 @@ class SSROrchestrator:
         """Clear the HTML cache. Called on hot reload / rebuild."""
         self._cache.invalidate()
 
-    def _get_ssr_html(
-        self, path: str, system_theme: str, theme_mode: str | None, session: RenderSession
-    ) -> str:
+    def _get_ssr_html(self, path: str, session: RenderSession) -> str:
         """Get rendered HTML, using the cache when possible."""
-        cache_key = f"{system_theme}:{theme_mode or 'system'}"
-        cached = self._cache.get(path, cache_key)
+        cached = self._cache.get(path)
         if cached is not None:
             return cached
 
@@ -111,6 +103,6 @@ class SSROrchestrator:
             rendered = self._ssr_renderer.render(tree)
             if rendered is not None:
                 ssr_html = rendered
-                self._cache.put(path, cache_key, ssr_html)
+                self._cache.put(path, ssr_html)
 
         return ssr_html

@@ -53,14 +53,6 @@ def register_spa_fallback(app: FastAPI) -> None:
         return _ssr_or_static_response(request)
 
 
-def _detect_theme(request: Request) -> str:
-    """Detect preferred color scheme from request headers."""
-    hint = request.headers.get("Sec-CH-Prefers-Color-Scheme", "").strip().lower()
-    if hint in ("light", "dark"):
-        return hint
-    return "light"
-
-
 def _get_ssr_orchestrator(request: Request) -> SSROrchestrator | None:
     """Get the SSR orchestrator from app state, if configured."""
     return getattr(request.app.state, "trellis_ssr", None)
@@ -71,16 +63,11 @@ def _ssr_or_static_response(request: Request) -> HTMLResponse:
     ssr = _get_ssr_orchestrator(request)
     if ssr is not None:
         try:
-            system_theme = _detect_theme(request)
             html = ssr.render_to_response(
                 path=request.url.path,
-                system_theme=system_theme,
-                theme_mode=None,
                 html_template=get_index_html(),
             )
-            response = HTMLResponse(content=html, status_code=200)
-            response.headers["Vary"] = "Sec-CH-Prefers-Color-Scheme"
-            return response
+            return HTMLResponse(content=html, status_code=200)
         except Exception:
             logger.exception("SSR render failed, falling back to static HTML")
 
