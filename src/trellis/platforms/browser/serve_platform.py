@@ -33,6 +33,8 @@ from trellis.bundler import (
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
+    SSRBundleBuildStep,
+    SSRPreRenderStep,
     StaticFileCopyStep,
     TsconfigStep,
 )
@@ -119,8 +121,10 @@ class BrowserServePlatform(Platform):
                 WheelBundleStep(config_json=config.to_json()),
                 PyodideWorkerBuildStep(),
                 BundleBuildStep(output_name="bundle"),
+                SSRBundleBuildStep(),
                 StaticFileCopyStep(),
                 IconAssetStep(icon_path=config.icon),
+                SSRPreRenderStep(),
                 IndexHtmlRenderStep(template_path, {"title": config.title, "routing_mode": "hash"}),
             ],
         )

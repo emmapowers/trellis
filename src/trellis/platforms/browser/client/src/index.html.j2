@@ -24,7 +24,55 @@
     </style>
 </head>
 <body>
-    <div id="root" class="trellis-root"></div>
+    <div id="root" class="trellis-root">
+    {% if ssr_enabled %}
+        <template id="ssr-light">{{ ssr_light_html | safe }}</template>
+        <template id="ssr-dark">{{ ssr_dark_html | safe }}</template>
+    {% endif %}
+    </div>
+    {% if ssr_enabled %}
+    <script>
+        // Select the correct SSR theme variant before first paint.
+        // SSR HTML is trusted build-time content from the app's renderToString.
+        (function() {
+            var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var templateId = isDark ? 'ssr-dark' : 'ssr-light';
+            var template = document.getElementById(templateId);
+            var root = document.getElementById('root');
+            if (template && root) {
+                while (root.firstChild) root.removeChild(root.firstChild);
+                var clone = document.importNode(template.content, true);
+                root.appendChild(clone);
+            }
+        })();
+    </script>
+    <script>
+        // Set dehydration data for the active theme
+        (function() {
+            var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var lightData = {{ ssr_light_data | safe }};
+            var darkData = {{ ssr_dark_data | safe }};
+            window.__TRELLIS_SSR__ = isDark ? darkData : lightData;
+        })();
+    </script>
+    <div id="ssr-loading" class="ssr-loading-backdrop">
+        <div class="ssr-loading-card">
+            <div class="ssr-loading-spinner"></div>
+            <p style="margin:0;font-size:14px">Loading...</p>
+        </div>
+    </div>
+    <style>
+        @keyframes trellis-spin { to { transform: rotate(360deg) } }
+        .ssr-loading-backdrop { position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.75);z-index:99999 }
+        .ssr-loading-card { display:flex;flex-direction:column;align-items:center;padding:24px 32px;border-radius:12px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,0.12);font-family:system-ui,-apple-system,sans-serif;color:#475569 }
+        .ssr-loading-spinner { width:28px;height:28px;border:3px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:trellis-spin 1s linear infinite;margin-bottom:12px }
+        @media (prefers-color-scheme: dark) {
+            .ssr-loading-backdrop { background:rgba(0,0,0,0.6) }
+            .ssr-loading-card { background:#1e293b;color:#cbd5e1;box-shadow:0 4px 24px rgba(0,0,0,0.4) }
+            .ssr-loading-spinner { border-color:#334155;border-top-color:#60a5fa }
+        }
+    </style>
+    {% endif %}
     <script>
         window.__TRELLIS_CONFIG__ = {
             routingMode: "{{ routing_mode | default('hash') }}"

@@ -193,8 +193,10 @@ class TestBrowserServeGetBuildConfig:
             WheelBundleStep,
             PyodideWorkerBuildStep,
             BundleBuildStep,
+            SSRBundleBuildStep,
             StaticFileCopyStep,
             IconAssetStep,
+            SSRPreRenderStep,
             IndexHtmlRenderStep,
         ]
 
