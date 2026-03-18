@@ -799,11 +799,12 @@ class SSRBundleBuildStep(BuildStep):
 
 
 class SSRPreRenderStep(BuildStep):
-    """Pre-render the app at build time for both light and dark themes.
+    """Pre-render the app at build time.
 
-    Runs the app's root component through the SSR pipeline for each theme,
-    producing rendered HTML and dehydration data that gets baked into
-    index.html via template_context.
+    Runs the app's root component through the SSR pipeline once, producing
+    rendered HTML and dehydration data that gets baked into index.html via
+    template_context. The HTML uses CSS variables for all colors, so a
+    single render works for both light and dark themes.
 
     Must run after SSRBundleBuildStep (needs the SSR bundle) and before
     IndexHtmlRenderStep (populates template_context).
@@ -840,21 +841,16 @@ class SSRPreRenderStep(BuildStep):
         renderer = SSRRenderer(ssr_bundle)
         try:
             renderer.start()
-            for theme in ("light", "dark"):
-                wrapped = app.get_wrapped_top(theme, None)
-                session = RenderSession(wrapped)
-                session.initial_path = "/"
-                ssr_result = render_for_ssr(session)
-                wire_patches = _serialize_patches(ssr_result.patches, session)
+            wrapped = app.get_wrapped_top("light", None)
+            session = RenderSession(wrapped)
+            session.initial_path = "/"
+            ssr_result = render_for_ssr(session)
+            wire_patches = _serialize_patches(ssr_result.patches, session)
 
-                assert session.root_element is not None
-                tree = serialize_element(session.root_element, session)
-                ssr_html = renderer.render(tree) or ""
-
-                dehydration = build_dehydration_data(None, wire_patches)
-                ctx.template_context[f"ssr_{theme}_html"] = ssr_html
-                ctx.template_context[f"ssr_{theme}_data"] = dehydration
-
+            assert session.root_element is not None
+            tree = serialize_element(session.root_element, session)
+            ctx.template_context["ssr_html"] = renderer.render(tree) or ""
+            ctx.template_context["ssr_data"] = build_dehydration_data(None, wire_patches)
             ctx.template_context["ssr_enabled"] = True
         finally:
             renderer.stop()

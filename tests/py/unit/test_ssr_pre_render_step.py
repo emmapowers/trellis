@@ -84,29 +84,25 @@ class TestSSRPreRenderStep:
         step.run(build_ctx)
         assert "ssr_enabled" not in build_ctx.template_context
 
-    def test_renders_both_themes(self, step: SSRPreRenderStep, build_ctx: MagicMock) -> None:
-        """Calls renderer.render for both light and dark themes."""
+    def test_renders_once(self, step: SSRPreRenderStep, build_ctx: MagicMock) -> None:
+        """Renders the app once (CSS variables handle both themes)."""
         (build_ctx.dist_dir / "ssr.js").touch()
 
         mock_app, mock_renderer, _ = _mock_ssr_run(build_ctx, step)
 
-        theme_calls = [c.args[0] for c in mock_app.get_wrapped_top.call_args_list]
-        assert "light" in theme_calls
-        assert "dark" in theme_calls
-        assert mock_renderer.render.call_count == 2
+        mock_app.get_wrapped_top.assert_called_once()
+        mock_renderer.render.assert_called_once()
 
     def test_populates_template_context(self, step: SSRPreRenderStep, build_ctx: MagicMock) -> None:
-        """Sets all 5 template context keys."""
+        """Sets ssr_enabled, ssr_html, and ssr_data in template context."""
         (build_ctx.dist_dir / "ssr.js").touch()
 
         _mock_ssr_run(build_ctx, step)
 
         ctx = build_ctx.template_context
         assert ctx["ssr_enabled"] is True
-        assert "ssr_light_html" in ctx
-        assert "ssr_dark_html" in ctx
-        assert "ssr_light_data" in ctx
-        assert "ssr_dark_data" in ctx
+        assert "ssr_html" in ctx
+        assert "ssr_data" in ctx
 
     def test_stops_renderer_on_exception(
         self, step: SSRPreRenderStep, build_ctx: MagicMock

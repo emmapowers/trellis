@@ -24,37 +24,8 @@
     </style>
 </head>
 <body>
-    <div id="root" class="trellis-root">
+    <div id="root" class="trellis-root">{% if ssr_enabled %}{{ ssr_html | safe }}{% endif %}</div>
     {% if ssr_enabled %}
-        <template id="ssr-light">{{ ssr_light_html | safe }}</template>
-        <template id="ssr-dark">{{ ssr_dark_html | safe }}</template>
-    {% endif %}
-    </div>
-    {% if ssr_enabled %}
-    <script>
-        // Select the correct SSR theme variant before first paint.
-        // SSR HTML is trusted build-time content from the app's renderToString.
-        (function() {
-            var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            var templateId = isDark ? 'ssr-dark' : 'ssr-light';
-            var template = document.getElementById(templateId);
-            var root = document.getElementById('root');
-            if (template && root) {
-                while (root.firstChild) root.removeChild(root.firstChild);
-                var clone = document.importNode(template.content, true);
-                root.appendChild(clone);
-            }
-        })();
-    </script>
-    <script>
-        // Set dehydration data for the active theme
-        (function() {
-            var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            var lightData = {{ ssr_light_data | safe }};
-            var darkData = {{ ssr_dark_data | safe }};
-            window.__TRELLIS_SSR__ = isDark ? darkData : lightData;
-        })();
-    </script>
     <div id="ssr-loading" class="ssr-loading-backdrop">
         <div class="ssr-loading-card">
             <div class="ssr-loading-spinner"></div>
@@ -72,6 +43,7 @@
             .ssr-loading-spinner { border-color:#334155;border-top-color:#60a5fa }
         }
     </style>
+    <script>window.__TRELLIS_SSR__ = {{ ssr_data | safe }};</script>
     {% endif %}
     <script>
         window.__TRELLIS_CONFIG__ = {
