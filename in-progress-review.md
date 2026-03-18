@@ -2,56 +2,56 @@
 
 ## Actionable — can fix now
 
-1. **`steps.py:729`** (emma) — Add docstring to `SSRBundleBuildStep` explaining it builds a Node-targeted bundle for the SSR sidecar (Bun), not shipped to the client.
-   → **Action:** Update class docstring.
+1. **`steps.py:729`** (emma) — Add docstring to `SSRBundleBuildStep`.
+   → ✅ **Fixed** — Updated docstring clarifying it's for the Bun sidecar, not shipped to client.
 
-2. **`steps.py:842`** (coderabbit) — Put `renderer.start()` inside the `try` block so `renderer.stop()` runs if `start()` raises.
-   → **Action:** Move `renderer.start()` inside the try.
+2. **`steps.py:842`** (coderabbit) — Put `renderer.start()` inside the `try` block.
+   → ✅ **Fixed** — `renderer.start()` now inside `try`.
 
 3. **`steps.py:854`** (coderabbit) — Don't mark SSR enabled when renderer returns no HTML.
-   → **Action:** Only set `ssr_enabled = True` if `ssr_html` is non-empty.
+   → ✅ **Fixed** — `ssr_enabled` only set when HTML is non-empty.
 
 4. **`handler.py:330`** (emma) — Extract resumed vs new-session logic into separate functions.
-   → **Action:** Refactor `handle_hello` into `_resume_session` and `_create_session` helpers.
+   → ✅ **Fixed** — Refactored into `_try_resume_session()` and `_create_session()`.
 
 5. **`handler.py:338`** (emma) — `_setup_router_callbacks` was supposed to be removed on main.
-   → **Known tech debt** — router callbacks still use the old pattern because the send-queue refactor isn't merged yet.
+   → ✅ **Resolved** — Known tech debt; send-queue refactor branch not merged yet.
 
-6. **`handler.py:370,383`** (emma) — Add `_ssr_resumed` flag, skip `initial_render` when SSR; don't call `initial_render` in SSR context.
-   → **Action:** Have `handle_hello` set an `_ssr_resumed` flag; `run()` skips `initial_render` when set.
+6. **`handler.py:370,383`** (emma) — Add `_ssr_resumed` flag, skip `initial_render` when SSR.
+   → ✅ **Fixed** — `_ssr_resumed` flag set in `_try_resume_session()`; `run()` skips `initial_render` when set.
 
 7. **`handler.py:376`** (coderabbit) — Restore router callback setup in non-SSR initial render path.
-   → **Action:** Call `_setup_router_callbacks()` after initial render in the non-SSR path too.
+   → ✅ **Fixed** — `_setup_router_callbacks()` called after `initial_render()` in non-SSR path.
 
-8. **`ssr_utils.py:4`** (emma) — Update module docstring; used by all platforms now, not just server.
-   → **Action:** Update docstring.
+8. **`ssr_utils.py:4`** (emma) — Update module docstring; used by all platforms now.
+   → ✅ **Fixed** — Docstring updated.
 
-9. **`ssr_utils.py:59`** (emma) — Is the `<` escaping in dehydration JSON robust enough?
-   → **Action:** Verify and add a comment explaining the escaping.
+9. **`ssr_utils.py:59`** (emma) — Is the `<` escaping robust enough?
+   → ✅ **Fixed** — Added comment documenting the standard approach (OWASP, used by Next.js/Remix).
 
 10. **`serve_platform.py:127`** (coderabbit) — Respect `config.ssr` when composing app-mode steps.
-    → **Action:** Only include `SSRBundleBuildStep`/`SSRPreRenderStep` when `config.ssr` is True.
+    → ✅ **Fixed** — SSR steps gated on `config.ssr`.
 
 11. **`platform.py:134`** (emma) — Move server platform lazy imports to the top.
-    → **Action:** Move imports to module level.
+    → ✅ **Fixed** — Imports moved to module level.
 
 12. **`platform.py:155`** (emma) — Extract SSR setup into its own function.
-    → **Action:** Create `_setup_ssr()` helper in server platform.
+    → ✅ **Fixed** — Extracted `_setup_ssr()` helper.
 
 13. **`ssr-entry.tsx:1`** (emma) — Verify SSR entry code isn't shipped to the client bundle.
-    → **Action:** Verify esbuild config separates SSR bundle from client bundle. Add comment if needed.
+    → ✅ **Fixed** — Added documentation; SSR uses `--platform=node`, client uses `--platform=browser`.
 
 14. **`subprocess.py:24`** (coderabbit) — Fix `Popen[bytes]` return type.
-    → ✅ **Already fixed** — changed to `Popen[tp.Any]`.
+    → ✅ **Previously fixed** — changed to `Popen[tp.Any]`.
 
 15. **`config.py:269`** (coderabbit) — Document `ssr` and `session_ttl` fields in Config docstring.
-    → ✅ **Already fixed** — docstring updated externally.
+    → ✅ **Previously fixed** — docstring updated.
 
 16. **`config.py:127`** (coderabbit) — Validate `session_ttl` as positive value.
-    → ✅ **Already fixed** — `validate_positive_int` wired up externally.
+    → ✅ **Previously fixed** — `validate_positive_int` wired up.
 
 17. **`desktop/index.html.j2`** (coderabbit) — Template removal code unreachable.
-    → ✅ **Already fixed** — removed `<template>` approach entirely, SSR HTML is inline now.
+    → ✅ **Previously fixed** — removed `<template>` approach entirely.
 
 ## Needs discussion
 
