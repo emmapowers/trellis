@@ -58,7 +58,7 @@ def _print_startup_banner(host: str, port: int) -> None:
     _console.print()
 
 
-def _setup_ssr(
+async def _setup_ssr(
     app: FastAPI,
     *,
     root_component: Any,
@@ -79,7 +79,7 @@ def _setup_ssr(
         if ssr_bundle.exists():
             ssr_renderer = SSRRenderer(ssr_bundle)
             try:
-                ssr_renderer.start()
+                await ssr_renderer.start()
             except Exception:
                 logger.warning("SSR renderer failed to start, falling back to CSR")
                 ssr_renderer = None
@@ -193,7 +193,7 @@ class ServerPlatform(Platform):
         app.state.trellis_app_wrapper = app_wrapper
         app.state.trellis_batch_delay = batch_delay
 
-        session_store, ssr_renderer = _setup_ssr(
+        session_store, ssr_renderer = await _setup_ssr(
             app,
             root_component=root_component,
             app_wrapper=app_wrapper,
@@ -235,7 +235,7 @@ class ServerPlatform(Platform):
         finally:
             cleanup_task.cancel()
             if ssr_renderer is not None:
-                ssr_renderer.stop()
+                await ssr_renderer.stop()
 
 
 async def _session_cleanup_loop(store: SessionStore, interval: float) -> None:

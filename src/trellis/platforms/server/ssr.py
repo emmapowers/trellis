@@ -45,7 +45,7 @@ class SSROrchestrator:
         self._ssr_renderer = ssr_renderer
         self._cache = SSRCache()
 
-    def render_to_response(
+    async def render_to_response(
         self,
         path: str,
         html_template: str,
@@ -75,7 +75,7 @@ class SSROrchestrator:
         self._session_store.store(session_id, entry)
 
         # Get rendered HTML — from cache or Bun sidecar
-        ssr_html = self._get_ssr_html(path, session)
+        ssr_html = await self._get_ssr_html(path, session)
 
         # Build dehydration data (always fresh — element IDs are per-session)
         dehydration_data = build_dehydration_data(session_id, wire_patches)
@@ -89,7 +89,7 @@ class SSROrchestrator:
         """Clear the HTML cache. Called on hot reload / rebuild."""
         self._cache.invalidate()
 
-    def _get_ssr_html(self, path: str, session: RenderSession) -> str:
+    async def _get_ssr_html(self, path: str, session: RenderSession) -> str:
         """Get rendered HTML, using the cache when possible."""
         cached = self._cache.get(path)
         if cached is not None:
@@ -100,7 +100,7 @@ class SSROrchestrator:
         if self._ssr_renderer is not None and self._ssr_renderer.is_available:
             assert session.root_element is not None
             tree = serialize_element(session.root_element, session)
-            rendered = self._ssr_renderer.render(tree)
+            rendered = await self._ssr_renderer.render(tree)
             if rendered is not None:
                 ssr_html = rendered
                 self._cache.put(path, ssr_html)

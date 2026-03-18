@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import subprocess
 import sys
 from pathlib import Path
@@ -87,7 +88,7 @@ def package_app(
             raise click.UsageError(str(e)) from None
 
         click.echo(f"Packaging {config.name} for desktop...")
-        apploader.bundle()
+        asyncio.run(apploader.bundle())
 
         try:
             bundle_types = [b.strip() for b in bundles.split(",")] if bundles else None

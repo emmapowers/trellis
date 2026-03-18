@@ -37,7 +37,7 @@ def main() -> None:
     set_apploader(loader)
 
     # Build the client bundle via the standard pipeline
-    loader.bundle()
+    asyncio.run(loader.bundle())
 
     # Create app wrapper using the real App infrastructure
     app_instance = App(test_app)

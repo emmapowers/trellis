@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -47,5 +48,5 @@ def bundle(ctx: CliContext, /, dest: Path | None = None, **cli_kwargs: Any) -> N
         apploader.import_module()
 
         click.echo(f"Bundling {config.name} for {config.platform.value}...")
-        apploader.bundle(dest=dest)
+        asyncio.run(apploader.bundle(dest=dest))
         click.echo("Bundle complete.")

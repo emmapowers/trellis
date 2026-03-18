@@ -9,6 +9,7 @@ mechanisms:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import subprocess
@@ -59,6 +60,37 @@ def stop_child_process(process: subprocess.Popen[tp.Any], timeout: float = 5.0) 
         _stop_windows(process, timeout)
     else:
         _stop_posix(process, timeout)
+
+
+async def start_child_process_async(cmd: list[str], **kwargs: tp.Any) -> asyncio.subprocess.Process:
+    """Start an async child process with a new session for cleanup.
+
+    Uses asyncio.create_subprocess_exec for non-blocking process management.
+    The process is started in a new session (start_new_session=True) so it
+    can be cleaned up via process group signals.
+    """
+    kwargs.setdefault("start_new_session", True)
+    return await asyncio.create_subprocess_exec(*cmd, **kwargs)
+
+
+async def stop_child_process_async(
+    process: asyncio.subprocess.Process, timeout: float = 5.0
+) -> None:
+    """Stop an async child process gracefully, escalating to SIGKILL on timeout."""
+    if process.returncode is not None:
+        return
+
+    try:
+        process.terminate()
+        await asyncio.wait_for(process.wait(), timeout=timeout)
+    except ProcessLookupError:
+        pass
+    except TimeoutError:
+        try:
+            process.kill()
+            await process.wait()
+        except ProcessLookupError:
+            pass
 
 
 def _start_posix(cmd: list[str], **popen_kwargs: tp.Any) -> subprocess.Popen[tp.Any]:

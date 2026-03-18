@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
 import typing as tp
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -49,7 +50,7 @@ def label_orchestrator_with_renderer(app_wrapper: tp.Any) -> SSROrchestrator:
     store = SessionStore(ttl_seconds=300)
     renderer = MagicMock()
     renderer.is_available = True
-    renderer.render.return_value = "<div>rendered</div>"
+    renderer.render = AsyncMock(return_value="<div>rendered</div>")
     return SSROrchestrator(
         root_component=App,
         app_wrapper=app_wrapper,
@@ -63,35 +64,47 @@ _HTML_TEMPLATE = '<!DOCTYPE html><html><body><div id="root"><!--ssr-outlet--></d
 
 class TestSSROrchestrator:
     def test_render_to_response_returns_html(self, label_orchestrator: SSROrchestrator) -> None:
-        result = label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+        result = asyncio.run(
+            label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+        )
         assert "<!DOCTYPE html>" in result
 
     def test_render_to_response_has_dehydration_script(
         self, label_orchestrator: SSROrchestrator
     ) -> None:
-        result = label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+        result = asyncio.run(
+            label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+        )
         assert "window.__TRELLIS_SSR__" in result
 
     def test_render_to_response_stores_session(self, label_orchestrator: SSROrchestrator) -> None:
-        result = label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+        result = asyncio.run(
+            label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+        )
         assert "sessionId" in result
 
     def test_render_to_response_falls_back_without_renderer(
         self, label_orchestrator: SSROrchestrator
     ) -> None:
         """Without an SSR renderer, dehydration data is still embedded but no rendered HTML."""
-        result = label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+        result = asyncio.run(
+            label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+        )
         assert "window.__TRELLIS_SSR__" in result
         assert "<!--ssr-outlet-->" not in result
 
     def test_dehydration_data_contains_session_id(
         self, label_orchestrator: SSROrchestrator
     ) -> None:
-        result = label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+        result = asyncio.run(
+            label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+        )
         assert '"sessionId"' in result
 
     def test_dehydration_data_contains_patches(self, label_orchestrator: SSROrchestrator) -> None:
-        result = label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+        result = asyncio.run(
+            label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+        )
         assert '"patches"' in result
 
     def test_second_request_same_route_reuses_cache(
@@ -101,7 +114,9 @@ class TestSSROrchestrator:
         (fresh dehydration data) even though the rendered HTML is cached."""
         results = []
         for _ in range(2):
-            html = label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+            html = asyncio.run(
+                label_orchestrator.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+            )
             results.append(html)
 
         # Both should have dehydration scripts
@@ -126,7 +141,7 @@ class TestSSROrchestrator:
         assert renderer is not None
 
         for _ in range(2):
-            orch.render_to_response(path="/", html_template=_HTML_TEMPLATE)
+            asyncio.run(orch.render_to_response(path="/", html_template=_HTML_TEMPLATE))
 
         # Renderer should only be called once — second request uses cache
         assert renderer.render.call_count == 1

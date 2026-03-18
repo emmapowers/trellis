@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def build(
+async def build(
     registry: ModuleRegistry,
     entry_point: Path,
     workspace: Path,
@@ -78,13 +78,13 @@ def build(
         # Run step if: forced or no previous manifest
         if force or prev_step_manifest is None:
             logger.debug("Running step: %s", step.name)
-            step.run(ctx)
+            await step.run(ctx)
         else:
             # Check if step needs to rebuild
             decision = step.should_build(ctx, prev_step_manifest)
             if decision is None or decision == ShouldBuild.BUILD:
                 logger.debug("Running step: %s", step.name)
-                step.run(ctx)
+                await step.run(ctx)
             else:
                 logger.debug("Skipping step: %s", step.name)
                 ctx.manifest.steps[step.name] = prev_step_manifest

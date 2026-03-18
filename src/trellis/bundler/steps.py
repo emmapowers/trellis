@@ -119,7 +119,7 @@ class BuildStep(ABC):
         ...
 
     @abstractmethod
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         """Execute the step, may mutate ctx."""
         ...
 
@@ -178,7 +178,7 @@ class PackageInstallStep(BuildStep):
             return ShouldBuild.BUILD
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         packages = dict(ctx.collected.packages)
         ensure_packages(packages, ctx.workspace)
 
@@ -231,7 +231,7 @@ class RegistryGenerationStep(BuildStep):
 
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         registry_path = write_registry_ts(ctx.workspace, ctx.collected)
         ctx.generated_files["_registry"] = registry_path
         ctx.esbuild_args.append(f"--alias:@trellis/_registry={registry_path}")
@@ -286,7 +286,7 @@ class TsconfigStep(BuildStep):
 
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         # Build path mappings for modules
         aliases = _get_module_aliases(ctx.collected)
         paths: dict[str, list[str]] = {
@@ -359,7 +359,7 @@ class TypeCheckStep(BuildStep):
             return ShouldBuild.BUILD
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         tsc = get_bin(node_modules_path(ctx.workspace), "tsc")
         tsconfig_path = ctx.generated_files.get("tsconfig")
 
@@ -412,7 +412,7 @@ class DeclarationStep(BuildStep):
             return ShouldBuild.BUILD
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         dts_generator = get_bin(node_modules_path(ctx.workspace), "dts-bundle-generator")
         tsconfig_path = ctx.generated_files.get("tsconfig")
 
@@ -469,7 +469,7 @@ class BundleBuildStep(BuildStep):
             return ShouldBuild.BUILD
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         esbuild = get_bin(node_modules_path(ctx.workspace), "esbuild")
         metafile_path = get_metafile_path(ctx.workspace)
 
@@ -532,7 +532,7 @@ class StaticFileCopyStep(BuildStep):
             return ShouldBuild.BUILD
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         # Copy from each module's assets directory
         for module in ctx.collected.modules:
             if module._base_path is None:
@@ -624,7 +624,7 @@ class IconAssetStep(BuildStep):
             return ShouldBuild.BUILD
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
         step_manifest.source_paths.clear()
         step_manifest.dest_files.clear()
@@ -704,7 +704,7 @@ class IndexHtmlRenderStep(BuildStep):
 
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         # Merge contexts: BuildContext.template_context first, then constructor (overrides)
         merged_context = {**ctx.template_context, **self._context}
 
@@ -755,7 +755,7 @@ class SSRBundleBuildStep(BuildStep):
             return ShouldBuild.BUILD
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         esbuild = get_bin(node_modules_path(ctx.workspace), "esbuild")
         metafile_path = get_metafile_path(ctx.workspace)
 
@@ -819,7 +819,7 @@ class SSRPreRenderStep(BuildStep):
     def name(self) -> str:
         return "ssr-pre-render"
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         # Lazy imports to avoid circular deps and heavy imports at module level
         from trellis.app.apploader import get_apploader  # noqa: PLC0415
         from trellis.core.rendering.session import RenderSession  # noqa: PLC0415
@@ -842,7 +842,7 @@ class SSRPreRenderStep(BuildStep):
 
         renderer = SSRRenderer(ssr_bundle)
         try:
-            renderer.start()
+            await renderer.start()
             wrapped = app.get_wrapped_top("light", None)
             session = RenderSession(wrapped)
             session.initial_path = "/"
@@ -851,7 +851,7 @@ class SSRPreRenderStep(BuildStep):
 
             assert session.root_element is not None
             tree = serialize_element(session.root_element, session)
-            ssr_html = renderer.render(tree) or ""
+            ssr_html = await renderer.render(tree) or ""
 
             if ssr_html:
                 ctx.template_context["ssr_html"] = ssr_html
@@ -860,4 +860,4 @@ class SSRPreRenderStep(BuildStep):
             else:
                 logger.warning("SSR renderer returned empty HTML, skipping SSR")
         finally:
-            renderer.stop()
+            await renderer.stop()

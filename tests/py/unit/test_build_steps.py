@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import subprocess
@@ -374,7 +375,7 @@ class TestBuildStep:
         """BuildStep subclass must implement name property."""
 
         class IncompleteStep(BuildStep):
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 pass
 
         with pytest.raises(TypeError):
@@ -399,7 +400,7 @@ class TestBuildStep:
             def name(self) -> str:
                 return "noop"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 pass
 
         step = NoopStep()
@@ -439,7 +440,7 @@ class TestBuildStepShouldBuildSignature:
             def name(self) -> str:
                 return "noop"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 pass
 
         step = NoopStep()
@@ -465,7 +466,7 @@ class TestBuildStepShouldBuildSignature:
             def name(self) -> str:
                 return "check-manifest"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 pass
 
             def should_build(
@@ -500,7 +501,7 @@ class TestBuildStepShouldBuildSignature:
             def name(self) -> str:
                 return "skip-step"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 pass
 
             def should_build(
@@ -529,7 +530,7 @@ class TestBuildStepShouldBuildSignature:
             def name(self) -> str:
                 return "build-always"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 pass
 
             def should_build(
@@ -576,7 +577,7 @@ class TestPackageInstallStep:
         """PackageInstallStep calls ensure_packages with packages from collected modules."""
         with patch("trellis.bundler.steps.ensure_packages") as mock_ensure:
             step = PackageInstallStep()
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
         mock_ensure.assert_called_once_with({"react": "18.2.0"}, build_context.workspace)
 
@@ -636,7 +637,7 @@ class TestPackageInstallStepShouldBuild:
         """PackageInstallStep stores packages in step manifest metadata."""
         with patch("trellis.bundler.steps.ensure_packages"):
             step = PackageInstallStep()
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
         step_manifest = build_context.manifest.steps["package-install"]
         expected_packages = {"react": "18.2.0"}
@@ -672,7 +673,7 @@ class TestRegistryGenerationStep:
     def test_generates_registry_ts_file(self, build_context: BuildContext) -> None:
         """RegistryGenerationStep writes _registry.ts to workspace."""
         step = RegistryGenerationStep()
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
 
         registry_path = build_context.workspace / "_registry.ts"
         assert registry_path.exists()
@@ -681,7 +682,7 @@ class TestRegistryGenerationStep:
     def test_sets_generated_files_registry(self, build_context: BuildContext) -> None:
         """RegistryGenerationStep sets ctx.generated_files['_registry']."""
         step = RegistryGenerationStep()
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
 
         expected = build_context.workspace / "_registry.ts"
         assert build_context.generated_files["_registry"] == expected
@@ -689,7 +690,7 @@ class TestRegistryGenerationStep:
     def test_adds_registry_alias_to_esbuild_args(self, build_context: BuildContext) -> None:
         """RegistryGenerationStep adds @trellis/_registry alias to ctx.esbuild_args."""
         step = RegistryGenerationStep()
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
 
         registry_path = build_context.workspace / "_registry.ts"
         expected_alias = f"--alias:@trellis/_registry={registry_path}"
@@ -738,7 +739,7 @@ class TestRegistryGenerationStepShouldBuild:
         """should_build returns BUILD when modules have changed."""
         # Run once to get the hash
         step = RegistryGenerationStep()
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
         original_hash = build_context.manifest.steps["registry-generation"].metadata.get(
             "collected_hash"
         )
@@ -757,7 +758,7 @@ class TestRegistryGenerationStepShouldBuild:
         """should_build returns SKIP when modules are unchanged."""
         # Run once to get the hash
         step = RegistryGenerationStep()
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
         current_hash = build_context.manifest.steps["registry-generation"].metadata.get(
             "collected_hash"
         )
@@ -802,7 +803,7 @@ class TestTsconfigStep:
     def test_generates_tsconfig_json_file(self, build_context: BuildContext) -> None:
         """TsconfigStep writes tsconfig.json to workspace."""
         step = TsconfigStep()
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
 
         tsconfig_path = build_context.workspace / "tsconfig.json"
         assert tsconfig_path.exists()
@@ -813,7 +814,7 @@ class TestTsconfigStep:
     def test_sets_generated_files_tsconfig(self, build_context: BuildContext) -> None:
         """TsconfigStep sets ctx.generated_files['tsconfig']."""
         step = TsconfigStep()
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
 
         expected = build_context.workspace / "tsconfig.json"
         assert build_context.generated_files["tsconfig"] == expected
@@ -821,7 +822,7 @@ class TestTsconfigStep:
     def test_includes_module_path_aliases(self, build_context: BuildContext) -> None:
         """TsconfigStep includes path aliases for registered modules."""
         step = TsconfigStep()
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
 
         tsconfig_path = build_context.workspace / "tsconfig.json"
         tsconfig = json.loads(tsconfig_path.read_text())
@@ -875,7 +876,7 @@ class TestTsconfigStepShouldBuild:
         """should_build returns BUILD when module paths have changed."""
         # Run once to get the hash
         step = TsconfigStep()
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
         original_hash = build_context.manifest.steps["tsconfig"].metadata.get("inputs_hash")
 
         # Change module path
@@ -893,7 +894,7 @@ class TestTsconfigStepShouldBuild:
         """should_build returns SKIP when inputs are unchanged."""
         # Run once to get the hash
         step = TsconfigStep()
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
         current_hash = build_context.manifest.steps["tsconfig"].metadata.get("inputs_hash")
 
         # Use same hash in previous manifest
@@ -905,7 +906,7 @@ class TestTsconfigStepShouldBuild:
     def test_restores_generated_files_when_skip(self, build_context: BuildContext) -> None:
         """should_build restores generated_files['tsconfig'] when returning SKIP."""
         step = TsconfigStep()
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
 
         inputs_hash = build_context.manifest.steps["tsconfig"].metadata["inputs_hash"]
         prev_manifest = StepManifest(metadata={"inputs_hash": inputs_hash})
@@ -975,7 +976,7 @@ class TestTypeCheckStep:
             mock_run.return_value.returncode = 0
 
             step = TypeCheckStep()
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
         mock_run.assert_called_once()
         cmd = mock_run.call_args[0][0]
@@ -990,7 +991,7 @@ class TestTypeCheckStep:
 
             step = TypeCheckStep(fail_on_error=False)
             with caplog.at_level(logging.WARNING):
-                step.run(build_context)  # Should not raise
+                asyncio.run(step.run(build_context))  # Should not raise
 
         assert "type-check" in caplog.text.lower() or "type" in caplog.text.lower()
 
@@ -1003,7 +1004,7 @@ class TestTypeCheckStep:
 
             step = TypeCheckStep(fail_on_error=True)
             with pytest.raises(subprocess.CalledProcessError):
-                step.run(build_context)
+                asyncio.run(step.run(build_context))
 
 
 class TestTypeCheckStepShouldBuild:
@@ -1157,7 +1158,7 @@ class TestDeclarationStep:
             mock_run.return_value.returncode = 0
 
             step = DeclarationStep()
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
         mock_run.assert_called_once()
         cmd = mock_run.call_args[0][0]
@@ -1170,7 +1171,7 @@ class TestDeclarationStep:
             mock_run.return_value.returncode = 0
 
             step = DeclarationStep()
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
         cmd = mock_run.call_args[0][0]
         # dts-bundle-generator uses -o for output file
@@ -1358,7 +1359,7 @@ class TestBundleBuildStep:
             mock_run.return_value.returncode = 0
 
             step = BundleBuildStep()
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
         mock_run.assert_called_once()
         cmd = mock_run.call_args[0][0]
@@ -1370,7 +1371,7 @@ class TestBundleBuildStep:
             mock_run.return_value.returncode = 0
 
             step = BundleBuildStep()
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
         cmd = mock_run.call_args[0][0]
         assert str(build_context.entry_point) in cmd
@@ -1381,7 +1382,7 @@ class TestBundleBuildStep:
             mock_run.return_value.returncode = 0
 
             step = BundleBuildStep(output_name="index")
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
         cmd = mock_run.call_args[0][0]
         assert "--entry-names=index" in cmd
@@ -1392,7 +1393,7 @@ class TestBundleBuildStep:
             mock_run.return_value.returncode = 0
 
             step = BundleBuildStep()
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
         cmd = mock_run.call_args[0][0]
         cmd_str = " ".join(str(arg) for arg in cmd)
@@ -1407,7 +1408,7 @@ class TestBundleBuildStep:
             mock_run.return_value.returncode = 0
 
             step = BundleBuildStep()
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
         cmd = mock_run.call_args[0][0]
         assert "--minify" in cmd
@@ -1462,7 +1463,7 @@ class TestBundleBuildStepManifest:
             mock_run.return_value.returncode = 0
 
             step = BundleBuildStep()
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
         # Check step manifest has input files (absolute paths)
         workspace = build_context.workspace
@@ -1486,7 +1487,7 @@ class TestBundleBuildStepManifest:
             mock_run.return_value.returncode = 0
 
             step = BundleBuildStep()
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
         # Check step manifest has output files (absolute paths)
         workspace = build_context.workspace
@@ -1637,7 +1638,7 @@ class TestIndexHtmlRenderStepManifest:
         template_path.write_text("<!DOCTYPE html><html><body>Hello</body></html>")
 
         step = IndexHtmlRenderStep(template_path=template_path)
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         step_manifest = ctx.manifest.steps["index-html-render"]
         assert template_path in step_manifest.source_paths
@@ -1666,7 +1667,7 @@ class TestIndexHtmlRenderStepManifest:
         template_path.write_text("<!DOCTYPE html><html><body>Hello</body></html>")
 
         step = IndexHtmlRenderStep(template_path=template_path)
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         step_manifest = ctx.manifest.steps["index-html-render"]
         expected_output = dist_dir / "index.html"
@@ -1807,7 +1808,7 @@ class TestIndexHtmlRenderStepShouldBuild:
 
         # Run step once to get the context hash
         step = IndexHtmlRenderStep(template_path=template_path, context={"key": "value"})
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
         current_hash = build_context.manifest.steps["index-html-render"].metadata.get(
             "context_hash"
         )
@@ -1869,7 +1870,7 @@ class TestIconAssetStep:
 
     def test_without_icon_sets_has_icon_false(self, build_context: BuildContext) -> None:
         step = IconAssetStep(icon_path=None)
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
 
         assert build_context.template_context["has_icon"] is False
         assert "favicon_href" not in build_context.template_context
@@ -1878,7 +1879,7 @@ class TestIconAssetStep:
         step = IconAssetStep(icon_path=tmp_path / "missing.png")
 
         with pytest.raises(FileNotFoundError, match="Icon file not found"):
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
     def test_unsupported_extension_raises(
         self, build_context: BuildContext, tmp_path: Path
@@ -1889,14 +1890,14 @@ class TestIconAssetStep:
         step = IconAssetStep(icon_path=source_icon)
 
         with pytest.raises(ValueError, match="Unsupported icon format"):
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
     def test_generates_icons_from_png_source(
         self, build_context: BuildContext, png_icon: Path
     ) -> None:
 
         step = IconAssetStep(icon_path=png_icon)
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
 
         # Verify all generated files exist
         assert (build_context.dist_dir / "favicon.ico").exists()
@@ -1927,7 +1928,7 @@ class TestIconAssetStep:
     ) -> None:
 
         step = IconAssetStep(icon_path=svg_icon)
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
 
         assert (build_context.dist_dir / "favicon.ico").exists()
         assert (build_context.dist_dir / "favicon.png").exists()
@@ -1940,7 +1941,7 @@ class TestIconAssetStep:
         self, build_context: BuildContext, png_icon: Path
     ) -> None:
         step = IconAssetStep(icon_path=png_icon, include_icns=True)
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
 
         assert (build_context.dist_dir / "favicon.icns").exists()
         assert (build_context.dist_dir / "favicon.icns") in build_context.manifest.steps[
@@ -1952,7 +1953,7 @@ class TestIconAssetStep:
     ) -> None:
         step = IconAssetStep(icon_path=png_icon)
         with caplog.at_level(logging.WARNING):
-            step.run(build_context)
+            asyncio.run(step.run(build_context))
 
         assert "recommend at least" in caplog.text
 
@@ -1960,7 +1961,7 @@ class TestIconAssetStep:
         self, build_context: BuildContext, png_icon: Path
     ) -> None:
         step = IconAssetStep(icon_path=png_icon)
-        step.run(build_context)
+        asyncio.run(step.run(build_context))
         prev = build_context.manifest.steps["icon-assets"]
 
         fresh_ctx = BuildContext(
@@ -2021,7 +2022,7 @@ class TestStaticFileCopyStep:
         )
 
         step = StaticFileCopyStep()
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         # Files should be copied to dist
         assert (dist_dir / "data.json").exists()
@@ -2058,7 +2059,7 @@ class TestStaticFileCopyStep:
 
         step = StaticFileCopyStep()
         # Should not raise - just skip the module
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         # dist should be empty (except what dist_dir.mkdir() created)
         assert list(dist_dir.iterdir()) == []
@@ -2094,7 +2095,7 @@ class TestStaticFileCopyStep:
         )
 
         step = StaticFileCopyStep()
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         # Nested structure should be preserved
         assert (dist_dir / "images" / "logo.png").exists()
@@ -2129,7 +2130,7 @@ class TestStaticFileCopyStep:
         )
 
         step = StaticFileCopyStep()
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         # App-level assets should be copied
         assert (dist_dir / "favicon.ico").exists()
@@ -2172,7 +2173,7 @@ class TestStaticFileCopyStep:
         )
 
         step = StaticFileCopyStep()
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         # Both module assets dirs and app assets should be copied
         assert (dist_dir / "module.css").exists()
@@ -2211,7 +2212,7 @@ class TestStaticFileCopyStepManifest:
         )
 
         step = StaticFileCopyStep()
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         # Assets directory should be in source_paths (not individual files)
         step_manifest = ctx.manifest.steps["asset-file-copy"]
@@ -2243,7 +2244,7 @@ class TestStaticFileCopyStepManifest:
         )
 
         step = StaticFileCopyStep()
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         step_manifest = ctx.manifest.steps["asset-file-copy"]
         assert app_assets in step_manifest.source_paths
@@ -2278,7 +2279,7 @@ class TestStaticFileCopyStepManifest:
         )
 
         step = StaticFileCopyStep()
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         # All copied files should be in dest_files
         step_manifest = ctx.manifest.steps["asset-file-copy"]
@@ -2418,7 +2419,7 @@ class TestBuildOrchestration:
             def name(self) -> str:
                 return "step1"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 run_order.append("step1")
 
         class Step2(BuildStep):
@@ -2426,7 +2427,7 @@ class TestBuildOrchestration:
             def name(self) -> str:
                 return "step2"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 run_order.append("step2")
 
         class Step3(BuildStep):
@@ -2434,16 +2435,18 @@ class TestBuildOrchestration:
             def name(self) -> str:
                 return "step3"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 run_order.append("step3")
 
-        build(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[Step1(), Step2(), Step3()],
-            force=True,
-            output_dir=tmp_path / "dist",
+        asyncio.run(
+            build(
+                registry=registry,
+                entry_point=entry_point,
+                workspace=workspace,
+                steps=[Step1(), Step2(), Step3()],
+                force=True,
+                output_dir=tmp_path / "dist",
+            )
         )
 
         assert run_order == ["step1", "step2", "step3"]
@@ -2456,13 +2459,15 @@ class TestBuildOrchestration:
         workspace = tmp_path / "workspace"
         dist_dir = tmp_path / "dist"
 
-        build(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[],
-            force=True,
-            output_dir=dist_dir,
+        asyncio.run(
+            build(
+                registry=registry,
+                entry_point=entry_point,
+                workspace=workspace,
+                steps=[],
+                force=True,
+                output_dir=dist_dir,
+            )
         )
 
         assert dist_dir.is_dir()
@@ -2482,16 +2487,18 @@ class TestBuildOrchestration:
             def name(self) -> str:
                 return "capture"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 captured_dist.append(ctx.dist_dir)
 
-        build(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[CaptureStep()],
-            output_dir=custom_output,
-            force=True,
+        asyncio.run(
+            build(
+                registry=registry,
+                entry_point=entry_point,
+                workspace=workspace,
+                steps=[CaptureStep()],
+                output_dir=custom_output,
+                force=True,
+            )
         )
 
         assert captured_dist[0] == custom_output
@@ -2512,16 +2519,18 @@ class TestBuildOrchestration:
             def name(self) -> str:
                 return "capture"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 captured_collected.append(ctx.collected)
 
-        build(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[CaptureStep()],
-            force=True,
-            output_dir=tmp_path / "dist",
+        asyncio.run(
+            build(
+                registry=registry,
+                entry_point=entry_point,
+                workspace=workspace,
+                steps=[CaptureStep()],
+                force=True,
+                output_dir=tmp_path / "dist",
+            )
         )
 
         assert len(captured_collected[0].modules) == 1
@@ -2542,16 +2551,18 @@ class TestBuildOrchestration:
             def name(self) -> str:
                 return "capture"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 captured_env.append(ctx.env.copy())
 
-        build(
-            registry=registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[CaptureStep()],
-            force=True,
-            output_dir=tmp_path / "dist",
+        asyncio.run(
+            build(
+                registry=registry,
+                entry_point=entry_point,
+                workspace=workspace,
+                steps=[CaptureStep()],
+                force=True,
+                output_dir=tmp_path / "dist",
+            )
         )
 
         # NODE_PATH should be set to workspace/node_modules
@@ -2582,7 +2593,7 @@ class TestBuildOrchestration:
             def name(self) -> str:
                 return "write-to-dist"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 # Simulate what DeclarationStep does: write to ctx.dist_dir
                 output_file = ctx.dist_dir / "output.js"
                 output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -2593,12 +2604,14 @@ class TestBuildOrchestration:
                 step_manifest.dest_files.add(output_file)
 
         # This should not raise ValueError about different anchors
-        build(
-            registry=test_registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[WriteToDistStep()],
-            output_dir=relative_output_dir,
+        asyncio.run(
+            build(
+                registry=test_registry,
+                entry_point=entry_point,
+                workspace=workspace,
+                steps=[WriteToDistStep()],
+                output_dir=relative_output_dir,
+            )
         )
 
     def test_skips_step_when_should_build_returns_skip(self, tmp_path: Path) -> None:
@@ -2621,7 +2634,7 @@ class TestBuildOrchestration:
             def name(self) -> str:
                 return "skip-step"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 step_ran.append(True)
 
             def should_build(
@@ -2629,13 +2642,15 @@ class TestBuildOrchestration:
             ) -> ShouldBuild | None:
                 return ShouldBuild.SKIP
 
-        build(
-            registry=test_registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[SkipStep()],
-            force=False,
-            output_dir=tmp_path / "dist",
+        asyncio.run(
+            build(
+                registry=test_registry,
+                entry_point=entry_point,
+                workspace=workspace,
+                steps=[SkipStep()],
+                force=False,
+                output_dir=tmp_path / "dist",
+            )
         )
 
         assert step_ran == [], "Step should not run when should_build returns SKIP"
@@ -2654,7 +2669,7 @@ class TestBuildOrchestration:
             def name(self) -> str:
                 return "build-always"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 step_ran.append(True)
 
             def should_build(
@@ -2662,13 +2677,15 @@ class TestBuildOrchestration:
             ) -> ShouldBuild | None:
                 return ShouldBuild.BUILD
 
-        build(
-            registry=test_registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[BuildAlwaysStep()],
-            force=False,
-            output_dir=tmp_path / "dist",
+        asyncio.run(
+            build(
+                registry=test_registry,
+                entry_point=entry_point,
+                workspace=workspace,
+                steps=[BuildAlwaysStep()],
+                force=False,
+                output_dir=tmp_path / "dist",
+            )
         )
 
         assert step_ran == [True], "Step should run when should_build returns BUILD"
@@ -2687,18 +2704,20 @@ class TestBuildOrchestration:
             def name(self) -> str:
                 return "default-step"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 step_ran.append(True)
 
             # Uses default should_build which returns None
 
-        build(
-            registry=test_registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[DefaultStep()],
-            force=False,
-            output_dir=tmp_path / "dist",
+        asyncio.run(
+            build(
+                registry=test_registry,
+                entry_point=entry_point,
+                workspace=workspace,
+                steps=[DefaultStep()],
+                force=False,
+                output_dir=tmp_path / "dist",
+            )
         )
 
         assert step_ran == [True], "Step should run when should_build returns None"
@@ -2725,7 +2744,7 @@ class TestBuildOrchestration:
             def name(self) -> str:
                 return "skip-step"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 pass  # Should not be called
 
             def should_build(
@@ -2733,13 +2752,15 @@ class TestBuildOrchestration:
             ) -> ShouldBuild | None:
                 return ShouldBuild.SKIP
 
-        build(
-            registry=test_registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[SkipStep()],
-            force=False,
-            output_dir=tmp_path / "dist",
+        asyncio.run(
+            build(
+                registry=test_registry,
+                entry_point=entry_point,
+                workspace=workspace,
+                steps=[SkipStep()],
+                force=False,
+                output_dir=tmp_path / "dist",
+            )
         )
 
         # Load the new manifest and verify old data was preserved
@@ -2762,7 +2783,7 @@ class TestBuildOrchestration:
             def name(self) -> str:
                 return "skip-step"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 step_ran.append(True)
 
             def should_build(
@@ -2770,13 +2791,15 @@ class TestBuildOrchestration:
             ) -> ShouldBuild | None:
                 return ShouldBuild.SKIP  # Would normally skip
 
-        build(
-            registry=test_registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[SkipStep()],
-            force=True,  # Force runs all
-            output_dir=tmp_path / "dist",
+        asyncio.run(
+            build(
+                registry=test_registry,
+                entry_point=entry_point,
+                workspace=workspace,
+                steps=[SkipStep()],
+                force=True,  # Force runs all
+                output_dir=tmp_path / "dist",
+            )
         )
 
         assert step_ran == [True], "Step should run when force=True"
@@ -2802,7 +2825,7 @@ class TestBuildOrchestration:
             def name(self) -> str:
                 return "test-step"
 
-            def run(self, ctx: BuildContext) -> None:
+            async def run(self, ctx: BuildContext) -> None:
                 step_ran.append(True)
 
             def should_build(
@@ -2811,13 +2834,15 @@ class TestBuildOrchestration:
                 should_build_called.append(True)
                 return ShouldBuild.SKIP
 
-        build(
-            registry=test_registry,
-            entry_point=entry_point,
-            workspace=workspace,
-            steps=[TestStep()],
-            force=False,
-            output_dir=tmp_path / "dist",
+        asyncio.run(
+            build(
+                registry=test_registry,
+                entry_point=entry_point,
+                workspace=workspace,
+                steps=[TestStep()],
+                force=False,
+                output_dir=tmp_path / "dist",
+            )
         )
 
         # should_build not called when no previous manifest (nothing to compare)

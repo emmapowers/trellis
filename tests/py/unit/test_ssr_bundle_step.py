@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import MagicMock, patch
 
 from trellis.bundler.steps import SSRBundleBuildStep
@@ -34,7 +35,7 @@ class TestSSRBundleBuildStep:
             mock_mf.return_value = "/fake/meta.json"
             mock_read_mf.return_value = MagicMock(inputs=set(), outputs=set())
 
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
             cmd = ctx.exec_in_build_env.call_args[0][0]
             assert "--platform=node" in cmd
@@ -65,7 +66,7 @@ class TestSSRBundleBuildStep:
             mock_mf.return_value = "/fake/meta.json"
             mock_read_mf.return_value = MagicMock(inputs=set(), outputs=set())
 
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
             cmd = ctx.exec_in_build_env.call_args[0][0]
             assert any("--entry-names=ssr" in arg for arg in cmd)

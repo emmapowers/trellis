@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -35,6 +36,9 @@ def _mock_ssr_run(
     """Run step with standard mocking, returning (mock_app, mock_renderer, mock_apploader)."""
     mock_app = app or MagicMock()
     mock_renderer = MagicMock()
+    mock_renderer.start = AsyncMock()
+    mock_renderer.stop = AsyncMock()
+    mock_renderer.render = AsyncMock()
     if render_side_effect:
         mock_renderer.render.side_effect = render_side_effect
     else:
@@ -68,7 +72,7 @@ def _mock_ssr_run(
         ),
         patch("trellis.platforms.server.ssr_renderer.SSRRenderer", return_value=mock_renderer),
     ):
-        step.run(build_ctx)
+        asyncio.run(step.run(build_ctx))
 
     return mock_app, mock_renderer, mock_apploader
 
@@ -81,7 +85,7 @@ class TestSSRPreRenderStep:
 
     def test_skips_when_no_ssr_bundle(self, step: SSRPreRenderStep, build_ctx: MagicMock) -> None:
         """When ssr.js doesn't exist in dist_dir, logs warning and returns."""
-        step.run(build_ctx)
+        asyncio.run(step.run(build_ctx))
         assert "ssr_enabled" not in build_ctx.template_context
 
     def test_renders_once(self, step: SSRPreRenderStep, build_ctx: MagicMock) -> None:
@@ -111,7 +115,9 @@ class TestSSRPreRenderStep:
         (build_ctx.dist_dir / "ssr.js").touch()
 
         mock_renderer = MagicMock()
-        mock_renderer.render.side_effect = RuntimeError("render failed")
+        mock_renderer.start = AsyncMock()
+        mock_renderer.stop = AsyncMock()
+        mock_renderer.render = AsyncMock(side_effect=RuntimeError("render failed"))
         mock_session = MagicMock()
         mock_session.root_element = MagicMock()
 
@@ -140,7 +146,7 @@ class TestSSRPreRenderStep:
             ),
             pytest.raises(RuntimeError, match="render failed"),
         ):
-            step.run(build_ctx)
+            asyncio.run(step.run(build_ctx))
 
         mock_renderer.stop.assert_called_once()
 

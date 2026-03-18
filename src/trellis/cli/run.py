@@ -87,8 +87,6 @@ def run(
 
         click.echo(f"Running {config.name} on {config.platform.value}...")
 
-        apploader.bundle()
-
         app = apploader.app
         assert app is not None
 
@@ -100,4 +98,8 @@ def run(
         def app_wrapper(_component: Any, system_theme: str, theme_mode: str | None) -> Any:
             return app.get_wrapped_top(system_theme, theme_mode)
 
-        asyncio.run(apploader.platform.run(app.top, app_wrapper, **run_kwargs))
+        async def _bundle_and_run() -> None:
+            await apploader.bundle()
+            await apploader.platform.run(app.top, app_wrapper, **run_kwargs)
+
+        asyncio.run(_bundle_and_run())

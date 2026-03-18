@@ -50,7 +50,7 @@ def register_spa_fallback(app: FastAPI) -> None:
         """Return SPA HTML for document 404s to support client-side routing."""
         if not _is_document_request(request):
             return HTMLResponse(content="Not Found", status_code=404)
-        return _ssr_or_static_response(request)
+        return await _ssr_or_static_response(request)
 
 
 def _get_ssr_orchestrator(request: Request) -> SSROrchestrator | None:
@@ -58,12 +58,12 @@ def _get_ssr_orchestrator(request: Request) -> SSROrchestrator | None:
     return getattr(request.app.state, "trellis_ssr", None)
 
 
-def _ssr_or_static_response(request: Request) -> HTMLResponse:
+async def _ssr_or_static_response(request: Request) -> HTMLResponse:
     """Return SSR-rendered HTML if available, otherwise static HTML."""
     ssr = _get_ssr_orchestrator(request)
     if ssr is not None:
         try:
-            html = ssr.render_to_response(
+            html = await ssr.render_to_response(
                 path=request.url.path,
                 html_template=get_index_html(),
             )
@@ -89,7 +89,7 @@ def get_index_html() -> str:
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> HTMLResponse:
     """Serve the main HTML page."""
-    return _ssr_or_static_response(request)
+    return await _ssr_or_static_response(request)
 
 
 def create_static_dir() -> Path:
