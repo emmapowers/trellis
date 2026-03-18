@@ -281,8 +281,6 @@ class MessageHandler:
     _root_component: Component
     _app_wrapper: AppWrapper
     _session_store: SessionStore | None
-    _background_tasks: set[asyncio.Task[tp.Any]]
-    _render_task: asyncio.Task[None] | None
 
     def __init__(
         self,
@@ -306,8 +304,6 @@ class MessageHandler:
         self.batch_delay = batch_delay
         self.message_send_queue = asyncio.Queue()
         self._session_store = session_store
-        self._background_tasks = set()
-        self._render_task = None
 
     async def handle_hello(self) -> str:
         """Handle hello handshake with client.
