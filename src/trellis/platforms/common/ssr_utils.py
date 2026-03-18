@@ -1,7 +1,7 @@
 """Shared SSR utilities for building dehydration data.
 
-Used by both the server platform (runtime SSR per-request) and the desktop
-platform (build-time SSR).
+Used by all platforms: server (runtime SSR per-request), desktop and browser
+(build-time SSR pre-rendering).
 """
 
 from __future__ import annotations
@@ -53,7 +53,8 @@ def build_dehydration_data(
     data_json = json.dumps(data)
     result = data_json[:-1] + f', "{_PATCHES_KEY}": {patches_json}' + "}"
 
-    # Escape characters that could break inline <script> embedding:
-    # - </script> injection via < becoming \u003c
-    # - JS line terminators that break string literals
+    # Escape for safe embedding inside <script> tags (OWASP recommendation):
+    # - All "<" → \u003c prevents </script> from closing the tag early
+    # - U+2028/U+2029 are JS line terminators that break string literals
+    # This is the standard approach used by Next.js, Remix, etc.
     return result.replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")

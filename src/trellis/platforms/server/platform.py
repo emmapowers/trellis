@@ -14,7 +14,6 @@ if TYPE_CHECKING:
     from trellis.app.config import Config
     from trellis.core.rendering.element import Element
     from trellis.platforms.common.handler import AppWrapper
-    from trellis.platforms.server.session_store import SessionStore
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -36,6 +35,9 @@ from trellis.platforms.server.handler import router as ws_router
 from trellis.platforms.server.middleware import RequestLoggingMiddleware
 from trellis.platforms.server.routes import create_static_dir, register_spa_fallback
 from trellis.platforms.server.routes import router as http_router
+from trellis.platforms.server.session_store import SessionStore
+from trellis.platforms.server.ssr import SSROrchestrator
+from trellis.platforms.server.ssr_renderer import SSRRenderer
 from trellis.utils.hot_reload import get_or_create_hot_reload
 
 logger = logging.getLogger(__name__)
@@ -54,6 +56,49 @@ def _print_startup_banner(host: str, port: int) -> None:
     _console.print()
     _console.print("  [dim]Press[/dim] [bold]Ctrl+C[/bold] [dim]to stop[/dim]")
     _console.print()
+
+
+def _setup_ssr(
+    app: FastAPI,
+    *,
+    root_component: Any,
+    app_wrapper: Any,
+    static_dir: Path | None,
+    session_ttl: int,
+    ssr_enabled: bool,
+    hot_reload: bool,
+) -> tuple[SessionStore, SSRRenderer | None]:
+    """Set up SSR infrastructure: session store, renderer, and orchestrator."""
+    ssr_renderer: SSRRenderer | None = None
+    session_store = SessionStore(ttl_seconds=session_ttl)
+    app.state.trellis_session_store = session_store
+
+    if ssr_enabled:
+        static = static_dir or create_static_dir()
+        ssr_bundle = static / "ssr.js"
+        if ssr_bundle.exists():
+            ssr_renderer = SSRRenderer(ssr_bundle)
+            try:
+                ssr_renderer.start()
+            except Exception:
+                logger.warning("SSR renderer failed to start, falling back to CSR")
+                ssr_renderer = None
+
+        orchestrator = SSROrchestrator(
+            root_component=root_component,
+            app_wrapper=app_wrapper,
+            session_store=session_store,
+            ssr_renderer=ssr_renderer,
+        )
+        app.state.trellis_ssr = orchestrator
+
+        if hot_reload:
+            hr = get_or_create_hot_reload()
+            hr.add_on_reload_callback(orchestrator.invalidate_cache)
+    else:
+        app.state.trellis_ssr = None
+
+    return session_store, ssr_renderer
 
 
 class ServerPlatform(Platform):
@@ -128,10 +173,6 @@ class ServerPlatform(Platform):
             ssr: Enable server-side rendering (default True)
             session_ttl: Session time-to-live in seconds (default 300)
         """
-        from trellis.platforms.server.session_store import SessionStore  # noqa: PLC0415
-        from trellis.platforms.server.ssr import SSROrchestrator  # noqa: PLC0415
-        from trellis.platforms.server.ssr_renderer import SSRRenderer  # noqa: PLC0415
-
         # Start hot reload if enabled
         if hot_reload:
             hr = get_or_create_hot_reload(asyncio.get_running_loop())
@@ -152,36 +193,15 @@ class ServerPlatform(Platform):
         app.state.trellis_app_wrapper = app_wrapper
         app.state.trellis_batch_delay = batch_delay
 
-        # Set up SSR infrastructure
-        ssr_renderer: SSRRenderer | None = None
-        session_store = SessionStore(ttl_seconds=session_ttl)
-        app.state.trellis_session_store = session_store
-
-        if ssr:
-            static = static_dir or create_static_dir()
-            ssr_bundle = static / "ssr.js"
-            if ssr_bundle.exists():
-                ssr_renderer = SSRRenderer(ssr_bundle)
-                try:
-                    ssr_renderer.start()
-                except Exception:
-                    logger.warning("SSR renderer failed to start, falling back to CSR")
-                    ssr_renderer = None
-
-            ssr_orchestrator = SSROrchestrator(
-                root_component=root_component,
-                app_wrapper=app_wrapper,
-                session_store=session_store,
-                ssr_renderer=ssr_renderer,
-            )
-            app.state.trellis_ssr = ssr_orchestrator
-
-            # Register SSR cache invalidation with hot reload
-            if hot_reload:
-                hr = get_or_create_hot_reload()
-                hr.add_on_reload_callback(ssr_orchestrator.invalidate_cache)
-        else:
-            app.state.trellis_ssr = None
+        session_store, ssr_renderer = _setup_ssr(
+            app,
+            root_component=root_component,
+            app_wrapper=app_wrapper,
+            static_dir=static_dir,
+            session_ttl=session_ttl,
+            ssr_enabled=ssr,
+            hot_reload=hot_reload,
+        )
 
         # Periodic cleanup of expired sessions
         cleanup_task = asyncio.create_task(

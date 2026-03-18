@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 from trellis.app.apploader import get_app_root, get_dist_dir
 from trellis.bundler import (
     BuildConfig,
+    BuildStep,
     BundleBuildStep,
     DeclarationStep,
     IconAssetStep,
@@ -111,22 +112,31 @@ class BrowserServePlatform(Platform):
 
         # App mode
         template_path = client_src / "index.html.j2"
-        return BuildConfig(
-            entry_point=client_src / "main.tsx",
-            steps=[
-                PackageInstallStep(),
-                RegistryGenerationStep(),
-                WheelBuildStep(app_root),
-                DependencyResolveStep(),
-                WheelBundleStep(config_json=config.to_json()),
-                PyodideWorkerBuildStep(),
-                BundleBuildStep(output_name="bundle"),
-                SSRBundleBuildStep(),
+        steps: list[BuildStep] = [
+            PackageInstallStep(),
+            RegistryGenerationStep(),
+            WheelBuildStep(app_root),
+            DependencyResolveStep(),
+            WheelBundleStep(config_json=config.to_json()),
+            PyodideWorkerBuildStep(),
+            BundleBuildStep(output_name="bundle"),
+        ]
+        if config.ssr:
+            steps.append(SSRBundleBuildStep())
+        steps.extend(
+            [
                 StaticFileCopyStep(),
                 IconAssetStep(icon_path=config.icon),
-                SSRPreRenderStep(),
-                IndexHtmlRenderStep(template_path, {"title": config.title, "routing_mode": "hash"}),
-            ],
+            ]
+        )
+        if config.ssr:
+            steps.append(SSRPreRenderStep())
+        steps.append(
+            IndexHtmlRenderStep(template_path, {"title": config.title, "routing_mode": "hash"}),
+        )
+        return BuildConfig(
+            entry_point=client_src / "main.tsx",
+            steps=steps,
         )
 
     async def run(

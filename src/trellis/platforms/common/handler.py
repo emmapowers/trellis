@@ -281,6 +281,7 @@ class MessageHandler:
     _root_component: Component
     _app_wrapper: AppWrapper
     _session_store: SessionStore | None
+    _ssr_resumed: bool
 
     def __init__(
         self,
@@ -304,6 +305,7 @@ class MessageHandler:
         self.batch_delay = batch_delay
         self.message_send_queue = asyncio.Queue()
         self._session_store = session_store
+        self._ssr_resumed = False
 
     async def handle_hello(self) -> str:
         """Handle hello handshake with client.
@@ -325,33 +327,8 @@ class MessageHandler:
 
         logger.debug("Hello from client_id=%s path=%s", msg.client_id, msg.path)
 
-        # Try to resume an SSR session
-        resumed = False
-        if msg.session_id and self._session_store:
-            entry = self._session_store.pop(msg.session_id)
-            if entry is not None:
-                self.session = entry.session
-                self.session_id = msg.session_id
-                get_session_registry().register(self.session)
-                set_render_session(self.session)
-                # Set up router before deferred hooks — mount callbacks may navigate
-                self._setup_router_callbacks()
-                execute_deferred_hooks(self.session, entry.deferred_mounts, entry.deferred_unmounts)
-                resumed = True
-                logger.debug("Resumed SSR session: session_id=%s", self.session_id)
-
-        if not resumed:
-            # Create a new session
-            wrapped = self._app_wrapper(
-                self._root_component,
-                msg.system_theme,  # "light" or "dark"
-                msg.theme_mode,  # "system", "light", "dark", or None
-            )
-            self.session = RenderSession(wrapped)
-            get_session_registry().register(self.session)
-            set_render_session(self.session)
-            self.session_id = str(uuid4())
-            self.session.initial_path = msg.path
+        if not self._try_resume_session(msg):
+            self._create_session(msg)
 
         # Include debug config if debug logging is enabled
         debug_categories = get_enabled_categories()
@@ -367,32 +344,57 @@ class MessageHandler:
         logger.debug("Session initialized: session_id=%s", self.session_id)
         return self.session_id
 
+    def _try_resume_session(self, msg: HelloMessage) -> bool:
+        """Try to resume an SSR session from the session store.
+
+        Returns True if a session was successfully resumed.
+        """
+        if not msg.session_id or not self._session_store:
+            return False
+
+        entry = self._session_store.pop(msg.session_id)
+        if entry is None:
+            return False
+
+        self.session = entry.session
+        self.session_id = msg.session_id
+        self._ssr_resumed = True
+        get_session_registry().register(self.session)
+        set_render_session(self.session)
+        # Set up router before deferred hooks — mount callbacks may navigate
+        self._setup_router_callbacks()
+        execute_deferred_hooks(self.session, entry.deferred_mounts, entry.deferred_unmounts)
+        logger.debug("Resumed SSR session: session_id=%s", self.session_id)
+        return True
+
+    def _create_session(self, msg: HelloMessage) -> None:
+        """Create a new session from a HelloMessage."""
+        wrapped = self._app_wrapper(
+            self._root_component,
+            msg.system_theme,
+            msg.theme_mode,
+        )
+        self.session = RenderSession(wrapped)
+        get_session_registry().register(self.session)
+        set_render_session(self.session)
+        self.session_id = str(uuid4())
+        self.session.initial_path = msg.path
+
     def initial_render(self) -> Message:
-        """Generate initial render message.
-
-        If the session was already rendered by SSR (root_element_id is set),
-        skips rendering and returns empty patches. Otherwise performs a full
-        initial render. Sets up router callbacks in both cases.
-
+        """Render the initial tree and return a PatchMessage.
 
         Returns:
             PatchMessage on success, ErrorMessage on exception
         """
         assert self.session is not None, "handle_hello must be called before initial_render"
         try:
-            if self.session.root_element_id is not None:
-                # Already rendered by SSR — skip render, just set up router
-                logger.debug("Skipping initial render (SSR session)")
-                self._setup_router_callbacks()
-                return PatchMessage(patches=[])
-
             render_patches = render(self.session)
             wire_patches = _serialize_patches(render_patches, self.session)
             element_count = len(self.session.elements)
             logger.debug(
                 "Initial render complete, sending PatchMessage (%d elements)", element_count
             )
-
+            self._setup_router_callbacks()
             return PatchMessage(patches=wire_patches)
         except Exception as e:
             logger.exception(f"Error during initial render: {e}")
@@ -682,7 +684,11 @@ class MessageHandler:
         try:
             set_message_handler(self)
             await self.handle_hello()
-            await self.send_message(self.initial_render())
+            if self._ssr_resumed:
+                # SSR session already rendered — send empty patches
+                await self.send_message(PatchMessage(patches=[]))
+            else:
+                await self.send_message(self.initial_render())
             assert self.session is not None
 
             critical_tasks = {

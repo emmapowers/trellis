@@ -1,5 +1,10 @@
 /**
- * Bun SSR worker entry point.
+ * Bun SSR worker entry point — NOT shipped to the client.
+ *
+ * This is bundled separately by SSRBundleBuildStep with --platform=node,
+ * producing ssr.js which runs in a Bun subprocess. The client bundle
+ * (bundle.js) is built by BundleBuildStep with --platform=browser and
+ * does not include this file.
  *
  * Starts a Bun HTTP server on a Unix socket that accepts serialized element
  * trees and returns rendered HTML using React's renderToString.

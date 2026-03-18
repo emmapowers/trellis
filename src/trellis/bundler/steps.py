@@ -726,10 +726,12 @@ class IndexHtmlRenderStep(BuildStep):
 
 
 class SSRBundleBuildStep(BuildStep):
-    """Run esbuild to create the SSR bundle for server-side rendering.
+    """Build the SSR bundle used by the Bun sidecar to render React to HTML.
 
-    Builds a Node-targeted ESM bundle from the SSR entry point.
-    Unlike BundleBuildStep, uses --platform=node and --target=esnext.
+    Produces a Node-targeted ESM bundle (--platform=node) from ssr-entry.tsx.
+    This bundle is NOT shipped to the client — it runs server-side in a Bun
+    subprocess that accepts serialized element trees via HTTP and returns
+    rendered HTML using React's renderToString.
     """
 
     def __init__(self, *, output_name: str = "ssr") -> None:
@@ -849,8 +851,13 @@ class SSRPreRenderStep(BuildStep):
 
             assert session.root_element is not None
             tree = serialize_element(session.root_element, session)
-            ctx.template_context["ssr_html"] = renderer.render(tree) or ""
-            ctx.template_context["ssr_data"] = build_dehydration_data(None, wire_patches)
-            ctx.template_context["ssr_enabled"] = True
+            ssr_html = renderer.render(tree) or ""
+
+            if ssr_html:
+                ctx.template_context["ssr_html"] = ssr_html
+                ctx.template_context["ssr_data"] = build_dehydration_data(None, wire_patches)
+                ctx.template_context["ssr_enabled"] = True
+            else:
+                logger.warning("SSR renderer returned empty HTML, skipping SSR")
         finally:
             renderer.stop()
