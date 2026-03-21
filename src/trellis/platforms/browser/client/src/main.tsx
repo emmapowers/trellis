@@ -9,33 +9,19 @@
  * becomes interactive without a flash of empty content.
  */
 
-// Initialize widget registry before any rendering
-import { initRegistry } from "@trellis/_registry";
-initRegistry();
+import "@trellis/trellis-core/init";
 
-import "@trellis/trellis-core/theme.css"; // Theme CSS variables
-import "@trellis/trellis-core/console"; // Set up console filtering
 import React from "react";
-import { createRoot, hydrateRoot } from "react-dom/client";
 import { TrellisApp, RoutingMode } from "@trellis/trellis-browser/client/src/TrellisApp";
-import { store } from "@trellis/trellis-core/core";
-import type { Patch } from "@trellis/trellis-core/types";
-
-interface TrellisSSRData {
-  serverVersion: string;
-  patches: Patch[];
-}
+import { ssrData, mountApp } from "@trellis/trellis-core/ssr";
 
 declare global {
   interface Window {
     __TRELLIS_CONFIG__?: {
       routingMode?: string;
     };
-    __TRELLIS_SSR__?: TrellisSSRData;
   }
 }
-
-const ssrData = window.__TRELLIS_SSR__;
 
 function App() {
   const config = window.__TRELLIS_CONFIG__;
@@ -59,23 +45,9 @@ function App() {
     );
   }
 
-  // Parse routing mode from config string
   const routingMode = config.routingMode as RoutingMode | undefined;
 
-  return (
-    <TrellisApp routingMode={routingMode} hydrated={!!ssrData} />
-  );
+  return <TrellisApp routingMode={routingMode} hydrated={!!ssrData} />;
 }
 
-const container = document.getElementById("root")!;
-
-if (ssrData) {
-  // SSR path: pre-populate the store with build-time patches,
-  // then hydrate the existing DOM.
-  store.applyPatches(ssrData.patches);
-  hydrateRoot(container, <App />);
-} else {
-  // CSR path: create a fresh root.
-  const root = createRoot(container);
-  root.render(<App />);
-}
+mountApp(document.getElementById("root")!, <App />);
