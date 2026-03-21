@@ -68,10 +68,10 @@
     → ✅ **Fixed** — Removed theme detection, params, and cache dimension. Cache keyed by route only.
 
 22. **`subprocess.py:110`** (emma) — Make `stop_child_process` async.
-    → **Open** — Use `asyncio.create_subprocess_exec` for native async.
+    → ✅ **Fixed** — Added `start_child_process_async()`/`stop_child_process_async()` using `asyncio.create_subprocess_exec`.
 
 23. **`ssr_renderer.py:28`** (emma) — Make SSRRenderer fully async.
-    → **Open** — `httpx.AsyncClient` + `asyncio.create_subprocess_exec`. Related to #22.
+    → ✅ **Fixed** — Full async rewrite: `httpx.AsyncClient`, `asyncio.create_subprocess_exec`, `asyncio.Lock`. Build pipeline (`BuildStep.run()`, `build()`, `AppLoader.bundle()`) made async too.
 
 ## Already resolved
 
