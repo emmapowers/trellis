@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from types import ModuleType
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -714,8 +715,8 @@ class TestAppLoaderBundle:
         apploader.load_config()
         set_apploader(apploader)
 
-        with patch("trellis.bundler.build") as mock_build:
-            apploader.bundle()
+        with patch("trellis.bundler.build", new_callable=AsyncMock) as mock_build:
+            asyncio.run(apploader.bundle())
 
         mock_build.assert_called_once()
         kwargs = mock_build.call_args.kwargs
@@ -735,8 +736,8 @@ class TestAppLoaderBundle:
         set_apploader(apploader)
 
         custom_dest = tmp_path / "custom_output"
-        with patch("trellis.bundler.build") as mock_build:
-            apploader.bundle(dest=custom_dest)
+        with patch("trellis.bundler.build", new_callable=AsyncMock) as mock_build:
+            asyncio.run(apploader.bundle(dest=custom_dest))
 
         assert mock_build.call_args.kwargs["output_dir"] == custom_dest
 
@@ -755,8 +756,8 @@ class TestAppLoaderBundle:
         apploader.load_config()
         set_apploader(apploader)
 
-        with patch("trellis.bundler.build") as mock_build:
-            apploader.bundle()
+        with patch("trellis.bundler.build", new_callable=AsyncMock) as mock_build:
+            asyncio.run(apploader.bundle())
 
         assert mock_build.call_args.kwargs["force"] is True
 
@@ -765,7 +766,7 @@ class TestAppLoaderBundle:
         apploader = AppLoader(tmp_path)
 
         with pytest.raises(RuntimeError, match="Config not loaded"):
-            apploader.bundle()
+            asyncio.run(apploader.bundle())
 
     def test_returns_workspace_path(
         self,
@@ -777,8 +778,8 @@ class TestAppLoaderBundle:
         apploader.load_config()
         set_apploader(apploader)
 
-        with patch("trellis.bundler.build"):
-            result = apploader.bundle()
+        with patch("trellis.bundler.build", new_callable=AsyncMock):
+            result = asyncio.run(apploader.bundle())
 
         assert result == app_root / ".workspace"
 

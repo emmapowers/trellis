@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -25,6 +26,7 @@ from trellis.bundler import (
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
+    SSRBundleBuildStep,
     StaticFileCopyStep,
 )
 from trellis.platforms.common import find_available_port
@@ -33,7 +35,12 @@ from trellis.platforms.server.handler import router as ws_router
 from trellis.platforms.server.middleware import RequestLoggingMiddleware
 from trellis.platforms.server.routes import create_static_dir, register_spa_fallback
 from trellis.platforms.server.routes import router as http_router
+from trellis.platforms.server.session_store import SessionStore
+from trellis.platforms.server.ssr import SSROrchestrator
+from trellis.platforms.server.ssr_renderer import SSRRenderer
 from trellis.utils.hot_reload import get_or_create_hot_reload
+
+logger = logging.getLogger(__name__)
 
 _console = Console()
 
@@ -49,6 +56,49 @@ def _print_startup_banner(host: str, port: int) -> None:
     _console.print()
     _console.print("  [dim]Press[/dim] [bold]Ctrl+C[/bold] [dim]to stop[/dim]")
     _console.print()
+
+
+async def _setup_ssr(
+    app: FastAPI,
+    *,
+    root_component: Any,
+    app_wrapper: Any,
+    static_dir: Path | None,
+    session_ttl: int,
+    ssr_enabled: bool,
+    hot_reload: bool,
+) -> tuple[SessionStore, SSRRenderer | None]:
+    """Set up SSR infrastructure: session store, renderer, and orchestrator."""
+    ssr_renderer: SSRRenderer | None = None
+    session_store = SessionStore(ttl_seconds=session_ttl)
+    app.state.trellis_session_store = session_store
+
+    if ssr_enabled:
+        static = static_dir or create_static_dir()
+        ssr_bundle = static / "ssr.js"
+        if ssr_bundle.exists():
+            ssr_renderer = SSRRenderer(ssr_bundle)
+            try:
+                await ssr_renderer.start()
+            except Exception:
+                logger.warning("SSR renderer failed to start, falling back to CSR")
+                ssr_renderer = None
+
+        orchestrator = SSROrchestrator(
+            root_component=root_component,
+            app_wrapper=app_wrapper,
+            session_store=session_store,
+            ssr_renderer=ssr_renderer,
+        )
+        app.state.trellis_ssr = orchestrator
+
+        if hot_reload:
+            hr = get_or_create_hot_reload()
+            hr.add_on_reload_callback(orchestrator.invalidate_cache)
+    else:
+        app.state.trellis_ssr = None
+
+    return session_store, ssr_renderer
 
 
 class ServerPlatform(Platform):
@@ -72,18 +122,28 @@ class ServerPlatform(Platform):
         """
         entry_point = Path(__file__).parent / "client" / "src" / "main.tsx"
         template_path = Path(__file__).parent / "client" / "src" / "index.html.j2"
-        return BuildConfig(
-            entry_point=entry_point,
-            steps=[
-                PackageInstallStep(),
-                RegistryGenerationStep(),
-                BundleBuildStep(output_name="bundle"),
+        ssr_enabled = config.ssr
+
+        steps = [
+            PackageInstallStep(),
+            RegistryGenerationStep(),
+            BundleBuildStep(output_name="bundle"),
+        ]
+        if ssr_enabled:
+            steps.append(SSRBundleBuildStep())
+        steps.extend(
+            [
                 StaticFileCopyStep(),
                 IconAssetStep(icon_path=config.icon),
                 IndexHtmlRenderStep(
                     template_path, {"title": config.title, "static_path": "/static"}
                 ),
-            ],
+            ]
+        )
+
+        return BuildConfig(
+            entry_point=entry_point,
+            steps=steps,
         )
 
     async def run(
@@ -96,6 +156,8 @@ class ServerPlatform(Platform):
         static_dir: Path | None = None,
         batch_delay: float = 1.0 / 30,
         hot_reload: bool = True,
+        ssr: bool = True,
+        session_ttl: int = 300,
         **_kwargs: Any,  # Ignore other platform args
     ) -> None:
         """Start FastAPI server with WebSocket support.
@@ -108,6 +170,8 @@ class ServerPlatform(Platform):
             static_dir: Custom static files directory
             batch_delay: Time between render frames in seconds (default ~33ms for 30fps)
             hot_reload: Enable hot reload (default True)
+            ssr: Enable server-side rendering (default True)
+            session_ttl: Session time-to-live in seconds (default 300)
         """
         # Start hot reload if enabled
         if hot_reload:
@@ -128,6 +192,21 @@ class ServerPlatform(Platform):
         app.state.trellis_top_component = root_component
         app.state.trellis_app_wrapper = app_wrapper
         app.state.trellis_batch_delay = batch_delay
+
+        session_store, ssr_renderer = await _setup_ssr(
+            app,
+            root_component=root_component,
+            app_wrapper=app_wrapper,
+            static_dir=static_dir,
+            session_ttl=session_ttl,
+            ssr_enabled=ssr,
+            hot_reload=hot_reload,
+        )
+
+        # Periodic cleanup of expired sessions
+        cleanup_task = asyncio.create_task(
+            _session_cleanup_loop(session_store, interval=session_ttl)
+        )
 
         # Set up static file serving
         static = static_dir or create_static_dir()
@@ -151,4 +230,16 @@ class ServerPlatform(Platform):
             log_level="warning",  # Suppress uvicorn's info messages
         )
         server = uvicorn.Server(config)
-        await server.serve()
+        try:
+            await server.serve()
+        finally:
+            cleanup_task.cancel()
+            if ssr_renderer is not None:
+                await ssr_renderer.stop()
+
+
+async def _session_cleanup_loop(store: SessionStore, interval: float) -> None:
+    """Periodically remove expired sessions from the store."""
+    while True:
+        await asyncio.sleep(interval)
+        store.cleanup_expired()

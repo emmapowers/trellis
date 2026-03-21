@@ -53,6 +53,7 @@ export interface HelloMessage {
   system_theme: "light" | "dark"; // Detected from OS preference
   theme_mode?: "system" | "light" | "dark"; // Host-controlled theme mode override
   path?: string;
+  session_id?: string; // Set when resuming an SSR session
 }
 
 /** Debug configuration from the server. */

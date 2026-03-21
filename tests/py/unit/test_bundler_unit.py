@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -252,7 +253,7 @@ class TestIndexHtmlRenderStep:
         )
 
         step = IndexHtmlRenderStep(template, context={"custom_var": "hello"})
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         output = (ctx.dist_dir / "index.html").read_text()
         assert 'source={"type": "code"}' in output
@@ -270,7 +271,7 @@ class TestIndexHtmlRenderStep:
 
         # Constructor context should override
         step = IndexHtmlRenderStep(template, context={"shared_key": "from_constructor"})
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         output = (ctx.dist_dir / "index.html").read_text()
         assert "value=from_constructor" in output
@@ -282,7 +283,7 @@ class TestIndexHtmlRenderStep:
 
         ctx = self._make_context(tmp_path)
         step = IndexHtmlRenderStep(template)
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         output = (ctx.dist_dir / "index.html").read_text()
         assert "static content" in output

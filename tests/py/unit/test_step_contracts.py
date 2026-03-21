@@ -6,6 +6,7 @@ and the should_build() logic for determining when steps need to run.
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -77,7 +78,7 @@ class TestPackageInstallStepContract:
         ctx = make_context(packages={"react": "18.2.0", "lodash": "4.17.21"})
         step = PackageInstallStep()
 
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         step_manifest = ctx.manifest.steps["package-install"]
         assert step_manifest.metadata["packages"] == {
@@ -93,7 +94,7 @@ class TestPackageInstallStepContract:
         ctx = make_context(packages={"react": "18.2.0"})
         step = PackageInstallStep()
 
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         mock_ensure.assert_called_once_with({"react": "18.2.0"}, ctx.workspace)
 
@@ -160,7 +161,7 @@ class TestRegistryGenerationStepContract:
         ctx = make_context()
         step = RegistryGenerationStep()
 
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         assert ctx.generated_files["_registry"] == registry_path
 
@@ -174,7 +175,7 @@ class TestRegistryGenerationStepContract:
         ctx = make_context()
         step = RegistryGenerationStep()
 
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         assert f"--alias:@trellis/_registry={registry_path}" in ctx.esbuild_args
 
@@ -188,7 +189,7 @@ class TestRegistryGenerationStepContract:
         ctx = make_context()
         step = RegistryGenerationStep()
 
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         step_manifest = ctx.manifest.steps["registry-generation"]
         assert "collected_hash" in step_manifest.metadata
@@ -252,7 +253,7 @@ class TestTsconfigStepContract:
         ctx = make_context()
         step = TsconfigStep()
 
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         assert ctx.generated_files["tsconfig"] == ctx.workspace / "tsconfig.json"
 
@@ -261,7 +262,7 @@ class TestTsconfigStepContract:
         ctx = make_context()
         step = TsconfigStep()
 
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         tsconfig_path = ctx.workspace / "tsconfig.json"
         assert tsconfig_path.exists()
@@ -271,7 +272,7 @@ class TestTsconfigStepContract:
         ctx = make_context()
         step = TsconfigStep()
 
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         step_manifest = ctx.manifest.steps["tsconfig"]
         assert "inputs_hash" in step_manifest.metadata
@@ -284,7 +285,7 @@ class TestTsconfigStepContract:
         ctx.generated_files["_registry"] = registry_path
         step = TsconfigStep()
 
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         tsconfig = json.loads((ctx.workspace / "tsconfig.json").read_text())
         assert "@trellis/_registry" in tsconfig["compilerOptions"]["paths"]
@@ -346,7 +347,7 @@ class TestIndexHtmlRenderStepContract:
         ctx = make_context()
         step = IndexHtmlRenderStep(template_path)
 
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         output_path = ctx.dist_dir / "index.html"
         assert output_path.exists()
@@ -360,7 +361,7 @@ class TestIndexHtmlRenderStepContract:
         ctx.template_context["message"] = "Hello from context"
         step = IndexHtmlRenderStep(template_path)
 
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         output = (ctx.dist_dir / "index.html").read_text()
         assert "Hello from context" in output
@@ -375,7 +376,7 @@ class TestIndexHtmlRenderStepContract:
         ctx.template_context["message"] = "From template_context"
         step = IndexHtmlRenderStep(template_path, context={"message": "From constructor"})
 
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         output = (ctx.dist_dir / "index.html").read_text()
         assert "From constructor" in output
@@ -387,7 +388,7 @@ class TestIndexHtmlRenderStepContract:
         ctx = make_context()
         step = IndexHtmlRenderStep(template_path)
 
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         step_manifest = ctx.manifest.steps["index-html-render"]
         assert "context_hash" in step_manifest.metadata

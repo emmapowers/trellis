@@ -110,6 +110,8 @@ class DesktopPlatform(Platform):
             IndexHtmlRenderStep,
             PackageInstallStep,
             RegistryGenerationStep,
+            SSRBundleBuildStep,
+            SSRPreRenderStep,
             StaticFileCopyStep,
         )
 
@@ -121,8 +123,10 @@ class DesktopPlatform(Platform):
                 PackageInstallStep(),
                 RegistryGenerationStep(),
                 BundleBuildStep(output_name="bundle"),
+                SSRBundleBuildStep(),
                 StaticFileCopyStep(),
                 IconAssetStep(icon_path=config.icon, include_icns=sys.platform == "darwin"),
+                SSRPreRenderStep(),
                 IndexHtmlRenderStep(template_path, {"title": config.title}),
             ],
         )

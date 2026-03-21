@@ -1,21 +1,11 @@
 /** Main entry point for Trellis desktop client. */
 
-// Polyfill for Symbol.dispose (Explicit Resource Management)
-// Required by @tauri-apps/api but not yet supported in all WebKit versions
-(Symbol as any).dispose ??= Symbol("Symbol.dispose");
-(Symbol as any).asyncDispose ??= Symbol("Symbol.asyncDispose");
+import "@trellis/trellis-core/init";
 
-// Initialize widget registry before any rendering
-import { initRegistry } from "@trellis/_registry";
-initRegistry();
-
-import "@trellis/trellis-core/theme.css"; // Theme CSS variables
-
-// Set up shared console (filtering, etc.) before other imports
+// Forward console messages to Python stdout
 import { addConsoleHandler } from "@trellis/trellis-core/console";
 import { pyInvoke } from "tauri-plugin-pytauri-api";
 
-// Forward console messages to Python stdout
 const stringify = (arg: unknown): string => {
   if (arg instanceof Error) {
     return `${arg.name}: ${arg.message}${arg.stack ? "\n" + arg.stack : ""}`;
@@ -37,58 +27,24 @@ addConsoleHandler((level, args) => {
   });
 });
 
-import React, { useEffect, useState, useMemo } from "react";
-import { createRoot } from "react-dom/client";
-import { DesktopClient, ConnectionState } from "@trellis/trellis-desktop/client/src/DesktopClient";
-import { TrellisRoot } from "@trellis/trellis-core/TrellisRoot";
+import React, { useCallback } from "react";
+import { DesktopClient } from "@trellis/trellis-desktop/client/src/DesktopClient";
+import { ClientApp } from "@trellis/trellis-core/ClientApp";
+import { mountApp } from "@trellis/trellis-core/ssr";
 import { installExternalLinkDelegation } from "./externalLinks";
 
 function App() {
-  const [connectionState, setConnectionState] =
-    useState<ConnectionState>("disconnected");
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [serverVersion, setServerVersion] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  // Create client once (stable reference for context)
-  const client = useMemo(
-    () =>
-      new DesktopClient({
-        onConnectionStateChange: setConnectionState,
-        onConnected: (response) => {
-          setSessionId(response.session_id);
-          setServerVersion(response.server_version);
-        },
-        onError: (errorMsg) => {
-          setError(errorMsg);
-        },
-      }),
+  const createClient = useCallback(
+    (onError: (error: string) => void) => new DesktopClient({ onError }),
     []
   );
 
-  useEffect(() => {
-    client.connect().catch((err) => {
-      console.error("Failed to connect:", err);
-    });
-
-    return () => client.disconnect();
-  }, [client]);
-
-  useEffect(() => {
-    return installExternalLinkDelegation();
-  }, []);
-
   return (
-    <TrellisRoot
-      client={client}
-      connectionState={connectionState}
-      error={error}
-      sessionId={sessionId}
-      serverVersion={serverVersion}
-      title="Trellis Desktop"
+    <ClientApp
+      createClient={createClient}
+      onMount={installExternalLinkDelegation}
     />
   );
 }
 
-const root = createRoot(document.getElementById("root")!);
-root.render(<App />);
+mountApp(document.getElementById("root")!, <App />);

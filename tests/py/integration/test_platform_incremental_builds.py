@@ -6,6 +6,7 @@ build step correctly detects when it needs to rebuild.
 
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
 from collections.abc import Callable
@@ -375,14 +376,16 @@ export const App = () => <div>Hello</div>;
         dist_dir = setup.workspace / "dist"
 
         # Initial force build
-        build(
-            registry=setup.registry,
-            entry_point=setup.entry_point,
-            workspace=setup.workspace,
-            steps=setup.steps,
-            assets_dir=setup.assets_dir,
-            output_dir=dist_dir,
-            force=True,
+        asyncio.run(
+            build(
+                registry=setup.registry,
+                entry_point=setup.entry_point,
+                workspace=setup.workspace,
+                steps=setup.steps,
+                assets_dir=setup.assets_dir,
+                output_dir=dist_dir,
+                force=True,
+            )
         )
 
         # Record state
@@ -392,14 +395,16 @@ export const App = () => <div>Hello</div>;
         apply_action(case.action, setup)
 
         # Incremental build
-        build(
-            registry=setup.registry,
-            entry_point=setup.entry_point,
-            workspace=setup.workspace,
-            steps=setup.steps,
-            assets_dir=setup.assets_dir,
-            output_dir=dist_dir,
-            force=False,
+        asyncio.run(
+            build(
+                registry=setup.registry,
+                entry_point=setup.entry_point,
+                workspace=setup.workspace,
+                steps=setup.steps,
+                assets_dir=setup.assets_dir,
+                output_dir=dist_dir,
+                force=False,
+            )
         )
 
         # Record state after build and detect which steps ran
@@ -516,14 +521,16 @@ export const App = () => <div>Hello Browser</div>;
         dist_dir = setup.workspace / "dist"
 
         # Initial force build
-        build(
-            registry=setup.registry,
-            entry_point=setup.entry_point,
-            workspace=setup.workspace,
-            steps=setup.steps,
-            assets_dir=setup.assets_dir,
-            output_dir=dist_dir,
-            force=True,
+        asyncio.run(
+            build(
+                registry=setup.registry,
+                entry_point=setup.entry_point,
+                workspace=setup.workspace,
+                steps=setup.steps,
+                assets_dir=setup.assets_dir,
+                output_dir=dist_dir,
+                force=True,
+            )
         )
 
         # Record state
@@ -533,14 +540,16 @@ export const App = () => <div>Hello Browser</div>;
         apply_action(case.action, setup)
 
         # Incremental build
-        build(
-            registry=setup.registry,
-            entry_point=setup.entry_point,
-            workspace=setup.workspace,
-            steps=setup.steps,
-            assets_dir=setup.assets_dir,
-            output_dir=dist_dir,
-            force=False,
+        asyncio.run(
+            build(
+                registry=setup.registry,
+                entry_point=setup.entry_point,
+                workspace=setup.workspace,
+                steps=setup.steps,
+                assets_dir=setup.assets_dir,
+                output_dir=dist_dir,
+                force=False,
+            )
         )
 
         # Record state after build and detect which steps ran
@@ -642,14 +651,16 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
         setup = declaration_build_setup
         dist_dir = setup.workspace / "dist"
 
-        build(
-            registry=setup.registry,
-            entry_point=setup.entry_point,
-            workspace=setup.workspace,
-            steps=setup.steps,
-            assets_dir=setup.assets_dir,
-            output_dir=dist_dir,
-            force=True,
+        asyncio.run(
+            build(
+                registry=setup.registry,
+                entry_point=setup.entry_point,
+                workspace=setup.workspace,
+                steps=setup.steps,
+                assets_dir=setup.assets_dir,
+                output_dir=dist_dir,
+                force=True,
+            )
         )
 
         # Verify declaration file was created
@@ -664,27 +675,31 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
         dist_dir = setup.workspace / "dist"
 
         # Initial build
-        build(
-            registry=setup.registry,
-            entry_point=setup.entry_point,
-            workspace=setup.workspace,
-            steps=setup.steps,
-            assets_dir=setup.assets_dir,
-            output_dir=dist_dir,
-            force=True,
+        asyncio.run(
+            build(
+                registry=setup.registry,
+                entry_point=setup.entry_point,
+                workspace=setup.workspace,
+                steps=setup.steps,
+                assets_dir=setup.assets_dir,
+                output_dir=dist_dir,
+                force=True,
+            )
         )
 
         before = record_step_states(setup.steps, setup.workspace, dist_dir)
 
         # Second build with no changes
-        build(
-            registry=setup.registry,
-            entry_point=setup.entry_point,
-            workspace=setup.workspace,
-            steps=setup.steps,
-            assets_dir=setup.assets_dir,
-            output_dir=dist_dir,
-            force=False,
+        asyncio.run(
+            build(
+                registry=setup.registry,
+                entry_point=setup.entry_point,
+                workspace=setup.workspace,
+                steps=setup.steps,
+                assets_dir=setup.assets_dir,
+                output_dir=dist_dir,
+                force=False,
+            )
         )
 
         after = record_step_states(setup.steps, setup.workspace, dist_dir)
@@ -700,14 +715,16 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
         dist_dir = setup.workspace / "dist"
 
         # Initial build
-        build(
-            registry=setup.registry,
-            entry_point=setup.entry_point,
-            workspace=setup.workspace,
-            steps=setup.steps,
-            assets_dir=setup.assets_dir,
-            output_dir=dist_dir,
-            force=True,
+        asyncio.run(
+            build(
+                registry=setup.registry,
+                entry_point=setup.entry_point,
+                workspace=setup.workspace,
+                steps=setup.steps,
+                assets_dir=setup.assets_dir,
+                output_dir=dist_dir,
+                force=True,
+            )
         )
 
         before = record_step_states(setup.steps, setup.workspace, dist_dir)
@@ -717,14 +734,16 @@ export const App = (props: AppProps) => <div>{props.title}</div>;
         setup.entry_point.touch()
 
         # Incremental build
-        build(
-            registry=setup.registry,
-            entry_point=setup.entry_point,
-            workspace=setup.workspace,
-            steps=setup.steps,
-            assets_dir=setup.assets_dir,
-            output_dir=dist_dir,
-            force=False,
+        asyncio.run(
+            build(
+                registry=setup.registry,
+                entry_point=setup.entry_point,
+                workspace=setup.workspace,
+                steps=setup.steps,
+                assets_dir=setup.assets_dir,
+                output_dir=dist_dir,
+                force=False,
+            )
         )
 
         after = record_step_states(setup.steps, setup.workspace, dist_dir)

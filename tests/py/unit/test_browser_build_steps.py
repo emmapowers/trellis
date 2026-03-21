@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 import zipfile
@@ -77,7 +78,7 @@ class TestWheelBuildStep:
         step = WheelBuildStep(app_root)
 
         with patch("trellis.platforms.browser.build_steps.build_wheel", return_value=built_wheel):
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         assert ctx.generated_files["app_wheel"] == built_wheel
 
@@ -95,7 +96,7 @@ class TestWheelBuildStep:
         step = WheelBuildStep(app_root)
 
         with patch("trellis.platforms.browser.build_steps.build_wheel", return_value=built_wheel):
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         sm = ctx.manifest.steps["wheel-build"]
         assert app_root / "myapp" / "__init__.py" in sm.source_paths
@@ -151,7 +152,7 @@ class TestDependencyResolveStep:
         with patch(
             "trellis.platforms.browser.build_steps.resolve_dependencies", return_value=resolved
         ):
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         assert ctx.build_data["resolved_deps"] is resolved
 
@@ -172,7 +173,7 @@ class TestDependencyResolveStep:
         with patch(
             "trellis.platforms.browser.build_steps.resolve_dependencies", return_value=resolved
         ):
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         sm = ctx.manifest.steps["dependency-resolve"]
         assert app_wheel in sm.source_paths
@@ -267,7 +268,7 @@ class TestWheelBundleStep:
 
         config_json = self._make_config_json()
         step = WheelBundleStep(config_json=config_json)
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         # Check zip was created
         zip_path = ctx.generated_files["wheel_bundle"]
@@ -292,7 +293,7 @@ class TestWheelBundleStep:
 
         config_json = self._make_config_json()
         step = WheelBundleStep(config_json=config_json)
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         manifest_path = ctx.generated_files["wheel_manifest"]
         manifest = json.loads(manifest_path.read_text())
@@ -307,7 +308,7 @@ class TestWheelBundleStep:
         ctx.build_data["resolved_deps"] = resolved
 
         step = WheelBundleStep(config_json=self._make_config_json())
-        step.run(ctx)
+        asyncio.run(step.run(ctx))
 
         sm = ctx.manifest.steps["wheel-bundle"]
         assert app_wheel in sm.source_paths
@@ -396,7 +397,7 @@ class TestPyodideWorkerBuildStep:
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         mock_run.assert_called_once()
         cmd = mock_run.call_args[0][0]
@@ -416,7 +417,7 @@ class TestPyodideWorkerBuildStep:
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         cmd = mock_run.call_args[0][0]
         expected_outfile = f"--outfile={ctx.workspace / 'pyodide.worker-bundle'}"
@@ -428,7 +429,7 @@ class TestPyodideWorkerBuildStep:
         step = PyodideWorkerBuildStep()
 
         with patch("subprocess.run"):
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         assert "--loader:.worker-bundle=text" in ctx.esbuild_args
 
@@ -438,7 +439,7 @@ class TestPyodideWorkerBuildStep:
         step = PyodideWorkerBuildStep()
 
         with patch("subprocess.run"):
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         expected_alias = (
             f"--alias:@trellis/trellis-browser/pyodide.worker-bundle="
@@ -460,7 +461,7 @@ class TestPyodideWorkerBuildStep:
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         cmd = mock_run.call_args[0][0]
         assert f"--alias:@trellis/wheel-bundle={wheel_bundle}" in cmd
@@ -477,7 +478,7 @@ class TestPyodideWorkerBuildStep:
         step = PyodideWorkerBuildStep()
 
         with patch("subprocess.run"):
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         step_manifest = ctx.manifest.steps["pyodide-worker-build"]
         assert _PYODIDE_WORKER_PATH.parent in step_manifest.source_paths
@@ -488,7 +489,7 @@ class TestPyodideWorkerBuildStep:
         step = PyodideWorkerBuildStep()
 
         with patch("subprocess.run"):
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         step_manifest = ctx.manifest.steps["pyodide-worker-build"]
         expected_output = ctx.workspace / "pyodide.worker-bundle"
@@ -508,7 +509,7 @@ class TestPyodideWorkerBuildStep:
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         sm = ctx.manifest.steps["pyodide-worker-build"]
         assert wheel_bundle in sm.source_paths
@@ -521,7 +522,7 @@ class TestPyodideWorkerBuildStep:
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         cmd = mock_run.call_args[0][0]
         define_args = [arg for arg in cmd if arg.startswith("--define:PYODIDE_VERSION=")]
@@ -537,7 +538,7 @@ class TestPyodideWorkerBuildStep:
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         cmd = mock_run.call_args[0][0]
         define_args = [arg for arg in cmd if arg.startswith("--define:PYODIDE_PYTHON_VERSION=")]
@@ -552,7 +553,7 @@ class TestPyodideWorkerBuildStep:
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
-            step.run(ctx)
+            asyncio.run(step.run(ctx))
 
         call_kwargs = mock_run.call_args[1]
         assert call_kwargs["env"]["NODE_PATH"] == "/custom/node_modules"

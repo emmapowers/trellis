@@ -335,6 +335,8 @@ class TestConfigToJson:
             "library",
             "host",
             "port",
+            "ssr",
+            "session_ttl",
             "window_size",
             "identifier",
             "version",

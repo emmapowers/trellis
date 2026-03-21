@@ -51,17 +51,22 @@ class TestSpaRoutes:
 
     def test_spa_route_serves_index_html(self, client: TestClient) -> None:
         """Non-root paths serve the same index HTML for client-side routing."""
-        response = client.get("/about")
+        response = client.get("/about", headers={"Accept": "text/html"})
         assert response.status_code == 200
         assert "<!DOCTYPE html>" in response.text
         assert 'id="root"' in response.text
 
     def test_nested_spa_route_serves_index_html(self, client: TestClient) -> None:
         """Nested paths serve index HTML for client-side routing."""
-        response = client.get("/users/123")
+        response = client.get("/users/123", headers={"Accept": "text/html"})
         assert response.status_code == 200
         assert "<!DOCTYPE html>" in response.text
         assert 'id="root"' in response.text
+
+    def test_non_document_404_returns_404(self, client: TestClient) -> None:
+        """Non-document requests (e.g., assets) get a real 404."""
+        response = client.get("/missing.js", headers={"Accept": "application/javascript"})
+        assert response.status_code == 404
 
 
 class TestGetIndexHtml:

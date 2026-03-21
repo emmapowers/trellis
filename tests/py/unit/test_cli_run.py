@@ -399,6 +399,7 @@ class TestBuildRunKwargs:
         assert kwargs["port"] is None
         assert kwargs["batch_delay"] == pytest.approx(1 / 30)
         assert kwargs["hot_reload"] is True
+        assert kwargs["session_ttl"] == 300
         assert "window_title" not in kwargs
 
     def test_desktop_with_explicit_size(self) -> None:

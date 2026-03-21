@@ -16,6 +16,7 @@ from trellis.app.configvars import (
     validate_batch_delay,
     validate_debug_categories,
     validate_port_or_none,
+    validate_positive_int,
     validate_window_size,
 )
 from trellis.platforms.common.base import PlatformType
@@ -110,6 +111,19 @@ _PORT: ConfigVar[int | None] = ConfigVar(
     validator=validate_port_or_none,
     short_name="p",
     help="Server port to bind to",
+)
+_SSR = ConfigVar(
+    "ssr",
+    default=True,
+    category="server",
+    help="Enable server-side rendering",
+)
+_SESSION_TTL = ConfigVar(
+    "session_ttl",
+    default=300,
+    category="server",
+    validator=validate_positive_int,
+    help="Session time-to-live in seconds (for SSR resumption and reconnection)",
 )
 
 
@@ -220,6 +234,8 @@ class Config:
         title: Application title (page/window title, defaults to name)
         host: Server bind address
         port: Server port (None for auto-select)
+        ssr: Enable server-side rendering (default True)
+        session_ttl: Session time-to-live in seconds (default 300)
         window_size: Desktop window size ('maximized' or 'WIDTHxHEIGHT')
         identifier: Reverse-domain bundle identifier (e.g., 'com.example.myapp')
         version: Application version string (semver)
@@ -250,6 +266,8 @@ class Config:
     # Server settings
     host: str = "127.0.0.1"
     port: int | None = None
+    ssr: bool = True
+    session_ttl: int = 300
 
     # Desktop settings
     window_size: str = "maximized"
@@ -278,6 +296,8 @@ class Config:
         library: bool = False,
         host: str = "127.0.0.1",
         port: int | None = None,
+        ssr: bool = True,
+        session_ttl: int = 300,
         window_size: str = "maximized",
         identifier: str | None = None,
         version: str | None = None,
@@ -318,6 +338,8 @@ class Config:
         # Server settings
         self.host = _HOST.resolve(host)
         self.port = _PORT.resolve(port)
+        self.ssr = _SSR.resolve(ssr)
+        self.session_ttl = _SESSION_TTL.resolve(session_ttl)
 
         # Desktop settings
         self.window_size = _WINDOW_SIZE.resolve(window_size)

@@ -80,6 +80,12 @@ packages = ["src/trellis"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-vv --ignore=tests/py/typecheck"
+markers = [
+    "slow: tests taking >1s or requiring subprocess",
+    "e2e: full browser tests with Playwright",
+    "network: tests requiring network access",
+    "platform: cross-platform protocol tests",
+]
 
 [tool.coverage.run]
 source = ["src/trellis"]

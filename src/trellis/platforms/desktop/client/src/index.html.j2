@@ -24,7 +24,7 @@
     </style>
 </head>
 <body>
-    <div id="root" class="trellis-root"></div>
+    <div id="root" class="trellis-root">{% if ssr_enabled %}{{ ssr_html | safe }}{% endif %}</div>
     <script>
         function renderFatalError(title, details) {
             var pre = document.createElement('pre');
@@ -40,6 +40,9 @@
             renderFatalError('UNHANDLED REJECTION: ' + e.reason, (e.reason && e.reason.stack || ''));
         });
     </script>
+    {% if ssr_enabled %}
+    <script>window.__TRELLIS_SSR__ = {{ ssr_data | safe }};</script>
+    {% endif %}
     <script type="module" src="bundle.js"></script>
 </body>
 </html>

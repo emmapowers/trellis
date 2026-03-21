@@ -119,7 +119,7 @@ class BuildStep(ABC):
         ...
 
     @abstractmethod
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         """Execute the step, may mutate ctx."""
         ...
 
@@ -178,7 +178,7 @@ class PackageInstallStep(BuildStep):
             return ShouldBuild.BUILD
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         packages = dict(ctx.collected.packages)
         ensure_packages(packages, ctx.workspace)
 
@@ -231,7 +231,7 @@ class RegistryGenerationStep(BuildStep):
 
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         registry_path = write_registry_ts(ctx.workspace, ctx.collected)
         ctx.generated_files["_registry"] = registry_path
         ctx.esbuild_args.append(f"--alias:@trellis/_registry={registry_path}")
@@ -286,7 +286,7 @@ class TsconfigStep(BuildStep):
 
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         # Build path mappings for modules
         aliases = _get_module_aliases(ctx.collected)
         paths: dict[str, list[str]] = {
@@ -359,7 +359,7 @@ class TypeCheckStep(BuildStep):
             return ShouldBuild.BUILD
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         tsc = get_bin(node_modules_path(ctx.workspace), "tsc")
         tsconfig_path = ctx.generated_files.get("tsconfig")
 
@@ -412,7 +412,7 @@ class DeclarationStep(BuildStep):
             return ShouldBuild.BUILD
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         dts_generator = get_bin(node_modules_path(ctx.workspace), "dts-bundle-generator")
         tsconfig_path = ctx.generated_files.get("tsconfig")
 
@@ -469,7 +469,7 @@ class BundleBuildStep(BuildStep):
             return ShouldBuild.BUILD
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         esbuild = get_bin(node_modules_path(ctx.workspace), "esbuild")
         metafile_path = get_metafile_path(ctx.workspace)
 
@@ -532,7 +532,7 @@ class StaticFileCopyStep(BuildStep):
             return ShouldBuild.BUILD
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         # Copy from each module's assets directory
         for module in ctx.collected.modules:
             if module._base_path is None:
@@ -624,7 +624,7 @@ class IconAssetStep(BuildStep):
             return ShouldBuild.BUILD
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
         step_manifest.source_paths.clear()
         step_manifest.dest_files.clear()
@@ -704,7 +704,7 @@ class IndexHtmlRenderStep(BuildStep):
 
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         # Merge contexts: BuildContext.template_context first, then constructor (overrides)
         merged_context = {**ctx.template_context, **self._context}
 
@@ -723,3 +723,141 @@ class IndexHtmlRenderStep(BuildStep):
         step_manifest.source_paths.add(self._template_path)
         step_manifest.dest_files.add(output_path)
         step_manifest.metadata["context_hash"] = self._compute_context_hash(ctx)
+
+
+class SSRBundleBuildStep(BuildStep):
+    """Build the SSR bundle used by the Bun sidecar to render React to HTML.
+
+    Produces a Node-targeted ESM bundle (--platform=node) from ssr-entry.tsx.
+    This bundle is NOT shipped to the client — it runs server-side in a Bun
+    subprocess that accepts serialized element trees via HTTP and returns
+    rendered HTML using React's renderToString.
+    """
+
+    def __init__(self, *, output_name: str = "ssr") -> None:
+        self.output_name = output_name
+
+    @property
+    def name(self) -> str:
+        return "ssr-bundle-build"
+
+    def should_build(
+        self, ctx: BuildContext, step_manifest: StepManifest | None
+    ) -> ShouldBuild | None:
+        """Check if SSR bundle needs rebuilding based on source/output mtimes."""
+        if step_manifest is None:
+            return ShouldBuild.BUILD
+        if step_manifest.metadata.get("output_name") != self.output_name:
+            return ShouldBuild.BUILD
+        if not step_manifest.source_paths or not step_manifest.dest_files:
+            return ShouldBuild.BUILD
+        if is_rebuild_needed(step_manifest.source_paths, step_manifest.dest_files):
+            return ShouldBuild.BUILD
+        return ShouldBuild.SKIP
+
+    async def run(self, ctx: BuildContext) -> None:
+        esbuild = get_bin(node_modules_path(ctx.workspace), "esbuild")
+        metafile_path = get_metafile_path(ctx.workspace)
+
+        ssr_entry = (
+            Path(__file__).parent.parent
+            / "platforms"
+            / "server"
+            / "client"
+            / "src"
+            / "ssr-entry.tsx"
+        )
+
+        cmd = [
+            str(esbuild),
+            str(ssr_entry),
+            "--bundle",
+            f"--outdir={ctx.dist_dir}",
+            f"--entry-names={self.output_name}",
+            f"--metafile={metafile_path}",
+            "--format=esm",
+            "--platform=node",
+            "--target=esnext",
+            "--jsx=automatic",
+            "--loader:.tsx=tsx",
+            "--loader:.ts=ts",
+        ]
+
+        # Add aliases for each module
+        aliases = _get_module_aliases(ctx.collected)
+        cmd.extend(f"--alias:@trellis/{name}={path}" for name, path in aliases.items())
+
+        # Add additional args from context (including _registry alias)
+        cmd.extend(ctx.esbuild_args)
+
+        ctx.exec_in_build_env(cmd)
+
+        # Populate step manifest from metafile
+        metafile = read_metafile(ctx.workspace)
+        step_manifest = ctx.manifest.steps.setdefault(self.name, StepManifest())
+        step_manifest.source_paths.update(metafile.inputs)
+        step_manifest.dest_files.update(metafile.outputs)
+        step_manifest.metadata["output_name"] = self.output_name
+
+
+class SSRPreRenderStep(BuildStep):
+    """Pre-render the app at build time.
+
+    Runs the app's root component through the SSR pipeline once, producing
+    rendered HTML and dehydration data that gets baked into index.html via
+    template_context. The HTML uses CSS variables for all colors, so a
+    single render works for both light and dark themes.
+
+    Must run after SSRBundleBuildStep (needs the SSR bundle) and before
+    IndexHtmlRenderStep (populates template_context).
+    """
+
+    def __init__(self, *, output_name: str = "ssr") -> None:
+        self.output_name = output_name
+
+    @property
+    def name(self) -> str:
+        return "ssr-pre-render"
+
+    async def run(self, ctx: BuildContext) -> None:
+        # Lazy imports to avoid circular deps and heavy imports at module level
+        from trellis.app.apploader import get_apploader  # noqa: PLC0415
+        from trellis.core.rendering.session import RenderSession  # noqa: PLC0415
+        from trellis.core.rendering.ssr import render_for_ssr  # noqa: PLC0415
+        from trellis.platforms.common.handler import _serialize_patches  # noqa: PLC0415
+        from trellis.platforms.common.serialization import serialize_element  # noqa: PLC0415
+        from trellis.platforms.common.ssr_utils import build_dehydration_data  # noqa: PLC0415
+        from trellis.platforms.server.ssr_renderer import SSRRenderer  # noqa: PLC0415
+
+        ssr_bundle = ctx.dist_dir / f"{self.output_name}.js"
+        if not ssr_bundle.exists():
+            logger.warning("SSR bundle not found at %s, skipping pre-render", ssr_bundle)
+            return
+
+        apploader = get_apploader()
+        if apploader.app is None:
+            apploader.load_app()
+        app = apploader.app
+        assert app is not None
+
+        renderer = SSRRenderer(ssr_bundle)
+        try:
+            await renderer.start()
+            wrapped = app.get_wrapped_top("light", None)
+            session = RenderSession(wrapped)
+            session.initial_path = "/"
+            ssr_result = render_for_ssr(session)
+            wire_patches = _serialize_patches(ssr_result.patches, session)
+
+            assert session.root_element is not None
+            tree = serialize_element(session.root_element, session)
+            ssr_html = await renderer.render(tree) or ""
+
+            if ssr_html:
+                ctx.template_context["ssr_html"] = ssr_html
+                ctx.template_context["ssr_data"] = build_dehydration_data(None, wire_patches)
+                ctx.template_context["ssr_enabled"] = True
+            else:
+                logger.warning("SSR renderer returned empty HTML, skipping SSR")
+        finally:
+            await renderer.stop()

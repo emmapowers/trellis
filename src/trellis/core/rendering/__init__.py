@@ -25,6 +25,7 @@ from trellis.core.rendering.session import (
     is_render_active,
     set_render_session,
 )
+from trellis.core.rendering.ssr import SSRRenderResult, execute_deferred_hooks, render_for_ssr
 from trellis.core.rendering.traits import ContainerTrait, KeyTrait
 
 __all__ = [
@@ -48,11 +49,14 @@ __all__ = [
     "RenderRemovePatch",
     "RenderSession",
     "RenderUpdatePatch",
+    "SSRRenderResult",
     "diff_props",
+    "execute_deferred_hooks",
     "get_render_session",
     "get_session_registry",
     "is_render_active",
     "reconcile_children",
     "render",
+    "render_for_ssr",
     "set_render_session",
 ]

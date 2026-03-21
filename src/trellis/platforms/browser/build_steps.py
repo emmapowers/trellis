@@ -58,7 +58,7 @@ class WheelBuildStep(BuildStep):
 
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         wheel_dir = ctx.workspace / "wheels"
         wheel_path = build_wheel(self._app_root, wheel_dir)
         ctx.generated_files["app_wheel"] = wheel_path
@@ -111,7 +111,7 @@ class DependencyResolveStep(BuildStep):
 
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         if "app_wheel" not in ctx.generated_files:
             raise RuntimeError(
                 "DependencyResolveStep.run requires ctx.generated_files['app_wheel'] "
@@ -172,7 +172,7 @@ class WheelBundleStep(BuildStep):
 
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         if "resolved_deps" not in ctx.build_data:
             raise RuntimeError(
                 "WheelBundleStep.run requires ctx.build_data['resolved_deps'] "
@@ -266,7 +266,7 @@ class PyodideWorkerBuildStep(BuildStep):
 
         return ShouldBuild.SKIP
 
-    def run(self, ctx: BuildContext) -> None:
+    async def run(self, ctx: BuildContext) -> None:
         esbuild = get_bin(node_modules_path(ctx.workspace), "esbuild")
         output_file = ctx.workspace / "pyodide.worker-bundle"
 
