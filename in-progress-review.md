@@ -62,7 +62,7 @@
     → ✅ **Resolved** — Same reasoning.
 
 20. **`main.tsx:48`** (emma) — Audit platform JS, move shared SSR/hydration code to common.
-    → **Open** — Needs investigation into how much can realistically be shared given platform-specific transports.
+    → ✅ **Fixed** — Extracted `init.ts`, `ssr.ts` (types + `mountApp()`), `ClientApp.tsx` (shared wrapper) to common. All 3 entry points simplified.
 
 21. **`routes.py:74`** + **`ssr.py:55`** (emma) — Drop theme from server SSR.
     → ✅ **Fixed** — Removed theme detection, params, and cache dimension. Cache keyed by route only.
