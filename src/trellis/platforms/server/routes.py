@@ -27,9 +27,11 @@ router = APIRouter()
 def _is_document_request(request: Request) -> bool:
     """Check if the request is a browser document navigation.
 
-    Returns True for requests that accept HTML (standard browser navigation),
-    False for asset/API requests that should get a real 404.
+    Returns True for GET/HEAD requests that accept HTML (standard browser
+    navigation). POST/PUT/DELETE etc. should get a real 404, not the SPA page.
     """
+    if request.method not in {"GET", "HEAD"}:
+        return False
     accept = request.headers.get("accept", "")
     return "text/html" in accept
 
