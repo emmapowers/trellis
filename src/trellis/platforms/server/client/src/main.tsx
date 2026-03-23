@@ -2,23 +2,19 @@
 
 import "@trellis/trellis-core/init";
 
-import React from "react";
+import React, { useCallback } from "react";
 import { ServerTrellisClient } from "@trellis/trellis-server/client/src/TrellisClient";
 import { ClientApp } from "@trellis/trellis-core/ClientApp";
 import { ssrData, mountApp } from "@trellis/trellis-core/ssr";
 
 function App() {
-  return (
-    <ClientApp
-      createClient={(onError) =>
-        new ServerTrellisClient(
-          { onError },
-          undefined,
-          ssrData?.sessionId
-        )
-      }
-    />
+  const createClient = useCallback(
+    (onError: (error: string) => void) =>
+      new ServerTrellisClient({ onError }, undefined, ssrData?.sessionId),
+    []
   );
+
+  return <ClientApp createClient={createClient} />;
 }
 
 mountApp(document.getElementById("root")!, <App />);

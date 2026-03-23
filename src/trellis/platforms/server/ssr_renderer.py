@@ -79,7 +79,7 @@ class SSRRenderer:
         self._client = httpx.AsyncClient(transport=transport, base_url="http://localhost")
 
         if not await self._wait_for_health():
-            await self.stop()
+            await self._stop_locked()
             raise RuntimeError("SSR renderer failed health check")
 
         self._restart_count = 0
