@@ -3,17 +3,17 @@
  *
  * This is used when generating self-contained HTML deployments.
  * Configuration is read from window.__TRELLIS_CONFIG__.
+ *
+ * When SSR data is present (window.__TRELLIS_SSR__), the store is
+ * pre-populated and hydrateRoot is used so the pre-rendered HTML
+ * becomes interactive without a flash of empty content.
  */
 
-// Initialize widget registry before any rendering
-import { initRegistry } from "@trellis/_registry";
-initRegistry();
+import "@trellis/trellis-core/init";
 
-import "@trellis/trellis-core/theme.css"; // Theme CSS variables
-import "@trellis/trellis-core/console"; // Set up console filtering
 import React from "react";
-import { createRoot } from "react-dom/client";
 import { TrellisApp, RoutingMode } from "@trellis/trellis-browser/client/src/TrellisApp";
+import { ssrData, mountApp } from "@trellis/trellis-core/ssr";
 
 declare global {
   interface Window {
@@ -45,16 +45,9 @@ function App() {
     );
   }
 
-  // Parse routing mode from config string
   const routingMode = config.routingMode as RoutingMode | undefined;
 
-  return (
-    <TrellisApp routingMode={routingMode} />
-  );
+  return <TrellisApp routingMode={routingMode} hydrated={!!ssrData} />;
 }
 
-const container = document.getElementById("root");
-if (container) {
-  const root = createRoot(container);
-  root.render(<App />);
-}
+mountApp(document.getElementById("root")!, <App />);

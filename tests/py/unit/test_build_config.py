@@ -17,6 +17,8 @@ from trellis.bundler.steps import (
     IndexHtmlRenderStep,
     PackageInstallStep,
     RegistryGenerationStep,
+    SSRBundleBuildStep,
+    SSRPreRenderStep,
     StaticFileCopyStep,
     TsconfigStep,
 )
@@ -77,6 +79,7 @@ class TestServerGetBuildConfig:
             PackageInstallStep,
             RegistryGenerationStep,
             BundleBuildStep,
+            SSRBundleBuildStep,
             StaticFileCopyStep,
             IconAssetStep,
             IndexHtmlRenderStep,
@@ -135,8 +138,10 @@ class TestDesktopGetBuildConfig:
             PackageInstallStep,
             RegistryGenerationStep,
             BundleBuildStep,
+            SSRBundleBuildStep,
             StaticFileCopyStep,
             IconAssetStep,
+            SSRPreRenderStep,
             IndexHtmlRenderStep,
         ]
 
@@ -188,8 +193,10 @@ class TestBrowserServeGetBuildConfig:
             WheelBundleStep,
             PyodideWorkerBuildStep,
             BundleBuildStep,
+            SSRBundleBuildStep,
             StaticFileCopyStep,
             IconAssetStep,
+            SSRPreRenderStep,
             IndexHtmlRenderStep,
         ]
 

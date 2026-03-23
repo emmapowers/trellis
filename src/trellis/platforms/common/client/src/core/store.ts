@@ -249,7 +249,7 @@ export function useNode(id: string): NodeData | undefined {
   );
   const getSnapshot = useCallback(() => store.getNode(id), [id]);
 
-  return useSyncExternalStore(subscribe, getSnapshot);
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
 /**
@@ -263,5 +263,5 @@ export function useRootId(): string | null {
   );
   const getSnapshot = useCallback(() => store.getRootId(), []);
 
-  return useSyncExternalStore(subscribe, getSnapshot);
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }

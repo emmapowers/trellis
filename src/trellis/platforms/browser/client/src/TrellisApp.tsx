@@ -6,6 +6,11 @@
  *
  * Unlike server/desktop platforms, this component manages the Pyodide lifecycle
  * (loading, initialization, Python execution) in addition to rendering.
+ *
+ * When `hydrated` is true (SSR content was pre-rendered at build time), the
+ * component tree is rendered immediately with a loading overlay on top. The
+ * overlay shows status text while Pyodide initializes, then dismisses when
+ * the app connects.
  */
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
@@ -54,6 +59,13 @@ export interface TrellisAppProps {
    * instead of importing from the wheel. Used by the playground and TrellisDemo.
    */
   source?: { type: "code"; code: string };
+  /**
+   * Whether the app was hydrated from build-time SSR content.
+   *
+   * When true, the component tree is rendered immediately (the store is
+   * already populated from SSR patches) with a loading overlay on top.
+   */
+  hydrated?: boolean;
 }
 
 type AppState =
@@ -62,7 +74,7 @@ type AppState =
   | { status: "error"; message: string };
 
 /**
- * Default loading component
+ * Default loading component — shown when there is no SSR content.
  */
 function DefaultLoading({ message }: { message: string }) {
   return (
@@ -92,6 +104,35 @@ function DefaultLoading({ message }: { message: string }) {
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/**
+ * Loading overlay — shown on top of SSR content while Pyodide loads.
+ *
+ * Uses CSS classes matching the static HTML overlay from index.html.j2 so
+ * the transition from static to React-managed overlay is seamless. The
+ * dark mode adaptation is handled via prefers-color-scheme in the stylesheet.
+ */
+function LoadingOverlay({ message }: { message: string }) {
+  return (
+    <div className="ssr-loading-backdrop">
+      <div className="ssr-loading-card">
+        <div className="ssr-loading-spinner" />
+        <p style={{ margin: 0, fontSize: "14px" }}>{message}</p>
+      </div>
+      <style>{`
+        @keyframes trellis-spin { to { transform: rotate(360deg) } }
+        .ssr-loading-backdrop { position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.75);z-index:99999 }
+        .ssr-loading-card { display:flex;flex-direction:column;align-items:center;padding:24px 32px;border-radius:12px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,0.12);font-family:system-ui,-apple-system,sans-serif;color:#475569 }
+        .ssr-loading-spinner { width:28px;height:28px;border:3px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:trellis-spin 1s linear infinite;margin-bottom:12px }
+        @media (prefers-color-scheme: dark) {
+          .ssr-loading-backdrop { background:rgba(0,0,0,0.6) }
+          .ssr-loading-card { background:#1e293b;color:#cbd5e1;box-shadow:0 4px 24px rgba(0,0,0,0.4) }
+          .ssr-loading-spinner { border-color:#334155;border-top-color:#60a5fa }
         }
       `}</style>
     </div>
@@ -138,6 +179,7 @@ export function TrellisApp({
   errorComponent,
   themeMode,
   source,
+  hydrated = false,
 }: TrellisAppProps): React.ReactElement {
   const [state, setState] = useState<AppState>({
     status: "loading",
@@ -165,6 +207,12 @@ export function TrellisApp({
       ),
     [routingMode]
   );
+
+  useEffect(() => {
+    // Remove the static HTML loading overlay (from index.html.j2) now that
+    // React has mounted and will render its own dynamic overlay.
+    document.getElementById("ssr-loading")?.remove();
+  }, []);
 
   useEffect(() => {
     // Prevent double initialization in React StrictMode
@@ -242,7 +290,26 @@ export function TrellisApp({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);  // Empty deps: runs once on mount. Re-run by remounting with new key.
 
-  // Render based on state
+  // SSR hydrated path: show the tree immediately with a loading overlay
+  if (hydrated) {
+    return (
+      <TrellisContext.Provider value={client}>
+        <HostThemeModeContext.Provider value={themeMode}>
+          {state.status === "loading" && <LoadingOverlay message={state.message} />}
+          {state.status === "error" && (
+            errorComponent ? (
+              errorComponent(state.message) as React.ReactElement
+            ) : (
+              <DefaultError message={state.message} />
+            )
+          )}
+          <HydratedContent />
+        </HostThemeModeContext.Provider>
+      </TrellisContext.Provider>
+    );
+  }
+
+  // Non-SSR path: show loading/error states, then render tree
   if (state.status === "loading") {
     return (
       loadingComponent ?? <DefaultLoading message={state.message} />
@@ -280,6 +347,21 @@ function AppContent({ loadingComponent }: AppContentProps): React.ReactElement {
 
   if (!rootId) {
     return (loadingComponent ?? <DefaultLoading message="Waiting for render..." />) as React.ReactElement;
+  }
+
+  return <TreeRenderer />;
+}
+
+/**
+ * Inner component for hydrated SSR mode.
+ * The store is already populated from build-time patches, so useRootId
+ * returns immediately. Renders TreeRenderer right away.
+ */
+function HydratedContent(): React.ReactElement | null {
+  const rootId = useRootId();
+
+  if (!rootId) {
+    return null;
   }
 
   return <TreeRenderer />;

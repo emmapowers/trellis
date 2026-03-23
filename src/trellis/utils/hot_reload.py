@@ -95,6 +95,7 @@ class HotReload:
         self._watcher: Watcher | None = None
         self._loop = loop
         self._started = False
+        self._on_reload_callbacks: list[tp.Callable[[], None]] = []
 
     @property
     def sessions(self) -> tp.Any:
@@ -157,6 +158,10 @@ class HotReload:
             # Run directly on watchdog thread
             self._invalidate_all_sessions()
 
+    def add_on_reload_callback(self, callback: tp.Callable[[], None]) -> None:
+        """Register a callback to be called on hot reload."""
+        self._on_reload_callbacks.append(callback)
+
     def _invalidate_all_sessions(self) -> None:
         """Mark all elements in all sessions as dirty.
 
@@ -173,6 +178,13 @@ class HotReload:
             with session.lock:
                 for element_id in session.elements:
                     session.dirty.mark(element_id)
+
+        # Notify additional callbacks (e.g., SSR cache invalidation)
+        for callback in self._on_reload_callbacks:
+            try:
+                callback()
+            except Exception:
+                logger.exception("Error in hot reload callback")
 
 
 def get_hot_reload() -> HotReload | None:

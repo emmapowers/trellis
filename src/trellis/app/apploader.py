@@ -382,7 +382,7 @@ class AppLoader:
 
         return self._platform
 
-    def bundle(self, dest: Path | None = None) -> Path:
+    async def bundle(self, dest: Path | None = None) -> Path:
         """Build the client bundle for this application.
 
         Uses the platform's get_build_config() to determine entry point and
@@ -408,7 +408,7 @@ class AppLoader:
         build_config = platform.get_build_config(config)
         workspace = get_workspace_dir()
 
-        build(
+        await build(
             registry=registry,
             entry_point=build_config.entry_point,
             workspace=workspace,
